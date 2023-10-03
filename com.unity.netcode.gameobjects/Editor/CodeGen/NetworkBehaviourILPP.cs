@@ -76,6 +76,37 @@ namespace Unity.Netcode.Editor.CodeGen
                             .ToList()
                             .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
 
+                        foreach (var type in mainModule.GetTypes())
+                        {
+                            var resolved = type.Resolve();
+                            foreach (var attribute in resolved.CustomAttributes)
+                            {
+                                if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
+                                {
+                                    var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
+                                    if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                    {
+                                        m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                    }
+                                }
+                            }
+
+                            foreach (var method in resolved.Methods)
+                            {
+                                foreach (var attribute in method.CustomAttributes)
+                                {
+                                    if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
+                                    {
+                                        var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
+                                        if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                        {
+                                            m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         CreateNetworkVariableTypeInitializers(assemblyDefinition);
                     }
                     catch (Exception e)
@@ -196,10 +227,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(wrappedType);
-                    }
+                    serializeMethod?.GenericArguments.Add(wrappedType);
                     equalityMethod.GenericArguments.Add(wrappedType);
                 }
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -259,10 +287,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
                 else
@@ -296,10 +321,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
 
@@ -1146,13 +1168,22 @@ namespace Unity.Netcode.Editor.CodeGen
                     //var type = field.FieldType;
                     if (type.IsGenericInstance)
                     {
-                        if (type.Resolve().Name == typeof(NetworkVariable<>).Name || type.Resolve().Name == typeof(NetworkList<>).Name)
+                        foreach (var attribute in type.Resolve().CustomAttributes)
                         {
-                            var genericInstanceType = (GenericInstanceType)type;
-                            var wrappedType = genericInstanceType.GenericArguments[0];
-                            if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                            if (attribute.AttributeType.Name == nameof(GenerateSerializationForGenericParameterAttribute))
                             {
-                                m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                var idx = (int)attribute.ConstructorArguments[0].Value;
+                                var genericInstanceType = (GenericInstanceType)type;
+                                if (idx < 0 || idx >= genericInstanceType.GenericArguments.Count)
+                                {
+                                    m_Diagnostics.AddError($"{type} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
+                                    continue;
+                                }
+                                var wrappedType = genericInstanceType.GenericArguments[idx];
+                                if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                {
+                                    m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                }
                             }
                         }
                     }
@@ -1173,13 +1204,22 @@ namespace Unity.Netcode.Editor.CodeGen
                         GetAllBaseTypesAndResolveGenerics(type.Resolve(), ref baseTypes, genericParams);
                         foreach (var baseType in baseTypes)
                         {
-                            if (baseType.Resolve().Name == typeof(NetworkVariable<>).Name || baseType.Resolve().Name == typeof(NetworkList<>).Name)
+                            foreach (var attribute in baseType.Resolve().CustomAttributes)
                             {
-                                var genericInstanceType = (GenericInstanceType)baseType;
-                                var wrappedType = genericInstanceType.GenericArguments[0];
-                                if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                if (attribute.AttributeType.Name == nameof(GenerateSerializationForGenericParameterAttribute))
                                 {
-                                    m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                    var idx = (int)attribute.ConstructorArguments[0].Value;
+                                    var genericInstanceType = (GenericInstanceType)baseType;
+                                    if (idx < 0 || idx >= genericInstanceType.GenericArguments.Count)
+                                    {
+                                        m_Diagnostics.AddError($"{baseType} has a {nameof(GenerateSerializationForGenericParameterAttribute)} referencing a parameter index outside the valid range (0-{genericInstanceType.GenericArguments.Count - 1}");
+                                        continue;
+                                    }
+                                    var wrappedType = genericInstanceType.GenericArguments[idx];
+                                    if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                    {
+                                        m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                    }
                                 }
                             }
                         }

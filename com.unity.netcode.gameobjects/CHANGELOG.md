@@ -10,7 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
+- Added `GenerateSerializationForGenericParameterAttribute`, which can be applied to user-created Network Variable types to ensure the codegen generates serialization for the generic types they wrap. (#2694)
+- Added `GenerateSerializationForTypeAttribute`, which can be applied to any class or method to ensure the codegen generates serialization for the specific provided type. (#2694)
+- Exposed `NetworkVariableSerialization<T>.Read`, `NetworkVariableSerialization<T>.Write`, `NetworkVariableSerialization<T>.AreEqual`, and `NetworkVariableSerialization<T>.Duplicate` to further support the creation of user-created network variables by allowing users to access the generated serialization methods and serialize generic types efficiently without boxing. (#2694)
+- Added `NetworkVariableBase.MarkNetworkBehaviourDirty` so that user-created network variable types can mark their containing `NetworkBehaviour` to be processed by the update loop. (#2694)
 
 ### Fixed
 

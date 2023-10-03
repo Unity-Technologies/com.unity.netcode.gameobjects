@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -9,6 +8,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
+    [GenerateSerializationForGenericParameter(0)]
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
@@ -68,14 +68,7 @@ namespace Unity.Netcode
 
         internal void MarkNetworkObjectDirty()
         {
-            if (m_NetworkBehaviour == null)
-            {
-                Debug.LogWarning($"NetworkList is written to, but doesn't know its NetworkBehaviour yet. " +
-                                 "Are you modifying a NetworkList before the NetworkObject is spawned?");
-                return;
-            }
-
-            m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+            MarkNetworkBehaviourDirty();
         }
 
         /// <inheritdoc />
