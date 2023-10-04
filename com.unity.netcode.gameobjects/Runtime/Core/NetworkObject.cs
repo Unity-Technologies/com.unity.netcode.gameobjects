@@ -51,7 +51,6 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Object Types <see href="https://docs.unity3d.com/ScriptReference/GlobalObjectId.html"/>
-        /// Parameter 0 of <see cref="k_GlobalIdTemplate"/>
         /// </summary>
         // 0 = Null (when considered a null object type we can ignore)
         // 1 = Imported Asset
@@ -99,6 +98,11 @@ namespace Unity.Netcode
 
         private void OnValidate()
         {
+            GenerateGlobalObjectIdHash();
+        }
+
+        internal void GenerateGlobalObjectIdHash()
+        {
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
@@ -143,6 +147,8 @@ namespace Unity.Netcode
                         // We must invoke this in order for the modifications to get saved with the scene (does not mark scene as dirty)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(this);
                     }
+
+                    NetworkObjectRefreshTool.ProcessScene(gameObject.scene.path);
                 }
                 else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
                 {
@@ -834,21 +840,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void InvokeOwnershipChanged(ulong previous, ulong next)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
-                {
-                    ChildNetworkBehaviours[i].InternalOnOwnershipChanged(previous, next);
-                }
-                else
-                {
-                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
-                }
-            }
-        }
-
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -1355,7 +1346,7 @@ namespace Unity.Netcode
             return 0;
         }
 
-        internal NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
+        public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
             if (index >= ChildNetworkBehaviours.Count)
             {
