@@ -16,9 +16,23 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class NetworkSceneManagerFixValidationTests : NetcodeIntegrationTest
     {
+
+        private const string k_SceneToLoad = "UnitTestBaseScene";
+        private const string k_AdditiveScene1 = "InSceneNetworkObject";
+        private const string k_AdditiveScene2 = "AdditiveSceneMultiInstance";
+
         protected override int NumberOfClients => 2;
 
         private bool m_CanStart;
+        private bool m_NoLatency;
+
+        private Scene m_OriginalActiveScene;
+
+        protected override IEnumerator OnSetup()
+        {
+            m_OriginalActiveScene = SceneManager.GetActiveScene();
+            return base.OnSetup();
+        }
 
         protected override bool CanStartServerAndClients()
         {
@@ -76,15 +90,13 @@ namespace TestProject.RuntimeTests
             // As long as there are no exceptions this test passes
         }
 
-        private const string k_SceneToLoad = "UnitTestBaseScene";
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            base.OnCreatePlayerPrefab();
-        }
-
         protected override void OnServerAndClientsCreated()
         {
+            if (m_NoLatency)
+            {
+                return;
+            }
+
             // Apply a 500ms latency on packets (primarily for ClientDisconnectsDuringSeneLoadingValidation)
             var serverTransport = m_ServerNetworkManager.GetComponent<UnityTransport>();
             serverTransport.SetDebugSimulatorParameters(500, 0, 0);
@@ -94,8 +106,6 @@ namespace TestProject.RuntimeTests
                 var clientTransport = m_ServerNetworkManager.GetComponent<UnityTransport>();
                 clientTransport.SetDebugSimulatorParameters(500, 0, 0);
             }
-
-            base.OnServerAndClientsCreated();
         }
 
         protected override IEnumerator OnServerAndClientsConnected()
@@ -178,9 +188,137 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+
+        private Scene m_FirstScene;
+        private Scene m_SecondScene;
+        private Scene m_ThirdScene;
+
+        private bool m_SceneUnloadedEventCompleted;
+
+
+        [UnityTest]
+        public IEnumerator InitialActiveSceneUnload()
+        {
+            m_EnableVerboseDebug = true;
+
+            IntegrationTestSceneHandler.VerboseDebugMode = true;
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
+
+            yield return WaitForConditionOrTimeOut(FirstSceneIsLoaded);
+            AssertOnTimeout($"Failed to load scene {k_SceneToLoad}!");
+
+            // Now set the "first scene" as the active scene prior to starting the server and clients
+            SceneManager.SetActiveScene(m_FirstScene);
+            m_NoLatency = true;
+            m_CanStart = true;
+
+            yield return StartServerAndClients();
+
+            var serverSceneManager = m_ServerNetworkManager.SceneManager;
+            serverSceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
+            m_SceneLoadEventCompleted = false;
+            serverSceneManager.LoadScene(k_AdditiveScene1, LoadSceneMode.Additive);
+
+            yield return WaitForConditionOrTimeOut(SecondSceneIsLoaded);
+            AssertOnTimeout($"[Load Event] Failure in loading scene {k_AdditiveScene1} (locally or on client side)!");
+
+            // Since we have to keep the test running scene active, we mimic the "auto assignment" of
+            // the active scene prior to unloading the first scene in order to validate this test scenario.
+            SceneManager.SetActiveScene(m_SecondScene);
+
+            yield return s_DefaultWaitForTick;
+
+            // Now unload the "first" scene which, if this was the only scene loaded prior to loading the second scene,
+            // would automatically make the second scene the currently active scene
+            m_SceneUnloadedEventCompleted = false;
+            serverSceneManager.UnloadScene(m_FirstScene);
+            yield return WaitForConditionOrTimeOut(SceneUnloadEventCompleted);
+            AssertOnTimeout($"[Unload Event] Failure in unloading scene {m_FirstScene} (locally or on client side)!");
+
+            // Now load the third scene, and if no time out occurs then we have validated this test!
+            m_SceneLoadEventCompleted = false;
+            serverSceneManager.LoadScene(k_AdditiveScene2, LoadSceneMode.Additive);
+            yield return WaitForConditionOrTimeOut(ThirdSceneIsLoaded);
+            AssertOnTimeout($"[Load Event] Failure in loading scene {k_AdditiveScene2} (locally or on client side)!");
+            serverSceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+        }
+
+        private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.ClientId != m_ServerNetworkManager.LocalClientId)
+            {
+                return;
+            }
+
+            if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+            {
+                if (sceneEvent.Scene.name == k_AdditiveScene1)
+                {
+                    m_SecondScene = sceneEvent.Scene;
+                }
+                else if (sceneEvent.Scene.name == k_AdditiveScene2)
+                {
+                    m_ThirdScene = sceneEvent.Scene;
+                }
+            }
+
+            if (sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
+            {
+                if (sceneEvent.SceneName == k_AdditiveScene1 || sceneEvent.SceneName == k_AdditiveScene2)
+                {
+                    m_SceneLoadEventCompleted = true;
+                }
+            }
+
+            if (sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted)
+            {
+                if (sceneEvent.SceneName == k_SceneToLoad || sceneEvent.SceneName == k_AdditiveScene1 || sceneEvent.SceneName == k_AdditiveScene2)
+                {
+                    m_SceneUnloadedEventCompleted = true;
+                }
+            }
+        }
+
+        private bool SceneUnloadEventCompleted()
+        {
+            return m_SceneUnloadedEventCompleted;
+        }
+
+        private bool FirstSceneIsLoaded()
+        {
+            return m_FirstScene.IsValid() && m_FirstScene.isLoaded;
+        }
+
+        private bool SecondSceneIsLoaded()
+        {
+            return m_SecondScene.IsValid() && m_SecondScene.isLoaded && m_SceneLoadEventCompleted;
+        }
+
+        private bool ThirdSceneIsLoaded()
+        {
+            return m_ThirdScene.IsValid() && m_ThirdScene.isLoaded && m_SceneLoadEventCompleted;
+        }
+
+        private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            if (scene.name == k_SceneToLoad && mode == LoadSceneMode.Additive)
+            {
+                m_FirstScene = scene;
+                SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+            }
+        }
+
         protected override IEnumerator OnTearDown()
         {
             m_CanStart = false;
+            m_NoLatency = false;
+
+            if (m_OriginalActiveScene != SceneManager.GetActiveScene())
+            {
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
+            }
+
             return base.OnTearDown();
         }
     }
