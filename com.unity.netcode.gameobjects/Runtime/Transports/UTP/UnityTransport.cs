@@ -1562,6 +1562,21 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
+#if UTP_TRANSPORT_2_1_ABOVE
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+            {
+                if (m_UseWebSockets && m_RelayServerData.IsWebSocket == 0)
+                {
+                    Debug.LogError("Transport is configured to use WebSockets, but Relay server data isn't. Be sure to use \"wss\" as the connection type when creating the server data (instead of \"dtls\" or \"udp\").");
+                }
+
+                if (!m_UseWebSockets && m_RelayServerData.IsWebSocket != 0)
+                {
+                    Debug.LogError("Relay server data indicates usage of WebSockets, but \"Use WebSockets\" checkbox isn't checked under \"Unity Transport\" component.");
+                }
+            }
+#endif
+
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)
             {
