@@ -727,6 +727,7 @@ namespace Unity.Netcode.Transports.UTP
             public SendTarget Target;
             public BatchedSendQueue Queue;
             public NetworkPipeline ReliablePipeline;
+            public int MTU;
 
             public void Execute()
             {
@@ -749,7 +750,7 @@ namespace Unity.Netcode.Transports.UTP
                     // in the stream (the send queue does that automatically) we are sure they'll be
                     // reassembled properly at the other end. This allows us to lift the limit of ~44KB
                     // on reliable payloads (because of the reliable window size).
-                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer) : Queue.FillWriterWithMessages(ref writer);
+                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer, MTU) : Queue.FillWriterWithMessages(ref writer);
 
                     result = Driver.EndSend(writer);
                     if (result == written)
@@ -788,7 +789,8 @@ namespace Unity.Netcode.Transports.UTP
                 Driver = m_Driver.ToConcurrent(),
                 Target = sendTarget,
                 Queue = queue,
-                ReliablePipeline = m_ReliableSequencedPipeline
+                ReliablePipeline = m_ReliableSequencedPipeline,
+                MTU = NetworkManager ? NetworkManager.GetPeerMTU(sendTarget.ClientId) + m_Driver.MaxHeaderSize(sendTarget.NetworkPipeline) : 0,
             }.Run();
         }
 
