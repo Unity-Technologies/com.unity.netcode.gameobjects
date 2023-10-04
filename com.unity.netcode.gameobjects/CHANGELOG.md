@@ -12,11 +12,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
+- Added `GenerateSerializationForGenericParameterAttribute`, which can be applied to user-created Network Variable types to ensure the codegen generates serialization for the generic types they wrap. (#2694)
+- Added `GenerateSerializationForTypeAttribute`, which can be applied to any class or method to ensure the codegen generates serialization for the specific provided type. (#2694)
+- Exposed `NetworkVariableSerialization<T>.Read`, `NetworkVariableSerialization<T>.Write`, `NetworkVariableSerialization<T>.AreEqual`, and `NetworkVariableSerialization<T>.Duplicate` to further support the creation of user-created network variables by allowing users to access the generated serialization methods and serialize generic types efficiently without boxing. (#2694)
+- Added `NetworkVariableBase.MarkNetworkBehaviourDirty` so that user-created network variable types can mark their containing `NetworkBehaviour` to be processed by the update loop. (#2694)
 
 ### Fixed
-
+- Generic NetworkBehaviour types no longer result in compile errors or runtime errors (#2720)
+- Rpcs within Generic NetworkBehaviour types can now serialize parameters of the class's generic types (but may not have generic types of their own) (#2720)
+- Errors are no longer thrown when entering play mode with domain reload disabled (#2720)
+- NetworkSpawn is now correctly called each time when entering play mode with scene reload disabled (#2720)
 - NetworkVariables of non-integer types will no longer break the inspector (#2714)
-- NetworkVariables with NonSerializedAttribute will not appear in the inspector (#2714
+- NetworkVariables with NonSerializedAttribute will not appear in the inspector (#2714)
 - Fixed issue where `UnityTransport` would attempt to establish WebSocket connections even if using UDP/DTLS Relay allocations when the build target was WebGL. This only applied to working in the editor since UDP/DTLS can't work in the browser. (#2695)
 - Fixed issue where a `NetworkBehaviour` component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the `NetworkBehaviour` component was positioned/ordered before the `NetworkObject` component. (#2685)
 - Fixed issue where `SpawnWithObservers` was not being honored when `NetworkConfig.EnableSceneManagement` was disabled. (#2682)
@@ -28,6 +35,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where the `GlobalObjectIdHash` value generated after creating a (network) prefab from an object constructed within the scene would not be the correct final value in a stand alone build. (#2662)
 
 ### Changed
+
+- Updated dependency on `com.unity.transport` to version 1.4.0. (#2716)
 
 ## [1.6.0] - 2023-08-09
 
