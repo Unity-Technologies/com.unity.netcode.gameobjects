@@ -50,6 +50,85 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    internal struct TypeReferencedOnlyInCustomSerialization1 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    internal struct TypeReferencedOnlyInCustomSerialization2 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    internal struct TypeReferencedOnlyInCustomSerialization3 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    internal struct TypeReferencedOnlyInCustomSerialization4 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    internal struct TypeReferencedOnlyInCustomSerialization5 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    internal struct TypeReferencedOnlyInCustomSerialization6 : INetworkSerializeByMemcpy
+    {
+        public int I;
+    }
+
+    // Both T and U are serializable
+    [GenerateSerializationForGenericParameter(0)]
+    [GenerateSerializationForGenericParameter(1)]
+    internal class CustomSerializableClass<TSerializableType1, TSerializableType2>
+    {
+
+    }
+
+    // Only U is serializable
+    [GenerateSerializationForGenericParameter(1)]
+    internal class CustomSerializableBaseClass<TUnserializableType, TSerializableType>
+    {
+
+    }
+
+    // T is serializable, passes TypeReferencedOnlyInCustomSerialization3 as U to the subclass, making it serializable
+    [GenerateSerializationForGenericParameter(0)]
+    internal class CustomSerializableSubclass<TSerializableType> : CustomSerializableBaseClass<TSerializableType, TypeReferencedOnlyInCustomSerialization3>
+    {
+
+    }
+
+    // T is serializable, passes TypeReferencedOnlyInCustomSerialization3 as U to the subclass, making it serializable
+    [GenerateSerializationForGenericParameter(0)]
+    internal class CustomSerializableSubclassWithNativeArray<TSerializableType> : CustomSerializableBaseClass<TSerializableType, NativeArray<TypeReferencedOnlyInCustomSerialization3>>
+    {
+
+    }
+
+    internal class CustomGenericSerializationTestBehaviour : NetworkBehaviour
+    {
+        public CustomSerializableClass<TypeReferencedOnlyInCustomSerialization1, TypeReferencedOnlyInCustomSerialization2> Value1;
+        public CustomSerializableClass<NativeArray<TypeReferencedOnlyInCustomSerialization1>, NativeArray<TypeReferencedOnlyInCustomSerialization2>> Value2;
+        public CustomSerializableSubclass<TypeReferencedOnlyInCustomSerialization4> Value3;
+        public CustomSerializableSubclassWithNativeArray<NativeArray<TypeReferencedOnlyInCustomSerialization4>> Value4;
+    }
+
+    [GenerateSerializationForType(typeof(TypeReferencedOnlyInCustomSerialization5))]
+    [GenerateSerializationForType(typeof(NativeArray<TypeReferencedOnlyInCustomSerialization5>))]
+    internal struct SomeRandomStruct
+    {
+        [GenerateSerializationForType(typeof(TypeReferencedOnlyInCustomSerialization6))]
+        [GenerateSerializationForType(typeof(NativeArray<TypeReferencedOnlyInCustomSerialization6>))]
+        public void Foo()
+        {
+
+        }
+    }
+
     public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
         where T : unmanaged
     {
@@ -1327,6 +1406,39 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyCallback));
+        }
+
+        [Test]
+        public void TestCustomGenericSerialization()
+        {
+            // Just verifies that the ILPP codegen initialized these values for this type.
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization1>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization1>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization2>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization2>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization3>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization3>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization4>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization4>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization5>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization5>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedTypeSerializer<TypeReferencedOnlyInCustomSerialization6>), NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization6>.Serializer.GetType());
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization1>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization2>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization3>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization4>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization5>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization6>.AreEqual);
+
+            // Verify no issues with generic values...
+
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization1>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization1>>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization2>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization2>>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization3>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization3>>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization4>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization4>>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization5>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization5>>.Serializer.GetType());
+            Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization6>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization6>>.Serializer.GetType());
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization1>>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization2>>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization3>>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization4>>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization5>>.AreEqual);
+            Assert.IsNotNull(NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization6>>.AreEqual);
         }
 
         [Test]
