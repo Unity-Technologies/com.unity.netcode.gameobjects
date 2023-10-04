@@ -8,6 +8,9 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
@@ -66,7 +69,7 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 m_MainModule = mainModule;
 
-                if (ImportReferences(mainModule))
+                if (ImportReferences(mainModule, compiledAssembly.Defines))
                 {
                     // process `NetworkBehaviour` types
                     try
@@ -107,7 +110,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
                         }
 
-                        CreateNetworkVariableTypeInitializers(assemblyDefinition);
+                        CreateNetworkVariableTypeInitializers(assemblyDefinition, compiledAssembly.Defines);
                     }
                     catch (Exception e)
                     {
@@ -166,7 +169,7 @@ namespace Unity.Netcode.Editor.CodeGen
             return false;
         }
 
-        private void CreateNetworkVariableTypeInitializers(AssemblyDefinition assembly)
+        private void CreateNetworkVariableTypeInitializers(AssemblyDefinition assembly, string[] assemblyDefines)
         {
             var typeDefinition = new TypeDefinition("__GEN", "NetworkVariableSerializationHelper", TypeAttributes.NotPublic | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, assembly.MainModule.TypeSystem.Object);
 
@@ -176,7 +179,15 @@ namespace Unity.Netcode.Editor.CodeGen
                 MethodAttributes.Static,
                 assembly.MainModule.TypeSystem.Void);
             staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-            staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+            bool isEditor = assemblyDefines.Contains("UNITY_EDITOR");
+            if (isEditor)
+            {
+                staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_InitializeOnLoadAttribute_Ctor));
+            }
+            else
+            {
+                staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+            }
             typeDefinition.Methods.Add(staticCtorMethodDef);
 
 
@@ -401,6 +412,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
 
         private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
+        private MethodReference m_InitializeOnLoadAttribute_Ctor;
 
         private MethodReference m_ExceptionCtorMethodReference;
         private MethodReference m_List_NetworkVariableBase_Add;
@@ -505,7 +517,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // CodeGen cannot reference the collections assembly to do a typeof() on it due to a bug that causes that to crash.
         private const string k_INativeListBool_FullName = "Unity.Collections.INativeList`1<System.Byte>";
 
-        private bool ImportReferences(ModuleDefinition moduleDefinition)
+        private bool ImportReferences(ModuleDefinition moduleDefinition, string[] assemblyDefines)
         {
             TypeDefinition debugTypeDef = null;
             foreach (var unityTypeDef in m_UnityModule.GetAllTypes())
@@ -515,6 +527,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     debugTypeDef = unityTypeDef;
                     continue;
                 }
+            }
+
+
+            bool isEditor = assemblyDefines.Contains("UNITY_EDITOR");
+            if (isEditor)
+            {
+                m_InitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(InitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
             }
 
             m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
