@@ -34,6 +34,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Updated dependency on `com.unity.transport` to version 1.4.0. (#2716)
+
 ## [1.6.0] - 2023-08-09
 
 ### Added
