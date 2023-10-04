@@ -199,9 +199,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator InitialActiveSceneUnload()
         {
-            m_EnableVerboseDebug = true;
-
-            IntegrationTestSceneHandler.VerboseDebugMode = true;
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
 
