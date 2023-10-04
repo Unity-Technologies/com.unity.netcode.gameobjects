@@ -37,12 +37,12 @@ namespace Unity.Netcode.Editor
             for (int i = 0; i < fields.Length; i++)
             {
                 var ft = fields[i].FieldType;
-                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
+                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true) && !fields[i].IsDefined(typeof(NonSerializedAttribute), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
                 }
-                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
+                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true) && !fields[i].IsDefined(typeof(NonSerializedAttribute), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
