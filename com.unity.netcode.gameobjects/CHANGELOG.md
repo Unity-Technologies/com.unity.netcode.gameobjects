@@ -19,6 +19,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkVariableBase.MarkNetworkBehaviourDirty` so that user-created network variable types can mark their containing `NetworkBehaviour` to be processed by the update loop. (#2694)
 
 ### Fixed
+
+- Fixed issue where the server side `NetworkSceneManager` instance was not adding the currently active scene to its list of scenes loaded. (#2723)
 - Generic NetworkBehaviour types no longer result in compile errors or runtime errors (#2720)
 - Rpcs within Generic NetworkBehaviour types can now serialize parameters of the class's generic types (but may not have generic types of their own) (#2720)
 - Errors are no longer thrown when entering play mode with domain reload disabled (#2720)
