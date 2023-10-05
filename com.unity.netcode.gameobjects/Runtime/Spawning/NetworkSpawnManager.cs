@@ -257,6 +257,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
+            var previous = networkObject.OwnerClientId;
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
 
@@ -286,6 +287,12 @@ namespace Unity.Netcode
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
                 }
             }
+
+            // After we have sent the change ownership message to all client observers, invoke the ownership changed notification.
+            /// !!Important!!
+            /// This gets called specifically *after* sending the ownership message so any additional messages that need to proceed an ownership
+            /// change can be sent from NetworkBehaviours that override the <see cref="NetworkBehaviour.OnOwnershipChanged"></see>
+            networkObject.InvokeOwnershipChanged(previous, clientId);
         }
 
         internal bool HasPrefab(NetworkObject.SceneObject sceneObject)

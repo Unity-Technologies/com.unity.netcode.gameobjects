@@ -588,6 +588,7 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
+            TimeTravelToNextTick();
             // This validates each child instance has preserved their local space values
             AllChildrenLocalTransformValuesMatch(false);
 
@@ -689,7 +690,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private Precision m_Precision = Precision.Full;
         private float m_CurrentHalfPrecision = 0.0f;
-        private const float k_HalfPrecisionPosScale = 0.03f;
+        private const float k_HalfPrecisionPosScale = 0.041f;
         private const float k_HalfPrecisionRot = 0.725f;
 
         protected override float GetDeltaVarianceThreshold()

@@ -12,9 +12,23 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class RpcTests : NetcodeIntegrationTest
     {
-        public class RpcTestNB : NetworkBehaviour
+        public class GenericRpcTestNB<T> : NetworkBehaviour where T : unmanaged
         {
-            public event Action<ulong, ServerRpcParams> OnServer_Rpc;
+            public event Action<T, ServerRpcParams> OnServer_Rpc;
+
+            [ServerRpc]
+            public void MyServerRpc(T clientId, ServerRpcParams param = default)
+            {
+                OnServer_Rpc(clientId, param);
+            }
+        }
+
+        public class RpcTestNBFloat : GenericRpcTestNB<float>
+        {
+        }
+
+        public class RpcTestNB : GenericRpcTestNB<ulong>
+        {
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             public event Action<NativeList<ulong>, ServerRpcParams> OnNativeListServer_Rpc;
 #endif
@@ -25,12 +39,6 @@ namespace Unity.Netcode.RuntimeTests
                 FixedString32Bytes> OnTypedServer_Rpc;
 
             public event Action OnClient_Rpc;
-
-            [ServerRpc]
-            public void MyServerRpc(ulong clientId, ServerRpcParams param = default)
-            {
-                OnServer_Rpc(clientId, param);
-            }
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ServerRpc]
@@ -67,6 +75,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnCreatePlayerPrefab()
         {
             m_PlayerPrefab.AddComponent<RpcTestNB>();
+            m_PlayerPrefab.AddComponent<RpcTestNBFloat>();
         }
 
         [UnityTest]
@@ -74,12 +83,15 @@ namespace Unity.Netcode.RuntimeTests
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER* RpcTestNB component
             var serverClientRpcTestNB = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNB>();
+            var serverClientRpcTestNBFloat = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNBFloat>();
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER* RpcTestNB component
             var localClienRpcTestNB = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNB>();
+            var localClienRpcTestNBFloat = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNBFloat>();
 
             // Setup state
             bool hasReceivedServerRpc = false;
+            bool hasReceivedFloatServerRpc = false;
             bool hasReceivedTypedServerRpc = false;
             bool hasReceivedClientRpcRemotely = false;
             bool hasReceivedClientRpcLocally = false;
@@ -106,11 +118,24 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.Fail("ServerRpc invoked locally. Weaver failure?");
             };
 
+            localClienRpcTestNBFloat.OnServer_Rpc += (clientId, param) =>
+            {
+                // The RPC invoked locally. (Weaver failure?)
+                Assert.Fail("ServerRpc (float) invoked locally. Weaver failure?");
+            };
+
             serverClientRpcTestNB.OnServer_Rpc += (clientId, param) =>
             {
                 Debug.Log("ServerRpc received on server object");
                 Assert.True(param.Receive.SenderClientId == clientId);
                 hasReceivedServerRpc = true;
+            };
+
+            serverClientRpcTestNBFloat.OnServer_Rpc += (clientId, param) =>
+            {
+                Debug.Log("ServerRpc (float) received on server object");
+                Assert.True(param.Receive.SenderClientId == clientId);
+                hasReceivedFloatServerRpc = true;
             };
 
             serverClientRpcTestNB.OnClient_Rpc += () =>
@@ -145,6 +170,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Send ServerRpc
             localClienRpcTestNB.MyServerRpc(m_ClientNetworkManagers[0].LocalClientId);
+            localClienRpcTestNBFloat.MyServerRpc(m_ClientNetworkManagers[0].LocalClientId);
 
             // Send TypedServerRpc
             localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s,
@@ -181,6 +207,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely && hasReceivedTypedServerRpc);
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
+            Assert.True(hasReceivedFloatServerRpc, "ServerRpc was not received");
             Assert.True(hasReceivedTypedServerRpc, "TypedServerRpc was not received");
             Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");
             Assert.True(hasReceivedClientRpcRemotely, "ClientRpc was not remotely received on the client");

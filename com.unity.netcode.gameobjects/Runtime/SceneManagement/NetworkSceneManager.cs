@@ -740,6 +740,14 @@ namespace Unity.Netcode
             // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
             DontDestroyOnLoadScene = networkManager.gameObject.scene;
 
+            // Since the server tracks loaded scenes, we need to add the currently active scene
+            // to the list of scenes that can be unloaded.
+            if (networkManager.IsServer)
+            {
+                var activeScene = SceneManager.GetActiveScene();
+                ScenesLoaded.Add(activeScene.handle, activeScene);
+            }
+
             // Add to the server to client scene handle table
             UpdateServerClientSceneHandle(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
         }
