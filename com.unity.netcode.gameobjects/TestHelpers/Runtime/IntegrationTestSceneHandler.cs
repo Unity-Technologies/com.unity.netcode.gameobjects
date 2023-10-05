@@ -913,6 +913,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (CoroutineRunner == null)
             {
                 CoroutineRunner = new GameObject("UnitTestSceneHandlerCoroutine").AddComponent<CoroutineRunner>();
+                // Move the CoroutineRunner into the DDOL in case we unload the scene it was instantiated in.
+                // (which if that gets destroyed then it basically stops all integration test queue processing)
+                Object.DontDestroyOnLoad(CoroutineRunner);
             }
         }
 
