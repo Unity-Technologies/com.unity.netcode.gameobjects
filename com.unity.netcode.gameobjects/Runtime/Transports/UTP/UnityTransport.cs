@@ -790,7 +790,7 @@ namespace Unity.Netcode.Transports.UTP
                 Target = sendTarget,
                 Queue = queue,
                 ReliablePipeline = m_ReliableSequencedPipeline,
-                MTU = NetworkManager ? NetworkManager.GetPeerMTU(sendTarget.ClientId) + m_Driver.MaxHeaderSize(sendTarget.NetworkPipeline) : 0,
+                MTU = NetworkManager ? NetworkManager.GetPeerMTU(sendTarget.ClientId) : 0,
             }.Run();
         }
 
