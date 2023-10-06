@@ -784,13 +784,21 @@ namespace Unity.Netcode.Transports.UTP
             {
                 return;
             }
+
+            var mtu = 0;
+            if (NetworkManager)
+            {
+                var ngoClientId = NetworkManager.ConnectionManager.TransportIdToClientId(sendTarget.ClientId);
+                mtu = NetworkManager.GetPeerMTU(ngoClientId);
+            }
+
             new SendBatchedMessagesJob
             {
                 Driver = m_Driver.ToConcurrent(),
                 Target = sendTarget,
                 Queue = queue,
                 ReliablePipeline = m_ReliableSequencedPipeline,
-                MTU = NetworkManager ? NetworkManager.GetPeerMTU(sendTarget.ClientId) : 0,
+                MTU = mtu,
             }.Run();
         }
 
