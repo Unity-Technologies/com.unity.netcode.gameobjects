@@ -383,6 +383,16 @@ namespace Unity.Netcode
                         // Create prefab instance
                         networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
                         networkObject.NetworkManagerOwner = NetworkManager;
+
+                        // if the NetworkSceneHandle this object is attached to isn't loaded but we have a loading scene event in progress
+                        // we move the object to the DontDestroyOnLoadScene. This allows objects spawned on the server while a loading scene
+                        // event is happening persist and are added to the correct scene
+                        if (!NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(sceneObject.NetworkSceneHandle) &&
+                             NetworkManager.SceneManager.IsSceneEventInProgressForScene(sceneObject.NetworkSceneHandle, new [] { SceneEventType.Synchronize, SceneEventType.Load} ) )
+                        {
+                            NetworkLog.LogInfo($"{networkObject.name} is being added to the wrong scene {networkObject.gameObject.scene.name}. A scene load operation is in progress for the correct scene. Marking as DontDestroyOnLoad so the object will be presereved and moved when loading completes.");
+                            UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                        }
                     }
                 }
             }

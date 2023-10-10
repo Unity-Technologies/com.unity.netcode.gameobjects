@@ -1806,7 +1806,14 @@ namespace Unity.Netcode
             // Clients need to update the NetworkSceneHandle
             if (!NetworkManager.IsServer && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
             {
-                NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+                // If the object is part of the DontDestroyOnLoad scene and the objects NetworkSceneHandle currently has a
+                // 'loading' scene event in progress, we leave the NetworkSceneHandle as is, this will allow it to be moved
+                // to the correct scene when the 'loading' event completes
+
+                if ( !( gameObject.scene.buildIndex == -1 && NetworkManager.SceneManager.IsSceneEventInProgressForScene(NetworkSceneHandle, new[] {SceneEventType.Synchronize, SceneEventType.Load })) )
+                {
+                    NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+                }
             }
             else if (NetworkManager.IsServer)
             {

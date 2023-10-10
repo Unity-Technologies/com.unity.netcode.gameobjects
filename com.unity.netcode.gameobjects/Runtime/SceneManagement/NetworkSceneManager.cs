@@ -2542,6 +2542,22 @@ namespace Unity.Netcode
             EndSceneEvent(sceneEvent.SceneEventId);
         }
 
+        /// <summary>
+        /// Query if a scene event is in progress for a specific NetworkSceneHandle
+        /// </summary>
+        internal bool IsSceneEventInProgressForScene( int networkSceneHandle, SceneEventType[] validEventTypes = null )
+        {
+            foreach ( var sceneEvent in SceneEventDataStore.Values )
+            {
+                if ( validEventTypes == null || validEventTypes.Contains(sceneEvent.SceneEventType ) )
+                {
+                    return sceneEvent.NetworkSceneHandle == networkSceneHandle || sceneEvent.SceneHandlesToSynchronize.Contains((uint)networkSceneHandle);
+                }
+            }
+
+            return false;
+        }
+
         // Used to handle client-side scene migration messages received while
         // a client is synchronizing
         internal struct DeferredObjectsMovedEvent
