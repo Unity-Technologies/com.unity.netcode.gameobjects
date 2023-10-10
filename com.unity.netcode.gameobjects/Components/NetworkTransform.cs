@@ -2388,7 +2388,7 @@ namespace Unity.Netcode.Components
                     m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.ToVector3(0);
                 }
                 // Update our target position
-                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);                
+                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
                 m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
             }
 
