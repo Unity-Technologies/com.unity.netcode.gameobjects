@@ -2388,7 +2388,8 @@ namespace Unity.Netcode.Components
                     m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.ToVector3(0);
                 }
                 // Update our target position
-                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
+                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);                
+                m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
             }
 
             if (!Interpolate)
@@ -2639,6 +2640,11 @@ namespace Unity.Netcode.Components
 
                 m_CurrentPosition = GetSpaceRelativePosition();
                 m_TargetPosition = GetSpaceRelativePosition();
+            }
+            else // If we are no longer authority, unsubscribe to the tick event
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
             }
         }
 
@@ -3225,7 +3231,7 @@ namespace Unity.Netcode.Components
 
 
         /// <summary>
-        /// If a NetworkTransformTickRegistration exists for the NetworkManager instanc, then this will
+        /// If a NetworkTransformTickRegistration exists for the NetworkManager instance, then this will
         /// remove the NetworkTransform instance from the single tick update entry point. 
         /// </summary>
         /// <param name="networkTransform"></param>
