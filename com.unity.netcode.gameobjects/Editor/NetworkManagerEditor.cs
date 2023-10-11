@@ -275,7 +275,7 @@ namespace Unity.Netcode.Editor
             var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
             GUILayout.BeginHorizontal();
             useRelay = GUILayout.Toggle(useRelay, "Try Relay in the editor");
-            
+
             var icon = EditorGUIUtility.IconContent("_Help");
             icon.tooltip = "This will help you test relay in the editor. Click here to know how to integrate Relay in your build";
             if (GUILayout.Button(icon, GUIStyle.none, GUILayout.Width(20)))
@@ -352,7 +352,7 @@ namespace Unity.Netcode.Editor
             AddStartServerOrHostButton(isServer:false);
 
             GUILayout.BeginHorizontal();
-            m_JoinCode = EditorGUILayout.TextField(m_JoinCode);
+            m_JoinCode = EditorGUILayout.TextField(m_JoinCode, GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.5f));
             if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
             {
                 m_StartConnectionError = null;
