@@ -703,7 +703,7 @@ namespace Unity.Netcode
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogErrorServer($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                        NetworkLog.LogErrorServer($"[Invalid Destroy][{gameObject.name}][NetworkObjectId:{NetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
                     }
                     return;
                 }
@@ -969,7 +969,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!NetworkManager.IsServer)
+            if (!NetworkManager.IsServer && !NetworkManager.ShutdownInProgress)
             {
                 return false;
             }
@@ -1018,8 +1018,19 @@ namespace Unity.Netcode
 
             if (!NetworkManager.IsServer)
             {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                // Log exception if we are a client and not shutting down.
+                if (!NetworkManager.ShutdownInProgress)
+                {
+                    transform.parent = m_CachedParent;
+                    Debug.LogException(new NotServerException($"Only the server can reparent {nameof(NetworkObject)}s"));
+                }
+                else // Otherwise, if we are removing a parent then go ahead and allow parenting to occur
+                if (transform.parent == null)
+                {
+                    m_LatestParent = null;
+                    m_CachedParent = null;
+                    InvokeBehaviourOnNetworkObjectParentChanged(null);
+                }
                 return;
             }
 
