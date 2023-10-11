@@ -1,3 +1,5 @@
+using UnityEngine.SceneManagement;
+
 namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
@@ -34,9 +36,16 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            var networkObject = NetworkObject.AddSceneObject(ObjectInfo, m_ReceivedNetworkVariableData, networkManager);
-
-            networkManager.NetworkMetrics.TrackObjectSpawnReceived(context.SenderId, networkObject, context.MessageSize);
+            // If a client receives a create object message and it is still synchronizing, then defer the object creation until it has finished synchronizing
+            if (networkManager.NetworkConfig.EnableSceneManagement && networkManager.SceneManager.IsSceneEventActive(SceneEventType.Synchronize) && networkManager.SceneManager.ClientSynchronizationMode == LoadSceneMode.Single)
+            {
+                networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData);
+            }
+            else
+            {
+                var networkObject = NetworkObject.AddSceneObject(ObjectInfo, m_ReceivedNetworkVariableData, networkManager);
+                networkManager.NetworkMetrics.TrackObjectSpawnReceived(context.SenderId, networkObject, context.MessageSize);
+            }
         }
     }
 }

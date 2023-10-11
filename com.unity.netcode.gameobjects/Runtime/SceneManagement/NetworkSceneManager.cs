@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -595,6 +597,21 @@ namespace Unity.Netcode
             {
                 Debug.LogWarning($"Trying to dispose and remove SceneEventData Id '{sceneEventId}' that no longer exists!");
             }
+        }
+
+        /// <summary>
+        /// Determines if a specific scene event is currently active
+        /// </summary>
+        internal bool IsSceneEventActive(SceneEventType sceneEventType)
+        {
+            foreach (var entry in SceneEventDataStore)
+            {
+                if (entry.Value.SceneEventType == sceneEventType)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -2058,6 +2075,26 @@ namespace Unity.Netcode
                             // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
                             SynchronizeNetworkObjectScene();
 
+                            // If we have any pending create object messages that the client received during synchronization, then create and spawn them now.
+                            if (DeferredObjectCreationList.Count > 0)
+                            {
+                                foreach (var deferredObjectCreation in DeferredObjectCreationList)
+                                {
+                                    // Warpped in a try catch to assure we process all and that we dispose all allocated FastBufferReaders
+                                    try
+                                    {
+                                        var networkObject = NetworkObject.AddSceneObject(deferredObjectCreation.SceneObject, deferredObjectCreation.FastBufferReader, NetworkManager);
+                                        NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(deferredObjectCreation.SenderId, networkObject, deferredObjectCreation.MessageSize);
+                                        deferredObjectCreation.FastBufferReader.Dispose();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Debug.LogException(ex);
+                                    }
+                                }
+                                DeferredObjectCreationList.Clear();
+                            }
+
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
 
@@ -2549,5 +2586,32 @@ namespace Unity.Netcode
             internal Dictionary<int, List<ulong>> ObjectsMigratedTable;
         }
         internal List<DeferredObjectsMovedEvent> DeferredObjectsMovedEvents = new List<DeferredObjectsMovedEvent>();
+
+        internal struct DeferredObjectCreation
+        {
+            internal ulong SenderId;
+            internal uint MessageSize;
+            internal NetworkObject.SceneObject SceneObject;
+            internal FastBufferReader FastBufferReader;
+        }
+
+        internal List<DeferredObjectCreation> DeferredObjectCreationList = new List<DeferredObjectCreation>();
+
+        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader)
+        {
+            var deferredObjectCreationEntry = new DeferredObjectCreation()
+            {
+                SenderId = senderId,
+                MessageSize = messageSize,
+                SceneObject = sceneObject,
+            };
+
+            unsafe
+            {
+                deferredObjectCreationEntry.FastBufferReader = new FastBufferReader(fastBufferReader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, fastBufferReader.Length - fastBufferReader.Position);
+            }
+
+            DeferredObjectCreationList.Add(deferredObjectCreationEntry);
+        }
     }
 }
