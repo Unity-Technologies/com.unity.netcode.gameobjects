@@ -412,9 +412,12 @@ namespace Unity.Netcode
         internal struct Override<T>
         {
             private T m_Value;
-            public bool Overidden { get;  private set; }
-            internal T Value { get { return Overidden ? m_Value : default(T); }
-                set { Overidden = true; m_Value = value; }  }
+            public bool Overidden { get; private set; }
+            internal T Value
+            {
+                get { return Overidden ? m_Value : default(T); }
+                set { Overidden = true; m_Value = value; }
+            }
         };
 
         internal Override<ushort> PortOverride;
@@ -1101,10 +1104,10 @@ namespace Unity.Netcode
         // Command line options
         private const string k_OverridePortArg = "-port";
 
-        private string GetArg( string[] commandLineArgs, string arg )
+        private string GetArg(string[] commandLineArgs, string arg)
         {
             var argIndex = Array.IndexOf(commandLineArgs, arg);
-            if (argIndex >= 0 && argIndex < commandLineArgs.Length - 1 )
+            if (argIndex >= 0 && argIndex < commandLineArgs.Length - 1)
             {
                 return commandLineArgs[argIndex + 1];
             }

@@ -284,7 +284,7 @@ namespace Unity.Netcode.Transports.UNET
 
         public int GetConnectPort()
         {
-            if ( NetworkManager && NetworkManager.PortOverride.Overidden )
+            if (NetworkManager && NetworkManager.PortOverride.Overidden)
             {
                 return NetworkManager.PortOverride.Value;
             }
