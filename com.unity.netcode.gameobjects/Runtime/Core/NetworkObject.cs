@@ -974,15 +974,16 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!IsSpawned)
+            // If the parent is not null fail only if:
+            // If this instance is spawned and the parent is not.
+            // If this instance is not spawned and the parent is.
+            // Basically, don't allow parenting when either the child or parent is not spawned.
+            // Caveat: if the parent is null then we can allow parenting whether the instance is or is not spawned.
+            if (parent != null && (IsSpawned && !parent.IsSpawned || !IsSpawned && parent.IsSpawned))
             {
                 return false;
             }
 
-            if (parent != null && !parent.IsSpawned)
-            {
-                return false;
-            }
             m_CachedWorldPositionStays = worldPositionStays;
 
             if (parent == null)
@@ -1033,11 +1034,21 @@ namespace Unity.Netcode
                 }
                 return;
             }
-
+            else // Otherwise, on the serer side if this instance is not spawned...
             if (!IsSpawned)
             {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
+                // ,,,and we are removing the parent, then go ahead and allow parenting to occur
+                if (transform.parent == null)
+                {
+                    m_LatestParent = null;
+                    m_CachedParent = null;
+                    InvokeBehaviourOnNetworkObjectParentChanged(null);
+                }
+                else
+                {
+                    transform.parent = m_CachedParent;
+                    Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
+                }
                 return;
             }
             var removeParent = false;
