@@ -745,9 +745,10 @@ namespace Unity.Netcode
                                 {
                                     continue;
                                 }
-                                // If the child is an in-scene placed NetworkObject and we are a client or we are a server and the child should not destroy with the owner,
-                                // then remove the child from the parent and set its parent to root
-                                if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value && (!NetworkManager.IsServer || NetworkManager.IsServer && childObject.DontDestroyWithOwner))
+
+                                // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
+                                // and set its parent to root
+                                if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
                                 {
                                     childObject.TryRemoveParent(childObject.WorldPositionStays());
                                 }
