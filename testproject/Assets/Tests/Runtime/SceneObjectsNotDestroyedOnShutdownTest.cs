@@ -114,7 +114,7 @@ namespace TestProject.RuntimeTests
 
         private bool PlayerNoLongerExistsWithChildren(ulong clientId)
         {
-            if (m_PlayerNetworkObjects[0].ContainsKey(clientId))
+            if (m_PlayerNetworkObjects[0].ContainsKey(clientId) && m_PlayerNetworkObjects[0][clientId] != null)
             {
                 return m_PlayerNetworkObjects[0][clientId].transform.childCount == 0;
             }

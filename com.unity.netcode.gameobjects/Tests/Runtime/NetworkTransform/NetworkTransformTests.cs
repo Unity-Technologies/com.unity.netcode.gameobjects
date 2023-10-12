@@ -588,7 +588,10 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
+            // Provide two network ticks for interpolation to finalize
             TimeTravelToNextTick();
+            TimeTravelToNextTick();
+
             // This validates each child instance has preserved their local space values
             AllChildrenLocalTransformValuesMatch(false);
 
