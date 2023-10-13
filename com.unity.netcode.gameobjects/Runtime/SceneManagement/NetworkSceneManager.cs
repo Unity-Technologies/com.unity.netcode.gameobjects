@@ -2091,6 +2091,7 @@ namespace Unity.Netcode
                                         Debug.LogException(ex);
                                     }
                                 }
+                                DeferredObjectCreationCount = DeferredObjectCreationList.Count;
                                 DeferredObjectCreationList.Clear();
                             }
 
@@ -2295,6 +2296,7 @@ namespace Unity.Netcode
                     // If the client is being synchronized for the first time do some initialization
                     if (sceneEventData.SceneEventType == SceneEventType.Synchronize)
                     {
+                        DeferredObjectCreationCount = 0;
                         ScenePlacedObjects.Clear();
                         // Set the server's configured client synchronization mode on the client side
                         ClientSynchronizationMode = sceneEventData.ClientSynchronizationMode;
@@ -2595,6 +2597,7 @@ namespace Unity.Netcode
         }
 
         internal List<DeferredObjectCreation> DeferredObjectCreationList = new List<DeferredObjectCreation>();
+        internal int DeferredObjectCreationCount;
 
         internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader)
         {
