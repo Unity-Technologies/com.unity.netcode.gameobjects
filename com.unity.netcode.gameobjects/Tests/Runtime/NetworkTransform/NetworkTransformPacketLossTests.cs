@@ -15,7 +15,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
 
-    public class NetworkTransformUTPTests : IntegrationTestWithApproximation
+    public class NetworkTransformPacketLossTests : IntegrationTestWithApproximation
     {
         private NetworkObject m_AuthoritativePlayer;
         private NetworkObject m_NonAuthoritativePlayer;
@@ -95,7 +95,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="testWithHost">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
-        public NetworkTransformUTPTests(HostOrServer testWithHost, Authority authority)
+        public NetworkTransformPacketLossTests(HostOrServer testWithHost, Authority authority)
         {
             m_UseHost = testWithHost == HostOrServer.Host ? true : false;
             m_Authority = authority;
