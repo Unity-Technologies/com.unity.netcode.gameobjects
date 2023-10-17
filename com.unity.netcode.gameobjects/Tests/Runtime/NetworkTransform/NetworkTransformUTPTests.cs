@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_TickRate = 60;
         private int m_OriginalTargetFrameRate;
         protected override void OnOneTimeSetup()
-        {            
+        {
             m_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = 120;
             base.OnOneTimeSetup();
