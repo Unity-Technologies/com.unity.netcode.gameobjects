@@ -1751,10 +1751,8 @@ namespace Unity.Netcode.Components
                         else
                         {
                             networkState.NetworkDeltaPosition = m_HalfPositionState;
-
                             networkState.SynchronizeBaseHalfFloat = UseUnreliableDeltas ? m_HalfPositionState.CollapsedDeltaIntoBase : false;
                         }
-
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
@@ -2250,7 +2248,6 @@ namespace Unity.Netcode.Components
                         shouldUseLossy = !NetworkObject.WorldPositionStays();
                     }
                 }
-
 
                 if (UseHalfFloatPrecision)
                 {
@@ -2813,9 +2810,10 @@ namespace Unity.Netcode.Components
             // Only if we are not authority
             if (!CanCommitToTransform)
             {
-                m_CurrentPosition = GetSpaceRelativePosition();
+                m_TargetPosition = m_CurrentPosition = GetSpaceRelativePosition();
                 m_CurrentRotation = GetSpaceRelativeRotation();
-                m_CurrentScale = GetScale();
+                m_TargetRotation = m_CurrentRotation.eulerAngles;
+                m_TargetScale = m_CurrentScale = GetScale();
                 m_ScaleInterpolator.Clear();
                 m_PositionInterpolator.Clear();
                 m_RotationInterpolator.Clear();
@@ -2824,6 +2822,15 @@ namespace Unity.Netcode.Components
                 UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
                 m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
                 m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+            }
+            else // Otherwise, authority sends out a final teleporting state update to assure all values are properly synchronized
+            if (IsSpawned && CanCommitToTransform)
+            {
+                m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
+                m_LocalAuthoritativeNetworkState.IsParented = parentNetworkObject != null;
+                // Force update
+                NetworkTickSystem_Tick();
             }
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
@@ -3069,7 +3076,6 @@ namespace Unity.Netcode.Components
 
             // Apply the message
             OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
-
         }
 
         /// <summary>
