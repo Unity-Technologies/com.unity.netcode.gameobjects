@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Text;
 using NUnit.Framework;
-using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -109,8 +108,7 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_TickRate = 60;
         private int m_OriginalTargetFrameRate;
         protected override void OnOneTimeSetup()
-        {
-            s_TestCounter = 0;
+        {            
             m_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = 120;
             base.OnOneTimeSetup();
