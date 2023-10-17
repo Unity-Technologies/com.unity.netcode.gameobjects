@@ -181,7 +181,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.NetworkConfig.TickRate = k_TickRate;
 
             var unityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
-            unityTransport.SetDebugSimulatorParameters(0, 0, 5);
+            unityTransport.SetDebugSimulatorParameters(100, 0, 5);
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 clientNetworkManager.NetworkConfig.TickRate = k_TickRate;
@@ -538,24 +538,6 @@ namespace Unity.Netcode.RuntimeTests
                         m_AuthoritativeTransform.transform.localScale = scale;
                         break;
                     }
-            }
-        }
-
-        /// <summary>
-        /// Waits until the next tick
-        /// </summary>
-        private void WaitForNextTick()
-        {
-            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
-            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
-            {
-                var frameRate = Application.targetFrameRate;
-                if (frameRate <= 0)
-                {
-                    frameRate = 60;
-                }
-                var frameDuration = 1f / frameRate;
-                TimeTravel(frameDuration, 1);
             }
         }
 
@@ -918,75 +900,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Timed out waiting for scale values to match");
         }
 
-        private bool PositionsMatchesValue(Vector3 positionToMatch)
-        {
-            var authorityPosition = m_AuthoritativeTransform.transform.position;
-            var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
-            var auhtorityIsEqual = Approximately(authorityPosition, positionToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityPosition, positionToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority position {authorityPosition} != position to match: {positionToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority position {nonAuthorityPosition} != position to match: {positionToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool RotationMatchesValue(Vector3 rotationEulerToMatch)
-        {
-            var authorityRotationEuler = m_AuthoritativeTransform.transform.rotation.eulerAngles;
-            var nonAuthorityRotationEuler = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
-            var auhtorityIsEqual = Approximately(authorityRotationEuler, rotationEulerToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityRotationEuler, rotationEulerToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority rotation {authorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority rotation {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool ScaleMatchesValue(Vector3 scaleToMatch)
-        {
-            var authorityScale = m_AuthoritativeTransform.transform.localScale;
-            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
-            var auhtorityIsEqual = Approximately(authorityScale, scaleToMatch);
-            var nonauthorityIsEqual = Approximately(nonAuthorityScale, scaleToMatch);
-
-            if (!auhtorityIsEqual)
-            {
-                VerboseDebug($"Authority scale {authorityScale} != scale to match: {scaleToMatch}!");
-            }
-            if (!nonauthorityIsEqual)
-            {
-                VerboseDebug($"NonAuthority scale {nonAuthorityScale} != scale to match: {scaleToMatch}!");
-            }
-            return auhtorityIsEqual && nonauthorityIsEqual;
-        }
-
-        private bool PositionRotationScaleMatches(Vector3 position, Vector3 eulerRotation, Vector3 scale)
-        {
-            return PositionsMatchesValue(position) && RotationMatchesValue(eulerRotation) && ScaleMatchesValue(scale);
-        }
-
         private bool PositionRotationScaleMatches()
         {
             return RotationsMatch() && PositionsMatch() && ScaleValuesMatch();
-        }
-
-        private void PrintPositionRotationScaleDeltas()
-        {
-            RotationsMatch(true);
-            PositionsMatch(true);
-            ScaleValuesMatch(true);
         }
 
         private bool RotationsMatch(bool printDeltas = false)
