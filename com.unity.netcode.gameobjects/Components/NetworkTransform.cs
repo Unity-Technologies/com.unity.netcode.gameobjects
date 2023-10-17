@@ -2814,23 +2814,19 @@ namespace Unity.Netcode.Components
                 m_CurrentRotation = GetSpaceRelativeRotation();
                 m_TargetRotation = m_CurrentRotation.eulerAngles;
                 m_TargetScale = m_CurrentScale = GetScale();
-                m_ScaleInterpolator.Clear();
-                m_PositionInterpolator.Clear();
-                m_RotationInterpolator.Clear();
-                // Always use NetworkManager here as this can be invoked prior to spawning
-                var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
-                UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
-                m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
-                m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
-            }
-            else // Otherwise, authority sends out a final teleporting state update to assure all values are properly synchronized
-            if (IsSpawned && CanCommitToTransform)
-            {
-                m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
-                m_LocalAuthoritativeNetworkState.IsParented = parentNetworkObject != null;
-                // Force update
-                NetworkTickSystem_Tick();
+
+                if (Interpolate)
+                {
+                    m_ScaleInterpolator.Clear();
+                    m_PositionInterpolator.Clear();
+                    m_RotationInterpolator.Clear();
+
+                    // Always use NetworkManager here as this can be invoked prior to spawning
+                    var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                    UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
+                    m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
+                    m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+                }
             }
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
