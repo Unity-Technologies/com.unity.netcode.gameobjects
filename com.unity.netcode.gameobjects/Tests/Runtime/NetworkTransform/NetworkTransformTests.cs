@@ -448,15 +448,21 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private enum ChildrenTransformCheckType
+        {
+            Connected_Clients,
+            Late_Join_Client
+        }
+
         /// <summary>
         /// Handles validating the local space values match the original local space values.
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private void AllChildrenLocalTransformValuesMatch(bool useSubChild)
+        private void AllChildrenLocalTransformValuesMatch(bool useSubChild, ChildrenTransformCheckType checkType)
         {
-            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
-            var infoMessage = new StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues, k_TickRate * 2);
+            var infoMessage = new StringBuilder($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
             var authorityObjectLocalPosition = useSubChild ? m_AuthoritySubChildObject.transform.localPosition : m_AuthorityChildObject.transform.localPosition;
             var authorityObjectLocalRotation = useSubChild ? m_AuthoritySubChildObject.transform.localRotation.eulerAngles : m_AuthorityChildObject.transform.localRotation.eulerAngles;
             var authorityObjectLocalScale = useSubChild ? m_AuthoritySubChildObject.transform.localScale : m_AuthorityChildObject.transform.localScale;
@@ -594,10 +600,10 @@ namespace Unity.Netcode.RuntimeTests
 
             TimeTravelToNextTick();
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -611,10 +617,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
         }
 
         /// <summary>
