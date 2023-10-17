@@ -1072,6 +1072,8 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
         {
+            m_AuthoritativeTransform.UseUnreliableDeltas = false;
+            m_NonAuthoritativeTransform.UseUnreliableDeltas = false;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
             m_AuthoritativeTransform.UseQuaternionSynchronization = true;
