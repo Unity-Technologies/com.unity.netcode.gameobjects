@@ -428,9 +428,12 @@ namespace Unity.Netcode.Editor
 #if RELAY_INTEGRATION_AVAILABLE
             if (!string.IsNullOrEmpty(m_JoinCode))
             {
-                var style = new GUIStyle(EditorStyles.helpBox);
-                style.fontSize = 10;
-                style.alignment = TextAnchor.MiddleCenter;
+                var style = new GUIStyle(EditorStyles.helpBox)
+                {
+                    fontSize = 10,
+                    alignment = TextAnchor.MiddleCenter,
+                };
+
                 GUILayout.BeginHorizontal(style, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
                 GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false));
                 GUILayout.Label($"Connected via relay ({m_Region}). Join code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
