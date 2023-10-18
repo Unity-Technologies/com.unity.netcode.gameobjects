@@ -919,14 +919,13 @@ namespace Unity.Netcode
         }
 
 #if RELAY_INTEGRATION_AVAILABLE
-
+// TODO: FIXME - Whether UNITY_WEBGL is defined or not, users might want to have a build that supports both modes.
+// This should be a property setting exposed in the UI/UX settings and configurable at runtime.
 #if UNITY_WEBGL
         private const string k_ConnectionType = "wss";
 #else
         private const string k_ConnectionType = "dtls";
 #endif
-
-        private readonly bool k_UseWebSockets = k_ConnectionType.StartsWith("ws");
 
         /// <summary>
         /// Easy relay integration (host): it will initialize the unity services, sign in anonymously and start the host with a new relay allocation.
@@ -1009,12 +1008,15 @@ namespace Unity.Netcode
                 transport = gameObject.AddComponent<UnityTransport>();
             }
 #if UTP_TRANSPORT_2_0_ABOVE
-            transport.UseWebSockets = k_UseWebSockets; //TODO: probably should be part of SetRelayServerData
+// TODO: FIXME - Whether UNITY_WEBGL is defined or not, users might want to have a build that supports both modes.
+// This should be a property setting exposed in the UI/UX settings.
+#if UNITY_WEBGL
+            transport.UseWebSockets = true; // TODO: probably should be part of SetRelayServerData
+#endif
 #endif
             NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
         }
-
 #endif
 
         /// <summary>
