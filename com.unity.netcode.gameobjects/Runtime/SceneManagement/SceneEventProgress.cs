@@ -43,6 +43,14 @@ namespace Unity.Netcode
         /// </summary>
         SceneFailedVerification,
         /// <summary>
+        /// This is returned when an unload or load action is attempted and scene management is disabled
+        /// </summary>
+        SceneManagementNotEnabled,
+        /// <summary>
+        /// This is returned when a client attempts to perform a server only action
+        /// </summary>
+        ServerOnlyAction,
+        /// <summary>
         /// This is used for internal error notifications.<br/>
         /// If you receive this event then it is most likely due to a bug (<em>please open a GitHub issue with steps to replicate</em>).<br/>
         /// </summary>

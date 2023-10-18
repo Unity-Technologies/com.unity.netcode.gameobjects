@@ -37,7 +37,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             // If a client receives a create object message and it is still synchronizing, then defer the object creation until it has finished synchronizing
-            if (networkManager.NetworkConfig.EnableSceneManagement && networkManager.SceneManager.IsSceneEventActive(SceneEventType.Synchronize) && networkManager.SceneManager.ClientSynchronizationMode == LoadSceneMode.Single)
+            if (networkManager.SceneManager.ShouldDeferCreateObject())
             {
                 networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData);
             }
