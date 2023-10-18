@@ -1,5 +1,3 @@
-using UnityEngine.SceneManagement;
-
 namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
