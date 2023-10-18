@@ -919,8 +919,6 @@ namespace Unity.Netcode
         }
 
 #if RELAY_INTEGRATION_AVAILABLE
-// TODO: FIXME - Whether UNITY_WEBGL is defined or not, users might want to have a build that supports both modes.
-// This should be a property setting exposed in the UI/UX settings and configurable at runtime.
 #if UNITY_WEBGL
         private const string k_ConnectionType = "wss";
 #else
@@ -1008,8 +1006,6 @@ namespace Unity.Netcode
                 transport = gameObject.AddComponent<UnityTransport>();
             }
 #if UTP_TRANSPORT_2_0_ABOVE
-// TODO: FIXME - Whether UNITY_WEBGL is defined or not, users might want to have a build that supports both modes.
-// This should be a property setting exposed in the UI/UX settings.
 #if UNITY_WEBGL
             transport.UseWebSockets = true; // TODO: probably should be part of SetRelayServerData
 #endif
