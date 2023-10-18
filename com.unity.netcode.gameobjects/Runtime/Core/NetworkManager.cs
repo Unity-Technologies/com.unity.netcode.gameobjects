@@ -935,7 +935,7 @@ namespace Unity.Netcode
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
         /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
         /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
-        /// <exception cref="RequestFailedException"> See <see cref="Unity.Services.Authentication.IAuthenticationService.SignInAnonymouslyAsync"/></exception>
+        /// <exception cref="RequestFailedException"> See <see cref="IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
         public async Task<(string, Allocation)> StartHostWithRelay(int maxConnections = 5)
@@ -954,7 +954,7 @@ namespace Unity.Netcode
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
         /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
         /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
-        /// <exception cref="RequestFailedException"> See <see cref="Unity.Services.Authentication.IAuthenticationService.SignInAnonymouslyAsync"/></exception>
+        /// <exception cref="RequestFailedException"> See <see cref="IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
         public async Task<(string, Allocation)> StartServerWithRelay(int maxConnections = 5)
