@@ -335,7 +335,7 @@ namespace Unity.Netcode.Editor
 
             void AddStartServerOrHostButton(bool isServer)
             {
-                var type = isServer?"Server":"Host";
+                var type = isServer ? "Server" : "Host";
                 if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with relay{buttonDisabledReasonSuffix}")))
                 {
                     m_StartConnectionError = null;
@@ -343,7 +343,7 @@ namespace Unity.Netcode.Editor
                     {
                         RunNextFrame(async () =>
                         {
-                            var (joinCode, allocation) = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
+                            var (joinCode, allocation) = isServer ? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
                             m_JoinCode = joinCode;
                             m_Region = allocation.Region;
                             Repaint();
@@ -357,8 +357,8 @@ namespace Unity.Netcode.Editor
                 }
             }
 
-            AddStartServerOrHostButton(isServer:true);
-            AddStartServerOrHostButton(isServer:false);
+            AddStartServerOrHostButton(isServer: true);
+            AddStartServerOrHostButton(isServer: false);
 
             GUILayout.BeginHorizontal();
             m_JoinCode = EditorGUILayout.TextField(m_JoinCode, GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.5f));
@@ -381,7 +381,7 @@ namespace Unity.Netcode.Editor
                 }
             }
             GUILayout.EndHorizontal();
-            if(Application.isPlaying && !string.IsNullOrEmpty(m_StartConnectionError))
+            if (Application.isPlaying && !string.IsNullOrEmpty(m_StartConnectionError))
             {
                 EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
             }
@@ -426,7 +426,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.HelpBox($"You cannot edit the NetworkConfig when a {instanceType} is running.", MessageType.Info);
 
 #if RELAY_INTEGRATION_AVAILABLE
-            if(!string.IsNullOrEmpty(m_JoinCode))
+            if (!string.IsNullOrEmpty(m_JoinCode))
             {
                 var style = new GUIStyle(EditorStyles.helpBox);
                 style.fontSize = 10;

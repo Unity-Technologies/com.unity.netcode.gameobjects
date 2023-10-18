@@ -941,10 +941,10 @@ namespace Unity.Netcode
         /// <exception cref="RequestFailedException"> See <see cref="Unity.Services.Authentication.IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
-        public async Task<(string, Allocation)> StartHostWithRelay(int maxConnections=5)
+        public async Task<(string, Allocation)> StartHostWithRelay(int maxConnections = 5)
         {
             var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections);
-            return StartHost()? codeAndAllocation : (null, null);
+            return StartHost() ? codeAndAllocation : (null, null);
         }
 
         /// <summary>
@@ -960,10 +960,10 @@ namespace Unity.Netcode
         /// <exception cref="RequestFailedException"> See <see cref="Unity.Services.Authentication.IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
-        public async Task<(string, Allocation)> StartServerWithRelay(int maxConnections=5)
+        public async Task<(string, Allocation)> StartServerWithRelay(int maxConnections = 5)
         {
-           var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections);
-           return StartServer()? codeAndAllocation : (null, null);
+            var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections);
+            return StartServer() ? codeAndAllocation : (null, null);
         }
 
         /// <summary>
@@ -986,7 +986,7 @@ namespace Unity.Netcode
             }
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
             GetUnityTransport().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
-            return StartClient()? joinAllocation: null;
+            return StartClient() ? joinAllocation : null;
         }
 
         private async Task<(string, Allocation)> InitializeAndCreateAllocAsync(int maxConnections)
@@ -1004,7 +1004,10 @@ namespace Unity.Netcode
 
         private UnityTransport GetUnityTransport()
         {
-            if(!TryGetComponent<UnityTransport>(out var transport))  {transport = gameObject.AddComponent<UnityTransport>();}
+            if (!TryGetComponent<UnityTransport>(out var transport))
+            {
+                transport = gameObject.AddComponent<UnityTransport>();
+            }
 #if UTP_TRANSPORT_2_0_ABOVE
             transport.UseWebSockets = k_UseWebSockets; //TODO: probably should be part of SetRelayServerData
 #endif
