@@ -555,10 +555,11 @@ namespace Unity.Netcode.Editor
                 }
                 else
                 {
+
 #if UNITY_2021_1_OR_NEWER
                     var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
 #else
-                        var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+                    var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
 #endif
                     if (prefabStage != null)
                     {
