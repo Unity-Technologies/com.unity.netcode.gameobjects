@@ -139,6 +139,8 @@ namespace Unity.Netcode.RuntimeTests
             networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
         }
 
+        private const int k_Latency = 100;
+        private const int k_PacketLoss = 5;
         protected override void OnServerAndClientsCreated()
         {
             var subChildObject = CreateNetworkObjectPrefab("SubChildObject");
@@ -181,7 +183,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.NetworkConfig.TickRate = k_TickRate;
 
             var unityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
-            unityTransport.SetDebugSimulatorParameters(100, 0, 5);
+            unityTransport.SetDebugSimulatorParameters(k_Latency, 0, k_PacketLoss);
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 clientNetworkManager.NetworkConfig.TickRate = k_TickRate;
@@ -469,8 +471,10 @@ namespace Unity.Netcode.RuntimeTests
             // This waits for all child instances to be parented
             yield return WaitForConditionOrTimeOut(AllChildObjectInstancesHaveChild);
             AssertOnTimeout("Timed out waiting for all instances to have parented a child!");
+            var latencyWait = new WaitForSeconds(k_Latency * 0.001f);
+            // Wait for at least the designated latency period
+            yield return latencyWait;
 
-            yield return s_DefaultWaitForTick;
             // This validates each child instance has preserved their local space values
             yield return AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
 
@@ -487,6 +491,9 @@ namespace Unity.Netcode.RuntimeTests
             // This waits for all child instances to be parented
             yield return WaitForConditionOrTimeOut(AllChildObjectInstancesHaveChild);
             AssertOnTimeout("Timed out waiting for all instances to have parented a child!");
+
+            // Wait for at least the designated latency period
+            yield return latencyWait;
 
             // This validates each child instance has preserved their local space values
             yield return AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
