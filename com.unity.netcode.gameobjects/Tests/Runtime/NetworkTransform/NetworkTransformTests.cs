@@ -337,6 +337,10 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
             m_NonAuthoritativeTransform = m_NonAuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
 
+            // All of these tests will validate not using unreliable network delivery
+            m_AuthoritativeTransform.UseUnreliableDeltas = false;
+            m_NonAuthoritativeTransform.UseUnreliableDeltas = false;
+
             m_OwnerTransform = m_AuthoritativeTransform.IsOwner ? m_AuthoritativeTransform : m_NonAuthoritativeTransform;
 
             // Wait for the client-side to notify it is finished initializing and spawning.
@@ -1078,8 +1082,6 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
         {
-            m_AuthoritativeTransform.UseUnreliableDeltas = false;
-            m_NonAuthoritativeTransform.UseUnreliableDeltas = false;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
             m_AuthoritativeTransform.UseQuaternionSynchronization = true;
