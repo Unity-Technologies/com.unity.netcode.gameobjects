@@ -10,6 +10,22 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Fixed
+
+- Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
+- Fixed issue where during client synchronization, when set to LoadSceneMode.Single, a CreateObjectMessage could be received, processed, and the resultant spawned NetworkObject could be instantiated in the client's currently active scene that could, towards the end of the client synchronization process, be unloaded and cause the newly created NetworkObject to be destroyed (and throw and exception). (#2735)
+- Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
+
+### Changed
+
+- Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
+
+
+## [1.7.0]
+
+### Added
+
 - exposed NetworkObject.GetNetworkBehaviourAtOrderIndex as a public API (#2724)
 - Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
