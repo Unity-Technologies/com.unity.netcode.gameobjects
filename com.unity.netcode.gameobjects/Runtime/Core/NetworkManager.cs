@@ -918,13 +918,13 @@ namespace Unity.Netcode
             return IsListening;
         }
 
-        #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
 
-        #if UNITY_WEBGL
+#if UNITY_WEBGL
         private const string k_ConnectionType = "wss";
-        #else
+#else
         private const string k_ConnectionType = "dtls";
-        #endif
+#endif
 
         private readonly bool k_UseWebSockets = k_ConnectionType.StartsWith("ws");
 
@@ -1005,14 +1005,14 @@ namespace Unity.Netcode
         private UnityTransport GetUnityTransport()
         {
             if(!TryGetComponent<UnityTransport>(out var transport))  {transport = gameObject.AddComponent<UnityTransport>();}
-            #if UTP_TRANSPORT_2_0_ABOVE
+#if UTP_TRANSPORT_2_0_ABOVE
             transport.UseWebSockets = k_UseWebSockets; //TODO: probably should be part of SetRelayServerData
-            #endif
+#endif
             NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
         }
 
-        #endif
+#endif
 
         /// <summary>
         /// Handles the host client creation logic along with

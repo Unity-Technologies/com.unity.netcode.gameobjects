@@ -221,11 +221,11 @@ namespace Unity.Netcode.Editor
 
         private void DrawTransportField()
         {
-            #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
             var useRelay = EditorPrefs.GetBool(m_UseEasyRelayIntegrationKey, false);
-            #else
+#else
             var useRelay = false;
-            #endif
+#endif
 
             if (useRelay)
             {
@@ -256,7 +256,7 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
         private string m_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay"; // Value replaced in OnEnable
 
         private void OnEnable()
@@ -271,13 +271,13 @@ namespace Unity.Netcode.Editor
 
         // wait for next frame so that ImGui finishes the current frame
         private static void RunNextFrame(Action action) => EditorApplication.delayCall += () => action();
-        #endif
+#endif
 
         private void ShowStartConnectionButtons()
         {
             EditorGUILayout.LabelField("Start Connection", EditorStyles.boldLabel);
 
-            #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
             // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
             var useRelay = EditorPrefs.GetBool(m_UseEasyRelayIntegrationKey, false);
             GUILayout.BeginHorizontal();
@@ -292,7 +292,7 @@ namespace Unity.Netcode.Editor
             GUILayout.EndHorizontal();
 
             EditorPrefs.SetBool(m_UseEasyRelayIntegrationKey, useRelay);
-            #if UNITY_2022_3_OR_NEWER
+#if UNITY_2022_3_OR_NEWER
             if(useRelay && !Application.isPlaying && !CloudProjectSettings.projectBound)
             {
                 EditorGUILayout.HelpBox("To use relay, you need to setup your project in the Project Settings in the Services section.", MessageType.Warning);
@@ -301,10 +301,10 @@ namespace Unity.Netcode.Editor
                     SettingsService.OpenProjectSettings("Project/Services");
                 }
             }
-            #endif
-            #else
+#endif
+#else
             var useRelay = false;
-            #endif
+#endif
 
             string buttonDisabledReasonSuffix = "";
 
@@ -314,7 +314,7 @@ namespace Unity.Netcode.Editor
                 GUI.enabled = false;
             }
 
-            if(useRelay)
+            if (useRelay)
             {
                 ShowStartConnectionButtons_Relay(buttonDisabledReasonSuffix);
             }
@@ -331,7 +331,7 @@ namespace Unity.Netcode.Editor
 
         private void ShowStartConnectionButtons_Relay(string buttonDisabledReasonSuffix)
         {
-            #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
 
             void AddStartServerOrHostButton(bool isServer)
             {
@@ -385,7 +385,7 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
             }
-            #endif
+#endif
         }
 
         private void ShowStartConnectionButtons_Standard(string buttonDisabledReasonSuffix)
@@ -425,7 +425,7 @@ namespace Unity.Netcode.Editor
 
             EditorGUILayout.HelpBox($"You cannot edit the NetworkConfig when a {instanceType} is running.", MessageType.Info);
 
-            #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
             if(!string.IsNullOrEmpty(m_JoinCode))
             {
                 var style = new GUIStyle(EditorStyles.helpBox);
@@ -441,13 +441,13 @@ namespace Unity.Netcode.Editor
                 }
                 GUILayout.EndHorizontal();
             }
-            #endif
+#endif
 
             if (GUILayout.Button(new GUIContent($"Stop {instanceType}", $"Stops the {instanceType} instance.")))
             {
-                #if RELAY_INTEGRATION_AVAILABLE
+#if RELAY_INTEGRATION_AVAILABLE
                 m_JoinCode = "";
-                #endif
+#endif
                 m_NetworkManager.Shutdown();
             }
         }
