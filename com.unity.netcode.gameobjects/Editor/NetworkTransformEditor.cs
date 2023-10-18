@@ -10,6 +10,7 @@ namespace Unity.Netcode.Editor
     [CustomEditor(typeof(NetworkTransform), true)]
     public class NetworkTransformEditor : UnityEditor.Editor
     {
+        private SerializedProperty m_UseUnreliableDeltas;
         private SerializedProperty m_SyncPositionXProperty;
         private SerializedProperty m_SyncPositionYProperty;
         private SerializedProperty m_SyncPositionZProperty;
@@ -39,6 +40,7 @@ namespace Unity.Netcode.Editor
         /// <inheritdoc/>
         public void OnEnable()
         {
+            m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
             m_SyncPositionYProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionY));
             m_SyncPositionZProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionZ));
@@ -129,7 +131,9 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_PositionThresholdProperty);
             EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
             EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
-
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);

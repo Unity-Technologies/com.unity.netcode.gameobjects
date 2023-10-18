@@ -55,7 +55,28 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal static bool TrackByStateId;
 
-        internal bool UseUnreliableDeltas = true;
+        /// <summary>
+        /// Enabled by default.
+        /// When set (enabled by default), NetworkTransform will send common state updates using unreliable network delivery
+        /// to provide a higher tolerance to poor network conditions (especially packet loss). When disabled, all state updates
+        /// are sent using a reliable fragmented sequenced network delivery.
+        /// </summary>
+        /// <remarks>
+        /// The following more critical state updates are still sent as reliable fragmented sequenced:
+        /// - The initial synchronization state update
+        /// - The teleporting state update.
+        /// - When using half float precision and the `NetworkDeltaPosition` delta exceeds the maximum delta forcing the axis in
+        /// question to be collapsed into the core base position, this state update will be sent as reliable fragmented sequenced.
+        /// 
+        /// In order to preserve a continual consistency of axial values when unreliable delta messaging is enabled (due to the
+        /// possibility of dropping packets), NetworkTransform instances will send 1 axial frame synchronization update per
+        /// second (only for the axis marked to synchronize are sent as reliable fragmented sequenced) as long as a delta state
+        /// update had been previously sent. When a NetworkObject is at rest, axial frame synchronization updates are not sent.
+        /// </remarks>
+        [Tooltip("When set (enabled by default), NetworkTransform will send common state updates using unreliable network delivery " +
+            "to provide a higher tolerance to poor network conditions (especially packet loss). When disabled, all state updates are " +
+            "sent using reliable fragmented sequenced network delivery.")]
+        public bool UseUnreliableDeltas = true;
 
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
