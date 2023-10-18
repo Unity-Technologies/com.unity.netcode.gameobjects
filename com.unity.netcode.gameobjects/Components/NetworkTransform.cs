@@ -657,13 +657,10 @@ namespace Unity.Netcode.Components
                 {
                     if (isWriting)
                     {
-                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                        // !!!!!! TODO: Revisit this flag, we might not need it
-                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                         if (UseUnreliableDeltas)
                         {
-                            // If teleporting, synchronizing, or using half float precision and we collapsed a delta into the base position
-                            if (IsTeleportingNextFrame || IsSynchronizing || (UseHalfFloatPrecision && NetworkDeltaPosition.CollapsedDeltaIntoBase))
+                            // If teleporting, synchronizing, doing an axial frame sync, or using half float precision and we collapsed a delta into the base position
+                            if (IsTeleportingNextFrame || IsSynchronizing || UnreliableFrameSync || (UseHalfFloatPrecision && NetworkDeltaPosition.CollapsedDeltaIntoBase))
                             {
                                 // Send the message reliably
                                 ReliableFragmentedSequenced = true;
@@ -672,6 +669,10 @@ namespace Unity.Netcode.Components
                             {
                                 ReliableFragmentedSequenced = false;
                             }
+                        }
+                        else // If not using UseUnreliableDeltas, then always use reliable fragmented sequenced
+                        {
+                            ReliableFragmentedSequenced = true;
                         }
 
                         BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
@@ -1685,9 +1686,6 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // !!!!!! TODO: Revisit this flag, we might not need it
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if (UseUnreliableDeltas != networkState.UseUnreliableDeltas)
             {
                 networkState.UseUnreliableDeltas = UseUnreliableDeltas;
@@ -2003,6 +2001,8 @@ namespace Unity.Netcode.Components
             UseHalfFloatPrecision = networkState.UseHalfFloatPrecision;
             UseQuaternionSynchronization = networkState.QuaternionSync;
             UseQuaternionCompression = networkState.QuaternionCompression;
+            UseUnreliableDeltas = networkState.UseUnreliableDeltas;
+
             if (SlerpPosition != networkState.UsePositionSlerp)
             {
                 SlerpPosition = networkState.UsePositionSlerp;
@@ -2362,6 +2362,8 @@ namespace Unity.Netcode.Components
             UseQuaternionSynchronization = newState.QuaternionSync;
             UseQuaternionCompression = newState.QuaternionCompression;
             UseHalfFloatPrecision = newState.UseHalfFloatPrecision;
+            UseUnreliableDeltas = newState.UseUnreliableDeltas;
+
             if (SlerpPosition != newState.UsePositionSlerp)
             {
                 SlerpPosition = newState.UsePositionSlerp;
@@ -3147,7 +3149,7 @@ namespace Unity.Netcode.Components
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
             // Determine what network delivery method to use
-            var networkDelivery = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing | m_LocalAuthoritativeNetworkState.UnreliableFrameSync ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+            var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing | m_LocalAuthoritativeNetworkState.UnreliableFrameSync ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
 
             using (writer)
             {
@@ -3249,9 +3251,6 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void RegisterForTickUpdate(NetworkTransform networkTransform)
         {
-            // TODO: Remove after further testing updating all transforms in one pass vs each instance subscribing
-            //networkTransform.NetworkManager.NetworkTickSystem.Tick -= networkTransform.NetworkTickSystem_Tick;
-            //networkTransform.NetworkManager.NetworkTickSystem.Tick += networkTransform.NetworkTickSystem_Tick;
             if (!s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
             {
                 s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
@@ -3267,8 +3266,6 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
         {
-            // TODO: Remove after further testing updating all transforms in one pass vs each instance subscribing
-            //networkTransform.NetworkManager.NetworkTickSystem.Tick -= networkTransform.NetworkTickSystem_Tick;
             if (s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
             {
                 s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Remove(networkTransform);
