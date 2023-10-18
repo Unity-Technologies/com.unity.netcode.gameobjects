@@ -18,7 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 
-## [1.7.0]
+## [Unreleased - 1.7.0]
 
 ### Added
 
