@@ -274,10 +274,10 @@ namespace Unity.Netcode.Editor
             // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
             var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
             GUILayout.BeginHorizontal();
-            useRelay = GUILayout.Toggle(useRelay, "Try Relay in the editor");
+            useRelay = GUILayout.Toggle(useRelay, "Try Relay in the Editor");
 
             var icon = EditorGUIUtility.IconContent("_Help");
-            icon.tooltip = "This will help you test relay in the editor. Click here to know how to integrate Relay in your build";
+            icon.tooltip = "This will help you test relay in the Editor. Click here to know how to integrate Relay in your build";
             if (GUILayout.Button(icon, GUIStyle.none, GUILayout.Width(20)))
             {
                 Application.OpenURL("https://docs-multiplayer.unity3d.com/netcode/current/relay/");
