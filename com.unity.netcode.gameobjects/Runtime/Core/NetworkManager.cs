@@ -920,9 +920,9 @@ namespace Unity.Netcode
 
 #if RELAY_INTEGRATION_AVAILABLE
 #if UNITY_WEBGL
-        private const string k_ConnectionType = "wss";
+        private const string k_DefaultConnectionType = "wss";
 #else
-        private const string k_ConnectionType = "dtls";
+        private const string k_DefaultConnectionType = "dtls";
 #endif
 
         /// <summary>
@@ -930,6 +930,7 @@ namespace Unity.Netcode
         /// Note that this will force the use of Unity Transport.
         /// </summary>
         /// <param name="maxConnections">Maximum number of connections to the created relay.</param>
+        /// <param name="connectionType">The connection type of the <see cref="RelayServerData"/> (wss, ws, dtls or udp) </param>
         /// <returns>The join code that a potential client can use and the allocation</returns>
         /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
@@ -938,9 +939,9 @@ namespace Unity.Netcode
         /// <exception cref="RequestFailedException"> See <see cref="IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
-        public async Task<(string, Allocation)> StartHostWithRelay(int maxConnections = 5)
+        public async Task<(string, Allocation)> StartHostWithRelay(int maxConnections = 5, string connectionType = k_DefaultConnectionType)
         {
-            var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections);
+            var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections, connectionType);
             return StartHost() ? codeAndAllocation : (null, null);
         }
 
@@ -949,6 +950,7 @@ namespace Unity.Netcode
         /// Note that this will force the use of Unity Transport.
         /// </summary>
         /// <param name="maxConnections">Maximum number of connections to the created relay.</param>
+        /// <param name="connectionType">The connection type of the <see cref="RelayServerData"/> (wss, ws, dtls or udp) </param>
         /// <returns>The join code that a potential client can use and the allocation.</returns>
         /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
@@ -957,9 +959,9 @@ namespace Unity.Netcode
         /// <exception cref="RequestFailedException"> See <see cref="IAuthenticationService.SignInAnonymouslyAsync"/></exception>
         /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
-        public async Task<(string, Allocation)> StartServerWithRelay(int maxConnections = 5)
+        public async Task<(string, Allocation)> StartServerWithRelay(int maxConnections = 5, string connectionType = k_DefaultConnectionType)
         {
-            var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections);
+            var codeAndAllocation = await InitializeAndCreateAllocAsync(maxConnections, connectionType);
             return StartServer() ? codeAndAllocation : (null, null);
         }
 
@@ -968,13 +970,14 @@ namespace Unity.Netcode
         /// Note that this will force the use of Unity Transport.
         /// </summary>
         /// <param name="joinCode">The join code of the allocation</param>
+        /// <param name="connectionType">The connection type of the <see cref="RelayServerData"/> (wss, ws, dtls or udp) </param>
         /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
         /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
         /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
         /// <exception cref="ArgumentException">Thrown if the joinCode has the wrong format.</exception>
         /// <returns>True if starting the client was successful</returns>
-        public async Task<JoinAllocation> StartClientWithRelay(string joinCode)
+        public async Task<JoinAllocation> StartClientWithRelay(string joinCode, string connectionType = k_DefaultConnectionType)
         {
             await UnityServices.InitializeAsync();
             if (!AuthenticationService.Instance.IsSignedIn)
@@ -982,11 +985,11 @@ namespace Unity.Netcode
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
             }
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
-            GetUnityTransport().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
+            GetUnityTransport(connectionType).SetRelayServerData(new RelayServerData(joinAllocation, k_DefaultConnectionType));
             return StartClient() ? joinAllocation : null;
         }
 
-        private async Task<(string, Allocation)> InitializeAndCreateAllocAsync(int maxConnections)
+        private async Task<(string, Allocation)> InitializeAndCreateAllocAsync(int maxConnections, string connectionType)
         {
             await UnityServices.InitializeAsync();
             if (!AuthenticationService.Instance.IsSignedIn)
@@ -994,21 +997,19 @@ namespace Unity.Netcode
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
             }
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
-            GetUnityTransport().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
+            GetUnityTransport(connectionType).SetRelayServerData(new RelayServerData(allocation, connectionType));
             var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             return (joinCode, allocation);
         }
 
-        private UnityTransport GetUnityTransport()
+        private UnityTransport GetUnityTransport(string connectionType)
         {
             if (!TryGetComponent<UnityTransport>(out var transport))
             {
                 transport = gameObject.AddComponent<UnityTransport>();
             }
 #if UTP_TRANSPORT_2_0_ABOVE
-#if UNITY_WEBGL
-            transport.UseWebSockets = true; // TODO: probably should be part of SetRelayServerData
-#endif
+            transport.UseWebSockets = connectionType.StartsWith("ws"); // Probably should be part of SetRelayServerData, but not possible at this point
 #endif
             NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
