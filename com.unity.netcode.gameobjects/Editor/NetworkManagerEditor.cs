@@ -432,7 +432,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.HelpBox($"You cannot edit the NetworkConfig when a {instanceType} is running.", MessageType.Info);
 
 #if RELAY_INTEGRATION_AVAILABLE
-            if (!string.IsNullOrEmpty(m_JoinCode))
+            if (!string.IsNullOrEmpty(m_JoinCode) && !string.IsNullOrEmpty(m_Region))
             {
                 var style = new GUIStyle(EditorStyles.helpBox)
                 {
@@ -441,13 +441,20 @@ namespace Unity.Netcode.Editor
                 };
 
                 GUILayout.BeginHorizontal(style, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
-                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false));
-                GUILayout.Label($"Connected via relay ({m_Region}). Join code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true));
+                GUILayout.Space(25f);
+                GUILayout.BeginVertical();
+                GUILayout.Space(4f);
+                GUILayout.Label($"Connected via relay ({m_Region}).\nJoin code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
 
                 if (GUILayout.Button("Copy code", GUILayout.ExpandHeight(true)))
                 {
                     GUIUtility.systemCopyBuffer = m_JoinCode;
                 }
+
+                GUILayout.Space(4f);
+                GUILayout.EndVertical();
+                GUILayout.Space(2f);
                 GUILayout.EndHorizontal();
             }
 #endif
