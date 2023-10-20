@@ -336,24 +336,24 @@ namespace Unity.Netcode.Editor
             void AddStartServerOrHostButton(bool isServer)
             {
                 var type = isServer ? "Server" : "Host";
-                if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with relay{buttonDisabledReasonSuffix}")))
+                if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with Relay{buttonDisabledReasonSuffix}")))
                 {
                     m_StartConnectionError = null;
-                    try
+                    RunNextFrame(async () =>
                     {
-                        RunNextFrame(async () =>
+                        try
                         {
                             var (joinCode, allocation) = isServer ? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
                             m_JoinCode = joinCode;
                             m_Region = allocation.Region;
                             Repaint();
-                        });
-                    }
-                    catch (Exception e)
-                    {
-                        m_StartConnectionError = e.Message;
-                        throw;
-                    }
+                        }
+                        catch (Exception e)
+                        {
+                            m_StartConnectionError = e.Message;
+                            throw;
+                        }
+                    });
                 }
             }
 
@@ -365,20 +365,26 @@ namespace Unity.Netcode.Editor
             if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance with Relay" + buttonDisabledReasonSuffix)))
             {
                 m_StartConnectionError = null;
-                try
+                RunNextFrame(async () =>
                 {
-                    RunNextFrame(async () =>
+                    if (string.IsNullOrEmpty(m_JoinCode))
+                    {
+                        m_StartConnectionError = "Please provide a join code!";
+                        return;
+                    }
+
+                    try
                     {
                         var allocation = await m_NetworkManager.StartClientWithRelay(m_JoinCode);
                         m_Region = allocation.Region;
                         Repaint();
-                    });
-                }
-                catch (Exception e)
-                {
-                    m_StartConnectionError = e.Message;
-                    throw;
-                }
+                    }
+                    catch (Exception e)
+                    {
+                        m_StartConnectionError = e.Message;
+                        throw;
+                    }
+                });
             }
 
             if (Application.isPlaying && !string.IsNullOrEmpty(m_StartConnectionError))
