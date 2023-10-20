@@ -360,9 +360,9 @@ namespace Unity.Netcode.Editor
             AddStartServerOrHostButton(isServer: true);
             AddStartServerOrHostButton(isServer: false);
 
-            GUILayout.BeginHorizontal();
-            m_JoinCode = EditorGUILayout.TextField(m_JoinCode, GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.5f));
-            if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
+            GUILayout.Space(8f);
+            m_JoinCode = EditorGUILayout.TextField("Relay Join Code", m_JoinCode);
+            if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance with Relay" + buttonDisabledReasonSuffix)))
             {
                 m_StartConnectionError = null;
                 try
@@ -380,7 +380,7 @@ namespace Unity.Netcode.Editor
                     throw;
                 }
             }
-            GUILayout.EndHorizontal();
+
             if (Application.isPlaying && !string.IsNullOrEmpty(m_StartConnectionError))
             {
                 EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
