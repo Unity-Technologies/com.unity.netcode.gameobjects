@@ -993,6 +993,8 @@ namespace Unity.Netcode
                 if (finalPosition == positionBeforeSynchronize || threwException)
                 {
                     writer.Seek(positionBeforeWrite);
+
+                    writer.Truncate();
                     return false;
                 }
                 else
