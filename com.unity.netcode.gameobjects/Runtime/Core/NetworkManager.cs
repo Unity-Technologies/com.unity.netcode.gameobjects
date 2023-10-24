@@ -975,7 +975,9 @@ namespace Unity.Netcode
         /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
         /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
         /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
+        /// <exception cref="RequestFailedException">Thrown when the request does not reach the Relay Allocation Service.</exception>
         /// <exception cref="ArgumentException">Thrown if the joinCode has the wrong format.</exception>
+        /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
         /// <returns>True if starting the client was successful</returns>
         public async Task<JoinAllocation> StartClientWithRelay(string joinCode, string connectionType = k_DefaultConnectionType)
         {
