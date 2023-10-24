@@ -1125,7 +1125,14 @@ namespace Unity.Netcode
 
         private void ParseCommandLineOptions()
         {
+#if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
+            if ( UnityEngine.DedicatedServer.Arguments.Port != null)
+            {
+                PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
+            }
+#else
             ParseArg(k_OverridePortArg, ref PortOverride);
+#endif
         }
     }
 }
