@@ -15,6 +15,9 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        // TODO: Deprecate...
+        // The following internal values are not used, but because ILPP makes them public in the assembly, they cannot
+        // be removed thanks to our semver validation.
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -504,6 +507,15 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        private void ModeChanged(PlayModeStateChange change)
+        {
+            if (IsListening && change == PlayModeStateChange.ExitingPlayMode)
+            {
+                // Make sure we are not holding onto anything in case domain reload is disabled
+                ShutdownInternal();
+            }
+        }
 #endif
 
         /// <summary>
@@ -552,6 +564,9 @@ namespace Unity.Netcode
             NetworkConfig?.InitializePrefabs();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged += ModeChanged;
+#endif
         }
 
         private void OnEnable()

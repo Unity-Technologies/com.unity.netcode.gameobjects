@@ -165,7 +165,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (!networkManager.IsServer || networkManager.IsServer && serverSideSceneManager)
             {
-                RegisterSceneManagerHandler(networkManager);
+                // Pass along the serverSideSceneManager property (otherwise the server won't register properly)
+                RegisterSceneManagerHandler(networkManager, serverSideSceneManager);
             }
         }
 
@@ -405,7 +406,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
                 // loaded and register the server to client scene handle since host-server shares the test runner scene
                 // with the clients.
-                networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
+                if (!networkManager.SceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                {
+                    networkManager.SceneManager.ScenesLoaded.Add(scene.handle, scene);
+                }
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }
         }
@@ -443,8 +447,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             server.ConnectionManager.MessageManager.Hook(hooks);
             s_Hooks[server] = hooks;
 
-            // if set, then invoke this for the server
-            RegisterHandlers(server);
+            // Register the server side handler (always pass true for server)
+            RegisterHandlers(server, true);
 
             callback?.Invoke();
 
@@ -924,6 +928,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             return networkObject.GlobalObjectIdHash;
         }
+
+#if UNITY_EDITOR
+        public static void SetRefreshAllPrefabsCallback(Action scenesProcessed)
+        {
+            NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
+        }
+
+        public static void RefreshAllPrefabInstances(NetworkObject networkObject, Action scenesProcessed)
+        {
+            NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
+            networkObject.RefreshAllPrefabInstances();
+        }
+#endif
     }
 
     // Empty MonoBehaviour that is a holder of coroutine
