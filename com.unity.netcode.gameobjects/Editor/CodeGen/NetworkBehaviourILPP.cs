@@ -1237,16 +1237,17 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
+            // This always needs to generate even if it's empty.
+            var initializeRpcsMethodDef = new MethodDefinition(
+                k_NetworkBehaviour___initializeRpcs,
+                MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,
+                typeDefinition.Module.TypeSystem.Void);
+            initializeRpcsMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+
+            typeDefinition.Methods.Add(initializeRpcsMethodDef);
+
             if (rpcHandlers.Count > 0)
             {
-                var initializeRpcsMethodDef = new MethodDefinition(
-                        k_NetworkBehaviour___initializeRpcs,
-                        MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                        typeDefinition.Module.TypeSystem.Void);
-                initializeRpcsMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-
-                typeDefinition.Methods.Add(initializeRpcsMethodDef);
-
                 var instructions = new List<Instruction>();
                 var processor = initializeRpcsMethodDef.Body.GetILProcessor();
 
