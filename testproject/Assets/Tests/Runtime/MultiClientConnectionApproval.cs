@@ -249,30 +249,35 @@ namespace TestProject.RuntimeTests
 
         private int m_ClientConnectedInvocations;
 
+        private int m_PeerConnectedInvocations;
+
         /// <summary>
         /// Tests that the OnClientConnectedCallback is invoked when scene management is enabled and disabled
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement)
+        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement, [Values(true, false)] bool isHost)
         {
             m_ServerClientConnectedInvocations = 0;
             m_ClientConnectedInvocations = 0;
+            m_PeerConnectedInvocations = 0;
 
             // Create Host and (numClients) clients
             Assert.True(NetcodeIntegrationTestHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
             server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            server.OnPeerConnectedCallback += Client_OnPeerConnectedCallback;
 
             foreach (var client in clients)
             {
                 client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
                 client.OnClientConnectedCallback += Client_OnClientConnectedCallback;
+                client.OnPeerConnectedCallback += Client_OnPeerConnectedCallback;
             }
 
             // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(isHost, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
@@ -281,20 +286,30 @@ namespace TestProject.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, isHost ? (clients.Length + 1) : clients.Length, null, 512);
 
 
             Assert.AreEqual(3, m_ClientConnectedInvocations);
             var timeoutHelper = new TimeoutHelper(2);
 
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ServerClientConnectedInvocations == 4, timeoutHelper);
-            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for server client connections to reach a count of 4 but only has {m_ServerClientConnectedInvocations}!");
-            Assert.AreEqual(4, m_ServerClientConnectedInvocations);
+            var expectedClientCount = (isHost ? 4 : 3);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ServerClientConnectedInvocations == expectedClientCount, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for server client connections to reach a count of {expectedClientCount} but only has {m_ServerClientConnectedInvocations}!");
+            Assert.AreEqual(expectedClientCount, m_ServerClientConnectedInvocations);
+
+            // Host will get peer connection events, server will not
+            var expectedPeerConnections = isHost ? (4 * (4 - 1)) : (3 * (3 - 1));
+            Assert.AreEqual(expectedPeerConnections, m_PeerConnectedInvocations);
         }
 
         private void Client_OnClientConnectedCallback(ulong clientId)
         {
             m_ClientConnectedInvocations++;
+        }
+
+        private void Client_OnPeerConnectedCallback(ulong clientId)
+        {
+            m_PeerConnectedInvocations++;
         }
 
         private void Server_OnClientConnectedCallback(ulong clientId)

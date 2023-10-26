@@ -69,7 +69,10 @@ namespace Unity.Netcode
 
             if (ret)
             {
-                networkObject.Observers.Remove(clientId);
+                if (networkObject.Observers.Contains(clientId))
+                {
+                    networkObject.Observers.Remove(clientId);
+                }
             }
 
             return ret;
@@ -947,7 +950,10 @@ namespace Unity.Netcode
                     // CheckObject visibility overrides SpawnWithObservers under this condition
                     if (sobj.CheckObjectVisibility(clientId))
                     {
-                        sobj.Observers.Add(clientId);
+                        if (!sobj.Observers.Contains(clientId))
+                        {
+                            sobj.Observers.Add(clientId);
+                        }
                     }
                     else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
                     if (sobj.Observers.Contains(clientId))

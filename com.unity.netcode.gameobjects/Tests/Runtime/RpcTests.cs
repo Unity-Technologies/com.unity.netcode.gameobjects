@@ -48,7 +48,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 #endif
 
-
             [ClientRpc]
             public void MyClientRpc()
             {

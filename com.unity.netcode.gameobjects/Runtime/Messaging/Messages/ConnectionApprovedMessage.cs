@@ -5,7 +5,8 @@ namespace Unity.Netcode
 {
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
-        public int Version => 0;
+        private const int k_VersionAddClientIds = 1;
+        public int Version => k_VersionAddClientIds;
 
         public ulong OwnerClientId;
         public int NetworkTick;
@@ -16,6 +17,8 @@ namespace Unity.Netcode
         private FastBufferReader m_ReceivedSceneObjectData;
 
         public NativeArray<MessageVersionData> MessageVersions;
+
+        public NativeArray<ulong> KnownClientIds;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
@@ -36,6 +39,11 @@ namespace Unity.Netcode
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
 
+            if (targetVersion >= k_VersionAddClientIds)
+            {
+                writer.WriteValueSafe(KnownClientIds);
+            }
+
             uint sceneObjectCount = 0;
 
             // When SpawnedObjectsList is not null then scene management is disabled. Provide a list of
@@ -50,7 +58,10 @@ namespace Unity.Netcode
                 {
                     if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
-                        sobj.Observers.Add(OwnerClientId);
+                        if (!sobj.Observers.Contains(OwnerClientId))
+                        {
+                            sobj.Observers.Add(OwnerClientId);
+                        }
                         var sceneObject = sobj.GetMessageSceneObject(OwnerClientId);
                         sceneObject.Serialize(writer);
                         ++sceneObjectCount;
@@ -106,6 +117,16 @@ namespace Unity.Netcode
 
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
+
+            if (receivedMessageVersion >= k_VersionAddClientIds)
+            {
+                reader.ReadValueSafe(out KnownClientIds, Allocator.TempJob);
+            }
+            else
+            {
+                KnownClientIds = new NativeArray<ulong>(0, Allocator.TempJob);
+            }
+
             m_ReceivedSceneObjectData = reader;
             return true;
         }
@@ -114,6 +135,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             networkManager.LocalClientId = OwnerClientId;
+            networkManager.MessageManager.SetLocalClientId(networkManager.LocalClientId);
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
@@ -125,6 +147,12 @@ namespace Unity.Netcode
             networkManager.ConnectionManager.LocalClient.ClientId = OwnerClientId;
             // Stop the client-side approval timeout coroutine since we are approved.
             networkManager.ConnectionManager.StopClientApprovalCoroutine();
+
+            networkManager.ConnectionManager.KnownClientIds.Clear();
+            foreach (var clientId in KnownClientIds)
+            {
+                networkManager.ConnectionManager.KnownClientIds.Add(clientId);
+            }
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
@@ -145,7 +173,18 @@ namespace Unity.Netcode
                 networkManager.IsConnectedClient = true;
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
+
+                foreach (var clientId in KnownClientIds)
+                {
+                    if (clientId == networkManager.LocalClientId)
+                    {
+                        continue;
+                    }
+                    networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(clientId);
+                }
             }
+
+            KnownClientIds.Dispose();
         }
     }
 }

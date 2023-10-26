@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -41,6 +42,8 @@ namespace Unity.Netcode
                     {
                         ConnectionManager.ProcessPendingApprovals();
                         ConnectionManager.PollAndHandleNetworkEvents();
+
+                        DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnNextFrame, 0);
 
                         MessageManager.ProcessIncomingMessageQueue();
                         MessageManager.CleanupDisconnectedClients();
@@ -107,6 +110,15 @@ namespace Unity.Netcode
         public IReadOnlyList<ulong> ConnectedClientsIds => IsServer ? ConnectionManager.ConnectedClientIds : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
 
         /// <summary>
+        /// Gets a list of just the IDs of all known clients.
+        /// This is accessible from client, server, and host.
+        /// Currently, this set contains the list of all client ids connected to the server, but this set
+        /// should be treated as the set of ids that a given process is <b>allowed to send messages to</b>,
+        /// and should not be depended on to always contain the full set of ids connected to the server in the future.
+        /// </summary>
+        public IReadOnlyCollection<ulong> KnownClientIds => ConnectionManager.KnownClientIds;
+
+        /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
         /// </summary>
         public NetworkClient LocalClient => ConnectionManager.LocalClient;
@@ -121,6 +133,11 @@ namespace Unity.Netcode
         /// Gets Whether or not a server is running
         /// </summary>
         public bool IsServer => ConnectionManager.LocalClient.IsServer;
+
+        /// <summary>
+        /// Gets whether or not the current server (local or remote) is a host - i.e., also a client
+        /// </summary>
+        public bool ServerIsHost => ConnectionManager.KnownClientIds.Contains(ServerClientId);
 
         /// <summary>
         /// Gets Whether or not a client is running
@@ -223,6 +240,24 @@ namespace Unity.Netcode
         {
             add => ConnectionManager.OnClientDisconnectCallback += value;
             remove => ConnectionManager.OnClientDisconnectCallback -= value;
+        }
+
+        /// <summary>
+        /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
+        /// </summary>
+        public event Action<ulong> OnPeerConnectedCallback
+        {
+            add => ConnectionManager.OnPeerConnectedCallback += value;
+            remove => ConnectionManager.OnPeerConnectedCallback -= value;
+        }
+
+        /// <summary>
+        /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
+        /// </summary>
+        public event Action<ulong> OnPeerDisconnectCallback
+        {
+            add => ConnectionManager.OnPeerDisconnectCallback += value;
+            remove => ConnectionManager.OnPeerDisconnectCallback -= value;
         }
 
         /// <summary>
@@ -378,6 +413,16 @@ namespace Unity.Netcode
         public NetworkSpawnManager SpawnManager { get; private set; }
 
         internal IDeferredNetworkMessageManager DeferredMessageManager { get; private set; }
+
+        /// <summary>
+        /// Provides access to the various <see cref="SendTo"/> targets at runtime, as well as
+        /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>, and
+        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>
+        /// </summary>
+        public RpcTarget RpcTarget;
 
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
@@ -714,6 +759,8 @@ namespace Unity.Netcode
 
             DeferredMessageManager = ComponentFactory.Create<IDeferredNetworkMessageManager>(this);
 
+            RpcTarget = new RpcTarget(this);
+
             CustomMessagingManager = new CustomMessagingManager(this);
 
             SceneManager = new NetworkSceneManager(this);
@@ -913,7 +960,9 @@ namespace Unity.Netcode
         private void HostServerInitialize()
         {
             LocalClientId = ServerClientId;
+            ConnectionManager.KnownClientIds.Add(ServerClientId);
             NetworkMetrics.SetConnectionId(LocalClientId);
+            MessageManager.SetLocalClientId(LocalClientId);
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
@@ -1020,6 +1069,9 @@ namespace Unity.Netcode
             // Everything is shutdown in the order of their dependencies
             DeferredMessageManager?.CleanupAllTriggers();
             CustomMessagingManager = null;
+
+            RpcTarget?.Dispose();
+            RpcTarget = null;
 
             BehaviourUpdater?.Shutdown();
             BehaviourUpdater = null;

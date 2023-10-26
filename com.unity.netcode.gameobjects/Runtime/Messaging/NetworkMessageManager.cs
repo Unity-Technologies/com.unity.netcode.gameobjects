@@ -85,6 +85,8 @@ namespace Unity.Netcode
         private INetworkMessageSender m_Sender;
         private bool m_Disposed;
 
+        private ulong m_LocalClientId;
+
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
 
@@ -93,6 +95,16 @@ namespace Unity.Netcode
         internal uint GetMessageType(Type t)
         {
             return m_MessageTypes[t];
+        }
+
+        internal object GetOwner()
+        {
+            return m_Owner;
+        }
+
+        internal void SetLocalClientId(ulong id)
+        {
+            m_LocalClientId = id;
         }
 
         public const int DefaultNonFragmentedMessageMaxSize = 1300 & ~7; // Round down to nearest word aligned size (1296)
@@ -551,7 +563,7 @@ namespace Unity.Netcode
             // Special cases because these are the messages that carry the version info - thus the version info isn't
             // populated yet when we get these. The first part of these messages always has to be the version data
             // and can't change.
-            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage))
+            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage) && context.SenderId != manager.m_LocalClientId)
             {
                 messageVersion = manager.GetMessageVersion(typeof(T), context.SenderId, true);
                 if (messageVersion < 0)

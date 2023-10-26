@@ -2067,6 +2067,15 @@ namespace Unity.Netcode
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
                             NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
 
+                            foreach (var peerId in NetworkManager.KnownClientIds)
+                            {
+                                if (peerId == NetworkManager.LocalClientId)
+                                {
+                                    continue;
+                                }
+                                NetworkManager.ConnectionManager.InvokeOnPeerConnectedCallback(peerId);
+                            }
+
                             // Notify the client that they have finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
                             {
@@ -2212,6 +2221,11 @@ namespace Unity.Netcode
                         // client progresses through (the name and associated legacy behavior/expected state
                         // of the client was persisted since MLAPI)
                         NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
+
+                        if (NetworkManager.IsHost)
+                        {
+                            NetworkManager.ConnectionManager.InvokeOnPeerConnectedCallback(clientId);
+                        }
 
                         // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
                         // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)

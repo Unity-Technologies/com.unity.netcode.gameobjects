@@ -518,7 +518,10 @@ namespace Unity.Netcode
                 return;
             }
             NetworkManager.SpawnManager.MarkObjectForShowingTo(this, clientId);
-            Observers.Add(clientId);
+            if (!Observers.Contains(clientId))
+            {
+                Observers.Add(clientId);
+            }
         }
 
 
@@ -613,7 +616,10 @@ namespace Unity.Netcode
                 {
                     throw new VisibilityChangeException("The object is already hidden");
                 }
-                Observers.Remove(clientId);
+                if (Observers.Contains(clientId))
+                {
+                    Observers.Remove(clientId);
+                }
 
                 var message = new DestroyObjectMessage
                 {
