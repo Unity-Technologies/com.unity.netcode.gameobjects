@@ -261,7 +261,7 @@ namespace Unity.Netcode.Transports.UTP
                 return 0;
             }
 
-            var maxLength = maxBytes == 0 ? writer.Capacity : maxBytes;
+            var maxLength = maxBytes == 0 ? writer.Capacity : Math.Min(maxBytes, writer.Capacity);
             var copyLength = Math.Min(maxLength, Length);
 
             unsafe
