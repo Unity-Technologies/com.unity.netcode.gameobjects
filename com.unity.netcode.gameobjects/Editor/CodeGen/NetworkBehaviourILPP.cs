@@ -1242,9 +1242,9 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // This always needs to generate even if it's empty.
                 var initializeRpcsMethodDef = new MethodDefinition(
-                    k_NetworkBehaviour___initializeRpcs,
-                    MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                    typeDefinition.Module.TypeSystem.Void);
+                        k_NetworkBehaviour___initializeRpcs,
+                        MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,
+                        typeDefinition.Module.TypeSystem.Void);
                 initializeRpcsMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
 
                 typeDefinition.Methods.Add(initializeRpcsMethodDef);
