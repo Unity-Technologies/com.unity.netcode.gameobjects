@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
 - Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
 
 ### Changed
