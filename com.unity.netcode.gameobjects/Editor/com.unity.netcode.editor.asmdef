@@ -4,7 +4,10 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Services.Relay"
+        "Unity.Services.Relay",
+        "Unity.Networking.Transport",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication"
     ],
     "includePlatforms": [
         "Editor"

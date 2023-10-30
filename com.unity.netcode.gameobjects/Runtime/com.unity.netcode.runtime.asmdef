@@ -13,18 +13,9 @@
         "Unity.Networking.Transport",
         "Unity.Collections",
         "Unity.Burst",
-        "Unity.Mathematics",
-        "Unity.Services.Relay",
-        "Unity.Services.Core",
-        "Unity.Services.Authentication"
+        "Unity.Mathematics"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -50,12 +41,6 @@
             "name": "com.unity.transport",
             "expression": "2.1.0",
             "define": "UTP_TRANSPORT_2_1_ABOVE"
-        },
-        {
-            "name": "com.unity.services.relay",
-            "expression": "1.0",
-            "define": "RELAY_SDK_INSTALLED"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }
