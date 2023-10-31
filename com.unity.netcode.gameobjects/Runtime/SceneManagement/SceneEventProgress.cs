@@ -46,7 +46,7 @@ namespace Unity.Netcode
         /// This is used for internal error notifications.<br/>
         /// If you receive this event then it is most likely due to a bug (<em>please open a GitHub issue with steps to replicate</em>).<br/>
         /// </summary>
-        InternalNetcodeError,        
+        InternalNetcodeError,
         /// <summary>
         /// This is returned when an unload or load action is attempted and scene management is disabled
         /// </summary>
