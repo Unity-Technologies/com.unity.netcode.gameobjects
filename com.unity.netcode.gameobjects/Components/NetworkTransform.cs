@@ -1643,6 +1643,52 @@ namespace Unity.Netcode.Components
             var scale = transformToUse.localScale;
             networkState.IsSynchronizing = isSynchronization;
 
+            // Check for parenting when synchronizing and/or teleporting
+            if (isSynchronization || networkState.IsTeleportingNextFrame)
+            {
+                // This all has to do with complex nested hierarchies and how it impacts scale
+                // when set for the first time and depending upon whether the NetworkObject is parented
+                // (or not parented) at the time the scale values are applied.
+                var hasParentNetworkObject = false;
+
+                // If the NetworkObject belonging to this NetworkTransform instance has a parent
+                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
+                if (NetworkObject.transform.parent != null)
+                {
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+
+                    // In-scene placed NetworkObjects parented under a GameObject with no
+                    // NetworkObject preserve their lossyScale when synchronizing.
+                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
+                    {
+                        hasParentNetworkObject = true;
+                    }
+                    else
+                    {
+                        // Or if the relative NetworkObject has a parent NetworkObject
+                        hasParentNetworkObject = parentNetworkObject != null;
+                    }
+                }
+
+                networkState.IsParented = hasParentNetworkObject;
+
+                // When synchronizing with a parent, world position stays impacts position whether
+                // the NetworkTransform is using world or local space synchronization.
+                // WorldPositionStays: (always use world space)
+                // !WorldPositionStays: (always use local space)
+                if (isSynchronization)
+                {
+                    if (NetworkObject.WorldPositionStays())
+                    {
+                        position = transformToUse.position;
+                    }
+                    else
+                    {
+                        position = transformToUse.localPosition;
+                    }
+                }
+            }
+
             if (InLocalSpace != networkState.InLocalSpace)
             {
                 networkState.InLocalSpace = InLocalSpace;
@@ -1873,34 +1919,9 @@ namespace Unity.Netcode.Components
             // For scale, we need to check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
             {
-                // This all has to do with complex nested hierarchies and how it impacts scale
-                // when set for the first time and depending upon whether the NetworkObject is parented
-                // (or not parented) at the time the scale values are applied.
-                var hasParentNetworkObject = false;
-
-                // If the NetworkObject belonging to this NetworkTransform instance has a parent
-                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
-                if (NetworkObject.transform.parent != null)
-                {
-                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
-
-                    // In-scene placed NetworkObjects parented under a GameObject with no
-                    // NetworkObject preserve their lossyScale when synchronizing.
-                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
-                    {
-                        hasParentNetworkObject = true;
-                    }
-                    else
-                    {
-                        // Or if the relative NetworkObject has a parent NetworkObject
-                        hasParentNetworkObject = parentNetworkObject != null;
-                    }
-                }
-
-                networkState.IsParented = hasParentNetworkObject;
                 // If we are synchronizing and the associated NetworkObject has a parent then we want to send the
-                // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not  guaranteed 
-                if (hasParentNetworkObject)
+                // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not guaranteed
+                if (networkState.IsParented)
                 {
                     networkState.LossyScale = transform.lossyScale;
                 }
