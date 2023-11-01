@@ -13,12 +13,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
+- Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per `NetworkBehaviour` component instance. (#2749)
 - Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
 - Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
 - Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
 
 ### Changed
-
 - Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
 
 ## [1.7.0] - 2023-10-11
