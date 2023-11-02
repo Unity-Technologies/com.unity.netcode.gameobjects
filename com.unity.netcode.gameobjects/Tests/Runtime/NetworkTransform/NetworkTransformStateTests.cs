@@ -274,7 +274,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (syncPosX || syncPosY || syncPosZ || syncRotX || syncRotY || syncRotZ || syncScaX || syncScaY || syncScaZ)
                 {
-                    Assert.IsTrue(networkTransform.NetworkManager != null, "NetworkManager is NULL!");
+                    Assert.NotNull(networkTransform.NetworkManager, "NetworkManager is NULL!");
                     Assert.IsTrue(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                 }
             }
