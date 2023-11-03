@@ -10,6 +10,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+- Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
+- Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per `NetworkBehaviour` component instance. (#2749)
+
+### Changed
+
+## [1.7.0] - 2023-10-11
+
+### Added
+
 - exposed NetworkObject.GetNetworkBehaviourAtOrderIndex as a public API (#2724)
 - Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
