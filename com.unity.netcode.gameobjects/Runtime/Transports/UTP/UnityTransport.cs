@@ -402,6 +402,7 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet jitter (variances in latency, see: https://en.wikipedia.org/wiki/Jitter)
         /// - packet drop rate (packet loss)
         /// </summary>
+
 #if UTP_TRANSPORT_2_0_ABOVE
         [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
 #endif
@@ -685,9 +686,11 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
+
 #if UTP_TRANSPORT_2_0_ABOVE
         [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
 #endif
+
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)
@@ -1208,6 +1211,11 @@ namespace Unity.Netcode.Transports.UTP
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
 
             NetworkManager = networkManager;
+
+            if (NetworkManager && NetworkManager.PortOverride.Overidden)
+            {
+                ConnectionData.Port = NetworkManager.PortOverride.Value;
+            }
 
             m_RealTimeProvider = NetworkManager ? NetworkManager.RealTimeProvider : new RealTimeProvider();
 
