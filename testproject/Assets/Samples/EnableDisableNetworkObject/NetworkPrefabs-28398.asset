@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e651dbb3fbac04af2b8f5abf007ddc23, type: 3}
+  m_Name: NetworkPrefabs-28398
+  m_EditorClassIdentifier: 
+  IsDefault: 0
+  List:
+  - Override: 0
+    Prefab: {fileID: 672869341006996560, guid: 23a6a208dc8f7b946a001fbfe1968aa9, type: 3}
+    SourcePrefabToOverride: {fileID: 0}
+    SourceHashToOverride: 0
+    OverridingTargetPrefab: {fileID: 0}
+  - Override: 2
+    Prefab: {fileID: 0}
+    SourcePrefabToOverride: {fileID: 0}
+    SourceHashToOverride: 1187012931
+    OverridingTargetPrefab: {fileID: 5085754885400786750, guid: f65b5e9dbbff79149a4a7d52e7da2565,
+      type: 3}
+  - Override: 2
+    Prefab: {fileID: 0}
+    SourcePrefabToOverride: {fileID: 0}
+    SourceHashToOverride: 637189631
+    OverridingTargetPrefab: {fileID: 9135756850134264021, guid: b3b9c4132e5721b4baa05aab08b1a0ab,
+      type: 3}

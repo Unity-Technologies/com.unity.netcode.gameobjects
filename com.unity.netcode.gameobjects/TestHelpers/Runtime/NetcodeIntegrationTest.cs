@@ -886,7 +886,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             IntegrationTestSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
             IntegrationTestSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
-            NetcodeIntegrationTestHelpers.RegisterSceneManagerHandler(m_ServerNetworkManager, true);
         }
 
         private bool ClientSceneHandler_CanClientsUnload()

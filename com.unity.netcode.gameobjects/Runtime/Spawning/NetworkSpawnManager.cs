@@ -113,12 +113,6 @@ namespace Unity.Netcode
                     // Remove the previous owner's entry
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
 
-                    // Server or Host alway invokes the lost ownership notification locally
-                    if (NetworkManager.IsServer)
-                    {
-                        networkObject.InvokeBehaviourOnLostOwnership();
-                    }
-
                     // If we are removing the entry (i.e. despawning or client lost ownership)
                     if (isRemoving)
                     {
@@ -143,12 +137,6 @@ namespace Unity.Netcode
             {
                 // Add the new ownership entry
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
-
-                // Server or Host always invokes the gained ownership notification locally
-                if (NetworkManager.IsServer)
-                {
-                    networkObject.InvokeBehaviourOnGainedOwnership();
-                }
             }
             else if (isRemoving)
             {
@@ -227,43 +215,6 @@ namespace Unity.Netcode
             return null;
         }
 
-        internal void RemoveOwnership(NetworkObject networkObject)
-        {
-            if (!NetworkManager.IsServer)
-            {
-                throw new NotServerException("Only the server can change ownership");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is not spawned");
-            }
-
-            // If we made it here then we are the server and if the server is determined to already be the owner
-            // then ignore the RemoveOwnership invocation.
-            if (networkObject.OwnerClientId == NetworkManager.ServerClientId)
-            {
-                return;
-            }
-
-            networkObject.OwnerClientId = NetworkManager.ServerClientId;
-
-            // Server removes the entry and takes over ownership before notifying
-            UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
-
-            var message = new ChangeOwnershipMessage
-            {
-                NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = networkObject.OwnerClientId
-            };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
-
-            foreach (var client in NetworkManager.ConnectedClients)
-            {
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-            }
-        }
-
         /// <summary>
         /// Helper function to get a network client for a clientId from the NetworkManager.
         /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
@@ -289,6 +240,11 @@ namespace Unity.Netcode
             return false;
         }
 
+        internal void RemoveOwnership(NetworkObject networkObject)
+        {
+            ChangeOwnership(networkObject, NetworkManager.ServerClientId);
+        }
+
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
         {
             if (!NetworkManager.IsServer)
@@ -301,13 +257,21 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
+            var previous = networkObject.OwnerClientId;
+            // Assign the new owner
             networkObject.OwnerClientId = clientId;
+
+            // Always notify locally on the server when ownership is lost
+            networkObject.InvokeBehaviourOnLostOwnership();
 
             networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
             // Server adds entries for all client ownership
             UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+
+            // Always notify locally on the server when a new owner is assigned
+            networkObject.InvokeBehaviourOnGainedOwnership();
 
             var message = new ChangeOwnershipMessage
             {
@@ -323,6 +287,12 @@ namespace Unity.Netcode
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
                 }
             }
+
+            // After we have sent the change ownership message to all client observers, invoke the ownership changed notification.
+            /// !!Important!!
+            /// This gets called specifically *after* sending the ownership message so any additional messages that need to proceed an ownership
+            /// change can be sent from NetworkBehaviours that override the <see cref="NetworkBehaviour.OnOwnershipChanged"></see>
+            networkObject.InvokeOwnershipChanged(previous, clientId);
         }
 
         internal bool HasPrefab(NetworkObject.SceneObject sceneObject)
@@ -952,27 +922,35 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified client
+        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified newly connected client 
         /// Note: if the clientId is the server then it is observable to all spawned <see cref="NetworkObject"/>'s
         /// </summary>
+        /// <remarks>
+        /// This method is to only to be used for newly connected clients in order to update the observers list for
+        /// each NetworkObject instance.
+        /// </remarks>
         internal void UpdateObservedNetworkObjects(ulong clientId)
         {
             foreach (var sobj in SpawnedObjectsList)
             {
+                // If the NetworkObject has no visibility check then prepare to add this client as an observer
                 if (sobj.CheckObjectVisibility == null)
                 {
-                    if (!sobj.Observers.Contains(clientId))
+                    // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server
+                    if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
                     {
                         sobj.Observers.Add(clientId);
                     }
                 }
                 else
                 {
+                    // CheckObject visibility overrides SpawnWithObservers under this condition
                     if (sobj.CheckObjectVisibility(clientId))
                     {
                         sobj.Observers.Add(clientId);
                     }
-                    else if (sobj.Observers.Contains(clientId))
+                    else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
+                    if (sobj.Observers.Contains(clientId))
                     {
                         sobj.Observers.Remove(clientId);
                     }

@@ -59,7 +59,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
         {
-            if (!typeDefinition.IsClass)
+            if (typeDefinition == null || !typeDefinition.IsClass)
             {
                 return false;
             }
@@ -154,6 +154,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public static bool IsSubclassOf(this TypeReference typeReference, TypeReference baseClass)
         {
+            if (typeReference == null)
+            {
+                return false;
+            }
             var type = typeReference.Resolve();
             if (type?.BaseType == null || type.BaseType.Name == nameof(Object))
             {

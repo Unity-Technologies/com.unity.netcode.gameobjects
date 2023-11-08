@@ -34,7 +34,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!NetworkManager.__rpc_func_table.ContainsKey(metadata.NetworkRpcMethodId))
+            if (!NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()].ContainsKey(metadata.NetworkRpcMethodId))
             {
                 return false;
             }
@@ -42,7 +42,7 @@ namespace Unity.Netcode
             payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (NetworkManager.__rpc_name_table.TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
+            if (NetworkBehaviour.__rpc_name_table[networkBehaviour.GetType()].TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
             {
                 networkManager.NetworkMetrics.TrackRpcReceived(
                     context.SenderId,
@@ -67,11 +67,19 @@ namespace Unity.Netcode
 
             try
             {
-                NetworkManager.__rpc_func_table[metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
+                NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
             }
             catch (Exception ex)
             {
                 Debug.LogException(new Exception("Unhandled RPC exception!", ex));
+                if (networkManager.LogLevel == LogLevel.Developer)
+                {
+                    Debug.Log($"RPC Table Contents");
+                    foreach (var entry in NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()])
+                    {
+                        Debug.Log($"{entry.Key} | {entry.Value.Method.Name}");
+                    }
+                }
             }
         }
     }
