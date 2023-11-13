@@ -1808,14 +1808,15 @@ namespace Unity.Netcode.Components
                             m_HalfPositionState.HalfVector3.AxisToSynchronize = math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ);
                             m_HalfPositionState.UpdateFrom(ref position, networkState.NetworkTick);
                         }
+
+                        networkState.NetworkDeltaPosition = m_HalfPositionState;
+
                         if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick && !networkState.IsTeleportingNextFrame)
                         {
-                            networkState.NetworkDeltaPosition = m_HalfPositionState;
                             networkState.SynchronizeBaseHalfFloat = true;
                         }
                         else
                         {
-                            networkState.NetworkDeltaPosition = m_HalfPositionState;
                             networkState.SynchronizeBaseHalfFloat = UseUnreliableDeltas ? m_HalfPositionState.CollapsedDeltaIntoBase : false;
                         }
                     }
@@ -3169,8 +3170,14 @@ namespace Unity.Netcode.Components
 
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
-            // Determine what network delivery method to use
-            var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing | m_LocalAuthoritativeNetworkState.UnreliableFrameSync ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+            // Determine what network delivery method to use:
+            // When to send reliable packets:
+            // - If UsUnrealiable is not enabled
+            // - If teleporting or synchronizing
+            // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
+            var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
+                | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
+                ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
 
             using (writer)
             {
