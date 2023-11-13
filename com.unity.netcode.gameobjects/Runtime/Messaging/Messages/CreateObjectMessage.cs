@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
@@ -41,8 +42,21 @@ namespace Unity.Netcode
             }
             else
             {
-                var networkObject = NetworkObject.AddSceneObject(ObjectInfo, m_ReceivedNetworkVariableData, networkManager);
-                networkManager.NetworkMetrics.TrackObjectSpawnReceived(context.SenderId, networkObject, context.MessageSize);
+                CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData)
+        {
+            try
+            {
+                var networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager);
+                networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject, messageSize);
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogException(ex);
             }
         }
     }

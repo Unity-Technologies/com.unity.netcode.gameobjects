@@ -598,7 +598,9 @@ namespace Unity.Netcode
             }
         }
 
-
+        /// <summary>
+        /// Used for integration tests, normal runtime mode this will always be LoadSceneMode.Single
+        /// </summary>
         internal LoadSceneMode DeferLoadingFilter = LoadSceneMode.Single;
         /// <summary>
         /// Determines if a remote client should defer object creation initiated by CreateObjectMessage
@@ -2626,26 +2628,19 @@ namespace Unity.Netcode
 
         private void ProcessDeferredCreateObjectMessages()
         {
-            // If we have any pending create object messages that the client received during synchronization, then create and spawn them now.
-            if (DeferredObjectCreationList.Count > 0)
+            // If no pending create object messages exit early
+            if (DeferredObjectCreationList.Count == 0)
             {
-                foreach (var deferredObjectCreation in DeferredObjectCreationList)
-                {
-                    // Warpped in a try catch to assure we process all and that we dispose all allocated FastBufferReaders
-                    try
-                    {
-                        var networkObject = NetworkObject.AddSceneObject(deferredObjectCreation.SceneObject, deferredObjectCreation.FastBufferReader, NetworkManager);
-                        NetworkManager.NetworkMetrics.TrackObjectSpawnReceived(deferredObjectCreation.SenderId, networkObject, deferredObjectCreation.MessageSize);
-                        deferredObjectCreation.FastBufferReader.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogException(ex);
-                    }
-                }
-                DeferredObjectCreationCount = DeferredObjectCreationList.Count;
-                DeferredObjectCreationList.Clear();
+                return;
             }
+            var networkManager = NetworkManager;
+            // Process all deferred create object messages.
+            foreach (var deferredObjectCreation in DeferredObjectCreationList)
+            {
+                CreateObjectMessage.CreateObject(ref networkManager, deferredObjectCreation.SenderId, deferredObjectCreation.MessageSize, deferredObjectCreation.SceneObject, deferredObjectCreation.FastBufferReader);
+            }
+            DeferredObjectCreationCount = DeferredObjectCreationList.Count;
+            DeferredObjectCreationList.Clear();
         }
     }
 }

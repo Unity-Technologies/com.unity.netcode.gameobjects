@@ -17,10 +17,10 @@ namespace TestProject.RuntimeTests
         private const string k_FirstSceneToLoad = "EmptyScene";
 
         private int m_ScenesLoaded;
-        private NetworkPrefab m_PrefabToSpawn;
+        private GameObject m_PrefabToSpawn;
 
         // Using this component assures we will know precisely how many prefabs were spawned on the client
-        public class SpawnObjecTrackingComponent : NetworkBehaviour
+        public class SpawnObjectTrackingComponent : NetworkBehaviour
         {
             public static int SpawnedObjects;
             public override void OnNetworkSpawn()
@@ -34,20 +34,9 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            SpawnObjecTrackingComponent.SpawnedObjects = 0;
-            // create prefab
-            var gameObject = new GameObject("TestObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            gameObject.AddComponent<SpawnObjecTrackingComponent>();
-
-            m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };
-
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
-            }
+            SpawnObjectTrackingComponent.SpawnedObjects = 0;
+            m_PrefabToSpawn = CreateNetworkObjectPrefab("TestObject");
+            m_PrefabToSpawn.AddComponent<SpawnObjectTrackingComponent>();
         }
 
         /// <summary>
@@ -85,10 +74,7 @@ namespace TestProject.RuntimeTests
             // Have the server start spawning a bunch of NetworkObjects
             for (int x = 0; x < k_SpawnObjectCount; x++)
             {
-                NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
-                serverObject.NetworkManagerOwner = m_ServerNetworkManager;
-
-                serverObject.Spawn();
+                SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
                 if (x % 5 == 0)
                 {
                     yield return null;
@@ -99,8 +85,8 @@ namespace TestProject.RuntimeTests
             var timeoutHelper = new TimeoutHelper(15);
 
             // ensure that client spawns the total number of objects expected
-            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnObjectCount, timeoutHelper);
-            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnObjectCount} objects! Client only spawned {SpawnObjecTrackingComponent.SpawnedObjects} objects so far.", timeoutHelper);
+            yield return WaitForConditionOrTimeOut(() => SpawnObjectTrackingComponent.SpawnedObjects == k_SpawnObjectCount, timeoutHelper);
+            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnObjectCount} objects! Client only spawned {SpawnObjectTrackingComponent.SpawnedObjects} objects so far.", timeoutHelper);
 
             // validate that some of those objects were deferred during the synchronization process
             Assert.IsTrue(m_ClientNetworkManagers[0].SceneManager.DeferredObjectCreationCount > 0, "Client did not defer CreateObjectMessage spawn handling while synchronizing!");
@@ -124,10 +110,7 @@ namespace TestProject.RuntimeTests
             // Start spawning things
             for (int x = 0; x < k_SpawnObjectCount; x++)
             {
-                NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
-                serverObject.NetworkManagerOwner = m_ServerNetworkManager;
-
-                serverObject.Spawn();
+                SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
                 if (x % 5 == 0)
                 {
                     yield return null;

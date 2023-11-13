@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
+- Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+
 ### Fixed
 
 - Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
@@ -17,6 +20,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per `NetworkBehaviour` component instance. (#2749)
 
 ### Changed
+
+- Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
 
 ## [1.7.0] - 2023-10-11
 
