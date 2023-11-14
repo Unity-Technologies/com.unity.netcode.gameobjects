@@ -337,6 +337,10 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
             m_NonAuthoritativeTransform = m_NonAuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
 
+            // All of these tests will validate not using unreliable network delivery
+            m_AuthoritativeTransform.UseUnreliableDeltas = false;
+            m_NonAuthoritativeTransform.UseUnreliableDeltas = false;
+
             m_OwnerTransform = m_AuthoritativeTransform.IsOwner ? m_AuthoritativeTransform : m_NonAuthoritativeTransform;
 
             // Wait for the client-side to notify it is finished initializing and spawning.
@@ -436,7 +440,7 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
                 // Adjust approximation based on precision
-                if (m_Precision == Precision.Half)
+                if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
                 {
                     m_CurrentHalfPrecision = k_HalfPrecisionRot;
                 }
@@ -448,15 +452,21 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private enum ChildrenTransformCheckType
+        {
+            Connected_Clients,
+            Late_Join_Client
+        }
+
         /// <summary>
         /// Handles validating the local space values match the original local space values.
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private void AllChildrenLocalTransformValuesMatch(bool useSubChild)
+        private void AllChildrenLocalTransformValuesMatch(bool useSubChild, ChildrenTransformCheckType checkType)
         {
-            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
-            var infoMessage = new StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues, k_TickRate * 2);
+            var infoMessage = new StringBuilder($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
             var authorityObjectLocalPosition = useSubChild ? m_AuthoritySubChildObject.transform.localPosition : m_AuthorityChildObject.transform.localPosition;
             var authorityObjectLocalRotation = useSubChild ? m_AuthoritySubChildObject.transform.localRotation.eulerAngles : m_AuthorityChildObject.transform.localRotation.eulerAngles;
             var authorityObjectLocalScale = useSubChild ? m_AuthoritySubChildObject.transform.localScale : m_AuthorityChildObject.transform.localScale;
@@ -470,7 +480,7 @@ namespace Unity.Netcode.RuntimeTests
                     var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
                     var childLocalScale = childInstance.transform.localScale;
                     // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
+                    if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
                     {
                         m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
                     }
@@ -486,7 +496,7 @@ namespace Unity.Netcode.RuntimeTests
                     }
 
                     // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
+                    if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
                     {
                         m_CurrentHalfPrecision = k_HalfPrecisionRot;
                     }
@@ -523,6 +533,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Set the precision being used for threshold adjustments
             m_Precision = precision;
+            m_RotationCompression = rotationCompression;
 
             // Get the NetworkManager that will have authority in order to spawn with the correct authority
             var isServerAuthority = m_Authority == Authority.ServerAuthority;
@@ -577,6 +588,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // Allow one tick for authority to update these changes
             TimeTravelToNextTick();
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
 
             // Parent the child under the parent with the current world position stays setting
             Assert.True(serverSideChild.TrySetParent(serverSideParent.transform, worldPositionStays), "[Server-Side Child] Failed to set child's parent!");
@@ -593,10 +607,10 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelToNextTick();
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Connected_Clients);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -610,10 +624,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(false);
+            AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Late_Join_Client);
 
             // This validates each sub-child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch(true);
+            AllChildrenLocalTransformValuesMatch(true, ChildrenTransformCheckType.Late_Join_Client);
         }
 
         /// <summary>
@@ -692,13 +706,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private Precision m_Precision = Precision.Full;
+        private RotationCompression m_RotationCompression = RotationCompression.None;
         private float m_CurrentHalfPrecision = 0.0f;
         private const float k_HalfPrecisionPosScale = 0.041f;
         private const float k_HalfPrecisionRot = 0.725f;
 
         protected override float GetDeltaVarianceThreshold()
         {
-            if (m_Precision == Precision.Half)
+            if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
             {
                 return m_CurrentHalfPrecision;
             }
