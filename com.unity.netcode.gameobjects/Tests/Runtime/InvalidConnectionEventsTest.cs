@@ -81,7 +81,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var message = new ConnectionApprovedMessage
             {
-                KnownClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+                PeerClientIds = new NativeArray<ulong>(0, Allocator.Temp)
             };
             m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
 
@@ -150,7 +150,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var message = new ConnectionApprovedMessage
             {
-                KnownClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+                PeerClientIds = new NativeArray<ulong>(0, Allocator.Temp)
             };
             m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
 
