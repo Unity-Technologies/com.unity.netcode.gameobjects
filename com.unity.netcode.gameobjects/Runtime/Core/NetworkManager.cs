@@ -110,13 +110,13 @@ namespace Unity.Netcode
         public IReadOnlyList<ulong> ConnectedClientsIds => IsServer ? ConnectionManager.ConnectedClientIds : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
 
         /// <summary>
-        /// Gets a list of just the IDs of all known clients.
+        /// Gets a list of just the IDs of all known peers.
         /// This is accessible from client, server, and host.
         /// Currently, this set contains the list of all client ids connected to the server, but this set
         /// should be treated as the set of ids that a given process is <b>allowed to send messages to</b>,
         /// and should not be depended on to always contain the full set of ids connected to the server in the future.
         /// </summary>
-        public IReadOnlyCollection<ulong> KnownClientIds => ConnectionManager.KnownClientIds;
+        public IReadOnlyCollection<ulong> PeerClientIds => ConnectionManager.PeerClientIds;
 
         /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
@@ -137,7 +137,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the current server (local or remote) is a host - i.e., also a client
         /// </summary>
-        public bool ServerIsHost => ConnectionManager.KnownClientIds.Contains(ServerClientId);
+        public bool ServerIsHost => ConnectionManager.PeerClientIds.Contains(ServerClientId);
 
         /// <summary>
         /// Gets Whether or not a client is running
@@ -960,7 +960,7 @@ namespace Unity.Netcode
         private void HostServerInitialize()
         {
             LocalClientId = ServerClientId;
-            ConnectionManager.KnownClientIds.Add(ServerClientId);
+            ConnectionManager.PeerClientIds.Add(ServerClientId);
             NetworkMetrics.SetConnectionId(LocalClientId);
             MessageManager.SetLocalClientId(LocalClientId);
 

@@ -85,7 +85,7 @@ namespace Unity.Netcode
         internal Dictionary<ulong, ulong> TransportIdToClientIdMap = new Dictionary<ulong, ulong>();
         internal List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
         internal List<ulong> ConnectedClientIds = new List<ulong>();
-        internal HashSet<ulong> KnownClientIds = new HashSet<ulong>();
+        internal HashSet<ulong> PeerClientIds = new HashSet<ulong>();
         internal Action<NetworkManager.ConnectionApprovalRequest, NetworkManager.ConnectionApprovalResponse> ConnectionApprovalCallback;
 
         /// <summary>
@@ -650,13 +650,13 @@ namespace Unity.Netcode
                     {
                         OwnerClientId = ownerClientId,
                         NetworkTick = NetworkManager.LocalTime.Tick,
-                        KnownClientIds = new NativeArray<ulong>(KnownClientIds.Count, Allocator.Temp)
+                        PeerClientIds = new NativeArray<ulong>(PeerClientIds.Count, Allocator.Temp)
                     };
 
                     var i = 0;
-                    foreach (var clientId in KnownClientIds)
+                    foreach (var clientId in PeerClientIds)
                     {
-                        message.KnownClientIds[i] = clientId;
+                        message.PeerClientIds[i] = clientId;
                         ++i;
                     }
 
@@ -686,7 +686,7 @@ namespace Unity.Netcode
 
                     SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                     message.MessageVersions.Dispose();
-                    message.KnownClientIds.Dispose();
+                    message.PeerClientIds.Dispose();
 
                     // If scene management is disabled, then we are done and notify the local host-server the client is connected
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
@@ -783,7 +783,7 @@ namespace Unity.Netcode
             var message = new ClientConnectedMessage { ClientId = clientId };
             NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             ConnectedClientIds.Add(clientId);
-            KnownClientIds.Add(clientId);
+            PeerClientIds.Add(clientId);
             return networkClient;
         }
 
@@ -887,7 +887,7 @@ namespace Unity.Netcode
                 }
 
                 ConnectedClientIds.Remove(clientId);
-                KnownClientIds.Remove(clientId);
+                PeerClientIds.Remove(clientId);
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
                 NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             }
@@ -978,7 +978,7 @@ namespace Unity.Netcode
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             ConnectedClientIds.Clear();
-            KnownClientIds.Clear();
+            PeerClientIds.Clear();
             ClientIdToTransportIdMap.Clear();
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
@@ -1001,7 +1001,7 @@ namespace Unity.Netcode
         {
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
-            KnownClientIds.Clear();
+            PeerClientIds.Clear();
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients

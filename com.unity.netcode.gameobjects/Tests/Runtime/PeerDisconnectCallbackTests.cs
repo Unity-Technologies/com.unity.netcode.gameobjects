@@ -87,21 +87,21 @@ namespace Unity.Netcode.RuntimeTests
                 client.OnPeerDisconnectCallback += OnPeerDisconnectCallback;
                 if(m_UseHost)
                 {
-                    Assert.IsTrue(client.KnownClientIds.Contains(0ul));
+                    Assert.IsTrue(client.PeerClientIds.Contains(0ul));
                 }
-                Assert.IsTrue(client.KnownClientIds.Contains(1ul));
-                Assert.IsTrue(client.KnownClientIds.Contains(2ul));
-                Assert.IsTrue(client.KnownClientIds.Contains(3ul));
+                Assert.IsTrue(client.PeerClientIds.Contains(1ul));
+                Assert.IsTrue(client.PeerClientIds.Contains(2ul));
+                Assert.IsTrue(client.PeerClientIds.Contains(3ul));
             }
             m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
             m_ServerNetworkManager.OnPeerDisconnectCallback += OnPeerDisconnectCallback;
             if(m_UseHost)
             {
-                Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(0ul));
+                Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(0ul));
             }
-            Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(1ul));
-            Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(2ul));
-            Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(3ul));
+            Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(1ul));
+            Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(2ul));
+            Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(3ul));
 
             // Set up a WaitForMessageReceived hook.
             // In some cases the message will be received during StopOneClient, but it is not guaranteed
@@ -134,40 +134,40 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (!client.IsConnectedClient)
                 {
-                    Assert.IsEmpty(client.KnownClientIds);
+                    Assert.IsEmpty(client.PeerClientIds);
                     continue;
                 }
                 if(m_UseHost)
                 {
-                    Assert.IsTrue(client.KnownClientIds.Contains(0ul));
+                    Assert.IsTrue(client.PeerClientIds.Contains(0ul));
                 }
 
                 for (var i = 1ul; i < 3ul; ++i)
                 {
                     if (i == disconnectedClient)
                     {
-                        Assert.IsFalse(client.KnownClientIds.Contains(i));
+                        Assert.IsFalse(client.PeerClientIds.Contains(i));
                     }
                     else
                     {
-                        Assert.IsTrue(client.KnownClientIds.Contains(i));
+                        Assert.IsTrue(client.PeerClientIds.Contains(i));
                     }
                 }
             }
             if(m_UseHost)
             {
-                Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(0ul));
+                Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(0ul));
             }
 
             for (var i = 1ul; i < 3ul; ++i)
             {
                 if (i == disconnectedClient)
                 {
-                    Assert.IsFalse(m_ServerNetworkManager.KnownClientIds.Contains(i));
+                    Assert.IsFalse(m_ServerNetworkManager.PeerClientIds.Contains(i));
                 }
                 else
                 {
-                    Assert.IsTrue(m_ServerNetworkManager.KnownClientIds.Contains(i));
+                    Assert.IsTrue(m_ServerNetworkManager.PeerClientIds.Contains(i));
                 }
             }
 
