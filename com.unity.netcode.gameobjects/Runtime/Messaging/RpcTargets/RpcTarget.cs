@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -62,11 +62,11 @@ namespace Unity.Netcode
 
     /// <summary>
     /// Implementations of the various <see cref="SendTo"/> options, as well as additional runtime-only options
-    /// <see cref="RpcTarget.Single"/>,
-    /// <see cref="RpcTarget.Group(NativeArray{ulong})"/>,
-    /// <see cref="RpcTarget.Group(NativeList{ulong})"/>,
-    /// <see cref="RpcTarget.Group(ulong[])"/>, and
-    /// <see cref="RpcTarget.Group{T}(T)"/>
+    /// <see cref="Single"/>,
+    /// <see cref="Group(NativeArray{ulong})"/>,
+    /// <see cref="Group(NativeList{ulong})"/>,
+    /// <see cref="Group(ulong[])"/>, and
+    /// <see cref="Group{T}(T)"/>
     /// </summary>
     public class RpcTarget
     {

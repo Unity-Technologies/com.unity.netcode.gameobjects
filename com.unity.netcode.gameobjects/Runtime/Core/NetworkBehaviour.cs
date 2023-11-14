@@ -422,6 +422,9 @@ namespace Unity.Netcode
             }
         }
 
+        // This erroneously tries to simplify these method references but the docs do not pick it up correctly
+        // because they try to resolve it on the field rather than the class of the same name.
+#pragma warning disable IDE0001
         /// <summary>
         /// Provides access to the various <see cref="SendTo"/> targets at runtime, as well as
         /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
@@ -430,6 +433,7 @@ namespace Unity.Netcode
         /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>, and
         /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>
         /// </summary>
+#pragma warning restore IDE0001
         public RpcTarget RpcTarget => NetworkManager.RpcTarget;
 
         /// <summary>
