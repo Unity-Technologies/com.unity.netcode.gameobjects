@@ -457,6 +457,19 @@ namespace Unity.Netcode
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
         internal NetworkMessageManager MessageManager = null;
 
+        internal struct Override<T>
+        {
+            private T m_Value;
+            public bool Overidden { get; private set; }
+            internal T Value
+            {
+                get { return Overidden ? m_Value : default(T); }
+                set { Overidden = true; m_Value = value; }
+            }
+        };
+
+        internal Override<ushort> PortOverride;
+
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
 
@@ -702,6 +715,8 @@ namespace Unity.Netcode
             {
                 return;
             }
+
+            ParseCommandLineOptions();
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -1151,6 +1166,40 @@ namespace Unity.Netcode
             {
                 Singleton = null;
             }
+        }
+
+        // Command line options
+        private const string k_OverridePortArg = "-port";
+
+        private string GetArg(string[] commandLineArgs, string arg)
+        {
+            var argIndex = Array.IndexOf(commandLineArgs, arg);
+            if (argIndex >= 0 && argIndex < commandLineArgs.Length - 1)
+            {
+                return commandLineArgs[argIndex + 1];
+            }
+
+            return null;
+        }
+
+        private void ParseArg<T>(string arg, ref Override<T> value)
+        {
+            if (GetArg(Environment.GetCommandLineArgs(), arg) is string argValue)
+            {
+                value.Value = (T)Convert.ChangeType(argValue, typeof(T));
+            }
+        }
+
+        private void ParseCommandLineOptions()
+        {
+#if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
+            if ( UnityEngine.DedicatedServer.Arguments.Port != null)
+            {
+                PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
+            }
+#else
+            ParseArg(k_OverridePortArg, ref PortOverride);
+#endif
         }
     }
 }

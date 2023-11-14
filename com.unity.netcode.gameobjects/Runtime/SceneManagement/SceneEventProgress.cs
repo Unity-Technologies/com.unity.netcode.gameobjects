@@ -47,6 +47,14 @@ namespace Unity.Netcode
         /// If you receive this event then it is most likely due to a bug (<em>please open a GitHub issue with steps to replicate</em>).<br/>
         /// </summary>
         InternalNetcodeError,
+        /// <summary>
+        /// This is returned when an unload or load action is attempted and scene management is disabled
+        /// </summary>
+        SceneManagementNotEnabled,
+        /// <summary>
+        /// This is returned when a client attempts to perform a server only action
+        /// </summary>
+        ServerOnlyAction,
     }
 
     /// <summary>

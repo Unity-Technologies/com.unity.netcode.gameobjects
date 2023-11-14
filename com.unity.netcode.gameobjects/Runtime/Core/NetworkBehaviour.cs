@@ -1116,6 +1116,8 @@ namespace Unity.Netcode
                 if (finalPosition == positionBeforeSynchronize || threwException)
                 {
                     writer.Seek(positionBeforeWrite);
+                    // Truncate back to the size before
+                    writer.Truncate();
                     return false;
                 }
                 else

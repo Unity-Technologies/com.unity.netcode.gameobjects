@@ -1293,8 +1293,10 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            if (rpcHandlers.Count > 0)
+            //if (rpcHandlers.Count > 0)
             {
+
+                // This always needs to generate even if it's empty.
                 var initializeRpcsMethodDef = new MethodDefinition(
                         k_NetworkBehaviour___initializeRpcs,
                         MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,

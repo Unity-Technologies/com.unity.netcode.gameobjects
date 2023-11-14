@@ -12,6 +12,20 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class RpcTests : NetcodeIntegrationTest
     {
+        public class CompileTimeNoRpcsBaseClassTest : NetworkBehaviour
+        {
+
+        }
+
+        public class CompileTimeHasRpcsChildClassDerivedFromNoRpcsBaseClassTest : CompileTimeNoRpcsBaseClassTest
+        {
+            [ServerRpc]
+            public void SomeDummyServerRpc()
+            {
+
+            }
+        }
+
         public class GenericRpcTestNB<T> : NetworkBehaviour where T : unmanaged
         {
             public event Action<T, ServerRpcParams> OnServer_Rpc;
