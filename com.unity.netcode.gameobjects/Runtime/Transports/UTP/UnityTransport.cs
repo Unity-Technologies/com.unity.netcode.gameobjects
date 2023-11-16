@@ -1230,13 +1230,12 @@ namespace Unity.Netcode.Transports.UTP
             // reliable delivery, we're better off with the increased window size compared to the
             // extra 4 bytes of header that this costs us.
             //
-            // We also increase the resend timeouts (even more if using Relay) since the default
-            // ones in UTP are very aggressive (optimized for latency and low bandwidth). With NGO,
-            // these are too low and we notice a lot of useless resends, especially if using Relay.
+            // We also increase the maximum resend timeout since the default one in UTP is very
+            // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
+            // we sometimes notice a lot of useless resends, especially if using Relay.
             m_NetworkSettings.WithReliableStageParameters(
                 windowSize: 64
 #if UTP_TRANSPORT_2_0_ABOVE
-                minimumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 150 : 100,
                 maximumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500
 #endif
             );
