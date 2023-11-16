@@ -294,6 +294,23 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void BatchedSendQueue_FillWriterWithBytes_MaxBytesGreaterThanCapacity()
+        {
+            var dataLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(dataLength, Allocator.Temp);
+
+            q.PushMessage(m_TestMessage);
+            q.PushMessage(m_TestMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(dataLength, q.FillWriterWithBytes(ref writer, dataLength * 2));
+            AssertIsTestMessage(data);
+            Assert.False(writer.HasFailedWrites);
+        }
+
+        [Test]
         public void BatchedSendQueue_Consume_LessThanLength()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);

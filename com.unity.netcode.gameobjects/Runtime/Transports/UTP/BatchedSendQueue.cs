@@ -242,7 +242,7 @@ namespace Unity.Netcode.Transports.UTP
         /// Fill the given <see cref="DataStreamWriter"/> with as many bytes from the queue as
         /// possible, disregarding message boundaries.
         /// </summary>
-        ///<remarks>
+        /// <remarks>
         /// This does NOT actually consume anything from the queue. That is, calling this method
         /// does not reduce the length of the queue. Callers are expected to call
         /// <see cref="Consume"/> with the value returned by this method afterwards if the data can
@@ -252,15 +252,17 @@ namespace Unity.Netcode.Transports.UTP
         /// this could lead to reading messages from a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
+        /// <param name="maxBytes">Max number of bytes to copy (0 means writer capacity).</param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriterWithBytes(ref DataStreamWriter writer)
+        public int FillWriterWithBytes(ref DataStreamWriter writer, int maxBytes = 0)
         {
             if (!IsCreated || Length == 0)
             {
                 return 0;
             }
 
-            var copyLength = Math.Min(writer.Capacity, Length);
+            var maxLength = maxBytes == 0 ? writer.Capacity : Math.Min(maxBytes, writer.Capacity);
+            var copyLength = Math.Min(maxLength, Length);
 
             unsafe
             {

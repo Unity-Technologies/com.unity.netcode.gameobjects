@@ -8,6 +8,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
     [Serializable]
+    [GenerateSerializationForGenericParameter(0)]
     public class NetworkVariable<T> : NetworkVariableBase
     {
         /// <summary>
@@ -149,7 +150,7 @@ namespace Unity.Netcode
             if (!m_HasPreviousValue || !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_PreviousValue))
             {
                 m_HasPreviousValue = true;
-                NetworkVariableSerialization<T>.Serializer.Duplicate(m_InternalValue, ref m_PreviousValue);
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
             }
         }
 
