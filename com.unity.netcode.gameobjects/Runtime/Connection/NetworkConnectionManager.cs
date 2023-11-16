@@ -122,7 +122,7 @@ namespace Unity.Netcode
             {
                 try
                 {
-                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData{ClientId = clientId, EventType = ConnectionEvent.ClientConnected});
+                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.ClientConnected });
                 }
                 catch (Exception exception)
                 {
@@ -143,7 +143,7 @@ namespace Unity.Netcode
             }
             try
             {
-                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData{ClientId = clientId, EventType = ConnectionEvent.ClientDisconnected});
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.ClientDisconnected });
             }
             catch (Exception exception)
             {
@@ -155,7 +155,7 @@ namespace Unity.Netcode
         {
             try
             {
-                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData{ClientId = clientId, EventType = ConnectionEvent.PeerConnected});
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.PeerConnected });
             }
             catch (Exception exception)
             {
@@ -166,7 +166,7 @@ namespace Unity.Netcode
         {
             try
             {
-                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData{ClientId = clientId, EventType = ConnectionEvent.PeerDisconnected});
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.PeerDisconnected });
             }
             catch (Exception exception)
             {
