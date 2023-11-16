@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Unity.Netcode;
 using TestProject.ManualTests;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
