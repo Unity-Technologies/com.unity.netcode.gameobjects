@@ -323,11 +323,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used this method to easily instantiate and spawn an instance of a network prefab.
+        /// Use this method to easily instantiate and spawn an instance of a network prefab.
         /// InstantiateAndSpawn will:
         /// - Find any override associated with the <see cref="NetworkObject"/> prefab
-        ///   - If there is no override, then the current <see cref="NetworkObject"/> prefab is used.
-        /// - Create an instance of the <see cref="NetworkObject"/> prefab
+        ///   - If there is no override, then the current <see cref="NetworkObject"/> prefab type is used.
+        /// - Create an instance of the <see cref="NetworkObject"/> prefab (or its override).
         /// - Spawn the <see cref="NetworkObject"/> prefab instance
         /// </summary>
         /// <param name="networkPrefab">The <see cref="NetworkObject"/> of the pefab asset.</param>
@@ -336,7 +336,7 @@ namespace Unity.Netcode
         /// <param name="isPlayerObject">Whether the <see cref="NetworkObject"/> instance is a player object or not (default is false).</param>
         /// <param name="position">The starting poisiton of the <see cref="NetworkObject"/> instance.</param>
         /// <param name="rotation">The starting rotation of the <see cref="NetworkObject"/> instance.</param>
-        /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> instance. </returns>
+        /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
         public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, Vector3 position = default, Quaternion rotation = default)
         {
             if (!NetworkManager.IsServer)
