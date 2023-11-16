@@ -129,10 +129,23 @@ namespace TestProject.ManualTests
             if (IsOwner && m_ShouldDespawn && NetworkObject != null)
             {
                 m_ShouldDespawn = false;
-                if (NetworkObject.NetworkManager != null)
+                if (IsServer)
                 {
                     NetworkObject.Despawn();
                 }
+                else
+                {
+                    DespawnServerRpc();
+                }
+            }
+        }
+
+        [ServerRpc]
+        private void DespawnServerRpc(ServerRpcParams serverRpcParams = default)
+        {
+            if (OwnerClientId == serverRpcParams.Receive.SenderClientId)
+            {
+                NetworkObject.Despawn();
             }
         }
 

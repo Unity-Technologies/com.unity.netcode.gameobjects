@@ -27,6 +27,13 @@ namespace Unity.Netcode
         internal uint GlobalObjectIdHash;
 
         /// <summary>
+        /// Used to track the original GlobalObjectIdHash value of the associated network prefab.
+        /// When an override exists, GlobalObjectIdHash and PrefabGlobalObjectIdHash will be different.
+        /// The PrefabGlobalObjectIdHash value is what is used when sending a <see cref="CreateObjectMessage"/>.
+        /// </summary>
+        internal uint PrefabGlobalObjectIdHash;
+
+        /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
@@ -712,7 +719,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
+        internal void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (!NetworkManager.IsListening)
             {
@@ -1867,6 +1874,14 @@ namespace Unity.Netcode
                 {
                     var globalObjectIdHash = NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
+                }
+
+                // If the PrefabGlobalObjectIdHash is a non-zero value and the GlobalObjectIdHash value is
+                // different from the PrefabGlobalObjectIdHash value, then the NetworkObject instance is
+                // an override for the original network prefab (i.e. PrefabGlobalObjectIdHash)
+                if (PrefabGlobalObjectIdHash != 0 && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
+                {
+                    return PrefabGlobalObjectIdHash;
                 }
             }
 
