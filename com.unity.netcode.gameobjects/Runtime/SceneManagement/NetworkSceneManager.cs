@@ -2115,15 +2115,6 @@ namespace Unity.Netcode
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
                             NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
 
-                            foreach (var peerId in NetworkManager.PeerClientIds)
-                            {
-                                if (peerId == NetworkManager.LocalClientId)
-                                {
-                                    continue;
-                                }
-                                NetworkManager.ConnectionManager.InvokeOnPeerConnectedCallback(peerId);
-                            }
-
                             // Notify the client that they have finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
                             {

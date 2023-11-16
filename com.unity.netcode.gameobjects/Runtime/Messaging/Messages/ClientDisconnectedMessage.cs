@@ -25,8 +25,11 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            networkManager.ConnectionManager.PeerClientIds.Remove(ClientId);
-            networkManager.ConnectionManager.InvokeOnPeerDisconnectedCallback(ClientId);
+            networkManager.ConnectionManager.ConnectedClientIds.Remove(ClientId);
+            if (networkManager.IsConnectedClient)
+            {
+                networkManager.ConnectionManager.InvokeOnPeerDisconnectedCallback(ClientId);
+            }
         }
     }
 }

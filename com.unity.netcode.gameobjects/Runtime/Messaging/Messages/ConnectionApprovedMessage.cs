@@ -18,7 +18,7 @@ namespace Unity.Netcode
 
         public NativeArray<MessageVersionData> MessageVersions;
 
-        public NativeArray<ulong> PeerClientIds;
+        public NativeArray<ulong> ConnectedClientIds;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
@@ -41,7 +41,7 @@ namespace Unity.Netcode
 
             if (targetVersion >= k_VersionAddClientIds)
             {
-                writer.WriteValueSafe(PeerClientIds);
+                writer.WriteValueSafe(ConnectedClientIds);
             }
 
             uint sceneObjectCount = 0;
@@ -120,11 +120,11 @@ namespace Unity.Netcode
 
             if (receivedMessageVersion >= k_VersionAddClientIds)
             {
-                reader.ReadValueSafe(out PeerClientIds, Allocator.TempJob);
+                reader.ReadValueSafe(out ConnectedClientIds, Allocator.TempJob);
             }
             else
             {
-                PeerClientIds = new NativeArray<ulong>(0, Allocator.TempJob);
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.TempJob);
             }
 
             m_ReceivedSceneObjectData = reader;
@@ -148,10 +148,10 @@ namespace Unity.Netcode
             // Stop the client-side approval timeout coroutine since we are approved.
             networkManager.ConnectionManager.StopClientApprovalCoroutine();
 
-            networkManager.ConnectionManager.PeerClientIds.Clear();
-            foreach (var clientId in PeerClientIds)
+            networkManager.ConnectionManager.ConnectedClientIds.Clear();
+            foreach (var clientId in ConnectedClientIds)
             {
-                networkManager.ConnectionManager.PeerClientIds.Add(clientId);
+                networkManager.ConnectionManager.ConnectedClientIds.Add(clientId);
             }
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
@@ -173,18 +173,9 @@ namespace Unity.Netcode
                 networkManager.IsConnectedClient = true;
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
-
-                foreach (var clientId in PeerClientIds)
-                {
-                    if (clientId == networkManager.LocalClientId)
-                    {
-                        continue;
-                    }
-                    networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(clientId);
-                }
             }
 
-            PeerClientIds.Dispose();
+            ConnectedClientIds.Dispose();
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Unity.Netcode
         {
             if (m_UnderlyingTarget == null)
             {
-                if (behaviour.NetworkManager.ConnectionManager.PeerClientIds.Contains(NetworkManager.ServerClientId))
+                if (behaviour.NetworkManager.ConnectionManager.ConnectedClientIds.Contains(NetworkManager.ServerClientId))
                 {
                     m_UnderlyingTarget = behaviour.RpcTarget.Everyone;
                 }

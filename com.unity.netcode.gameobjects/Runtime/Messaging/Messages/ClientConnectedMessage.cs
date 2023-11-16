@@ -25,8 +25,11 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            networkManager.ConnectionManager.PeerClientIds.Add(ClientId);
-            networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(ClientId);
+            networkManager.ConnectionManager.ConnectedClientIds.Add(ClientId);
+            if (networkManager.IsConnectedClient)
+            {
+                networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(ClientId);
+            }
         }
     }
 }

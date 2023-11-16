@@ -44,7 +44,7 @@ namespace Unity.Netcode
             }
             else
             {
-                foreach (var clientId in m_NetworkManager.PeerClientIds)
+                foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
                 {
                     if (clientId == NetworkManager.ServerClientId)
                     {

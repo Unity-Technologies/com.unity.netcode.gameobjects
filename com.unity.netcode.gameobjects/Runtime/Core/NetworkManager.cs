@@ -107,16 +107,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
         /// </summary>
-        public IReadOnlyList<ulong> ConnectedClientsIds => IsServer ? ConnectionManager.ConnectedClientIds : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
-
-        /// <summary>
-        /// Gets a list of just the IDs of all known peers.
-        /// This is accessible from client, server, and host.
-        /// Currently, this set contains the list of all client ids connected to the server, but this set
-        /// should be treated as the set of ids that a given process is <b>allowed to send messages to</b>,
-        /// and should not be depended on to always contain the full set of ids connected to the server in the future.
-        /// </summary>
-        public IReadOnlyCollection<ulong> PeerClientIds => ConnectionManager.PeerClientIds;
+        public IReadOnlyList<ulong> ConnectedClientsIds => ConnectionManager.ConnectedClientIds;
 
         /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
@@ -137,7 +128,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the current server (local or remote) is a host - i.e., also a client
         /// </summary>
-        public bool ServerIsHost => ConnectionManager.PeerClientIds.Contains(ServerClientId);
+        public bool ServerIsHost => ConnectionManager.ConnectedClientIds.Contains(ServerClientId);
 
         /// <summary>
         /// Gets Whether or not a client is running
@@ -226,6 +217,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
+        ///
+        /// It is recommended to use OnConnectionEvent instead, as this will eventually be deprecated
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback
         {
@@ -235,6 +228,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
+        ///
+        /// It is recommended to use OnConnectionEvent instead, as this will eventually be deprecated
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback
         {
@@ -243,21 +238,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
+        /// The callback to invoke on any connection event. See <see cref="ConnectionEvent"/> and <see cref="ConnectionEventData"/>
+        /// for more info.
         /// </summary>
-        public event Action<ulong> OnPeerConnectedCallback
+        public event Action<NetworkManager, ConnectionEventData> OnConnectionEvent
         {
-            add => ConnectionManager.OnPeerConnectedCallback += value;
-            remove => ConnectionManager.OnPeerConnectedCallback -= value;
-        }
-
-        /// <summary>
-        /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
-        /// </summary>
-        public event Action<ulong> OnPeerDisconnectCallback
-        {
-            add => ConnectionManager.OnPeerDisconnectCallback += value;
-            remove => ConnectionManager.OnPeerDisconnectCallback -= value;
+            add => ConnectionManager.OnConnectionEvent += value;
+            remove => ConnectionManager.OnConnectionEvent -= value;
         }
 
         /// <summary>
@@ -979,7 +966,7 @@ namespace Unity.Netcode
         private void HostServerInitialize()
         {
             LocalClientId = ServerClientId;
-            ConnectionManager.PeerClientIds.Add(ServerClientId);
+            //ConnectionManager.ConnectedClientIds.Add(ServerClientId);
             NetworkMetrics.SetConnectionId(LocalClientId);
             MessageManager.SetLocalClientId(LocalClientId);
 
