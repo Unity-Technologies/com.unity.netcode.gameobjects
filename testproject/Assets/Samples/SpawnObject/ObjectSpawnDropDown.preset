@@ -1,0 +1,248 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!181963792 &2655988077585873504
+Preset:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ObjectSpawnDropDown
+  m_TargetType:
+    m_NativeTypeID: 114
+    m_ManagedTypePPtr: {fileID: 11500000, guid: 0d0b652f32a2cc243917e4028fa0f046,
+      type: 3}
+    m_ManagedTypeFallback: 
+  m_Properties:
+  - target: {fileID: 0}
+    propertyPath: m_Enabled
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorHideFlags
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_EditorClassIdentifier
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_Mode
+    value: 3
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_WrapAround
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_SelectOnUp
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_SelectOnDown
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_SelectOnLeft
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Navigation.m_SelectOnRight
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Transition
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_NormalColor.r
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_NormalColor.g
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_NormalColor.b
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_NormalColor.a
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_HighlightedColor.r
+    value: 0.9528302
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_HighlightedColor.g
+    value: 0.7900611
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_HighlightedColor.b
+    value: 0.56181026
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_HighlightedColor.a
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_PressedColor.r
+    value: 0.9528302
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_PressedColor.g
+    value: 0.9528302
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_PressedColor.b
+    value: 0.9528302
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_PressedColor.a
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_SelectedColor.r
+    value: 0.990566
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_SelectedColor.g
+    value: 0.990566
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_SelectedColor.b
+    value: 0.990566
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_SelectedColor.a
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_DisabledColor.r
+    value: 0.78431374
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_DisabledColor.g
+    value: 0.78431374
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_DisabledColor.b
+    value: 0.78431374
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_DisabledColor.a
+    value: 0.5019608
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_ColorMultiplier
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Colors.m_FadeDuration
+    value: 0.1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_SpriteState.m_HighlightedSprite
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_SpriteState.m_PressedSprite
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_SpriteState.m_SelectedSprite
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_SpriteState.m_DisabledSprite
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AnimationTriggers.m_NormalTrigger
+    value: Normal
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AnimationTriggers.m_HighlightedTrigger
+    value: Highlighted
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AnimationTriggers.m_PressedTrigger
+    value: Pressed
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AnimationTriggers.m_SelectedTrigger
+    value: Selected
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AnimationTriggers.m_DisabledTrigger
+    value: Disabled
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Interactable
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_TargetGraphic
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Template
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_CaptionText
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_CaptionImage
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_ItemText
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_ItemImage
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Value
+    value: 1
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.size
+    value: 3
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[0].m_Text
+    value: SpawnObject
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[0].m_Image
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[1].m_Text
+    value: SpawnObjectPinkVariant
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[1].m_Image
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[2].m_Text
+    value: SpawnObjectRedSphereServerOnly
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_Options.m_Options.Array.data[2].m_Image
+    value: 
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_OnValueChanged.m_PersistentCalls.m_Calls.Array.size
+    value: 0
+    objectReference: {fileID: 0}
+  - target: {fileID: 0}
+    propertyPath: m_AlphaFadeSpeed
+    value: 0.15
+    objectReference: {fileID: 0}
+  m_ExcludedProperties: []

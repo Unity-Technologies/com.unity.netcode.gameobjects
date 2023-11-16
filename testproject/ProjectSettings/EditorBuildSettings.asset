@@ -137,6 +137,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/EmptyScene3.unity
     guid: abd4c8b51c445d54faa16c67ac973f1b
+  - enabled: 1
+    path: Assets/Samples/SpawnObject/SimpleSpawn.unity
+    guid: 2a46f77814044a6448d9c8872d851905
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
