@@ -13,7 +13,11 @@ namespace Unity.Netcode
         {
             if (m_UnderlyingTarget == null)
             {
-                if (behaviour.NetworkManager.ConnectionManager.ConnectedClientIds.Contains(NetworkManager.ServerClientId))
+                // NotServer treats a host as being a server and will not send to it
+                // ClientsAndHost sends to everyone who runs any client logic
+                // So if the server is a host, this target includes it (as hosts run client logic)
+                // If the server is not a host, this target leaves it out, ergo the selection of NotServer.
+                if (behaviour.NetworkManager.ServerIsHost)
                 {
                     m_UnderlyingTarget = behaviour.RpcTarget.Everyone;
                 }

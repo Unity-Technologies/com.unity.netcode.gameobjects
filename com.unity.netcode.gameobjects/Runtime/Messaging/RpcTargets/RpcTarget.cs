@@ -9,53 +9,60 @@ namespace Unity.Netcode
     public enum SendTo
     {
         /// <summary>
-        /// Send to the NetworkObject's current owner
-        /// Will execute locally if the local process is the owner
+        /// Send to the NetworkObject's current owner.
+        /// Will execute locally if the local process is the owner.
         /// </summary>
         Owner,
         /// <summary>
-        /// Send to everyone but the current owner, filtered to the current observer list
-        /// Will execute locally if the local process is not the owner
+        /// Send to everyone but the current owner, filtered to the current observer list.
+        /// Will execute locally if the local process is not the owner.
         /// </summary>
         NotOwner,
         /// <summary>
-        /// Send to the server, regardless of ownership
-        /// Will execute locally if invoked on the server
+        /// Send to the server, regardless of ownership.
+        /// Will execute locally if invoked on the server.
         /// </summary>
         Server,
         /// <summary>
-        /// Send to everyone but the server, filtered to the current observer list
-        /// Will execute locally if invoked on a client
-        /// Will NOT execute locally if invoked on a server running in host mode
+        /// Send to everyone but the server, filtered to the current observer list.
+        /// Will NOT send to a server running in host mode - it is still treated as a server.
+        /// If you want to send to servers when they are host, but not when they are dedicated server, use
+        /// <see cref="SendTo.ClientsAndHost"/>.
+        /// <br />
+        /// <br />
+        /// Will execute locally if invoked on a client.
+        /// Will NOT execute locally if invoked on a server running in host mode.
         /// </summary>
         NotServer,
         /// <summary>
-        /// Execute this RPC locally
-        ///
+        /// Execute this RPC locally.
+        /// <br />
+        /// <br />
         /// Normally this is no different from a standard function call.
-        ///
+        /// <br />
+        /// <br />
         /// Using the DeferLocal parameter of the attribute or the LocalDeferMode override in RpcSendParams,
         /// this can allow an RPC to be processed on localhost with a one-frame delay as if it were sent over
         /// the network.
         /// </summary>
         Me,
         /// <summary>
-        /// Send this RPC to everyone but the local machine, filtered to the current observer list
+        /// Send this RPC to everyone but the local machine, filtered to the current observer list.
         /// </summary>
         NotMe,
         /// <summary>
-        /// Send this RPC to everone, filtered to the current observer list
-        /// Will execute locally
+        /// Send this RPC to everone, filtered to the current observer list.
+        /// Will execute locally.
         /// </summary>
         Everyone,
         /// <summary>
-        /// Send this RPC to all clients, including the host.
-        /// If the server is running in host mode, this is the same as SendTo.Everyone
-        /// If the server is running in dedicated server mode, this is the same as SendTo.NotServer
+        /// Send this RPC to all clients, including the host, if a host exists.
+        /// If the server is running in host mode, this is the same as <see cref="SendTo.Everyone" />.
+        /// If the server is running in dedicated server mode, this is the same as <see cref="SendTo.NotServer" />.
         /// </summary>
         ClientsAndHost,
         /// <summary>
-        /// This RPC cannot be sent without passing in a target in RpcSendParams
+        /// This RPC cannot be sent without passing in a target in RpcSendParams.
         /// </summary>
         SpecifiedInParams
     }
@@ -109,35 +116,42 @@ namespace Unity.Netcode
 
 
         /// <summary>
-        /// Send to the NetworkObject's current owner
-        /// Will execute locally if the local process is the owner
+        /// Send to the NetworkObject's current owner.
+        /// Will execute locally if the local process is the owner.
         /// </summary>
         public BaseRpcTarget Owner;
 
         /// <summary>
-        /// Send to everyone but the current owner, filtered to the current observer list
-        /// Will execute locally if the local process is not the owner
+        /// Send to everyone but the current owner, filtered to the current observer list.
+        /// Will execute locally if the local process is not the owner.
         /// </summary>
         public BaseRpcTarget NotOwner;
 
         /// <summary>
-        /// Send to the server, regardless of ownership
-        /// Will execute locally if invoked on the server
+        /// Send to the server, regardless of ownership.
+        /// Will execute locally if invoked on the server.
         /// </summary>
         public BaseRpcTarget Server;
 
         /// <summary>
-        /// Send to everyone but the server, filtered to the current observer list
-        /// Will execute locally if invoked on a client
-        /// Will NOT execute locally if invoked on a server running in host mode
+        /// Send to everyone but the server, filtered to the current observer list.
+        /// Will NOT send to a server running in host mode - it is still treated as a server.
+        /// If you want to send to servers when they are host, but not when they are dedicated server, use
+        /// <see cref="SendTo.ClientsAndHost"/>.
+        /// <br />
+        /// <br />
+        /// Will execute locally if invoked on a client.
+        /// Will NOT execute locally if invoked on a server running in host mode.
         /// </summary>
         public BaseRpcTarget NotServer;
 
         /// <summary>
-        /// Execute this RPC locally
-        ///
+        /// Execute this RPC locally.
+        /// <br />
+        /// <br />
         /// Normally this is no different from a standard function call.
-        ///
+        /// <br />
+        /// <br />
         /// Using the DeferLocal parameter of the attribute or the LocalDeferMode override in RpcSendParams,
         /// this can allow an RPC to be processed on localhost with a one-frame delay as if it were sent over
         /// the network.
@@ -145,26 +159,27 @@ namespace Unity.Netcode
         public BaseRpcTarget Me;
 
         /// <summary>
-        /// Send this RPC to everyone but the local machine, filtered to the current observer list
+        /// Send this RPC to everyone but the local machine, filtered to the current observer list.
         /// </summary>
         public BaseRpcTarget NotMe;
 
         /// <summary>
-        /// Send this RPC to everone, filtered to the current observer list
-        /// Will execute locally
+        /// Send this RPC to everone, filtered to the current observer list.
+        /// Will execute locally.
         /// </summary>
         public BaseRpcTarget Everyone;
 
         /// <summary>
-        /// Send this RPC to all clients, including the host.
-        /// If the server is running in host mode, this is the same as SendTo.Everyone
-        /// If the server is running in dedicated server mode, this is the same as SendTo.NotServer
+        /// Send this RPC to all clients, including the host, if a host exists.
+        /// If the server is running in host mode, this is the same as <see cref="RpcTarget.Everyone" />.
+        /// If the server is running in dedicated server mode, this is the same as <see cref="RpcTarget.NotServer" />.
         /// </summary>
         public BaseRpcTarget ClientsAndHost;
 
         /// <summary>
         /// Send to a specific single client ID.
-        ///
+        /// <br />
+        /// <br />
         /// Do not cache or reuse the result of this method.
         /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
         /// and its contents are simply changed.
@@ -192,7 +207,8 @@ namespace Unity.Netcode
         /// Sends to a group of client IDs.
         /// NativeArrays can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
-        ///
+        /// <br />
+        /// <br />
         /// Do not cache or reuse the result of this method.
         /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
         /// and its contents are simply changed.
@@ -223,7 +239,8 @@ namespace Unity.Netcode
         /// Sends to a group of client IDs.
         /// NativeList can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
-        ///
+        /// <br />
+        /// <br />
         /// Do not cache or reuse the result of this method.
         /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
         /// and its contents are simply changed.
@@ -240,7 +257,8 @@ namespace Unity.Netcode
         /// Constructing arrays requires garbage collected allocations. This override is only recommended
         /// if you either have no strict performance requirements, or have the group of client IDs cached so
         /// it is not created each time.
-        ///
+        /// <br />
+        /// <br />
         /// Do not cache or reuse the result of this method.
         /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
         /// and its contents are simply changed.
@@ -259,7 +277,8 @@ namespace Unity.Netcode
         /// a garbage collected allocation (even if the type itself is a struct type, due to boxing).
         /// This override is only recommended if you either have no strict performance requirements,
         /// or have the group of client IDs cached so it is not created each time.
-        ///
+        /// <br />
+        /// <br />
         /// Do not cache or reuse the result of this method.
         /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
         /// and its contents are simply changed.
