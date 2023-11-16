@@ -357,7 +357,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a NetworkObject to spawn
+        /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the 
+        /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
         internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3 position = default, Quaternion rotation = default)
         {
