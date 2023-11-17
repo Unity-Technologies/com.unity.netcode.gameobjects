@@ -27,7 +27,7 @@ namespace Unity.Netcode
         /// Send to everyone but the server, filtered to the current observer list.
         /// Will NOT send to a server running in host mode - it is still treated as a server.
         /// If you want to send to servers when they are host, but not when they are dedicated server, use
-        /// <see cref="SendTo.ClientsAndHost"/>.
+        /// <see cref="ClientsAndHost"/>.
         /// <br />
         /// <br />
         /// Will execute locally if invoked on a client.
@@ -57,8 +57,8 @@ namespace Unity.Netcode
         Everyone,
         /// <summary>
         /// Send this RPC to all clients, including the host, if a host exists.
-        /// If the server is running in host mode, this is the same as <see cref="SendTo.Everyone" />.
-        /// If the server is running in dedicated server mode, this is the same as <see cref="SendTo.NotServer" />.
+        /// If the server is running in host mode, this is the same as <see cref="Everyone" />.
+        /// If the server is running in dedicated server mode, this is the same as <see cref="NotServer" />.
         /// </summary>
         ClientsAndHost,
         /// <summary>
@@ -171,8 +171,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Send this RPC to all clients, including the host, if a host exists.
-        /// If the server is running in host mode, this is the same as <see cref="RpcTarget.Everyone" />.
-        /// If the server is running in dedicated server mode, this is the same as <see cref="RpcTarget.NotServer" />.
+        /// If the server is running in host mode, this is the same as <see cref="Everyone" />.
+        /// If the server is running in dedicated server mode, this is the same as <see cref="NotServer" />.
         /// </summary>
         public BaseRpcTarget ClientsAndHost;
 
