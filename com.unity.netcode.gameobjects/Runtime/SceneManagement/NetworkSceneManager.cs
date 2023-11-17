@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -598,6 +599,47 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Used for integration tests, normal runtime mode this will always be LoadSceneMode.Single
+        /// </summary>
+        internal LoadSceneMode DeferLoadingFilter = LoadSceneMode.Single;
+        /// <summary>
+        /// Determines if a remote client should defer object creation initiated by CreateObjectMessage
+        /// until a scene event is completed.
+        /// </summary>
+        /// <remarks>
+        /// Deferring object creation should only occur when there is a possibility the objects could be
+        /// instantiated in a currently active scene that will be unloaded during single mode scene loading
+        /// to prevent the newly created objects from being destroyed when the scene is unloaded.
+        /// </remarks>
+        internal bool ShouldDeferCreateObject()
+        {
+            // This applies only to remote clients and when scene management is enabled
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || NetworkManager.IsServer)
+            {
+                return false;
+            }
+            var synchronizeEventDetected = false;
+            var loadingEventDetected = false;
+            foreach (var entry in SceneEventDataStore)
+            {
+                if (entry.Value.SceneEventType == SceneEventType.Synchronize)
+                {
+                    synchronizeEventDetected = true;
+                }
+
+                // When loading a scene and the load scene mode is single we should defer object creation
+                if (entry.Value.SceneEventType == SceneEventType.Load && entry.Value.LoadSceneMode == DeferLoadingFilter)
+                {
+                    loadingEventDetected = true;
+                }
+            }
+
+            // Synchronizing while in client synchronization mode single --> Defer
+            // When not synchronizing but loading a scene in single mode --> Defer
+            return (synchronizeEventDetected && ClientSynchronizationMode == LoadSceneMode.Single) || (!synchronizeEventDetected && loadingEventDetected);
+        }
+
+        /// <summary>
         /// Gets the scene name from full path to the scene
         /// </summary>
         internal string GetSceneNameFromPath(string scenePath)
@@ -739,6 +781,14 @@ namespace Unity.Netcode
 
             // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
             DontDestroyOnLoadScene = networkManager.gameObject.scene;
+
+            // Since the server tracks loaded scenes, we need to add the currently active scene
+            // to the list of scenes that can be unloaded.
+            if (networkManager.IsServer)
+            {
+                var activeScene = SceneManager.GetActiveScene();
+                ScenesLoaded.Add(activeScene.handle, activeScene);
+            }
 
             // Add to the server to client scene handle table
             UpdateServerClientSceneHandle(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
@@ -961,17 +1011,16 @@ namespace Unity.Netcode
         /// <returns></returns>
         private SceneEventProgress ValidateSceneEventUnloading(Scene scene)
         {
-            if (!NetworkManager.IsServer)
-            {
-                throw new NotServerException("Only server can start a scene event!");
-            }
-
             if (!NetworkManager.NetworkConfig.EnableSceneManagement)
             {
-                //Log message about enabling SceneManagement
-                throw new Exception(
-                    $"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(Netcode.NetworkManager)}'s {nameof(NetworkConfig)}. " +
-                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling {nameof(LoadScene)} or {nameof(UnloadScene)}.");
+                Debug.LogWarning($"{nameof(LoadScene)} was called, but {nameof(NetworkConfig.EnableSceneManagement)} was not enabled! Enable {nameof(NetworkConfig.EnableSceneManagement)} prior to starting a client, host, or server prior to using {nameof(NetworkSceneManager)}!");
+                return new SceneEventProgress(null, SceneEventProgressStatus.SceneManagementNotEnabled);
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                Debug.LogWarning($"[{nameof(SceneEventProgressStatus.ServerOnlyAction)}][Unload] Clients cannot invoke the {nameof(UnloadScene)} method!");
+                return new SceneEventProgress(null, SceneEventProgressStatus.ServerOnlyAction);
             }
 
             if (!scene.isLoaded)
@@ -990,16 +1039,16 @@ namespace Unity.Netcode
         /// <returns></returns>
         private SceneEventProgress ValidateSceneEventLoading(string sceneName)
         {
-            if (!NetworkManager.IsServer)
-            {
-                throw new NotServerException("Only server can start a scene event!");
-            }
             if (!NetworkManager.NetworkConfig.EnableSceneManagement)
             {
-                //Log message about enabling SceneManagement
-                throw new Exception(
-                    $"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(Netcode.NetworkManager)}'s {nameof(NetworkConfig)}. " +
-                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling {nameof(LoadScene)} or {nameof(UnloadScene)}.");
+                Debug.LogWarning($"{nameof(LoadScene)} was called, but {nameof(NetworkConfig.EnableSceneManagement)} was not enabled! Enable {nameof(NetworkConfig.EnableSceneManagement)} prior to starting a client, host, or server prior to using {nameof(NetworkSceneManager)}!");
+                return new SceneEventProgress(null, SceneEventProgressStatus.SceneManagementNotEnabled);
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                Debug.LogWarning($"[{nameof(SceneEventProgressStatus.ServerOnlyAction)}][Load] Clients cannot invoke the {nameof(LoadScene)} method!");
+                return new SceneEventProgress(null, SceneEventProgressStatus.ServerOnlyAction);
             }
 
             return ValidateSceneEvent(sceneName);
@@ -1104,6 +1153,7 @@ namespace Unity.Netcode
         {
             var sceneName = scene.name;
             var sceneHandle = scene.handle;
+
             if (!scene.isLoaded)
             {
                 Debug.LogWarning($"{nameof(UnloadScene)} was called, but the scene {scene.name} is not currently loaded!");
@@ -1689,6 +1739,9 @@ namespace Unity.Netcode
             SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
             m_IsSceneEventActive = false;
 
+            // Process any pending create object messages that the client received while loading a scene
+            ProcessDeferredCreateObjectMessages();
+
             // Notify local client that the scene was loaded
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -2049,6 +2102,9 @@ namespace Unity.Netcode
 
                             // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
                             SynchronizeNetworkObjectScene();
+
+                            // Process any pending create object messages that the client received during synchronization
+                            ProcessDeferredCreateObjectMessages();
 
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
@@ -2541,5 +2597,50 @@ namespace Unity.Netcode
             internal Dictionary<int, List<ulong>> ObjectsMigratedTable;
         }
         internal List<DeferredObjectsMovedEvent> DeferredObjectsMovedEvents = new List<DeferredObjectsMovedEvent>();
+
+        internal struct DeferredObjectCreation
+        {
+            internal ulong SenderId;
+            internal uint MessageSize;
+            internal NetworkObject.SceneObject SceneObject;
+            internal FastBufferReader FastBufferReader;
+        }
+
+        internal List<DeferredObjectCreation> DeferredObjectCreationList = new List<DeferredObjectCreation>();
+        internal int DeferredObjectCreationCount;
+
+        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader)
+        {
+            var deferredObjectCreationEntry = new DeferredObjectCreation()
+            {
+                SenderId = senderId,
+                MessageSize = messageSize,
+                SceneObject = sceneObject,
+            };
+
+            unsafe
+            {
+                deferredObjectCreationEntry.FastBufferReader = new FastBufferReader(fastBufferReader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, fastBufferReader.Length - fastBufferReader.Position);
+            }
+
+            DeferredObjectCreationList.Add(deferredObjectCreationEntry);
+        }
+
+        private void ProcessDeferredCreateObjectMessages()
+        {
+            // If no pending create object messages exit early
+            if (DeferredObjectCreationList.Count == 0)
+            {
+                return;
+            }
+            var networkManager = NetworkManager;
+            // Process all deferred create object messages.
+            foreach (var deferredObjectCreation in DeferredObjectCreationList)
+            {
+                CreateObjectMessage.CreateObject(ref networkManager, deferredObjectCreation.SenderId, deferredObjectCreation.MessageSize, deferredObjectCreation.SceneObject, deferredObjectCreation.FastBufferReader);
+            }
+            DeferredObjectCreationCount = DeferredObjectCreationList.Count;
+            DeferredObjectCreationList.Clear();
+        }
     }
 }

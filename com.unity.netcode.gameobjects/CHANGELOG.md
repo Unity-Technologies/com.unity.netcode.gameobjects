@@ -6,12 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [1.5.2] - 2023-07-24
+## [Unreleased]
 
 ### Added
 
+- Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
+- Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+
 ### Fixed
 
+- Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
+- Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
+- Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per `NetworkBehaviour` component instance. (#2749)
+- Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
+- Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
+- Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
+
+### Changed
+- Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
+
+- Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
+
+## [1.7.0] - 2023-10-11
+
+### Added
+
+- exposed NetworkObject.GetNetworkBehaviourAtOrderIndex as a public API (#2724)
+- Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
+- Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
+- Added `GenerateSerializationForGenericParameterAttribute`, which can be applied to user-created Network Variable types to ensure the codegen generates serialization for the generic types they wrap. (#2694)
+- Added `GenerateSerializationForTypeAttribute`, which can be applied to any class or method to ensure the codegen generates serialization for the specific provided type. (#2694)
+- Exposed `NetworkVariableSerialization<T>.Read`, `NetworkVariableSerialization<T>.Write`, `NetworkVariableSerialization<T>.AreEqual`, and `NetworkVariableSerialization<T>.Duplicate` to further support the creation of user-created network variables by allowing users to access the generated serialization methods and serialize generic types efficiently without boxing. (#2694)
+- Added `NetworkVariableBase.MarkNetworkBehaviourDirty` so that user-created network variable types can mark their containing `NetworkBehaviour` to be processed by the update loop. (#2694)
+
+### Fixed
+
+- Fixed issue where the server side `NetworkSceneManager` instance was not adding the currently active scene to its list of scenes loaded. (#2723)
+- Generic NetworkBehaviour types no longer result in compile errors or runtime errors (#2720)
+- Rpcs within Generic NetworkBehaviour types can now serialize parameters of the class's generic types (but may not have generic types of their own) (#2720)
+- Errors are no longer thrown when entering play mode with domain reload disabled (#2720)
+- NetworkSpawn is now correctly called each time when entering play mode with scene reload disabled (#2720)
+- NetworkVariables of non-integer types will no longer break the inspector (#2714)
+- NetworkVariables with NonSerializedAttribute will not appear in the inspector (#2714)
+- Fixed issue where `UnityTransport` would attempt to establish WebSocket connections even if using UDP/DTLS Relay allocations when the build target was WebGL. This only applied to working in the editor since UDP/DTLS can't work in the browser. (#2695)
+- Fixed issue where a `NetworkBehaviour` component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the `NetworkBehaviour` component was positioned/ordered before the `NetworkObject` component. (#2685)
+- Fixed issue where `SpawnWithObservers` was not being honored when `NetworkConfig.EnableSceneManagement` was disabled. (#2682)
+- Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
+- Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
+- Fixed issue where generation of the `DefaultNetworkPrefabs` asset was not enabled by default. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value could be updated but the asset not marked as dirty. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value of a (network) prefab asset could be assigned an incorrect value when editing the prefab in a temporary scene. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value generated after creating a (network) prefab from an object constructed within the scene would not be the correct final value in a stand alone build. (#2662)
+
+### Changed
+
+- Updated dependency on `com.unity.transport` to version 1.4.0. (#2716)
+
+## [1.6.0] - 2023-08-09
+
+### Added
+
+- Added a protected virtual method `NetworkTransform.OnInitialize(ref NetworkTransformState replicatedState)` that just returns the replicated state reference.
+  
+### Fixed
+
+- Fixed issue where invoking `NetworkManager.Shutdown` within `NetworkManager.OnClientStopped` or `NetworkManager.OnServerStopped` would force `NetworkManager.ShutdownInProgress` to remain true after completing the shutdown process. (#2661)
+- Fixed issue where ARMv7 Android builds would crash when trying to validate the batch header. (#2654)
 - Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
 - Fixed issue with scale not synchronizing properly depending upon the spawn order of NetworkObjects. (#2636)
 - Fixed issue position was not properly transitioning between ownership changes with an owner authoritative NetworkTransform. (#2636)

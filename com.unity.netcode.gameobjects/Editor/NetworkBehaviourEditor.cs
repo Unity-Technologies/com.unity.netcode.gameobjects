@@ -37,12 +37,12 @@ namespace Unity.Netcode.Editor
             for (int i = 0; i < fields.Length; i++)
             {
                 var ft = fields[i].FieldType;
-                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
+                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true) && !fields[i].IsDefined(typeof(NonSerializedAttribute), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
                 }
-                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
+                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true) && !fields[i].IsDefined(typeof(NonSerializedAttribute), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
@@ -416,6 +416,48 @@ namespace Unity.Netcode.Editor
                         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
                     }
                 }
+            }
+
+            if (networkObject != null)
+            {
+                OrderNetworkObject(networkObject);
+            }
+        }
+
+        // Assures the NetworkObject precedes any NetworkBehaviour on the same GameObject as the NetworkObject
+        private static void OrderNetworkObject(NetworkObject networkObject)
+        {
+            var monoBehaviours = networkObject.gameObject.GetComponents<MonoBehaviour>();
+            var networkObjectIndex = 0;
+            var firstNetworkBehaviourIndex = -1;
+            for (int i = 0; i < monoBehaviours.Length; i++)
+            {
+                if (monoBehaviours[i] == networkObject)
+                {
+                    networkObjectIndex = i;
+                    break;
+                }
+
+                var networkBehaviour = monoBehaviours[i] as NetworkBehaviour;
+                if (networkBehaviour != null)
+                {
+                    // Get the index of the first NetworkBehaviour Component
+                    if (firstNetworkBehaviourIndex == -1)
+                    {
+                        firstNetworkBehaviourIndex = i;
+                    }
+                }
+            }
+
+            if (firstNetworkBehaviourIndex != -1 && networkObjectIndex > firstNetworkBehaviourIndex)
+            {
+                var positionsToMove = networkObjectIndex - firstNetworkBehaviourIndex;
+                for (int i = 0; i < positionsToMove; i++)
+                {
+                    UnityEditorInternal.ComponentUtility.MoveComponentUp(networkObject);
+                }
+
+                EditorUtility.SetDirty(networkObject.gameObject);
             }
         }
     }
