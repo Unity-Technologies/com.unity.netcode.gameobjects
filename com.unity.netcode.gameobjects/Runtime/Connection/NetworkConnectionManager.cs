@@ -971,14 +971,7 @@ namespace Unity.Netcode
                 // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
                 foreach (var sobj in NetworkManager.SpawnManager.SpawnedObjectsList)
                 {
-                    if (sobj.Observers.Contains(clientId))
-                    {
-                        sobj.Observers.Remove(clientId);
-                        /*foreach (var behaviour in sobj.ChildNetworkBehaviours)
-                        {
-                            behaviour.Observers.Remove(clientId);
-                        }*/
-                    }
+                    sobj.Observers.Remove(clientId);
                 }
 
                 if (ConnectedClients.ContainsKey(clientId))

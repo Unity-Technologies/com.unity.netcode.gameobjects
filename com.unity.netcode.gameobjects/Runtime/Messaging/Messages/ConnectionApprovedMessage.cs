@@ -58,10 +58,7 @@ namespace Unity.Netcode
                 {
                     if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
-                        if (!sobj.Observers.Contains(OwnerClientId))
-                        {
-                            sobj.Observers.Add(OwnerClientId);
-                        }
+                        sobj.Observers.Add(OwnerClientId);
                         var sceneObject = sobj.GetMessageSceneObject(OwnerClientId);
                         sceneObject.Serialize(writer);
                         ++sceneObjectCount;
