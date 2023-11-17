@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -1109,7 +1110,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Me })));
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.NotMe })));
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Single(0) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(0) })));
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Group(new[] { 0ul, 1ul, 2ul }) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(new[] { 0ul, 1ul, 2ul }) })));
         }
 
     }
@@ -1183,6 +1186,40 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
+    internal class UniversalRpcTestSendingWithSingleNotOverride : UniversalRpcTestsBase
+    {
+        public UniversalRpcTestSendingWithSingleNotOverride(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+
+        }
+
+        [Test]
+        public void TestSendingWithSingleNotOverride(
+            [Values] SendTo defaultSendTo,
+            [Values(0u, 1u, 2u)] ulong recipient,
+            [Values(0u, 1u, 2u)] ulong objectOwner,
+            [Values(0u, 1u, 2u)] ulong sender
+        )
+        {
+            var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
+
+            var senderObject = GetPlayerObject(objectOwner, sender);
+            var target = senderObject.RpcTarget.Not(recipient);
+            var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+            sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
+
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient != c).ToArray(), false);
+            VerifyNotReceived(objectOwner, new[] { recipient });
+
+            // Pass some time to make sure that no other client ever receives this
+            TimeTravel(1f, 30);
+            VerifyNotReceived(objectOwner, new[] { recipient });
+        }
+
+    }
+
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithGroupOverride : UniversalRpcTestsBase
     {
         public UniversalRpcTestSendingWithGroupOverride(HostOrServer hostOrServer) : base(hostOrServer)
@@ -1198,18 +1235,50 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             new[] { 0ul, 1ul, 2ul }
         };
 
+        public enum AllocationType
+        {
+            Array,
+            NativeArray,
+            NativeList,
+            List
+        }
+
         [Test]
         public void TestSendingWithGroupOverride(
             [Values] SendTo defaultSendTo,
             [ValueSource(nameof(RecipientGroups))] ulong[] recipient,
             [Values(0u, 1u, 2u)] ulong objectOwner,
-            [Values(0u, 1u, 2u)] ulong sender
+            [Values(0u, 1u, 2u)] ulong sender,
+            [Values] AllocationType allocationType
         )
         {
             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
             var senderObject = GetPlayerObject(objectOwner, sender);
-            var target = senderObject.RpcTarget.Group(recipient);
+            BaseRpcTarget target = null;
+            switch (allocationType)
+            {
+                case AllocationType.Array:
+                    target = senderObject.RpcTarget.Group(recipient);
+                    break;
+                case AllocationType.List:
+                    target = senderObject.RpcTarget.Group(recipient.ToList());
+                    break;
+                case AllocationType.NativeArray:
+                    var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
+                    target = senderObject.RpcTarget.Group(arr);
+                    arr.Dispose();
+                    break;
+                case AllocationType.NativeList:
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.Temp);
+                    foreach (var id in recipient)
+                    {
+                        list.Add(id);
+                    }
+                    target = senderObject.RpcTarget.Group(list);
+                    list.Dispose();
+                    break;
+            }
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
@@ -1219,6 +1288,80 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             // Pass some time to make sure that no other client ever receives this
             TimeTravel(1f, 30);
             VerifyNotReceived(objectOwner, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray());
+        }
+
+    }
+
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    internal class UniversalRpcTestSendingWithGroupNotOverride : UniversalRpcTestsBase
+    {
+        public UniversalRpcTestSendingWithGroupNotOverride(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+
+        }
+
+        public static ulong[][] RecipientGroups = new[]
+        {
+            new ulong[] {},
+            new[] { 0ul },
+            new[] { 1ul },
+            new[] { 0ul, 1ul },
+        };
+
+        public enum AllocationType
+        {
+            Array,
+            NativeArray,
+            NativeList,
+            List
+        }
+
+        [Test]
+        public void TestSendingWithGroupNotOverride(
+            [Values] SendTo defaultSendTo,
+            [ValueSource(nameof(RecipientGroups))] ulong[] recipient,
+            [Values(0u, 1u, 2u)] ulong objectOwner,
+            [Values(0u, 1u, 2u)] ulong sender,
+            [Values] AllocationType allocationType
+        )
+        {
+            var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
+
+            var senderObject = GetPlayerObject(objectOwner, sender);
+            BaseRpcTarget target = null;
+            switch (allocationType)
+            {
+                case AllocationType.Array:
+                    target = senderObject.RpcTarget.Not(recipient);
+                    break;
+                case AllocationType.List:
+                    target = senderObject.RpcTarget.Not(recipient.ToList());
+                    break;
+                case AllocationType.NativeArray:
+                    var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
+                    target = senderObject.RpcTarget.Not(arr);
+                    arr.Dispose();
+                    break;
+                case AllocationType.NativeList:
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.Temp);
+                    foreach (var id in recipient)
+                    {
+                        list.Add(id);
+                    }
+                    target = senderObject.RpcTarget.Not(list);
+                    list.Dispose();
+                    break;
+            }
+            var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+            sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
+
+            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => !recipient.Contains(c)).ToArray(), false);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
+
+            // Pass some time to make sure that no other client ever receives this
+            TimeTravel(1f, 30);
+            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
         }
 
     }

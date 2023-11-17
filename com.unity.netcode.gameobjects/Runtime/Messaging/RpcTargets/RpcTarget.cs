@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -72,8 +73,12 @@ namespace Unity.Netcode
     /// <see cref="Single"/>,
     /// <see cref="Group(NativeArray{ulong})"/>,
     /// <see cref="Group(NativeList{ulong})"/>,
-    /// <see cref="Group(ulong[])"/>, and
-    /// <see cref="Group{T}(T)"/>
+    /// <see cref="Group(ulong[])"/>,
+    /// <see cref="Group{T}(T)"/>, <see cref="Not(ulong)"/>,
+    /// <see cref="Not(NativeArray{ulong})"/>,
+    /// <see cref="Not(NativeList{ulong})"/>,
+    /// <see cref="Not(ulong[])"/>, and
+    /// <see cref="Not{T}(T)"/>
     /// </summary>
     public class RpcTarget
     {
@@ -204,6 +209,45 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Send to everyone EXCEPT a specific single client ID.
+        /// <br />
+        /// <br />
+        /// Do not cache or reuse the result of this method.
+        /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
+        /// and its contents are simply changed.
+        /// </summary>
+        /// <param name="excludedClientId"></param>
+        /// <returns></returns>
+        public BaseRpcTarget Not(ulong excludedClientId)
+        {
+            IGroupRpcTarget target;
+            if (m_NetworkManager.IsServer)
+            {
+                target = m_CachedTargetGroup;
+            }
+            else
+            {
+                target = m_CachedProxyRpcTargetGroup;
+            }
+            target.Clear();
+            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId != excludedClientId)
+                {
+                    target.Add(clientId);
+                }
+            }
+
+            // If ServerIsHost, ConnectedClientIds already contains ServerClientId and this would duplicate it.
+            if (!m_NetworkManager.ServerIsHost && excludedClientId != NetworkManager.ServerClientId)
+            {
+                target.Add(NetworkManager.ServerClientId);
+            }
+
+            return target.Target;
+        }
+
+        /// <summary>
         /// Sends to a group of client IDs.
         /// NativeArrays can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
@@ -270,7 +314,6 @@ namespace Unity.Netcode
             return Group(new NativeArray<ulong>(clientIds, Allocator.Temp));
         }
 
-
         /// <summary>
         /// Sends to a group of client IDs.
         /// This accepts any IEnumerable type, such as List&lt;ulong&gt;, but cannot be called without
@@ -300,6 +343,139 @@ namespace Unity.Netcode
             foreach (var clientId in clientIds)
             {
                 target.Add(clientId);
+            }
+
+            return target.Target;
+        }
+
+        /// <summary>
+        /// Sends to everyone EXCEPT a group of client IDs.
+        /// NativeArrays can be trivially constructed using Allocator.Temp, making this an efficient
+        /// Group method if the group list is dynamically constructed.
+        /// <br />
+        /// <br />
+        /// Do not cache or reuse the result of this method.
+        /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
+        /// and its contents are simply changed.
+        /// </summary>
+        /// <param name="excludedClientIds"></param>
+        /// <returns></returns>
+        public BaseRpcTarget Not(NativeArray<ulong> excludedClientIds)
+        {
+            IGroupRpcTarget target;
+            if (m_NetworkManager.IsServer)
+            {
+                target = m_CachedTargetGroup;
+            }
+            else
+            {
+                target = m_CachedProxyRpcTargetGroup;
+            }
+            target.Clear();
+
+            using var asASet = new NativeHashSet<ulong>(excludedClientIds.Length, Allocator.Temp);
+            foreach (var clientId in excludedClientIds)
+            {
+                asASet.Add(clientId);
+            }
+
+            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            {
+                if(!asASet.Contains(clientId))
+                {
+                    target.Add(clientId);
+                }
+            }
+
+            // If ServerIsHost, ConnectedClientIds already contains ServerClientId and this would duplicate it.
+            if (!m_NetworkManager.ServerIsHost && !asASet.Contains(NetworkManager.ServerClientId))
+            {
+                target.Add(NetworkManager.ServerClientId);
+            }
+
+            return target.Target;
+        }
+
+        /// <summary>
+        /// Sends to everyone EXCEPT a group of client IDs.
+        /// NativeList can be trivially constructed using Allocator.Temp, making this an efficient
+        /// Group method if the group list is dynamically constructed.
+        /// <br />
+        /// <br />
+        /// Do not cache or reuse the result of this method.
+        /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
+        /// and its contents are simply changed.
+        /// </summary>
+        /// <param name="excludedClientIds"></param>
+        /// <returns></returns>
+        public BaseRpcTarget Not(NativeList<ulong> excludedClientIds)
+        {
+            return Not(excludedClientIds.AsArray());
+        }
+
+        /// <summary>
+        /// Sends to everyone EXCEPT a group of client IDs.
+        /// Constructing arrays requires garbage collected allocations. This override is only recommended
+        /// if you either have no strict performance requirements, or have the group of client IDs cached so
+        /// it is not created each time.
+        /// <br />
+        /// <br />
+        /// Do not cache or reuse the result of this method.
+        /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
+        /// and its contents are simply changed.
+        /// </summary>
+        /// <param name="excludedClientIds"></param>
+        /// <returns></returns>
+        public BaseRpcTarget Not(ulong[] excludedClientIds)
+        {
+            return Not(new NativeArray<ulong>(excludedClientIds, Allocator.Temp));
+        }
+
+        /// <summary>
+        /// Sends to everyone EXCEPT a group of client IDs.
+        /// This accepts any IEnumerable type, such as List&lt;ulong&gt;, but cannot be called without
+        /// a garbage collected allocation (even if the type itself is a struct type, due to boxing).
+        /// This override is only recommended if you either have no strict performance requirements,
+        /// or have the group of client IDs cached so it is not created each time.
+        /// <br />
+        /// <br />
+        /// Do not cache or reuse the result of this method.
+        /// For performance reasons, the same object is used each time to avoid garbage-collected allocations,
+        /// and its contents are simply changed.
+        /// </summary>
+        /// <param name="excludedClientIds"></param>
+        /// <returns></returns>
+        public BaseRpcTarget Not<T>(T excludedClientIds) where T : IEnumerable<ulong>
+        {
+            IGroupRpcTarget target;
+            if (m_NetworkManager.IsServer)
+            {
+                target = m_CachedTargetGroup;
+            }
+            else
+            {
+                target = m_CachedProxyRpcTargetGroup;
+            }
+            target.Clear();
+
+            using var asASet = new NativeHashSet<ulong>(m_NetworkManager.ConnectedClientsIds.Count, Allocator.Temp);
+            foreach (var clientId in excludedClientIds)
+            {
+                asASet.Add(clientId);
+            }
+
+            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            {
+                if(!asASet.Contains(clientId))
+                {
+                    target.Add(clientId);
+                }
+            }
+
+            // If ServerIsHost, ConnectedClientIds already contains ServerClientId and this would duplicate it.
+            if (!m_NetworkManager.ServerIsHost && !asASet.Contains(NetworkManager.ServerClientId))
+            {
+                target.Add(NetworkManager.ServerClientId);
             }
 
             return target.Target;

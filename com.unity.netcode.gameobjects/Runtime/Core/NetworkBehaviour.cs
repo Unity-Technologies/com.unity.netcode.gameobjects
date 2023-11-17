@@ -430,8 +430,12 @@ namespace Unity.Netcode
         /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
         /// <see cref="Unity.Netcode.RpcTarget.Group(NativeArray{ulong})"/>,
         /// <see cref="Unity.Netcode.RpcTarget.Group(NativeList{ulong})"/>,
-        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>, and
-        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>
+        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>, <see cref="Unity.Netcode.RpcTarget.Not(ulong)"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(ulong[])"/>, and
+        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>
         /// </summary>
 #pragma warning restore IDE0001
         public RpcTarget RpcTarget => NetworkManager.RpcTarget;
