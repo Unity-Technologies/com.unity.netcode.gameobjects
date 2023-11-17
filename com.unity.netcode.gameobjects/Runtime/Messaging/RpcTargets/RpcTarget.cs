@@ -292,7 +292,8 @@ namespace Unity.Netcode
         /// <returns></returns>
         public BaseRpcTarget Group(NativeList<ulong> clientIds)
         {
-            return Group(clientIds.AsArray());
+            var asArray = clientIds.AsArray();
+            return Group(asArray);
         }
 
         /// <summary>
@@ -409,7 +410,8 @@ namespace Unity.Netcode
         /// <returns></returns>
         public BaseRpcTarget Not(NativeList<ulong> excludedClientIds)
         {
-            return Not(excludedClientIds.AsArray());
+            var asArray = excludedClientIds.AsArray();
+            return Not(asArray);
         }
 
         /// <summary>
