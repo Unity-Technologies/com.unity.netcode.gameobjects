@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -381,7 +380,7 @@ namespace Unity.Netcode
 
             foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
             {
-                if(!asASet.Contains(clientId))
+                if (!asASet.Contains(clientId))
                 {
                     target.Add(clientId);
                 }
@@ -466,7 +465,7 @@ namespace Unity.Netcode
 
             foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
             {
-                if(!asASet.Contains(clientId))
+                if (!asASet.Contains(clientId))
                 {
                     target.Add(clientId);
                 }
