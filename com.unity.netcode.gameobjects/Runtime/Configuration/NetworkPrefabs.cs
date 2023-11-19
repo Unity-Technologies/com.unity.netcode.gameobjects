@@ -100,6 +100,13 @@ namespace Unity.Netcode
                 {
                     foreach (var networkPrefab in list.PrefabList)
                     {
+                        // This check assures that the base Prefab is the same as the SourcePrefabToOverride when the NetworkPrefab has some form of override.
+                        // TODO MTT-7755: This could be fixed within the editor with a property control when NetworkPrefab entries are added and/or an override is selected.
+                        // For now, this will resolve the issue to assure Prefab is always the same as SourcePrefabToOverride.
+                        if (networkPrefab.Override != NetworkPrefabOverride.None && networkPrefab.SourcePrefabToOverride != null && networkPrefab.Prefab != networkPrefab.SourcePrefabToOverride)
+                        {
+                            networkPrefab.Prefab = networkPrefab.SourcePrefabToOverride;
+                        }
                         prefabs.Add(networkPrefab);
                     }
                 }

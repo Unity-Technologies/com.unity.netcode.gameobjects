@@ -360,7 +360,7 @@ namespace Unity.Netcode
         /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the 
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
-        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3 position = default, Quaternion rotation = default)
+        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3 position = default, Quaternion rotation = default, bool isScenePlaced = false)
         {
             NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
@@ -373,10 +373,20 @@ namespace Unity.Netcode
             else
             {
                 // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
-                GameObject networkPrefabReference = null;
+                var networkPrefabReference = (GameObject)null;
+                var inScenePlacedWithNoSceneManagement = !NetworkManager.NetworkConfig.EnableSceneManagement && isScenePlaced;
+
                 if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                 {
-                    switch (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
+                    var prefabOverrideType = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].Override;
+                    // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the Prefab
+                    // and not any possible prefab override as a user might want to spawn overrides dynamically but might want to
+                    // use the same source network prefab as an in-scene placed NetworkObject.
+                    if (inScenePlacedWithNoSceneManagement)
+                    {
+                        prefabOverrideType = NetworkPrefabOverride.None;
+                    }
+                    switch (prefabOverrideType)
                     {
                         default:
                         case NetworkPrefabOverride.None:
@@ -429,7 +439,7 @@ namespace Unity.Netcode
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
             {
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation);
+                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject);
             }
             else // Get the in-scene placed NetworkObject
             {
@@ -669,6 +679,13 @@ namespace Unity.Netcode
             {
                 networkObject.SubscribeToActiveSceneForSynch();
             }
+
+            // If we are an in-scene placed NetworkObject and our InScenePlacedSourceGlobalObjectId is set
+            // then assign this to the PrefabGlobalObjectIdHash
+            if (networkObject.IsSceneObject.Value && networkObject.InScenePlacedSourceGlobalObjectId != 0)
+            {
+                networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectId;
+            }
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -833,7 +850,7 @@ namespace Unity.Netcode
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (networkObjects[i].IsSceneObject == null)
+                    if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
                     {
                         networkObjectsToSpawn.Add(networkObjects[i]);
                     }

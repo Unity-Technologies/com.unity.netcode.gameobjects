@@ -732,6 +732,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Assert.Fail("Failed to start instances");
                 }
 
+                // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
+                // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients 
+                // to load their own scenes.
+                if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    var scenesLoaded = m_ServerNetworkManager.SceneManager.ScenesLoaded;
+                    m_ServerNetworkManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, m_ServerNetworkManager);
+                }
+
+
                 if (LogAllMessages)
                 {
                     EnableMessageLogging();
@@ -797,6 +807,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
+                }
+
+                // Time travel does not play nice with scene loading, clear out server side pre-loaded scenes.
+                if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    m_ServerNetworkManager.SceneManager.ScenesLoaded.Clear();
                 }
 
                 if (LogAllMessages)

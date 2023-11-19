@@ -34,6 +34,15 @@ namespace Unity.Netcode
         internal uint PrefabGlobalObjectIdHash;
 
         /// <summary>
+        /// This is the source prefab of an in-scene placed NetworkObject This is not set for in-scene 
+        /// placd NetworkObjects that are not prefab instances (scene management must be enabled), 
+        /// dynamically spawned prefab instances, or for network prefab assets. 
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
+        internal uint InScenePlacedSourceGlobalObjectId;
+
+        /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
@@ -167,8 +176,28 @@ namespace Unity.Netcode
         {
             var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
 
+            var isEditingPrefab = IsEditingPrefab();
+
+            // If the NetworkObject is:
+            // - Part of a prefab
+            // - Not being directly edited
+            // - Within a valid scene that is part of the scenes in build list
+            // Then this is an in-scene placed NetworkObject, lets automatically get the source prefab GlobalObjectIdHash value and mark this as being in-scene placed
+            if (PrefabUtility.IsPartOfAnyPrefab(this) && !isEditingPrefab && gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            {
+                var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+                var assetPath = AssetDatabase.GetAssetPath(prefab);
+                var sourceAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(assetPath);
+                if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectId != sourceAsset.GlobalObjectIdHash)
+                {
+                    InScenePlacedSourceGlobalObjectId = sourceAsset.GlobalObjectIdHash;
+                }
+                IsSceneObject = true;
+            }
+
+
             // If not editing a prefab, then just use the generated id
-            if (!IsEditingPrefab())
+            if (!isEditingPrefab)
             {
                 return instanceGlobalId;
             }
@@ -1876,10 +1905,17 @@ namespace Unity.Netcode
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
                 }
 
+                // If scene management is disabled and this is an in-scene placed NetworkObject then go ahead
+                // and send the InScenePlacedSourcePrefab's GlobalObjectIdHash value (i.e. what to dynamically spawn)
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement && IsSceneObject.Value)
+                {
+                    return InScenePlacedSourceGlobalObjectId;
+                }
+
                 // If the PrefabGlobalObjectIdHash is a non-zero value and the GlobalObjectIdHash value is
                 // different from the PrefabGlobalObjectIdHash value, then the NetworkObject instance is
                 // an override for the original network prefab (i.e. PrefabGlobalObjectIdHash)
-                if (PrefabGlobalObjectIdHash != 0 && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
+                if (!IsSceneObject.Value && PrefabGlobalObjectIdHash != 0 && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
                 {
                     return PrefabGlobalObjectIdHash;
                 }
