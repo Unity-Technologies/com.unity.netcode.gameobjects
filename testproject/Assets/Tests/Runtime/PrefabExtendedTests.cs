@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using TestProject.ManualTests;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -22,7 +24,7 @@ namespace TestProject.RuntimeTests
             SceneManagementDisabled,
         }
 
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 0;
 
         private Scene m_ServerSideTestScene;
 
@@ -43,7 +45,6 @@ namespace TestProject.RuntimeTests
         /// We are also testing that a scene loaded prior to the server starting will be included in the
         /// servers loaded scenes and will synchronize a client with the scene.
         /// </summary>
-        /// <returns></returns>
         protected override IEnumerator OnSetup()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -51,7 +52,6 @@ namespace TestProject.RuntimeTests
             SceneManager.LoadSceneAsync(k_PrefabTestScene, LoadSceneMode.Additive);
             yield return WaitForConditionOrTimeOut(() => m_ServerSideTestScene.IsValid() && m_ServerSideTestScene.isLoaded);
             AssertOnTimeout($"Timed out waiting for {k_PrefabTestScene} scene to load during {nameof(OnSetup)}!");
-
             yield return base.OnSetup();
         }
         private void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
@@ -105,6 +105,7 @@ namespace TestProject.RuntimeTests
                 client.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
                 client.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(PrefabTestConfig.Instance.TestPrefabs);
             }
+
             base.OnServerAndClientsCreated();
         }
 
@@ -114,6 +115,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnStartedServerAndClients()
         {
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+
             return base.OnStartedServerAndClients();
         }
 
@@ -152,8 +154,8 @@ namespace TestProject.RuntimeTests
                     }
 
                     var clientSpawnedObject = s_GlobalNetworkObjects[client.LocalClientId][spawnedObject.NetworkObjectId];
-                    // When scene management is disabled, we match against the InScenePlacedSourceGlobalObjectId for in-scene placed NetworkObjects
-                    var spawnedObjectGlobalObjectIdHash = !m_SceneManagementEnabled && spawnedObject.IsSceneObject.Value ? spawnedObject.InScenePlacedSourceGlobalObjectId : spawnedObject.GlobalObjectIdHash;
+                    // When scene management is disabled, we match against the InScenePlacedSourceGlobalObjectIdHash for in-scene placed NetworkObjects
+                    var spawnedObjectGlobalObjectIdHash = !m_SceneManagementEnabled && spawnedObject.IsSceneObject.Value ? spawnedObject.InScenePlacedSourceGlobalObjectIdHash : spawnedObject.GlobalObjectIdHash;
                     // Validate the GlobalObjectIdHash values match
                     if (clientSpawnedObject.GlobalObjectIdHash != spawnedObjectGlobalObjectIdHash)
                     {
@@ -189,6 +191,24 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator TestPrefabsSpawning()
         {
+            var gloabalObjectId = m_SceneManagementEnabled ? 0 : InScenePlacedHelper.ServerInSceneDefined.First().GlobalObjectIdHash;
+            var firstError = $"[Netcode] Failed to create object locally. [globalObjectIdHash={gloabalObjectId}]. NetworkPrefab could not be found. Is the prefab registered with NetworkManager?";
+            var secondError = $"[Netcode] Failed to spawn NetworkObject for Hash {gloabalObjectId}.";
+
+            if (!m_SceneManagementEnabled)
+            {
+                // When scene management is disabled, in-scene defined NetworkObjects are not synchronized.
+                // Expect 2 error messages about not being able to find the in-scene defined NetworkObject in the PrefabTestScene.
+                LogAssert.Expect(LogType.Error, firstError);
+                LogAssert.Expect(LogType.Error, secondError);
+            }
+
+            // We have to spawn the first client manually in order to account for the errors when scene management is disabled.
+            // Spawn the client prior to dynamically spawning our prefab instances. Two of the in-scene placed NetworkObjects
+            // have overrides defined so we can assure that when scene management is disabled the in-scene placed instances
+            // spawn the original prefab and when spawning dynamically the override is used.
+            yield return CreateAndStartNewClient();
+
             var spawnManager = m_ServerNetworkManager.SpawnManager;
             // If scene management is enabled, then we want to verify against the editor 
             // assigned in-scene placed NetworkObjects
@@ -220,6 +240,13 @@ namespace TestProject.RuntimeTests
 
             // Finally, let's test a late joining client and make sure it synchronizes with the in-scene placed and
             // dynamically spawned NetworkObjects
+            if (!m_SceneManagementEnabled)
+            {
+                // When scene management is disabled, in-scene defined NetworkObjects are not synchronized.
+                // Expect 2 error messages about not being able to find the in-scene defined NetworkObject in the PrefabTestScene.
+                LogAssert.Expect(LogType.Error, firstError);
+                LogAssert.Expect(LogType.Error, secondError);
+            }
             yield return CreateAndStartNewClient();
             yield return WaitForConditionOrTimeOut(ValidateAllClientsSpawnedObjects);
             AssertOnTimeout($"[Second Stage] Validating spawned objects faild with the following error: {m_ErrorLog}");

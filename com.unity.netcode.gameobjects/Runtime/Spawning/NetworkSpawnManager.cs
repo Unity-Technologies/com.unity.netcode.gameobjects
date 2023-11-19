@@ -378,24 +378,32 @@ namespace Unity.Netcode
 
                 if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                 {
-                    var prefabOverrideType = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].Override;
-                    // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the Prefab
-                    // and not any possible prefab override as a user might want to spawn overrides dynamically but might want to
-                    // use the same source network prefab as an in-scene placed NetworkObject.
-                    if (inScenePlacedWithNoSceneManagement)
-                    {
-                        prefabOverrideType = NetworkPrefabOverride.None;
-                    }
-                    switch (prefabOverrideType)
+                    var networkPrefab = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash];
+
+                    switch (networkPrefab.Override)
                     {
                         default:
                         case NetworkPrefabOverride.None:
-                            networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
+                            networkPrefabReference = networkPrefab.Prefab;
                             break;
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
-                            networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                            break;
+                            {
+                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the 
+                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically 
+                                // but might want to use the same source network prefab as an in-scene placed NetworkObject.
+                                // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
+                                // spawning them so the original prefab placed is preserved and this is not needed)
+                                if (inScenePlacedWithNoSceneManagement)
+                                {
+                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride != null ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
+                                }
+                                else
+                                {
+                                    networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                                }
+                                break;
+                            }
                     }
                 }
 
@@ -680,11 +688,11 @@ namespace Unity.Netcode
                 networkObject.SubscribeToActiveSceneForSynch();
             }
 
-            // If we are an in-scene placed NetworkObject and our InScenePlacedSourceGlobalObjectId is set
+            // If we are an in-scene placed NetworkObject and our InScenePlacedSourceGlobalObjectIdHash is set
             // then assign this to the PrefabGlobalObjectIdHash
-            if (networkObject.IsSceneObject.Value && networkObject.InScenePlacedSourceGlobalObjectId != 0)
+            if (networkObject.IsSceneObject.Value && networkObject.InScenePlacedSourceGlobalObjectIdHash != 0)
             {
-                networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectId;
+                networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
         }
 
