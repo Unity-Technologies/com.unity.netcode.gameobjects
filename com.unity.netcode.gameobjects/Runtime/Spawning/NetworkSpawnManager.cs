@@ -334,17 +334,24 @@ namespace Unity.Netcode
         /// <param name="ownerClientId">The owner of the <see cref="NetworkObject"/> instance (defaults to server).</param>
         /// <param name="destroyWithScene">Whether the <see cref="NetworkObject"/> instance will be destroyed when the scene it is located within is unloaded (default is false).</param>
         /// <param name="isPlayerObject">Whether the <see cref="NetworkObject"/> instance is a player object or not (default is false).</param>
+        /// <param name="forceOverride">Whether you want to force spawning the override when running as a host or server or if you want it to spawn the override for host mode and
+        /// the source prefab for server. If there is an override, clients always spawn that as opposed to the source prefab (defaults to false).  </param>
         /// <param name="position">The starting poisiton of the <see cref="NetworkObject"/> instance.</param>
         /// <param name="rotation">The starting rotation of the <see cref="NetworkObject"/> instance.</param>
         /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
-        public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, Vector3 position = default, Quaternion rotation = default)
+        public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
         {
             if (!NetworkManager.IsServer)
             {
                 NetworkLog.LogErrorServer($"Failed to spawn {networkPrefab.name}! Only the server has authority to spawn {nameof(NetworkObject)}s!");
                 return null;
             }
-            var networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, position, rotation);
+            var networkObject = networkPrefab;
+            // Host spawns the ovveride and server spawns the original prefab unless forceOverride is set to true where both server or host will spawn the override.
+            if (forceOverride || NetworkManager.IsHost)
+            {
+                networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, position, rotation);
+            }
             if (networkObject == null)
             {
                 return null;
