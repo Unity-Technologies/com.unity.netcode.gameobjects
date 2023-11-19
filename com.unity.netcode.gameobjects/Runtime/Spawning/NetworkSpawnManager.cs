@@ -396,7 +396,7 @@ namespace Unity.Netcode
                                 // spawning them so the original prefab placed is preserved and this is not needed)
                                 if (inScenePlacedWithNoSceneManagement)
                                 {
-                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride != null ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
+                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
                                 }
                                 else
                                 {
