@@ -10,111 +10,105 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests that check OnNetworkDespawn being invoked
     /// </summary>
-    public class NetworkObjectOnNetworkDespawnTests
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    public class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
     {
-        private NetworkManager m_ServerHost;
-        private NetworkManager[] m_Clients;
+        private const string k_ObjectName = "TestDespawn";
+        public enum InstanceType
+        {
+            Server,
+            Client
+        }
 
+        protected override int NumberOfClients => 1;
         private GameObject m_ObjectToSpawn;
-        private NetworkObject m_NetworkObject;
+        private HostOrServer m_HostOrServer;
+        public NetworkObjectOnNetworkDespawnTests(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+            m_HostOrServer = hostOrServer;
+        }
 
         internal class OnNetworkDespawnTestComponent : NetworkBehaviour
         {
-            public bool OnNetworkDespawnCalled { get; internal set; }
+            public static bool OnServerNetworkDespawnCalled { get; internal set; }
+            public static bool OnClientNetworkDespawnCalled { get; internal set; }
 
             public override void OnNetworkSpawn()
             {
-                OnNetworkDespawnCalled = false;
+                if (IsServer)
+                {
+                    OnServerNetworkDespawnCalled = false;
+                }
+                else
+                {
+                    OnClientNetworkDespawnCalled = false;
+                }
                 base.OnNetworkSpawn();
             }
 
             public override void OnNetworkDespawn()
             {
-                OnNetworkDespawnCalled = true;
+                if (IsServer)
+                {
+                    OnServerNetworkDespawnCalled = true;
+                }
+                else
+                {
+                    OnClientNetworkDespawnCalled = true;
+                }
                 base.OnNetworkDespawn();
-            }
+            }         
         }
 
-        [UnitySetUp]
-        public IEnumerator Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            Assert.IsTrue(NetcodeIntegrationTestHelpers.Create(1, out m_ServerHost, out m_Clients));
-
-            m_ObjectToSpawn = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(nameof(NetworkObjectOnNetworkDespawnTests), m_ServerHost, m_Clients);
+            m_ObjectToSpawn = CreateNetworkObjectPrefab(k_ObjectName);
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
-            m_NetworkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
-
-            yield return null;
-        }
-
-        [UnityTearDown]
-        public IEnumerator Teardown()
-        {
-            // Shutdown and clean up both of our NetworkManager instances
-            if (m_ObjectToSpawn)
-            {
-                Object.Destroy(m_ObjectToSpawn);
-                m_ObjectToSpawn = null;
-            }
-            NetcodeIntegrationTestHelpers.Destroy();
-            yield return null;
-        }
-
-        public enum InstanceType
-        {
-            Server,
-            Host,
-            Client
+            m_ObjectToSpawn.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
+            base.OnServerAndClientsCreated();
         }
 
         /// <summary>
-        /// Tests that a spawned NetworkObject's associated NetworkBehaviours will have
-        /// their OnNetworkDespawn invoked during NetworkManager shutdown.
+        /// This test validates that <see cref="NetworkBehaviour.OnNetworkDespawn"/> is invoked when the
+        /// <see cref="NetworkManager"/> is shutdown.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceType.Server, InstanceType.Host, InstanceType.Client)] InstanceType despawnCheck)
+        public IEnumerator TestNetworkObjectDespawnOnShutdown()
         {
-            var useHost = despawnCheck != InstanceType.Server;
-            var networkManager = despawnCheck == InstanceType.Host || despawnCheck == InstanceType.Server ? m_ServerHost : m_Clients[0];
-
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(useHost, m_ServerHost, m_Clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_Clients, null, 512);
-
-            // [Host-Server-Side] Check to make sure all clients are connected
-            var clientCount = useHost ? m_Clients.Length + 1 : m_Clients.Length;
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerHost, clientCount, null, 512);
-
             // Spawn the test object
-            var spawnedObject = Object.Instantiate(m_NetworkObject);
+            var spawnedObject = SpawnObject(m_ObjectToSpawn, m_ServerNetworkManager);
             var spawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            spawnedNetworkObject.NetworkManagerOwner = m_ServerHost;
-            spawnedNetworkObject.Spawn(true);
 
-            // Get the spawned object relative to which NetworkManager instance we are testing.
-            var relativeSpawnedObject = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.GetComponent<OnNetworkDespawnTestComponent>() != null), networkManager, relativeSpawnedObject);
-            var onNetworkDespawnTestComponent = relativeSpawnedObject.Result.GetComponent<OnNetworkDespawnTestComponent>();
+            // Wait for the client to spawn the object
+            yield return WaitForConditionOrTimeOut(() =>
+            {
+                if (!s_GlobalNetworkObjects.ContainsKey(m_ClientNetworkManagers[0].LocalClientId))
+                {
+                    return false;
+                }
+                if (!s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].ContainsKey(spawnedNetworkObject.NetworkObjectId))
+                {
+                    return false;
+                }
+                return true;
+            });
+
+            AssertOnTimeout($"Timed out waiting for client to spawn {k_ObjectName}!");
 
             // Confirm it is not set before shutting down the NetworkManager
-            Assert.IsFalse(onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
+            Assert.IsFalse(OnNetworkDespawnTestComponent.OnClientNetworkDespawnCalled, "[Client-side] despawn state is already set (should not be set at this point)!");
+            Assert.IsFalse(OnNetworkDespawnTestComponent.OnServerNetworkDespawnCalled, $"[{m_HostOrServer}-side] despawn state is already set (should not be set at this point)!");
 
-            // Shutdown the NetworkManager instance we are testing.
-            networkManager.Shutdown();
+            // Shutdown the client-side first to validate the client-side instance invokes OnNetworkDespawn
+            m_ClientNetworkManagers[0].Shutdown();
+            yield return WaitForConditionOrTimeOut(() => OnNetworkDespawnTestComponent.OnClientNetworkDespawnCalled);
+            AssertOnTimeout($"[Client-side] Timed out waiting for {k_ObjectName}'s {nameof(NetworkBehaviour.OnNetworkDespawn)} to be invoked!");
 
-            // Since shutdown is now delayed until the post frame update
-            // just wait 2 frames before checking to see if OnNetworkDespawnCalled is true
-            var currentFrame = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount <= currentFrame);
-
-            // Confirm that OnNetworkDespawn is invoked after shutdown
-            Assert.IsTrue(onNetworkDespawnTestComponent.OnNetworkDespawnCalled);
+            // Shutdown the servr-host-side second to validate servr-host-side instance invokes OnNetworkDespawn
+            m_ServerNetworkManager.Shutdown();
+            yield return WaitForConditionOrTimeOut(() => OnNetworkDespawnTestComponent.OnClientNetworkDespawnCalled);
+            AssertOnTimeout($"[{m_HostOrServer}-side]Timed out waiting for {k_ObjectName}'s {nameof(NetworkBehaviour.OnNetworkDespawn)} to be invoked!");            
         }
     }
 }
