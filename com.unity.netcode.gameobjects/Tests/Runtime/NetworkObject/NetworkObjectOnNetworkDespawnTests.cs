@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests
                     OnClientNetworkDespawnCalled = true;
                 }
                 base.OnNetworkDespawn();
-            }         
+            }
         }
 
         protected override void OnServerAndClientsCreated()
@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
             // Shutdown the servr-host-side second to validate servr-host-side instance invokes OnNetworkDespawn
             m_ServerNetworkManager.Shutdown();
             yield return WaitForConditionOrTimeOut(() => OnNetworkDespawnTestComponent.OnClientNetworkDespawnCalled);
-            AssertOnTimeout($"[{m_HostOrServer}-side]Timed out waiting for {k_ObjectName}'s {nameof(NetworkBehaviour.OnNetworkDespawn)} to be invoked!");            
+            AssertOnTimeout($"[{m_HostOrServer}-side]Timed out waiting for {k_ObjectName}'s {nameof(NetworkBehaviour.OnNetworkDespawn)} to be invoked!");
         }
     }
 }
