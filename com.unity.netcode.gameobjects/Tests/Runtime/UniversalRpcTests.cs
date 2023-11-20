@@ -1270,7 +1270,10 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                     arr.Dispose();
                     break;
                 case AllocationType.NativeList:
-                    var list = new NativeList<ulong>(recipient.Length, Allocator.Temp);
+                    // For some reason on 2020.3, calling list.AsArray() and passing that to the next function
+                    // causes Allocator.Temp allocations to become invalid somehow. This is not an issue on later
+                    // versions of Unity.
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.TempJob);
                     foreach (var id in recipient)
                     {
                         list.Add(id);
@@ -1344,7 +1347,10 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                     arr.Dispose();
                     break;
                 case AllocationType.NativeList:
-                    var list = new NativeList<ulong>(recipient.Length, Allocator.Temp);
+                    // For some reason on 2020.3, calling list.AsArray() and passing that to the next function
+                    // causes Allocator.Temp allocations to become invalid somehow. This is not an issue on later
+                    // versions of Unity.
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.TempJob);
                     foreach (var id in recipient)
                     {
                         list.Add(id);
