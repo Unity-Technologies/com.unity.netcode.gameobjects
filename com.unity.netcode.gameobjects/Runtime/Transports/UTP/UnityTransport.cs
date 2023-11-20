@@ -1229,7 +1229,17 @@ namespace Unity.Netcode.Transports.UTP
             // Bump the reliable window size to its maximum size of 64. Since NGO makes heavy use of
             // reliable delivery, we're better off with the increased window size compared to the
             // extra 4 bytes of header that this costs us.
-            m_NetworkSettings.WithReliableStageParameters(windowSize: 64);
+            //
+            // We also increase the maximum resend timeout since the default one in UTP is very
+            // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
+            // we sometimes notice a lot of useless resends, especially if using Relay. (We can
+            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)
+            m_NetworkSettings.WithReliableStageParameters(
+                windowSize: 64
+#if UTP_TRANSPORT_2_0_ABOVE
+                maximumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500
+#endif
+            );
 
 #if !UTP_TRANSPORT_2_0_ABOVE && !UNITY_WEBGL
             m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
