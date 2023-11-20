@@ -995,6 +995,11 @@ namespace Unity.Netcode.Transports.UTP
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
         {
+            if (m_Driver.GetConnectionState(networkConnection) != NetworkConnection.State.Connected)
+            {
+                return;
+            }
+
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
 #if UTP_TRANSPORT_2_0_ABOVE
