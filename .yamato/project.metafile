@@ -14,7 +14,7 @@ test_platforms:
     utr: .\utr.bat
   - name: mac
     type: Unity::VM::osx
-    image: package-ci/mac:stable
+    image: package-ci/macos-13:v4
     pathsep: /
     standalone: StandaloneOSX
     flavor: b1.large
