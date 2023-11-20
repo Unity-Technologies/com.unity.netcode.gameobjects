@@ -65,7 +65,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ObjectToSpawn = CreateNetworkObjectPrefab(k_ObjectName);
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
-            m_ObjectToSpawn.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
             base.OnServerAndClientsCreated();
         }
 
