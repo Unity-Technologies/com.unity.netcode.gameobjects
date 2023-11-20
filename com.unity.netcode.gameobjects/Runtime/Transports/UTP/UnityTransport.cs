@@ -995,6 +995,11 @@ namespace Unity.Netcode.Transports.UTP
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
         {
+            if (m_Driver.GetConnectionState(networkConnection) != NetworkConnection.State.Connected)
+            {
+                return;
+            }
+
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
 #if UTP_TRANSPORT_2_0_ABOVE
@@ -1233,10 +1238,11 @@ namespace Unity.Netcode.Transports.UTP
             // We also increase the maximum resend timeout since the default one in UTP is very
             // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
             // we sometimes notice a lot of useless resends, especially if using Relay. (We can
-            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)
+            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)    
             m_NetworkSettings.WithReliableStageParameters(
                 windowSize: 64
 #if UTP_TRANSPORT_2_0_ABOVE
+                ,
                 maximumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500
 #endif
             );
