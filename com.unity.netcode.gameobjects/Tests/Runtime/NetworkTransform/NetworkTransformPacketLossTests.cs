@@ -97,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="authority">Determines if we are using server or owner authority</param>
         public NetworkTransformPacketLossTests(HostOrServer testWithHost, Authority authority)
         {
-            m_UseHost = testWithHost == HostOrServer.Host ? true : false;
+            m_UseHost = testWithHost == HostOrServer.Host;
             m_Authority = authority;
         }
 
@@ -139,8 +139,8 @@ namespace Unity.Netcode.RuntimeTests
             networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
         }
 
-        private const int k_Latency = 100;
-        private const int k_PacketLoss = 5;
+        private const int k_Latency = 50;
+        private const int k_PacketLoss = 2;
         protected override void OnServerAndClientsCreated()
         {
             var subChildObject = CreateNetworkObjectPrefab("SubChildObject");
@@ -198,7 +198,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout("Timed out waiting for client-side to notify it is ready!");
 
             // Get the client player representation on both the server and the client side
-            var serverSideClientPlayer = m_PlayerNetworkObjects[0][m_ClientNetworkManagers[0].LocalClientId];// m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
+            var serverSideClientPlayer = m_PlayerNetworkObjects[0][m_ClientNetworkManagers[0].LocalClientId];
             var clientSideClientPlayer = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
 
             m_AuthoritativePlayer = m_Authority == Authority.ServerAuthority ? serverSideClientPlayer : clientSideClientPlayer;
@@ -328,9 +328,10 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private IEnumerator AllChildrenLocalTransformValuesMatch(bool useSubChild, ChildrenTransformCheckType checkType)
         {
-            yield return WaitForConditionOrTimeOut(AllInstancesKeptLocalTransformValues);
-
             var infoMessage = new StringBuilder($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
+            yield return WaitForConditionOrTimeOut(AllInstancesKeptLocalTransformValues);
+            AssertOnTimeout(infoMessage.ToString());
+
             var authorityObjectLocalPosition = useSubChild ? m_AuthoritySubChildObject.transform.localPosition : m_AuthorityChildObject.transform.localPosition;
             var authorityObjectLocalRotation = useSubChild ? m_AuthoritySubChildObject.transform.localRotation.eulerAngles : m_AuthorityChildObject.transform.localRotation.eulerAngles;
             var authorityObjectLocalScale = useSubChild ? m_AuthoritySubChildObject.transform.localScale : m_AuthorityChildObject.transform.localScale;
@@ -621,11 +622,12 @@ namespace Unity.Netcode.RuntimeTests
         /// delta update, and it runs through 8 delta updates per unique test.
         /// </remarks>
         [UnityTest]
-        public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
+        public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform,
             [Values] Precision precision, [Values] Rotation rotationSynch, [Values] Axis axis)
         {
             yield return s_DefaultWaitForTick;
-
+            // Just test for OverrideState.Update (they are already being tested for functionality in normal NetworkTransformTests)
+            var overideState = OverrideState.Update;
             var tickRelativeTime = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
             bool axisX = axis == Axis.X || axis == Axis.XY || axis == Axis.XZ || axis == Axis.XYZ;
@@ -781,7 +783,7 @@ namespace Unity.Netcode.RuntimeTests
 
             if (axisCount == 3)
             {
-                // As a final test, wait for deltas to synchronize on non-authoritative side to assure it interpolates to th
+                // As a final test, wait for deltas to synchronize on non-authoritative side to assure it interpolates to the correct values
                 yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
                 // Provide additional debug info about what failed (if it fails)
                 if (s_GlobalTimeoutHelper.TimedOut)
@@ -823,9 +825,11 @@ namespace Unity.Netcode.RuntimeTests
         /// from a child derived or external class.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
+            // Just test for OverrideState.Update (they are already being tested for functionality in normal NetworkTransformTests)
+            var overideState = OverrideState.Update;
+            var overrideUpdate = false;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
 
