@@ -10,7 +10,8 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Integration tests for NetworkTransform that will test both
     /// server and host operating modes and will test both authoritative
-    /// models for each operating mode.
+    /// models for each operating mode when packet loss and latency is
+    /// present.
     /// </summary>
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
