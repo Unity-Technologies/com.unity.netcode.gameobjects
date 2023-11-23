@@ -813,7 +813,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (minFrames > 0)
             {
-                yield return new WaitUntil(() => Time.frameCount >= minFrames);
+                var waitForFrameCount = Time.frameCount + minFrames;
+                yield return new WaitUntil(() => Time.frameCount >= waitForFrameCount);
             }
 
             while (Time.realtimeSinceStartup - startTime < timeout && !predicate())
