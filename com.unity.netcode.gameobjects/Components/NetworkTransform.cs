@@ -1540,10 +1540,10 @@ namespace Unity.Netcode.Components
 
                 m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
 
-                // Make sure our network tick is incremented
+                // Check if we are sending on the same network tick as the last NetworkTransformState update
                 if (m_LastTick == m_LocalAuthoritativeNetworkState.NetworkTick && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
                 {
-                    // If our last state was teleporting and we were not synchronizing, then ignore this update
+                    // If our last state update was a teleport and we were not synchronizing, then ignore this update
                     if (m_OldState.IsTeleportingNextFrame && !m_OldState.IsSynchronizing)
                     {
                         m_OldState = m_LocalAuthoritativeNetworkState;
