@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Text;
 using NUnit.Framework;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -18,6 +19,9 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkTransformPacketLossTests : IntegrationTestWithApproximation
     {
+        private const int k_Latency = 50;
+        private const int k_PacketLoss = 2;
+
         private NetworkObject m_AuthoritativePlayer;
         private NetworkObject m_NonAuthoritativePlayer;
         private NetworkObject m_ChildObject;
@@ -106,21 +110,6 @@ namespace Unity.Netcode.RuntimeTests
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
 
-        private const int k_TickRate = 60;
-        private int m_OriginalTargetFrameRate;
-        protected override void OnOneTimeSetup()
-        {
-            m_OriginalTargetFrameRate = Application.targetFrameRate;
-            Application.targetFrameRate = 120;
-            base.OnOneTimeSetup();
-        }
-
-        protected override void OnOneTimeTearDown()
-        {
-            Application.targetFrameRate = m_OriginalTargetFrameRate;
-            base.OnOneTimeTearDown();
-        }
-
         protected override void OnInlineSetup()
         {
             NetworkTransformTestComponent.AuthorityInstance = null;
@@ -140,8 +129,6 @@ namespace Unity.Netcode.RuntimeTests
             networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
         }
 
-        private const int k_Latency = 50;
-        private const int k_PacketLoss = 2;
         protected override void OnServerAndClientsCreated()
         {
             var subChildObject = CreateNetworkObjectPrefab("SubChildObject");
@@ -181,14 +168,8 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            m_ServerNetworkManager.NetworkConfig.TickRate = k_TickRate;
-
             var unityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
             unityTransport.SetDebugSimulatorParameters(k_Latency, 0, k_PacketLoss);
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.TickRate = k_TickRate;
-            }
         }
 
         protected override IEnumerator OnServerAndClientsConnected()
@@ -557,7 +538,6 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            networkManager.NetworkConfig.TickRate = k_TickRate;
             base.OnNewClientCreated(networkManager);
         }
 
@@ -818,48 +798,26 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Tests changing all axial values one at a time.
+        /// Tests changing all axial values one at a time with packet loss
         /// These tests are performed:
         /// - While in local space and world space
         /// - While interpolation is enabled and disabled
-        /// - Using the TryCommitTransformToServer "override" that can be used
-        /// from a child derived or external class.
         /// </summary>
         [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation)
         {
             // Just test for OverrideState.Update (they are already being tested for functionality in normal NetworkTransformTests)
-            var overideState = OverrideState.Update;
-            var overrideUpdate = false;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
 
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
 
             // test position
-            var authPlayerTransform = overrideUpdate ? m_OwnerTransform.transform : m_AuthoritativeTransform.transform;
+            var authPlayerTransform = m_AuthoritativeTransform.transform;
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
-            m_AuthoritativeTransform.StatePushed = false;
-            var nextPosition = GetRandomVector3(2f, 30f);
-            m_AuthoritativeTransform.transform.position = nextPosition;
-            if (overideState != OverrideState.SetState)
-            {
-                authPlayerTransform.position = nextPosition;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
-            }
-
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
-            }
+            m_AuthoritativeTransform.transform.position = GetRandomVector3(2f, 30f);
 
             yield return WaitForConditionOrTimeOut(() => PositionsMatch());
             AssertOnTimeout($"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
@@ -867,49 +825,66 @@ namespace Unity.Netcode.RuntimeTests
             // test rotation
             Assert.AreEqual(Quaternion.identity, m_NonAuthoritativeTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
 
-            m_AuthoritativeTransform.StatePushed = false;
-            var nextRotation = Quaternion.Euler(GetRandomVector3(5, 60)); // using euler angles instead of quaternions directly to really see issues users might encounter
-            if (overideState != OverrideState.SetState)
-            {
-                authPlayerTransform.rotation = nextRotation;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(null, nextRotation, null, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
-            }
+            m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(GetRandomVector3(5, 60)); // using euler angles instead of quaternions directly to really see issues users might encounter
 
             // Make sure the values match
             yield return WaitForConditionOrTimeOut(() => RotationsMatch());
             AssertOnTimeout($"Timed out waiting for rotations to match");
 
             m_AuthoritativeTransform.StatePushed = false;
-            var nextScale = GetRandomVector3(1, 6);
-            if (overrideUpdate)
-            {
-                authPlayerTransform.localScale = nextScale;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(null, null, nextScale, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
-            {
-                // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
-            }
+            m_AuthoritativeTransform.transform.localScale = GetRandomVector3(1, 6);
 
             // Make sure the scale values match
             yield return WaitForConditionOrTimeOut(() => ScaleValuesMatch());
             AssertOnTimeout($"Timed out waiting for scale values to match");
+        }
+
+
+        [UnityTest]
+        public IEnumerator TestSameFrameDeltaStateAndTeleport([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation)
+        {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
+            m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
+
+            // test position
+            var authPlayerTransform = m_AuthoritativeTransform.transform;
+
+            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
+
+            m_AuthoritativeTransform.AuthorityPushedTransformState += OnAuthorityPushedTransformState;
+            m_AuthoritativeTransform.transform.position = GetRandomVector3(2f, 30f);
+
+            yield return WaitForConditionOrTimeOut(() => PositionsMatch());
+            AssertOnTimeout($"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
+
+            Assert.IsTrue((m_TeleportStateUpdate.NetworkTick - m_DeltaStateUpdate.NetworkTick) == 1, $"Teleport next tick failed! Teleporting state tick: {m_TeleportStateUpdate.NetworkTick}" +
+                $" | Current delta state update tick: {m_DeltaStateUpdate.NetworkTick}");
+
+            var authPosition = m_AuthoritativeTransform.GetSpaceRelativePosition();
+            var nonAuthPosition = m_NonAuthoritativeTransform.GetSpaceRelativePosition();
+            Assert.True(Approximately(authPosition, m_TeleportPosition), $"Authority did not set its position ({authPosition}) to the teleport position ({m_TeleportPosition})!");
+            Assert.True(Approximately(nonAuthPosition, m_TeleportPosition), $"NonAuthority did not set its position ({nonAuthPosition}) to the teleport position ({m_TeleportPosition})!");
+        }
+
+        private NetworkTransform.NetworkTransformState m_DeltaStateUpdate;
+        private NetworkTransform.NetworkTransformState m_TeleportStateUpdate;
+        private Vector3 m_TeleportPosition = new Vector3(-1024f, 0f, 0f);
+
+        /// <summary>
+        /// For the TestSameFrameDeltaStateAndTeleport test, we want to teleport on the same frame that we had a delta state update when
+        /// using unreliable delta state updates (i.e. we want the unreliable packet to be sent first and then the teleport to be sent on
+        /// the next tick. Store off both states when invoked
+        /// </summary>
+        /// <param name="networkTransformState"></param>
+        private void OnAuthorityPushedTransformState(ref NetworkTransform.NetworkTransformState networkTransformState)
+        {
+            m_DeltaStateUpdate = networkTransformState;
+            m_AuthoritativeTransform.SetState(m_TeleportPosition, null, null, false);
+            m_TeleportStateUpdate = m_AuthoritativeTransform.TeleportingNetworkTransformState;
+            m_AuthoritativeTransform.AuthorityPushedTransformState -= OnAuthorityPushedTransformState;
         }
 
         private bool PositionRotationScaleMatches()
