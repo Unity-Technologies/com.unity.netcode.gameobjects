@@ -883,7 +883,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_DeltaStateUpdate = networkTransformState;
             m_AuthoritativeTransform.SetState(m_TeleportPosition, null, null, false);
-            m_TeleportStateUpdate = m_AuthoritativeTransform.TeleportingNetworkTransformState;
+            m_TeleportStateUpdate = m_AuthoritativeTransform.DeferredNetworkTransformState;
             m_AuthoritativeTransform.AuthorityPushedTransformState -= OnAuthorityPushedTransformState;
         }
 

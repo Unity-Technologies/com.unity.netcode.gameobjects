@@ -115,6 +115,9 @@ namespace Unity.Netcode.Components
                 set { m_Bitset = value; }
             }
 
+            // Used to determine if the last state sent was deferred
+            internal bool WasDeferrred;
+
             // Used to store the tick calculated sent time
             internal double SentTime;
 
@@ -1506,7 +1509,7 @@ namespace Unity.Netcode.Components
         // to assure the instance doesn't continue to send axial synchs when an object is at rest.
         private bool m_DeltaSynch;
 
-        internal NetworkTransformState TeleportingNetworkTransformState;
+        internal NetworkTransformState DeferredNetworkTransformState;
 
         /// <summary>
         /// Authoritative side only
@@ -1522,42 +1525,41 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // We only are concerned about deferred state updates when UseUnreliableDeltas is set. The scenario that can happen is if you send an unreliable state update
-            // on the same tick as a reliable teleport state update, then the teleport state (on the receiving side) can be processed before the unreliable delta state update.
-            // This can cause an undesirable out of synch period. To avoid this, we just defer teleport state updates to the next tick and do not check for deltas for that tick.
-            var setStateThisTick = UseUnreliableDeltas && (TeleportingNetworkTransformState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick) && !synchronize;
+            // If we are not synchronizing, not setting state, our last state sent was deferred, and we are still on the same tick, then ignore this tick update check
+            if (!synchronize && !settingState && m_LastTick == m_CachedNetworkManager.ServerTime.Tick && m_OldState.WasDeferrred)
+            {
+                return;
+            }
+
+            // The following check is most noticable when sending unreliable deferred state updates. If we had just sent an unreliable state update on the same tick that 
+            // we send a reliable teleport state update, then the teleport state (on the receiving side) can be processed before the unreliable delta state update.
+            // We can also set the state explicity using SetState before or after sending a state update which can cause two state updates with the same tick which both  
+            // scenarios can cause can cause an undesirable out of synch period. To avoid this, we just defer teleport state updates to the next tick and do not check for 
+            // deltas for that tick.
+            var applyDeferredState = (DeferredNetworkTransformState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick) && !synchronize;
 
             // If the transform has deltas (returns dirty) then...
-            if (setStateThisTick || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
+            if (applyDeferredState || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
-                // If we are setting state, teleporting, and we arrived on a tick that we have already sent a delta state update for, then defer to next tick.
-                if (UseUnreliableDeltas && settingState && !setStateThisTick && m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame && m_LastTick == m_CachedNetworkManager.ServerTime.Tick)
+                // If we are setting state or teleporting,not applying the deferred state, and we arrived on a tick that we have already sent a delta state update for, then defer this state update to next tick.
+                if ((settingState || m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame) && !applyDeferredState && m_LastTick == m_CachedNetworkManager.ServerTime.Tick)
                 {
-                    TeleportingNetworkTransformState = m_LocalAuthoritativeNetworkState;
-                    TeleportingNetworkTransformState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick + 1;
+                    DeferredNetworkTransformState = m_LocalAuthoritativeNetworkState;
+                    DeferredNetworkTransformState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick + 1;
+                    DeferredNetworkTransformState.WasDeferrred = true;
                     return;
+                }
+
+                // If we are processing a deferred state update, then apply it to the local authoritative state
+                if (applyDeferredState)
+                {
+                    m_LocalAuthoritativeNetworkState = DeferredNetworkTransformState;
                 }
 
                 m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
 
-                // Check if we are sending on the same network tick as the last NetworkTransformState update
-                if (m_LastTick == m_LocalAuthoritativeNetworkState.NetworkTick && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
-                {
-                    // If our last state update was a teleport and we were not synchronizing, then ignore this update
-                    if (m_OldState.IsTeleportingNextFrame && !m_OldState.IsSynchronizing)
-                    {
-                        m_OldState = m_LocalAuthoritativeNetworkState;
-                        return;
-                    }
-                    // When running in authority and a remote client is the owner, the client can hit a perfect window of time where
-                    // it is still on the previous network tick (as a count) but still have had the tick event triggered.
-                    // (This is cheaper than calculating the exact tick each time and only can occur on clients)
-                    if (!IsServer)
-                    {
-                        m_LocalAuthoritativeNetworkState.NetworkTick = m_LocalAuthoritativeNetworkState.NetworkTick + 1;
-                    }
-                }
                 m_LastTick = m_LocalAuthoritativeNetworkState.NetworkTick;
+
                 // Update the state
                 UpdateTransformState();
 
@@ -2979,7 +2981,7 @@ namespace Unity.Netcode.Components
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             var transformToCommit = transform;
-            TryCommitTransform(ref transformToCommit, settingState: UseUnreliableDeltas);
+            TryCommitTransform(ref transformToCommit, settingState: true);
         }
 
         /// <summary>
@@ -3142,7 +3144,11 @@ namespace Unity.Netcode.Components
             // Forward owner authoritative messages before doing anything else
             if (ownerAuthoritativeServerSide)
             {
-                ForwardStateUpdateMessage(messagePayload, networkDelivery);
+                // Forward the state update if there are any remote clients to foward it to
+                if (m_CachedNetworkManager.ConnectionManager.ConnectedClientsList.Count > (IsHost ? 2 : 1))
+                {
+                    ForwardStateUpdateMessage(messagePayload, networkDelivery);
+                }
             }
 
             // Apply the message
