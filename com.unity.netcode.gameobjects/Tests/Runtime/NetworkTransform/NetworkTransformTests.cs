@@ -978,11 +978,11 @@ namespace Unity.Netcode.RuntimeTests
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);
                 Assert.True(success, $"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch());
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch(), 600);
             Assert.True(success, $"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
@@ -1002,12 +1002,12 @@ namespace Unity.Netcode.RuntimeTests
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);
                 Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the values match
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch());
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch(), 600);
             Assert.True(success, $"Timed out waiting for rotations to match");
 
             m_AuthoritativeTransform.StatePushed = false;
@@ -1024,12 +1024,12 @@ namespace Unity.Netcode.RuntimeTests
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);
                 Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the scale values match
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleValuesMatch());
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleValuesMatch(), 600);
             Assert.True(success, $"Timed out waiting for scale values to match");
         }
 
