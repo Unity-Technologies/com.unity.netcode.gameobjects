@@ -18,10 +18,15 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkTransformState AuthorityLastSentState;
         public bool StatePushed { get; internal set; }
 
+        public delegate void AuthorityPushedTransformStateDelegateHandler(ref NetworkTransformState networkTransformState);
+
+        public event AuthorityPushedTransformStateDelegateHandler AuthorityPushedTransformState;
+
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
+            AuthorityPushedTransformState?.Invoke(ref networkTransformState);
             base.OnAuthorityPushTransformState(ref networkTransformState);
         }
 
@@ -963,19 +968,29 @@ namespace Unity.Netcode.RuntimeTests
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextPosition = GetRandomVector3(2f, 30f);
-            m_AuthoritativeTransform.transform.position = nextPosition;
-            if (overideState != OverrideState.SetState)
+
+            switch (overideState)
             {
-                authPlayerTransform.position = nextPosition;
-                m_OwnerTransform.CommitToTransform();
-            }
-            else
-            {
-                m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.position = nextPosition;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(nextPosition, null, null);
+                        break;
+                    }
+                case OverrideState.CommitToTransform:
+                    {
+                        m_OwnerTransform.transform.position = nextPosition;
+                        m_OwnerTransform.CommitToTransform();
+                        break;
+                    }
             }
 
             bool success;
-            if (overideState != OverrideState.Update)
+            if (overideState == OverrideState.CommitToTransform)
             {
                 // Wait for the deltas to be pushed
                 success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);
@@ -990,16 +1005,27 @@ namespace Unity.Netcode.RuntimeTests
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextRotation = Quaternion.Euler(GetRandomVector3(5, 60)); // using euler angles instead of quaternions directly to really see issues users might encounter
-            if (overideState != OverrideState.SetState)
+            switch (overideState)
             {
-                authPlayerTransform.rotation = nextRotation;
-                m_OwnerTransform.CommitToTransform();
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.rotation = nextRotation;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(null, nextRotation, null);
+                        break;
+                    }
+                case OverrideState.CommitToTransform:
+                    {
+                        m_OwnerTransform.transform.rotation = nextRotation;
+                        m_OwnerTransform.CommitToTransform();
+                        break;
+                    }
             }
-            else
-            {
-                m_OwnerTransform.SetState(null, nextRotation, null, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
+
+            if (overideState == OverrideState.CommitToTransform)
             {
                 // Wait for the deltas to be pushed
                 success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);
@@ -1012,16 +1038,28 @@ namespace Unity.Netcode.RuntimeTests
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextScale = GetRandomVector3(1, 6);
-            if (overrideUpdate)
+
+            switch (overideState)
             {
-                authPlayerTransform.localScale = nextScale;
-                m_OwnerTransform.CommitToTransform();
+                case OverrideState.Update:
+                    {
+                        m_AuthoritativeTransform.transform.localScale = nextScale;
+                        break;
+                    }
+                case OverrideState.SetState:
+                    {
+                        m_OwnerTransform.SetState(null, null, nextScale);
+                        break;
+                    }
+                case OverrideState.CommitToTransform:
+                    {
+                        m_OwnerTransform.transform.localScale = nextScale;
+                        m_OwnerTransform.CommitToTransform();
+                        break;
+                    }
             }
-            else
-            {
-                m_OwnerTransform.SetState(null, null, nextScale, m_AuthoritativeTransform.Interpolate);
-            }
-            if (overideState != OverrideState.Update)
+
+            if (overideState == OverrideState.CommitToTransform)
             {
                 // Wait for the deltas to be pushed
                 success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed, 600);

@@ -1506,7 +1506,7 @@ namespace Unity.Netcode.Components
         // to assure the instance doesn't continue to send axial synchs when an object is at rest.
         private bool m_DeltaSynch;
 
-        private NetworkTransformState m_SetNetworkTransformState;
+        internal NetworkTransformState TeleportingNetworkTransformState;
 
         /// <summary>
         /// Authoritative side only
@@ -1525,7 +1525,7 @@ namespace Unity.Netcode.Components
             // We only are concerned about deferred state updates when UseUnreliableDeltas is set. The scenario that can happen is if you send an unreliable state update
             // on the same tick as a reliable teleport state update, then the teleport state (on the receiving side) can be processed before the unreliable delta state update.
             // This can cause an undesirable out of synch period. To avoid this, we just defer teleport state updates to the next tick and do not check for deltas for that tick.
-            var setStateThisTick = UseUnreliableDeltas && (m_SetNetworkTransformState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick) && !synchronize;
+            var setStateThisTick = UseUnreliableDeltas && (TeleportingNetworkTransformState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick) && !synchronize;
 
             // If the transform has deltas (returns dirty) then...
             if (setStateThisTick || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
@@ -1533,8 +1533,8 @@ namespace Unity.Netcode.Components
                 // If we are setting state, teleporting, and we arrived on a tick that we have already sent a delta state update for, then defer to next tick.
                 if (UseUnreliableDeltas && settingState && !setStateThisTick && m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame && m_LastTick == m_CachedNetworkManager.ServerTime.Tick)
                 {
-                    m_SetNetworkTransformState = m_LocalAuthoritativeNetworkState;
-                    m_SetNetworkTransformState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick + 1;
+                    TeleportingNetworkTransformState = m_LocalAuthoritativeNetworkState;
+                    TeleportingNetworkTransformState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick + 1;
                     return;
                 }
 
