@@ -115,7 +115,7 @@ namespace Unity.Netcode.Components
                 set { m_Bitset = value; }
             }
 
-            // Used to determine if the last state sent was deferred
+            // Used to determine if this state was deferred
             internal bool WasDeferrred;
 
             // Used to store the tick calculated sent time
@@ -1509,6 +1509,9 @@ namespace Unity.Netcode.Components
         // to assure the instance doesn't continue to send axial synchs when an object is at rest.
         private bool m_DeltaSynch;
 
+        /// <summary>
+        /// Used to defer state updates to the next network tick
+        /// </summary>
         internal NetworkTransformState DeferredNetworkTransformState;
 
         /// <summary>
@@ -1534,14 +1537,15 @@ namespace Unity.Netcode.Components
             // The following check is most noticable when sending unreliable deferred state updates. If we had just sent an unreliable state update on the same tick that 
             // we send a reliable teleport state update, then the teleport state (on the receiving side) can be processed before the unreliable delta state update.
             // We can also set the state explicity using SetState before or after sending a state update which can cause two state updates with the same tick which both  
-            // scenarios can cause can cause an undesirable out of synch period. To avoid this, we just defer teleport state updates to the next tick and do not check for 
-            // deltas for that tick.
+            // scenarios can cause an undesirable out of synch period. To avoid this, we just defer the state update to the next tick and upon applying the state update
+            // on the next tick we do not check for deltas but do apply the state update.
             var applyDeferredState = (DeferredNetworkTransformState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick) && !synchronize;
 
-            // If the transform has deltas (returns dirty) then...
+            // If the transform has deltas (returns dirty) or we are applying a deferred state update then...
             if (applyDeferredState || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
-                // If we are setting state or teleporting,not applying the deferred state, and we arrived on a tick that we have already sent a delta state update for, then defer this state update to next tick.
+                // If we are setting state or teleporting, not applying the deferred state, and arrived on a tick that we have already sent a delta state update for, then
+                // we defer this state update to next tick.
                 if ((settingState || m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame) && !applyDeferredState && m_LastTick == m_CachedNetworkManager.ServerTime.Tick)
                 {
                     DeferredNetworkTransformState = m_LocalAuthoritativeNetworkState;
@@ -1563,13 +1567,14 @@ namespace Unity.Netcode.Components
                 // Update the state
                 UpdateTransformState();
 
-                // This is where we assure that we will only send a frame synch if sending unreliable deltas and
-                // we have already sent at least one unreliable delta state update. At this point in the callstack
-                // we have just finished sending the delta state update in the above UpdateTransformState() call,
-                // and as long as we didn't send a synch and we are not synchronizing then we know at least one
-                // unreliable delta has been sent so we should start checking for this instance's alloted frame
-                // synch "tick slot". Upon sending a frame synch, if no other deltas occur after that (i.e. the
-                // object is at rest) we will stop sending frame synch's until the object beings moving again.
+                // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if 
+                // we have already sent at least one unreliable delta state update. At this point in the callstack,
+                // a delta state update has just been sent in the above UpdateTransformState() call and as long as
+                // we didn't send a frame synch and we are not synchronizing then we know at least one unreliable
+                // delta has been sent. Under this scenario, we should start checking for this instance's alloted 
+                // frame synch "tick slot". Once we send a frame synch, if no other deltas occur after that
+                // (i.e. the object is at rest) then we will stop sending frame synch's until the object begins
+                // moving, rotating, or scaling again.
                 if (UseUnreliableDeltas && !m_LocalAuthoritativeNetworkState.UnreliableFrameSync && !synchronize)
                 {
                     m_DeltaSynch = true;
@@ -1638,20 +1643,26 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
-            // As long as we are not teleporting or doing our first synchronization and we are sending unreliable deltas,
-            // each NetworkTransform will stagger their axial synchronization over a 1 second period based on their
+            // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
+            // NetworkTransform will stagger their axial synchronization over a 1 second period based on their
             // assigned tick synchronization (m_TickSync) value.
+            // More about m_DeltaSynch:
+            // If we have not sent any deltas since our last frame synch, then this will prevent us from sending
+            // frame synch's when the object is at rest. If this is false and a state update is detected and sent,
+            // then it will be set to true and each subsequent tick will do this check to determine if it should
+            // send a frame synch.
             var isAxisSync = false;
-            if (UseUnreliableDeltas && !networkState.IsTeleportingNextFrame && !isSynchronization && m_DeltaSynch)
+            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch)
             {
                 if ((m_TickSync + m_CachedNetworkManager.NetworkConfig.TickRate) <= m_CachedNetworkManager.ServerTime.Tick)
                 {
                     // Increment to the the current frame synch tick position for this instance
                     m_TickSync += m_CachedNetworkManager.NetworkConfig.TickRate;
                     // If we are teleporting, we do not need to send a frame synch for this tick slot
+                    // as a "frame synch" really is effectively just a teleport.
                     isAxisSync = !networkState.IsTeleportingNextFrame;
                     // Reset our delta synch trigger so we don't send another frame synch until we
-                    // send at least 1 unreliable state update 
+                    // send at least 1 unreliable state update after this fame synch or teleport
                     m_DeltaSynch = false;
                 }
             }
@@ -1673,8 +1684,9 @@ namespace Unity.Netcode.Components
             if (isSynchronization || networkState.IsTeleportingNextFrame)
             {
                 // This all has to do with complex nested hierarchies and how it impacts scale
-                // when set for the first time and depending upon whether the NetworkObject is parented
-                // (or not parented) at the time the scale values are applied.
+                // when set for the first time or teleporting and depends upon whether the
+                // NetworkObject is parented (or "de-parented") at the same time any scale
+                // values are applied.
                 var hasParentNetworkObject = false;
 
                 // If the NetworkObject belonging to this NetworkTransform instance has a parent
@@ -2981,6 +2993,7 @@ namespace Unity.Netcode.Components
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             var transformToCommit = transform;
+            // Always set settingState to true so we know an explicit state update is being applied
             TryCommitTransform(ref transformToCommit, settingState: true);
         }
 
