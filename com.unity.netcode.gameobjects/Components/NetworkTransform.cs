@@ -459,6 +459,26 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// Returns whether this state update was an axial frame synchronization
+            /// (only applies when UseUnreliableDeltas is enabled)
+            /// </summary>            
+            public bool IsAxisFrameSync()
+            {
+                return UnreliableFrameSync;
+            }
+
+            /// <summary>
+            /// Returns whether this state update was sent with unreliable delivery.
+            /// If false, then it was sent with reliable delivery.
+            /// (only applies when UseUnreliableDeltas is enabled)
+            /// 
+            /// </summary>            
+            public bool IsUnreliableStateUpdate()
+            {
+                return !ReliableFragmentedSequenced;
+            }
+
             internal bool IsParented
             {
                 get => GetFlag(k_IsParented);
@@ -1652,19 +1672,16 @@ namespace Unity.Netcode.Components
             // then it will be set to true and each subsequent tick will do this check to determine if it should
             // send a frame synch.
             var isAxisSync = false;
-            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch)
+            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= m_CachedNetworkManager.ServerTime.Tick)
             {
-                if ((m_TickSync + m_CachedNetworkManager.NetworkConfig.TickRate) <= m_CachedNetworkManager.ServerTime.Tick)
-                {
-                    // Increment to the the current frame synch tick position for this instance
-                    m_TickSync += m_CachedNetworkManager.NetworkConfig.TickRate;
-                    // If we are teleporting, we do not need to send a frame synch for this tick slot
-                    // as a "frame synch" really is effectively just a teleport.
-                    isAxisSync = !networkState.IsTeleportingNextFrame;
-                    // Reset our delta synch trigger so we don't send another frame synch until we
-                    // send at least 1 unreliable state update after this fame synch or teleport
-                    m_DeltaSynch = false;
-                }
+                // Increment to the next frame synch tick position for this instance
+                m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
+                // If we are teleporting, we do not need to send a frame synch for this tick slot
+                // as a "frame synch" really is effectively just a teleport.
+                isAxisSync = !networkState.IsTeleportingNextFrame;
+                // Reset our delta synch trigger so we don't send another frame synch until we
+                // send at least 1 unreliable state update after this fame synch or teleport
+                m_DeltaSynch = false;
             }
             // This is used to determine if we need to send the state update reliably (if we are doing an axial sync)
             networkState.UnreliableFrameSync = isAxisSync;
@@ -2592,6 +2609,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // If we are using UseUnreliableDeltas and our old state tick is greater than the new state tick,
+            // then just ignore the newstate. This avoids any scenario where the new state is out of order
+            // from the old state (with unreliable traffic and/or mixed unreliable and reliable)
+            if (UseUnreliableDeltas && oldState.NetworkTick > newState.NetworkTick)
+            {
+                return;
+            }
+
             // Get the time when this new state was sent
             newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
 
@@ -3310,14 +3335,13 @@ namespace Unity.Netcode.Components
                 }
             }
         }
-        private static uint s_TickSynchPosition;
-        private uint m_TickSync;
+        private static int s_TickSynchPosition;
+        private int m_NextTickSync;
 
         internal void RegisterForTickSynchronization()
         {
             s_TickSynchPosition++;
-            s_TickSynchPosition = s_TickSynchPosition % NetworkManager.NetworkConfig.TickRate;
-            m_TickSync = s_TickSynchPosition;
+            m_NextTickSync = NetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
         }
 
         /// <summary>
