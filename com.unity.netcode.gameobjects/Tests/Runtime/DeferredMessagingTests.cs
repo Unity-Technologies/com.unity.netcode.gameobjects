@@ -94,6 +94,10 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void ProcessTriggers(IDeferredNetworkMessageManager.TriggerType trigger, ulong key)
         {
+            if (trigger == IDeferredNetworkMessageManager.TriggerType.OnNextFrame)
+            {
+                return;
+            }
             ProcessTriggersCalled = true;
             base.ProcessTriggers(trigger, key);
         }
