@@ -73,10 +73,10 @@ namespace Unity.Netcode.Components
         /// second (only for the axis marked to synchronize are sent as reliable fragmented sequenced) as long as a delta state
         /// update had been previously sent. When a NetworkObject is at rest, axial frame synchronization updates are not sent.
         /// </remarks>
-        [Tooltip("When set (enabled by default), NetworkTransform will send common state updates using unreliable network delivery " +
+        [Tooltip("When set, NetworkTransform will send common state updates using unreliable network delivery " +
             "to provide a higher tolerance to poor network conditions (especially packet loss). When disabled, all state updates are " +
             "sent using reliable fragmented sequenced network delivery.")]
-        public bool UseUnreliableDeltas = true;
+        public bool UseUnreliableDeltas = false;
 
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
