@@ -19,8 +19,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a new RPC attribute, which is simply `Rpc`. (#2762)
+  - This is a generic attribute that can perform the functions of both Server and Client RPCs, as well as enabling client-to-client RPCs. Includes several default targets: `Server`, `NotServer`, `Owner`, `NotOwner`, `Me`, `NotMe`, `ClientsAndHost`, and `Everyone`. Runtime overrides are available for any of these targets, as well as for sending to a specific ID or groups of IDs.
+  - This attribute also includes the ability to defer RPCs that are sent to the local process to the start of the next frame instead of executing them immediately, treating them as if they had gone across the network. The default behavior is to execute immediately.
+  - This attribute effectively replaces `ServerRpc` and `ClientRpc`. `ServerRpc` and `ClientRpc` remain in their existing forms for backward compatibility, but `Rpc` will be the recommended and most supported option.
+- Added `NetworkManager.OnConnectionEvent` as a unified connection event callback to notify clients and servers of all client connections and disconnections within the session (#2762)
+- Added `NetworkManager.ServerIsHost` and `NetworkBehaviour.ServerIsHost` to allow a client to tell if it is connected to a host or to a dedicated server (#2762)
 - Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
 - Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+
+### Changed
+
+- `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
 
 ### Fixed
 

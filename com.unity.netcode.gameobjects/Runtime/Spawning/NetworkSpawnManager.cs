@@ -963,7 +963,7 @@ namespace Unity.Netcode
                 if (sobj.CheckObjectVisibility == null)
                 {
                     // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server
-                    if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
+                    if (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId)
                     {
                         sobj.Observers.Add(clientId);
                     }
@@ -976,7 +976,6 @@ namespace Unity.Netcode
                         sobj.Observers.Add(clientId);
                     }
                     else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
-                    if (sobj.Observers.Contains(clientId))
                     {
                         sobj.Observers.Remove(clientId);
                     }
