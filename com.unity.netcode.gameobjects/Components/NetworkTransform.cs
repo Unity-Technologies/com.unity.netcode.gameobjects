@@ -460,10 +460,11 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Returns whether this state update was an axial frame synchronization
-            /// (only applies when UseUnreliableDeltas is enabled)
-            /// </summary>            
-            public bool IsAxisFrameSync()
+            /// Returns whether this state update was a frame synchronization when 
+            /// UseUnreliableDeltas is enabled. When set, the entire transform has
+            /// been synchronized.
+            /// </summary>
+            public bool IsUnreliableFrameSync()
             {
                 return UnreliableFrameSync;
             }
@@ -471,9 +472,7 @@ namespace Unity.Netcode.Components
             /// <summary>
             /// Returns whether this state update was sent with unreliable delivery.
             /// If false, then it was sent with reliable delivery.
-            /// (only applies when UseUnreliableDeltas is enabled)
-            /// 
-            /// </summary>            
+            /// </summary>
             public bool IsUnreliableStateUpdate()
             {
                 return !ReliableFragmentedSequenced;
