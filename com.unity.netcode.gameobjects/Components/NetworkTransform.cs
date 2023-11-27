@@ -2612,7 +2612,7 @@ namespace Unity.Netcode.Components
             // If we are using UseUnreliableDeltas and our old state tick is greater than the new state tick,
             // then just ignore the newstate. This avoids any scenario where the new state is out of order
             // from the old state (with unreliable traffic and/or mixed unreliable and reliable)
-            if (UseUnreliableDeltas && oldState.NetworkTick > newState.NetworkTick)
+            if (UseUnreliableDeltas && oldState.NetworkTick > newState.NetworkTick && !newState.IsTeleportingNextFrame)
             {
                 return;
             }
