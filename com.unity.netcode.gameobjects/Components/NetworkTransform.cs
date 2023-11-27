@@ -116,7 +116,7 @@ namespace Unity.Netcode.Components
             }
 
             // Used to determine if this state was deferred
-            internal bool WasDeferrred;
+            internal bool WasDeferred;
 
             // Used to store the tick calculated sent time
             internal double SentTime;
@@ -1549,7 +1549,7 @@ namespace Unity.Netcode.Components
             }
 
             // If we are not synchronizing, not setting state, our last state sent was deferred, and we are still on the same tick, then ignore this tick update check
-            if (!synchronize && !settingState && m_LastTick == m_CachedNetworkManager.ServerTime.Tick && m_OldState.WasDeferrred)
+            if (!synchronize && !settingState && m_LastTick == m_CachedNetworkManager.ServerTime.Tick && m_OldState.WasDeferred)
             {
                 return;
             }
@@ -1570,7 +1570,7 @@ namespace Unity.Netcode.Components
                 {
                     DeferredNetworkTransformState = m_LocalAuthoritativeNetworkState;
                     DeferredNetworkTransformState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick + 1;
-                    DeferredNetworkTransformState.WasDeferrred = true;
+                    DeferredNetworkTransformState.WasDeferred = true;
                     return;
                 }
 
