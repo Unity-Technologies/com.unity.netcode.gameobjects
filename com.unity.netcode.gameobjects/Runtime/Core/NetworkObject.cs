@@ -979,7 +979,7 @@ namespace Unity.Netcode
             // - This instance is not spawned and the parent is.
             // Basically, don't allow parenting when either the child or parent is not spawned.
             // Caveat: if the parent is null then we can allow parenting whether the instance is or is not spawned.
-            if (parent != null && (IsSpawned && !parent.IsSpawned || !IsSpawned && parent.IsSpawned))
+            if (parent != null && (IsSpawned ^ parent.IsSpawned))
             {
                 return false;
             }
