@@ -1,5 +1,3 @@
-
-using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
@@ -12,136 +10,127 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-    public class SceneObjectsNotDestroyedOnShutdownTest
+    public class SceneObjectsNotDestroyedOnShutdownTest : NetcodeIntegrationTest
     {
+        protected override int NumberOfClients => 0;
+
         private const string k_TestScene = "InSceneNetworkObject";
         private const string k_SceneObjectName = "InSceneObject";
         private Scene m_TestScene;
-        private NetworkManager m_ClientNetworkManager;
-        private GameObject m_NetworkManagerGameObject;
         private WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / 30);
-
-        [SetUp]
-        public void Setup()
-        {
-            m_NetworkManagerGameObject = new GameObject();
-            m_ClientNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
-            m_ClientNetworkManager.NetworkConfig = new NetworkConfig
-            {
-                NetworkTransport = m_NetworkManagerGameObject.AddComponent<BlankTestingTransport>()
-            };
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-            SceneManager.LoadSceneAsync(k_TestScene, LoadSceneMode.Additive);
-        }
-
-        private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
-        {
-            if (scene.name == k_TestScene)
-            {
-                m_TestScene = scene;
-            }
-        }
 
         [UnityTest]
         public IEnumerator SceneObjectsNotDestroyedOnShutdown()
         {
-            var timeoutHelper = new TimeoutHelper(2);
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            m_ServerNetworkManager.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
 
-            // Wait for the scene with the in-scene placed NetworkObject to be loaded.
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded, timeoutHelper);
-            Assert.False(timeoutHelper.TimedOut, "Timed out waiting for scene to load!");
+            yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
+            AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
 
 #if UNITY_2023_1_OR_NEWER
             var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #else
-            var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+            var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
 #endif
-
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
+            yield return CreateAndStartNewClient();
 
-            // Only start the client
-            m_ClientNetworkManager.StartClient();
-
-            // Wait for a tick
-            yield return m_DefaultWaitForTick;
-
-            // Shutdown the client
-            m_ClientNetworkManager.Shutdown();
-
-            // Wait for a tick
-            yield return m_DefaultWaitForTick;
-
-            // Find the same object
 #if UNITY_2023_1_OR_NEWER
-            loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+            var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName);
 #else
-            loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+            var loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
 #endif
-
-            // Verify it still exists
-            Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} after starting client!");
+            Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
+            m_ClientNetworkManagers[0].Shutdown();
+            yield return m_DefaultWaitForTick;
+#if UNITY_2023_1_OR_NEWER
+            loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName);
+#else
+            loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
+#endif
+            Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client shutdown!");
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTest]
+        public IEnumerator ChildSceneObjectsDoNotDestroyOnShutdown()
         {
-            SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            m_ServerNetworkManager.SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
 
-            if (m_TestScene.IsValid() && m_TestScene.isLoaded)
+            yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
+            AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
+
+#if UNITY_2023_1_OR_NEWER
+            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+#else
+            var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
+#endif
+            Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
+            yield return CreateAndStartNewClient();
+
+            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            Assert.IsTrue(loadedInSceneObject.TrySetParent(m_PlayerNetworkObjects[0][clientId]), $"Failed to parent in-scene object under client player");
+
+            yield return WaitForConditionOrTimeOut(() => PlayerHasChildren(clientId));
+            AssertOnTimeout($"Client-{clientId} player never parented {k_SceneObjectName}!");
+
+#if UNITY_2023_1_OR_NEWER
+            var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName);
+#else
+            var loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
+#endif
+            Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
+            m_ClientNetworkManagers[0].Shutdown();
+            yield return m_DefaultWaitForTick;
+
+            // Sanity check to make sure the client's player no longer has any children
+            yield return WaitForConditionOrTimeOut(() => PlayerNoLongerExistsWithChildren(clientId));
+            AssertOnTimeout($"Client-{clientId} player still exits with children after client shutdown!");
+#if UNITY_2023_1_OR_NEWER
+            loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName);
+#else
+            loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
+#endif
+            // Make sure any in-scene placed NetworkObject instantiated has no parent
+            foreach (var insceneObject in loadedInSceneObjects)
             {
-                SceneManager.UnloadSceneAsync(m_TestScene);
+                Assert.IsTrue(insceneObject.transform.parent == null, $"{insceneObject.name} is still parented!");
             }
 
-            if (m_NetworkManagerGameObject != null)
-            {
-                Object.DestroyImmediate(m_NetworkManagerGameObject);
-            }
+            // We should have exactly 2 in-scene placed NetworkObjects remaining:
+            // One instance on host side and one on the disconnected client side.
+            Assert.IsTrue(loadedInSceneObjects.Count() == 2, $"Only found one instance of {k_SceneObjectName} after client shutdown!");
         }
 
-        internal class BlankTestingTransport : TestingNetworkTransport
+        private bool PlayerHasChildren(ulong clientId)
         {
-            public override ulong ServerClientId { get; } = 0;
-            public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
+            if (m_PlayerNetworkObjects[clientId].ContainsKey(clientId) && m_PlayerNetworkObjects[clientId][clientId] != null)
             {
+                return m_PlayerNetworkObjects[clientId][clientId].transform.childCount > 0;
+            }
+            return false;
+        }
+
+        private bool PlayerNoLongerExistsWithChildren(ulong clientId)
+        {
+            if (m_PlayerNetworkObjects[0].ContainsKey(clientId) && m_PlayerNetworkObjects[0][clientId] != null)
+            {
+                return m_PlayerNetworkObjects[0][clientId].transform.childCount == 0;
+            }
+            return true;
+        }
+
+        private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
+        {
+            if (sceneEvent.ClientId != m_ServerNetworkManager.LocalClientId)
+            {
+                return;
             }
 
-            public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+            if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == k_TestScene)
             {
-                clientId = 0;
-                payload = new ArraySegment<byte>();
-                receiveTime = 0;
-                return NetworkEvent.Nothing;
-            }
-
-            public override bool StartClient()
-            {
-                return true;
-            }
-
-            public override bool StartServer()
-            {
-                return true;
-            }
-
-            public override void DisconnectRemoteClient(ulong clientId)
-            {
-            }
-
-            public override void DisconnectLocalClient()
-            {
-            }
-
-            public override ulong GetCurrentRtt(ulong clientId)
-            {
-                return 0;
-            }
-
-            public override void Shutdown()
-            {
-            }
-
-            public override void Initialize(NetworkManager networkManager = null)
-            {
+                m_TestScene = sceneEvent.Scene;
             }
         }
     }
