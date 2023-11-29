@@ -53,7 +53,7 @@ namespace Unity.Netcode
     /// Server side only:
     /// This tracks the progress of clients during a load or unload scene event
     /// </summary>
-    internal class SceneEventProgress
+    public class SceneEventProgress
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.

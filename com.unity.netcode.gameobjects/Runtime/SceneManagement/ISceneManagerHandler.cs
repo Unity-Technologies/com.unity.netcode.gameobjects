@@ -8,7 +8,7 @@ namespace Unity.Netcode
     /// Used to override the LoadSceneAsync and UnloadSceneAsync methods called
     /// within the NetworkSceneManager.
     /// </summary>
-    internal interface ISceneManagerHandler
+    public interface ISceneManagerHandler
     {
         AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress);
 
