@@ -899,9 +899,8 @@ namespace Unity.Netcode
                 throw new Exception("[OnClientDisconnectFromServer] Was invoked by non-server instance!");
             }
 
-            // If we are shutting down and this is the server or host disconnecting, then ignore
-            // clean up as everything that needs to be destroyed will be during shutdown.
-            if (NetworkManager.ShutdownInProgress && clientId == NetworkManager.ServerClientId)
+            // If we are shutting down, then ignore clean up as everything that needs to be destroyed will be during shutdown.
+            if (NetworkManager.ShutdownInProgress)
             {
                 return;
             }
