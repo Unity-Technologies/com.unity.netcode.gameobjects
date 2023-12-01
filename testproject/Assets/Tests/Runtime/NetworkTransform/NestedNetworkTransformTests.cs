@@ -183,7 +183,7 @@ namespace TestProject.RuntimeTests
 
         private string GetVector3Values(ref Vector3 vector3)
         {
-            return $"({vector3.x.ToString("G6")},{vector3.y.ToString("G6")},{vector3.z.ToString("G6")})";
+            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
         }
 
         /// <summary>
@@ -229,9 +229,11 @@ namespace TestProject.RuntimeTests
                             }
                         }
 
-                        if (!Approximately(playerNetworkTransforms[i].PushedScale, relativeClonedTransforms[i].transform.localScale))
+                        if (!Approximately(playerNetworkTransforms[i].transform.localScale, relativeClonedTransforms[i].transform.localScale))
                         {
-                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]\n");
+                            var playerScale = playerNetworkTransforms[i].transform.localScale;
+                            var relativeScale = relativeClonedTransforms[i].transform.localScale;
+                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {GetVector3Values(ref playerScale)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {GetVector3Values(ref relativeScale)}]\n");
                         }
 
                         // TODO: Determine why MAC OS X on 2020.3 has precision issues when interpolating using full precision but no other platform does nor does MAC OS X on later versions of Unity.
@@ -263,7 +265,7 @@ namespace TestProject.RuntimeTests
                                 var eulerPlayer = playerCurrentRotation.eulerAngles;
                                 var eulerClone = cloneRotation.eulerAngles;
 
-                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({eulerPlayer.x}, {eulerPlayer.y}, {eulerPlayer.z})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({eulerClone.x}, {eulerClone.y}, {eulerClone.z})]\n");
+                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({GetVector3Values(ref eulerPlayer)})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({GetVector3Values(ref eulerClone)})]\n");
                                 m_ValidationErrors.Append($"[Rotation Delta] ({deltaEuler.x}, {deltaEuler.y}, {deltaEuler.z})\n");
                             }
                         }
@@ -302,7 +304,7 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors = new StringBuilder();
 
             var pauseFrames = CalculateTimeOutFrames(1f);
-            var synchTimeOut = CalculateTimeOutFrames(m_Interpolation == Interpolation.Interpolation ? 4 : 2);
+            var synchTimeOut = CalculateTimeOutFrames(m_Interpolation == Interpolation.Interpolation ? k_DefaultTickRate * 3 : k_DefaultTickRate * 2);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
 
