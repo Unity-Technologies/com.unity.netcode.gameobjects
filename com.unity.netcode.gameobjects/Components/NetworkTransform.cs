@@ -161,6 +161,9 @@ namespace Unity.Netcode.Components
             // Used when tracking by state ID is enabled
             internal int StateId;
 
+            // When explicitly settings (i.e. SetState) this will be set;
+            internal bool ExplicitSet;
+
             // Used during serialization
             private FastBufferReader m_Reader;
             private FastBufferWriter m_Writer;
@@ -1541,9 +1544,15 @@ namespace Unity.Netcode.Components
             }
 
             // If the transform has deltas (returns dirty) or we are applying a deferred state update then...
-            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
+            if (m_LocalAuthoritativeNetworkState.ExplicitSet || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
                 m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
+
+                // If the state was explicitly set, then update the network tick
+                if (m_LocalAuthoritativeNetworkState.ExplicitSet)
+                {
+                    m_LocalAuthoritativeNetworkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
+                }
 
                 // Send the state update
                 UpdateTransformState();
@@ -1554,6 +1563,9 @@ namespace Unity.Netcode.Components
                 // Reset the teleport flag after we have sent the state update.
                 // We could set this again in the below OnAuthorityPushTransformState virtual method
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+
+                // Clear out the explicit flag after having sent this state update (in the event it was set)
+                m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 // Notify of the pushed state update
                 OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
@@ -2675,7 +2687,7 @@ namespace Unity.Netcode.Components
         internal void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
-            if (m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+            if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
@@ -2981,6 +2993,10 @@ namespace Unity.Netcode.Components
             }
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+
+            var transformToRef = transform;
+            // Apply the state as it is currently to the next update. If there was an adjustment/change then it will set the ExplicitSet flag
+            m_LocalAuthoritativeNetworkState.ExplicitSet = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToRef);
         }
 
         /// <summary>
