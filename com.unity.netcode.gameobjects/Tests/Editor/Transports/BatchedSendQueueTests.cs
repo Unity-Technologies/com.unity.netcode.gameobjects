@@ -238,6 +238,35 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void BatchedSendQueue_FillWriterWithMessages_StopOnSoftMaxBytes()
+        {
+            var smallMessage = new ArraySegment<byte>(new byte[10]);
+            var largeMessage = new ArraySegment<byte>(new byte[3000]);
+
+            var smallMessageSize = smallMessage.Count + BatchedSendQueue.PerMessageOverhead;
+            var largeMessageSize = largeMessage.Count + BatchedSendQueue.PerMessageOverhead;
+
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            using var data = new NativeArray<byte>(largeMessageSize, Allocator.Temp);
+
+            q.PushMessage(smallMessage);
+            q.PushMessage(largeMessage);
+            q.PushMessage(smallMessage);
+
+            var writer = new DataStreamWriter(data);
+            Assert.AreEqual(smallMessageSize, q.FillWriterWithMessages(ref writer, 1000));
+            q.Consume(smallMessageSize);
+
+            writer = new DataStreamWriter(data);
+            Assert.AreEqual(largeMessageSize, q.FillWriterWithMessages(ref writer, 1000));
+            q.Consume(largeMessageSize);
+
+            writer = new DataStreamWriter(data);
+            Assert.AreEqual(smallMessageSize, q.FillWriterWithMessages(ref writer, 1000));
+            q.Consume(smallMessageSize);
+        }
+
+        [Test]
         public void BatchedSendQueue_FillWriterWithBytes_NoopIfNoData()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);

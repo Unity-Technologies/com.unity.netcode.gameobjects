@@ -192,19 +192,31 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var data1 = new ArraySegment<byte>(new byte[] { 11 });
-            m_Client1.Send(m_Client1.ServerClientId, data1, delivery);
+            var data1 = new byte[10];
+            data1[0] = 11;
+            m_Client1.Send(m_Client1.ServerClientId, new ArraySegment<byte>(data1), delivery);
 
-            var data2 = new ArraySegment<byte>(new byte[] { 22 });
-            m_Client1.Send(m_Client1.ServerClientId, data2, delivery);
+            var data2 = new byte[3000];
+            data2[0] = 22;
+            m_Client1.Send(m_Client1.ServerClientId, new ArraySegment<byte>(data2), delivery);
+
+            var data3 = new byte[10];
+            data3[0] = 33;
+            m_Client1.Send(m_Client1.ServerClientId, new ArraySegment<byte>(data3), delivery);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
 
-            Assert.AreEqual(3, m_ServerEvents.Count);
-            Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[2].Type);
+            Assert.AreEqual(4, m_ServerEvents.Count);
+            Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[3].Type);
 
             Assert.AreEqual(11, m_ServerEvents[1].Data.First());
+            Assert.AreEqual(10, m_ServerEvents[1].Data.Count);
+
             Assert.AreEqual(22, m_ServerEvents[2].Data.First());
+            Assert.AreEqual(3000, m_ServerEvents[2].Data.Count);
+
+            Assert.AreEqual(33, m_ServerEvents[3].Data.First());
+            Assert.AreEqual(10, m_ServerEvents[3].Data.Count);
 
             yield return null;
         }
