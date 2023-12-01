@@ -899,8 +899,10 @@ namespace Unity.Netcode
                 throw new Exception("[OnClientDisconnectFromServer] Was invoked by non-server instance!");
             }
 
-            // If we are shutting down, then ignore clean up as everything that needs to be destroyed will be during shutdown.
-            if (NetworkManager.ShutdownInProgress)
+            // If we are shutting down and this is the server or host disconnecting, then ignore
+            // clean up as everything that needs to be destroyed will be during shutdown.
+
+            if (NetworkManager.ShutdownInProgress && clientId == NetworkManager.ServerClientId)
             {
                 return;
             }
@@ -924,6 +926,7 @@ namespace Unity.Netcode
                         }
                     }
                     else
+                    if (!NetworkManager.ShutdownInProgress)
                     {
                         playerObject.RemoveOwnership();
                     }
@@ -942,7 +945,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Handle changing ownership and prefab handlers                    
+                    // Handle changing ownership and prefab handlers
                     for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = clientOwnedObjects[i];
@@ -960,6 +963,7 @@ namespace Unity.Netcode
                                 }
                             }
                             else
+                            if (!NetworkManager.ShutdownInProgress)
                             {
                                 ownedObject.RemoveOwnership();
                             }
