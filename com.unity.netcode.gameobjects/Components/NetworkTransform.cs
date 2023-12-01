@@ -2994,9 +2994,9 @@ namespace Unity.Netcode.Components
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
 
-            var transformToRef = transform;
+            var transformToCommit = transform;
             // Apply the state as it is currently to the next update. If there was an adjustment/change then it will set the ExplicitSet flag
-            m_LocalAuthoritativeNetworkState.ExplicitSet = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToRef);
+            m_LocalAuthoritativeNetworkState.ExplicitSet = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit);
         }
 
         /// <summary>
