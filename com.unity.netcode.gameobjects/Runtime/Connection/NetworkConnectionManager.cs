@@ -1080,16 +1080,9 @@ namespace Unity.Netcode
         /// </summary>
         internal void Shutdown()
         {
-            LocalClient.IsApproved = false;
-            LocalClient.IsConnected = false;
-            ConnectedClients.Clear();
-            ConnectedClientIds.Clear();
-            ConnectedClientsList.Clear();
+
             if (LocalClient.IsServer)
             {
-                // make sure all messages are flushed before transport disconnect clients
-                MessageManager?.ProcessSendQueues();
-
                 // Build a list of all client ids to be disconnected
                 var disconnectedIds = new HashSet<ulong>();
 
@@ -1125,6 +1118,9 @@ namespace Unity.Netcode
                 {
                     DisconnectRemoteClient(clientId);
                 }
+
+                // make sure all messages are flushed before transport disconnect clients
+                MessageManager?.ProcessSendQueues();
             }
             else if (NetworkManager != null && NetworkManager.IsListening && LocalClient.IsClient)
             {
@@ -1138,6 +1134,12 @@ namespace Unity.Netcode
                     Debug.LogException(ex);
                 }
             }
+
+            LocalClient.IsApproved = false;
+            LocalClient.IsConnected = false;
+            ConnectedClients.Clear();
+            ConnectedClientIds.Clear();
+            ConnectedClientsList.Clear();
 
             if (NetworkManager != null && NetworkManager.NetworkConfig?.NetworkTransport != null)
             {
