@@ -102,7 +102,7 @@ namespace Unity.Netcode.Components
             private const int k_PositionSlerp = 0x00010000; // Persists between state updates (authority dictates if this is set)
             private const int k_IsParented = 0x00020000; // When parented and synchronizing, we need to have both lossy and local scale due to varying spawn order
             private const int k_SynchBaseHalfFloat = 0x00040000;
-            private const int k_ReliableFragmentedSequenced = 0x00080000;
+            private const int k_ReliableSequenced = 0x00080000;
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
             private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier 
@@ -475,7 +475,7 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool IsReliableStateUpdate()
             {
-                return ReliableFragmentedSequenced;
+                return ReliableSequenced;
             }
 
             internal bool IsParented
@@ -496,12 +496,12 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool ReliableFragmentedSequenced
+            internal bool ReliableSequenced
             {
-                get => GetFlag(k_ReliableFragmentedSequenced);
+                get => GetFlag(k_ReliableSequenced);
                 set
                 {
-                    SetFlag(value, k_ReliableFragmentedSequenced);
+                    SetFlag(value, k_ReliableSequenced);
                 }
             }
 
@@ -685,16 +685,16 @@ namespace Unity.Netcode.Components
                             if (IsTeleportingNextFrame || IsSynchronizing || UnreliableFrameSync || (UseHalfFloatPrecision && NetworkDeltaPosition.CollapsedDeltaIntoBase))
                             {
                                 // Send the message reliably
-                                ReliableFragmentedSequenced = true;
+                                ReliableSequenced = true;
                             }
                             else
                             {
-                                ReliableFragmentedSequenced = false;
+                                ReliableSequenced = false;
                             }
                         }
                         else // If not using UseUnreliableDeltas, then always use reliable fragmented sequenced
                         {
-                            ReliableFragmentedSequenced = true;
+                            ReliableSequenced = true;
                         }
 
                         BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
@@ -3172,7 +3172,7 @@ namespace Unity.Netcode.Components
             messagePayload.Seek(currentPosition);
 
             // Get the network delivery method used to send this state update
-            var networkDelivery = m_LocalAuthoritativeNetworkState.ReliableFragmentedSequenced ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+            var networkDelivery = m_LocalAuthoritativeNetworkState.ReliableSequenced ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             // Forward owner authoritative messages before doing anything else
             if (ownerAuthoritativeServerSide)
@@ -3246,7 +3246,7 @@ namespace Unity.Netcode.Components
             // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
             var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
                 | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
-                ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+                ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             using (writer)
             {
