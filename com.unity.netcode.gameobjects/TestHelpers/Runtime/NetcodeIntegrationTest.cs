@@ -1575,7 +1575,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// and <see cref="GetTickRate"/>.
         /// </summary>
         protected void TimeTravelAdvanceTick()
-        {            
+        {
             TimeTravel(m_TickFrequency, m_FramesPerTick);
         }
 
