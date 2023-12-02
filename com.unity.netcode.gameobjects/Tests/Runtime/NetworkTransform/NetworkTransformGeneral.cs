@@ -76,7 +76,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-            WaitForNextTick();
             Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
             WaitForNextTick();
 
@@ -85,8 +84,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-
-            WaitForNextTick();
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {m_AuthoritativeTransform.RotAngleThreshold} degrees!");
             WaitForNextTick();
 
@@ -100,7 +97,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-            WaitForNextTick();
             Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
                 $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
@@ -108,7 +104,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-            WaitForNextTick();
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
             //Reset rotation back to zero on all axis
@@ -120,7 +115,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-            WaitForNextTick();
             Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
                 $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
@@ -128,7 +122,6 @@ namespace Unity.Netcode.RuntimeTests
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
-            WaitForNextTick();
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
         }
 
