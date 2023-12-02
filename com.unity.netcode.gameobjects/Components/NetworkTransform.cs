@@ -2995,8 +2995,26 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
 
             var transformToCommit = transform;
-            // Apply the state as it is currently to the next update. If there was an adjustment/change then it will set the ExplicitSet flag
-            m_LocalAuthoritativeNetworkState.ExplicitSet = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit);
+
+            // Explicit set states are additive during the same fractional tick period of time (i.e. each SetState invocation will 
+            // update the axial deltas to whatever changes are applied). As such, we need to preserve the dirty flag.
+            var stateWasDirty = m_LocalAuthoritativeNetworkState.IsDirty;
+
+            // Preserve the explicit state in case it was already set.
+            var explicitState = m_LocalAuthoritativeNetworkState.ExplicitSet;
+
+            // Apply any delta states to the m_LocalAuthoritativeNetworkState
+            var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit);
+
+            // If we were dirty and the explicit state was set (prior to checking for deltas) or the current explicit state is dirty,
+            // then we set the explicit state flag.
+            m_LocalAuthoritativeNetworkState.ExplicitSet = (stateWasDirty & explicitState) | isDirty;
+
+            // If the current explicit set flag is set, then we are dirty. This assures if more than one explicit set state is invoked
+            // in between a fractional tick period and the current explicit set state did not find any deltas that we preserve any
+            // previous dirty state.
+            m_LocalAuthoritativeNetworkState.IsDirty = m_LocalAuthoritativeNetworkState.ExplicitSet;
+
         }
 
         /// <summary>

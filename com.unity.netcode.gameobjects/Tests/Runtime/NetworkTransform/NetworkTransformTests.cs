@@ -22,6 +22,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
     public class NetworkTransformTests : NetworkTransformBase
     {
+        protected const int k_TickRate = 60;
         /// <summary>
         /// Constructor
         /// </summary>
@@ -35,6 +36,11 @@ namespace Unity.Netcode.RuntimeTests
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
 
+        protected override uint GetTickRate()
+        {
+            return k_TickRate;
+        }
+
         /// <summary>
         /// Handles validating the local space values match the original local space values.
         /// If not, it generates a message containing the axial values that did not match
@@ -43,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
         private void AllChildrenLocalTransformValuesMatch(bool useSubChild, ChildrenTransformCheckType checkType)
         {
             // We don't assert on timeout here because we want to log this information during PostAllChildrenLocalTransformValuesMatch
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesKeptLocalTransformValues(useSubChild), k_TickRate * 2);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesKeptLocalTransformValues(useSubChild), (int)GetTickRate() * 2);
             m_InfoMessage.Clear();
             m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
             if (!success)
@@ -53,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     var instances = useSubChild ? ChildObjectComponent.SubInstances : ChildObjectComponent.Instances;
                     success = PostAllChildrenLocalTransformValuesMatch(useSubChild);
-                    WaitForNextTick();
+                    TimeTravelAdvanceTick();
                 }
             }
 
@@ -123,7 +129,7 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritySubChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
 
             // Allow one tick for authority to update these changes
-            TimeTravelToNextTick();
+            TimeTravelAdvanceTick();
             success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
 
             Assert.True(success, "All transform values did not match prior to parenting!");
@@ -139,8 +145,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // Provide two network ticks for interpolation to finalize
-            TimeTravelToNextTick();
-            TimeTravelToNextTick();
+            TimeTravelAdvanceTick();
+            TimeTravelAdvanceTick();
 
             // This validates each child instance has preserved their local space values
             AllChildrenLocalTransformValuesMatch(false, ChildrenTransformCheckType.Connected_Clients);
@@ -230,7 +236,7 @@ namespace Unity.Netcode.RuntimeTests
             WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
             // Allow the precision settings to propagate first as changing precision
             // causes a teleport event to occur
-            WaitForNextTick();
+            TimeTravelAdvanceTick();
             var iterations = axisCount == 3 ? k_PositionRotationScaleIterations3Axis : k_PositionRotationScaleIterations;
 
             // Move and rotate within the same tick, validate the non-authoritative instance updates
@@ -365,7 +371,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
-            TimeTravelToNextTick();
+            TimeTravelAdvanceTick();
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextPosition = GetRandomVector3(2f, 30f);

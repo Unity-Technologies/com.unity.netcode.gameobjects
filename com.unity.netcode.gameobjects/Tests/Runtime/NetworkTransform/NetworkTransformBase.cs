@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkTransformBase : IntegrationTestWithApproximation
     {
-        protected const int k_TickRate = 60;
+
         // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
         protected const int k_PositionRotationScaleIterations = 3;
         protected const int k_PositionRotationScaleIterations3Axis = 8;
@@ -138,11 +138,6 @@ namespace Unity.Netcode.RuntimeTests
             return 1;
         }
 
-        protected virtual uint GetTestTickRate()
-        {
-            return k_DefaultTickRate;
-        }
-
         /// <summary>
         /// Determines whether the test will use unreliable delivery for implicit state updates or not
         /// </summary>
@@ -170,6 +165,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnInlineSetup()
         {
             Setup();
+            base.OnInlineSetup();
         }
 
         /// <summary>
@@ -178,6 +174,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnInlineTearDown()
         {
             Teardown();
+            base.OnInlineTearDown();
         }
 
         /// <summary>
@@ -275,10 +272,10 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            m_ServerNetworkManager.NetworkConfig.TickRate = k_TickRate;
+            m_ServerNetworkManager.NetworkConfig.TickRate = GetTickRate();
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.TickRate = k_TickRate;
+                clientNetworkManager.NetworkConfig.TickRate = GetTickRate();
             }
         }
 
@@ -322,7 +319,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
             Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
             // Just wait for at least one tick for NetworkTransforms to finish synchronization
-            WaitForNextTick();
+            TimeTravelAdvanceTick();
         }
 
         /// <summary>
@@ -343,7 +340,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            networkManager.NetworkConfig.TickRate = k_TickRate;
+            networkManager.NetworkConfig.TickRate = GetTickRate();
             if (m_EnableVerboseDebug)
             {
                 networkManager.LogLevel = LogLevel.Developer;
@@ -728,24 +725,6 @@ namespace Unity.Netcode.RuntimeTests
             RotationsMatch(true);
             PositionsMatch(true);
             ScaleValuesMatch(true);
-        }
-
-        /// <summary>
-        /// Waits until the next tick
-        /// </summary>
-        protected void WaitForNextTick()
-        {
-            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
-            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
-            {
-                var frameRate = Application.targetFrameRate;
-                if (frameRate <= 0)
-                {
-                    frameRate = 60;
-                }
-                var frameDuration = 1f / frameRate;
-                TimeTravel(frameDuration, 1);
-            }
         }
     }
 
