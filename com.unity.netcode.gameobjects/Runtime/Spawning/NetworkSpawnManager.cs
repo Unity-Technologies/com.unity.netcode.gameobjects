@@ -728,17 +728,43 @@ namespace Unity.Netcode
                         // Leave destruction up to the handler
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
                     }
-                    else if (networkObjects[i].IsSpawned)
+                    else
                     {
-                        // If it is an in-scene placed NetworkObject then just despawn
-                        // and let it be destroyed when the scene is unloaded. Otherwise, despawn and destroy it.
+                        // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
+                        // is unloaded. Otherwise, despawn and destroy it.
                         var shouldDestroy = !(networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value);
 
-                        OnDespawnObject(networkObjects[i], shouldDestroy);
-                    }
-                    else if (networkObjects[i].IsSceneObject != null && !networkObjects[i].IsSceneObject.Value)
-                    {
-                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
+                        if (shouldDestroy)
+                        {
+                            // Check to see if there are any in-scene placed children that are marked to be destroyed with the scene
+                            var childrenObjects = networkObjects[i].GetComponentsInChildren<NetworkObject>();
+                            foreach (var childObject in childrenObjects)
+                            {
+                                if (childObject == networkObjects[i])
+                                {
+                                    continue;
+                                }
+
+                                // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
+                                // and set its parent to root
+                                if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
+                                {
+                                    childObject.TryRemoveParent(childObject.WorldPositionStays());
+                                }
+                            }
+                        }
+
+                        // If spawned, then despawn and potentially destroy. 
+                        if (networkObjects[i].IsSpawned)
+                        {
+                            OnDespawnObject(networkObjects[i], shouldDestroy);
+                        }
+                        else // Otherwise, if we are not spawned and we should destroy...then destroy.
+                        if (shouldDestroy)
+                        {
+                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        }
                     }
                 }
             }
@@ -937,7 +963,7 @@ namespace Unity.Netcode
                 if (sobj.CheckObjectVisibility == null)
                 {
                     // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server
-                    if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
+                    if (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId)
                     {
                         sobj.Observers.Add(clientId);
                     }
@@ -950,7 +976,6 @@ namespace Unity.Netcode
                         sobj.Observers.Add(clientId);
                     }
                     else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
-                    if (sobj.Observers.Contains(clientId))
                     {
                         sobj.Observers.Remove(clientId);
                     }

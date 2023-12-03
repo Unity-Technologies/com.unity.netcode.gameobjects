@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
@@ -51,6 +52,15 @@ namespace Unity.Netcode.Editor.CodeGen
                             break;
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
+                            break;
+                        case nameof(RpcAttribute):
+                            foreach (var methodDefinition in typeDefinition.GetConstructors())
+                            {
+                                if (methodDefinition.Parameters.Count == 0)
+                                {
+                                    methodDefinition.IsPublic = true;
+                                }
+                            }
                             break;
                         case nameof(__RpcParams):
                         case nameof(RpcFallbackSerialization):
