@@ -161,7 +161,7 @@ namespace Unity.Netcode.Components
             // Used when tracking by state ID is enabled
             internal int StateId;
 
-            // When explicitly settings (i.e. SetState) this will be set;
+            // Set when a state has been explicitly set (i.e. SetState)
             internal bool ExplicitSet;
 
             // Used during serialization
@@ -461,8 +461,8 @@ namespace Unity.Netcode.Components
 
             /// <summary>
             /// Returns whether this state update was a frame synchronization when 
-            /// UseUnreliableDeltas is enabled. When set, the entire transform has
-            /// been synchronized.
+            /// UseUnreliableDeltas is enabled. When set, the entire transform will 
+            /// be or has been synchronized.
             /// </summary>
             public bool IsUnreliableFrameSync()
             {
@@ -470,9 +470,12 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Returns whether this state update was sent with unreliable delivery.
-            /// If false, then it was sent with reliable delivery.
+            /// Returns true if this state was sent with reliable delivery.
+            /// If false, then it was sent with unreliable delivery.
             /// </summary>
+            /// <remarks>
+            /// Unreliable delivery will only be used if <see cref="UseUnreliableDeltas"/> is set.
+            /// </remarks>
             public bool IsReliableStateUpdate()
             {
                 return ReliableSequenced;
@@ -1543,12 +1546,12 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // If the transform has deltas (returns dirty) or we are applying a deferred state update then...
+            // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
                 m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
 
-                // If the state was explicitly set, then update the network tick
+                // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
                 {
                     m_LocalAuthoritativeNetworkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
@@ -1560,11 +1563,9 @@ namespace Unity.Netcode.Components
                 // Mark the last tick and the old state (for next ticks)
                 m_OldState = m_LocalAuthoritativeNetworkState;
 
-                // Reset the teleport flag after we have sent the state update.
-                // We could set this again in the below OnAuthorityPushTransformState virtual method
+                // Reset the teleport and explicit state flags after we have sent the state update.
+                // These could be set again in the below OnAuthorityPushTransformState virtual method
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-
-                // Clear out the explicit flag after having sent this state update (in the event it was set)
                 m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 // Notify of the pushed state update
@@ -1643,13 +1644,13 @@ namespace Unity.Netcode.Components
         private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
-            // NetworkTransform will stagger their axial synchronization over a 1 second period based on their
-            // assigned tick synchronization (m_TickSync) value.
+            // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
+            // assigned tick slot (m_TickSync).
             // More about m_DeltaSynch:
             // If we have not sent any deltas since our last frame synch, then this will prevent us from sending
             // frame synch's when the object is at rest. If this is false and a state update is detected and sent,
             // then it will be set to true and each subsequent tick will do this check to determine if it should
-            // send a frame synch.
+            // send a full frame synch.
             var isAxisSync = false;
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
             if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick)
@@ -1724,6 +1725,8 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // All of the checks below, up to the delta position checking portion, are to determine if the
+            // authority changed a property during runtime that requires a full synchronizing.
             if (InLocalSpace != networkState.InLocalSpace)
             {
                 networkState.InLocalSpace = InLocalSpace;
@@ -1774,6 +1777,7 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
+            // Begin delta checks against last sent state update
             if (!UseHalfFloatPrecision)
             {
                 if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
@@ -2996,11 +3000,10 @@ namespace Unity.Netcode.Components
 
             var transformToCommit = transform;
 
-            // Explicit set states are additive during the same fractional tick period of time (i.e. each SetState invocation will 
-            // update the axial deltas to whatever changes are applied). As such, we need to preserve the dirty flag.
+            // Explicit set states are cumulative during a fractional tick period of time (i.e. each SetState invocation will 
+            // update the axial deltas to whatever changes are applied). As such, we need to preserve the dirty and explicit
+            // state flags.
             var stateWasDirty = m_LocalAuthoritativeNetworkState.IsDirty;
-
-            // Preserve the explicit state in case it was already set.
             var explicitState = m_LocalAuthoritativeNetworkState.ExplicitSet;
 
             // Apply any delta states to the m_LocalAuthoritativeNetworkState
