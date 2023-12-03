@@ -113,6 +113,7 @@ namespace Unity.Netcode
                 // processed before the object is fully spawned. This must be the last thing done in the spawn process.
                 if (triggers.TryGetValue(key, out var triggerInfo))
                 {
+                    triggers.Remove(key);
                     foreach (var deferredMessage in triggerInfo.TriggerData)
                     {
                         // Reader will be disposed within HandleMessage
@@ -120,7 +121,6 @@ namespace Unity.Netcode
                     }
 
                     triggerInfo.TriggerData.Dispose();
-                    triggers.Remove(key);
                 }
             }
         }

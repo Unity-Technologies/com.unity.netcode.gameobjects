@@ -2266,6 +2266,11 @@ namespace Unity.Netcode
                         // of the client was persisted since MLAPI)
                         NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
 
+                        if (NetworkManager.IsHost)
+                        {
+                            NetworkManager.ConnectionManager.InvokeOnPeerConnectedCallback(clientId);
+                        }
+
                         // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
                         // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)
                         if (sceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization && NetworkManager.ConnectedClients.ContainsKey(clientId))

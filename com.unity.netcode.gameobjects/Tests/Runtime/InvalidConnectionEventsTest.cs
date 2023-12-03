@@ -79,7 +79,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingConnectionApprovedToAlreadyConnectedClient_ConnectionApprovedMessageIsRejected()
         {
-            var message = new ConnectionApprovedMessage();
+            var message = new ConnectionApprovedMessage
+            {
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+            };
             m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
@@ -145,7 +148,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingConnectionApprovedFromAnyClient_ConnectionApprovedMessageIsRejected()
         {
-            var message = new ConnectionApprovedMessage();
+            var message = new ConnectionApprovedMessage
+            {
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
+            };
             m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,

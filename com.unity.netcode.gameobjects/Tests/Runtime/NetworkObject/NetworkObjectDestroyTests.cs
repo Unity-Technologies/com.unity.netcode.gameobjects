@@ -58,6 +58,9 @@ namespace Unity.Netcode.RuntimeTests
             ShuttingDown,
             ActiveSession
         }
+
+        private string m_ClientPlayerName;
+        private ulong m_ClientNetworkObjectId;
         /// <summary>
         /// Validates the expected behavior when the client-side destroys a <see cref="NetworkObject"/>
         /// </summary>
@@ -78,7 +81,8 @@ namespace Unity.Netcode.RuntimeTests
                 LogAssert.ignoreFailingMessages = true;
                 NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
             }
-
+            m_ClientPlayerName = clientPlayer.gameObject.name;
+            m_ClientNetworkObjectId = clientPlayer.NetworkObjectId;
             Object.DestroyImmediate(clientPlayer.gameObject);
 
             // destroying a NetworkObject while a session is active is not allowed
@@ -91,12 +95,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool HaveLogsBeenReceived()
         {
-            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
             {
                 return false;
             }
 
-            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
             {
                 return false;
             }
