@@ -5,9 +5,6 @@ using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-// TODO: Rewrite test to use the tools package. Debug simulator not available in UTP 2.X.
-#if !UTP_TRANSPORT_2_0_ABOVE
-
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
@@ -971,4 +968,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-#endif
