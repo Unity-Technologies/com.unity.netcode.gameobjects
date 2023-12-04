@@ -310,7 +310,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 // Setup the frames per tick for time travel advance to next tick
                 ConfigureFramesPerTick();
-            }            
+            }
             if (m_SetupIsACoroutine)
             {
                 yield return OnSetup();
