@@ -9,6 +9,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
+// TODO: Rewrite test to use the tools package. Debug simulator not available in UTP 2.X.
+#if !UTP_TRANSPORT_2_0_ABOVE
+
 namespace TestProject.RuntimeTests
 {
     /// <summary>
@@ -320,3 +323,4 @@ namespace TestProject.RuntimeTests
         }
     }
 }
+#endif

@@ -63,7 +63,7 @@ namespace Unity.Netcode
             using (WrappedMessage.WriteBuffer)
             {
                 WrappedMessage.WriteBuffer.WriteBytesSafe(WrappedMessage.ReadBuffer.GetUnsafePtr(), WrappedMessage.ReadBuffer.Length);
-                networkManager.MessageManager.SendMessage(ref WrappedMessage, Delivery, nonServerIds);
+                networkManager.MessageManager.SendMessage(ref WrappedMessage, Delivery, nonServerIds.AsArray());
             }
         }
     }

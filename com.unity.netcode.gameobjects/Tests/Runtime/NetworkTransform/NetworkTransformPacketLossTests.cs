@@ -5,6 +5,9 @@ using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
+// TODO: Rewrite test to use the tools package. Debug simulator not available in UTP 2.X.
+#if !UTP_TRANSPORT_2_0_ABOVE
+
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
@@ -550,7 +553,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
         private const int k_PositionRotationScaleIterations = 3;
         private const int k_PositionRotationScaleIterations3Axis = 8;
 
@@ -688,7 +691,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the deltas to be pushed
             yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
 
-            // Just in case we drop the first few state updates 
+            // Just in case we drop the first few state updates
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 // Set the local state to not reflect the authority state's local space settings
@@ -746,7 +749,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
 
                 // For 3 axis, we will skip validating that the non-authority interpolates to its target point at least once.
-                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2 
+                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2
                 // of the axis are being updated to assure interpolation maintains the targeted axial value per axis.
                 // For 2 and 1 axis tests we always validate per delta update
                 if (m_AxisExcluded || axisCount < 3)
@@ -968,3 +971,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
