@@ -1569,11 +1569,11 @@ namespace Unity.Netcode.Components
                 m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 try
-                { 
+                {
                     // Notify of the pushed state update
                     OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogException(ex);
                 }
