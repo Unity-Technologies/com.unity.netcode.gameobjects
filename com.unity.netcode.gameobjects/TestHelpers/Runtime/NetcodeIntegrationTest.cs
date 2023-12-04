@@ -305,16 +305,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public IEnumerator SetUp()
         {
             VerboseDebug($"Entering {nameof(SetUp)}");
-
             NetcodeLogAssert = new NetcodeLogAssert();
+            if (m_EnableTimeTravel)
+            {
+                // Setup the frames per tick for time travel advance to next tick
+                ConfigureFramesPerTick();
+            }            
             if (m_SetupIsACoroutine)
             {
                 yield return OnSetup();
             }
             else
             {
-                // Setup the frames per tick for time travel to next tick
-                ConfigureFramesPerTick();
                 OnInlineSetup();
             }
 

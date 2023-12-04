@@ -1,3 +1,5 @@
+// TODO: Rewrite test to use the tools package. Debug simulator not available in UTP 2.X.
+#if !UTP_TRANSPORT_2_0_ABOVE
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -478,16 +480,6 @@ namespace Unity.Netcode.RuntimeTests
                 m_Teleported = true;
             }
         }
-
-        //public IEnumerator MultipleTeleportsBackToBack([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation)
-        //{
-        //    // Register with NetworkUpdateLoop EarlyUpdate
-        //    // Mock receiving message that teleports
-        //    // Determine each frame if it is a new tick
-        //    // If so, teleport to a position
-        //    // Check the receiving side for the teleport
-        //    // repeat steps several times
-        //    yield return null;
-        //}
     }
 }
+#endif

@@ -1568,8 +1568,15 @@ namespace Unity.Netcode.Components
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
                 m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
-                // Notify of the pushed state update
-                OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
+                try
+                { 
+                    // Notify of the pushed state update
+                    OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
+                }
+                catch(Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
 
                 // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if 
                 // we have already sent at least one unreliable delta state update. At this point in the callstack,
@@ -3011,7 +3018,7 @@ namespace Unity.Netcode.Components
 
             // If we were dirty and the explicit state was set (prior to checking for deltas) or the current explicit state is dirty,
             // then we set the explicit state flag.
-            m_LocalAuthoritativeNetworkState.ExplicitSet = (stateWasDirty & explicitState) | isDirty;
+            m_LocalAuthoritativeNetworkState.ExplicitSet = (stateWasDirty && explicitState) || isDirty;
 
             // If the current explicit set flag is set, then we are dirty. This assures if more than one explicit set state is invoked
             // in between a fractional tick period and the current explicit set state did not find any deltas that we preserve any
