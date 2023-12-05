@@ -164,6 +164,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     methodDefinition.Name == nameof(NetworkBehaviour.__endSendServerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__beginSendRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__initializeVariables) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__initializeRpcs) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__registerRpc) ||
