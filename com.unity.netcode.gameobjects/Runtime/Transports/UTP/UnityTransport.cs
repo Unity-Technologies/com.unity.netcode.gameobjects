@@ -753,7 +753,7 @@ namespace Unity.Netcode.Transports.UTP
                     // in the stream (the send queue does that automatically) we are sure they'll be
                     // reassembled properly at the other end. This allows us to lift the limit of ~44KB
                     // on reliable payloads (because of the reliable window size).
-                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer, MTU) : Queue.FillWriterWithMessages(ref writer);
+                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer, MTU) : Queue.FillWriterWithMessages(ref writer, MTU);
 
                     result = Driver.EndSend(writer);
                     if (result == written)
@@ -1238,7 +1238,7 @@ namespace Unity.Netcode.Transports.UTP
             // We also increase the maximum resend timeout since the default one in UTP is very
             // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
             // we sometimes notice a lot of useless resends, especially if using Relay. (We can
-            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)    
+            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)
             m_NetworkSettings.WithReliableStageParameters(
                 windowSize: 64
 #if UTP_TRANSPORT_2_0_ABOVE
