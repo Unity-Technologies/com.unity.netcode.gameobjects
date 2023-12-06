@@ -347,7 +347,7 @@ namespace Unity.Netcode
             // When this happens, the client will not have an entry within the m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup tables so we exit early and just return 0 to be used for the disconnect event.
             if (!LocalClient.IsServer && !TransportIdToClientIdMap.ContainsKey(transportId))
             {
-                return 0;
+                return NetworkManager.LocalClientId;
             }
 
             var clientId = TransportIdToClientId(transportId);
@@ -476,10 +476,16 @@ namespace Unity.Netcode
             s_TransportDisconnect.Begin();
 #endif
             var clientId = TransportIdCleanUp(transportClientId);
-
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"Disconnect Event From {clientId}");
+            }
+
+            // If we are a client and we have gotten the ServerClientId back, then use our assigned local id as the client that was
+            // disconnected (either the user disconnected or the server disconnected, but the client that disconnected is the LocalClientId)
+            if (!NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+            {
+                clientId = NetworkManager.LocalClientId;
             }
 
             // Process the incoming message queue so that we get everything from the server disconnecting us or, if we are the server, so we got everything from that client.
@@ -496,9 +502,12 @@ namespace Unity.Netcode
             {
                 OnClientDisconnectFromServer(clientId);
             }
-            else
+            else // As long as we are not in the middle of a shutdown
+            if (!NetworkManager.ShutdownInProgress)
             {
-                // We must pass true here and not process any sends messages as we are no longer connected and thus there is no one to send any messages to and this will cause an exception within UnityTransport as the client ID is no longer valid.
+                // We must pass true here and not process any sends messages as we are no longer connected.
+                // Otherwise, attempting to process messages here can cause an exception within UnityTransport
+                // as the client ID is no longer valid.
                 NetworkManager.Shutdown(true);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
