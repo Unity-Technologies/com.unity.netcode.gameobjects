@@ -256,18 +256,21 @@ public class ConnectionModeScript : MonoBehaviour
     {
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();
-        if (m_ConnectionModeButtons != null)
+        if (m_ConnectionModeButtons)
         {
             m_ConnectionModeButtons.SetActive(false);
             NetworkManager.Singleton.OnClientStopped += OnClientStopped;
         }
 
-        m_DisconnectClientButton?.SetActive(true);
+        if (m_DisconnectClientButton)
+        {
+            m_DisconnectClientButton.SetActive(true);
+        }
     }
 
     private void OnClientStopped(bool obj)
     {
-        if (m_ConnectionModeButtons != null)
+        if (m_ConnectionModeButtons)
         {
             NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
             m_ConnectionModeButtons.SetActive(true);
