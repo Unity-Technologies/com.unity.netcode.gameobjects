@@ -26,7 +26,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a host could disconnect its local client but remain running as a server. (#2789)
 - Fixed issue where `OnClientDisconnectedCallback` was not being invoked under certain conditions. (#2789)
 - Fixed issue where `OnClientDisconnectedCallback` was always returning 0 as the client identifier. (#2789)
-- Fixed issue where if a host or server shutdown while a client owned NetworkObjects (other than the player) it would throw an exception.
+- Fixed issue where if a host or server shutdown while a client owned NetworkObjects (other than the player) it would throw an exception. (#2789)
+- Fixed issue where setting values on a `NetworkVariable` or `NetworkList` within `OnNetworkDespawn` during a shutdown sequence would throw an exception. (#2789)
 - Fixed issue where a teleport state could potentially be overridden by a previous unreliable delta state. (#2777)
 - Fixed issue where `NetworkTransform` was using the `NetworkManager.ServerTime.Tick` as opposed to `NetworkManager.NetworkTickSystem.ServerTime.Tick` during the authoritative side's tick update where it performed a delta state check. (#2777)
 - Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
