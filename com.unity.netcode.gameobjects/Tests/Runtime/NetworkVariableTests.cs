@@ -2782,7 +2782,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkDespawn()
         {
-            if (IsServer && m_IntList != null)
+            if (IsServer)
             {
                 m_IntNetworkVariable.Value = 5;
                 for (int i = 0; i < 10; i++)
