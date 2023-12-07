@@ -1045,6 +1045,12 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
             }
 
+            if (clientId == NetworkManager.ServerClientId)
+            {
+                Debug.LogWarning($"Disconnecting the local server-host client is not allowed. Use NetworkManager.Shutdown instead.");
+                return;
+            }
+
             if (!string.IsNullOrEmpty(reason))
             {
                 var disconnectReason = new DisconnectReasonMessage
