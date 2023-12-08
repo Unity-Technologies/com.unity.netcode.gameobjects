@@ -341,11 +341,40 @@ namespace Unity.Netcode
         /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
         public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
         {
-            if (!NetworkManager.IsServer)
+            if (networkPrefab == null)
             {
-                NetworkLog.LogErrorServer($"Failed to spawn {networkPrefab.name}! Only the server has authority to spawn {nameof(NetworkObject)}s!");
+                Debug.LogError($"The {nameof(networkPrefab)} parameter was null! You must pass in a valid {nameof(NetworkObject)}.");
                 return null;
             }
+
+            if (!NetworkManager.IsServer)
+            {
+                Debug.LogError($"Only the server has authority to {nameof(NetworkSpawnManager.InstantiateAndSpawn)}!");
+                return null;
+            }
+
+            if (!NetworkManager.ShutdownInProgress)
+            {
+                Debug.LogWarning($"Invoking {nameof(NetworkSpawnManager.InstantiateAndSpawn)} while shutting down! Calls to {nameof(NetworkSpawnManager.InstantiateAndSpawn)} will be ignored.");
+                return null;
+            }
+
+            // Verify it is actually a valid prefab
+            if (!NetworkManager.NetworkConfig.Prefabs.Contains(networkPrefab.gameObject))
+            {
+                Debug.LogError($"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab? The {nameof(NetworkObject.InstantiateAndSpawn)} {nameof(NetworkObject)} parameter must be the source network prefab!");
+                return null;
+            }
+
+            return InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+        }
+
+        /// <summary>
+        /// !!! Does not perform any parameter checks prior to attempting to instantiate and spawn the NetworkObject !!!
+        /// </summary>
+        internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
+        {
+
             var networkObject = networkPrefab;
             // Host spawns the ovveride and server spawns the original prefab unless forceOverride is set to true where both server or host will spawn the override.
             if (forceOverride || NetworkManager.IsHost)
@@ -354,6 +383,7 @@ namespace Unity.Netcode
             }
             if (networkObject == null)
             {
+                Debug.LogError($"Failed to instantiate and spawn {networkPrefab.name}!");
                 return null;
             }
             networkObject.IsPlayerObject = isPlayerObject;

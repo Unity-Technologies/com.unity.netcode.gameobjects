@@ -782,6 +782,61 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// This basically invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
+        /// </summary>
+        /// <param name="networkmanager">The local instance of the NetworkManager connected to an session in progress.</param>
+        /// <param name="networkPrefab">The <see cref="NetworkObject"/> of the pefab asset.</param>
+        /// <param name="ownerClientId">The owner of the <see cref="NetworkObject"/> instance (defaults to server).</param>
+        /// <param name="destroyWithScene">Whether the <see cref="NetworkObject"/> instance will be destroyed when the scene it is located within is unloaded (default is false).</param>
+        /// <param name="isPlayerObject">Whether the <see cref="NetworkObject"/> instance is a player object or not (default is false).</param>
+        /// <param name="forceOverride">Whether you want to force spawning the override when running as a host or server or if you want it to spawn the override for host mode and
+        /// the source prefab for server. If there is an override, clients always spawn that as opposed to the source prefab (defaults to false).  </param>
+        /// <param name="position">The starting poisiton of the <see cref="NetworkObject"/> instance.</param>
+        /// <param name="rotation">The starting rotation of the <see cref="NetworkObject"/> instance.</param>
+        /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
+        public NetworkObject InstantiateAndSpawn(NetworkManager networkManager, NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
+        {
+            if (networkManager == null)
+            {
+                Debug.LogError($"The {nameof(NetworkManager)} parameter was null! You must pass in a valid {nameof(NetworkManager)} instance.");
+                return null;
+            }
+
+            if (networkPrefab == null)
+            {
+                Debug.LogError($"The {nameof(networkPrefab)} parameter was null! You must pass in a valid {nameof(NetworkObject)}.");
+                return null;
+            }
+
+            if (!networkManager.IsListening)
+            {
+                Debug.LogError("You can only invoked this method when you are connected to an existing/in-progress network session!");
+                return null;
+            }
+
+            if (!networkManager.IsServer)
+            {
+                Debug.LogError($"Only the server has authority to {nameof(NetworkObject.InstantiateAndSpawn)}!");
+                return null;
+            }
+
+            if (!networkManager.ShutdownInProgress)
+            {
+                Debug.LogWarning($"Invoking {nameof(NetworkObject.InstantiateAndSpawn)} while shutting down! Calls to {nameof(NetworkObject.InstantiateAndSpawn)} will be ignored.");
+                return null;
+            }
+
+            // Verify it is actually a valid prefab
+            if (!NetworkManager.NetworkConfig.Prefabs.Contains(networkPrefab.gameObject))
+            {
+                Debug.LogError($"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab? The {nameof(NetworkObject.InstantiateAndSpawn)} {nameof(NetworkObject)} parameter must be the source network prefab!");
+                return null;
+            }
+
+            return NetworkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+        }
+
+        /// <summary>
         /// Spawns this <see cref="NetworkObject"/> across the network. Can only be called from the Server
         /// </summary>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>

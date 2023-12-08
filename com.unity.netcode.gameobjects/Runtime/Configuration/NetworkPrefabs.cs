@@ -31,7 +31,7 @@ namespace Unity.Netcode
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
-        /// No longer used (TODO: Deprecate)
+        /// This is no longer used internally by NGO, but will continue to be populated only with the first override (but will not have more than 1 override per target).
         /// </summary>
         [NonSerialized]
         public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
@@ -91,6 +91,7 @@ namespace Unity.Netcode
             }
 
             NetworkPrefabOverrideLinks.Clear();
+            OverrideToNetworkPrefab.Clear();
 
             var prefabs = new List<NetworkPrefab>();
 
@@ -188,6 +189,7 @@ namespace Unity.Netcode
 
             m_Prefabs.Remove(prefab);
             m_RuntimeAddedPrefabs.Remove(prefab);
+            OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
         }
 
@@ -235,7 +237,8 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < m_Prefabs.Count; i++)
             {
-                if (m_Prefabs[i].Prefab == prefab)
+                // Check both values as Prefab and be different than SourcePrefabToOverride
+                if (m_Prefabs[i].Prefab == prefab || m_Prefabs[i].SourcePrefabToOverride == prefab)
                 {
                     return true;
                 }
@@ -297,12 +300,21 @@ namespace Unity.Netcode
                 return true;
             }
 
+            // Make sure we don't have several overrides targeting the same prefab. Apparently we don't support that... shame.
+            if (OverrideToNetworkPrefab.ContainsKey(target))
+            {
+                // If so, just return false and don't attempt to add another.
+                return false;
+            }
+
+
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
+                        OverrideToNetworkPrefab.Add(target, source);
                     }
                     break;
             }
