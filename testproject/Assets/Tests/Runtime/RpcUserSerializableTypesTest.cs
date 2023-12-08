@@ -333,6 +333,8 @@ namespace TestProject.RuntimeTests
                 yield return new WaitForSeconds(0.1f);
             }
 
+            Debug.Log($"clientMyObjCalled {clientMyObjCalled} && clientMySharedObjCalled {clientMySharedObjCalled} && clientMyObjPassedWithThisRefCalled {clientMyObjPassedWithThisRefCalled} && serverMyObjCalled {serverMyObjCalled} && serverMySharedObjCalled {serverMySharedObjCalled} && serverMyObjPassedWithThisRefCalled {serverMyObjPassedWithThisRefCalled} && serverIntListCalled {serverIntListCalled} && serverStrListCalled {serverStrListCalled}");
+
             // Verify the test passed
             Assert.False(timedOut);
 
@@ -1503,4 +1505,3 @@ namespace TestProject.RuntimeTests
 
     }
 }
-

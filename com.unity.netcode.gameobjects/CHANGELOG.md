@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+- Added a new RPC attribute, which is simply `Rpc`. (#2762)
+  - This is a generic attribute that can perform the functions of both Server and Client RPCs, as well as enabling client-to-client RPCs. Includes several default targets: `Server`, `NotServer`, `Owner`, `NotOwner`, `Me`, `NotMe`, `ClientsAndHost`, and `Everyone`. Runtime overrides are available for any of these targets, as well as for sending to a specific ID or groups of IDs.
+  - This attribute also includes the ability to defer RPCs that are sent to the local process to the start of the next frame instead of executing them immediately, treating them as if they had gone across the network. The default behavior is to execute immediately.
+  - This attribute effectively replaces `ServerRpc` and `ClientRpc`. `ServerRpc` and `ClientRpc` remain in their existing forms for backward compatibility, but `Rpc` will be the recommended and most supported option.
+- Added `NetworkManager.OnConnectionEvent` as a unified connection event callback to notify clients and servers of all client connections and disconnections within the session (#2762)
+- Added `NetworkManager.ServerIsHost` and `NetworkBehaviour.ServerIsHost` to allow a client to tell if it is connected to a host or to a dedicated server (#2762)
+- Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
+- Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+
+### Fixed
+
+- Fixed issue where a teleport state could pot
+- entially be overridden by a previous unreliable delta state. (#2777)
+- Fixed issue where `NetworkTransform` was using the `NetworkManager.ServerTime.Tick` as opposed to `NetworkManager.NetworkTickSystem.ServerTime.Tick` during the authoritative side's tick update where it performed a delta state check. (#2777)
+- Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
+- Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
+- Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
+
+### Changed
+
+- Changed `NetworkTransform.SetState` (and related methods) now are cumulative during a fractional tick period and sent on the next pending tick. (#2777)
+- `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
+- Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
+- Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
+
 ## [1.7.1] - 2023-11-15
 
 ### Added
@@ -14,8 +43,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed a bug where having a class with Rpcs that inherits from a class without Rpcs that inherits from NetworkVariable would cause a compile error. (#2751)
 - Fixed issue where `NetworkBehaviour.Synchronize` was not truncating the write buffer if nothing was serialized during `NetworkBehaviour.OnSynchronize` causing an additional 6 bytes to be written per `NetworkBehaviour` component instance. (#2749)
-
-### Changed
 
 ## [1.7.0] - 2023-10-11
 
@@ -74,7 +101,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Fixed
-
+- Bumped minimum Unity version supported to 2021.3 LTS
 - Fixed issue where `NetworkClient.OwnedObjects` was not returning any owned objects due to the `NetworkClient.IsConnected` not being properly set. (#2631)
 - Fixed a crash when calling TrySetParent with a null Transform (#2625)
 - Fixed issue where a `NetworkTransform` using full precision state updates was losing transform state updates when interpolation was enabled. (#2624)

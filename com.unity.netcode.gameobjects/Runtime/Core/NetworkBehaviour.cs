@@ -6,6 +6,14 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    public class RpcException : Exception
+    {
+        public RpcException(string message) : base(message)
+        {
+
+        }
+    }
+
     /// <summary>
     /// The base class to override to write network code. Inherits MonoBehaviour
     /// </summary>
@@ -27,16 +35,22 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `protected`
         internal enum __RpcExecStage
         {
+            // Technically will overlap with None and Server
+            // but it doesn't matter since we don't use None and Server
+            Send = 0,
+            Execute = 1,
+
+            // Backward compatibility, not used...
             None = 0,
             Server = 1,
-            Client = 2
+            Client = 2,
         }
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
 
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
+        internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.Send;
 #pragma warning restore IDE1006 // restore naming rule violation check
 
         private const int k_RpcMessageDefaultSize = 1024; // 1k
@@ -284,6 +298,99 @@ namespace Unity.Netcode
 #endif
         }
 
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal FastBufferWriter __beginSendRpc(uint rpcMethodId, RpcParams rpcParams, RpcAttribute.RpcAttributeParams attributeParams, SendTo defaultTarget, RpcDelivery rpcDelivery)
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            if (attributeParams.RequireOwnership && !IsOwner)
+            {
+                throw new RpcException("This RPC can only be sent by its owner.");
+            }
+            return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
+        }
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void __endSendRpc(ref FastBufferWriter bufferWriter, uint rpcMethodId, RpcParams rpcParams, RpcAttribute.RpcAttributeParams attributeParams, SendTo defaultTarget, RpcDelivery rpcDelivery)
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            var rpcMessage = new RpcMessage
+            {
+                Metadata = new RpcMetadata
+                {
+                    NetworkObjectId = NetworkObjectId,
+                    NetworkBehaviourId = NetworkBehaviourId,
+                    NetworkRpcMethodId = rpcMethodId,
+                },
+                SenderClientId = NetworkManager.LocalClientId,
+                WriteBuffer = bufferWriter
+            };
+
+            NetworkDelivery networkDelivery;
+            switch (rpcDelivery)
+            {
+                default:
+                case RpcDelivery.Reliable:
+                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
+                    break;
+                case RpcDelivery.Unreliable:
+                    if (bufferWriter.Length > NetworkManager.MessageManager.NonFragmentedMessageMaxSize)
+                    {
+                        throw new OverflowException("RPC parameters are too large for unreliable delivery.");
+                    }
+                    networkDelivery = NetworkDelivery.Unreliable;
+                    break;
+            }
+
+            if (rpcParams.Send.Target == null)
+            {
+                switch (defaultTarget)
+                {
+                    case SendTo.Everyone:
+                        rpcParams.Send.Target = RpcTarget.Everyone;
+                        break;
+                    case SendTo.Owner:
+                        rpcParams.Send.Target = RpcTarget.Owner;
+                        break;
+                    case SendTo.Server:
+                        rpcParams.Send.Target = RpcTarget.Server;
+                        break;
+                    case SendTo.NotServer:
+                        rpcParams.Send.Target = RpcTarget.NotServer;
+                        break;
+                    case SendTo.NotMe:
+                        rpcParams.Send.Target = RpcTarget.NotMe;
+                        break;
+                    case SendTo.NotOwner:
+                        rpcParams.Send.Target = RpcTarget.NotOwner;
+                        break;
+                    case SendTo.Me:
+                        rpcParams.Send.Target = RpcTarget.Me;
+                        break;
+                    case SendTo.ClientsAndHost:
+                        rpcParams.Send.Target = RpcTarget.ClientsAndHost;
+                        break;
+                    case SendTo.SpecifiedInParams:
+                        throw new RpcException("This method requires a runtime-specified send target.");
+                }
+            }
+            else if (defaultTarget != SendTo.SpecifiedInParams && !attributeParams.AllowTargetOverride)
+            {
+                throw new RpcException("Target override is not allowed for this method.");
+            }
+
+            if (rpcParams.Send.LocalDeferMode == LocalDeferMode.Default)
+            {
+                rpcParams.Send.LocalDeferMode = attributeParams.DeferLocal ? LocalDeferMode.Defer : LocalDeferMode.SendImmediate;
+            }
+
+            rpcParams.Send.Target.Send(this, ref rpcMessage, networkDelivery, rpcParams);
+
+            bufferWriter.Dispose();
+        }
+
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
         internal static NativeList<T> __createNativeList<T>() where T : unmanaged
@@ -315,6 +422,24 @@ namespace Unity.Netcode
             }
         }
 
+        // This erroneously tries to simplify these method references but the docs do not pick it up correctly
+        // because they try to resolve it on the field rather than the class of the same name.
+#pragma warning disable IDE0001
+        /// <summary>
+        /// Provides access to the various <see cref="SendTo"/> targets at runtime, as well as
+        /// runtime-bound targets like <see cref="Unity.Netcode.RpcTarget.Single"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group(ulong[])"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Group{T}(T)"/>, <see cref="Unity.Netcode.RpcTarget.Not(ulong)"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeArray{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(NativeList{ulong})"/>,
+        /// <see cref="Unity.Netcode.RpcTarget.Not(ulong[])"/>, and
+        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>
+        /// </summary>
+#pragma warning restore IDE0001
+        public RpcTarget RpcTarget => NetworkManager.RpcTarget;
+
         /// <summary>
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
         /// is the local player object.  If no NetworkObject is assigned it will always return false.
@@ -330,6 +455,11 @@ namespace Unity.Netcode
         /// Gets if we are executing as server
         /// </summary>
         public bool IsServer { get; private set; }
+
+        /// <summary>
+        /// Gets if the server (local or remote) is a host - i.e., also a client
+        /// </summary>
+        public bool ServerIsHost { get; private set; }
 
         /// <summary>
         /// Gets if we are executing as client
@@ -472,12 +602,13 @@ namespace Unity.Netcode
                     IsHost = NetworkManager.IsListening && NetworkManager.IsHost;
                     IsClient = NetworkManager.IsListening && NetworkManager.IsClient;
                     IsServer = NetworkManager.IsListening && NetworkManager.IsServer;
+                    ServerIsHost = NetworkManager.IsListening && NetworkManager.ServerIsHost;
                 }
             }
             else // Shouldn't happen, but if so then set the properties to their default value;
             {
                 OwnerClientId = NetworkObjectId = default;
-                IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = default;
+                IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = ServerIsHost = default;
                 NetworkBehaviourId = default;
             }
         }

@@ -3,6 +3,60 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
+    public enum LocalDeferMode
+    {
+        Default,
+        Defer,
+        SendImmediate
+    }
+    /// <summary>
+    /// Generic RPC
+    /// </summary>
+    public struct RpcSendParams
+    {
+        public BaseRpcTarget Target;
+
+        public LocalDeferMode LocalDeferMode;
+
+        public static implicit operator RpcSendParams(BaseRpcTarget target) => new RpcSendParams { Target = target };
+        public static implicit operator RpcSendParams(LocalDeferMode deferMode) => new RpcSendParams { LocalDeferMode = deferMode };
+    }
+
+    /// <summary>
+    /// The receive parameters for server-side remote procedure calls
+    /// </summary>
+    public struct RpcReceiveParams
+    {
+        /// <summary>
+        /// Server-Side RPC
+        /// The client identifier of the sender
+        /// </summary>
+        public ulong SenderClientId;
+    }
+
+    /// <summary>
+    /// Server-Side RPC
+    /// Can be used with any sever-side remote procedure call
+    /// Note: typically this is use primarily for the <see cref="ServerRpcReceiveParams"/>
+    /// </summary>
+    public struct RpcParams
+    {
+        /// <summary>
+        /// The server RPC send parameters (currently a place holder)
+        /// </summary>
+        public RpcSendParams Send;
+
+        /// <summary>
+        /// The client RPC receive parameters provides you with the sender's identifier
+        /// </summary>
+        public RpcReceiveParams Receive;
+
+        public static implicit operator RpcParams(RpcSendParams send) => new RpcParams { Send = send };
+        public static implicit operator RpcParams(BaseRpcTarget target) => new RpcParams { Send = new RpcSendParams { Target = target } };
+        public static implicit operator RpcParams(LocalDeferMode deferMode) => new RpcParams { Send = new RpcSendParams { LocalDeferMode = deferMode } };
+        public static implicit operator RpcParams(RpcReceiveParams receive) => new RpcParams { Receive = receive };
+    }
+
     /// <summary>
     /// Server-Side RPC
     /// Place holder.  <see cref="ServerRpcParams"/>
@@ -99,6 +153,7 @@ namespace Unity.Netcode
     internal struct __RpcParams
 #pragma warning restore IDE1006 // restore naming rule violation check
     {
+        public RpcParams Ext;
         public ServerRpcParams Server;
         public ClientRpcParams Client;
     }

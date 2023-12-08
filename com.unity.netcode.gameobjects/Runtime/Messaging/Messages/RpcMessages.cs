@@ -159,4 +159,42 @@ namespace Unity.Netcode
             RpcMessageHelpers.Handle(ref context, ref Metadata, ref ReadBuffer, ref rpcParams);
         }
     }
+
+    internal struct RpcMessage : INetworkMessage
+    {
+        public int Version => 0;
+
+        public RpcMetadata Metadata;
+        public ulong SenderClientId;
+
+        public FastBufferWriter WriteBuffer;
+        public FastBufferReader ReadBuffer;
+
+        public unsafe void Serialize(FastBufferWriter writer, int targetVersion)
+        {
+            BytePacker.WriteValuePacked(writer, SenderClientId);
+            RpcMessageHelpers.Serialize(ref writer, ref Metadata, ref WriteBuffer);
+        }
+
+        public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
+        {
+            ByteUnpacker.ReadValuePacked(reader, out SenderClientId);
+            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
+        }
+
+        public void Handle(ref NetworkContext context)
+        {
+            var rpcParams = new __RpcParams
+            {
+                Ext = new RpcParams
+                {
+                    Receive = new RpcReceiveParams
+                    {
+                        SenderClientId = SenderClientId
+                    }
+                }
+            };
+            RpcMessageHelpers.Handle(ref context, ref Metadata, ref ReadBuffer, ref rpcParams);
+        }
+    }
 }

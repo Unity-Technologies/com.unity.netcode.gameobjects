@@ -10,6 +10,38 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
+
+    public enum ConnectionEvent
+    {
+        ClientConnected,
+        PeerConnected,
+        ClientDisconnected,
+        PeerDisconnected
+    }
+
+    public struct ConnectionEventData
+    {
+        public ConnectionEvent EventType;
+
+        /// <summary>
+        /// The client ID for the client that just connected
+        /// For the <see cref="ConnectionEvent.ClientConnected"/> and <see cref="ConnectionEvent.ClientDisconnected"/>
+        /// events on the client side, this will be LocalClientId.
+        /// On the server side, this will be the ID of the client that just connected.
+        ///
+        /// For the <see cref="ConnectionEvent.PeerConnected"/> and <see cref="ConnectionEvent.PeerDisconnected"/>
+        /// events on the client side, this will be the client ID assigned by the server to the remote peer.
+        /// </summary>
+        public ulong ClientId;
+
+        /// <summary>
+        /// This is only populated in <see cref="ConnectionEvent.ClientConnected"/> on the client side, and
+        /// contains the list of other peers who were present before you connected. In all other situations,
+        /// this array will be uninitialized.
+        /// </summary>
+        public NativeArray<ulong> PeerClientIds;
+    }
+
     /// <summary>
     /// The NGO connection manager handles:
     /// - Client Connections
@@ -42,7 +74,105 @@ namespace Unity.Netcode
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
 
-        internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
+        /// <summary>
+        /// The callback to invoke once a peer connects. This callback is only ran on the server and on the local client that connects.
+        /// </summary>
+        public event Action<NetworkManager, ConnectionEventData> OnConnectionEvent = null;
+
+
+        internal void InvokeOnClientConnectedCallback(ulong clientId)
+        {
+            try
+            {
+                OnClientConnectedCallback?.Invoke(clientId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            if (!NetworkManager.IsServer)
+            {
+                var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+                // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
+                using var sentinel = peerClientIds;
+
+                var idx = 0;
+                foreach (var peerId in NetworkManager.ConnectedClientsIds)
+                {
+                    if (peerId == NetworkManager.LocalClientId)
+                    {
+                        continue;
+                    }
+
+                    peerClientIds[idx] = peerId;
+                    ++idx;
+                }
+
+                try
+                {
+                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+            else
+            {
+                try
+                {
+                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.ClientConnected });
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+            }
+        }
+
+        internal void InvokeOnClientDisconnectCallback(ulong clientId)
+        {
+            try
+            {
+                OnClientDisconnectCallback?.Invoke(clientId);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.ClientDisconnected });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        internal void InvokeOnPeerConnectedCallback(ulong clientId)
+        {
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.PeerConnected });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+        internal void InvokeOnPeerDisconnectedCallback(ulong clientId)
+        {
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = clientId, EventType = ConnectionEvent.PeerDisconnected });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -355,13 +485,11 @@ namespace Unity.Netcode
             // Process the incoming message queue so that we get everything from the server disconnecting us or, if we are the server, so we got everything from that client.
             MessageManager.ProcessIncomingMessageQueue();
 
-            try
+            InvokeOnClientDisconnectCallback(clientId);
+
+            if (LocalClient.IsHost)
             {
-                OnClientDisconnectCallback?.Invoke(clientId);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
+                InvokeOnPeerDisconnectedCallback(clientId);
             }
 
             if (LocalClient.IsServer)
@@ -623,8 +751,17 @@ namespace Unity.Netcode
                     var message = new ConnectionApprovedMessage
                     {
                         OwnerClientId = ownerClientId,
-                        NetworkTick = NetworkManager.LocalTime.Tick
+                        NetworkTick = NetworkManager.LocalTime.Tick,
+                        ConnectedClientIds = new NativeArray<ulong>(ConnectedClientIds.Count, Allocator.Temp)
                     };
+
+                    var i = 0;
+                    foreach (var clientId in ConnectedClientIds)
+                    {
+                        message.ConnectedClientIds[i] = clientId;
+                        ++i;
+                    }
+
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                     {
                         // Update the observed spawned NetworkObjects for the newly connected player when scene management is disabled
@@ -651,12 +788,17 @@ namespace Unity.Netcode
 
                     SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                     message.MessageVersions.Dispose();
+                    message.ConnectedClientIds.Dispose();
 
                     // If scene management is disabled, then we are done and notify the local host-server the client is connected
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                     {
                         NetworkManager.ConnectedClients[ownerClientId].IsConnected = true;
                         InvokeOnClientConnectedCallback(ownerClientId);
+                        if (LocalClient.IsHost)
+                        {
+                            InvokeOnPeerConnectedCallback(ownerClientId);
+                        }
                     }
                     else // Otherwise, let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     {
@@ -740,6 +882,8 @@ namespace Unity.Netcode
 
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
+            var message = new ClientConnectedMessage { ClientId = clientId };
+            NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             ConnectedClientIds.Add(clientId);
             return networkClient;
         }
@@ -837,6 +981,8 @@ namespace Unity.Netcode
                 }
 
                 ConnectedClientIds.Remove(clientId);
+                var message = new ClientDisconnectedMessage { ClientId = clientId };
+                NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             }
 
             // If the client ID transport map exists
@@ -845,13 +991,11 @@ namespace Unity.Netcode
                 var transportId = ClientIdToTransportId(clientId);
                 NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
 
-                try
+                InvokeOnClientDisconnectCallback(clientId);
+
+                if (LocalClient.IsHost)
                 {
-                    OnClientDisconnectCallback?.Invoke(clientId);
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
+                    InvokeOnPeerDisconnectedCallback(clientId);
                 }
 
                 // Clean up the transport to client (and vice versa) mappings
@@ -935,6 +1079,9 @@ namespace Unity.Netcode
         {
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
+            ConnectedClients.Clear();
+            ConnectedClientIds.Clear();
+            ConnectedClientsList.Clear();
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients

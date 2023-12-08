@@ -57,9 +57,9 @@ namespace Unity.Netcode.RuntimeTests
                 serverObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverObject.Spawn();
             }
-            // ensure all objects are replicated before spawning more
-            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects < k_SpawnedObjects);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
+            // ensure all objects are replicated
+            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects);
+            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
         }
     }
 }

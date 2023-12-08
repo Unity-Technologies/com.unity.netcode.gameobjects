@@ -6,6 +6,7 @@ namespace Unity.Netcode
         {
             OnSpawn,
             OnAddPrefab,
+            OnNextFrame,
         }
 
         /// <summary>

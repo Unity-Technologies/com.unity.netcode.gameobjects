@@ -5,7 +5,8 @@ namespace Unity.Netcode
 {
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
-        public int Version => 0;
+        private const int k_VersionAddClientIds = 1;
+        public int Version => k_VersionAddClientIds;
 
         public ulong OwnerClientId;
         public int NetworkTick;
@@ -16,6 +17,8 @@ namespace Unity.Netcode
         private FastBufferReader m_ReceivedSceneObjectData;
 
         public NativeArray<MessageVersionData> MessageVersions;
+
+        public NativeArray<ulong> ConnectedClientIds;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
@@ -35,6 +38,11 @@ namespace Unity.Netcode
 
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
+
+            if (targetVersion >= k_VersionAddClientIds)
+            {
+                writer.WriteValueSafe(ConnectedClientIds);
+            }
 
             uint sceneObjectCount = 0;
 
@@ -106,6 +114,16 @@ namespace Unity.Netcode
 
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
+
+            if (receivedMessageVersion >= k_VersionAddClientIds)
+            {
+                reader.ReadValueSafe(out ConnectedClientIds, Allocator.TempJob);
+            }
+            else
+            {
+                ConnectedClientIds = new NativeArray<ulong>(0, Allocator.TempJob);
+            }
+
             m_ReceivedSceneObjectData = reader;
             return true;
         }
@@ -114,6 +132,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             networkManager.LocalClientId = OwnerClientId;
+            networkManager.MessageManager.SetLocalClientId(networkManager.LocalClientId);
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
             var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
@@ -125,6 +144,12 @@ namespace Unity.Netcode
             networkManager.ConnectionManager.LocalClient.ClientId = OwnerClientId;
             // Stop the client-side approval timeout coroutine since we are approved.
             networkManager.ConnectionManager.StopClientApprovalCoroutine();
+
+            networkManager.ConnectionManager.ConnectedClientIds.Clear();
+            foreach (var clientId in ConnectedClientIds)
+            {
+                networkManager.ConnectionManager.ConnectedClientIds.Add(clientId);
+            }
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
@@ -146,6 +171,8 @@ namespace Unity.Netcode
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
             }
+
+            ConnectedClientIds.Dispose();
         }
     }
 }

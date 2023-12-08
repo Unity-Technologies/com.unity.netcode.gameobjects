@@ -26,8 +26,10 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string INetworkMessage_FullName = typeof(INetworkMessage).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
+        public static readonly string RpcAttribute_FullName = typeof(RpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
+        public static readonly string RpcParams_FullName = typeof(RpcParams).FullName;
         public static readonly string ClientRpcSendParams_FullName = typeof(ClientRpcSendParams).FullName;
         public static readonly string ClientRpcReceiveParams_FullName = typeof(ClientRpcReceiveParams).FullName;
         public static readonly string ServerRpcSendParams_FullName = typeof(ServerRpcSendParams).FullName;

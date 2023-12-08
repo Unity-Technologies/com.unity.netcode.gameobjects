@@ -247,32 +247,43 @@ namespace TestProject.RuntimeTests
 
         private int m_ServerClientConnectedInvocations;
 
+        private int m_ServerClientConnectedInvocationsThroughConnectionEvent;
+
         private int m_ClientConnectedInvocations;
+
+        private int m_ClientConnectedInvocationsThroughConnectionEvent;
+
+        private int m_PeerConnectedInvocations;
 
         /// <summary>
         /// Tests that the OnClientConnectedCallback is invoked when scene management is enabled and disabled
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement)
+        public IEnumerator ClientConnectedCallbackTest([Values(true, false)] bool enableSceneManagement, [Values(true, false)] bool isHost)
         {
             m_ServerClientConnectedInvocations = 0;
+            m_ServerClientConnectedInvocationsThroughConnectionEvent = 0;
             m_ClientConnectedInvocations = 0;
+            m_ClientConnectedInvocationsThroughConnectionEvent = 0;
+            m_PeerConnectedInvocations = 0;
 
             // Create Host and (numClients) clients
             Assert.True(NetcodeIntegrationTestHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
             server.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            server.OnConnectionEvent += Server_OnConnectionEventCallback;
 
             foreach (var client in clients)
             {
                 client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
                 client.OnClientConnectedCallback += Client_OnClientConnectedCallback;
+                client.OnConnectionEvent += Client_OnConnectionEventCallback;
             }
 
             // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(isHost, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
@@ -281,15 +292,22 @@ namespace TestProject.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, isHost ? (clients.Length + 1) : clients.Length, null, 512);
 
 
             Assert.AreEqual(3, m_ClientConnectedInvocations);
+            Assert.AreEqual(3, m_ClientConnectedInvocationsThroughConnectionEvent);
             var timeoutHelper = new TimeoutHelper(2);
 
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ServerClientConnectedInvocations == 4, timeoutHelper);
-            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for server client connections to reach a count of 4 but only has {m_ServerClientConnectedInvocations}!");
-            Assert.AreEqual(4, m_ServerClientConnectedInvocations);
+            var expectedClientCount = (isHost ? 4 : 3);
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ServerClientConnectedInvocations == expectedClientCount, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for server client connections to reach a count of {expectedClientCount} but only has {m_ServerClientConnectedInvocations}!");
+            Assert.AreEqual(expectedClientCount, m_ServerClientConnectedInvocations);
+            Assert.AreEqual(expectedClientCount, m_ServerClientConnectedInvocationsThroughConnectionEvent);
+
+            // Host will get peer connection events, server will not
+            var expectedPeerConnections = isHost ? (4 * (4 - 1)) : (3 * (3 - 1));
+            Assert.AreEqual(expectedPeerConnections, m_PeerConnectedInvocations);
         }
 
         private void Client_OnClientConnectedCallback(ulong clientId)
@@ -297,9 +315,48 @@ namespace TestProject.RuntimeTests
             m_ClientConnectedInvocations++;
         }
 
+
+        private void Client_OnConnectionEventCallback(NetworkManager networkManager, ConnectionEventData data)
+        {
+            switch (data.EventType)
+            {
+                case ConnectionEvent.ClientConnected:
+                    m_ClientConnectedInvocationsThroughConnectionEvent++;
+                    Assert.AreEqual(networkManager.LocalClientId, data.ClientId);
+                    Assert.AreEqual(networkManager.ConnectedClientsIds.Count - 1, data.PeerClientIds.Length);
+                    var set = new HashSet<ulong>(networkManager.ConnectedClientsIds);
+                    for (var i = 0; i < data.PeerClientIds.Length; ++i)
+                    {
+                        Assert.IsTrue(set.Contains(data.PeerClientIds[i]));
+                        // detect duplicates
+                        set.Remove(data.PeerClientIds[i]);
+                    }
+                    Assert.IsTrue(set.Contains(data.ClientId));
+                    m_PeerConnectedInvocations += data.PeerClientIds.Length;
+                    break;
+                case ConnectionEvent.PeerConnected:
+                    m_PeerConnectedInvocations++;
+                    break;
+            }
+        }
+
         private void Server_OnClientConnectedCallback(ulong clientId)
         {
             m_ServerClientConnectedInvocations++;
+        }
+        private void Server_OnConnectionEventCallback(NetworkManager networkManager, ConnectionEventData data)
+        {
+            switch (data.EventType)
+            {
+                case ConnectionEvent.ClientConnected:
+                    m_ServerClientConnectedInvocationsThroughConnectionEvent++;
+                    Assert.IsFalse(data.PeerClientIds.IsCreated);
+                    break;
+                case ConnectionEvent.PeerConnected:
+                    m_PeerConnectedInvocations++;
+                    Assert.IsFalse(data.PeerClientIds.IsCreated);
+                    break;
+            }
         }
 
 

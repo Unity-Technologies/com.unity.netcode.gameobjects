@@ -25,9 +25,9 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (!networkManager.ShutdownInProgress)
+            if (!networkManager.ShutdownInProgress && networkManager.CustomMessagingManager != null)
             {
-                ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(Hash, context.SenderId, m_ReceiveData, context.SerializedHeaderSize);
+                networkManager.CustomMessagingManager.InvokeNamedMessage(Hash, context.SenderId, m_ReceiveData, context.SerializedHeaderSize);
             }
         }
     }

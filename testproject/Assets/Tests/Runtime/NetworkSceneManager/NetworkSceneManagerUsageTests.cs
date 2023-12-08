@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -25,26 +24,12 @@ namespace TestProject.RuntimeTests
         /// Checks that LoadScene cannot be called when EnableSceneManagement is false
         /// </summary>
         [Test]
-        public void SceneManagementDisabledException([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
+        public void SceneManagementDisabled([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
         {
             m_CurrentSceneName = k_AdditiveScene1;
-
-            var threwException = false;
-            try
-            {
-                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-                m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains($"{nameof(NetworkConfig.EnableSceneManagement)} flag is not enabled in the {nameof(NetworkManager)}'s {nameof(NetworkConfig)}. " +
-                    $"Please set {nameof(NetworkConfig.EnableSceneManagement)} flag to true before calling " +
-                    $"{nameof(NetworkSceneManager.LoadScene)} or {nameof(NetworkSceneManager.UnloadScene)}."))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+            var results = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
+            Assert.True(results == SceneEventProgressStatus.SceneManagementNotEnabled, $"[Server][Load][{loadSceneMode}] Failed to receive a {nameof(SceneEventProgressStatus)}.{nameof(SceneEventProgressStatus.SceneManagementNotEnabled)}!");
         }
 
         /// <summary>
@@ -79,23 +64,10 @@ namespace TestProject.RuntimeTests
         public IEnumerator ClientCannotUseException([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode loadSceneMode)
         {
             m_CurrentSceneName = k_AdditiveScene1;
-            bool threwException = false;
-            try
-            {
-                m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("Only server can start a scene event!"))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+            var statusResult = m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
+            Assert.True(statusResult == SceneEventProgressStatus.ServerOnlyAction, $"[Client][Load][{loadSceneMode}] Failed to receive a {nameof(SceneEventProgressStatus.ServerOnlyAction)} response!");
 
             // Check that a client cannot call UnloadScene
-            threwException = false;
-
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
             m_ClientNetworkManagers[0].SceneManager.OnLoadComplete += ClientSceneManager_OnLoadComplete;
             // Loading additive only because we don't want to unload the
@@ -109,18 +81,8 @@ namespace TestProject.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {m_CurrentSceneName} {nameof(SceneEventType.LoadComplete)} event from client!");
 
             // Now try to unload the scene as a client
-            try
-            {
-                m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("Only server can start a scene event!"))
-                {
-                    threwException = true;
-                }
-            }
-            Assert.IsTrue(threwException);
+            statusResult = m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
+            Assert.True(statusResult == SceneEventProgressStatus.ServerOnlyAction, $"[Client][Unload] Failed to receive a {nameof(SceneEventProgressStatus.ServerOnlyAction)} response!");
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
