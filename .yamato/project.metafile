@@ -6,7 +6,7 @@ mobile_validation_editor: 2021.3
 test_platforms:
   - name: win
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.large
     pathsep: \
     standalone: StandaloneWindows64
