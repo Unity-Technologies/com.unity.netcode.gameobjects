@@ -934,8 +934,7 @@ namespace Unity.Netcode
                             NetworkManager.SpawnManager.DespawnObject(playerObject, true);
                         }
                     }
-                    else
-                    if (!NetworkManager.ShutdownInProgress)
+                    else if (!NetworkManager.ShutdownInProgress)
                     {
                         playerObject.RemoveOwnership();
                     }
@@ -971,8 +970,7 @@ namespace Unity.Netcode
                                     Object.Destroy(ownedObject.gameObject);
                                 }
                             }
-                            else
-                            if (!NetworkManager.ShutdownInProgress)
+                            else if (!NetworkManager.ShutdownInProgress)
                             {
                                 ownedObject.RemoveOwnership();
                             }

@@ -833,8 +833,7 @@ namespace Unity.Netcode.Components
                     stateChangeDetected = true;
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
-                else
-                if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer])
+                else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer])
                 {
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
@@ -1053,8 +1052,7 @@ namespace Unity.Netcode.Components
                         BytePacker.WriteValuePacked(writer, valueBool);
                     }
                 }
-                else
-                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                 {
                     var valueFloat = m_Animator.GetFloat(hash);
                     fixed (void* value = cacheValue.Value)
