@@ -47,6 +47,9 @@ namespace TestProject.RuntimeTests
         /// </summary>
         protected override IEnumerator OnSetup()
         {
+            m_ObjectsToSpawn.Clear();
+            m_ServerSpawnedObjects.Clear();
+            InScenePlacedHelper.ServerSpawnedInScenePlaced.Clear();
             SceneManager.sceneLoaded += OnSceneLoaded;
             // Load a scene but don't make it the active scene.
             SceneManager.LoadSceneAsync(k_PrefabTestScene, LoadSceneMode.Additive);
@@ -178,6 +181,13 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        public enum InstantiateAndSpawnMethods
+        {
+            SpawnManager,
+            NetworkObject,
+        }
+
+
         /// <summary>
         /// This test validates that the network prefab instance used to spawn works when scene management is enabled
         /// and disabled. It also validates tha:
@@ -189,7 +199,7 @@ namespace TestProject.RuntimeTests
         /// NetworkObjects (this is now automatically configured for the user).
         /// </summary>
         [UnityTest]
-        public IEnumerator TestPrefabsSpawning()
+        public IEnumerator TestPrefabsSpawning([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
         {
             var gloabalObjectId = m_SceneManagementEnabled ? 0 : InScenePlacedHelper.ServerInSceneDefined.First().GlobalObjectIdHash;
             var firstError = $"[Netcode] Failed to create object locally. [globalObjectIdHash={gloabalObjectId}]. NetworkPrefab could not be found. Is the prefab registered with NetworkManager?";
@@ -230,7 +240,7 @@ namespace TestProject.RuntimeTests
             // Now, dynamically spawn several NetworkObject instances
             foreach (var prefabNetworkObject in m_ObjectsToSpawn)
             {
-                m_ServerSpawnedObjects.Add(spawnManager.InstantiateAndSpawn(prefabNetworkObject));
+                m_ServerSpawnedObjects.Add(InstantiateAndSpawn(prefabNetworkObject, instantiateAndSpawnType));
                 yield return s_DefaultWaitForTick;
             }
 
@@ -250,6 +260,88 @@ namespace TestProject.RuntimeTests
             yield return CreateAndStartNewClient();
             yield return WaitForConditionOrTimeOut(ValidateAllClientsSpawnedObjects);
             AssertOnTimeout($"[Second Stage] Validating spawned objects faild with the following error: {m_ErrorLog}");
+
+            LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
+            InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, true);
         }
+
+        [UnityTest]
+        public IEnumerator TestsInstantiateAndSpawnError([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
+        {
+            // If scene management is enabled, then we want to verify against the editor 
+            // assigned in-scene placed NetworkObjects
+            if (m_SceneManagementEnabled)
+            {
+                foreach (var gameObject in PrefabTestConfig.Instance.InScenePlacedObjects)
+                {
+                    m_ServerSpawnedObjects.Add(gameObject.GetComponent<NetworkObject>());
+                }
+            }
+            else // Otherwise, we use the server-side registered InScenePlacedHelper to check against
+            {
+                foreach (var networkObject in InScenePlacedHelper.ServerSpawnedInScenePlaced)
+                {
+                    m_ServerSpawnedObjects.Add(networkObject);
+                }
+            }
+
+            m_ServerSpawnedObjects.Add(InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType));
+            // Validate that the client synchronized with the in-scene placed and dynamically spawned NetworkObjects
+            yield return WaitForConditionOrTimeOut(ValidateAllClientsSpawnedObjects);
+            AssertOnTimeout($"[First Stage] Validating spawned objects faild with the following error: {m_ErrorLog}");
+
+            LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]);
+            InstantiateAndSpawn(m_ServerSpawnedObjects[0], instantiateAndSpawnType);
+
+            // The Network Prefab is null error can only happen when invoking from NetworkSpawnManager
+            if (instantiateAndSpawnType == InstantiateAndSpawnMethods.SpawnManager)
+            {
+                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkPrefabNull]);
+                InstantiateAndSpawn(null, instantiateAndSpawnType);
+            }
+            else
+            {
+                // The NetworkManager is null error can only happen when invoking from Network Prefab
+                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
+                InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, false, true);
+            }
+
+
+            m_ServerNetworkManager.Shutdown();
+            LogAssert.Expect(LogType.Warning, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
+            InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
+            // The not listening error can only happen when trying to instantiate and spawn on a Network Prefab 
+            if (instantiateAndSpawnType == InstantiateAndSpawnMethods.NetworkObject)
+            {
+                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
+                yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.IsListening);
+                InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
+            }
+        }
+
+        private NetworkObject InstantiateAndSpawn(NetworkObject prefabNetworkObject, InstantiateAndSpawnMethods instantiateAndSpawnType, bool clientNetworkManager = false, bool useNullNetworkManager = false)
+        {
+            var spawnedObject = (NetworkObject)null;
+            var networkManager = clientNetworkManager ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            if (instantiateAndSpawnType == InstantiateAndSpawnMethods.SpawnManager)
+            {
+                spawnedObject = networkManager.SpawnManager.InstantiateAndSpawn(prefabNetworkObject);
+            }
+            else
+            {
+                if (useNullNetworkManager)
+                {
+                    spawnedObject = prefabNetworkObject.InstantiateAndSpawn(null);
+                }
+                else
+                {
+                    spawnedObject = prefabNetworkObject.InstantiateAndSpawn(networkManager);
+                }
+            }
+            return spawnedObject;
+        }
+
     }
+
+
 }
