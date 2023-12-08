@@ -300,21 +300,16 @@ namespace Unity.Netcode
                 return true;
             }
 
-            // Make sure we don't have several overrides targeting the same prefab. Apparently we don't support that... shame.
-            if (OverrideToNetworkPrefab.ContainsKey(target))
-            {
-                // If so, just return false and don't attempt to add another.
-                return false;
-            }
-
-
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
+                        if (!OverrideToNetworkPrefab.ContainsKey(target))
+                        {
+                            OverrideToNetworkPrefab.Add(target, source);
+                        }
                     }
                     break;
             }
