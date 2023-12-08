@@ -266,7 +266,7 @@ namespace TestProject.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestsInstantiateAndSpawnError([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
+        public IEnumerator TestsInstantiateAndSpawnErrors([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
         {
             // If scene management is enabled, then we want to verify against the editor 
             // assigned in-scene placed NetworkObjects
@@ -305,7 +305,6 @@ namespace TestProject.RuntimeTests
                 LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NetworkManagerNull]);
                 InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, false, true);
             }
-
 
             m_ServerNetworkManager.Shutdown();
             LogAssert.Expect(LogType.Warning, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
