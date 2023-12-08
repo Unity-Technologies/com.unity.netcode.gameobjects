@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a teleport state could potentially be overridden by a previous unreliable delta state. (#2777)
+- Fixed issue where `NetworkTransform` was using the `NetworkManager.ServerTime.Tick` as opposed to `NetworkManager.NetworkTickSystem.ServerTime.Tick` during the authoritative side's tick update where it performed a delta state check. (#2777)
 - Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
 - Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
 - Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
@@ -29,6 +31,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkTransform.SetState` (and related methods) now are cumulative during a fractional tick period and sent on the next pending tick. (#2777)
 - `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
 - Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
 - Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
