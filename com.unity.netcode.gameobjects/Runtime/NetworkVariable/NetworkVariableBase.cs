@@ -105,8 +105,7 @@ namespace Unity.Netcode
                 if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
                 {
                     Debug.LogWarning($"NetworkVariable is written to during the NetworkManager shutdown! " +
-                 "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method? " +
-                 "If so, avoid trying to set NetworkVariables during despawn or destroy.");
+                 "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
                 }
                 return;
             }
