@@ -322,6 +322,26 @@ namespace Unity.Netcode
             return networkObject != null;
         }
 
+        internal enum InstantiateAndSpawnErrorTypes
+        {
+            NetworkPrefabNull,
+            NotAuthority,
+            InvokedWhenShuttingDown,
+            NotRegisteredNetworkPrefab,
+            NetworkManagerNull,
+            NoActiveSession,
+        }
+
+        internal static readonly Dictionary<InstantiateAndSpawnErrorTypes, string> InstantiateAndSpawnErrors = new Dictionary<InstantiateAndSpawnErrorTypes, string>(
+            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>[]{
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkPrefabNull, $"The {nameof(NetworkObject)} prefab parameter was null!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotAuthority, $"Only the server has authority to {nameof(InstantiateAndSpawn)}!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown, $"Invoking {nameof(InstantiateAndSpawn)} while shutting down! Calls to {nameof(InstantiateAndSpawn)} will be ignored."),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab, $"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab?"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkManagerNull, $"The {nameof(NetworkManager)} parameter was null!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NoActiveSession, "You can only invoke this method when you are connected to an existing/in-progress network session!")
+            });
+
         /// <summary>
         /// Use this method to easily instantiate and spawn an instance of a network prefab.
         /// InstantiateAndSpawn will:
@@ -343,26 +363,26 @@ namespace Unity.Netcode
         {
             if (networkPrefab == null)
             {
-                Debug.LogError($"The {nameof(networkPrefab)} parameter was null! You must pass in a valid {nameof(NetworkObject)}.");
+                Debug.LogError(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.NetworkPrefabNull]);
                 return null;
             }
 
             if (!NetworkManager.IsServer)
             {
-                Debug.LogError($"Only the server has authority to {nameof(NetworkSpawnManager.InstantiateAndSpawn)}!");
+                Debug.LogError(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.NotAuthority]);
                 return null;
             }
 
-            if (!NetworkManager.ShutdownInProgress)
+            if (NetworkManager.ShutdownInProgress)
             {
-                Debug.LogWarning($"Invoking {nameof(NetworkSpawnManager.InstantiateAndSpawn)} while shutting down! Calls to {nameof(NetworkSpawnManager.InstantiateAndSpawn)} will be ignored.");
+                Debug.LogWarning(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
                 return null;
             }
 
             // Verify it is actually a valid prefab
             if (!NetworkManager.NetworkConfig.Prefabs.Contains(networkPrefab.gameObject))
             {
-                Debug.LogError($"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab? The {nameof(NetworkObject.InstantiateAndSpawn)} {nameof(NetworkObject)} parameter must be the source network prefab!");
+                Debug.LogError(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab]);
                 return null;
             }
 
