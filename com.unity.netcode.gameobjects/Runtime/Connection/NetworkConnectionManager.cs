@@ -993,9 +993,6 @@ namespace Unity.Netcode
                 ConnectedClientIds.Remove(clientId);
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
                 MessageManager?.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
-
-                // Send the message immediately
-                MessageManager?.ProcessSendQueues();
             }
 
             // If the client ID transport map exists
@@ -1133,10 +1130,13 @@ namespace Unity.Netcode
                 {
                     DisconnectRemoteClient(clientId);
                 }
+
+                // make sure all messages are flushed before transport disconnects clients
+                MessageManager?.ProcessSendQueues();
             }
             else if (NetworkManager != null && NetworkManager.IsListening && LocalClient.IsClient)
             {
-                // make sure all messages are flushed before transport disconnect clients
+                // make sure all messages are flushed before disconnecting
                 MessageManager?.ProcessSendQueues();
 
                 // Client only, send disconnect and if transport throws and exception, log the exception and continue the shutdown sequence (or forever be shutting down)
