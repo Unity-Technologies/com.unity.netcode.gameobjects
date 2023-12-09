@@ -6,7 +6,7 @@ mobile_validation_editor: 2021.3
 test_platforms:
   - name: win
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.large
     pathsep: \
     standalone: StandaloneWindows64
@@ -14,7 +14,7 @@ test_platforms:
     utr: .\utr.bat
   - name: mac
     type: Unity::VM::osx
-    image: package-ci/mac:stable
+    image: package-ci/macos-13:v4
     pathsep: /
     standalone: StandaloneOSX
     flavor: b1.large
@@ -22,7 +22,7 @@ test_platforms:
     utr: ./utr
   - name: ubuntu
     type: Unity::VM
-    image: package-ci/ubuntu:stable
+    image: package-ci/ubuntu-22.04:v4
     flavor: b1.large
     pathsep: /
     standalone: StandaloneLinux64
