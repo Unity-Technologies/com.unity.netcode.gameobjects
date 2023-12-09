@@ -282,7 +282,7 @@ namespace Unity.Netcode.Transports.UNET
             return connectionConfig;
         }
 
-        public int GetConnectPort()
+        private int GetConnectPort()
         {
             if (NetworkManager && NetworkManager.PortOverride.Overidden)
             {
@@ -292,7 +292,7 @@ namespace Unity.Netcode.Transports.UNET
             return ConnectPort;
         }
 
-        public int GetServerListenPort()
+        private int GetServerListenPort()
         {
             if (NetworkManager && NetworkManager.PortOverride.Overidden)
             {
