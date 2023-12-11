@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new Hooks<ConnectionApprovedMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(m_ClientNetworkManagers.ToList());
         }
@@ -118,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new Hooks<ConnectionRequestMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(m_ClientNetworkManagers.ToList());
         }
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new Hooks<ConnectionRequestMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(new List<NetworkManager> { m_ServerNetworkManager });
         }
@@ -165,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new Hooks<ConnectionApprovedMessage>());
 
-            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side\\. This should not happen\\."));
+            LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side\\. NetworkTransport: Unity.Netcode.Transports.UTP.UnityTransport UnityTransportProtocol: UnityTransport. This should not happen\\."));
 
             yield return WaitForMessageReceived<UnnamedMessage>(new List<NetworkManager> { m_ServerNetworkManager });
         }
