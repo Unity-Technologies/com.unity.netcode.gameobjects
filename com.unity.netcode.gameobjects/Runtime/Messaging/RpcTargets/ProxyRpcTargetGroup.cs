@@ -17,7 +17,7 @@ namespace Unity.Netcode
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
         {
-            var proxyMessage = new ProxyMessage { Delivery = delivery, TargetClientIds = TargetClientIds, WrappedMessage = message };
+            var proxyMessage = new ProxyMessage { Delivery = delivery, TargetClientIds = TargetClientIds.AsArray(), WrappedMessage = message };
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             var size =
 #endif
