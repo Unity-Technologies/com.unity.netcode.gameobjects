@@ -171,6 +171,11 @@ namespace TestProject.RuntimeTests
                     // Validate the PrefabGlobalObjectIdHash values match (i.e. they both used the same source asset)
                     if (clientSpawnedObject.PrefabGlobalObjectIdHash != spawnedObject.PrefabGlobalObjectIdHash)
                     {
+                        // This is "ok" for the legacy manual instantiate and spawn scenario
+                        if (m_InstantiateAndSpawnType == InstantiateAndSpawnMethods.Manual && spawnedObject.PrefabGlobalObjectIdHash == 0)
+                        {
+                            continue;
+                        }
                         m_ErrorLog.AppendLine($"Client-{client.LocalClientId} spawned object {clientSpawnedObject.name} with a " +
                             $"{nameof(NetworkObject.NetworkObjectId)} ({spawnedObject.NetworkObjectId}) has a {nameof(NetworkObject.PrefabGlobalObjectIdHash)} value of " +
                             $"{clientSpawnedObject.PrefabGlobalObjectIdHash} and was expecting it to be {spawnedObject.PrefabGlobalObjectIdHash}!");
@@ -183,10 +188,12 @@ namespace TestProject.RuntimeTests
 
         public enum InstantiateAndSpawnMethods
         {
+            Manual,
             SpawnManager,
             NetworkObject,
         }
 
+        private InstantiateAndSpawnMethods m_InstantiateAndSpawnType;
 
         /// <summary>
         /// This test validates that the network prefab instance used to spawn works when scene management is enabled
@@ -204,7 +211,7 @@ namespace TestProject.RuntimeTests
             var gloabalObjectId = m_SceneManagementEnabled ? 0 : InScenePlacedHelper.ServerInSceneDefined.First().GlobalObjectIdHash;
             var firstError = $"[Netcode] Failed to create object locally. [globalObjectIdHash={gloabalObjectId}]. NetworkPrefab could not be found. Is the prefab registered with NetworkManager?";
             var secondError = $"[Netcode] Failed to spawn NetworkObject for Hash {gloabalObjectId}.";
-
+            m_InstantiateAndSpawnType = instantiateAndSpawnType;
             if (!m_SceneManagementEnabled)
             {
                 // When scene management is disabled, in-scene defined NetworkObjects are not synchronized.
@@ -236,12 +243,37 @@ namespace TestProject.RuntimeTests
                     m_ServerSpawnedObjects.Add(networkObject);
                 }
             }
-
+            var manualSpawnCount = 0;
             // Now, dynamically spawn several NetworkObject instances
             foreach (var prefabNetworkObject in m_ObjectsToSpawn)
             {
-                m_ServerSpawnedObjects.Add(InstantiateAndSpawn(prefabNetworkObject, instantiateAndSpawnType));
+                var spawnedNetworkObject = (NetworkObject)null;
+                // Assure the legacy way of instantiating and spawning an override still works
+                if (instantiateAndSpawnType == InstantiateAndSpawnMethods.Manual)
+                {
+                    var prefabOverride = m_ServerNetworkManager.GetNetworkPrefabOverride(prefabNetworkObject.gameObject);
+                    var prefabOverrideNetworkObject = prefabOverride.GetComponent<NetworkObject>();
+                    // Just don't spawn anything that does not have an OverrideToNetworkPrefab entry
+                    if (!m_ServerNetworkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.ContainsKey(prefabOverrideNetworkObject.GlobalObjectIdHash))
+                    {
+                        continue;
+                    }
+                    var gameObjectInstance = Object.Instantiate(prefabOverride.gameObject);
+                    spawnedNetworkObject = gameObjectInstance.GetComponent<NetworkObject>();
+                    spawnedNetworkObject.Spawn();
+                    manualSpawnCount++;
+                }
+                else
+                {
+                    spawnedNetworkObject = InstantiateAndSpawn(prefabNetworkObject, instantiateAndSpawnType);
+                }
+                m_ServerSpawnedObjects.Add(spawnedNetworkObject);
                 yield return s_DefaultWaitForTick;
+            }
+
+            if (instantiateAndSpawnType == InstantiateAndSpawnMethods.Manual)
+            {
+                Assert.True(manualSpawnCount > 0, $"Did not manually instantiate and spawn any objects!");
             }
 
             // Validate that the client synchronized with the in-scene placed and dynamically spawned NetworkObjects
@@ -261,8 +293,11 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidateAllClientsSpawnedObjects);
             AssertOnTimeout($"[Second Stage] Validating spawned objects faild with the following error: {m_ErrorLog}");
 
-            LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
-            InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, true);
+            if (instantiateAndSpawnType != InstantiateAndSpawnMethods.Manual)
+            {
+                LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NotAuthority]);
+                InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType, true);
+            }
         }
 
         [UnityTest]
