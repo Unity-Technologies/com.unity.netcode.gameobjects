@@ -1,4 +1,5 @@
 using System;
+using Unity.Netcode.Transports.UTP;
 
 namespace Unity.Netcode
 {
@@ -56,7 +57,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
+                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side. {transportErrorMsg}");
                     }
 
                     return false;
@@ -66,7 +68,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted");
+                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted.");
                     }
 
                     return false;
@@ -76,7 +78,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
+                        NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established. {transportErrorMsg}");
                     }
 
                     return false;
@@ -88,7 +91,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
+                        NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side. {transportErrorMsg}");
                     }
 
                     return false;
@@ -98,7 +102,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
+                        NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established. {transportErrorMsg}");
                     }
 
                     return false;
@@ -106,6 +111,28 @@ namespace Unity.Netcode
             }
 
             return !m_NetworkManager.MessageManager.StopProcessing;
+        }
+
+        private static string GetTransportErrorMessage(FastBufferReader messageContent, NetworkManager networkManager)
+        {
+            if (networkManager.NetworkConfig.NetworkTransport is not UnityTransport)
+            {
+                return $"NetworkTransport: {networkManager.NetworkConfig.NetworkTransport.GetType()}. Please report this to the maintainer of transport layer.";
+            }
+
+            var transportVersion = GetTransportVersion(networkManager);
+            return $"{transportVersion}. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {NetworkMessageManager.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}";
+        }
+
+        private static string GetTransportVersion(NetworkManager networkManager)
+        {
+            var transportVersion = "NetworkTransport: " + networkManager.NetworkConfig.NetworkTransport.GetType();
+            if (networkManager.NetworkConfig.NetworkTransport is UnityTransport unityTransport)
+            {
+                transportVersion += " UnityTransportProtocol: " + unityTransport.Protocol;
+            }
+
+            return transportVersion;
         }
 
         public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
