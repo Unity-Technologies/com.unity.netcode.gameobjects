@@ -73,10 +73,86 @@ namespace Unity.Netcode
 
                         if (m_ShuttingDown)
                         {
-                            ShutdownInternal();
+                            // Host-server will disconnect any connected clients prior to finalizing its shutdown
+                            if (IsServer)
+                            {
+                                ProcessServerShutdown();
+                            }
+                            else
+                            {
+                                // Clients just disconnect immediately
+                                ShutdownInternal();
+                            }
                         }
                     }
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Used to provide a graceful shutdown sequence
+        /// </summary>
+        internal enum ServerShutdownStates
+        {
+            None,
+            WaitForClientDisconnects,
+            InternalShutdown,
+            ShuttingDown,
+        };
+
+        internal ServerShutdownStates ServerShutdownState;
+        private float m_ShutdownTimeout;
+
+        /// <summary>
+        /// This is a "soft shutdown" where the host or server will disconnect
+        /// all clients, with a provided reasons, prior to invoking its final
+        /// internal shutdown.
+        /// </summary>
+        internal void ProcessServerShutdown()
+        {
+            var minClientCount = IsHost ? 2 : 1;
+            switch (ServerShutdownState)
+            {
+                case ServerShutdownStates.None:
+                    {
+                        if (ConnectedClients.Count >= minClientCount)
+                        {
+                            var hostServer = IsHost ? "host" : "server";
+                            var disconnectReason = $"Disconnected due to {hostServer} shutting down.";
+                            for (int i = ConnectedClientsIds.Count - 1; i >= 0; i--)
+                            {
+                                var clientId = ConnectedClientsIds[i];
+                                if (clientId == ServerClientId)
+                                {
+                                    continue;
+                                }
+                                ConnectionManager.DisconnectClient(clientId, disconnectReason);
+                            }
+                            ServerShutdownState = ServerShutdownStates.WaitForClientDisconnects;
+                            m_ShutdownTimeout = Time.realtimeSinceStartup + 5.0f;
+                        }
+                        else
+                        {
+                            ServerShutdownState = ServerShutdownStates.InternalShutdown;
+                            ProcessServerShutdown();
+                        }
+                        break;
+                    }
+                case ServerShutdownStates.WaitForClientDisconnects:
+                    {
+                        if (ConnectedClients.Count < minClientCount || m_ShutdownTimeout < Time.realtimeSinceStartup)
+                        {
+                            ServerShutdownState = ServerShutdownStates.InternalShutdown;
+                            ProcessServerShutdown();
+                        }
+                        break;
+                    }
+                case ServerShutdownStates.InternalShutdown:
+                    {
+                        ServerShutdownState = ServerShutdownStates.ShuttingDown;
+                        ShutdownInternal();
+                        break;
+                    }
             }
         }
 
@@ -704,6 +780,12 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+            // Make sure the ServerShutdownState is reset when initializing
+            if (server)
+            {
+                ServerShutdownState = ServerShutdownStates.None;
+            }
+
             // Don't allow the user to start a network session if the NetworkManager is
             // still parented under another GameObject
             if (NetworkManagerCheckForParent(true))
@@ -970,7 +1052,6 @@ namespace Unity.Netcode
         private void HostServerInitialize()
         {
             LocalClientId = ServerClientId;
-            //ConnectionManager.ConnectedClientIds.Add(ServerClientId);
             NetworkMetrics.SetConnectionId(LocalClientId);
             MessageManager.SetLocalClientId(LocalClientId);
 
@@ -1050,11 +1131,6 @@ namespace Unity.Netcode
                 {
                     MessageManager.StopProcessing = discardMessageQueue;
                 }
-            }
-
-            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
-            {
-                NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
             }
         }
 

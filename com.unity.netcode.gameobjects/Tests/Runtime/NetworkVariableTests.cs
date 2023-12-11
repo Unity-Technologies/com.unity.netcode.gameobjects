@@ -2769,4 +2769,71 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, nameof(CheckTestObjectComponentValuesOnAll));
         }
     }
+
+    public class NetvarDespawnShutdown : NetworkBehaviour
+    {
+        private NetworkVariable<int> m_IntNetworkVariable = new NetworkVariable<int>();
+        private NetworkList<int> m_IntList;
+
+        private void Awake()
+        {
+            m_IntList = new NetworkList<int>();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (IsServer)
+            {
+                m_IntNetworkVariable.Value = 5;
+                for (int i = 0; i < 10; i++)
+                {
+                    m_IntList.Add(i);
+                }
+            }
+            base.OnNetworkDespawn();
+        }
+    }
+
+    /// <summary>
+    /// Validates that setting values for NetworkVariable or NetworkList during the
+    /// OnNetworkDespawn method will not cause an exception to occur.
+    /// </summary>
+    public class NetworkVariableModifyOnNetworkDespawn : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 1;
+
+        private GameObject m_TestPrefab;
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestPrefab = CreateNetworkObjectPrefab("NetVarDespawn");
+            m_TestPrefab.AddComponent<NetvarDespawnShutdown>();
+            base.OnServerAndClientsCreated();
+        }
+
+        private bool OnClientSpawnedTestPrefab(ulong networkObjectId)
+        {
+            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            if (!s_GlobalNetworkObjects.ContainsKey(clientId))
+            {
+                return false;
+            }
+
+            if (!s_GlobalNetworkObjects[clientId].ContainsKey(networkObjectId))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator ModifyNetworkVariableOrListOnNetworkDespawn()
+        {
+            var instance = SpawnObject(m_TestPrefab, m_ServerNetworkManager);
+            yield return WaitForConditionOrTimeOut(() => OnClientSpawnedTestPrefab(instance.GetComponent<NetworkObject>().NetworkObjectId));
+            m_ServerNetworkManager.Shutdown();
+            // As long as no excetptions occur, the test passes.
+        }
+    }
 }

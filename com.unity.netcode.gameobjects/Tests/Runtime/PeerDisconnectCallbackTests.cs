@@ -176,9 +176,8 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            // If disconnected client-side, only server will receive it.
-            // If disconnected server-side, one for server, one for self
-            Assert.AreEqual(clientDisconnectType == ClientDisconnectType.ClientDisconnectsFromServer ? 1 : 2, m_ClientDisconnectCount);
+            // If disconnected, the server and the client that disconnected will be notified
+            Assert.AreEqual(2, m_ClientDisconnectCount);
             // Host receives peer disconnect, dedicated server does not
             Assert.AreEqual(m_UseHost ? 3 : 2, m_PeerDisconnectCount);
         }

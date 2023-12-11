@@ -21,6 +21,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a client disconnected by a server-host would not receive a local notification. (#2789)
+- Fixed issue where a server-host could shutdown during a relay connection but periodically the transport disconnect message sent to any connected clients could be dropped. (#2789)
+- Fixed issue where a host could disconnect its local client but remain running as a server. (#2789)
+- Fixed issue where `OnClientDisconnectedCallback` was not being invoked under certain conditions. (#2789)
+- Fixed issue where `OnClientDisconnectedCallback` was always returning 0 as the client identifier. (#2789)
+- Fixed issue where if a host or server shutdown while a client owned NetworkObjects (other than the player) it would throw an exception. (#2789)
+- Fixed issue where setting values on a `NetworkVariable` or `NetworkList` within `OnNetworkDespawn` during a shutdown sequence would throw an exception. (#2789)
 - Fixed issue where a teleport state could potentially be overridden by a previous unreliable delta state. (#2777)
 - Fixed issue where `NetworkTransform` was using the `NetworkManager.ServerTime.Tick` as opposed to `NetworkManager.NetworkTickSystem.ServerTime.Tick` during the authoritative side's tick update where it performed a delta state check. (#2777)
 - Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
@@ -28,7 +35,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
 
 ### Changed
-
+- Changed the server or host shutdown so it will now perform a "soft shutdown" when `NetworkManager.Shutdown` is invoked. This will send a disconnect notification to all connected clients and the server-host will wait for all connected clients to disconnect or timeout after a 5 second period before completing the shutdown process. (#2789)
+- Changed `OnClientDisconnectedCallback` will now return the assigned client identifier on the local client side if the client was approved and assigned one prior to being disconnected. (#2789)
 - Changed `NetworkTransform.SetState` (and related methods) now are cumulative during a fractional tick period and sent on the next pending tick. (#2777)
 - `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
 - Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)

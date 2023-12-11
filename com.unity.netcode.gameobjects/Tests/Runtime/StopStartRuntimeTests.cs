@@ -1,7 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -16,15 +15,19 @@ namespace Unity.Netcode.RuntimeTests
             base.OnOneTimeSetup();
         }
 
+
+        private bool m_ServerStopped;
         [UnityTest]
         public IEnumerator WhenShuttingDownAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
         {
             // shutdown the server
+            m_ServerNetworkManager.OnServerStopped += OnServerStopped;
             m_ServerNetworkManager.Shutdown();
 
-            // wait 1 frame because shutdowns are delayed
-            var nextFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // wait until the OnServerStopped is invoked
+            m_ServerStopped = false;
+            yield return WaitForConditionOrTimeOut(() => m_ServerStopped);
+            AssertOnTimeout("Timed out waiting for the server to stop!");
 
             // Verify the shutdown occurred
             Assert.IsFalse(m_ServerNetworkManager.IsServer);
@@ -45,15 +48,23 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(m_ServerNetworkManager.IsListening);
         }
 
+        private void OnServerStopped(bool obj)
+        {
+            m_ServerNetworkManager.OnServerStopped -= OnServerStopped;
+            m_ServerStopped = true;
+        }
+
         [UnityTest]
         public IEnumerator WhenShuttingDownTwiceAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
         {
             // shutdown the server
+            m_ServerNetworkManager.OnServerStopped += OnServerStopped;
             m_ServerNetworkManager.Shutdown();
 
-            // wait 1 frame because shutdowns are delayed
-            var nextFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // wait until the OnServerStopped is invoked
+            m_ServerStopped = false;
+            yield return WaitForConditionOrTimeOut(() => m_ServerStopped);
+            AssertOnTimeout("Timed out waiting for the server to stop!");
 
             // Verify the shutdown occurred
             Assert.IsFalse(m_ServerNetworkManager.IsServer);
