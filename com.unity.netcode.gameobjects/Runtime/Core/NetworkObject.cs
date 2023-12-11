@@ -782,7 +782,31 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This basically invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
+        /// This invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
+        /// </summary>
+        /// <param name="networkPrefab">The NetworkPrefab to instantiate and spawn.</param>
+        /// <param name="networkManager">The local instance of the NetworkManager connected to an session in progress.</param>
+        /// <param name="ownerClientId">The owner of the <see cref="NetworkObject"/> instance (defaults to server).</param>
+        /// <param name="destroyWithScene">Whether the <see cref="NetworkObject"/> instance will be destroyed when the scene it is located within is unloaded (default is false).</param>
+        /// <param name="isPlayerObject">Whether the <see cref="NetworkObject"/> instance is a player object or not (default is false).</param>
+        /// <param name="forceOverride">Whether you want to force spawning the override when running as a host or server or if you want it to spawn the override for host mode and
+        /// the source prefab for server. If there is an override, clients always spawn that as opposed to the source prefab (defaults to false).  </param>
+        /// <param name="position">The starting poisiton of the <see cref="NetworkObject"/> instance.</param>
+        /// <param name="rotation">The starting rotation of the <see cref="NetworkObject"/> instance.</param>
+        /// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
+        public static NetworkObject InstantiateAndSpawn(GameObject networkPrefab, NetworkManager networkManager, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
+        {
+            var networkObject = networkPrefab.GetComponent<NetworkObject>();
+            if (networkObject == null)
+            {
+                Debug.LogError($"The {nameof(NetworkPrefab)} {networkPrefab.name} does not have a {nameof(NetworkObject)} component!");
+                return null;
+            }
+            return networkObject.InstantiateAndSpawn(networkManager, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+        }
+
+        /// <summary>
+        /// This invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
         /// </summary>
         /// <param name="networkManager">The local instance of the NetworkManager connected to an session in progress.</param>
         /// <param name="ownerClientId">The owner of the <see cref="NetworkObject"/> instance (defaults to server).</param>
