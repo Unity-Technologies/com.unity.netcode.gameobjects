@@ -1995,9 +1995,21 @@ namespace Unity.Netcode
                 // If the PrefabGlobalObjectIdHash is a non-zero value and the GlobalObjectIdHash value is
                 // different from the PrefabGlobalObjectIdHash value, then the NetworkObject instance is
                 // an override for the original network prefab (i.e. PrefabGlobalObjectIdHash)
-                if (!IsSceneObject.Value && PrefabGlobalObjectIdHash != 0 && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
+                if (!IsSceneObject.Value && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
                 {
-                    return PrefabGlobalObjectIdHash;
+                    // If the PrefabGlobalObjectIdHash is already populated (i.e. InstantiateAndSpawn used), then return this
+                    if (PrefabGlobalObjectIdHash != 0)
+                    {
+                        return PrefabGlobalObjectIdHash;
+                    }
+                    else
+                    {
+                        // For legacy manual instantiation and spawning, check the OverrideToNetworkPrefab for a possible match
+                        if (NetworkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.ContainsKey(GlobalObjectIdHash))
+                        {
+                            return NetworkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab[GlobalObjectIdHash];
+                        }
+                    }
                 }
             }
 

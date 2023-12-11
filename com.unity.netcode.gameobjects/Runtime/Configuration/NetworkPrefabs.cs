@@ -31,7 +31,10 @@ namespace Unity.Netcode
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
         /// <summary>
-        /// This is no longer used internally by NGO, but will continue to be populated only with the first override (but will not have more than 1 override per target).
+        /// This is used for the legacy way of spawning NetworkPrefabs with an override when manually instantiating and spawning.
+        /// To handle multiple source NetworkPrefab overrides that all point to the same target NetworkPrefab use
+        /// <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// or <see cref="NetworkObject.InstantiateAndSpawn(NetworkManager, ulong, bool, bool, bool, Vector3, Quaternion)"/>
         /// </summary>
         [NonSerialized]
         public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
