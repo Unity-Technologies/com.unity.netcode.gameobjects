@@ -100,7 +100,15 @@ namespace Unity.Netcode
                                  "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
                 return;
             }
-
+            if (m_NetworkBehaviour.NetworkManager.ShutdownInProgress)
+            {
+                if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to during the NetworkManager shutdown! " +
+                 "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
+                }
+                return;
+            }
             m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 
