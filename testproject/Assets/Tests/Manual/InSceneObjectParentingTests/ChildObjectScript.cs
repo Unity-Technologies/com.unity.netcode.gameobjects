@@ -71,8 +71,7 @@ namespace TestProject.ManualTests
                 transform.localRotation = m_OriginalLocalRotation;
                 transform.localScale = m_OriginalLocalScale;
             }
-            else
-            if (parentNetworkObject == null && m_LastParent)
+            else if (parentNetworkObject == null && m_LastParent)
             {
                 // This example will drop the object at the current world position
                 transform.position = m_LastParent.transform.position;
