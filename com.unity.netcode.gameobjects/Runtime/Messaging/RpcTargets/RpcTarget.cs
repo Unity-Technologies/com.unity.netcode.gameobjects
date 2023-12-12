@@ -196,7 +196,7 @@ namespace Unity.Netcode
         /// <returns></returns>
         public BaseRpcTarget Single(ulong clientId, RpcTargetUse use)
         {
-            if (use != RpcTargetUse.Persistent && clientId == m_NetworkManager.LocalClientId)
+            if (clientId == m_NetworkManager.LocalClientId)
             {
                 return Me;
             }
