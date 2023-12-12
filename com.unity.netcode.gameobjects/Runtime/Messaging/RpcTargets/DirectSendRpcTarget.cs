@@ -25,5 +25,10 @@ namespace Unity.Netcode
         {
 
         }
+
+        internal DirectSendRpcTarget(ulong clientId, NetworkManager manager) : base(manager)
+        {
+            ClientId = clientId;
+        }
     }
 }

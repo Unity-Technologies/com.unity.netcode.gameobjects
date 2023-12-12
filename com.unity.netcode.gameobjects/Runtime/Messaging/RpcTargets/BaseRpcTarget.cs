@@ -1,6 +1,8 @@
+using System;
+
 namespace Unity.Netcode
 {
-    public abstract class BaseRpcTarget
+    public abstract class BaseRpcTarget : IDisposable
     {
         protected NetworkManager m_NetworkManager;
 
