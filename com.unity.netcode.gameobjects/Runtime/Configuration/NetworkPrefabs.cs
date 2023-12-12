@@ -30,6 +30,12 @@ namespace Unity.Netcode
         [NonSerialized]
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
+        /// <summary>
+        /// This is used for the legacy way of spawning NetworkPrefabs with an override when manually instantiating and spawning.
+        /// To handle multiple source NetworkPrefab overrides that all point to the same target NetworkPrefab use
+        /// <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// or <see cref="NetworkObject.InstantiateAndSpawn(NetworkManager, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// </summary>
         [NonSerialized]
         public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
 
@@ -234,7 +240,8 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < m_Prefabs.Count; i++)
             {
-                if (m_Prefabs[i].Prefab == prefab)
+                // Check both values as Prefab and be different than SourcePrefabToOverride
+                if (m_Prefabs[i].Prefab == prefab || m_Prefabs[i].SourcePrefabToOverride == prefab)
                 {
                     return true;
                 }
@@ -262,7 +269,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Configures <see cref="NetworkPrefabOverrideLinks"/> and <see cref="OverrideToNetworkPrefab"/> for the given <see cref="NetworkPrefab"/>
+        /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
         /// </summary>
         private bool AddPrefabRegistration(NetworkPrefab networkPrefab)
         {
@@ -296,28 +303,16 @@ namespace Unity.Netcode
                 return true;
             }
 
-            // Make sure we don't have several overrides targeting the same prefab. Apparently we don't support that... shame.
-            if (OverrideToNetworkPrefab.ContainsKey(target))
-            {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
-                // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {target}!");
-                return false;
-            }
-
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
-                    {
-                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
-                    }
-                    break;
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
+                        if (!OverrideToNetworkPrefab.ContainsKey(target))
+                        {
+                            OverrideToNetworkPrefab.Add(target, source);
+                        }
                     }
                     break;
             }

@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkManager.ServerIsHost` and `NetworkBehaviour.ServerIsHost` to allow a client to tell if it is connected to a host or to a dedicated server (#2762)
 - Added `SceneEventProgress.SceneManagementNotEnabled` return status to be returned when a `NetworkSceneManager` method is invoked and scene management is not enabled. (#2735)
 - Added `SceneEventProgress.ServerOnlyAction` return status to be returned when a `NetworkSceneManager` method is invoked by a client. (#2735)
+- Added `NetworkObject.InstantiateAndSpawn` and `NetworkSpawnManager.InstantiateAndSpawn` methods to simplify prefab spawning by assuring that the prefab is valid and applies any override prior to instantiating the `GameObject` and spawning the `NetworkObject` instance. (#2710)
 
 ### Fixed
 
@@ -33,6 +34,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a parented in-scene placed NetworkObject would be destroyed upon a client or server exiting a network session but not unloading the original scene in which the NetworkObject was placed. (#2737)
 - Fixed issue where during client synchronization and scene loading, when client synchronization or the scene loading mode are set to `LoadSceneMode.Single`, a `CreateObjectMessage` could be received, processed, and the resultant spawned `NetworkObject` could be instantiated in the client's currently active scene that could, towards the end of the client synchronization or loading process, be unloaded and cause the newly created `NetworkObject` to be destroyed (and throw and exception). (#2735)
 - Fixed issue where a `NetworkTransform` instance with interpolation enabled would result in wide visual motion gaps (stuttering) under above normal latency conditions and a 1-5% or higher packet are drop rate. (#2713)
+- Fixed issue where  you could not have multiple source network prefab overrides targeting the same network prefab as their override. (#2710)
 
 ### Changed
 - Changed the server or host shutdown so it will now perform a "soft shutdown" when `NetworkManager.Shutdown` is invoked. This will send a disconnect notification to all connected clients and the server-host will wait for all connected clients to disconnect or timeout after a 5 second period before completing the shutdown process. (#2789)
@@ -41,6 +43,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `NetworkManager.ConnectedClientsIds` is now accessible on the client side and will contain the list of all clients in the session, including the host client if the server is operating in host mode (#2762)
 - Changed `NetworkSceneManager` to return a `SceneEventProgress` status and not throw exceptions for methods invoked when scene management is disabled and when a client attempts to access a `NetworkSceneManager` method by a client. (#2735)
 - Changed `NetworkTransform` authoritative instance tick registration so a single `NetworkTransform` specific tick event update will update all authoritative instances to improve perofmance. (#2713)
+- Changed `NetworkPrefabs.OverrideToNetworkPrefab` dictionary is no longer used/populated due to it ending up being related to a regression bug and not allowing more than one override to be assigned to a network prefab asset. (#2710)
+- Changed in-scene placed `NetworkObject`s now store their source network prefab asset's `GlobalObjectIdHash` internally that is used, when scene management is disabled, by clients to spawn the correct prefab even if the `NetworkPrefab` entry has an override. This does not impact dynamically spawning the same prefab which will yield the override on both host and client. (#2710)
+- Changed in-scene placed `NetworkObject`s no longer require a `NetworkPrefab` entry with `GlobalObjectIdHash` override in order for clients to properly synchronize. (#2710)
+- Changed in-scene placed `NetworkObject`s now set their `IsSceneObject` value when generating their `GlobalObjectIdHash` value. (#2710)
+- Changed the default `NetworkConfig.SpawnTimeout` value from 1.0s to 10.0s. (#2710)
 
 ## [1.7.1] - 2023-11-15
 
