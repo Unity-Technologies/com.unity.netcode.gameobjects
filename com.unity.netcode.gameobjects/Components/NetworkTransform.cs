@@ -1857,7 +1857,7 @@ namespace Unity.Netcode.Components
 
                         networkState.NetworkDeltaPosition = m_HalfPositionState;
 
-                        if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick && !networkState.IsTeleportingNextFrame)
+                        if ((m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick || isAxisSync) && !networkState.IsTeleportingNextFrame)
                         {
                             networkState.SynchronizeBaseHalfFloat = true;
                         }
