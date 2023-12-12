@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -1781,7 +1780,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Server
         }
 
-        NetworkBehaviour m_Obj;
+        private NetworkBehaviour m_Obj;
 
         protected override void OnTimeTravelServerAndClientsConnected()
         {
