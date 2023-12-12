@@ -1801,8 +1801,8 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var group1 = GetGroup(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Temp);
             var group2 = GetGroup(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Temp);
-            using var group3 = GetGroup(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
-            using var group4 = GetGroup(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
+            var group3 = GetGroup(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
+            var group4 = GetGroup(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
 
             Assert.AreSame(group1, group2);
             Assert.AreNotSame(group1, group3);
@@ -1810,6 +1810,19 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Assert.AreNotSame(group2, group3);
             Assert.AreNotSame(group2, group4);
             Assert.AreNotSame(group3, group4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                group1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                group2.Dispose();
+            });
+
+            group3.Dispose();
+            group4.Dispose();
         }
 
         [Test]
@@ -1817,8 +1830,8 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var not1 = GetNot(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Temp);
             var not2 = GetNot(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Temp);
-            using var not3 = GetNot(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
-            using var not4 = GetNot(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
+            var not3 = GetNot(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
+            var not4 = GetNot(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
 
             Assert.AreSame(not1, not2);
             Assert.AreNotSame(not1, not3);
@@ -1826,6 +1839,19 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Assert.AreNotSame(not2, not3);
             Assert.AreNotSame(not2, not4);
             Assert.AreNotSame(not3, not4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                not1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                not2.Dispose();
+            });
+
+            not3.Dispose();
+            not4.Dispose();
         }
 
         [Test]
@@ -1836,14 +1862,27 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             // So 1 will always be different from 2 and we want to verify the first two are the same.
             var single1 = m_Obj.RpcTarget.Single(2ul, RpcTargetUse.Temp);
             var single2 = m_Obj.RpcTarget.Single(3ul, RpcTargetUse.Temp);
-            using var single3 = m_Obj.RpcTarget.Single(2ul, RpcTargetUse.Persistent);
-            using var single4 = m_Obj.RpcTarget.Single(3ul, RpcTargetUse.Persistent);
+            var single3 = m_Obj.RpcTarget.Single(2ul, RpcTargetUse.Persistent);
+            var single4 = m_Obj.RpcTarget.Single(3ul, RpcTargetUse.Persistent);
             Assert.AreSame(single1, single2);
             Assert.AreNotSame(single1, single3);
             Assert.AreNotSame(single1, single4);
             Assert.AreNotSame(single2, single3);
             Assert.AreNotSame(single2, single4);
             Assert.AreNotSame(single3, single4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                single1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                single2.Dispose();
+            });
+
+            single3.Dispose();
+            single4.Dispose();
         }
 
         [Test]
@@ -1851,14 +1890,27 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var singleNot1 = m_Obj.RpcTarget.Not(1ul, RpcTargetUse.Temp);
             var singleNot2 = m_Obj.RpcTarget.Not(2ul, RpcTargetUse.Temp);
-            using var singleNot3 = m_Obj.RpcTarget.Not(1ul, RpcTargetUse.Persistent);
-            using var singleNot4 = m_Obj.RpcTarget.Not(2ul, RpcTargetUse.Persistent);
+            var singleNot3 = m_Obj.RpcTarget.Not(1ul, RpcTargetUse.Persistent);
+            var singleNot4 = m_Obj.RpcTarget.Not(2ul, RpcTargetUse.Persistent);
             Assert.AreSame(singleNot1, singleNot2);
             Assert.AreNotSame(singleNot1, singleNot3);
             Assert.AreNotSame(singleNot1, singleNot4);
             Assert.AreNotSame(singleNot2, singleNot3);
             Assert.AreNotSame(singleNot2, singleNot4);
             Assert.AreNotSame(singleNot3, singleNot4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                singleNot1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                singleNot2.Dispose();
+            });
+
+            singleNot3.Dispose();
+            singleNot4.Dispose();
         }
 
     }

@@ -8,7 +8,7 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
-
+            CheckLockBeforeDispose();
         }
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
