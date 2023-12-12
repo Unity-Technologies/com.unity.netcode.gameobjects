@@ -1857,6 +1857,7 @@ namespace Unity.Netcode.Components
 
                         networkState.NetworkDeltaPosition = m_HalfPositionState;
 
+                        // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position 
                         if ((m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick || isAxisSync) && !networkState.IsTeleportingNextFrame)
                         {
                             networkState.SynchronizeBaseHalfFloat = true;
