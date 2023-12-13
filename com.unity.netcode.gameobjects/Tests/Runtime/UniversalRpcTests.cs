@@ -1109,10 +1109,10 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.ClientsAndHost })));
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Me })));
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.NotMe })));
-            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Single(0) })));
-            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(0) })));
-            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Group(new[] { 0ul, 1ul, 2ul }) })));
-            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(new[] { 0ul, 1ul, 2ul }) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Single(0, RpcTargetUse.Temp) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(0, RpcTargetUse.Temp) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Group(new[] { 0ul, 1ul, 2ul }, RpcTargetUse.Temp) })));
+            Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Not(new[] { 0ul, 1ul, 2ul }, RpcTargetUse.Temp) })));
         }
 
     }
@@ -1170,7 +1170,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
             var senderObject = GetPlayerObject(objectOwner, sender);
-            var target = senderObject.RpcTarget.Single(recipient);
+            var target = senderObject.RpcTarget.Single(recipient, RpcTargetUse.Temp);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
@@ -1204,7 +1204,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
             var senderObject = GetPlayerObject(objectOwner, sender);
-            var target = senderObject.RpcTarget.Not(recipient);
+            var target = senderObject.RpcTarget.Not(recipient, RpcTargetUse.Temp);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
 
@@ -1259,14 +1259,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             switch (allocationType)
             {
                 case AllocationType.Array:
-                    target = senderObject.RpcTarget.Group(recipient);
+                    target = senderObject.RpcTarget.Group(recipient, RpcTargetUse.Temp);
                     break;
                 case AllocationType.List:
-                    target = senderObject.RpcTarget.Group(recipient.ToList());
+                    target = senderObject.RpcTarget.Group(recipient.ToList(), RpcTargetUse.Temp);
                     break;
                 case AllocationType.NativeArray:
                     var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
-                    target = senderObject.RpcTarget.Group(arr);
+                    target = senderObject.RpcTarget.Group(arr, RpcTargetUse.Temp);
                     arr.Dispose();
                     break;
                 case AllocationType.NativeList:
@@ -1278,7 +1278,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                     {
                         list.Add(id);
                     }
-                    target = senderObject.RpcTarget.Group(list);
+                    target = senderObject.RpcTarget.Group(list, RpcTargetUse.Temp);
                     list.Dispose();
                     break;
             }
@@ -1336,14 +1336,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             switch (allocationType)
             {
                 case AllocationType.Array:
-                    target = senderObject.RpcTarget.Not(recipient);
+                    target = senderObject.RpcTarget.Not(recipient, RpcTargetUse.Temp);
                     break;
                 case AllocationType.List:
-                    target = senderObject.RpcTarget.Not(recipient.ToList());
+                    target = senderObject.RpcTarget.Not(recipient.ToList(), RpcTargetUse.Temp);
                     break;
                 case AllocationType.NativeArray:
                     var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
-                    target = senderObject.RpcTarget.Not(arr);
+                    target = senderObject.RpcTarget.Not(arr, RpcTargetUse.Temp);
                     arr.Dispose();
                     break;
                 case AllocationType.NativeList:
@@ -1355,7 +1355,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                     {
                         list.Add(id);
                     }
-                    target = senderObject.RpcTarget.Not(list);
+                    target = senderObject.RpcTarget.Not(list, RpcTargetUse.Temp);
                     list.Dispose();
                     break;
             }
@@ -1693,6 +1693,224 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             SimulateOneFrame();
             Assert.IsFalse(serverObj.Stop);
             VerifyNotReceived(NetworkManager.ServerClientId, s_ClientIds);
+        }
+
+    }
+
+    [TestFixture(ObjType.Server)]
+    [TestFixture(ObjType.Client)]
+    internal class UniversalRpcTestRpcTargetUse : UniversalRpcTestsBase
+    {
+        private ObjType m_ObjType;
+
+        public UniversalRpcTestRpcTargetUse(ObjType objType) : base(HostOrServer.Server)
+        {
+            m_ObjType = objType;
+        }
+
+        public enum AllocationType
+        {
+            Array,
+            NativeArray,
+            NativeList,
+            List
+        }
+        private BaseRpcTarget GetGroup(NetworkBehaviour senderObject, ulong[] recipient, AllocationType allocationType, RpcTargetUse use)
+        {
+            switch (allocationType)
+            {
+                case AllocationType.Array:
+                    return senderObject.RpcTarget.Group(recipient, use);
+                case AllocationType.List:
+                    return senderObject.RpcTarget.Group(recipient.ToList(), use);
+                case AllocationType.NativeArray:
+                    var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
+                    var naTarget = senderObject.RpcTarget.Group(arr, use);
+                    arr.Dispose();
+                    return naTarget;
+                case AllocationType.NativeList:
+                    // For some reason on 2020.3, calling list.AsArray() and passing that to the next function
+                    // causes Allocator.Temp allocations to become invalid somehow. This is not an issue on later
+                    // versions of Unity.
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.TempJob);
+                    foreach (var id in recipient)
+                    {
+                        list.Add(id);
+                    }
+                    var nlTarget = senderObject.RpcTarget.Group(list, use);
+                    list.Dispose();
+                    return nlTarget;
+            }
+
+            return null;
+        }
+        private BaseRpcTarget GetNot(NetworkBehaviour senderObject, ulong[] recipient, AllocationType allocationType, RpcTargetUse use)
+        {
+            switch (allocationType)
+            {
+                case AllocationType.Array:
+                    return senderObject.RpcTarget.Not(recipient, use);
+                case AllocationType.List:
+                    return senderObject.RpcTarget.Not(recipient.ToList(), use);
+                case AllocationType.NativeArray:
+                    var arr = new NativeArray<ulong>(recipient, Allocator.Temp);
+                    var naTarget = senderObject.RpcTarget.Not(arr, use);
+                    arr.Dispose();
+                    return naTarget;
+                case AllocationType.NativeList:
+                    // For some reason on 2020.3, calling list.AsArray() and passing that to the next function
+                    // causes Allocator.Temp allocations to become invalid somehow. This is not an issue on later
+                    // versions of Unity.
+                    var list = new NativeList<ulong>(recipient.Length, Allocator.TempJob);
+                    foreach (var id in recipient)
+                    {
+                        list.Add(id);
+                    }
+                    var nlTarget = senderObject.RpcTarget.Not(list, use);
+                    list.Dispose();
+                    return nlTarget;
+            }
+
+            return null;
+        }
+
+        public enum ObjType
+        {
+            Client,
+            Server
+        }
+
+        private NetworkBehaviour m_Obj;
+
+        protected override void OnTimeTravelServerAndClientsConnected()
+        {
+            base.OnTimeTravelServerAndClientsConnected();
+
+            if (m_ObjType == ObjType.Server)
+            {
+                m_Obj = GetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
+            }
+            else
+            {
+                m_Obj = GetPlayerObject(1, 1);
+            }
+        }
+
+        [Test]
+        public void TestRpcTargetUseGroup([Values] AllocationType allocationType)
+        {
+            var group1 = GetGroup(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Temp);
+            var group2 = GetGroup(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Temp);
+            var group3 = GetGroup(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
+            var group4 = GetGroup(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
+
+            Assert.AreSame(group1, group2);
+            Assert.AreNotSame(group1, group3);
+            Assert.AreNotSame(group1, group4);
+            Assert.AreNotSame(group2, group3);
+            Assert.AreNotSame(group2, group4);
+            Assert.AreNotSame(group3, group4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                group1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                group2.Dispose();
+            });
+
+            group3.Dispose();
+            group4.Dispose();
+        }
+
+        [Test]
+        public void TestRpcTargetUseNotGroup([Values] AllocationType allocationType)
+        {
+            var not1 = GetNot(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Temp);
+            var not2 = GetNot(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Temp);
+            var not3 = GetNot(m_Obj, new[] { 1ul, 2ul }, allocationType, RpcTargetUse.Persistent);
+            var not4 = GetNot(m_Obj, new[] { 2ul, 3ul }, allocationType, RpcTargetUse.Persistent);
+
+            Assert.AreSame(not1, not2);
+            Assert.AreNotSame(not1, not3);
+            Assert.AreNotSame(not1, not4);
+            Assert.AreNotSame(not2, not3);
+            Assert.AreNotSame(not2, not4);
+            Assert.AreNotSame(not3, not4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                not1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                not2.Dispose();
+            });
+
+            not3.Dispose();
+            not4.Dispose();
+        }
+
+        [Test]
+        public void TestRpcTargetUseSingle()
+        {
+            // Not using 1 here because 1 is a special case that returns a LocalSendTarget for the client
+            // because the client versin of this test uses m_Obj from client ID 1 (ergo 1 is localhost in this test).
+            // So 1 will always be different from 2 and we want to verify the first two are the same.
+            var single1 = m_Obj.RpcTarget.Single(2ul, RpcTargetUse.Temp);
+            var single2 = m_Obj.RpcTarget.Single(3ul, RpcTargetUse.Temp);
+            var single3 = m_Obj.RpcTarget.Single(2ul, RpcTargetUse.Persistent);
+            var single4 = m_Obj.RpcTarget.Single(3ul, RpcTargetUse.Persistent);
+            Assert.AreSame(single1, single2);
+            Assert.AreNotSame(single1, single3);
+            Assert.AreNotSame(single1, single4);
+            Assert.AreNotSame(single2, single3);
+            Assert.AreNotSame(single2, single4);
+            Assert.AreNotSame(single3, single4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                single1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                single2.Dispose();
+            });
+
+            single3.Dispose();
+            single4.Dispose();
+        }
+
+        [Test]
+        public void TestRpcTargetUseNotSingle()
+        {
+            var singleNot1 = m_Obj.RpcTarget.Not(1ul, RpcTargetUse.Temp);
+            var singleNot2 = m_Obj.RpcTarget.Not(2ul, RpcTargetUse.Temp);
+            var singleNot3 = m_Obj.RpcTarget.Not(1ul, RpcTargetUse.Persistent);
+            var singleNot4 = m_Obj.RpcTarget.Not(2ul, RpcTargetUse.Persistent);
+            Assert.AreSame(singleNot1, singleNot2);
+            Assert.AreNotSame(singleNot1, singleNot3);
+            Assert.AreNotSame(singleNot1, singleNot4);
+            Assert.AreNotSame(singleNot2, singleNot3);
+            Assert.AreNotSame(singleNot2, singleNot4);
+            Assert.AreNotSame(singleNot3, singleNot4);
+
+            Assert.Throws<Exception>(() =>
+            {
+                singleNot1.Dispose();
+            });
+
+            Assert.Throws<Exception>(() =>
+            {
+                singleNot2.Dispose();
+            });
+
+            singleNot3.Dispose();
+            singleNot4.Dispose();
         }
 
     }

@@ -14,6 +14,7 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
+            CheckLockBeforeDispose();
             foreach (var target in Targets)
             {
                 target.Dispose();
