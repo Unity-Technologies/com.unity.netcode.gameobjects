@@ -8,7 +8,7 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
-
+            CheckLockBeforeDispose();
         }
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
@@ -24,6 +24,11 @@ namespace Unity.Netcode
         internal DirectSendRpcTarget(NetworkManager manager) : base(manager)
         {
 
+        }
+
+        internal DirectSendRpcTarget(ulong clientId, NetworkManager manager) : base(manager)
+        {
+            ClientId = clientId;
         }
     }
 }

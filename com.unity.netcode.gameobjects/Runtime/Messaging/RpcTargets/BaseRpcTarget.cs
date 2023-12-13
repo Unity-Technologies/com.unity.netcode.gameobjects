@@ -1,12 +1,33 @@
+using System;
+
 namespace Unity.Netcode
 {
-    public abstract class BaseRpcTarget
+    public abstract class BaseRpcTarget : IDisposable
     {
         protected NetworkManager m_NetworkManager;
+        private bool m_Locked;
+
+        internal void Lock()
+        {
+            m_Locked = true;
+        }
+
+        internal void Unlock()
+        {
+            m_Locked = false;
+        }
 
         internal BaseRpcTarget(NetworkManager manager)
         {
             m_NetworkManager = manager;
+        }
+
+        protected void CheckLockBeforeDispose()
+        {
+            if (m_Locked)
+            {
+                throw new Exception($"RPC targets obtained through {nameof(RpcTargetUse)}.{RpcTargetUse.Temp} may not be disposed.");
+            }
         }
 
         public abstract void Dispose();

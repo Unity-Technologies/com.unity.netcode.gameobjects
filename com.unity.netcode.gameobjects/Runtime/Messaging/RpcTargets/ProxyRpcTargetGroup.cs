@@ -56,6 +56,7 @@ namespace Unity.Netcode
 
         public override void Dispose()
         {
+            CheckLockBeforeDispose();
             if (!m_Disposed)
             {
                 TargetClientIds.Dispose();
