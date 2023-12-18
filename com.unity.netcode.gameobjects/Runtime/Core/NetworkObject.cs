@@ -992,6 +992,11 @@ namespace Unity.Netcode
             m_CachedParent = parentTransform;
         }
 
+        internal Transform GetCachedParent()
+        {
+            return m_CachedParent;
+        }
+
         internal ulong? GetNetworkParenting() => m_LatestParent;
 
         internal void SetNetworkParenting(ulong? latestParent, bool worldPositionStays)
@@ -1236,7 +1241,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false)
         {
             if (!AutoObjectParentSync)
             {
@@ -1324,19 +1329,43 @@ namespace Unity.Netcode
             // If we made it here, then parent this instance under the parentObject
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
+
+            if (orphanedChildPass)
+            {
+                if (OrphanChildren.Contains(parentObject))
+                {
+                    Debug.LogWarning($"CHECK HERE TO SEE IF THIS IS NEEDED!!!");
+                    return false;
+                }
+            }
+
             m_CachedParent = parentObject.transform;
+            if (LogTransform)
+            {
+                Debug.Log($"[BEFORE][{m_CachedWorldPositionStays}]---------------");
+                Debug.Log($"[parent][{parentObject.name}] Pos: {m_CachedParent.position} | Rot: {m_CachedParent.eulerAngles} | Scale: {m_CachedParent.localScale}");
+                Debug.Log($"[child][{name}] Pos: {transform.position} | Rot: {transform.eulerAngles} | Scale: {transform.localScale}");
+            }
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
+            if (LogTransform)
+            {
+                Debug.Log($"[AFTER][{m_CachedWorldPositionStays}]---------------");
+                Debug.Log($"[parent][{parentObject.name}] Pos: {m_CachedParent.position} | Rot: {m_CachedParent.eulerAngles} | Scale: {m_CachedParent.localScale}");
+                Debug.Log($"[child][{name}] Pos: {transform.position} | Rot: {transform.eulerAngles} | Scale: {transform.localScale}");
+            }
 
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
         }
+
+        internal static bool LogTransform = false;
 
         internal static void CheckOrphanChildren()
         {
             var objectsToRemove = new List<NetworkObject>();
             foreach (var orphanObject in OrphanChildren)
             {
-                if (orphanObject.ApplyNetworkParenting())
+                if (orphanObject.ApplyNetworkParenting(orphanedChildPass: true))
                 {
                     objectsToRemove.Add(orphanObject);
                 }
@@ -1807,7 +1836,6 @@ namespace Unity.Netcode
                     // will result in the improper scale for the child
                     syncScaleLocalSpaceRelative = obj.HasParent;
                 }
-
 
                 obj.Transform = new SceneObject.TransformData
                 {

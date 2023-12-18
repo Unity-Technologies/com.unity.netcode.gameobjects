@@ -245,6 +245,80 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Sorts the synchronization order of the NetworkObjects to be serialized
+        /// by parents before children order
+        /// </summary>
+        private void SortParentedNetworkObjects()
+        {
+            var rootParentChildTable = new Dictionary<NetworkObject, List<NetworkObject>>();
+
+            foreach (var networkObject in m_NetworkObjectsSync)
+            {
+                // Find all root parent NetworkObjects
+                if (networkObject.transform.childCount > 0 && networkObject.transform.parent == null)
+                {
+                    // Get all child NetworkObjects of the root
+                    var childNetworkObjects = networkObject.GetComponentsInChildren<NetworkObject>().ToList();
+                    // Remove the root from the list
+                    childNetworkObjects.Remove(networkObject);
+                    // Assure the root has children
+                    if (childNetworkObjects.Count() > 0)
+                    {
+                        var currentParent = networkObject;
+                        var currentChild = (NetworkObject)null;
+                        rootParentChildTable.Add(networkObject, new List<NetworkObject>());
+                        // Cycle through all child NetworkObjects ordering them relative to the root
+                        // and each other
+                        while (childNetworkObjects.Count > 0)
+                        {
+                            foreach (var childObj in childNetworkObjects)
+                            {
+                                // Get the cached parent NetworkObject
+                                var childParent = childObj.GetCachedParent().GetComponent<NetworkObject>();
+                                // If the parent is the current parent in the hierarchy of the root parent
+                                if (childParent == currentParent)
+                                {
+                                    // Add it to the root's child list (ordered)
+                                    rootParentChildTable[networkObject].Add(childObj);
+                                    currentChild = childObj;
+                                    break;
+                                }
+                            }
+                            // Remove the child just added
+                            childNetworkObjects.Remove(currentChild);
+                            // Set the child just added as the next current parent
+                            currentParent = currentChild;
+                        }
+                    }
+                }
+            }
+
+            // Cycle through the table of root to ordered children tables
+            foreach (var entry in rootParentChildTable)
+            {
+                // Remove all children from the list of NetworkObjects to sync
+                foreach (var networkObject in entry.Value)
+                {
+                    m_NetworkObjectsSync.Remove(networkObject);
+                }
+                // Inject the children after the root parent
+                // The children are ordered as parents before children
+                var rootIndex = m_NetworkObjectsSync.IndexOf(entry.Key);
+
+                if (rootIndex == m_NetworkObjectsSync.Count - 1)
+                {
+                    m_NetworkObjectsSync.AddRange(entry.Value);
+                }
+                else
+                {
+                    m_NetworkObjectsSync.InsertRange(rootIndex + 1, entry.Value);
+                }
+            }
+        }
+
+        internal static bool LogSerializationOrder = false;
+
         internal void AddSpawnedNetworkObjects()
         {
             m_NetworkObjectsSync.Clear();
@@ -256,22 +330,22 @@ namespace Unity.Netcode
                 }
             }
 
-            // Sort by parents before children
-            m_NetworkObjectsSync.Sort(SortParentedNetworkObjects);
-
             // Sort by INetworkPrefabInstanceHandler implementation before the
             // NetworkObjects spawned by the implementation
             m_NetworkObjectsSync.Sort(SortNetworkObjects);
 
+            // The last thing we sort is parents before children
+            SortParentedNetworkObjects();
+
             // This is useful to know what NetworkObjects a client is going to be synchronized with
             // as well as the order in which they will be deserialized
-            if (m_NetworkManager.LogLevel == LogLevel.Developer)
+            //if (LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var messageBuilder = new System.Text.StringBuilder(0xFFFF);
-                messageBuilder.Append("[Server-Side Client-Synchronization] NetworkObject serialization order:");
+                messageBuilder.AppendLine("[Server-Side Client-Synchronization] NetworkObject serialization order:");
                 foreach (var networkObject in m_NetworkObjectsSync)
                 {
-                    messageBuilder.Append($"{networkObject.name}");
+                    messageBuilder.AppendLine($"{networkObject.name}");
                 }
                 NetworkLog.LogInfo(messageBuilder.ToString());
             }
@@ -361,32 +435,6 @@ namespace Unity.Netcode
             }
             return 0;
         }
-
-        /// <summary>
-        /// Sorts the synchronization order of the NetworkObjects to be serialized
-        /// by parents before children.
-        /// </summary>
-        /// <remarks>
-        /// This only handles late joining players. Spawning and nesting several children
-        /// dynamically is still handled by the orphaned child list when deserialized out of
-        /// hierarchical order (i.e. Spawn parent and child dynamically, parent message is
-        /// dropped and re-sent but child object is received and processed)
-        /// </remarks>
-        private int SortParentedNetworkObjects(NetworkObject first, NetworkObject second)
-        {
-            // If the first has a parent, move the first down
-            if (first.transform.parent != null)
-            {
-                return 1;
-            }
-            else // If the second has a parent and the first does not, then move the first up
-            if (second.transform.parent != null)
-            {
-                return -1;
-            }
-            return 0;
-        }
-
 
         /// <summary>
         /// Client and Server Side:
