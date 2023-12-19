@@ -182,9 +182,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
                 var networkObjects = networkObject.gameObject.GetComponentsInChildren<NetworkObject>();
-                foreach(var child in networkObjects)
+                foreach (var child in networkObjects)
                 {
-                    if(child == networkObject)
+                    if (child == networkObject)
                     {
                         continue;
                     }

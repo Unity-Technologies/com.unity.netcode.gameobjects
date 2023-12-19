@@ -1329,36 +1329,20 @@ namespace Unity.Netcode
             // If we made it here, then parent this instance under the parentObject
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
-
+            // If we are handling an orphaned child and its parent is orphaned too, then don't parent yet.
             if (orphanedChildPass)
             {
                 if (OrphanChildren.Contains(parentObject))
                 {
-                    Debug.LogWarning($"CHECK HERE TO SEE IF THIS IS NEEDED!!!");
                     return false;
                 }
             }
 
             m_CachedParent = parentObject.transform;
-            if (LogTransform)
-            {
-                Debug.Log($"[BEFORE][{m_CachedWorldPositionStays}]---------------");
-                Debug.Log($"[parent][{parentObject.name}] Pos: {m_CachedParent.position} | Rot: {m_CachedParent.eulerAngles} | Scale: {m_CachedParent.localScale}");
-                Debug.Log($"[child][{name}] Pos: {transform.position} | Rot: {transform.eulerAngles} | Scale: {transform.localScale}");
-            }
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-            if (LogTransform)
-            {
-                Debug.Log($"[AFTER][{m_CachedWorldPositionStays}]---------------");
-                Debug.Log($"[parent][{parentObject.name}] Pos: {m_CachedParent.position} | Rot: {m_CachedParent.eulerAngles} | Scale: {m_CachedParent.localScale}");
-                Debug.Log($"[child][{name}] Pos: {transform.position} | Rot: {transform.eulerAngles} | Scale: {transform.localScale}");
-            }
-
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
         }
-
-        internal static bool LogTransform = false;
 
         internal static void CheckOrphanChildren()
         {
@@ -1825,6 +1809,12 @@ namespace Unity.Netcode
                 // be synchronizing clients with.
                 var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
                 var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
+
+                // Always synchronize in-scene placed object's scale using local space
+                if (obj.IsSceneObject)
+                {
+                    syncScaleLocalSpaceRelative = obj.HasParent;
+                }
 
                 // If auto object synchronization is turned off
                 if (!AutoObjectParentSync)

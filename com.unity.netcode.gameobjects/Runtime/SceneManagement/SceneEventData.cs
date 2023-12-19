@@ -284,11 +284,34 @@ namespace Unity.Netcode
                                     currentChild = childObj;
                                     break;
                                 }
+                                else// Check to see if it is the root
+                                if (childParent = networkObject)
+                                {
+                                    // If we rolled back to root, just insert it at the start
+                                    rootParentChildTable[networkObject].Insert(0, childObj);
+                                    currentChild = childObj;
+                                    break;
+                                }
+                                else // Check to see if one of the already inserted children is its parent
+                                if (rootParentChildTable[networkObject].Contains(childParent))
+                                {
+                                    var index = rootParentChildTable[networkObject].IndexOf(childParent);
+                                    if (index == rootParentChildTable[networkObject].Count - 1)
+                                    {
+                                        rootParentChildTable[networkObject].Add(childObj);
+                                    }
+                                    else
+                                    {
+                                        rootParentChildTable[networkObject].Insert(index + 1, childObj);
+                                    }
+                                    currentChild = childObj;
+                                    break;
+                                }
                             }
-                            // Remove the child just added
-                            childNetworkObjects.Remove(currentChild);
                             // Set the child just added as the next current parent
                             currentParent = currentChild;
+                            // Remove the child just added
+                            childNetworkObjects.Remove(currentChild);
                         }
                     }
                 }
@@ -339,7 +362,7 @@ namespace Unity.Netcode
 
             // This is useful to know what NetworkObjects a client is going to be synchronized with
             // as well as the order in which they will be deserialized
-            //if (LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
+            if (LogSerializationOrder && m_NetworkManager.LogLevel == LogLevel.Developer)
             {
                 var messageBuilder = new System.Text.StringBuilder(0xFFFF);
                 messageBuilder.AppendLine("[Server-Side Client-Synchronization] NetworkObject serialization order:");
