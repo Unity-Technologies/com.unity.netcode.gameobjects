@@ -246,7 +246,6 @@ namespace TestProject.RuntimeTests
 
             // [Late Join Client #1]
             // Make sure the late joining client synchronizes properly
-            // NetworkObject.LogTransform = true;
             yield return CreateAndStartNewClient();
             yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
             AssertOnTimeout($"[Late Join 1] Timed out waiting for the late joining client's transform values to match the server transform values!\n {m_ErrorValidationLog}");
