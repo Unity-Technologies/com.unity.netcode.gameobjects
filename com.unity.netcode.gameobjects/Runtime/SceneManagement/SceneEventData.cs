@@ -246,96 +246,66 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Used with SortParentedNetworkObjects to sort the children of the root parent NetworkObject
+        /// </summary>
+        /// <param name="first">object to be sorted</param>
+        /// <param name="second">object to be compared to for sorting the first object</param>
+        /// <returns></returns>
+        private int SortChildrenNetworkObjects(NetworkObject first, NetworkObject second)
+        {
+            var firstParent = first.GetCachedParent()?.GetComponent<NetworkObject>();
+            // If the second is the first's parent then move the first down
+            if (firstParent != null && firstParent == second)
+            {
+                return 1;
+            }
+
+            var secondParent = second.GetCachedParent()?.GetComponent<NetworkObject>();
+            // If the first is the second's parent then move the first up
+            if (secondParent != null && secondParent == first)
+            {
+                return -1;
+            }
+
+            // Otherwise, don't move the first at all
+            return 0;
+        }
+
+        /// <summary>
         /// Sorts the synchronization order of the NetworkObjects to be serialized
         /// by parents before children order
         /// </summary>
         private void SortParentedNetworkObjects()
         {
-            var rootParentChildTable = new Dictionary<NetworkObject, List<NetworkObject>>();
-
-            foreach (var networkObject in m_NetworkObjectsSync)
+            var networkObjectList = m_NetworkObjectsSync.ToList();
+            foreach (var networkObject in networkObjectList)
             {
-                // Find all root parent NetworkObjects
+                // Find only the root parent NetworkObjects
                 if (networkObject.transform.childCount > 0 && networkObject.transform.parent == null)
                 {
                     // Get all child NetworkObjects of the root
                     var childNetworkObjects = networkObject.GetComponentsInChildren<NetworkObject>().ToList();
-                    // Remove the root from the list
+
+                    childNetworkObjects.Sort(SortChildrenNetworkObjects);
+
+                    // Remove the root from the children list
                     childNetworkObjects.Remove(networkObject);
-                    // Assure the root has children
-                    if (childNetworkObjects.Count() > 0)
+
+                    // Remove the root's children from the primary list
+                    foreach (var childObject in childNetworkObjects)
                     {
-                        var currentParent = networkObject;
-                        var currentChild = (NetworkObject)null;
-                        rootParentChildTable.Add(networkObject, new List<NetworkObject>());
-                        // Cycle through all child NetworkObjects ordering them relative to the root
-                        // and each other
-                        while (childNetworkObjects.Count > 0)
-                        {
-                            foreach (var childObj in childNetworkObjects)
-                            {
-                                // Get the cached parent NetworkObject
-                                var childParent = childObj.GetCachedParent().GetComponent<NetworkObject>();
-                                // If the parent is the current parent in the hierarchy of the root parent
-                                if (childParent == currentParent)
-                                {
-                                    // Add it to the root's child list (ordered)
-                                    rootParentChildTable[networkObject].Add(childObj);
-                                    currentChild = childObj;
-                                    break;
-                                }
-                                else// Check to see if it is the root
-                                if (childParent = networkObject)
-                                {
-                                    // If we rolled back to root, just insert it at the start
-                                    rootParentChildTable[networkObject].Insert(0, childObj);
-                                    currentChild = childObj;
-                                    break;
-                                }
-                                else // Check to see if one of the already inserted children is its parent
-                                if (rootParentChildTable[networkObject].Contains(childParent))
-                                {
-                                    var index = rootParentChildTable[networkObject].IndexOf(childParent);
-                                    if (index == rootParentChildTable[networkObject].Count - 1)
-                                    {
-                                        rootParentChildTable[networkObject].Add(childObj);
-                                    }
-                                    else
-                                    {
-                                        rootParentChildTable[networkObject].Insert(index + 1, childObj);
-                                    }
-                                    currentChild = childObj;
-                                    break;
-                                }
-                            }
-                            // Set the child just added as the next current parent
-                            currentParent = currentChild;
-                            // Remove the child just added
-                            childNetworkObjects.Remove(currentChild);
-                        }
+                        m_NetworkObjectsSync.Remove(childObject);
                     }
-                }
-            }
-
-            // Cycle through the table of root to ordered children tables
-            foreach (var entry in rootParentChildTable)
-            {
-                // Remove all children from the list of NetworkObjects to sync
-                foreach (var networkObject in entry.Value)
-                {
-                    m_NetworkObjectsSync.Remove(networkObject);
-                }
-                // Inject the children after the root parent
-                // The children are ordered as parents before children
-                var rootIndex = m_NetworkObjectsSync.IndexOf(entry.Key);
-
-                if (rootIndex == m_NetworkObjectsSync.Count - 1)
-                {
-                    m_NetworkObjectsSync.AddRange(entry.Value);
-                }
-                else
-                {
-                    m_NetworkObjectsSync.InsertRange(rootIndex + 1, entry.Value);
+                    // Insert or Add the sorted children list
+                    var nextIndex = m_NetworkObjectsSync.IndexOf(networkObject) + 1;
+                    if (nextIndex == m_NetworkObjectsSync.Count)
+                    {
+                        m_NetworkObjectsSync.AddRange(childNetworkObjects);
+                    }
+                    else
+                    {
+                        m_NetworkObjectsSync.InsertRange(nextIndex, childNetworkObjects);
+                    }
                 }
             }
         }
