@@ -98,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(string.Empty, MockNamedMessageCallback);
             LogAssert.Expect(UnityEngine.LogType.Error, $"[{nameof(CustomMessagingManager.RegisterNamedMessageHandler)}] Cannot register a named message of type null or empty!");
             m_ServerNetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(null, MockNamedMessageCallback);
-            LogAssert.Expect(UnityEngine.LogType.Error, $"[{nameof(CustomMessagingManager.UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");            
+            LogAssert.Expect(UnityEngine.LogType.Error, $"[{nameof(CustomMessagingManager.UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");
             m_ServerNetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(string.Empty);
             LogAssert.Expect(UnityEngine.LogType.Error, $"[{nameof(CustomMessagingManager.UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");
             m_ServerNetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(null);
