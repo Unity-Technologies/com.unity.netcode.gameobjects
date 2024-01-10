@@ -6,7 +6,7 @@ code_coverage_win_{{ project.name }}_{{ validation_editor }}:
   name: Code Coverage Report - Windows - {{ project.name }} - {{ validation_editor }}
   agent:
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.large
   commands:
     - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
