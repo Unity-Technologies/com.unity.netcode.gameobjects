@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Netcode.Components;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
