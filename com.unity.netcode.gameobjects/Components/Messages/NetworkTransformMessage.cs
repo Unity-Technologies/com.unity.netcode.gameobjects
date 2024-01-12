@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// NetworkTransform State Update Message
     /// </summary>
-    internal struct NetworkTransformMessage : INetworkMessage, INetworkSerializeByMemcpy
+    internal struct NetworkTransformMessage : INetworkMessage
     {
         public int Version => 0;
         public ulong NetworkObjectId;
