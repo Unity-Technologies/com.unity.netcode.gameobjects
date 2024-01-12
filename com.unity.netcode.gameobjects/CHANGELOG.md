@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
+
+### Changed
+
+
 ## [1.8.0] - 2023-12-12
 
 ### Added
@@ -22,7 +33,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
 - Fixed issue where a client disconnected by a server-host would not receive a local notification. (#2789)
 - Fixed issue where a server-host could shutdown during a relay connection but periodically the transport disconnect message sent to any connected clients could be dropped. (#2789)
 - Fixed issue where a host could disconnect its local client but remain running as a server. (#2789)
