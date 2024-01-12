@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+### Changed
+
+- Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+
 ## [1.8.0] - 2023-12-12
 
 ### Added
