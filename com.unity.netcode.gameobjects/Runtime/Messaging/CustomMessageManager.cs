@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -199,6 +200,14 @@ namespace Unity.Netcode
         /// <param name="callback">The callback to run when a named message is received.</param>
         public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                if (m_NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    Debug.LogError($"[{nameof(CustomMessagingManager.RegisterNamedMessageHandler)}] Cannot register a named message of type null or empty!");
+                }
+                return;
+            }
             var hash32 = XXHash.Hash32(name);
             var hash64 = XXHash.Hash64(name);
 
@@ -215,6 +224,15 @@ namespace Unity.Netcode
         /// <param name="name">The name of the message.</param>
         public void UnregisterNamedMessageHandler(string name)
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                if (m_NetworkManager.LogLevel <= LogLevel.Error)
+                {
+                    Debug.LogError($"[{nameof(CustomMessagingManager.UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");
+                }
+                return;
+            }
+
             var hash32 = XXHash.Hash32(name);
             var hash64 = XXHash.Hash64(name);
 
