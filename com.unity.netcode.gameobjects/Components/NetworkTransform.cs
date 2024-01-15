@@ -2763,7 +2763,7 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             // During destroy, use NetworkBehaviour.NetworkManager as opposed to m_CachedNetworkManager
-            if (!NetworkManager.ShutdownInProgress && NetworkManager.CustomMessagingManager != null)
+            if (!NetworkManager.ShutdownInProgress && NetworkManager.CustomMessagingManager != null && !string.IsNullOrEmpty(m_MessageName))
             {
                 NetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(m_MessageName);
             }
