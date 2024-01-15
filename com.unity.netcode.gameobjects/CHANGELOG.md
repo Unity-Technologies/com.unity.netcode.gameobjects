@@ -12,9 +12,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
+
 ### Changed
 
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+- Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
 
 ## [1.8.0] - 2023-12-12
 
