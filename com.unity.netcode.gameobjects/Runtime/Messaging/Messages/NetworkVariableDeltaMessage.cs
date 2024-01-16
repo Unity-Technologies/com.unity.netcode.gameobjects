@@ -30,6 +30,9 @@ namespace Unity.Netcode
                 throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
             }
 
+            var obj = NetworkBehaviour.NetworkObject;
+            var networkManager = obj.NetworkManagerOwner;
+
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
 
@@ -38,7 +41,7 @@ namespace Unity.Netcode
                 if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
                     // This var does not belong to the currently iterating delivery group.
-                    if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         BytePacker.WriteValueBitPacked(writer, (ushort)0);
                     }
@@ -54,7 +57,7 @@ namespace Unity.Netcode
                 var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
-                    (NetworkBehaviour.NetworkManager.IsServer || networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
+                    (networkManager.IsServer || networkVariable.CanClientWrite(networkManager.LocalClientId));
 
                 // Prevent the server from writing to the client that owns a given NetworkVariable
                 // Allowing the write would send an old value to the client and cause jitter
@@ -67,14 +70,14 @@ namespace Unity.Netcode
                 // The object containing the behaviour we're about to process is about to be shown to this client
                 // As a result, the client will get the fully serialized NetworkVariable and would be confused by
                 // an extraneous delta
-                if (NetworkBehaviour.NetworkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
-                    NetworkBehaviour.NetworkManager.SpawnManager.ObjectsToShowToClient[TargetClientId]
-                    .Contains(NetworkBehaviour.NetworkObject))
+                if (networkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
+                    networkManager.SpawnManager.ObjectsToShowToClient[TargetClientId]
+                    .Contains(obj))
                 {
                     shouldWrite = false;
                 }
 
-                if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
                     if (!shouldWrite)
                     {
@@ -88,9 +91,9 @@ namespace Unity.Netcode
 
                 if (shouldWrite)
                 {
-                    if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tempWriter = new FastBufferWriter(NetworkBehaviour.NetworkManager.MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkBehaviour.NetworkManager.MessageManager.FragmentedMessageMaxSize);
+                        var tempWriter = new FastBufferWriter(networkManager.MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, networkManager.MessageManager.FragmentedMessageMaxSize);
                         NetworkBehaviour.NetworkVariableFields[i].WriteDelta(tempWriter);
                         BytePacker.WriteValueBitPacked(writer, tempWriter.Length);
 
@@ -105,9 +108,9 @@ namespace Unity.Netcode
                     {
                         networkVariable.WriteDelta(writer);
                     }
-                    NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
-                        NetworkBehaviour.NetworkObject,
+                        obj,
                         networkVariable.Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length - startingSize);
