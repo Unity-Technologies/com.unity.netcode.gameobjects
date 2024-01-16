@@ -78,9 +78,11 @@ namespace Unity.Netcode
                 // Forward the state update if there are any remote clients to foward it to
                 if (networkManager.ConnectionManager.ConnectedClientsList.Count > (networkManager.IsHost ? 2 : 1))
                 {
+                    // This is only to copy the existing and already serialized struct for forwarding purposes only.
+                    // This will not include any changes made to this struct at this particular stage of processing the message.
                     var currentMessage = this;
                     // Create a new reader that replicates this message
-                    currentMessage.m_CurrentReader = new FastBufferReader(reader, Collections.Allocator.Temp);
+                    currentMessage.m_CurrentReader = new FastBufferReader(reader, Collections.Allocator.None);
                     // Rewind the new reader to the beginning of the message's payload
                     currentMessage.m_CurrentReader.Seek(currentPosition);
                     // Forward the message to all connected clients that are observers of the associated NetworkObject
