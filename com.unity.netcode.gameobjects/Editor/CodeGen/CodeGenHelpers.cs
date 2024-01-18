@@ -21,6 +21,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public const string NetcodeModuleName = "Unity.Netcode.Runtime.dll";
 
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
+        public const string ComponentsAssemblyName = "Unity.Netcode.Components";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
         public static readonly string INetworkMessage_FullName = typeof(INetworkMessage).FullName;
