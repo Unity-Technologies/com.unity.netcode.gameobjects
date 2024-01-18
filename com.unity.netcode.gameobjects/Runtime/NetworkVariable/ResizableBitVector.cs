@@ -1,5 +1,6 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -20,7 +21,7 @@ namespace Unity.Netcode
 
         public int GetSerializedSize()
         {
-            return FastBufferWriter.GetWriteSize(m_Bits);
+            return sizeof(int) + m_Bits.Length;
         }
 
         public (int, int) GetBitData(int i)
@@ -63,9 +64,22 @@ namespace Unity.Netcode
             return (m_Bits[index] & (byte)(1 << bitWithinIndex)) != 0;
         }
 
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        public unsafe void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref m_Bits);
+            var length = m_Bits.Length;
+            serializer.SerializeValue(ref length);
+            m_Bits.ResizeUninitialized(length);
+            var ptr = m_Bits.GetUnsafePtr();
+            {
+                if (serializer.IsReader)
+                {
+                    serializer.GetFastBufferReader().ReadBytesSafe((byte*)ptr, length);
+                }
+                else
+                {
+                    serializer.GetFastBufferWriter().WriteBytesSafe((byte*)ptr, length);
+                }
+            }
         }
     }
 }

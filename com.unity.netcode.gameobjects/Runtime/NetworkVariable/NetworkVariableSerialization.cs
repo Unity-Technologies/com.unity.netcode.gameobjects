@@ -1301,6 +1301,27 @@ namespace Unity.Netcode
         /// Registeres a native hash set (this generic implementation works with all types)
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
+        {
+            NetworkVariableSerialization<NativeHashSet<T>>.Serializer = new NativeHashSetSerializer<T>();
+        }
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_NativeHashMap<TKey, TVal>()
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.Serializer = new NativeHashMapSerializer<TKey, TVal>();
+        }
+#endif
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         public static void InitializeSerializer_List<T>()
         {
             NetworkVariableSerialization<List<T>>.Serializer = new ListSerializer<T>();
@@ -1323,27 +1344,6 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<Dictionary<TKey, TVal>>.Serializer = new DictionarySerializer<TKey, TVal>();
         }
-
-        /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        public static void InitializeSerializer_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
-        {
-            NetworkVariableSerialization<NativeHashSet<T>>.Serializer = new NativeHashSetSerializer<T>();
-        }
-
-        /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        public static void InitializeSerializer_NativeHashMap<TKey, TVal>()
-            where TKey : unmanaged, IEquatable<TKey>
-            where TVal : unmanaged
-        {
-            NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.Serializer = new NativeHashMapSerializer<TKey, TVal>();
-        }
-#endif
 
         /// <summary>
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
