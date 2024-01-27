@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added serializer for `Pose` (#2675)
+
 ### Fixed
 
 - Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)

@@ -1250,6 +1250,20 @@ namespace Unity.Netcode
         public void ReadValue(out Quaternion[] value) => ReadUnmanaged(out value);
 
         /// <summary>
+        /// Read a Pose
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Pose value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Pose array
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Pose[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
         /// Read a Color
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1425,6 +1439,26 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Quaternion[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Pose
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Pose value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Pose array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Pose[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
         /// Read a Color

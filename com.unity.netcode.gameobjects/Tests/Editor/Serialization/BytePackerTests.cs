@@ -109,7 +109,7 @@ namespace Unity.Netcode.EditorTests
                     object[] args = { reader, outVal };
                     method.Invoke(null, args);
                     outVal = (T)args[1];
-                    Assert.AreEqual(value, outVal);
+                    EqualityHelper.AreEqual(value, outVal);
                     VerifyBytewiseEquality(value, outVal);
                 }
             }
@@ -555,7 +555,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D))]
+                typeof(Quaternion), typeof(Pose), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D))]
             Type testType,
             [Values] WriteType writeType)
         {
@@ -753,6 +753,15 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(Quaternion))
             {
                 var v = new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble());
+                if (writeType == WriteType.WriteDirect)
+                {
+                    RunTypeTest(v);
+                }
+            }
+            else if (testType == typeof(Pose))
+            {
+                var v = new Pose(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()),
+                                new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()));
                 if (writeType == WriteType.WriteDirect)
                 {
                     RunTypeTest(v);

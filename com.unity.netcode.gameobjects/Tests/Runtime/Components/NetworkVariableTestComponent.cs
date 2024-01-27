@@ -191,6 +191,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariable<long> m_NetworkVariableLong = new NetworkVariable<long>();
         private NetworkVariable<sbyte> m_NetworkVariableSByte = new NetworkVariable<sbyte>();
         private NetworkVariable<Quaternion> m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>();
+        private NetworkVariable<Pose> m_NetworkVariablePose = new NetworkVariable<Pose>();
         private NetworkVariable<short> m_NetworkVariableShort = new NetworkVariable<short>();
         private NetworkVariable<Vector4> m_NetworkVariableVector4 = new NetworkVariable<Vector4>();
         private NetworkVariable<Vector3> m_NetworkVariableVector3 = new NetworkVariable<Vector3>();
@@ -217,6 +218,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariableHelper<long> Long_Var;
         public NetworkVariableHelper<sbyte> Sbyte_Var;
         public NetworkVariableHelper<Quaternion> Quaternion_Var;
+        public NetworkVariableHelper<Pose> Pose_Var;
         public NetworkVariableHelper<short> Short_Var;
         public NetworkVariableHelper<Vector4> Vector4_Var;
         public NetworkVariableHelper<Vector3> Vector3_Var;
@@ -253,6 +255,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableLong = new NetworkVariable<long>();
             m_NetworkVariableSByte = new NetworkVariable<sbyte>();
             m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>();
+            m_NetworkVariablePose = new NetworkVariable<Pose>();
             m_NetworkVariableShort = new NetworkVariable<short>();
             m_NetworkVariableVector4 = new NetworkVariable<Vector4>();
             m_NetworkVariableVector3 = new NetworkVariable<Vector3>();
@@ -280,6 +283,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableLong = new NetworkVariable<long>(1);
             m_NetworkVariableSByte = new NetworkVariable<sbyte>(0);
             m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(Quaternion.identity);
+            m_NetworkVariablePose = new NetworkVariable<Pose>(Pose.identity);
             m_NetworkVariableShort = new NetworkVariable<short>(256);
             m_NetworkVariableVector4 = new NetworkVariable<Vector4>(new Vector4(1, 1, 1, 1));
             m_NetworkVariableVector3 = new NetworkVariable<Vector3>(new Vector3(1, 1, 1));
@@ -312,6 +316,7 @@ namespace Unity.Netcode.RuntimeTests
             Long_Var = new NetworkVariableHelper<long>(m_NetworkVariableLong);
             Sbyte_Var = new NetworkVariableHelper<sbyte>(m_NetworkVariableSByte);
             Quaternion_Var = new NetworkVariableHelper<Quaternion>(m_NetworkVariableQuaternion);
+            Pose_Var = new NetworkVariableHelper<Pose>(m_NetworkVariablePose);
             Short_Var = new NetworkVariableHelper<short>(m_NetworkVariableShort);
             Vector4_Var = new NetworkVariableHelper<Vector4>(m_NetworkVariableVector4);
             Vector3_Var = new NetworkVariableHelper<Vector3>(m_NetworkVariableVector3);
@@ -376,6 +381,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(100, m_NetworkVariableQuaternion.Value.x);
             Assert.AreEqual(100, m_NetworkVariableQuaternion.Value.y);
             Assert.AreEqual(100, m_NetworkVariableQuaternion.Value.z);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.position.x);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.position.y);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.position.z);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.rotation.w);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.rotation.x);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.rotation.y);
+            Assert.AreEqual(100, m_NetworkVariablePose.Value.rotation.z);
             Assert.AreEqual(short.MaxValue, m_NetworkVariableShort.Value);
             Assert.AreEqual(1000, m_NetworkVariableVector4.Value.w);
             Assert.AreEqual(1000, m_NetworkVariableVector4.Value.x);
@@ -435,6 +447,7 @@ namespace Unity.Netcode.RuntimeTests
                         m_NetworkVariableLong.Value = 100000;
                         m_NetworkVariableSByte.Value = -127;
                         m_NetworkVariableQuaternion.Value = new Quaternion(100, 100, 100, 100);
+                        m_NetworkVariablePose.Value = new Pose(new Vector3(100, 100, 100), new Quaternion(100, 100, 100, 100));
                         m_NetworkVariableShort.Value = short.MaxValue;
                         m_NetworkVariableVector4.Value = new Vector4(1000, 1000, 1000, 1000);
                         m_NetworkVariableVector3.Value = new Vector3(1000, 1000, 1000);
