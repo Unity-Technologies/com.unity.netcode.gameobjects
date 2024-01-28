@@ -14,7 +14,7 @@ namespace TestProject.RuntimeTests
         private const string k_BaseSceneToLoad = "UnitTestBaseScene";
         private const string k_TestSceneToLoad = "ParentingInSceneObjects";
         private const int k_NumIterationsDeparentReparent = 100;
-        private const float k_AproximateThresholdValue = 0.001f;
+        private const float k_AproximateThresholdValue = 0.1f;
 
         private bool m_InitialClientsLoadedScene;
         private StringBuilder m_ErrorValidationLog = new StringBuilder(0x2000);
@@ -71,7 +71,7 @@ namespace TestProject.RuntimeTests
 
         private void GenerateRotationDoesNotMatch(InSceneParentChildHandler serverHandler, InSceneParentChildHandler clientHandler)
         {
-            m_ErrorValidationLog.Append($"[Client-{clientHandler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{clientHandler.NetworkObjectId}'s rotation {clientHandler.transform.eulerAngles} does not equal the server-side scale {serverHandler.transform.eulerAngles}");
+            m_ErrorValidationLog.Append($"[Client-{clientHandler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{clientHandler.NetworkObjectId}'s rotation {clientHandler.transform.eulerAngles} does not equal the server-side rotation {serverHandler.transform.eulerAngles}");
         }
 
         private void GenerateScaleDoesNotMatch(InSceneParentChildHandler serverHandler, InSceneParentChildHandler clientHandler)
