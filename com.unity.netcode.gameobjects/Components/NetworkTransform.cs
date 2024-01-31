@@ -2051,6 +2051,11 @@ namespace Unity.Netcode.Components
             return isDirty;
         }
 
+        protected virtual void OnTransformUpdated()
+        {
+
+        }
+
         /// <summary>
         /// Applies the authoritative state to the transform
         /// </summary>
@@ -2225,6 +2230,7 @@ namespace Unity.Netcode.Components
                 }
                 transform.localScale = m_CurrentScale;
             }
+            OnTransformUpdated();
         }
 
         /// <summary>
@@ -2422,6 +2428,7 @@ namespace Unity.Netcode.Components
             {
                 AddLogEntry(ref newState, NetworkObject.OwnerClientId);
             }
+            OnTransformUpdated();
         }
 
         /// <summary>

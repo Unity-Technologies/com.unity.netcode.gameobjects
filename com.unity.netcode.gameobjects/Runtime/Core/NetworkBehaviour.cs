@@ -836,7 +836,6 @@ namespace Unity.Netcode
             {
                 InitializeVariables();
             }
-
             PreNetworkVariableWrite();
         }
 
@@ -863,7 +862,14 @@ namespace Unity.Netcode
                     var networkVariable = NetworkVariableFields[k];
                     if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                     {
-                        shouldSend = true;
+                        var timeSinceLastUpdate = Time.time - networkVariable.LastUpdateSent;
+                        if(
+                            (networkVariable.UpdateTraits.MaxSecondsBetweenUpdates > 0 && timeSinceLastUpdate >= networkVariable.UpdateTraits.MaxSecondsBetweenUpdates) ||
+                            (timeSinceLastUpdate >= networkVariable.UpdateTraits.MinSecondsBetweenUpdates && networkVariable.ExceedsDirtinessThreshold())
+                        )
+                        {
+                            shouldSend = true;
+                        }
                         break;
                     }
                 }
@@ -904,9 +910,17 @@ namespace Unity.Netcode
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty())
+                var networkVariable = NetworkVariableFields[i];
+                if (networkVariable.IsDirty())
                 {
-                    return true;
+                    var timeSinceLastUpdate = Time.time - networkVariable.LastUpdateSent;
+                    if (
+                        (networkVariable.UpdateTraits.MaxSecondsBetweenUpdates > 0 && timeSinceLastUpdate >= networkVariable.UpdateTraits.MaxSecondsBetweenUpdates) ||
+                        (timeSinceLastUpdate >= networkVariable.UpdateTraits.MinSecondsBetweenUpdates && networkVariable.ExceedsDirtinessThreshold())
+                    )
+                    {
+                        return true;
+                    }
                 }
             }
 

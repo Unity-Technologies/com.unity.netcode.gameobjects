@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -55,9 +56,16 @@ namespace Unity.Netcode
 
                 var startingSize = writer.Length;
                 var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
+
+                var timeSinceLastUpdate = Time.time - networkVariable.LastUpdateSent;
+
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
-                    (networkManager.IsServer || networkVariable.CanClientWrite(networkManager.LocalClientId));
+                    (networkManager.IsServer || networkVariable.CanClientWrite(networkManager.LocalClientId)) &&
+                    (
+                        (networkVariable.UpdateTraits.MaxSecondsBetweenUpdates > 0 && timeSinceLastUpdate >= networkVariable.UpdateTraits.MaxSecondsBetweenUpdates) ||
+                        (timeSinceLastUpdate >= networkVariable.UpdateTraits.MinSecondsBetweenUpdates && networkVariable.ExceedsDirtinessThreshold())
+                    );
 
                 // Prevent the server from writing to the client that owns a given NetworkVariable
                 // Allowing the write would send an old value to the client and cause jitter

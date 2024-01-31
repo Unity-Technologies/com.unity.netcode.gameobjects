@@ -1979,6 +1979,15 @@ namespace Unity.Netcode
         /// </remarks>
         private void Update()
         {
+            foreach (var behaviour in ChildNetworkBehaviours)
+            {
+                for (int k = 0; k < behaviour.NetworkVariableFields.Count; k++)
+                {
+                    var networkVariable = behaviour.NetworkVariableFields[k];
+                    networkVariable.Update();
+                }
+            }
+
             // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle

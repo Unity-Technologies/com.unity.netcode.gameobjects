@@ -22,6 +22,20 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
+        public delegate bool CheckExceedsDirtinessThresholdDelegate(in T previousValue, in T newValue);
+
+        public CheckExceedsDirtinessThresholdDelegate CheckExceedsDirtinessThreshold;
+
+        public override bool ExceedsDirtinessThreshold()
+        {
+            if (CheckExceedsDirtinessThreshold != null && m_HasPreviousValue)
+            {
+                return CheckExceedsDirtinessThreshold(m_PreviousValue, m_InternalValue);
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Constructor for <see cref="NetworkVariable{T}"/>
         /// </summary>

@@ -548,6 +548,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => !networkManager.IsConnectedClient));
         }
 
+        protected void SetTimeTravelSimulatedLatency(float latencySeconds)
+        {
+            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                ((MockTransport)client.NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
+            }
+        }
+
+        protected void SetTimeTravelSimulatedDropRate(float dropRatePercent)
+        {
+            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                ((MockTransport)client.NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
+            }
+        }
+
+        protected void SetTimeTravelSimulatedLatencyJitter(float jitterSeconds)
+        {
+            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                ((MockTransport)client.NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
+            }
+        }
+
         /// <summary>
         /// Creates the server and clients
         /// </summary>
@@ -1640,13 +1667,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!string.IsNullOrEmpty(methodName))
                 {
 #if UNITY_2023_1_OR_NEWER
-                    foreach (var behaviour in Object.FindObjectsByType<NetworkBehaviour>(FindObjectsSortMode.InstanceID))
+                    foreach (var obj in Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID))
 #else
-                    foreach (var behaviour in Object.FindObjectsOfType<NetworkBehaviour>())
+                    foreach (var obj in Object.FindObjectsOfType<NetworkObject>())
 #endif
                     {
-                        var method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        method?.Invoke(behaviour, new object[] { });
+                        var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        method?.Invoke(obj, new object[] { });
+                        foreach (var behaviour in obj.ChildNetworkBehaviours)
+                        {
+                            var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                            behaviourMethod?.Invoke(behaviour, new object[] { });
+                        }
                     }
                 }
             }

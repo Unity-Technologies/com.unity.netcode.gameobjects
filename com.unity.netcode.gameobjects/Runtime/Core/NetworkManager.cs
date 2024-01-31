@@ -47,6 +47,12 @@ namespace Unity.Netcode
 
                         MessageManager.ProcessIncomingMessageQueue();
                         MessageManager.CleanupDisconnectedClients();
+
+                        if (!IsServer)
+                        {
+                            var message = new AnticipationTickSyncPingMessage { Tick = LocalTime.TickWithPartial};
+                            MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, ServerClientId);
+                        }
                     }
                     break;
                 case NetworkUpdateStage.PreUpdate:

@@ -1,5 +1,6 @@
 using System;
 using Unity.Profiling;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -34,6 +35,13 @@ namespace Unity.Netcode
         ///  This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
         /// </summary>
         public NetworkTime ServerTime { get; internal set; }
+
+        /// <summary>
+        /// The local (client-side) tick the server last received from the client.
+        /// Useful for checking whether a message associated with a particular client anticipation action
+        /// has been received and processed by the server yet.
+        /// </summary>
+        public double AnticipationTick = 0;
 
         /// <summary>
         /// Gets invoked before every network tick.
