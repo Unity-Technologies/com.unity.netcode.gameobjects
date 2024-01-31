@@ -27,7 +27,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the tick, including partial tick value passed since it started.
         /// </summary>
-        public double TickWithPartial => Tick + (TickOffset/m_TickInterval);
+        public double TickWithPartial => Tick + (TickOffset / m_TickInterval);
 
         /// <summary>
         /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>.

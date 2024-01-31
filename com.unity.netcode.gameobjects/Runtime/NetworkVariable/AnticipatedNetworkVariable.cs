@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,6 +11,7 @@ namespace Unity.Netcode
         Reanticipate
     }
 
+#pragma warning disable IDE0001
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// This version supports basic client anticipation - the client can set a value on the belief that the server
@@ -47,6 +48,7 @@ namespace Unity.Netcode
     /// snap behavior if the difference is too large.
     /// </summary>
     /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
+#pragma warning restore IDE0001
     [Serializable]
     [GenerateSerializationForGenericParameter(0)]
     public class AnticipatedNetworkVariable<T> : NetworkVariableBase
@@ -67,6 +69,7 @@ namespace Unity.Netcode
         private float m_CurrentSmoothTime;
         private bool m_HasSmoothValues;
 
+#pragma warning disable IDE0001
         /// <summary>
         /// Defines what the behavior should be if we receive a value from the server with an earlier associated
         /// tick value than the anticipation tick value.
@@ -80,15 +83,17 @@ namespace Unity.Netcode
         /// In this case, the authoritativeTick value passed to <see cref="OnReanticipate"/> will be lower than
         /// the anticipationTick value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
-        [NonSerialized]
+#pragma warning restore IDE0001
         public StaleDataHandling StaleDataHandling;
 
         public delegate void OnReanticipateDelegate(AnticipatedNetworkVariable<T> variable, in T anticipatedValue, double anticipationTick, in T authoritativeValue, double authoritativeTick);
 
+#pragma warning disable IDE0001
         /// <summary>
         /// Invoked whenever new data is received from the server, unless <see cref="StaleDataHandling"/> is
         /// <see cref="Netcode.StaleDataHandling.Ignore"/> and the data is determined to be stale.
         /// </summary>
+#pragma warning restore IDE0001
         public OnReanticipateDelegate OnReanticipate = null;
 
         public delegate void OnAuthoritativeValueChangedDelegate(AnticipatedNetworkVariable<T> variable, in T previousValue, in T newValue);
@@ -146,12 +151,14 @@ namespace Unity.Netcode
             }
         }
 
+#pragma warning disable IDE0001
         /// <summary>
         /// Retrieves or sets the underlying authoritative value.
         /// Note that only a client or server with write permissions to this variable may set this value.
         /// When this variable has been anticipated, this value will alawys return the most recent authoritative
         /// state, which is updated even if <see cref="StaleDataHandling"/> is <see cref="Netcode.StaleDataHandling.Ignore"/>.
         /// </summary>
+#pragma warning restore IDE0001
         public T AuthoritativeValue
         {
             get => m_AuthoritativeValue.Value;
@@ -170,14 +177,14 @@ namespace Unity.Netcode
             }
         }
 
-        public delegate T SmoothDelegate(T authoritativeValue, T anticipatedValue, float amount);
-
         /// <summary>
         /// A function to interpolate between two values based on a percentage.
         /// See <see cref="Mathf.Lerp"/>, <see cref="Vector3.Lerp"/>, <see cref="Vector3.Slerp"/>, and so on
         /// for examples.
         /// </summary>
-        public SmoothDelegate m_SmoothDelegate = null;
+        public delegate T SmoothDelegate(T authoritativeValue, T anticipatedValue, float amount);
+
+        private SmoothDelegate m_SmoothDelegate = null;
 
         public AnticipatedNetworkVariable(T value = default,
             StaleDataHandling staleDataHandling = StaleDataHandling.Ignore,
@@ -186,8 +193,10 @@ namespace Unity.Netcode
             : base(readPerm, writePerm)
         {
             StaleDataHandling = staleDataHandling;
-            m_AuthoritativeValue = new NetworkVariable<T>(value, readPerm, writePerm);
-            m_AuthoritativeValue.OnValueChanged = OnValueChangedInternal;
+            m_AuthoritativeValue = new NetworkVariable<T>(value, readPerm, writePerm)
+            {
+                OnValueChanged = OnValueChangedInternal
+            };
         }
 
         public override void Update()
@@ -225,12 +234,12 @@ namespace Unity.Netcode
 
             if (m_HasSmoothValues)
             {
-                if(m_SmoothFrom is IDisposable smoothFromDisposable)
+                if (m_SmoothFrom is IDisposable smoothFromDisposable)
                 {
                     smoothFromDisposable.Dispose();
                     m_SmoothFrom = default;
                 }
-                if(m_SmoothTo is IDisposable smoothToDisposable)
+                if (m_SmoothTo is IDisposable smoothToDisposable)
                 {
                     smoothToDisposable.Dispose();
                     m_SmoothTo = default;

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -195,7 +190,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.SetSnapValueRpc(10);
 
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(
-                new List<NetworkManager>{m_ServerNetworkManager}
+                new List<NetworkManager> { m_ServerNetworkManager }
             );
 
             var serverComponent = GetServerComponent();
@@ -230,7 +225,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.SetSmoothValueRpc(20);
 
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(
-                new List<NetworkManager>{m_ServerNetworkManager}
+                new List<NetworkManager> { m_ServerNetworkManager }
             );
 
             var serverComponent = GetServerComponent();
@@ -243,25 +238,23 @@ namespace Unity.Netcode.RuntimeTests
 
             WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
 
-            // Has not changed yet - smoothing
-            Assert.AreEqual(15 + 1f/60f * 5, testComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
+            Assert.AreEqual(15 + 1f / 60f * 5, testComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
             Assert.AreEqual(20, testComponent.SmoothOnAnticipationFailVariable.AuthoritativeValue, Mathf.Epsilon);
 
-            // Has not changed yet - smoothing
-            Assert.AreEqual(0 + 1f/60f * 20, otherClientComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
+            Assert.AreEqual(0 + 1f / 60f * 20, otherClientComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
             Assert.AreEqual(20, otherClientComponent.SmoothOnAnticipationFailVariable.AuthoritativeValue, Mathf.Epsilon);
 
             for (var i = 1; i < 60; ++i)
             {
-                TimeTravel(1f/60f, 1);
+                TimeTravel(1f / 60f, 1);
 
-                Assert.AreEqual(15 + 1f/60f * 5 * (i+1), testComponent.SmoothOnAnticipationFailVariable.Value, 0.00001);
+                Assert.AreEqual(15 + 1f / 60f * 5 * (i + 1), testComponent.SmoothOnAnticipationFailVariable.Value, 0.00001);
                 Assert.AreEqual(20, testComponent.SmoothOnAnticipationFailVariable.AuthoritativeValue, Mathf.Epsilon);
 
-                Assert.AreEqual(0 + 1f/60f * 20 * (i+1), otherClientComponent.SmoothOnAnticipationFailVariable.Value, 0.00001);
+                Assert.AreEqual(0 + 1f / 60f * 20 * (i + 1), otherClientComponent.SmoothOnAnticipationFailVariable.Value, 0.00001);
                 Assert.AreEqual(20, otherClientComponent.SmoothOnAnticipationFailVariable.AuthoritativeValue, Mathf.Epsilon);
             }
-            TimeTravel(1f/60f, 1);
+            TimeTravel(1f / 60f, 1);
             Assert.AreEqual(20, testComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
             Assert.AreEqual(20, otherClientComponent.SmoothOnAnticipationFailVariable.Value, Mathf.Epsilon);
         }
@@ -281,7 +274,7 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.SetReanticipateValueRpc(20);
 
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(
-                new List<NetworkManager>{m_ServerNetworkManager}
+                new List<NetworkManager> { m_ServerNetworkManager }
             );
 
             var serverComponent = GetServerComponent();

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 namespace Unity.Netcode.Components
 {
 
+#pragma warning disable IDE0001
     /// <summary>
     /// A subclass of <see cref="NetworkTransform"/> that supports basic client anticipation - the client
     /// can set a value on the belief that the server will update it to reflect the same value in a future update
@@ -18,7 +14,7 @@ namespace Unity.Netcode.Components
     /// <list type="bullet">
     ///
     /// <item><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and no <see cref="OnReanticipate"/> callback),
+    /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
     /// resulting in a "snap" to the new value if it is different from the anticipated value.</item>
     ///
@@ -44,6 +40,7 @@ namespace Unity.Netcode.Components
     /// difference between the anticipated and authoritative values is within some threshold, but fall back to
     /// snap behavior if the difference is too large.
     /// </summary>
+#pragma warning restore IDE0001
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Network Transform")]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
@@ -66,11 +63,34 @@ namespace Unity.Netcode.Components
         private float m_SmoothDuration;
         private float m_CurrentSmoothTime;
 
-        public bool m_OutstandingAuthorityChange = false;
+        private bool m_OutstandingAuthorityChange = false;
 
+#pragma warning disable IDE0001
+        /// <summary>
+        /// Defines what the behavior should be if we receive a value from the server with an earlier associated
+        /// tick value than the anticipation tick value.
+        /// <br/><br/>
+        /// If this is <see cref="Netcode.StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
+        /// value will not replace the anticipated value until the anticipation tick is reached. <see cref="OnAuthoritativeValueChanged"/>
+        /// and <see cref="OnReanticipate"/> will also not be invoked for this stale data.
+        /// <br/><br/>
+        /// If this is <see cref="Netcode.StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
+        /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="OnReanticipate"/> will be invoked.
+        /// In this case, the authoritativeTick value passed to <see cref="OnReanticipate"/> will be lower than
+        /// the anticipationTick value, and that callback can be used to calculate a new anticipated value.
+        /// </summary>
+#pragma warning restore IDE0001
         public StaleDataHandling StaleDataHandling = StaleDataHandling.Reanticipate;
 
+        /// <summary>
+        /// Contains the current state of this transform on the server side
+        /// </summary>
         public TransformState AuthorityState => m_AuthorityTransform;
+
+        /// <summary>
+        /// Contains the current anticipated state, which will match the values of this object's
+        /// actual <see cref="MonoBehaviour.transform"/>.
+        /// </summary>
         public TransformState AnticipatedState => m_AnticipatedTransform;
 
         /// <summary>
@@ -168,10 +188,12 @@ namespace Unity.Netcode.Components
 
         public delegate void OnReanticipateDelegate(AnticipatedNetworkTransform anticipatedNetworkTransform, TransformState anticipatedValue, double anticipationTick, TransformState authorityValue, double authorityTick);
 
+#pragma warning disable IDE0001
         /// <summary>
         /// Invoked whenever new data is received from the server, unless <see cref="StaleDataHandling"/> is
         /// <see cref="Netcode.StaleDataHandling.Ignore"/> and the data is determined to be stale.
         /// </summary>
+#pragma warning restore IDE0001
         public OnReanticipateDelegate OnReanticipate;
 
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)

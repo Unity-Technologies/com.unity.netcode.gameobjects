@@ -50,7 +50,7 @@ namespace Unity.Netcode
 
                         if (!IsServer)
                         {
-                            var message = new AnticipationTickSyncPingMessage { Tick = LocalTime.TickWithPartial};
+                            var message = new AnticipationTickSyncPingMessage { Tick = LocalTime.TickWithPartial };
                             MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, ServerClientId);
                         }
                     }

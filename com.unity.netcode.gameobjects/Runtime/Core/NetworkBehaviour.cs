@@ -863,7 +863,7 @@ namespace Unity.Netcode
                     if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                     {
                         var timeSinceLastUpdate = Time.time - networkVariable.LastUpdateSent;
-                        if(
+                        if (
                             (networkVariable.UpdateTraits.MaxSecondsBetweenUpdates > 0 && timeSinceLastUpdate >= networkVariable.UpdateTraits.MaxSecondsBetweenUpdates) ||
                             (timeSinceLastUpdate >= networkVariable.UpdateTraits.MinSecondsBetweenUpdates && networkVariable.ExceedsDirtinessThreshold())
                         )
