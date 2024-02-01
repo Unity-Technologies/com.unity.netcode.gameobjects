@@ -1,3 +1,4 @@
+using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -41,6 +42,24 @@ namespace Unity.Netcode.RuntimeTests
             return k_TickRate;
         }
 
+        private bool m_UseParentingThreshold;
+        private const float k_ParentingThreshold = 0.25f;
+
+        protected override float GetDeltaVarianceThreshold()
+        {
+            if (m_UseParentingThreshold)
+            {
+                return k_ParentingThreshold;
+            }
+            return base.GetDeltaVarianceThreshold();
+        }
+
+        protected override IEnumerator OnSetup()
+        {
+            m_UseParentingThreshold = false;
+            return base.OnSetup();
+        }
+
         /// <summary>
         /// Handles validating the local space values match the original local space values.
         /// If not, it generates a message containing the axial values that did not match
@@ -77,6 +96,7 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void ParentedNetworkTransformTest([Values] Interpolation interpolation, [Values] bool worldPositionStays, [Values(0.5f, 1.0f, 5.0f)] float scale)
         {
+            m_UseParentingThreshold = true;
             // Get the NetworkManager that will have authority in order to spawn with the correct authority
             var isServerAuthority = m_Authority == Authority.ServerAuthority;
             var authorityNetworkManager = m_ServerNetworkManager;
