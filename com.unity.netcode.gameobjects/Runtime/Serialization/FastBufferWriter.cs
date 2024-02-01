@@ -1189,6 +1189,31 @@ namespace Unity.Netcode
                 WriteUnmanaged(value);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void WriteValueSafe<T>(NativeHashSet<T> value) where T : unmanaged, IEquatable<T>
+        {
+            WriteUnmanagedSafe(value.Count());
+            foreach (var item in value)
+            {
+                var iReffable = item;
+                NetworkVariableSerialization<T>.Write(this, ref iReffable);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void WriteValueSafe<TKey, TVal>(NativeHashMap<TKey, TVal> value)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            WriteUnmanagedSafe(value.Count());
+            foreach (var item in value)
+            {
+                (var key, var val) = (item.Key, item.Value);
+                NetworkVariableSerialization<TKey>.Write(this, ref key);
+                NetworkVariableSerialization<TVal>.Write(this, ref val);
+            }
+        }
 #endif
 
         /// <summary>

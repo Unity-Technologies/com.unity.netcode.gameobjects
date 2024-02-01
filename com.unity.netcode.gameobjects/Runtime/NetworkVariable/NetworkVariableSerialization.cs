@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,6 +22,8 @@ namespace Unity.Netcode
         // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
         public void Read(FastBufferReader reader, ref T value);
+        public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue);
+        public void ReadDelta(FastBufferReader reader, ref T value);
         internal void ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator);
         public void Duplicate(in T value, ref T duplicatedValue);
     }
@@ -36,6 +40,15 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref short value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref short value, ref short previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref short value)
+        {
+            Read(reader, ref value);
         }
 
         void INetworkVariableSerializer<short>.ReadWithAllocator(FastBufferReader reader, out short value, Allocator allocator)
@@ -63,6 +76,15 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref ushort value, ref ushort previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref ushort value)
+        {
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<ushort>.ReadWithAllocator(FastBufferReader reader, out ushort value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -86,6 +108,15 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref int value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref int value, ref int previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref int value)
+        {
+            Read(reader, ref value);
         }
 
         void INetworkVariableSerializer<int>.ReadWithAllocator(FastBufferReader reader, out int value, Allocator allocator)
@@ -113,6 +144,15 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref uint value, ref uint previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref uint value)
+        {
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<uint>.ReadWithAllocator(FastBufferReader reader, out uint value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -138,6 +178,15 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref long value, ref long previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref long value)
+        {
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<long>.ReadWithAllocator(FastBufferReader reader, out long value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -161,6 +210,15 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref ulong value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref ulong value, ref ulong previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref ulong value)
+        {
+            Read(reader, ref value);
         }
 
         void INetworkVariableSerializer<ulong>.ReadWithAllocator(FastBufferReader reader, out ulong value, Allocator allocator)
@@ -193,6 +251,15 @@ namespace Unity.Netcode
             reader.ReadUnmanagedSafe(out value);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -201,6 +268,237 @@ namespace Unity.Netcode
         public void Duplicate(in T value, ref T duplicatedValue)
         {
             duplicatedValue = value;
+        }
+    }
+
+    internal class ListSerializer<T> : INetworkVariableSerializer<List<T>>
+    {
+        public void Write(FastBufferWriter writer, ref List<T> value)
+        {
+            bool isNull = value == null;
+            writer.WriteValueSafe(isNull);
+            if (!isNull)
+            {
+                BytePacker.WriteValuePacked(writer, value.Count);
+                foreach (var item in value)
+                {
+                    var reffable = item;
+                    NetworkVariableSerialization<T>.Write(writer, ref reffable);
+                }
+            }
+        }
+        public void Read(FastBufferReader reader, ref List<T> value)
+        {
+            reader.ReadValueSafe(out bool isNull);
+            if (isNull)
+            {
+                value = null;
+            }
+            else
+            {
+                if (value == null)
+                {
+                    value = new List<T>();
+                }
+
+                ByteUnpacker.ReadValuePacked(reader, out int len);
+                if (len < value.Count)
+                {
+                    value.RemoveRange(len, value.Count - len);
+                }
+                for (var i = 0; i < len; ++i)
+                {
+                    // Read in place where possible
+                    if (i < value.Count)
+                    {
+                        T item = value[i];
+                        NetworkVariableSerialization<T>.Read(reader, ref item);
+                        value[i] = item;
+                    }
+                    else
+                    {
+                        T item = default;
+                        NetworkVariableSerialization<T>.Read(reader, ref item);
+                        value.Add(item);
+                    }
+                }
+            }
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref List<T> value, ref List<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteListDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref List<T> value)
+        {
+            CollectionSerializationUtility.ReadListDelta(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<List<T>>.ReadWithAllocator(FastBufferReader reader, out List<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in List<T> value, ref List<T> duplicatedValue)
+        {
+            if (duplicatedValue == null)
+            {
+                duplicatedValue = new List<T>();
+            }
+
+            duplicatedValue.Clear();
+            foreach (var item in value)
+            {
+                duplicatedValue.Add(item);
+            }
+        }
+    }
+
+    internal class HashSetSerializer<T> : INetworkVariableSerializer<HashSet<T>> where T : IEquatable<T>
+    {
+        public void Write(FastBufferWriter writer, ref HashSet<T> value)
+        {
+            bool isNull = value == null;
+            writer.WriteValueSafe(isNull);
+            if (!isNull)
+            {
+                writer.WriteValueSafe(value.Count);
+                foreach (var item in value)
+                {
+                    var reffable = item;
+                    NetworkVariableSerialization<T>.Write(writer, ref reffable);
+                }
+            }
+        }
+        public void Read(FastBufferReader reader, ref HashSet<T> value)
+        {
+            reader.ReadValueSafe(out bool isNull);
+            if (isNull)
+            {
+                value = null;
+            }
+            else
+            {
+                if (value == null)
+                {
+                    value = new HashSet<T>();
+                }
+                else
+                {
+                    value.Clear();
+                }
+                reader.ReadValueSafe(out int len);
+                for (var i = 0; i < len; ++i)
+                {
+                    T item = default;
+                    NetworkVariableSerialization<T>.Read(reader, ref item);
+                    value.Add(item);
+                }
+            }
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref HashSet<T> value, ref HashSet<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteHashSetDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref HashSet<T> value)
+        {
+            CollectionSerializationUtility.ReadHashSetDelta(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<HashSet<T>>.ReadWithAllocator(FastBufferReader reader, out HashSet<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in HashSet<T> value, ref HashSet<T> duplicatedValue)
+        {
+            if (duplicatedValue == null)
+            {
+                duplicatedValue = new HashSet<T>();
+            }
+
+            duplicatedValue.Clear();
+            foreach (var item in value)
+            {
+                duplicatedValue.Add(item);
+            }
+        }
+    }
+
+
+    internal class DictionarySerializer<TKey, TVal> : INetworkVariableSerializer<Dictionary<TKey, TVal>>
+        where TKey : IEquatable<TKey>
+    {
+        public void Write(FastBufferWriter writer, ref Dictionary<TKey, TVal> value)
+        {
+            bool isNull = value == null;
+            writer.WriteValueSafe(isNull);
+            if (!isNull)
+            {
+                writer.WriteValueSafe(value.Count);
+                foreach (var item in value)
+                {
+                    (var key, var val) = (item.Key, item.Value);
+                    NetworkVariableSerialization<TKey>.Write(writer, ref key);
+                    NetworkVariableSerialization<TVal>.Write(writer, ref val);
+                }
+            }
+        }
+        public void Read(FastBufferReader reader, ref Dictionary<TKey, TVal> value)
+        {
+            reader.ReadValueSafe(out bool isNull);
+            if (isNull)
+            {
+                value = null;
+            }
+            else
+            {
+                if (value == null)
+                {
+                    value = new Dictionary<TKey, TVal>();
+                }
+                else
+                {
+                    value.Clear();
+                }
+                reader.ReadValueSafe(out int len);
+                for (var i = 0; i < len; ++i)
+                {
+                    (TKey key, TVal val) = (default, default);
+                    NetworkVariableSerialization<TKey>.Read(reader, ref key);
+                    NetworkVariableSerialization<TVal>.Read(reader, ref val);
+                    value.Add(key, val);
+                }
+            }
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref Dictionary<TKey, TVal> value, ref Dictionary<TKey, TVal> previousValue)
+        {
+            CollectionSerializationUtility.WriteDictionaryDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref Dictionary<TKey, TVal> value)
+        {
+            CollectionSerializationUtility.ReadDictionaryDelta(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<Dictionary<TKey, TVal>>.ReadWithAllocator(FastBufferReader reader, out Dictionary<TKey, TVal> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in Dictionary<TKey, TVal> value, ref Dictionary<TKey, TVal> duplicatedValue)
+        {
+            if (duplicatedValue == null)
+            {
+                duplicatedValue = new Dictionary<TKey, TVal>();
+            }
+
+            duplicatedValue.Clear();
+            foreach (var item in value)
+            {
+                duplicatedValue.Add(item.Key, item.Value);
+            }
         }
     }
 
@@ -214,6 +512,15 @@ namespace Unity.Netcode
         {
             value.Dispose();
             reader.ReadUnmanagedSafe(out value, Allocator.Persistent);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeArrayDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeArrayDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
@@ -249,6 +556,15 @@ namespace Unity.Netcode
             reader.ReadUnmanagedSafeInPlace(ref value);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeListDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeList<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeListDelta(reader, ref value);
+        }
+
         void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -268,6 +584,90 @@ namespace Unity.Netcode
             duplicatedValue.CopyFrom(value);
         }
     }
+
+
+    internal class NativeHashSetSerializer<T> : INetworkVariableSerializer<NativeHashSet<T>> where T : unmanaged, IEquatable<T>
+    {
+        public void Write(FastBufferWriter writer, ref NativeHashSet<T> value)
+        {
+            writer.WriteValueSafe(value);
+        }
+        public void Read(FastBufferReader reader, ref NativeHashSet<T> value)
+        {
+            reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeHashSet<T> value, ref NativeHashSet<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeHashSetDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeHashSet<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeHashSetDelta(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<NativeHashSet<T>>.ReadWithAllocator(FastBufferReader reader, out NativeHashSet<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in NativeHashSet<T> value, ref NativeHashSet<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated)
+            {
+                duplicatedValue = new NativeHashSet<T>(value.Capacity, Allocator.Persistent);
+            }
+
+            duplicatedValue.Clear();
+            foreach (var item in value)
+            {
+                duplicatedValue.Add(item);
+            }
+        }
+    }
+
+
+    internal class NativeHashMapSerializer<TKey, TVal> : INetworkVariableSerializer<NativeHashMap<TKey, TVal>>
+        where TKey : unmanaged, IEquatable<TKey>
+        where TVal : unmanaged
+    {
+        public void Write(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value)
+        {
+            writer.WriteValueSafe(value);
+        }
+        public void Read(FastBufferReader reader, ref NativeHashMap<TKey, TVal> value)
+        {
+            reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value, ref NativeHashMap<TKey, TVal> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeHashMapDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeHashMap<TKey, TVal> value)
+        {
+            CollectionSerializationUtility.ReadNativeHashMapDelta(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<NativeHashMap<TKey, TVal>>.ReadWithAllocator(FastBufferReader reader, out NativeHashMap<TKey, TVal> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in NativeHashMap<TKey, TVal> value, ref NativeHashMap<TKey, TVal> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated)
+            {
+                duplicatedValue = new NativeHashMap<TKey, TVal>(value.Capacity, Allocator.Persistent);
+            }
+
+            duplicatedValue.Clear();
+            foreach (var item in value)
+            {
+                duplicatedValue.Add(item.Key, item.Value);
+            }
+        }
+    }
 #endif
 
     /// <summary>
@@ -283,6 +683,93 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref T value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        // Because of how strings are generally used, it is likely that most strings will still write as full strings
+        // instead of deltas. This actually adds one byte to the data to encode that it was serialized in full.
+        // But the potential savings from a small change to a large string are valuable enough to be worth that extra
+        // byte.
+        public unsafe void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            using var changes = new ResizableBitVector(Allocator.Temp);
+            int minLength = math.min(value.Length, previousValue.Length);
+            var numChanges = 0;
+            for (var i = 0; i < minLength; ++i)
+            {
+                var val = value[i];
+                var prevVal = previousValue[i];
+                if (!NetworkVariableSerialization<byte>.AreEqual(ref val, ref prevVal))
+                {
+                    ++numChanges;
+                    changes.Set(i);
+                }
+            }
+
+            for (var i = previousValue.Length; i < value.Length; ++i)
+            {
+                ++numChanges;
+                changes.Set(i);
+            }
+
+            if (changes.GetSerializedSize() + FastBufferWriter.GetWriteSize<byte>() * numChanges > FastBufferWriter.GetWriteSize<byte>() * value.Length)
+            {
+                writer.WriteByteSafe(1);
+                writer.WriteValueSafe(value);
+                return;
+            }
+            writer.WriteByte(0);
+            BytePacker.WriteValuePacked(writer, value.Length);
+            writer.WriteValueSafe(changes);
+            unsafe
+            {
+                byte* ptr = value.GetUnsafePtr();
+                byte* prevPtr = previousValue.GetUnsafePtr();
+                for (int i = 0; i < value.Length; ++i)
+                {
+                    if (changes.IsSet(i))
+                    {
+                        if (i < previousValue.Length)
+                        {
+                            NetworkVariableSerialization<byte>.WriteDelta(writer, ref ptr[i], ref prevPtr[i]);
+                        }
+                        else
+                        {
+                            NetworkVariableSerialization<byte>.Write(writer, ref ptr[i]);
+                        }
+                    }
+                }
+            }
+        }
+        public unsafe void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            // Writing can use the NativeArray logic as it is, but reading is a little different.
+            // Using the NativeArray logic for reading would result in length changes allocating a new NativeArray,
+            // which is not what we want for FixedString. With FixedString, the actual size of the data does not change,
+            // only an in-memory "length" value - so if the length changes, the only thing we want to do is change
+            // that value, and otherwise read everything in-place.
+            reader.ReadByteSafe(out byte full);
+            if (full == 1)
+            {
+                reader.ReadValueSafeInPlace(ref value);
+                return;
+            }
+            ByteUnpacker.ReadValuePacked(reader, out int length);
+            var changes = new ResizableBitVector(Allocator.Temp);
+            using var toDispose = changes;
+            {
+                reader.ReadNetworkSerializableInPlace(ref changes);
+
+                value.Length = length;
+
+                byte* ptr = value.GetUnsafePtr();
+                for (var i = 0; i < value.Length; ++i)
+                {
+                    if (changes.IsSet(i))
+                    {
+                        reader.ReadByte(out ptr[i]);
+                    }
+                }
+            }
         }
 
         void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
@@ -310,6 +797,16 @@ namespace Unity.Netcode
         {
             value.Dispose();
             reader.ReadValueSafe(out value, Allocator.Persistent);
+        }
+
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeArrayDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeArrayDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
@@ -347,6 +844,15 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeListDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeList<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeListDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
@@ -387,6 +893,25 @@ namespace Unity.Netcode
             value.NetworkSerialize(bufferSerializer);
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.WriteDelta(writer, value, previousValue);
+                return;
+            }
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.ReadDelta(reader, ref value);
+                return;
+            }
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -412,6 +937,16 @@ namespace Unity.Netcode
         {
             value.Dispose();
             reader.ReadNetworkSerializable(out value, Allocator.Persistent);
+        }
+
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeArrayDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeArrayDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
@@ -449,6 +984,15 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadNetworkSerializableInPlace(ref value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue)
+        {
+            CollectionSerializationUtility.WriteNativeListDelta(writer, ref value, ref previousValue);
+        }
+        public void ReadDelta(FastBufferReader reader, ref NativeList<T> value)
+        {
+            CollectionSerializationUtility.ReadNativeListDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
@@ -507,6 +1051,25 @@ namespace Unity.Netcode
             }
         }
 
+        public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.WriteDelta(writer, value, previousValue);
+                return;
+            }
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            if (UserNetworkVariableSerialization<T>.WriteDelta != null && UserNetworkVariableSerialization<T>.ReadDelta != null)
+            {
+                UserNetworkVariableSerialization<T>.ReadDelta(reader, ref value);
+                return;
+            }
+            Read(reader, ref value);
+        }
+
         void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
         {
             throw new NotImplementedException();
@@ -540,11 +1103,25 @@ namespace Unity.Netcode
         public delegate void WriteValueDelegate(FastBufferWriter writer, in T value);
 
         /// <summary>
+        /// The write value delegate handler definition
+        /// </summary>
+        /// <param name="writer">The <see cref="FastBufferWriter"/> to write the value of type `T`</param>
+        /// <param name="value">The value of type `T` to be written</param>
+        public delegate void WriteDeltaDelegate(FastBufferWriter writer, in T value, in T previousValue);
+
+        /// <summary>
         /// The read value delegate handler definition
         /// </summary>
         /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
         /// <param name="value">The value of type `T` to be read</param>
         public delegate void ReadValueDelegate(FastBufferReader reader, out T value);
+
+        /// <summary>
+        /// The read value delegate handler definition
+        /// </summary>
+        /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
+        /// <param name="value">The value of type `T` to be read</param>
+        public delegate void ReadDeltaDelegate(FastBufferReader reader, ref T value);
 
         /// <summary>
         /// The read value delegate handler definition
@@ -562,6 +1139,17 @@ namespace Unity.Netcode
         /// Callback to read a value
         /// </summary>
         public static ReadValueDelegate ReadValue;
+
+        /// <summary>
+        /// Callback to write a delta between two values, based on computing the difference between the previous and
+        /// current values.
+        /// </summary>
+        public static WriteDeltaDelegate WriteDelta;
+
+        /// <summary>
+        /// Callback to read a delta, applying only select changes to the current value.
+        /// </summary>
+        public static ReadDeltaDelegate ReadDelta;
 
         /// <summary>
         /// Callback to create a duplicate of a value, used to check for dirty status.
@@ -600,6 +1188,36 @@ namespace Unity.Netcode
                 ThrowArgumentError();
             }
             UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
+            {
+                ThrowArgumentError();
+            }
+
+            if (UserNetworkVariableSerialization<T>.WriteDelta == null || UserNetworkVariableSerialization<T>.ReadDelta == null)
+            {
+                UserNetworkVariableSerialization<T>.WriteValue(writer, value);
+                return;
+            }
+            UserNetworkVariableSerialization<T>.WriteDelta(writer, value, previousValue);
+        }
+
+        public void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
+            {
+                ThrowArgumentError();
+            }
+
+            if (UserNetworkVariableSerialization<T>.WriteDelta == null || UserNetworkVariableSerialization<T>.ReadDelta == null)
+            {
+                UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
+                return;
+            }
+            UserNetworkVariableSerialization<T>.ReadDelta(reader, ref value);
         }
 
         void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
@@ -678,7 +1296,54 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new UnmanagedListSerializer<T>();
         }
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
+        {
+            NetworkVariableSerialization<NativeHashSet<T>>.Serializer = new NativeHashSetSerializer<T>();
+        }
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_NativeHashMap<TKey, TVal>()
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.Serializer = new NativeHashMapSerializer<TKey, TVal>();
+        }
 #endif
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_List<T>()
+        {
+            NetworkVariableSerialization<List<T>>.Serializer = new ListSerializer<T>();
+        }
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_HashSet<T>() where T : IEquatable<T>
+        {
+            NetworkVariableSerialization<HashSet<T>>.Serializer = new HashSetSerializer<T>();
+        }
+
+        /// <summary>
+        /// Registeres a native hash set (this generic implementation works with all types)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeSerializer_Dictionary<TKey, TVal>() where TKey : IEquatable<TKey>
+        {
+            NetworkVariableSerialization<Dictionary<TKey, TVal>>.Serializer = new DictionarySerializer<TKey, TVal>();
+        }
 
         /// <summary>
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
@@ -780,6 +1445,31 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeArray<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsArray;
         }
+        /// <summary>
+        /// Registers an unmanaged type that will be checked for equality using T.Equals()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeEqualityChecker_List<T>()
+        {
+            NetworkVariableSerialization<List<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsList;
+        }
+        /// <summary>
+        /// Registers an unmanaged type that will be checked for equality using T.Equals()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeEqualityChecker_HashSet<T>() where T : IEquatable<T>
+        {
+            NetworkVariableSerialization<HashSet<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsHashSet;
+        }
+        /// <summary>
+        /// Registers an unmanaged type that will be checked for equality using T.Equals()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeEqualityChecker_Dictionary<TKey, TVal>()
+            where TKey : IEquatable<TKey>
+        {
+            NetworkVariableSerialization<Dictionary<TKey, TVal>>.AreEqual = NetworkVariableDictionarySerialization<TKey, TVal>.GenericEqualsDictionary;
+        }
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
@@ -788,7 +1478,25 @@ namespace Unity.Netcode
         /// <typeparam name="T"></typeparam>
         public static void InitializeEqualityChecker_UnmanagedIEquatableList<T>() where T : unmanaged, IEquatable<T>
         {
-            NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsList;
+            NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsNativeList;
+        }
+        /// <summary>
+        /// Registers an unmanaged type that will be checked for equality using T.Equals()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeEqualityChecker_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
+        {
+            NetworkVariableSerialization<NativeHashSet<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsNativeHashSet;
+        }
+        /// <summary>
+        /// Registers an unmanaged type that will be checked for equality using T.Equals()
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public static void InitializeEqualityChecker_NativeHashMap<TKey, TVal>()
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.AreEqual = NetworkVariableMapSerialization<TKey, TVal>.GenericEqualsNativeHashMap;
         }
 #endif
 
@@ -913,6 +1621,53 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Serialize a value using the best-known serialization method for a generic value.
+        /// Will reliably serialize any value that is passed to it correctly with no boxing.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to use FastBufferWriter directly.
+        /// <br/>
+        /// <br/>
+        /// If the codegen is unable to determine a serializer for a type,
+        /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.WriteValue"/> is called, which, by default,
+        /// will throw an exception, unless you have assigned a user serialization callback to it at runtime.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        public static void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
+        {
+            Serializer.WriteDelta(writer, ref value, ref previousValue);
+        }
+
+        /// <summary>
+        /// Deserialize a value using the best-known serialization method for a generic value.
+        /// Will reliably deserialize any value that is passed to it correctly with no boxing.
+        /// For types whose deserialization can be determined by codegen (which is most types),
+        /// GC will only be incurred if the type is a managed type and the ref value passed in is `null`,
+        /// in which case a new value is created; otherwise, it will be deserialized in-place.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to use FastBufferReader directly.
+        /// <br/>
+        /// <br/>
+        /// If the codegen is unable to determine a serializer for a type,
+        /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.ReadValue"/> is called, which, by default,
+        /// will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="value"></param>
+        public static void ReadDelta(FastBufferReader reader, ref T value)
+        {
+            Serializer.ReadDelta(reader, ref value);
+        }
+
+        /// <summary>
         /// Duplicates a value using the most efficient means of creating a complete copy.
         /// For most types this is a simple assignment or memcpy.
         /// For managed types, this is will serialize and then deserialize the value to ensure
@@ -1021,11 +1776,69 @@ namespace Unity.Netcode
             return a.Equals(b);
         }
 
+        internal static bool EqualityEqualsList<TValueType>(ref List<TValueType> a, ref List<TValueType> b)
+        {
+            if ((a == null) != (b == null))
+            {
+                return false;
+            }
+
+            if (a == null)
+            {
+                return true;
+            }
+
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < a.Count; ++i)
+            {
+                var aItem = a[i];
+                var bItem = b[i];
+                if (!NetworkVariableSerialization<TValueType>.AreEqual(ref aItem, ref bItem))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal static bool EqualityEqualsHashSet<TValueType>(ref HashSet<TValueType> a, ref HashSet<TValueType> b) where TValueType : IEquatable<TValueType>
+        {
+            if ((a == null) != (b == null))
+            {
+                return false;
+            }
+
+            if (a == null)
+            {
+                return true;
+            }
+
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+
+            foreach (var item in a)
+            {
+                if (!b.Contains(item))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks
         // Size is fixed
-        internal static unsafe bool EqualityEqualsList<TValueType>(ref NativeList<TValueType> a, ref NativeList<TValueType> b) where TValueType : unmanaged, IEquatable<TValueType>
+        internal static unsafe bool EqualityEqualsNativeList<TValueType>(ref NativeList<TValueType> a, ref NativeList<TValueType> b) where TValueType : unmanaged, IEquatable<TValueType>
         {
             if (a.IsCreated != b.IsCreated)
             {
@@ -1047,6 +1860,34 @@ namespace Unity.Netcode
             for (var i = 0; i < a.Length; ++i)
             {
                 if (!EqualityEquals(ref aptr[i], ref bptr[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        internal static bool EqualityEqualsNativeHashSet<TValueType>(ref NativeHashSet<TValueType> a, ref NativeHashSet<TValueType> b) where TValueType : unmanaged, IEquatable<TValueType>
+        {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
+            if (a.Count() != b.Count())
+            {
+                return false;
+            }
+
+            foreach (var item in a)
+            {
+                if (!b.Contains(item))
                 {
                     return false;
                 }
@@ -1094,6 +1935,82 @@ namespace Unity.Netcode
             return a == b;
         }
     }
+    internal class NetworkVariableDictionarySerialization<TKey, TVal>
+        where TKey : IEquatable<TKey>
+    {
+
+        internal static bool GenericEqualsDictionary(ref Dictionary<TKey, TVal> a, ref Dictionary<TKey, TVal> b)
+        {
+            if ((a == null) != (b == null))
+            {
+                return false;
+            }
+
+            if (a == null)
+            {
+                return true;
+            }
+
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+
+            foreach (var item in a)
+            {
+                var hasKey = b.TryGetValue(item.Key, out var val);
+                if (!hasKey)
+                {
+                    return false;
+                }
+
+                var bVal = item.Value;
+                if (!NetworkVariableSerialization<TVal>.AreEqual(ref bVal, ref val))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+    internal class NetworkVariableMapSerialization<TKey, TVal>
+        where TKey : unmanaged, IEquatable<TKey>
+        where TVal : unmanaged
+    {
+
+        internal static bool GenericEqualsNativeHashMap(ref NativeHashMap<TKey, TVal> a, ref NativeHashMap<TKey, TVal> b)
+        {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
+            if (a.Count() != b.Count())
+            {
+                return false;
+            }
+
+            foreach (var item in a)
+            {
+                var hasKey = b.TryGetValue(item.Key, out var val);
+                if (!hasKey || !NetworkVariableSerialization<TVal>.AreEqual(ref item.Value, ref val))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+#endif
 
     // RuntimeAccessModifiersILPP will make this `public`
     // This is just pass-through to NetworkVariableSerialization<T> but is here becaues I could not get ILPP
