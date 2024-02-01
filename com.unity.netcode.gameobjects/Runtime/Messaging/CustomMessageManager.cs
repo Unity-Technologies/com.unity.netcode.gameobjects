@@ -204,7 +204,7 @@ namespace Unity.Netcode
             {
                 if (m_NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    Debug.LogError($"[{nameof(CustomMessagingManager.RegisterNamedMessageHandler)}] Cannot register a named message of type null or empty!");
+                    Debug.LogError($"[{nameof(RegisterNamedMessageHandler)}] Cannot register a named message of type null or empty!");
                 }
                 return;
             }
@@ -228,7 +228,7 @@ namespace Unity.Netcode
             {
                 if (m_NetworkManager.LogLevel <= LogLevel.Error)
                 {
-                    Debug.LogError($"[{nameof(CustomMessagingManager.UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");
+                    Debug.LogError($"[{nameof(UnregisterNamedMessageHandler)}] Cannot unregister a named message of type null or empty!");
                 }
                 return;
             }

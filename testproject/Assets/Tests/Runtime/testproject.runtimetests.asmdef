@@ -11,10 +11,20 @@
         "Unity.Netcode.TestHelpers.Runtime",
         "Unity.Netcode.Components",
         "Unity.Collections",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [
         {
@@ -32,5 +42,6 @@
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }
