@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -48,14 +46,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             var serverComponent = GetServerComponent();
             var testComponent = GetTestComponent();
-            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) =>Mathf.Abs(newValue - value) >= 0.1;
+            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
 
             serverComponent.TheVariable.Value = 0.05f;
 
             TimeTravel(2, 120);
 
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
         }
         [Test]
         public void WhenNewValueIsGreaterThanThreshold_VariableIsSerialized()
@@ -68,8 +66,8 @@ namespace Unity.Netcode.RuntimeTests
 
             TimeTravel(2, 120);
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
         }
 
         [Test]
@@ -78,20 +76,20 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = GetServerComponent();
             var testComponent = GetTestComponent();
             serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits{MaxSecondsBetweenUpdates = 2});
+            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MaxSecondsBetweenUpdates = 2 });
             serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
 
             serverComponent.TheVariable.Value = 0.05f;
 
-            TimeTravel(1/60f * 119, 119);
+            TimeTravel(1 / 60f * 119, 119);
 
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
 
-            TimeTravel(1/60f * 4, 4);
+            TimeTravel(1 / 60f * 4, 4);
 
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0.05f, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0.05f, testComponent.TheVariable.Value); ;
         }
 
         [Test]
@@ -100,20 +98,20 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = GetServerComponent();
             var testComponent = GetTestComponent();
             serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits{MinSecondsBetweenUpdates = 2});
+            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 2 });
             serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
 
             serverComponent.TheVariable.Value = 0.15f;
 
-            TimeTravel(1/60f * 119, 119);
+            TimeTravel(1 / 60f * 119, 119);
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
 
-            TimeTravel(1/60f * 4, 4);
+            TimeTravel(1 / 60f * 4, 4);
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
         }
 
         [Test]
@@ -121,20 +119,20 @@ namespace Unity.Netcode.RuntimeTests
         {
             var serverComponent = GetServerComponent();
             var testComponent = GetTestComponent();
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits{MinSecondsBetweenUpdates = 2});
+            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 2 });
             serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
 
             serverComponent.TheVariable.Value = 0.15f;
 
-            TimeTravel(1/60f * 119, 119);
+            TimeTravel(1 / 60f * 119, 119);
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
 
-            TimeTravel(1/60f * 4, 4);
+            TimeTravel(1 / 60f * 4, 4);
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value);;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value);;
+            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
+            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
         }
     }
 }

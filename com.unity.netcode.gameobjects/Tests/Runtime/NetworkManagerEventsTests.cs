@@ -36,7 +36,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
@@ -93,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.OnClientStopped += onClientStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
