@@ -25,8 +25,11 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            var message = new AnticipationTickSyncPongMessage { Tick = Tick };
-            networkManager.MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, context.SenderId);
+            if (networkManager.IsListening && !networkManager.ShutdownInProgress && networkManager.ConnectedClients.ContainsKey(context.SenderId))
+            {
+                var message = new AnticipationTickSyncPongMessage { Tick = Tick };
+                networkManager.MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, context.SenderId);
+            }
         }
     }
     internal struct AnticipationTickSyncPongMessage : INetworkMessage, INetworkSerializeByMemcpy

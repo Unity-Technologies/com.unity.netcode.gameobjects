@@ -1,3 +1,4 @@
+using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -17,6 +18,23 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnPlayerPrefabGameObjectCreated()
         {
             m_PlayerPrefab.AddComponent<AnticipatedNetworkTransform>();
+        }
+
+        protected override void OnTimeTravelServerAndClientsConnected()
+        {
+            var serverComponent = GetServerComponent();
+            var testComponent = GetTestComponent();
+            var otherClientComponent = GetOtherClientComponent();
+
+            serverComponent.transform.position = Vector3.zero;
+            serverComponent.transform.localScale = Vector3.one;
+            serverComponent.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+            testComponent.transform.position = Vector3.zero;
+            testComponent.transform.localScale = Vector3.one;
+            testComponent.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+            otherClientComponent.transform.position = Vector3.zero;
+            otherClientComponent.transform.localScale = Vector3.one;
+            otherClientComponent.transform.rotation = Quaternion.LookRotation(Vector3.forward);
         }
 
         public AnticipatedNetworkTransform GetTestComponent()
@@ -344,16 +362,16 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void WhenStaleDataArrivesToIgnoreVariable_ItIsIgnored()
         {
-            var testComponent = GetTestComponent();
             var serverComponent = GetServerComponent();
+            serverComponent.Interpolate = false;
+
+            var testComponent = GetTestComponent();
             testComponent.StaleDataHandling = StaleDataHandling.Ignore;
             testComponent.Interpolate = false;
 
             var otherClientComponent = GetOtherClientComponent();
             otherClientComponent.StaleDataHandling = StaleDataHandling.Ignore;
             otherClientComponent.Interpolate = false;
-
-            serverComponent.Interpolate = false;
 
             testComponent.AnticipateMove(new Vector3(0, 5, 0));
             serverComponent.transform.position = new Vector3(1, 2, 3);

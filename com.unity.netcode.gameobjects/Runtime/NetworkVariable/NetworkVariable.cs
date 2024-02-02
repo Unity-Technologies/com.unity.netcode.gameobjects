@@ -36,6 +36,14 @@ namespace Unity.Netcode
             return true;
         }
 
+        public override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            m_HasPreviousValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+        }
+
         /// <summary>
         /// Constructor for <see cref="NetworkVariable{T}"/>
         /// </summary>

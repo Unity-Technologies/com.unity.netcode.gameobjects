@@ -21,7 +21,7 @@ namespace Unity.Netcode
         internal NetworkVariableUpdateTraits UpdateTraits = default;
 
         [NonSerialized]
-        internal float LastUpdateSent;
+        internal double LastUpdateSent;
 
         /// <summary>
         /// The delivery type (QoS) to send data with
@@ -45,6 +45,14 @@ namespace Unity.Netcode
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
             m_NetworkBehaviour = networkBehaviour;
+            if (m_NetworkBehaviour.NetworkManager)
+            {
+                if (m_NetworkBehaviour.NetworkManager.NetworkTimeSystem != null)
+                {
+                    UpdateLastSentTime();
+                }
+            }
+
             OnInitialize();
         }
 
@@ -134,6 +142,25 @@ namespace Unity.Netcode
             {
                 MarkNetworkBehaviourDirty();
             }
+        }
+
+        internal bool CanSend()
+        {
+            var timeSinceLastUpdate = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime - LastUpdateSent;
+            return
+                (
+                    UpdateTraits.MaxSecondsBetweenUpdates > 0 &&
+                    timeSinceLastUpdate >= UpdateTraits.MaxSecondsBetweenUpdates
+                ) ||
+                (
+                    timeSinceLastUpdate >= UpdateTraits.MinSecondsBetweenUpdates &&
+                    ExceedsDirtinessThreshold()
+                );
+        }
+
+        internal void UpdateLastSentTime()
+        {
+            LastUpdateSent = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
         }
 
         /// <summary>

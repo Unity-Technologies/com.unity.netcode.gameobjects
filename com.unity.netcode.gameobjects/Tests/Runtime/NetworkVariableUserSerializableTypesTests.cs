@@ -112,6 +112,16 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             WorkingUserNetworkVariableComponentBase.Reset();
+
+            UserNetworkVariableSerialization<MyTypeOne>.WriteValue = null;
+            UserNetworkVariableSerialization<MyTypeOne>.ReadValue = null;
+            UserNetworkVariableSerialization<MyTypeOne>.DuplicateValue = null;
+            UserNetworkVariableSerialization<MyTypeTwo>.WriteValue = null;
+            UserNetworkVariableSerialization<MyTypeTwo>.ReadValue = null;
+            UserNetworkVariableSerialization<MyTypeTwo>.DuplicateValue = null;
+            UserNetworkVariableSerialization<MyTypeThree>.WriteValue = null;
+            UserNetworkVariableSerialization<MyTypeThree>.ReadValue = null;
+            UserNetworkVariableSerialization<MyTypeThree>.DuplicateValue = null;
             return base.OnSetup();
         }
 
@@ -216,6 +226,37 @@ namespace Unity.Netcode.RuntimeTests
                     serverNetworkObject.Spawn();
                 }
             );
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            // These have to get set to SOMETHING, otherwise we will get an exception thrown because Object.Destroy()
+            // calls __initializeNetworkVariables, and the network variable initialization attempts to call FallbackSerializer<T>,
+            // which throws an exception if any of these values are null. They don't have to DO anything, they just have to
+            // be non-null to keep the test from failing during teardown.
+            // None of this is related to what's being tested above, and in reality, these values being null is an invalid
+            // use case. But one of the tests is explicitly testing that invalid use case, and the values are being set
+            // to null in OnSetup to ensure test isolation. This wouldn't be a situation a user would have to think about
+            // in a real world use case.
+            UserNetworkVariableSerialization<MyTypeOne>.WriteValue = (FastBufferWriter writer, in MyTypeOne value) => { };
+            UserNetworkVariableSerialization<MyTypeOne>.ReadValue = (FastBufferReader reader, out MyTypeOne value) => { value = new MyTypeOne(); };
+            UserNetworkVariableSerialization<MyTypeOne>.DuplicateValue = (in MyTypeOne value, ref MyTypeOne duplicatedValue) =>
+            {
+                duplicatedValue = value;
+            };
+            UserNetworkVariableSerialization<MyTypeTwo>.WriteValue = (FastBufferWriter writer, in MyTypeTwo value) => { };
+            UserNetworkVariableSerialization<MyTypeTwo>.ReadValue = (FastBufferReader reader, out MyTypeTwo value) => { value = new MyTypeTwo(); };
+            UserNetworkVariableSerialization<MyTypeTwo>.DuplicateValue = (in MyTypeTwo value, ref MyTypeTwo duplicatedValue) =>
+            {
+                duplicatedValue = value;
+            };
+            UserNetworkVariableSerialization<MyTypeThree>.WriteValue = (FastBufferWriter writer, in MyTypeThree value) => { };
+            UserNetworkVariableSerialization<MyTypeThree>.ReadValue = (FastBufferReader reader, out MyTypeThree value) => { value = new MyTypeThree(); };
+            UserNetworkVariableSerialization<MyTypeThree>.DuplicateValue = (in MyTypeThree value, ref MyTypeThree duplicatedValue) =>
+            {
+                duplicatedValue = value;
+            };
+            return base.OnTearDown();
         }
     }
 }
