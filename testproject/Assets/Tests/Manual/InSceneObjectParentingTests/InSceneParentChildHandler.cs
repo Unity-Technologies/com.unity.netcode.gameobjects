@@ -174,6 +174,7 @@ namespace TestProject.RuntimeTests
                 {
                     ServerRootParent = this;
                 }
+                ServerRelativeInstances.Add(NetworkObjectId, this);
             }
             else
             {

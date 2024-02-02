@@ -992,6 +992,11 @@ namespace Unity.Netcode
             m_CachedParent = parentTransform;
         }
 
+        internal Transform GetCachedParent()
+        {
+            return m_CachedParent;
+        }
+
         internal ulong? GetNetworkParenting() => m_LatestParent;
 
         internal void SetNetworkParenting(ulong? latestParent, bool worldPositionStays)
@@ -1236,7 +1241,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false)
         {
             if (!AutoObjectParentSync)
             {
@@ -1324,9 +1329,17 @@ namespace Unity.Netcode
             // If we made it here, then parent this instance under the parentObject
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
+            // If we are handling an orphaned child and its parent is orphaned too, then don't parent yet.
+            if (orphanedChildPass)
+            {
+                if (OrphanChildren.Contains(parentObject))
+                {
+                    return false;
+                }
+            }
+
             m_CachedParent = parentObject.transform;
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
         }
@@ -1336,7 +1349,7 @@ namespace Unity.Netcode
             var objectsToRemove = new List<NetworkObject>();
             foreach (var orphanObject in OrphanChildren)
             {
-                if (orphanObject.ApplyNetworkParenting())
+                if (orphanObject.ApplyNetworkParenting(orphanedChildPass: true))
                 {
                     objectsToRemove.Add(orphanObject);
                 }
@@ -1797,6 +1810,12 @@ namespace Unity.Netcode
                 var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
                 var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
 
+                // Always synchronize in-scene placed object's scale using local space
+                if (obj.IsSceneObject)
+                {
+                    syncScaleLocalSpaceRelative = obj.HasParent;
+                }
+
                 // If auto object synchronization is turned off
                 if (!AutoObjectParentSync)
                 {
@@ -1807,7 +1826,6 @@ namespace Unity.Netcode
                     // will result in the improper scale for the child
                     syncScaleLocalSpaceRelative = obj.HasParent;
                 }
-
 
                 obj.Transform = new SceneObject.TransformData
                 {

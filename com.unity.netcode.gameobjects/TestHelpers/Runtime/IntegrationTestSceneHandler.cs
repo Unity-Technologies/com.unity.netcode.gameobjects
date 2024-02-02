@@ -165,13 +165,30 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             foreach (var sobj in inSceneNetworkObjects)
             {
-                if (sobj.NetworkManagerOwner != networkManager)
+                ProcessInSceneObject(sobj, networkManager);
+            }
+        }
+
+        /// <summary>
+        /// Assures to apply an ObjectNameIdentifier to all children
+        /// </summary>
+        private static void ProcessInSceneObject(NetworkObject networkObject, NetworkManager networkManager)
+        {
+            if (networkObject.NetworkManagerOwner != networkManager)
+            {
+                networkObject.NetworkManagerOwner = networkManager;
+            }
+            if (networkObject.GetComponent<ObjectNameIdentifier>() == null)
+            {
+                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                var networkObjects = networkObject.gameObject.GetComponentsInChildren<NetworkObject>();
+                foreach (var child in networkObjects)
                 {
-                    sobj.NetworkManagerOwner = networkManager;
-                }
-                if (sobj.GetComponent<ObjectNameIdentifier>() == null && sobj.GetComponentInChildren<ObjectNameIdentifier>() == null)
-                {
-                    sobj.gameObject.AddComponent<ObjectNameIdentifier>();
+                    if (child == networkObject)
+                    {
+                        continue;
+                    }
+                    ProcessInSceneObject(child, networkManager);
                 }
             }
         }
