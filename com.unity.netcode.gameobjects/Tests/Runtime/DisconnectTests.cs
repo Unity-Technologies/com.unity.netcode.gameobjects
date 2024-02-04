@@ -161,6 +161,17 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(TransportIdCleanedUp);
             AssertOnTimeout("Timed out waiting for transport and client id mappings to be cleaned up!");
+
+            // Validate the host-client generates a OnClientDisconnected event when it shutsdown.
+            // Only test when the test run is the client disconnecting from the server (otherwise the server will be shutdown already)
+            if (clientDisconnectType == ClientDisconnectType.ClientDisconnectsFromServer)
+            {
+                m_ClientDisconnected = false;
+                m_ServerNetworkManager.Shutdown();
+
+                yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
+                AssertOnTimeout("Timed out waiting for host-client to generate disconnect message!");
+            }
         }
     }
 }
