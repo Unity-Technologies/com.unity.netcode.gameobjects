@@ -104,5 +104,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             NetworkManager = networkManager;
         }
+
+        public static void Reset()
+        {
+            s_MessageQueue.Clear();
+            HighTransportId = 0;
+        }
+
+        public static void ClearQueues()
+        {
+            foreach (var kvp in s_MessageQueue)
+            {
+                kvp.Value.Clear();
+            }
+        }
     }
 }

@@ -308,6 +308,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
             {
+                if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
+                {
+                    MockTransport.ClearQueues();
+                }
+                else
+                {
+                    MockTransport.Reset();
+                }
                 // Setup the frames per tick for time travel advance to next tick
                 ConfigureFramesPerTick();
             }
