@@ -98,7 +98,7 @@ namespace TestProject.RuntimeTests
         {
             return m_ClientsDisconnected.Contains(m_ClientToValidateDisconnected);
         }
-       
+
         private void OnClientDisconnected(ulong clientId)
         {
             m_ClientsDisconnected.Add(clientId);
