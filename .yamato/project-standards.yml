@@ -5,7 +5,7 @@ standards_{{ projects.first.name }}:
   agent:
     type: Unity::VM
     image: desktop/logging-testing-linux:v0.1.2-926285
-    flavor: b1.medium
+    flavor: b1.large
   commands:
     - dotnet --version
     - dotnet format --version
