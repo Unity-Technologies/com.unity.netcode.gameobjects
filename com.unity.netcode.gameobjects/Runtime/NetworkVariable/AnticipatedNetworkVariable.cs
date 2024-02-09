@@ -304,6 +304,7 @@ namespace Unity.Netcode
             m_CurrentSmoothTime = 0;
             m_SmoothDelegate = how;
             m_HasSmoothValues = true;
+            m_LastAnticipationTick = m_NetworkBehaviour.NetworkManager.LocalTime.TickWithPartial;
         }
 
         public override bool IsDirty()

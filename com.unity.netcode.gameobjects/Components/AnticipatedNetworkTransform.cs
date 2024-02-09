@@ -42,7 +42,7 @@ namespace Unity.Netcode.Components
     /// </summary>
 #pragma warning restore IDE0001
     [DisallowMultipleComponent]
-    [AddComponentMenu("Netcode/Network Transform")]
+    [AddComponentMenu("Netcode/Anticipated Network Transform")]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class AnticipatedNetworkTransform : NetworkTransform
     {
