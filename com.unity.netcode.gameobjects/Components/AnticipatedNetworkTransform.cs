@@ -65,6 +65,15 @@ namespace Unity.Netcode.Components
 
         private bool m_OutstandingAuthorityChange = false;
 
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            // Anticipation + smoothing is a form of interpolation, and adding NetworkTransform's buffered interpolation
+            // makes the anticipation get weird, so we default it to false.
+            Interpolate = false;
+        }
+#endif
+
 #pragma warning disable IDE0001
         /// <summary>
         /// Defines what the behavior should be if we receive a value from the server with an earlier associated
@@ -103,6 +112,10 @@ namespace Unity.Netcode.Components
             transform.position = newPosition;
             m_AnticipatedTransform.Position = newPosition;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform = m_AnticipatedTransform;
+            }
         }
 
         /// <summary>
@@ -115,6 +128,10 @@ namespace Unity.Netcode.Components
             transform.rotation = newRotation;
             m_AnticipatedTransform.Rotation = newRotation;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform = m_AnticipatedTransform;
+            }
         }
 
         /// <summary>
@@ -127,11 +144,28 @@ namespace Unity.Netcode.Components
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform = m_AnticipatedTransform;
+            }
         }
 
         protected override void Update()
         {
             base.Update();
+
+            if (CanCommitToTransform)
+            {
+                var transform_ = transform;
+                m_AuthorityTransform = new TransformState
+                {
+                    Position = transform_.position,
+                    Rotation = transform_.rotation,
+                    Scale = transform_.localScale
+                };
+                m_AnticipatedTransform = m_AuthorityTransform;
+                return;
+            }
 
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
@@ -161,6 +195,7 @@ namespace Unity.Netcode.Components
                 Scale = transform_.localScale
             };
             m_AnticipatedTransform = m_AuthorityTransform;
+            m_OutstandingAuthorityChange = true;
         }
 
         /// <summary>
