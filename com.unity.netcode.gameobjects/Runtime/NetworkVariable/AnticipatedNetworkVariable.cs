@@ -116,6 +116,7 @@ namespace Unity.Netcode
         public override void OnInitialize()
         {
             m_AuthoritativeValue.Initialize(m_NetworkBehaviour);
+            m_AnticipatedValue = m_AuthoritativeValue.Value;
         }
 
         public override bool ExceedsDirtinessThreshold()
@@ -330,6 +331,7 @@ namespace Unity.Netcode
         public override void ReadField(FastBufferReader reader)
         {
             m_AuthoritativeValue.ReadField(reader);
+            m_AnticipatedValue = m_AuthoritativeValue.Value;
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
