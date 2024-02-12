@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -6,6 +7,15 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetworkTransformAnticipationComponent : NetworkBehaviour
+    {
+        [Rpc(SendTo.Server)]
+        public void MoveRpc(Vector3 newPosition)
+        {
+            transform.position = newPosition;
+        }
+    }
+
     public class NetworkTransformAnticipationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -17,6 +27,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnPlayerPrefabGameObjectCreated()
         {
             m_PlayerPrefab.AddComponent<AnticipatedNetworkTransform>();
+            m_PlayerPrefab.AddComponent<NetworkTransformAnticipationComponent>();
         }
 
         protected override void OnTimeTravelServerAndClientsConnected()
@@ -172,16 +183,17 @@ namespace Unity.Netcode.RuntimeTests
         public void WhenServerChangesSnapValue_ValuesAreUpdated()
         {
             var testComponent = GetTestComponent();
+            var serverComponent = GetServerComponent();
+            serverComponent.Interpolate = false;
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
-            TimeTravelToNextTick();
+            var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
+            rpcComponent.MoveRpc(new Vector3(2, 3, 4));
 
-            var serverComponent = GetServerComponent();
-            serverComponent.Interpolate = false;
-            serverComponent.transform.position = new Vector3(2, 3, 4);
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
             var otherClientComponent = GetOtherClientComponent();
 
             WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
@@ -359,8 +371,60 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void WhenStaleDataArrivesToIgnoreVariable_ItIsIgnored()
+        public void WhenStaleDataArrivesToIgnoreVariable_ItIsIgnored([Values(10u, 30u, 60u)] uint tickRate, [Values(0u, 1u, 2u)] uint skipFrames)
         {
+            m_ServerNetworkManager.NetworkConfig.TickRate = tickRate;
+            m_ServerNetworkManager.NetworkTickSystem.TickRate = tickRate;
+
+            for (var i = 0; i < skipFrames; ++i)
+            {
+                TimeTravel(1 / 60f, 1);
+            }
+
+            var serverComponent = GetServerComponent();
+            serverComponent.Interpolate = false;
+
+            var testComponent = GetTestComponent();
+            testComponent.StaleDataHandling = StaleDataHandling.Ignore;
+            testComponent.Interpolate = false;
+
+            var otherClientComponent = GetOtherClientComponent();
+            otherClientComponent.StaleDataHandling = StaleDataHandling.Ignore;
+            otherClientComponent.Interpolate = false;
+
+            var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
+            rpcComponent.MoveRpc(new Vector3(1, 2, 3));
+
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
+
+            testComponent.AnticipateMove(new Vector3(0, 5, 0));
+
+            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
+
+            // Anticiped client received this data for a tick earlier than its anticipation, and should have prioritized the anticiped value
+            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.transform.position);
+            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.AnticipatedState.Position);
+            // However, the authoritative value still gets updated
+            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
+
+            // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
+            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.transform.position);
+            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AnticipatedState.Position);
+            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthorityState.Position);
+        }
+
+
+        [Test]
+        public void WhenNonStaleDataArrivesToIgnoreVariable_ItIsNotIgnored([Values(10u, 30u, 60u)] uint tickRate, [Values(0u, 1u, 2u)] uint skipFrames)
+        {
+            m_ServerNetworkManager.NetworkConfig.TickRate = tickRate;
+            m_ServerNetworkManager.NetworkTickSystem.TickRate = tickRate;
+
+            for (var i = 0; i < skipFrames; ++i)
+            {
+                TimeTravel(1 / 60f, 1);
+            }
+
             var serverComponent = GetServerComponent();
             serverComponent.Interpolate = false;
 
@@ -373,13 +437,16 @@ namespace Unity.Netcode.RuntimeTests
             otherClientComponent.Interpolate = false;
 
             testComponent.AnticipateMove(new Vector3(0, 5, 0));
-            serverComponent.transform.position = new Vector3(1, 2, 3);
+            var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
+            rpcComponent.MoveRpc(new Vector3(1, 2, 3));
+
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
 
             WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
 
             // Anticiped client received this data for a tick earlier than its anticipation, and should have prioritized the anticiped value
-            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.transform.position);
-            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.AnticipatedState.Position);
+            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.transform.position);
+            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Position);
             // However, the authoritative value still gets updated
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
 

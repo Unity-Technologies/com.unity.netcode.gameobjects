@@ -1,6 +1,5 @@
 using Unity.Netcode.Components;
 using UnityEditor;
-using UnityEngine;
 
 namespace Unity.Netcode.Editor
 {

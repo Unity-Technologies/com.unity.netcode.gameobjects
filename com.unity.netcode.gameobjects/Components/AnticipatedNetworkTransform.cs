@@ -112,10 +112,6 @@ namespace Unity.Netcode.Components
             transform.position = newPosition;
             m_AnticipatedTransform.Position = newPosition;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
-            if (CanCommitToTransform)
-            {
-                m_AuthorityTransform = m_AnticipatedTransform;
-            }
         }
 
         /// <summary>
@@ -128,10 +124,6 @@ namespace Unity.Netcode.Components
             transform.rotation = newRotation;
             m_AnticipatedTransform.Rotation = newRotation;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
-            if (CanCommitToTransform)
-            {
-                m_AuthorityTransform = m_AnticipatedTransform;
-            }
         }
 
         /// <summary>
@@ -144,28 +136,49 @@ namespace Unity.Netcode.Components
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
             m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+        }
+
+        protected void LateUpdate()
+        {
             if (CanCommitToTransform)
             {
-                m_AuthorityTransform = m_AnticipatedTransform;
+                var transform_ = transform;
+                if (transform_.position != m_AuthorityTransform.Position || transform_.rotation != m_AuthorityTransform.Rotation || transform_.localScale != m_AuthorityTransform.Scale)
+                {
+                    m_AuthorityTransform = new TransformState
+                    {
+                        Position = transform_.position,
+                        Rotation = transform_.rotation,
+                        Scale = transform_.localScale
+                    };
+                    m_AnticipatedTransform = m_AuthorityTransform;
+
+                    var message = new NetworkTransformAnticipationSyncMessage
+                    {
+                        NetworkObjectId = NetworkObjectId,
+                        NetworkBehaviourId = NetworkBehaviourId,
+                    };
+                    var clientCount = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                    for (int i = 0; i < clientCount; i++)
+                    {
+                        var clientId = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                        if (NetworkManager.ServerClientId == clientId)
+                        {
+                            continue;
+                        }
+                        if (!NetworkObject.Observers.Contains(clientId))
+                        {
+                            continue;
+                        }
+                        NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clientId);
+                    }
+                }
             }
         }
 
         protected override void Update()
         {
             base.Update();
-
-            if (CanCommitToTransform)
-            {
-                var transform_ = transform;
-                m_AuthorityTransform = new TransformState
-                {
-                    Position = transform_.position,
-                    Rotation = transform_.rotation,
-                    Scale = transform_.localScale
-                };
-                m_AnticipatedTransform = m_AuthorityTransform;
-                return;
-            }
 
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
@@ -196,6 +209,11 @@ namespace Unity.Netcode.Components
             };
             m_AnticipatedTransform = m_AuthorityTransform;
             m_OutstandingAuthorityChange = true;
+        }
+
+        internal void SetLastAuthorityUpdateTick()
+        {
+            m_LastAuthorityUpdateTick = NetworkManager.NetworkTickSystem.AnticipationTick;
         }
 
         /// <summary>
@@ -234,7 +252,6 @@ namespace Unity.Netcode.Components
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             // this is called when new data comes from the server
-            m_LastAuthorityUpdateTick = NetworkManager.NetworkTickSystem.AnticipationTick;
             m_OutstandingAuthorityChange = true;
         }
 
