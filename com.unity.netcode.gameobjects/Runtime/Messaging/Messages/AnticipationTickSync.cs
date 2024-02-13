@@ -1,14 +1,16 @@
 namespace Unity.Netcode
 {
-    internal struct AnticipationTickSyncPingMessage : INetworkMessage, INetworkSerializeByMemcpy
+    internal struct AnticipationCounterSyncPingMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public int Version => 0;
 
-        public double Tick;
+        public ulong Counter;
+        public double Time;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(Tick);
+            BytePacker.WriteValuePacked(writer, Counter);
+            writer.WriteValueSafe(Time);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -18,7 +20,8 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            reader.ReadValueSafe(out Tick);
+            ByteUnpacker.ReadValuePacked(reader, out Counter);
+            reader.ReadValueSafe(out Time);
             return true;
         }
 
@@ -27,20 +30,22 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             if (networkManager.IsListening && !networkManager.ShutdownInProgress && networkManager.ConnectedClients.ContainsKey(context.SenderId))
             {
-                var message = new AnticipationTickSyncPongMessage { Tick = Tick };
+                var message = new AnticipationCounterSyncPongMessage { Counter = Counter, Time = Time };
                 networkManager.MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, context.SenderId);
             }
         }
     }
-    internal struct AnticipationTickSyncPongMessage : INetworkMessage, INetworkSerializeByMemcpy
+    internal struct AnticipationCounterSyncPongMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public int Version => 0;
 
-        public double Tick;
+        public ulong Counter;
+        public double Time;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(Tick);
+            BytePacker.WriteValuePacked(writer, Counter);
+            writer.WriteValueSafe(Time);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -50,14 +55,16 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            reader.ReadValueSafe(out Tick);
+            ByteUnpacker.ReadValuePacked(reader, out Counter);
+            reader.ReadValueSafe(out Time);
             return true;
         }
 
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            networkManager.NetworkTickSystem.AnticipationTick = Tick;
+            networkManager.AnticipationSystem.LastAnticipationAck = Counter;
+            networkManager.AnticipationSystem.LastAnticipationAckTime = Time;
         }
     }
 }

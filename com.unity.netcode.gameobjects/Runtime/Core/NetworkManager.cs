@@ -52,15 +52,12 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
-                        if (!m_ShuttingDown && !ConnectionManager.LocalClient.IsServer && ConnectionManager.LocalClient.IsConnected)
-                        {
-                            var message = new AnticipationTickSyncPingMessage { Tick = LocalTime.TickWithPartial };
-                            MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, ServerClientId);
-                        }
                     }
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
                     {
+                        AnticipationSystem.Sync();
+
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 
@@ -523,6 +520,8 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
 
+        internal AnticipationSystem AnticipationSystem { get; private set; }
+
         /// <summary>
         /// Used for time mocking in tests
         /// </summary>
@@ -850,6 +849,7 @@ namespace Unity.Netcode
             // The remaining systems can then be initialized
             NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
+            AnticipationSystem = new AnticipationSystem(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);

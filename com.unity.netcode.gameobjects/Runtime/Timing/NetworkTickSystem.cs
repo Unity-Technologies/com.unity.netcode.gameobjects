@@ -36,13 +36,6 @@ namespace Unity.Netcode
         public NetworkTime ServerTime { get; internal set; }
 
         /// <summary>
-        /// The local (client-side) tick the server last received from the client.
-        /// Useful for checking whether a message associated with a particular client anticipation action
-        /// has been received and processed by the server yet.
-        /// </summary>
-        public double AnticipationTick = 0;
-
-        /// <summary>
         /// Gets invoked before every network tick.
         /// </summary>
         public event Action Tick;

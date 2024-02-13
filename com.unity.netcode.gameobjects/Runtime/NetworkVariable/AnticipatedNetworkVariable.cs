@@ -58,8 +58,9 @@ namespace Unity.Netcode
         private T m_AnticipatedValue;
         private T m_PreviousAnticipatedValue;
         private bool m_HasPreviousAnticipatedValue;
-        private double m_LastAuthorityUpdateTick = 0;
-        private double m_LastAnticipationTick = 0;
+        private ulong m_LastAuthorityUpdateCounter = 0;
+        private ulong m_LastAnticipationCounter = 0;
+        private double m_LastAnticipationTime = 0;
         private bool m_IsDisposed = false;
         private bool m_SettingAuthoritativeValue = false;
 
@@ -72,21 +73,21 @@ namespace Unity.Netcode
 #pragma warning disable IDE0001
         /// <summary>
         /// Defines what the behavior should be if we receive a value from the server with an earlier associated
-        /// tick value than the anticipation tick value.
+        /// time value than the anticipation time value.
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
-        /// value will not replace the anticipated value until the anticipation tick is reached. <see cref="OnAuthoritativeValueChanged"/>
+        /// value will not replace the anticipated value until the anticipation time is reached. <see cref="OnAuthoritativeValueChanged"/>
         /// and <see cref="OnReanticipate"/> will also not be invoked for this stale data.
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
         /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="OnReanticipate"/> will be invoked.
-        /// In this case, the authoritativeTick value passed to <see cref="OnReanticipate"/> will be lower than
-        /// the anticipationTick value, and that callback can be used to calculate a new anticipated value.
+        /// In this case, the authoritativeTime value passed to <see cref="OnReanticipate"/> will be lower than
+        /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
 #pragma warning restore IDE0001
         public StaleDataHandling StaleDataHandling;
 
-        public delegate void OnReanticipateDelegate(AnticipatedNetworkVariable<T> variable, in T anticipatedValue, double anticipationTick, in T authoritativeValue, double authoritativeTick);
+        public delegate void OnReanticipateDelegate(AnticipatedNetworkVariable<T> variable, in T anticipatedValue, double anticipationTime, in T authoritativeValue, double authoritativeTime);
 
 #pragma warning disable IDE0001
         /// <summary>
@@ -144,7 +145,7 @@ namespace Unity.Netcode
         {
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
-            m_LastAnticipationTick = m_NetworkBehaviour.NetworkManager.LocalTime.TickWithPartial;
+            m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
             m_AnticipatedValue = value;
             if (CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
             {
@@ -188,13 +189,11 @@ namespace Unity.Netcode
         private SmoothDelegate m_SmoothDelegate = null;
 
         public AnticipatedNetworkVariable(T value = default,
-            StaleDataHandling staleDataHandling = StaleDataHandling.Ignore,
-            NetworkVariableReadPermission readPerm = DefaultReadPerm,
-            NetworkVariableWritePermission writePerm = DefaultWritePerm)
-            : base(readPerm, writePerm)
+            StaleDataHandling staleDataHandling = StaleDataHandling.Ignore)
+            : base()
         {
             StaleDataHandling = staleDataHandling;
-            m_AuthoritativeValue = new NetworkVariable<T>(value, readPerm, writePerm)
+            m_AuthoritativeValue = new NetworkVariable<T>(value)
             {
                 OnValueChanged = OnValueChangedInternal
             };
@@ -259,8 +258,8 @@ namespace Unity.Netcode
         {
             if (!m_SettingAuthoritativeValue)
             {
-                m_LastAuthorityUpdateTick = m_NetworkBehaviour.NetworkManager.NetworkTickSystem.AnticipationTick;
-                if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipationTick > m_LastAuthorityUpdateTick)
+                m_LastAuthorityUpdateCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.LastAnticipationAck;
+                if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipationCounter > m_LastAuthorityUpdateCounter)
                 {
                     // Keep the anticipated value unchanged because it is more recent than the authoritative one.
                     return;
@@ -282,7 +281,7 @@ namespace Unity.Netcode
                 m_CurrentSmoothTime = 0;
 
                 // If the user wants to smooth the values, they will call Smooth(previousValue, newValue, duration, how) here
-                OnReanticipate?.Invoke(this, m_PreviousAnticipatedValue, m_LastAnticipationTick, newValue, m_LastAuthorityUpdateTick);
+                OnReanticipate?.Invoke(this, m_PreviousAnticipatedValue, m_LastAnticipationTime, newValue, m_NetworkBehaviour.NetworkManager.AnticipationSystem.LastAnticipationAckTime);
             }
 
             OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
@@ -305,7 +304,8 @@ namespace Unity.Netcode
             m_CurrentSmoothTime = 0;
             m_SmoothDelegate = how;
             m_HasSmoothValues = true;
-            m_LastAnticipationTick = m_NetworkBehaviour.NetworkManager.LocalTime.TickWithPartial;
+            m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = m_NetworkBehaviour.NetworkManager.LocalTime.Time;
         }
 
         public override bool IsDirty()

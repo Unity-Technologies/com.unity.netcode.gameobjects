@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -234,7 +235,7 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = GetServerComponent();
             serverComponent.Interpolate = false;
 
-            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTick, authorityValue, authorityTick) =>
+            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTime, authorityValue, authorityTime) =>
             {
                 transform.Smooth(anticipedValue, authorityValue, 1);
             };
@@ -349,7 +350,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var testComponent = GetTestComponent();
             var otherClientComponent = GetOtherClientComponent();
-            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTick, authorityValue, authorityTick) =>
+            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTime, authorityValue, authorityTime) =>
             {
                 transform.AnticipateMove(authorityValue.Position + new Vector3(0, 5, 0));
             };
@@ -398,19 +399,41 @@ namespace Unity.Netcode.RuntimeTests
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
 
             testComponent.AnticipateMove(new Vector3(0, 5, 0));
+            rpcComponent.MoveRpc(new Vector3(4, 5, 6));
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
+            // Depending on tick rate, one of these two things will happen.
+            // The assertions are different based on this... either the tick rate is slow enough that the second RPC is received
+            // before the next update and we move to 4, 5, 6, or the tick rate is fast enough that the next update is sent out
+            // before the RPC is received and we get the update for the move to 1, 2, 3. Both are valid, what we want to assert
+            // here is that the anticipated state never becomes 1, 2, 3.
+            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == new Vector3(1, 2, 3) || testComponent.AuthorityState.Position == new Vector3(4, 5, 6));
 
-            // Anticiped client received this data for a tick earlier than its anticipation, and should have prioritized the anticiped value
-            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.transform.position);
-            Assert.AreEqual(new Vector3(0, 5, 0), testComponent.AnticipatedState.Position);
-            // However, the authoritative value still gets updated
-            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
+            if (testComponent.AnticipatedState.Position == new Vector3(4, 5, 6))
+            {
+                // Anticiped client received this data for a time earlier than its anticipation, and should have prioritized the anticiped value
+                Assert.AreEqual(new Vector3(4, 5, 6), testComponent.transform.position);
+                Assert.AreEqual(new Vector3(4, 5, 6), testComponent.AnticipatedState.Position);
+                // However, the authoritative value still gets updated
+                Assert.AreEqual(new Vector3(4, 5, 6), testComponent.AuthorityState.Position);
 
-            // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
-            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.transform.position);
-            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AnticipatedState.Position);
-            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthorityState.Position);
+                // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
+                Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.transform.position);
+                Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.AnticipatedState.Position);
+                Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.AuthorityState.Position);
+            }
+            else
+            {
+                // Anticiped client received this data for a time earlier than its anticipation, and should have prioritized the anticiped value
+                Assert.AreEqual(new Vector3(0, 5, 0), testComponent.transform.position);
+                Assert.AreEqual(new Vector3(0, 5, 0), testComponent.AnticipatedState.Position);
+                // However, the authoritative value still gets updated
+                Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
+
+                // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
+                Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.transform.position);
+                Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AnticipatedState.Position);
+                Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthorityState.Position);
+            }
         }
 
 
@@ -444,7 +467,7 @@ namespace Unity.Netcode.RuntimeTests
 
             WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
 
-            // Anticiped client received this data for a tick earlier than its anticipation, and should have prioritized the anticiped value
+            // Anticiped client received this data for a time earlier than its anticipation, and should have prioritized the anticiped value
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.transform.position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Position);
             // However, the authoritative value still gets updated

@@ -15,25 +15,34 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Awake()
         {
-            SmoothOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTick, in float authoritativeValue, double authoritativeTick) =>
+            SmoothOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTime, in float authoritativeValue, double authoritativeTime) =>
             {
                 if (Mathf.Abs(authoritativeValue - anticipatedValue) > Mathf.Epsilon)
                 {
                     variable.Smooth(anticipatedValue, authoritativeValue, 1, Mathf.Lerp);
                 }
             };
-            ReanticipateOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTick, in float authoritativeValue, double authoritativeTick) =>
+            ReanticipateOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTime, in float authoritativeValue, double authoritativeTime) =>
             {
-                // Would love to test some stuff about anticipation based on tick, but that is difficult to test accurately.
+                // Would love to test some stuff about anticipation based on time, but that is difficult to test accurately.
                 // This reanticipating variable will just always anticipate a value 5 higher than the server value.
                 variable.Anticipate(authoritativeValue + 5);
             };
         }
 
+        public bool SnapRpcResponseReceived = false;
+
         [Rpc(SendTo.Server)]
-        public void SetSnapValueRpc(int i)
+        public void SetSnapValueRpc(int i, RpcParams rpcParams = default)
         {
             SnapOnAnticipationFailVariable.AuthoritativeValue = i;
+            SetSnapValueResponseRpc(RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
+        }
+
+        [Rpc(SendTo.SpecifiedInParams)]
+        public void SetSnapValueResponseRpc(RpcParams rpcParams)
+        {
+            SnapRpcResponseReceived = true;
         }
 
         [Rpc(SendTo.Server)]
@@ -295,13 +304,57 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void WhenStaleDataArrivesToIgnoreVariable_ItIsIgnored()
+        public void WhenNonStaleDataArrivesToIgnoreVariable_ItIsNotIgnored([Values(10u, 30u, 60u)] uint tickRate, [Values(0u, 1u, 2u)] uint skipFrames)
         {
+            m_ServerNetworkManager.NetworkConfig.TickRate = tickRate;
+            m_ServerNetworkManager.NetworkTickSystem.TickRate = tickRate;
+
+            for (var i = 0; i < skipFrames; ++i)
+            {
+                TimeTravel(1 / 60f, 1);
+            }
             var testComponent = GetTestComponent();
             testComponent.SnapOnAnticipationFailVariable.Anticipate(10);
 
             Assert.AreEqual(10, testComponent.SnapOnAnticipationFailVariable.Value);
             Assert.AreEqual(0, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+            testComponent.SetSnapValueRpc(20);
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager>{m_ServerNetworkManager});
+
+            var serverComponent = GetServerComponent();
+
+            Assert.AreEqual(20, serverComponent.SnapOnAnticipationFailVariable.Value);
+            Assert.AreEqual(20, serverComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+
+            WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
+
+            // Both values get updated
+            Assert.AreEqual(20, testComponent.SnapOnAnticipationFailVariable.Value);
+            Assert.AreEqual(20, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+
+            // Other client got the server value and had made no anticipation, so it applies it to the anticipated value as well.
+            var otherClientComponent = GetOtherClientComponent();
+            Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.Value);
+            Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+        }
+
+        [Test]
+        public void WhenStaleDataArrivesToIgnoreVariable_ItIsIgnored([Values(10u, 30u, 60u)] uint tickRate, [Values(0u, 1u, 2u)] uint skipFrames)
+        {
+            m_ServerNetworkManager.NetworkConfig.TickRate = tickRate;
+            m_ServerNetworkManager.NetworkTickSystem.TickRate = tickRate;
+
+            for (var i = 0; i < skipFrames; ++i)
+            {
+                TimeTravel(1 / 60f, 1);
+            }
+            var testComponent = GetTestComponent();
+            testComponent.SnapOnAnticipationFailVariable.Anticipate(10);
+
+            Assert.AreEqual(10, testComponent.SnapOnAnticipationFailVariable.Value);
+            Assert.AreEqual(0, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+
+            testComponent.SetSnapValueRpc(30);
 
             var serverComponent = GetServerComponent();
             serverComponent.SnapOnAnticipationFailVariable.AuthoritativeValue = 20;
@@ -311,15 +364,29 @@ namespace Unity.Netcode.RuntimeTests
 
             WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
 
-            // Anticipated client received this data for a tick earlier than its anticipation, and should have prioritized the anticipated value
-            Assert.AreEqual(10, testComponent.SnapOnAnticipationFailVariable.Value);
-            // However, the authoritative value still gets updated
-            Assert.AreEqual(20, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+            if (testComponent.SnapRpcResponseReceived)
+            {
+                // In this case the tick rate is slow enough that the RPC was received and processed, so we check that.
+                Assert.AreEqual(30, testComponent.SnapOnAnticipationFailVariable.Value);
+                Assert.AreEqual(30, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
 
-            // Other client got the server value and had made no anticipation, so it applies it to the anticipated value as well.
-            var otherClientComponent = GetOtherClientComponent();
-            Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.Value);
-            Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+                var otherClientComponent = GetOtherClientComponent();
+                Assert.AreEqual(30, otherClientComponent.SnapOnAnticipationFailVariable.Value);
+                Assert.AreEqual(30, otherClientComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+            }
+            else
+            {
+                // In this case, we got an update before the RPC was processed, so we should have ignored it.
+                // Anticipated client received this data for a tick earlier than its anticipation, and should have prioritized the anticipated value
+                Assert.AreEqual(10, testComponent.SnapOnAnticipationFailVariable.Value);
+                // However, the authoritative value still gets updated
+                Assert.AreEqual(20, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+
+                // Other client got the server value and had made no anticipation, so it applies it to the anticipated value as well.
+                var otherClientComponent = GetOtherClientComponent();
+                Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.Value);
+                Assert.AreEqual(20, otherClientComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
+            }
         }
 
         [Test]

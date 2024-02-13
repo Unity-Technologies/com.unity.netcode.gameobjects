@@ -55,8 +55,9 @@ namespace Unity.Netcode.Components
 
         private TransformState m_AuthorityTransform = new TransformState();
         private TransformState m_AnticipatedTransform = new TransformState();
-        private double m_LastAnticipatedTick;
-        private double m_LastAuthorityUpdateTick;
+        private ulong m_LastAnticipaionCounter;
+        private double m_LastAnticipationTime;
+        private ulong m_LastAuthorityUpdateCounter;
 
         private TransformState m_SmoothFrom;
         private TransformState m_SmoothTo;
@@ -77,16 +78,16 @@ namespace Unity.Netcode.Components
 #pragma warning disable IDE0001
         /// <summary>
         /// Defines what the behavior should be if we receive a value from the server with an earlier associated
-        /// tick value than the anticipation tick value.
+        /// time value than the anticipation time value.
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
-        /// value will not replace the anticipated value until the anticipation tick is reached. <see cref="OnAuthoritativeValueChanged"/>
+        /// value will not replace the anticipated value until the anticipation time is reached. <see cref="OnAuthoritativeValueChanged"/>
         /// and <see cref="OnReanticipate"/> will also not be invoked for this stale data.
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
         /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="OnReanticipate"/> will be invoked.
-        /// In this case, the authoritativeTick value passed to <see cref="OnReanticipate"/> will be lower than
-        /// the anticipationTick value, and that callback can be used to calculate a new anticipated value.
+        /// In this case, the authoritativeTime value passed to <see cref="OnReanticipate"/> will be lower than
+        /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
 #pragma warning restore IDE0001
         public StaleDataHandling StaleDataHandling = StaleDataHandling.Reanticipate;
@@ -111,7 +112,8 @@ namespace Unity.Netcode.Components
         {
             transform.position = newPosition;
             m_AnticipatedTransform.Position = newPosition;
-            m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
         }
 
         /// <summary>
@@ -123,7 +125,8 @@ namespace Unity.Netcode.Components
         {
             transform.rotation = newRotation;
             m_AnticipatedTransform.Rotation = newRotation;
-            m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
         }
 
         /// <summary>
@@ -135,7 +138,8 @@ namespace Unity.Netcode.Components
         {
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
-            m_LastAnticipatedTick = NetworkManager.LocalTime.TickWithPartial;
+            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
         }
 
         protected void LateUpdate()
@@ -152,26 +156,6 @@ namespace Unity.Netcode.Components
                         Scale = transform_.localScale
                     };
                     m_AnticipatedTransform = m_AuthorityTransform;
-
-                    var message = new NetworkTransformAnticipationSyncMessage
-                    {
-                        NetworkObjectId = NetworkObjectId,
-                        NetworkBehaviourId = NetworkBehaviourId,
-                    };
-                    var clientCount = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList.Count;
-                    for (int i = 0; i < clientCount; i++)
-                    {
-                        var clientId = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
-                        if (NetworkManager.ServerClientId == clientId)
-                        {
-                            continue;
-                        }
-                        if (!NetworkObject.Observers.Contains(clientId))
-                        {
-                            continue;
-                        }
-                        NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clientId);
-                    }
                 }
             }
         }
@@ -211,11 +195,6 @@ namespace Unity.Netcode.Components
             m_OutstandingAuthorityChange = true;
         }
 
-        internal void SetLastAuthorityUpdateTick()
-        {
-            m_LastAuthorityUpdateTick = NetworkManager.NetworkTickSystem.AnticipationTick;
-        }
-
         /// <summary>
         /// Interpolate between the transform represented by <see cref="from"/> to the transform represented by
         /// <see cref="to"/> over <see cref="durationSeconds"/> of real time. The duration uses
@@ -239,7 +218,7 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
-        public delegate void OnReanticipateDelegate(AnticipatedNetworkTransform anticipatedNetworkTransform, TransformState anticipatedValue, double anticipationTick, TransformState authorityValue, double authorityTick);
+        public delegate void OnReanticipateDelegate(AnticipatedNetworkTransform anticipatedNetworkTransform, TransformState anticipatedValue, double anticipationTime, TransformState authorityValue, double authorityTime);
 
 #pragma warning disable IDE0001
         /// <summary>
@@ -252,6 +231,7 @@ namespace Unity.Netcode.Components
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             // this is called when new data comes from the server
+            m_LastAuthorityUpdateCounter = NetworkManager.AnticipationSystem.LastAnticipationAck;
             m_OutstandingAuthorityChange = true;
         }
 
@@ -279,7 +259,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipatedTick > m_LastAuthorityUpdateTick)
+            if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipaionCounter > m_LastAuthorityUpdateCounter)
             {
                 // Keep the anticipated value unchanged because it is more recent than the authoritative one.
                 transform_.position = previousAnticipateddTransform.Position;
@@ -294,7 +274,7 @@ namespace Unity.Netcode.Components
 
             m_AnticipatedTransform = m_AuthorityTransform;
 
-            OnReanticipate?.Invoke(this, previousAnticipateddTransform, m_LastAnticipatedTick, m_AuthorityTransform, NetworkManager.NetworkTickSystem.AnticipationTick);
+            OnReanticipate?.Invoke(this, previousAnticipateddTransform, m_LastAnticipationTime, m_AuthorityTransform, NetworkManager.AnticipationSystem.LastAnticipationAckTime);
         }
     }
 }
