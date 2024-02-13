@@ -319,7 +319,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(10, testComponent.SnapOnAnticipationFailVariable.Value);
             Assert.AreEqual(0, testComponent.SnapOnAnticipationFailVariable.AuthoritativeValue);
             testComponent.SetSnapValueRpc(20);
-            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager>{m_ServerNetworkManager});
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
 
             var serverComponent = GetServerComponent();
 

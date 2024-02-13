@@ -1,4 +1,4 @@
-﻿namespace Unity.Netcode
+namespace Unity.Netcode
 {
     internal class AnticipationSystem
     {
