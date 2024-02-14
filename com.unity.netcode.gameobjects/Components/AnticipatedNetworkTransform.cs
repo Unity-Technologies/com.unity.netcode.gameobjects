@@ -93,7 +93,9 @@ namespace Unity.Netcode.Components
         public StaleDataHandling StaleDataHandling = StaleDataHandling.Reanticipate;
 
         /// <summary>
-        /// Contains the current state of this transform on the server side
+        /// Contains the current state of this transform on the server side.
+        /// Note that, on the server side, this gets updated at the end of the frame, and will not immediately reflect
+        /// changes to the transform.
         /// </summary>
         public TransformState AuthorityState => m_AuthorityTransform;
 
@@ -138,6 +140,22 @@ namespace Unity.Netcode.Components
         {
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
+            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
+        }
+
+        /// <summary>
+        /// Anticipate that, at the end of one round trip to the server, the transform will have the given
+        /// <see cref="newState"/>
+        /// </summary>
+        /// <param name="newState"></param>
+        public void AnticipateState(TransformState newState)
+        {
+            var transform_ = transform;
+            transform_.position = newState.Position;
+            transform_.rotation = newState.Rotation;
+            transform_.localScale = newState.Scale;
+            m_AnticipatedTransform = newState;
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
         }
