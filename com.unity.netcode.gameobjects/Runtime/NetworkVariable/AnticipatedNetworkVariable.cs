@@ -270,7 +270,7 @@ namespace Unity.Netcode
                     new AnticipationSystem.NetworkVariableCallbackData
                     {
                         Variable = this,
-                        Callback = CachedDelegate
+                        Callback = s_CachedDelegate
                     };
             }
 
@@ -302,7 +302,7 @@ namespace Unity.Netcode
             ((AnticipatedNetworkVariable<T>)variable).Reanticipate();
         }
 
-        private static AnticipationSystem.NetworkVariableReanticipationDelegate CachedDelegate = ReanticipateCallback;
+        private static AnticipationSystem.NetworkVariableReanticipationDelegate s_CachedDelegate = ReanticipateCallback;
 
         /// <summary>
         /// Interpolate this variable from <see cref="from"/> to <see cref="to"/> over <see cref="durationSeconds"/> of

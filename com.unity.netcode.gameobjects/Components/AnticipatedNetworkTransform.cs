@@ -276,10 +276,6 @@ namespace Unity.Netcode.Components
             ApplyAuthoritativeState();
         }
 
-        private struct CallbackData
-        {
-            public AnticipatedNetworkTransform networkTransform;
-        }
         protected override void OnTransformUpdated()
         {
             // this is called pretty much every frame and will change the transform
@@ -317,7 +313,7 @@ namespace Unity.Netcode.Components
                 new AnticipationSystem.NetworkBehaviourCallbackData
                 {
                     Behaviour = this,
-                    Callback = CachedDelegate
+                    Callback = s_CachedDelegate
                 };
         }
 
@@ -338,6 +334,6 @@ namespace Unity.Netcode.Components
             ((AnticipatedNetworkTransform)networkTransform).Reanticipate();
         }
 
-        private static AnticipationSystem.NetworkBehaviourReanticipateDelegate CachedDelegate = ReanticipateCallback;
+        private static AnticipationSystem.NetworkBehaviourReanticipateDelegate s_CachedDelegate = ReanticipateCallback;
     }
 }
