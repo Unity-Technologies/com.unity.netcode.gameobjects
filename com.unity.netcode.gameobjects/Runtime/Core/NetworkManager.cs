@@ -47,6 +47,8 @@ namespace Unity.Netcode
 
                         MessageManager.ProcessIncomingMessageQueue();
                         MessageManager.CleanupDisconnectedClients();
+
+                        AnticipationSystem.ProcessReanticipation();
                     }
                     break;
                 case NetworkUpdateStage.PreUpdate:
@@ -274,6 +276,19 @@ namespace Unity.Netcode
         {
             add => ConnectionManager.OnTransportFailure += value;
             remove => ConnectionManager.OnTransportFailure -= value;
+        }
+
+        /// <summary>
+        /// This callback is called after all individual OnReanticipate calls on AnticipatedNetworkVariable
+        /// and AnticipatedNetworkTransform values have been invoked. The first parameter is a hash set of
+        /// all the variables that have been changed on this frame (you can detect a particular variable by
+        /// checking if the set contains it), while the second parameter is a set of all anticipated network
+        /// transforms that have been changed. Both are passed as their base class type.
+        /// </summary>
+        public event Action<HashSet<NetworkVariableBase>, HashSet<NetworkBehaviour>> OnReanticipate
+        {
+            add => AnticipationSystem.OnReanticipate += value;
+            remove => AnticipationSystem.OnReanticipate -= value;
         }
 
         /// <summary>

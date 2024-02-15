@@ -180,7 +180,17 @@ namespace Unity.Netcode.Components
 
         protected override void Update()
         {
-            base.Update();
+            // If not spawned or this instance has authority, exit early
+            if (!IsSpawned || CanCommitToTransform)
+            {
+                return;
+            }
+            // Do not call the base class implementation...
+            // AnticipatedNetworkTransform applies its authoritative state immediately rather than waiting for update
+            // This is because AnticipatedNetworkTransforms may need to reference each other in reanticipating
+            // and we will want all reanticipation done before anything else wants to reference the transform in
+            // Update()
+            //base.Update();
 
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
@@ -199,6 +209,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            base.OnSynchronize(ref serializer);
+            ApplyAuthoritativeState();
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -211,6 +227,7 @@ namespace Unity.Netcode.Components
             };
             m_AnticipatedTransform = m_AuthorityTransform;
             m_OutstandingAuthorityChange = true;
+            ApplyAuthoritativeState();
         }
 
         /// <summary>
@@ -246,13 +263,23 @@ namespace Unity.Netcode.Components
 #pragma warning restore IDE0001
         public OnReanticipateDelegate OnReanticipate;
 
-        protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
+        protected override void OnBeforeUpdateTransformState()
         {
             // this is called when new data comes from the server
             m_LastAuthorityUpdateCounter = NetworkManager.AnticipationSystem.LastAnticipationAck;
             m_OutstandingAuthorityChange = true;
         }
 
+        protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
+        {
+            base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
+            ApplyAuthoritativeState();
+        }
+
+        private struct CallbackData
+        {
+            public AnticipatedNetworkTransform networkTransform;
+        }
         protected override void OnTransformUpdated()
         {
             // this is called pretty much every frame and will change the transform
@@ -261,7 +288,7 @@ namespace Unity.Netcode.Components
             // call the OnReanticipate callback
             var transform_ = transform;
 
-            var previousAnticipateddTransform = m_AnticipatedTransform;
+            var previousAnticipatedTransform = m_AnticipatedTransform;
 
             // Update authority state to catch any possible interpolation data
             m_AuthorityTransform.Position = transform_.position;
@@ -271,28 +298,46 @@ namespace Unity.Netcode.Components
             if (!m_OutstandingAuthorityChange)
             {
                 // Keep the anticipated value unchanged, we have no updates from the server at all.
-                transform_.position = previousAnticipateddTransform.Position;
-                transform_.localScale = previousAnticipateddTransform.Scale;
-                transform_.rotation = previousAnticipateddTransform.Rotation;
+                transform_.position = previousAnticipatedTransform.Position;
+                transform_.localScale = previousAnticipatedTransform.Scale;
+                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
 
             if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipaionCounter > m_LastAuthorityUpdateCounter)
             {
                 // Keep the anticipated value unchanged because it is more recent than the authoritative one.
-                transform_.position = previousAnticipateddTransform.Position;
-                transform_.localScale = previousAnticipateddTransform.Scale;
-                transform_.rotation = previousAnticipateddTransform.Rotation;
+                transform_.position = previousAnticipatedTransform.Position;
+                transform_.localScale = previousAnticipatedTransform.Scale;
+                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
+
+            NetworkManager.AnticipationSystem.NetworkBehaviourReanticipationCallbacks[this] =
+                new AnticipationSystem.NetworkBehaviourCallbackData
+                {
+                    Behaviour = this,
+                    Callback = CachedDelegate
+                };
+        }
+
+        private void Reanticipate()
+        {
+            var previousAnticipatedTransform = m_AnticipatedTransform;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
             m_OutstandingAuthorityChange = false;
-
             m_AnticipatedTransform = m_AuthorityTransform;
 
-            OnReanticipate?.Invoke(this, previousAnticipateddTransform, m_LastAnticipationTime, m_AuthorityTransform, NetworkManager.AnticipationSystem.LastAnticipationAckTime);
+            OnReanticipate?.Invoke(this, previousAnticipatedTransform, m_LastAnticipationTime, m_AuthorityTransform, NetworkManager.AnticipationSystem.LastAnticipationAckTime);
         }
+
+        private static void ReanticipateCallback(NetworkBehaviour networkTransform)
+        {
+            ((AnticipatedNetworkTransform)networkTransform).Reanticipate();
+        }
+
+        private static AnticipationSystem.NetworkBehaviourReanticipateDelegate CachedDelegate = ReanticipateCallback;
     }
 }

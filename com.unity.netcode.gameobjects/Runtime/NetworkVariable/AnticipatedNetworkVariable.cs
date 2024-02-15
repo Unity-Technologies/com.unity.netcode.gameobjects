@@ -265,27 +265,44 @@ namespace Unity.Netcode
                     return;
                 }
 
-                // Immediately set the value to the new value.
-                // Done with Duplicate() here for two reasons:
-                // 1 - Duplicate handles disposable types correctly without any leaks, and
-                // 2 - If the user is using a NativeArray or other native collection type, we do not want them
-                // to be able to (unintentionally) modify the authority value by modifying the anticipated value
-                // Note that Duplicate() does not create new values unless the current value is null; it will
-                // copy newValue over m_AnticipatedValue in-place on most occasions.
-                m_HasPreviousAnticipatedValue = true;
-                NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
 
-                NetworkVariableSerialization<T>.Duplicate(newValue, ref m_AnticipatedValue);
-
-                m_SmoothDuration = 0;
-                m_CurrentSmoothTime = 0;
-
-                // If the user wants to smooth the values, they will call Smooth(previousValue, newValue, duration, how) here
-                OnReanticipate?.Invoke(this, m_PreviousAnticipatedValue, m_LastAnticipationTime, newValue, m_NetworkBehaviour.NetworkManager.AnticipationSystem.LastAnticipationAckTime);
+                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NetworkVariableReanticipationCallbacks[this] =
+                    new AnticipationSystem.NetworkVariableCallbackData
+                    {
+                        Variable = this,
+                        Callback = CachedDelegate
+                    };
             }
 
             OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
         }
+
+        private void Reanticipate()
+        {
+            // Immediately set the value to the new value.
+            // Done with Duplicate() here for two reasons:
+            // 1 - Duplicate handles disposable types correctly without any leaks, and
+            // 2 - If the user is using a NativeArray or other native collection type, we do not want them
+            // to be able to (unintentionally) modify the authority value by modifying the anticipated value
+            // Note that Duplicate() does not create new values unless the current value is null; it will
+            // copy newValue over m_AnticipatedValue in-place on most occasions.
+            m_HasPreviousAnticipatedValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
+
+            NetworkVariableSerialization<T>.Duplicate(AuthoritativeValue, ref m_AnticipatedValue);
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
+
+            OnReanticipate?.Invoke(this, m_PreviousAnticipatedValue, m_LastAnticipationTime, AuthoritativeValue, m_NetworkBehaviour.NetworkManager.AnticipationSystem.LastAnticipationAckTime);
+        }
+
+        private static void ReanticipateCallback(NetworkVariableBase variable)
+        {
+            ((AnticipatedNetworkVariable<T>)variable).Reanticipate();
+        }
+
+        private static AnticipationSystem.NetworkVariableReanticipationDelegate CachedDelegate = ReanticipateCallback;
 
         /// <summary>
         /// Interpolate this variable from <see cref="from"/> to <see cref="to"/> over <see cref="durationSeconds"/> of

@@ -2055,7 +2055,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Applies the authoritative state to the transform
         /// </summary>
-        private void ApplyAuthoritativeState()
+        protected internal void ApplyAuthoritativeState()
         {
             var networkState = m_LocalAuthoritativeNetworkState;
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
@@ -2593,6 +2593,11 @@ namespace Unity.Netcode.Components
 
         }
 
+        protected virtual void OnBeforeUpdateTransformState()
+        {
+
+        }
+
         private NetworkTransformState m_OldState = new NetworkTransformState();
 
         /// <summary>
@@ -2615,6 +2620,8 @@ namespace Unity.Netcode.Components
 
             // Get the time when this new state was sent
             newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
+
+            OnBeforeUpdateTransformState();
 
             // Apply the new state
             ApplyUpdatedState(newState);
@@ -3322,7 +3329,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// If a NetworkTransformTickRegistration exists for the NetworkManager instance, then this will
-        /// remove the NetworkTransform instance from the single tick update entry point. 
+        /// remove the NetworkTransform instance from the single tick update entry point.
         /// </summary>
         /// <param name="networkTransform"></param>
         private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
