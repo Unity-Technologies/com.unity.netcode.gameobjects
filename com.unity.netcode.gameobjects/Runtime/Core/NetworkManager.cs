@@ -278,14 +278,20 @@ namespace Unity.Netcode
             remove => ConnectionManager.OnTransportFailure -= value;
         }
 
+        public delegate void ReanticipateDelegate(HashSet<NetworkVariableBase> changedVariables, HashSet<NetworkBehaviour> changedTransforms, double authorityTime);
+
         /// <summary>
         /// This callback is called after all individual OnReanticipate calls on AnticipatedNetworkVariable
         /// and AnticipatedNetworkTransform values have been invoked. The first parameter is a hash set of
         /// all the variables that have been changed on this frame (you can detect a particular variable by
         /// checking if the set contains it), while the second parameter is a set of all anticipated network
         /// transforms that have been changed. Both are passed as their base class type.
+        ///
+        /// The third parameter is the local time corresponding to the current authoritative server state
+        /// (i.e., to determine the amount of time that needs to be re-simulated, you will use
+        /// NetworkManager.LocalTime.Time - authorityTime).
         /// </summary>
-        public event Action<HashSet<NetworkVariableBase>, HashSet<NetworkBehaviour>> OnReanticipate
+        public event ReanticipateDelegate OnReanticipate
         {
             add => AnticipationSystem.OnReanticipate += value;
             remove => AnticipationSystem.OnReanticipate -= value;

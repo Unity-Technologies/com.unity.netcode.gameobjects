@@ -40,7 +40,7 @@ namespace Unity.Netcode
             m_NetworkManager = manager;
         }
 
-        public event Action<HashSet<NetworkVariableBase>, HashSet<NetworkBehaviour>> OnReanticipate;
+        public event NetworkManager.ReanticipateDelegate OnReanticipate;
 
         public void ProcessReanticipation()
         {
@@ -58,7 +58,7 @@ namespace Unity.Netcode
                 item.Value.Callback?.Invoke(item.Value.Behaviour);
             }
             NetworkBehaviourReanticipationCallbacks.Clear();
-            OnReanticipate?.Invoke(ChangedVariables, ChangedBehaviours);
+            OnReanticipate?.Invoke(ChangedVariables, ChangedBehaviours, LastAnticipationAckTime);
         }
 
         public void Sync()
