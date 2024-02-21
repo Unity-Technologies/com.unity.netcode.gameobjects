@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+- Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
+- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
+
+### Changed
+
+- Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+- Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
 ## [1.8.1] - 2024-02-05
 
 ### Fixed

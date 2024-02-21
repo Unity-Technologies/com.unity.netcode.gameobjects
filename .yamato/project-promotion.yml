@@ -29,7 +29,7 @@ promote_{{ project.name }}_{{ package.name }}:
   name: Promote Project {{ project.name }} - Package {{ package.name }} to Production
   agent:
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.small
   variables:
     UPMCI_PROMOTION: 1
@@ -49,7 +49,7 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
   name: Promote Project {{ project.name }} - Package {{ package.name }} to Production (dry-run)
   agent:
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.small
   variables:
     UPMCI_PROMOTION: 1

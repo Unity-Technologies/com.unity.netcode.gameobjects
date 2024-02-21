@@ -11,441 +11,6 @@ using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetVarPermTestComp : NetworkBehaviour
-    {
-        public NetworkVariable<Vector3> OwnerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Owner);
-        public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
-        public NetworkVariable<Vector3> OwnerReadWrite_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
-    }
-
-    public class NetworkVariableMiddleclass<TMiddleclassName> : NetworkVariable<TMiddleclassName>
-    {
-
-    }
-
-    public class NetworkVariableSubclass<TSubclassName> : NetworkVariableMiddleclass<TSubclassName>
-    {
-
-    }
-
-    public class NetworkBehaviourWithNetVarArray : NetworkBehaviour
-    {
-        public NetworkVariable<int> Int0 = new NetworkVariable<int>();
-        public NetworkVariable<int> Int1 = new NetworkVariable<int>();
-        public NetworkVariable<int> Int2 = new NetworkVariable<int>();
-        public NetworkVariable<int> Int3 = new NetworkVariable<int>();
-        public NetworkVariable<int> Int4 = new NetworkVariable<int>();
-        public NetworkVariable<int>[] AllInts = new NetworkVariable<int>[5];
-
-        public int InitializedFieldCount => NetworkVariableFields.Count;
-
-
-        private void Awake()
-        {
-            AllInts[0] = Int0;
-            AllInts[1] = Int1;
-            AllInts[2] = Int2;
-            AllInts[3] = Int3;
-            AllInts[4] = Int4;
-        }
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization1 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization2 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization3 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization4 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization5 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    internal struct TypeReferencedOnlyInCustomSerialization6 : INetworkSerializeByMemcpy
-    {
-        public int I;
-    }
-
-    // Both T and U are serializable
-    [GenerateSerializationForGenericParameter(0)]
-    [GenerateSerializationForGenericParameter(1)]
-    internal class CustomSerializableClass<TSerializableType1, TSerializableType2>
-    {
-
-    }
-
-    // Only U is serializable
-    [GenerateSerializationForGenericParameter(1)]
-    internal class CustomSerializableBaseClass<TUnserializableType, TSerializableType>
-    {
-
-    }
-
-    // T is serializable, passes TypeReferencedOnlyInCustomSerialization3 as U to the subclass, making it serializable
-    [GenerateSerializationForGenericParameter(0)]
-    internal class CustomSerializableSubclass<TSerializableType> : CustomSerializableBaseClass<TSerializableType, TypeReferencedOnlyInCustomSerialization3>
-    {
-
-    }
-
-    // T is serializable, passes TypeReferencedOnlyInCustomSerialization3 as U to the subclass, making it serializable
-    [GenerateSerializationForGenericParameter(0)]
-    internal class CustomSerializableSubclassWithNativeArray<TSerializableType> : CustomSerializableBaseClass<TSerializableType, NativeArray<TypeReferencedOnlyInCustomSerialization3>>
-    {
-
-    }
-
-    internal class CustomGenericSerializationTestBehaviour : NetworkBehaviour
-    {
-        public CustomSerializableClass<TypeReferencedOnlyInCustomSerialization1, TypeReferencedOnlyInCustomSerialization2> Value1;
-        public CustomSerializableClass<NativeArray<TypeReferencedOnlyInCustomSerialization1>, NativeArray<TypeReferencedOnlyInCustomSerialization2>> Value2;
-        public CustomSerializableSubclass<TypeReferencedOnlyInCustomSerialization4> Value3;
-        public CustomSerializableSubclassWithNativeArray<NativeArray<TypeReferencedOnlyInCustomSerialization4>> Value4;
-    }
-
-    [GenerateSerializationForType(typeof(TypeReferencedOnlyInCustomSerialization5))]
-    [GenerateSerializationForType(typeof(NativeArray<TypeReferencedOnlyInCustomSerialization5>))]
-    internal struct SomeRandomStruct
-    {
-        [GenerateSerializationForType(typeof(TypeReferencedOnlyInCustomSerialization6))]
-        [GenerateSerializationForType(typeof(NativeArray<TypeReferencedOnlyInCustomSerialization6>))]
-        public void Foo()
-        {
-
-        }
-    }
-
-    public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
-        where T : unmanaged
-    {
-        public T Value;
-    }
-
-    public enum ByteEnum : byte
-    {
-        A,
-        B,
-        C = byte.MaxValue
-    }
-    public enum SByteEnum : sbyte
-    {
-        A,
-        B,
-        C = sbyte.MaxValue
-    }
-    public enum ShortEnum : short
-    {
-        A,
-        B,
-        C = short.MaxValue
-    }
-    public enum UShortEnum : ushort
-    {
-        A,
-        B,
-        C = ushort.MaxValue
-    }
-    public enum IntEnum : int
-    {
-        A,
-        B,
-        C = int.MaxValue
-    }
-    public enum UIntEnum : uint
-    {
-        A,
-        B,
-        C = uint.MaxValue
-    }
-    public enum LongEnum : long
-    {
-        A,
-        B,
-        C = long.MaxValue
-    }
-    public enum ULongEnum : ulong
-    {
-        A,
-        B,
-        C = ulong.MaxValue
-    }
-
-    public struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
-    {
-        public byte A;
-        public short B;
-        public ushort C;
-        public int D;
-        public uint E;
-        public long F;
-        public ulong G;
-        public bool H;
-        public char I;
-        public float J;
-        public double K;
-
-        private static System.Random s_Random = new System.Random();
-
-        public static NetworkVariableTestStruct GetTestStruct()
-        {
-            var testStruct = new NetworkVariableTestStruct
-            {
-                A = (byte)s_Random.Next(),
-                B = (short)s_Random.Next(),
-                C = (ushort)s_Random.Next(),
-                D = s_Random.Next(),
-                E = (uint)s_Random.Next(),
-                F = ((long)s_Random.Next() << 32) + s_Random.Next(),
-                G = ((ulong)s_Random.Next() << 32) + (ulong)s_Random.Next(),
-                H = true,
-                I = '\u263a',
-                J = (float)s_Random.NextDouble(),
-                K = s_Random.NextDouble(),
-            };
-
-            return testStruct;
-        }
-    }
-
-    // The ILPP code for NetworkVariables to determine how to serialize them relies on them existing as fields of a NetworkBehaviour to find them.
-    // Some of the tests below create NetworkVariables on the stack, so this class is here just to make sure the relevant types are all accounted for.
-    public class NetVarILPPClassForTests : NetworkBehaviour
-    {
-        public NetworkVariable<byte> ByteVar;
-        public NetworkVariable<NativeArray<byte>> ByteArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<byte>> ByteListVar;
-#endif
-        public NetworkVariable<sbyte> SbyteVar;
-        public NetworkVariable<NativeArray<sbyte>> SbyteArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<sbyte>> SbyteListVar;
-#endif
-        public NetworkVariable<short> ShortVar;
-        public NetworkVariable<NativeArray<short>> ShortArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<short>> ShortListVar;
-#endif
-        public NetworkVariable<ushort> UshortVar;
-        public NetworkVariable<NativeArray<ushort>> UshortArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<ushort>> UshortListVar;
-#endif
-        public NetworkVariable<int> IntVar;
-        public NetworkVariable<NativeArray<int>> IntArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<int>> IntListVar;
-#endif
-        public NetworkVariable<uint> UintVar;
-        public NetworkVariable<NativeArray<uint>> UintArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<uint>> UintListVar;
-#endif
-        public NetworkVariable<long> LongVar;
-        public NetworkVariable<NativeArray<long>> LongArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<long>> LongListVar;
-#endif
-        public NetworkVariable<ulong> UlongVar;
-        public NetworkVariable<NativeArray<ulong>> UlongArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<ulong>> UlongListVar;
-#endif
-        public NetworkVariable<bool> BoolVar;
-        public NetworkVariable<NativeArray<bool>> BoolArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<bool>> BoolListVar;
-#endif
-        public NetworkVariable<char> CharVar;
-        public NetworkVariable<NativeArray<char>> CharArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<char>> CharListVar;
-#endif
-        public NetworkVariable<float> FloatVar;
-        public NetworkVariable<NativeArray<float>> FloatArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<float>> FloatListVar;
-#endif
-        public NetworkVariable<double> DoubleVar;
-        public NetworkVariable<NativeArray<double>> DoubleArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<double>> DoubleListVar;
-#endif
-        public NetworkVariable<ByteEnum> ByteEnumVar;
-        public NetworkVariable<NativeArray<ByteEnum>> ByteEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<ByteEnum>> ByteEnumListVar;
-#endif
-        public NetworkVariable<SByteEnum> SByteEnumVar;
-        public NetworkVariable<NativeArray<SByteEnum>> SByteEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<SByteEnum>> SByteEnumListVar;
-#endif
-        public NetworkVariable<ShortEnum> ShortEnumVar;
-        public NetworkVariable<NativeArray<ShortEnum>> ShortEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<ShortEnum>> ShortEnumListVar;
-#endif
-        public NetworkVariable<UShortEnum> UShortEnumVar;
-        public NetworkVariable<NativeArray<UShortEnum>> UShortEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<UShortEnum>> UShortEnumListVar;
-#endif
-        public NetworkVariable<IntEnum> IntEnumVar;
-        public NetworkVariable<NativeArray<IntEnum>> IntEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<IntEnum>> IntEnumListVar;
-#endif
-        public NetworkVariable<UIntEnum> UIntEnumVar;
-        public NetworkVariable<NativeArray<UIntEnum>> UIntEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<UIntEnum>> UIntEnumListVar;
-#endif
-        public NetworkVariable<LongEnum> LongEnumVar;
-        public NetworkVariable<NativeArray<LongEnum>> LongEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<LongEnum>> LongEnumListVar;
-#endif
-        public NetworkVariable<ULongEnum> ULongEnumVar;
-        public NetworkVariable<NativeArray<ULongEnum>> ULongEnumArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<ULongEnum>> ULongEnumListVar;
-#endif
-        public NetworkVariable<Vector2> Vector2Var;
-        public NetworkVariable<NativeArray<Vector2>> Vector2ArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Vector2>> Vector2ListVar;
-#endif
-        public NetworkVariable<Vector3> Vector3Var;
-        public NetworkVariable<NativeArray<Vector3>> Vector3ArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Vector3>> Vector3ListVar;
-#endif
-        public NetworkVariable<Vector2Int> Vector2IntVar;
-        public NetworkVariable<NativeArray<Vector2Int>> Vector2IntArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Vector2Int>> Vector2IntListVar;
-#endif
-        public NetworkVariable<Vector3Int> Vector3IntVar;
-        public NetworkVariable<NativeArray<Vector3Int>> Vector3IntArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Vector3Int>> Vector3IntListVar;
-#endif
-        public NetworkVariable<Vector4> Vector4Var;
-        public NetworkVariable<NativeArray<Vector4>> Vector4ArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Vector4>> Vector4ListVar;
-#endif
-        public NetworkVariable<Quaternion> QuaternionVar;
-        public NetworkVariable<NativeArray<Quaternion>> QuaternionArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Quaternion>> QuaternionListVar;
-#endif
-        public NetworkVariable<Color> ColorVar;
-        public NetworkVariable<NativeArray<Color>> ColorArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Color>> ColorListVar;
-#endif
-        public NetworkVariable<Color32> Color32Var;
-        public NetworkVariable<NativeArray<Color32>> Color32ArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Color32>> Color32ListVar;
-#endif
-        public NetworkVariable<Ray> RayVar;
-        public NetworkVariable<NativeArray<Ray>> RayArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Ray>> RayListVar;
-#endif
-        public NetworkVariable<Ray2D> Ray2DVar;
-        public NetworkVariable<NativeArray<Ray2D>> Ray2DArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<Ray2D>> Ray2DListVar;
-#endif
-        public NetworkVariable<NetworkVariableTestStruct> TestStructVar;
-        public NetworkVariable<NativeArray<NetworkVariableTestStruct>> TestStructArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<NetworkVariableTestStruct>> TestStructListVar;
-#endif
-
-        public NetworkVariable<FixedString32Bytes> FixedStringVar;
-        public NetworkVariable<NativeArray<FixedString32Bytes>> FixedStringArrayVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<FixedString32Bytes>> FixedStringListVar;
-#endif
-
-        public NetworkVariable<UnmanagedNetworkSerializableType> UnmanagedNetworkSerializableTypeVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableListVar;
-#endif
-        public NetworkVariable<NativeArray<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableArrayVar;
-
-        public NetworkVariable<ManagedNetworkSerializableType> ManagedNetworkSerializableTypeVar;
-
-        public NetworkVariable<string> StringVar;
-        public NetworkVariable<Guid> GuidVar;
-        public NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
-    }
-
-    public class TemplateNetworkBehaviourType<T> : NetworkBehaviour
-    {
-        public NetworkVariable<T> TheVar;
-    }
-
-    public class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
-    {
-        public NetworkVariable<T> TheVar2;
-    }
-
-    public class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>
-    {
-
-    }
-
-    // Please do not reference TestClass_ReferencedOnlyByTemplateNetworkBehavourType anywhere other than here!
-    public class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
-    {
-
-    }
-
-    public class StructHavingNetworkBehaviour : TemplateNetworkBehaviourType<TestStruct>
-    {
-
-    }
-
-    public struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
-    {
-        public int Value;
-
-        public bool Equals(StructUsedOnlyInNetworkList other)
-        {
-            return Value == other.Value;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is StructUsedOnlyInNetworkList other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return Value;
-        }
-    }
-
     [TestFixtureSource(nameof(TestDataSource))]
     public class NetworkVariablePermissionTests : NetcodeIntegrationTest
     {
@@ -1632,38 +1197,61 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
         }
 
+        public void AssertArraysMatch<T>(ref NativeArray<T> a, ref NativeArray<T> b) where T : unmanaged
+        {
+            Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref a, ref b),
+                $"Lists do not match: {ArrayStr(a)} != {ArrayStr(b)}");
+        }
+        public void AssertArraysDoNotMatch<T>(ref NativeArray<T> a, ref NativeArray<T> b) where T : unmanaged
+        {
+            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref a, ref b),
+                $"Lists match when they should not: {ArrayStr(a)} == {ArrayStr(b)}");
+        }
+
         private void TestValueTypeNativeArray<T>(NativeArray<T> testValue, NativeArray<T> changedValue) where T : unmanaged
         {
+            Debug.Log($"Changing {ArrayStr(testValue)} to {ArrayStr(changedValue)}");
             var serverVariable = new NetworkVariable<NativeArray<T>>(testValue);
             var clientVariable = new NetworkVariable<NativeArray<T>>(new NativeArray<T>(1, Allocator.Persistent));
-            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
             serverVariable.WriteField(writer);
 
-            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertArraysDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
 
             using var reader = new FastBufferReader(writer, Allocator.None);
             clientVariable.ReadField(reader);
 
-            Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertArraysMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
 
-            serverVariable.Dispose();
+            serverVariable.ResetDirty();
+            serverVariable.Value.Dispose();
             serverVariable.Value = changedValue;
-            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertArraysDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
 
             writer.Seek(0);
 
             serverVariable.WriteDelta(writer);
 
-            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertArraysDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
 
             using var reader2 = new FastBufferReader(writer, Allocator.None);
             clientVariable.ReadDelta(reader2, false);
-            Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertArraysMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
 
             serverVariable.ResetDirty();
             Assert.IsFalse(serverVariable.IsDirty());
             var cachedValue = changedValue[0];
-            changedValue[0] = testValue[0];
+            var differentValue = changedValue[0];
+            foreach (var checkValue in testValue)
+            {
+                var checkValueRef = checkValue;
+                if (!NetworkVariableSerialization<T>.AreEqual(ref checkValueRef, ref differentValue))
+                {
+                    differentValue = checkValue;
+                    break;
+                }
+            }
+            changedValue[0] = differentValue;
             Assert.IsTrue(serverVariable.IsDirty());
             serverVariable.ResetDirty();
             Assert.IsFalse(serverVariable.IsDirty());
@@ -1675,45 +1263,57 @@ namespace Unity.Netcode.RuntimeTests
             clientVariable.Dispose();
         }
 
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
+        public void AssertListsMatch<T>(ref List<T> a, ref List<T> b)
         {
-            var serverVariable = new NetworkVariable<NativeList<T>>(testValue);
-            var inPlaceList = new NativeList<T>(1, Allocator.Temp);
-            var clientVariable = new NetworkVariable<NativeList<T>>(inPlaceList);
-            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            Assert.IsTrue(NetworkVariableSerialization<List<T>>.AreEqual(ref a, ref b),
+                $"Lists do not match: {ListStr(a)} != {ListStr(b)}");
+        }
+        public void AssertListsDoNotMatch<T>(ref List<T> a, ref List<T> b)
+        {
+            Assert.IsFalse(NetworkVariableSerialization<List<T>>.AreEqual(ref a, ref b),
+                $"Lists match when they should not: {ListStr(a)} == {ListStr(b)}");
+        }
+
+
+        private void TestList<T>(List<T> testValue, List<T> changedValue)
+        {
+            Debug.Log($"Changing {ListStr(testValue)} to {ListStr(changedValue)}");
+            var serverVariable = new NetworkVariable<List<T>>(testValue);
+            var inPlaceList = new List<T>();
+            var clientVariable = new NetworkVariable<List<T>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
             serverVariable.WriteField(writer);
 
-            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
 
             using var reader = new FastBufferReader(writer, Allocator.None);
             clientVariable.ReadField(reader);
 
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertListsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
 
-            serverVariable.Dispose();
+            serverVariable.ResetDirty();
             serverVariable.Value = changedValue;
-            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
 
             writer.Seek(0);
 
             serverVariable.WriteDelta(writer);
 
-            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
 
             using var reader2 = new FastBufferReader(writer, Allocator.None);
             clientVariable.ReadDelta(reader2, false);
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            AssertListsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
-            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
 
             serverVariable.ResetDirty();
             Assert.IsFalse(serverVariable.IsDirty());
@@ -1724,6 +1324,353 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.IsFalse(serverVariable.IsDirty());
             serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+        }
+
+
+        public void AssertSetsMatch<T>(ref HashSet<T> a, ref HashSet<T> b) where T : IEquatable<T>
+        {
+            Assert.IsTrue(NetworkVariableSerialization<HashSet<T>>.AreEqual(ref a, ref b),
+                $"Sets do not match: {HashSetStr(a)} != {HashSetStr(b)}");
+        }
+        public void AssertSetsDoNotMatch<T>(ref HashSet<T> a, ref HashSet<T> b) where T : IEquatable<T>
+        {
+            Assert.IsFalse(NetworkVariableSerialization<HashSet<T>>.AreEqual(ref a, ref b),
+                $"Sets match when they should not: {HashSetStr(a)} == {HashSetStr(b)}");
+        }
+
+        private void TestHashSet<T>(HashSet<T> testValue, HashSet<T> changedValue) where T : IEquatable<T>
+        {
+            Debug.Log($"Changing {HashSetStr(testValue)} to {HashSetStr(changedValue)}");
+            var serverVariable = new NetworkVariable<HashSet<T>>(testValue);
+            var inPlaceList = new HashSet<T>();
+            var clientVariable = new NetworkVariable<HashSet<T>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
+            serverVariable.WriteField(writer);
+
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            AssertSetsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            serverVariable.Value = changedValue;
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            AssertSetsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+        }
+
+
+        public void AssertMapsMatch<TKey, TVal>(ref Dictionary<TKey, TVal> a, ref Dictionary<TKey, TVal> b)
+            where TKey : IEquatable<TKey>
+        {
+            Assert.IsTrue(NetworkVariableSerialization<Dictionary<TKey, TVal>>.AreEqual(ref a, ref b),
+                $"Maps do not match: {DictionaryStr(a)} != {DictionaryStr(b)}");
+        }
+
+        public void AssertMapsDoNotMatch<TKey, TVal>(ref Dictionary<TKey, TVal> a, ref Dictionary<TKey, TVal> b)
+            where TKey : IEquatable<TKey>
+        {
+            Assert.IsFalse(NetworkVariableSerialization<Dictionary<TKey, TVal>>.AreEqual(ref a, ref b),
+                $"Maps match when they should not: {DictionaryStr(a)} != {DictionaryStr(b)}");
+        }
+
+        private void TestDictionary<TKey, TVal>(Dictionary<TKey, TVal> testValue, Dictionary<TKey, TVal> changedValue)
+            where TKey : IEquatable<TKey>
+        {
+            Debug.Log($"Changing {DictionaryStr(testValue)} to {DictionaryStr(changedValue)}");
+            var serverVariable = new NetworkVariable<Dictionary<TKey, TVal>>(testValue);
+            var inPlaceList = new Dictionary<TKey, TVal>();
+            var clientVariable = new NetworkVariable<Dictionary<TKey, TVal>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
+            serverVariable.WriteField(writer);
+
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            AssertMapsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            serverVariable.Value = changedValue;
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            AssertMapsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            foreach (var kvp in testValue)
+            {
+                if (!serverVariable.Value.ContainsKey(kvp.Key))
+                {
+                    serverVariable.Value.Add(kvp.Key, kvp.Value);
+                }
+            }
+            Assert.IsTrue(serverVariable.IsDirty());
+        }
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        public void AssertListsMatch<T>(ref NativeList<T> a, ref NativeList<T> b) where T : unmanaged
+        {
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref a, ref b),
+                $"Lists do not match: {NativeListStr(a)} != {NativeListStr(b)}");
+        }
+        public void AssertListsDoNotMatch<T>(ref NativeList<T> a, ref NativeList<T> b) where T : unmanaged
+        {
+            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref a, ref b),
+                $"Lists match when they should not: {NativeListStr(a)} == {NativeListStr(b)}");
+        }
+
+
+        private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
+        {
+            Debug.Log($"Changing {NativeListStr(testValue)} to {NativeListStr(changedValue)}");
+            var serverVariable = new NetworkVariable<NativeList<T>>(testValue);
+            var inPlaceList = new NativeList<T>(1, Allocator.Temp);
+            var clientVariable = new NetworkVariable<NativeList<T>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
+            serverVariable.WriteField(writer);
+
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            AssertListsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            serverVariable.Value.Dispose();
+            serverVariable.Value = changedValue;
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            AssertListsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            AssertListsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertListsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
+        }
+
+
+        public void AssertSetsMatch<T>(ref NativeHashSet<T> a, ref NativeHashSet<T> b) where T : unmanaged, IEquatable<T>
+        {
+            Assert.IsTrue(NetworkVariableSerialization<NativeHashSet<T>>.AreEqual(ref a, ref b),
+                $"Sets do not match: {NativeHashSetStr(a)} != {NativeHashSetStr(b)}");
+        }
+        public void AssertSetsDoNotMatch<T>(ref NativeHashSet<T> a, ref NativeHashSet<T> b) where T : unmanaged, IEquatable<T>
+        {
+            Assert.IsFalse(NetworkVariableSerialization<NativeHashSet<T>>.AreEqual(ref a, ref b),
+                $"Sets match when they should not: {NativeHashSetStr(a)} == {NativeHashSetStr(b)}");
+        }
+
+        private void TestValueTypeNativeHashSet<T>(NativeHashSet<T> testValue, NativeHashSet<T> changedValue) where T : unmanaged, IEquatable<T>
+        {
+            Debug.Log($"Changing {NativeHashSetStr(testValue)} to {NativeHashSetStr(changedValue)}");
+            var serverVariable = new NetworkVariable<NativeHashSet<T>>(testValue);
+            var inPlaceList = new NativeHashSet<T>(1, Allocator.Temp);
+            var clientVariable = new NetworkVariable<NativeHashSet<T>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
+            serverVariable.WriteField(writer);
+
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            AssertSetsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            serverVariable.Value.Dispose();
+            serverVariable.Value = changedValue;
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            AssertSetsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            AssertSetsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertSetsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
+        }
+
+
+        public void AssertMapsMatch<TKey, TVal>(ref NativeHashMap<TKey, TVal> a, ref NativeHashMap<TKey, TVal> b)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            Assert.IsTrue(NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.AreEqual(ref a, ref b),
+                $"Maps do not match: {NativeHashMapStr(a)} != {NativeHashMapStr(b)}");
+        }
+
+        public void AssertMapsDoNotMatch<TKey, TVal>(ref NativeHashMap<TKey, TVal> a, ref NativeHashMap<TKey, TVal> b)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            Assert.IsFalse(NetworkVariableSerialization<NativeHashMap<TKey, TVal>>.AreEqual(ref a, ref b),
+                $"Maps match when they should not: {NativeHashMapStr(a)} != {NativeHashMapStr(b)}");
+        }
+
+        private void TestValueTypeNativeHashMap<TKey, TVal>(NativeHashMap<TKey, TVal> testValue, NativeHashMap<TKey, TVal> changedValue)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            Debug.Log($"Changing {NativeHashMapStr(testValue)} to {NativeHashMapStr(changedValue)}");
+            var serverVariable = new NetworkVariable<NativeHashMap<TKey, TVal>>(testValue);
+            var inPlaceList = new NativeHashMap<TKey, TVal>(1, Allocator.Temp);
+            var clientVariable = new NetworkVariable<NativeHashMap<TKey, TVal>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
+            serverVariable.WriteField(writer);
+
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            AssertMapsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            serverVariable.Value.Dispose();
+            serverVariable.Value = changedValue;
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            AssertMapsDoNotMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            AssertMapsMatch(ref serverVariable.RefValue(), ref clientVariable.RefValue());
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            AssertMapsMatch(ref clientVariable.RefValue(), ref inPlaceList);
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default, default);
             Assert.IsTrue(serverVariable.IsDirty());
 
             serverVariable.Dispose();
@@ -2132,6 +2079,1488 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        public delegate T GetRandomElement<T>(System.Random rand);
+
+        public unsafe T RandGenBytes<T>(System.Random rand) where T : unmanaged
+        {
+            var t = new T();
+            T* tPtr = &t;
+            var s = new Span<byte>(tPtr, sizeof(T));
+            rand.NextBytes(s);
+            return t;
+        }
+
+        public FixedString32Bytes RandGenFixedString32(System.Random rand)
+        {
+            var s = new FixedString32Bytes();
+            var len = rand.Next(s.Capacity);
+            s.Length = len;
+            for (var i = 0; i < len; ++i)
+            {
+                // Ascii visible character range
+                s[i] = (byte)rand.Next(32, 126);
+            }
+
+            return s;
+        }
+        public string ArrayStr<T>(NativeArray<T> arr) where T : unmanaged
+        {
+            var str = "[";
+            var comma = false;
+            foreach (var item in arr)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item}";
+            }
+
+            str += "]";
+            return str;
+        }
+
+        public (NativeArray<T> original, NativeArray<T> original2, NativeArray<T> changed, NativeArray<T> changed2) GetArarys<T>(GetRandomElement<T> generator) where T : unmanaged
+        {
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Changes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(-16, 16);
+
+            var original = new NativeArray<T>(originalSize, Allocator.Temp);
+            var changed = new NativeArray<T>(changedSize, Allocator.Temp);
+            var original2 = new NativeArray<T>(originalSize, Allocator.Temp);
+            var changed2 = new NativeArray<T>(originalSize + changed2Adds, Allocator.Temp);
+
+
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var item = generator(rand);
+                original[i] = item;
+                original2[i] = item;
+                if (i < changed2.Length)
+                {
+                    changed2[i] = item;
+                }
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var item = generator(rand);
+                changed[i] = item;
+            }
+
+            for (var i = 0; i < changed2Changes; ++i)
+            {
+                var idx = rand.Next(changed2.Length - 1);
+                var item = generator(rand);
+                changed2[idx] = item;
+            }
+
+            for (var i = 0; i < changed2Adds; ++i)
+            {
+                var item = generator(rand);
+                changed2[originalSize + i] = item;
+            }
+
+            Debug.Log($"Original: {ArrayStr(original)}");
+            Debug.Log($"Changed: {ArrayStr(changed)}");
+            Debug.Log($"Original2: {ArrayStr(original2)}");
+            Debug.Log($"Changed2: {ArrayStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<byte>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<sbyte>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(short))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<short>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(ushort))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<ushort>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(int))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<int>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(uint))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<uint>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(long))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<long>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(ulong))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<ulong>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(bool))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<bool>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(char))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<char>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(float))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<float>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(double))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<double>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Vector2Int(rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Color))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Color32))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Color32((byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Ray))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Ray(
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Ray2D(
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenBytes<NetworkVariableTestStruct>);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(RandGenFixedString32);
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+        }
+
+
+        public string ListStr<T>(List<T> list)
+        {
+            var str = "[";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item}";
+            }
+
+            str += "]";
+            return str;
+        }
+
+        public string HashSetStr<T>(HashSet<T> list) where T : IEquatable<T>
+        {
+            var str = "{";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item}";
+            }
+
+            str += "}";
+            return str;
+        }
+
+        public string DictionaryStr<TKey, TVal>(Dictionary<TKey, TVal> list)
+            where TKey : IEquatable<TKey>
+        {
+            var str = "{";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item.Key}: {item.Value}";
+            }
+
+            str += "}";
+            return str;
+        }
+
+        public (List<T> original, List<T> original2, List<T> changed, List<T> changed2) GetLists<T>(GetRandomElement<T> generator)
+        {
+            var original = new List<T>();
+            var changed = new List<T>();
+            var original2 = new List<T>();
+            var changed2 = new List<T>();
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Changes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(-16, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var item = generator(rand);
+                original.Add(item);
+                original2.Add(item);
+                changed2.Add(item);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var item = generator(rand);
+                changed.Add(item);
+            }
+
+            for (var i = 0; i < changed2Changes; ++i)
+            {
+                var idx = rand.Next(changed2.Count - 1);
+                var item = generator(rand);
+                changed2[idx] = item;
+            }
+
+            if (changed2Adds < 0)
+            {
+                changed2.RemoveRange(changed2.Count + changed2Adds, -changed2Adds);
+            }
+            else
+            {
+                for (var i = 0; i < changed2Adds; ++i)
+                {
+                    var item = generator(rand);
+                    changed2.Add(item);
+                }
+
+            }
+
+            Debug.Log($"Original: {ListStr(original)}");
+            Debug.Log($"Changed: {ListStr(changed)}");
+            Debug.Log($"Original2: {ListStr(original2)}");
+            Debug.Log($"Changed2: {ListStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+        public (HashSet<T> original, HashSet<T> original2, HashSet<T> changed, HashSet<T> changed2) GetHashSets<T>(GetRandomElement<T> generator) where T : IEquatable<T>
+        {
+            var original = new HashSet<T>();
+            var changed = new HashSet<T>();
+            var original2 = new HashSet<T>();
+            var changed2 = new HashSet<T>();
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Removes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(12, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var item = generator(rand);
+                while (original.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                original.Add(item);
+                original2.Add(item);
+                changed2.Add(item);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var item = generator(rand);
+                while (changed.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                changed.Add(item);
+            }
+
+            for (var i = 0; i < changed2Removes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                T toRemove = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        toRemove = check;
+                        break;
+                    }
+                    --which;
+                }
+
+                changed2.Remove(toRemove);
+            }
+
+            for (var i = 0; i < changed2Adds; ++i)
+            {
+                var item = generator(rand);
+                while (changed2.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                changed2.Add(item);
+            }
+
+            Debug.Log($"Original: {HashSetStr(original)}");
+            Debug.Log($"Changed: {HashSetStr(changed)}");
+            Debug.Log($"Original2: {HashSetStr(original2)}");
+            Debug.Log($"Changed2: {HashSetStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+
+        public (Dictionary<TKey, TVal> original, Dictionary<TKey, TVal> original2, Dictionary<TKey, TVal> changed, Dictionary<TKey, TVal> changed2) GetDictionaries<TKey, TVal>(GetRandomElement<TKey> keyGenerator, GetRandomElement<TVal> valGenerator)
+            where TKey : IEquatable<TKey>
+        {
+            var original = new Dictionary<TKey, TVal>();
+            var changed = new Dictionary<TKey, TVal>();
+            var original2 = new Dictionary<TKey, TVal>();
+            var changed2 = new Dictionary<TKey, TVal>();
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Removes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(12, 16);
+            var changed2Changes = rand.Next(12, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (original.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                original.Add(key, val);
+                original2.Add(key, val);
+                changed2.Add(key, val);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (changed.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                changed.Add(key, val);
+            }
+
+            for (var i = 0; i < changed2Removes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                TKey toRemove = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        toRemove = check.Key;
+                        break;
+                    }
+                    --which;
+                }
+
+                changed2.Remove(toRemove);
+            }
+
+            for (var i = 0; i < changed2Changes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                TKey key = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        key = check.Key;
+                        break;
+                    }
+                    --which;
+                }
+
+                var val = valGenerator(rand);
+                changed2[key] = val;
+            }
+
+            for (var i = 0; i < changed2Adds; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (changed2.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                changed2.Add(key, val);
+            }
+
+            Debug.Log($"Original: {DictionaryStr(original)}");
+            Debug.Log($"Changed: {DictionaryStr(changed)}");
+            Debug.Log($"Original2: {DictionaryStr(original2)}");
+            Debug.Log($"Changed2: {DictionaryStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(NetworkVariableTestClass), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<byte>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<sbyte>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(short))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<short>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(ushort))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<ushort>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(int))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<int>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(uint))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<uint>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(long))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<long>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(ulong))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<ulong>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(bool))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<bool>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(char))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<char>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(float))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<float>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(double))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenBytes<double>);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Vector2Int(rand.Next(), rand.Next())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Color))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Color32))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Color32((byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next())
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Ray))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Ray(
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Ray2D(
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(NetworkVariableTestClass))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists((rand) =>
+                {
+                    return new NetworkVariableTestClass { Data = RandGenBytes<NetworkVariableTestStruct>(rand) };
+                });
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(RandGenFixedString32);
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(HashableNetworkVariableTestClass), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<byte>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<sbyte>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(short))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<short>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(ushort))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<ushort>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(int))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<int>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(uint))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<uint>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(long))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<long>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(ulong))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<ulong>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(bool))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<bool>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(char))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<char>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(float))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<float>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(double))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenBytes<double>);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Vector2Int(rand.Next(), rand.Next())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Color))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(HashableNetworkVariableTestClass))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets((rand) =>
+                {
+                    return new HashableNetworkVariableTestClass { Data = RandGenBytes<HashableNetworkVariableTestStruct>(rand) };
+                });
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(RandGenFixedString32);
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(ulong), typeof(Vector2), typeof(HashMapKeyClass))] Type keyType,
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(HashMapValClass), typeof(FixedString32Bytes))]
+            Type valType)
+        {
+            if (valType == typeof(byte))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<byte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<byte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<byte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<byte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(sbyte))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<sbyte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<sbyte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<sbyte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<sbyte>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(short))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<short>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<short>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<short>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<short>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(ushort))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<ushort>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<ushort>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<ushort>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<ushort>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<int>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<int>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<int>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<int>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(uint))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<uint>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<uint>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<uint>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<uint>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(long))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<long>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<long>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<long>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<long>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(ulong))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<ulong>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<ulong>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<ulong>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<ulong>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(bool))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<bool>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<bool>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<bool>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<bool>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(char))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<char>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<char>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<char>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<char>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(float))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<float>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<float>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<float>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<float>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(double))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenBytes<double>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenBytes<double>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<double>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenBytes<double>);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector2))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector3))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector2Int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector3Int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector4))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Quaternion))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(HashMapValClass))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new HashMapValClass { Data = RandGenBytes<HashMapValStruct>(rand) });
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new HashMapValClass { Data = RandGenBytes<HashMapValStruct>(rand) });
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new HashMapValClass { Data = RandGenBytes<HashMapValStruct>(rand) });
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new HashMapValClass { Data = RandGenBytes<HashMapValStruct>(rand) });
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+            else if (valType == typeof(FixedString32Bytes))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, RandGenFixedString32);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, RandGenFixedString32);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenFixedString32);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, RandGenFixedString32);
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
+        }
+
+
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
@@ -2373,6 +3802,1206 @@ namespace Unity.Netcode.RuntimeTests
                     });
             }
         }
+
+        public string NativeListStr<T>(NativeList<T> list) where T : unmanaged
+        {
+            var str = "[";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item}";
+            }
+
+            str += "]";
+            return str;
+        }
+
+        public string NativeHashSetStr<T>(NativeHashSet<T> list) where T : unmanaged, IEquatable<T>
+        {
+            var str = "{";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item}";
+            }
+
+            str += "}";
+            return str;
+        }
+
+        public string NativeHashMapStr<TKey, TVal>(NativeHashMap<TKey, TVal> list)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            var str = "{";
+            var comma = false;
+            foreach (var item in list)
+            {
+                if (comma)
+                {
+                    str += ", ";
+                }
+
+                comma = true;
+                str += $"{item.Key}: {item.Value}";
+            }
+
+            str += "}";
+            return str;
+        }
+
+        public (NativeList<T> original, NativeList<T> original2, NativeList<T> changed, NativeList<T> changed2) GetNativeLists<T>(GetRandomElement<T> generator) where T : unmanaged
+        {
+            var original = new NativeList<T>(Allocator.Temp);
+            var changed = new NativeList<T>(Allocator.Temp);
+            var original2 = new NativeList<T>(Allocator.Temp);
+            var changed2 = new NativeList<T>(Allocator.Temp);
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Changes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(-16, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var item = generator(rand);
+                original.Add(item);
+                original2.Add(item);
+                changed2.Add(item);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var item = generator(rand);
+                changed.Add(item);
+            }
+
+            for (var i = 0; i < changed2Changes; ++i)
+            {
+                var idx = rand.Next(changed2.Length - 1);
+                var item = generator(rand);
+                changed2[idx] = item;
+            }
+
+            if (changed2Adds < 0)
+            {
+                changed2.Resize(changed2.Length + changed2Adds, NativeArrayOptions.UninitializedMemory);
+            }
+            else
+            {
+                for (var i = 0; i < changed2Adds; ++i)
+                {
+                    var item = generator(rand);
+                    changed2.Add(item);
+                }
+
+            }
+
+            Debug.Log($"Original: {NativeListStr(original)}");
+            Debug.Log($"Changed: {NativeListStr(changed)}");
+            Debug.Log($"Original2: {NativeListStr(original2)}");
+            Debug.Log($"Changed2: {NativeListStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+        public (NativeHashSet<T> original, NativeHashSet<T> original2, NativeHashSet<T> changed, NativeHashSet<T> changed2) GetNativeHashSets<T>(GetRandomElement<T> generator) where T : unmanaged, IEquatable<T>
+        {
+            var original = new NativeHashSet<T>(16, Allocator.Temp);
+            var changed = new NativeHashSet<T>(16, Allocator.Temp);
+            var original2 = new NativeHashSet<T>(16, Allocator.Temp);
+            var changed2 = new NativeHashSet<T>(16, Allocator.Temp);
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Removes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(12, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var item = generator(rand);
+                while (original.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                original.Add(item);
+                original2.Add(item);
+                changed2.Add(item);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var item = generator(rand);
+                while (changed.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                changed.Add(item);
+            }
+
+            for (var i = 0; i < changed2Removes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                T toRemove = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        toRemove = check;
+                        break;
+                    }
+                    --which;
+                }
+
+                changed2.Remove(toRemove);
+            }
+
+            for (var i = 0; i < changed2Adds; ++i)
+            {
+                var item = generator(rand);
+                while (changed2.Contains(item))
+                {
+                    item = generator(rand);
+                }
+                changed2.Add(item);
+            }
+
+            Debug.Log($"Original: {NativeHashSetStr(original)}");
+            Debug.Log($"Changed: {NativeHashSetStr(changed)}");
+            Debug.Log($"Original2: {NativeHashSetStr(original2)}");
+            Debug.Log($"Changed2: {NativeHashSetStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+
+        public (NativeHashMap<TKey, TVal> original, NativeHashMap<TKey, TVal> original2, NativeHashMap<TKey, TVal> changed, NativeHashMap<TKey, TVal> changed2) GetMaps<TKey, TVal>(GetRandomElement<TKey> keyGenerator, GetRandomElement<TVal> valGenerator)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TVal : unmanaged
+        {
+            var original = new NativeHashMap<TKey, TVal>(16, Allocator.Temp);
+            var changed = new NativeHashMap<TKey, TVal>(16, Allocator.Temp);
+            var original2 = new NativeHashMap<TKey, TVal>(16, Allocator.Temp);
+            var changed2 = new NativeHashMap<TKey, TVal>(16, Allocator.Temp);
+
+            var rand = new System.Random();
+            var originalSize = rand.Next(32, 64);
+            var changedSize = rand.Next(32, 64);
+            var changed2Removes = rand.Next(12, 16);
+            var changed2Adds = rand.Next(12, 16);
+            var changed2Changes = rand.Next(12, 16);
+            for (var i = 0; i < originalSize; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (original.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                original.Add(key, val);
+                original2.Add(key, val);
+                changed2.Add(key, val);
+            }
+            for (var i = 0; i < changedSize; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (changed.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                changed.Add(key, val);
+            }
+
+            for (var i = 0; i < changed2Removes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                TKey toRemove = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        toRemove = check.Key;
+                        break;
+                    }
+                    --which;
+                }
+
+                changed2.Remove(toRemove);
+            }
+
+            for (var i = 0; i < changed2Changes; ++i)
+            {
+                var which = rand.Next(changed2.Count());
+                TKey key = default;
+                foreach (var check in changed2)
+                {
+                    if (which == 0)
+                    {
+                        key = check.Key;
+                        break;
+                    }
+                    --which;
+                }
+
+                var val = valGenerator(rand);
+                changed2[key] = val;
+            }
+
+            for (var i = 0; i < changed2Adds; ++i)
+            {
+                var key = keyGenerator(rand);
+                while (changed2.ContainsKey(key))
+                {
+                    key = keyGenerator(rand);
+                }
+                var val = valGenerator(rand);
+                changed2.Add(key, val);
+            }
+
+            Debug.Log($"Original: {NativeHashMapStr(original)}");
+            Debug.Log($"Changed: {NativeHashMapStr(changed)}");
+            Debug.Log($"Original2: {NativeHashMapStr(original2)}");
+            Debug.Log($"Changed2: {NativeHashMapStr(changed2)}");
+            return (original, original2, changed, changed2);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<byte>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<sbyte>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(short))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<short>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(ushort))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<ushort>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<int>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(uint))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<uint>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(long))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<long>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(ulong))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<ulong>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(bool))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<bool>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(char))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<char>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(float))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<float>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(double))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<double>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Vector2Int(rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Color))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Color32))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Color32((byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next(), (byte)rand.Next())
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Ray))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Ray(
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Ray2D(
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()),
+                        new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                    )
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenBytes<NetworkVariableTestStruct>);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(RandGenFixedString32);
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(HashableNetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<byte>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<sbyte>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(short))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<short>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(ushort))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<ushort>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<int>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(uint))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<uint>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(long))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<long>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(ulong))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<ulong>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(bool))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<bool>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(char))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<char>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(float))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<float>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(double))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<double>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Vector2Int(rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(Color))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(HashableNetworkVariableTestStruct))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenBytes<HashableNetworkVariableTestStruct>);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(RandGenFixedString32);
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
+        }
+
+        [Test]
+        [Repeat(5)]
+        public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeHashMapNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(ulong), typeof(Vector2), typeof(HashMapKeyStruct))] Type keyType,
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
+                typeof(Quaternion), typeof(HashMapValStruct), typeof(FixedString32Bytes))]
+            Type valType)
+        {
+            if (valType == typeof(byte))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<byte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<byte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<byte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<byte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(sbyte))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<sbyte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<sbyte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<sbyte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<sbyte>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(short))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<short>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<short>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<short>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<short>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(ushort))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<ushort>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<ushort>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<ushort>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<ushort>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<int>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<int>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<int>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<int>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(uint))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<uint>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<uint>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<uint>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<uint>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(long))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<long>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<long>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<long>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<long>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(ulong))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<ulong>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<ulong>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<ulong>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<ulong>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(bool))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<bool>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<bool>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<bool>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<bool>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(char))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<char>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<char>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<char>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<char>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(float))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<float>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<float>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<float>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<float>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(double))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<double>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<double>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<double>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<double>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector2))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector3))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector2Int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Vector2Int(rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector3Int))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Vector3Int(rand.Next(), rand.Next(), rand.Next()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Vector4))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Vector4((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Quaternion))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(HashMapValStruct))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenBytes<HashMapValStruct>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenBytes<HashMapValStruct>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenBytes<HashMapValStruct>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenBytes<HashMapValStruct>);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(FixedString32Bytes))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, RandGenFixedString32);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, RandGenFixedString32);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), RandGenFixedString32);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, RandGenFixedString32);
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+        }
+
 #endif
 
         [Test]

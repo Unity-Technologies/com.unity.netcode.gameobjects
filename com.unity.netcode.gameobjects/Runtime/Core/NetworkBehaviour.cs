@@ -505,12 +505,14 @@ namespace Unity.Netcode
         {
             get
             {
+                if (m_NetworkObject != null)
+                {
+                    return m_NetworkObject;
+                }
+
                 try
                 {
-                    if (m_NetworkObject == null)
-                    {
-                        m_NetworkObject = GetComponentInParent<NetworkObject>();
-                    }
+                    m_NetworkObject = GetComponentInParent<NetworkObject>();
                 }
                 catch (Exception)
                 {
