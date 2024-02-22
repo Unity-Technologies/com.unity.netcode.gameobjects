@@ -31,6 +31,43 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
+        public void AddWrappedType(TypeReference wrappedType)
+        {
+            if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+            {
+                m_WrappedNetworkVariableTypes.Add(wrappedType);
+
+                var resolved = wrappedType.Resolve();
+                if (resolved != null)
+                {
+                    if (resolved.FullName == "System.Collections.Generic.List`1")
+                    {
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                    }
+                    if (resolved.FullName == "System.Collections.Generic.HashSet`1")
+                    {
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                    }
+                    else if (resolved.FullName == "System.Collections.Generic.Dictionary`2")
+                    {
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1]);
+                    }
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                    else if (resolved.FullName == "Unity.Collections.NativeHashSet`1")
+                    {
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                    }
+                    else if (resolved.FullName == "Unity.Collections.NativeHashMap`2")
+                    {
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[0]);
+                        AddWrappedType(((GenericInstanceType)wrappedType).GenericArguments[1]);
+                    }
+#endif
+                }
+            }
+        }
+
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly))
@@ -87,10 +124,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                 if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
                                 {
                                     var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
-                                    if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
-                                    {
-                                        m_WrappedNetworkVariableTypes.Add(wrappedType);
-                                    }
+                                    AddWrappedType(wrappedType);
                                 }
                             }
 
@@ -101,10 +135,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                     if (attribute.AttributeType.Name == nameof(GenerateSerializationForTypeAttribute))
                                     {
                                         var wrappedType = mainModule.ImportReference((TypeReference)attribute.ConstructorArguments[0].Value);
-                                        if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
-                                        {
-                                            m_WrappedNetworkVariableTypes.Add(wrappedType);
-                                        }
+                                        AddWrappedType(wrappedType);
                                     }
                                 }
                             }
@@ -241,6 +272,36 @@ namespace Unity.Netcode.Editor.CodeGen
                     serializeMethod?.GenericArguments.Add(wrappedType);
                     equalityMethod.GenericArguments.Add(wrappedType);
                 }
+                else if (type.Resolve().FullName == "System.Collections.Generic.List`1")
+                {
+                    var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
+                    serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_List_MethodRef);
+
+                    equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_List_MethodRef);
+                    serializeMethod.GenericArguments.Add(wrappedType);
+                    equalityMethod.GenericArguments.Add(wrappedType);
+                }
+                else if (type.Resolve().FullName == "System.Collections.Generic.HashSet`1")
+                {
+                    var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
+                    serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_HashSet_MethodRef);
+
+                    equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_HashSet_MethodRef);
+                    serializeMethod.GenericArguments.Add(wrappedType);
+                    equalityMethod.GenericArguments.Add(wrappedType);
+                }
+                else if (type.Resolve().FullName == "System.Collections.Generic.Dictionary`2")
+                {
+                    var wrappedKeyType = ((GenericInstanceType)type).GenericArguments[0];
+                    var wrappedValType = ((GenericInstanceType)type).GenericArguments[1];
+                    serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_Dictionary_MethodRef);
+
+                    equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_Dictionary_MethodRef);
+                    serializeMethod.GenericArguments.Add(wrappedKeyType);
+                    serializeMethod.GenericArguments.Add(wrappedValType);
+                    equalityMethod.GenericArguments.Add(wrappedKeyType);
+                    equalityMethod.GenericArguments.Add(wrappedValType);
+                }
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                 else if (type.Resolve().FullName == "Unity.Collections.NativeList`1")
                 {
@@ -267,11 +328,29 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(wrappedType);
-                    }
+                    serializeMethod?.GenericArguments.Add(wrappedType);
                     equalityMethod.GenericArguments.Add(wrappedType);
+                }
+                else if (type.Resolve().FullName == "Unity.Collections.NativeHashSet`1")
+                {
+                    var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
+                    serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashSet_MethodRef);
+
+                    equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashSet_MethodRef);
+                    serializeMethod.GenericArguments.Add(wrappedType);
+                    equalityMethod.GenericArguments.Add(wrappedType);
+                }
+                else if (type.Resolve().FullName == "Unity.Collections.NativeHashMap`2")
+                {
+                    var wrappedKeyType = ((GenericInstanceType)type).GenericArguments[0];
+                    var wrappedValType = ((GenericInstanceType)type).GenericArguments[1];
+                    serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashMap_MethodRef);
+
+                    equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashMap_MethodRef);
+                    serializeMethod.GenericArguments.Add(wrappedKeyType);
+                    serializeMethod.GenericArguments.Add(wrappedValType);
+                    equalityMethod.GenericArguments.Add(wrappedKeyType);
+                    equalityMethod.GenericArguments.Add(wrappedValType);
                 }
 #endif
                 else if (type.IsValueType)
@@ -398,7 +477,12 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableArray_MethodRef;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashSet_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashMap_MethodRef;
 #endif
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_List_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_HashSet_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_Dictionary_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringArray_MethodRef;
@@ -415,7 +499,12 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashSet_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashMap_MethodRef;
 #endif
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_List_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_HashSet_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_Dictionary_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
 
         private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
@@ -940,7 +1029,22 @@ namespace Unity.Netcode.Editor.CodeGen
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedINetworkSerializableList):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef = method;
                         break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_NativeHashSet):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashSet_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_NativeHashMap):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_NativeHashMap_MethodRef = method;
+                        break;
 #endif
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_List):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_List_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_HashSet):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_HashSet_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_Dictionary):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_Dictionary_MethodRef = method;
+                        break;
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_ManagedINetworkSerializable):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef = method;
                         break;
@@ -971,7 +1075,22 @@ namespace Unity.Netcode.Editor.CodeGen
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedIEquatableList):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableList_MethodRef = method;
                         break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_NativeHashSet):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashSet_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_NativeHashMap):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_NativeHashMap_MethodRef = method;
+                        break;
 #endif
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_List):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_List_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_HashSet):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_HashSet_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_Dictionary):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_Dictionary_MethodRef = method;
+                        break;
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedValueEquals):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef = method;
                         break;
@@ -1246,10 +1365,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                     continue;
                                 }
                                 var wrappedType = genericInstanceType.GenericArguments[idx];
-                                if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
-                                {
-                                    m_WrappedNetworkVariableTypes.Add(wrappedType);
-                                }
+                                AddWrappedType(wrappedType);
                             }
                         }
                     }
@@ -1282,10 +1398,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                         continue;
                                     }
                                     var wrappedType = genericInstanceType.GenericArguments[idx];
-                                    if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
-                                    {
-                                        m_WrappedNetworkVariableTypes.Add(wrappedType);
-                                    }
+                                    AddWrappedType(wrappedType);
                                 }
                             }
                         }
