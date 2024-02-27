@@ -24,6 +24,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         public string Received = string.Empty;
         public Tuple<int, bool, float, string> ReceivedParams = null;
         public ulong ReceivedFrom = ulong.MaxValue;
+        public int ReceivedCount;
 
         public void OnRpcReceived()
         {
@@ -32,6 +33,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             var currentMethod = sf.GetMethod();
             Received = currentMethod.Name;
+            ReceivedCount++;
         }
         public void OnRpcReceivedWithParams(int a, bool b, float f, string s)
         {
@@ -40,6 +42,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             var currentMethod = sf.GetMethod();
             Received = currentMethod.Name;
+            ReceivedCount++;
             ReceivedParams = new Tuple<int, bool, float, string>(a, b, f, s);
         }
 
@@ -496,6 +499,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             foreach (var obj in Object.FindObjectsByType<UniversalRpcNetworkBehaviour>(FindObjectsSortMode.None))
             {
                 obj.Received = string.Empty;
+                obj.ReceivedCount = 0;
                 obj.ReceivedParams = null;
                 obj.ReceivedFrom = ulong.MaxValue;
             }
@@ -528,10 +532,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return m_PlayerNetworkObjects[onClient][ownerClientId].GetComponent<UniversalRpcNetworkBehaviour>();
         }
 
-        protected void VerifyLocalReceived(ulong objectOwner, ulong sender, string name, bool verifyReceivedFrom)
+        protected void VerifyLocalReceived(ulong objectOwner, ulong sender, string name, bool verifyReceivedFrom, int expectedReceived = 1)
         {
             var obj = GetPlayerObject(objectOwner, sender);
             Assert.AreEqual(name, obj.Received);
+            Assert.That(obj.ReceivedCount, Is.EqualTo(expectedReceived));
             Assert.IsNull(obj.ReceivedParams);
             if (verifyReceivedFrom)
             {
@@ -543,6 +548,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var obj = GetPlayerObject(objectOwner, sender);
             Assert.AreEqual(name, obj.Received);
+            Assert.That(obj.ReceivedCount, Is.EqualTo(1));
             Assert.IsNotNull(obj.ReceivedParams);
             Assert.AreEqual(i, obj.ReceivedParams.Item1);
             Assert.AreEqual(b, obj.ReceivedParams.Item2);
@@ -556,17 +562,18 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
                 Assert.AreEqual(string.Empty, playerObject.Received);
+                Assert.That(playerObject.ReceivedCount, Is.EqualTo(0));
                 Assert.IsNull(playerObject.ReceivedParams);
             }
         }
 
-        protected void VerifyRemoteReceived(ulong objectOwner, ulong sender, string message, ulong[] receivedBy, bool verifyReceivedFrom, bool waitForMessages = true)
+        protected void VerifyRemoteReceived(ulong objectOwner, ulong sender, string message, ulong[] receivedBy, bool verifyReceivedFrom, bool waitForMessages = true, int expectedReceived = 1)
         {
             foreach (var client in receivedBy)
             {
                 if (client == sender)
                 {
-                    VerifyLocalReceived(objectOwner, sender, message, verifyReceivedFrom);
+                    VerifyLocalReceived(objectOwner, sender, message, verifyReceivedFrom, expectedReceived);
 
                     break;
                 }
@@ -628,6 +635,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
                 Assert.AreEqual(message, playerObject.Received);
+                Assert.That(playerObject.ReceivedCount, Is.EqualTo(expectedReceived));
                 Assert.IsNull(playerObject.ReceivedParams);
                 if (verifyReceivedFrom)
                 {
@@ -701,6 +709,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
                 Assert.AreEqual(message, playerObject.Received);
+                Assert.That(playerObject.ReceivedCount, Is.EqualTo(1));
 
                 Assert.IsNotNull(playerObject.ReceivedParams);
                 Assert.AreEqual(i, playerObject.ReceivedParams.Item1);
@@ -1636,17 +1645,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             VerifyNotReceived(NetworkManager.ServerClientId, s_ClientIds);
 
-            for (var i = 0; i < 10; ++i)
+            var clientListExpected = 1;
+            var serverListExpected = 2;
+            for (var i = 1; i <= 10; ++i)
             {
                 WaitForMessageReceivedWithTimeTravel<RpcMessage>(clientList);
-                VerifyRemoteReceived(NetworkManager.ServerClientId, NetworkManager.ServerClientId, nameof(UniversalRpcNetworkBehaviour.MutualRecursionClientRpc), clientIdArray, false, false);
+                VerifyRemoteReceived(NetworkManager.ServerClientId, NetworkManager.ServerClientId, nameof(UniversalRpcNetworkBehaviour.MutualRecursionClientRpc), clientIdArray, false, false, clientListExpected);
                 VerifyNotReceived(NetworkManager.ServerClientId, serverIdArray);
+                clientListExpected *= 2;
 
                 Clear();
-
                 WaitForMessageReceivedWithTimeTravel<RpcMessage>(serverList);
-                VerifyRemoteReceived(NetworkManager.ServerClientId, NetworkManager.ServerClientId, nameof(UniversalRpcNetworkBehaviour.MutualRecursionServerRpc), serverIdArray, false, false);
+                VerifyRemoteReceived(NetworkManager.ServerClientId, NetworkManager.ServerClientId, nameof(UniversalRpcNetworkBehaviour.MutualRecursionServerRpc), serverIdArray, false, false, serverListExpected);
                 VerifyNotReceived(NetworkManager.ServerClientId, clientIdArray);
+                serverListExpected *= 2;
 
                 Clear();
             }
