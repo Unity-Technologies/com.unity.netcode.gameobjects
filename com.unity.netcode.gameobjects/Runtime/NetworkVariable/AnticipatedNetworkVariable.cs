@@ -321,8 +321,6 @@ namespace Unity.Netcode
             m_CurrentSmoothTime = 0;
             m_SmoothDelegate = how;
             m_HasSmoothValues = true;
-            m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = m_NetworkBehaviour.NetworkManager.LocalTime.Time;
         }
 
         public override bool IsDirty()
