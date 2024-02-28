@@ -240,9 +240,19 @@ namespace Unity.Netcode.Components
         /// <param name="durationSeconds"></param>
         public void Smooth(TransformState from, TransformState to, float durationSeconds)
         {
+            var transform_ = transform;
+            if (durationSeconds <= 0)
+            {
+                m_AnticipatedTransform = to;
+                transform_.position = to.Position;
+                transform_.rotation = to.Rotation;
+                transform_.localScale = to.Scale;
+                m_SmoothDuration = 0;
+                m_CurrentSmoothTime = 0;
+                return;
+            }
             m_AnticipatedTransform = from;
 
-            var transform_ = transform;
             transform_.position = from.Position;
             transform_.rotation = from.Rotation;
             transform_.localScale = from.Scale;

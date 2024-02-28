@@ -314,6 +314,14 @@ namespace Unity.Netcode
         /// <param name="how"></param>
         public void Smooth(in T from, in T to, float durationSeconds, SmoothDelegate how)
         {
+            if (durationSeconds <= 0)
+            {
+                NetworkVariableSerialization<T>.Duplicate(to, ref m_AnticipatedValue);
+                m_SmoothDuration = 0;
+                m_CurrentSmoothTime = 0;
+                m_SmoothDelegate = null;
+                return;
+            }
             NetworkVariableSerialization<T>.Duplicate(from, ref m_AnticipatedValue);
             NetworkVariableSerialization<T>.Duplicate(from, ref m_SmoothFrom);
             NetworkVariableSerialization<T>.Duplicate(to, ref m_SmoothTo);
