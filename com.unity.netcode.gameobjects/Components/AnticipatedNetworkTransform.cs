@@ -114,8 +114,16 @@ namespace Unity.Netcode.Components
         {
             transform.position = newPosition;
             m_AnticipatedTransform.Position = newPosition;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform.Position = newPosition;
+            }
+
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
         }
 
         /// <summary>
@@ -127,8 +135,16 @@ namespace Unity.Netcode.Components
         {
             transform.rotation = newRotation;
             m_AnticipatedTransform.Rotation = newRotation;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform.Rotation = newRotation;
+            }
+
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
         }
 
         /// <summary>
@@ -140,8 +156,16 @@ namespace Unity.Netcode.Components
         {
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
+            if (CanCommitToTransform)
+            {
+                m_AuthorityTransform.Scale = newScale;
+            }
+
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
         }
 
         /// <summary>
@@ -156,32 +180,22 @@ namespace Unity.Netcode.Components
             transform_.rotation = newState.Rotation;
             transform_.localScale = newState.Scale;
             m_AnticipatedTransform = newState;
-            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
-        }
-
-        protected void LateUpdate()
-        {
             if (CanCommitToTransform)
             {
-                var transform_ = transform;
-                if (transform_.position != m_AuthorityTransform.Position || transform_.rotation != m_AuthorityTransform.Rotation || transform_.localScale != m_AuthorityTransform.Scale)
-                {
-                    m_AuthorityTransform = new TransformState
-                    {
-                        Position = transform_.position,
-                        Rotation = transform_.rotation,
-                        Scale = transform_.localScale
-                    };
-                    m_AnticipatedTransform = m_AuthorityTransform;
-                }
+                m_AuthorityTransform = newState;
             }
+
+            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
+            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
         }
 
         protected override void Update()
         {
             // If not spawned or this instance has authority, exit early
-            if (!IsSpawned || CanCommitToTransform)
+            if (!IsSpawned)
             {
                 return;
             }
@@ -197,17 +211,68 @@ namespace Unity.Netcode.Components
                 m_CurrentSmoothTime += NetworkManager.RealTimeProvider.DeltaTime;
                 var transform_ = transform;
                 var pct = math.min(m_CurrentSmoothTime / m_SmoothDuration, 1f);
-                transform_.position = Vector3.Lerp(m_SmoothFrom.Position, m_SmoothTo.Position, pct);
-                transform_.localScale = Vector3.Lerp(m_SmoothFrom.Scale, m_SmoothTo.Scale, pct);
-                transform_.rotation = Quaternion.Slerp(m_SmoothFrom.Rotation, m_SmoothTo.Rotation, pct);
+
                 m_AnticipatedTransform = new TransformState
                 {
-                    Position = transform_.position,
-                    Rotation = transform_.rotation,
-                    Scale = transform_.localScale
+                    Position = Vector3.Lerp(m_SmoothFrom.Position, m_SmoothTo.Position, pct),
+                    Rotation = Quaternion.Slerp(m_SmoothFrom.Rotation, m_SmoothTo.Rotation, pct),
+                    Scale = Vector3.Lerp(m_SmoothFrom.Scale, m_SmoothTo.Scale, pct)
                 };
+                if (!CanCommitToTransform)
+                {
+                    transform_.position = m_AnticipatedTransform.Position;
+                    transform_.localScale = m_AnticipatedTransform.Scale;
+                    transform_.rotation = m_AnticipatedTransform.Rotation;
+                }
             }
         }
+
+        internal class AnticipationEventReceiver : IAnticipationEventReceiver
+        {
+            public AnticipatedNetworkTransform Transform;
+
+
+            public void SetupForRender()
+            {
+                if (Transform.CanCommitToTransform)
+                {
+                    var transform_ = Transform.transform;
+                    if (transform_.position != Transform.m_AuthorityTransform.Position || transform_.rotation != Transform.m_AuthorityTransform.Rotation || transform_.localScale != Transform.m_AuthorityTransform.Scale)
+                    {
+                        Transform.m_AuthorityTransform = new TransformState
+                        {
+                            Position = transform_.position,
+                            Rotation = transform_.rotation,
+                            Scale = transform_.localScale
+                        };
+                        if (Transform.m_CurrentSmoothTime >= Transform.m_SmoothDuration)
+                        {
+                            // If we've had a call to Smooth() we'll continue interpolating.
+                            // Otherwise we'll go ahead and make the visual and actual locations
+                            // match.
+                            Transform.m_AnticipatedTransform = Transform.m_AuthorityTransform;
+                        }
+                    }
+
+                    transform_.position = Transform.m_AnticipatedTransform.Position;
+                    transform_.rotation = Transform.m_AnticipatedTransform.Rotation;
+                    transform_.localScale = Transform.m_AnticipatedTransform.Scale;
+                }
+            }
+
+            public void SetupForUpdate()
+            {
+                if (Transform.CanCommitToTransform)
+                {
+                    var transform_ = Transform.transform;
+                    transform_.position = Transform.m_AuthorityTransform.Position;
+                    transform_.rotation = Transform.m_AuthorityTransform.Rotation;
+                    transform_.localScale = Transform.m_AuthorityTransform.Scale;
+                }
+            }
+        }
+
+        private AnticipationEventReceiver m_EventReceiver = null;
 
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
@@ -228,6 +293,20 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform = m_AuthorityTransform;
             m_OutstandingAuthorityChange = true;
             ApplyAuthoritativeState();
+            m_EventReceiver = new AnticipationEventReceiver { Transform = this };
+            NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_EventReceiver);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+            base.OnNetworkDespawn();
+        }
+
+        public override void OnDestroy()
+        {
+            NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+            base.OnDestroy();
         }
 
         /// <summary>
@@ -253,9 +332,12 @@ namespace Unity.Netcode.Components
             }
             m_AnticipatedTransform = from;
 
-            transform_.position = from.Position;
-            transform_.rotation = from.Rotation;
-            transform_.localScale = from.Scale;
+            if (!CanCommitToTransform)
+            {
+                transform_.position = from.Position;
+                transform_.rotation = from.Rotation;
+                transform_.localScale = from.Scale;
+            }
 
             m_SmoothFrom = from;
             m_SmoothTo = to;
@@ -288,6 +370,10 @@ namespace Unity.Netcode.Components
 
         protected override void OnTransformUpdated()
         {
+            if (CanCommitToTransform)
+            {
+                return;
+            }
             // this is called pretty much every frame and will change the transform
             // If we've overridden the transform with an anticipated state, we need to be able to change it back
             // to the anticipated state (while updating the authority state accordingly) or else

@@ -45,6 +45,7 @@ namespace Unity.Netcode
 
                         DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnNextFrame, 0);
 
+                        AnticipationSystem.SetupForUpdate();
                         MessageManager.ProcessIncomingMessageQueue();
                         MessageManager.CleanupDisconnectedClients();
 
@@ -56,10 +57,14 @@ namespace Unity.Netcode
                         NetworkTimeSystem.UpdateTime();
                     }
                     break;
+                case NetworkUpdateStage.PostScriptLateUpdate:
+
+                    AnticipationSystem.Sync();
+                    AnticipationSystem.SetupForRender();
+                    break;
+
                 case NetworkUpdateStage.PostLateUpdate:
                     {
-                        AnticipationSystem.Sync();
-
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 
@@ -838,6 +843,7 @@ namespace Unity.Netcode
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostScriptLateUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             // ComponentFactory needs to set its defaults next

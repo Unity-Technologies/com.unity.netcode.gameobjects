@@ -54,9 +54,14 @@ namespace Unity.Netcode
         /// </summary>
         PreLateUpdate = 6,
         /// <summary>
-        /// Updated after the Monobehaviour.LateUpdate for all components is invoked
+        /// Updated after Monobehaviour.LateUpdate, but BEFORE rendering
         /// </summary>
-        PostLateUpdate = 7
+        PostScriptLateUpdate = 7,
+        /// <summary>
+        /// Updated after the Monobehaviour.LateUpdate for all components is invoked
+        /// and all rendering is complete
+        /// </summary>
+        PostLateUpdate = 8
     }
 
     /// <summary>
@@ -258,6 +263,18 @@ namespace Unity.Netcode
             }
         }
 
+        internal struct NetworkPostScriptLateUpdate
+        {
+            public static PlayerLoopSystem CreateLoopSystem()
+            {
+                return new PlayerLoopSystem
+                {
+                    type = typeof(NetworkPostScriptLateUpdate),
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.PostScriptLateUpdate)
+                };
+            }
+        }
+
         internal struct NetworkPostLateUpdate
         {
             public static PlayerLoopSystem CreateLoopSystem()
@@ -399,6 +416,7 @@ namespace Unity.Netcode
                 else if (currentSystem.type == typeof(PreLateUpdate))
                 {
                     TryAddLoopSystem(ref currentSystem, NetworkPreLateUpdate.CreateLoopSystem(), typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate), LoopSystemPosition.Before);
+                    TryAddLoopSystem(ref currentSystem, NetworkPostScriptLateUpdate.CreateLoopSystem(), typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate), LoopSystemPosition.After);
                 }
                 else if (currentSystem.type == typeof(PostLateUpdate))
                 {
@@ -440,6 +458,7 @@ namespace Unity.Netcode
                 else if (currentSystem.type == typeof(PreLateUpdate))
                 {
                     TryRemoveLoopSystem(ref currentSystem, typeof(NetworkPreLateUpdate));
+                    TryRemoveLoopSystem(ref currentSystem, typeof(NetworkPostScriptLateUpdate));
                 }
                 else if (currentSystem.type == typeof(PostLateUpdate))
                 {

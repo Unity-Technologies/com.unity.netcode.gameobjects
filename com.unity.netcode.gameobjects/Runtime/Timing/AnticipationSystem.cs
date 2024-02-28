@@ -2,6 +2,12 @@ using System.Collections.Generic;
 
 namespace Unity.Netcode
 {
+    internal interface IAnticipationEventReceiver
+    {
+        public void SetupForUpdate();
+        public void SetupForRender();
+    }
+
     internal class AnticipationSystem
     {
         internal ulong LastAnticipationAck;
@@ -40,6 +46,33 @@ namespace Unity.Netcode
         }
 
         public event NetworkManager.ReanticipateDelegate OnReanticipate;
+
+        private HashSet<IAnticipationEventReceiver> m_AnticipationEventReceivers = new HashSet<IAnticipationEventReceiver>();
+
+        public void RegisterForAnticipationEvents(IAnticipationEventReceiver receiver)
+        {
+            m_AnticipationEventReceivers.Add(receiver);
+        }
+        public void DeregisterForAnticipationEvents(IAnticipationEventReceiver receiver)
+        {
+            m_AnticipationEventReceivers.Remove(receiver);
+        }
+
+        public void SetupForUpdate()
+        {
+            foreach (var receiver in m_AnticipationEventReceivers)
+            {
+                receiver.SetupForUpdate();
+            }
+        }
+
+        public void SetupForRender()
+        {
+            foreach (var receiver in m_AnticipationEventReceivers)
+            {
+                receiver.SetupForRender();
+            }
+        }
 
         public void ProcessReanticipation()
         {
