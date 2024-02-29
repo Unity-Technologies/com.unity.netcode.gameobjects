@@ -276,6 +276,7 @@ namespace Unity.Netcode.Components
 
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
+            m_OutstandingAuthorityChange = true;
             base.OnSynchronize(ref serializer);
             ApplyAuthoritativeState();
         }
