@@ -40,6 +40,10 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
                     if (clientId == behaviour.NetworkManager.LocalClientId)
                     {
                         m_LocalSendRpcTarget.Send(behaviour, ref message, delivery, rpcParams);
@@ -54,6 +58,10 @@ namespace Unity.Netcode
                 foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
                 {
                     if (clientId == behaviour.OwnerClientId)
+                    {
+                        continue;
+                    }
+                    if (clientId == NetworkManager.ServerClientId)
                     {
                         continue;
                     }
