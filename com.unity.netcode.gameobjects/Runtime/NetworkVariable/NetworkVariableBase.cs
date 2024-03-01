@@ -188,6 +188,16 @@ namespace Unity.Netcode
                 }
                 return;
             }
+
+            if (!m_NetworkBehaviour.NetworkManager.IsListening)
+            {
+                if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to after the NetworkManager has already shutdown! " +
+                     "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
+                }
+                return;
+            }
             m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 

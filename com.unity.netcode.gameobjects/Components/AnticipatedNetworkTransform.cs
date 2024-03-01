@@ -112,6 +112,10 @@ namespace Unity.Netcode.Components
         /// <param name="newPosition"></param>
         public void AnticipateMove(Vector3 newPosition)
         {
+            if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
+            {
+                return;
+            }
             transform.position = newPosition;
             m_AnticipatedTransform.Position = newPosition;
             if (CanCommitToTransform)
@@ -133,6 +137,10 @@ namespace Unity.Netcode.Components
         /// <param name="newRotation"></param>
         public void AnticipateRotate(Quaternion newRotation)
         {
+            if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
+            {
+                return;
+            }
             transform.rotation = newRotation;
             m_AnticipatedTransform.Rotation = newRotation;
             if (CanCommitToTransform)
@@ -154,6 +162,10 @@ namespace Unity.Netcode.Components
         /// <param name="newScale"></param>
         public void AnticipateScale(Vector3 newScale)
         {
+            if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
+            {
+                return;
+            }
             transform.localScale = newScale;
             m_AnticipatedTransform.Scale = newScale;
             if (CanCommitToTransform)
@@ -175,6 +187,10 @@ namespace Unity.Netcode.Components
         /// <param name="newState"></param>
         public void AnticipateState(TransformState newState)
         {
+            if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
+            {
+                return;
+            }
             var transform_ = transform;
             transform_.position = newState.Position;
             transform_.rotation = newState.Rotation;

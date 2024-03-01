@@ -143,6 +143,10 @@ namespace Unity.Netcode
         /// <param name="value"></param>
         public void Anticipate(T value)
         {
+            if (m_NetworkBehaviour.NetworkManager.ShutdownInProgress || !m_NetworkBehaviour.NetworkManager.IsListening)
+            {
+                return;
+            }
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
             m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
