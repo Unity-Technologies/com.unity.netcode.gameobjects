@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -13,6 +15,18 @@ namespace Unity.Netcode.RuntimeTests
         public void MoveRpc(Vector3 newPosition)
         {
             transform.position = newPosition;
+        }
+
+        [Rpc(SendTo.Server)]
+        public void ScaleRpc(Vector3 newScale)
+        {
+            transform.localScale = newScale;
+        }
+
+        [Rpc(SendTo.Server)]
+        public void RotateRpc(Quaternion newRotation)
+        {
+            transform.rotation = newRotation;
         }
     }
 
@@ -254,13 +268,19 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateScale(anticipeScale);
             testComponent.AnticipateRotate(anticipeRotation);
 
-            TimeTravelToNextTick();
+            var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
+            rpcComponent.MoveRpc(serverSetPosition);
+            rpcComponent.RotateRpc(serverSetRotation);
+            rpcComponent.ScaleRpc(serverSetScale);
 
-            serverComponent.transform.position = serverSetPosition;
-            serverComponent.transform.localScale = serverSetScale;
-            serverComponent.transform.rotation = serverSetRotation;
+            WaitForMessagesReceivedWithTimeTravel(new List<Type>
+            {
+                typeof(RpcMessage),
+                typeof(RpcMessage),
+                typeof(RpcMessage),
+            }, new List<NetworkManager>{m_ServerNetworkManager});
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverSetPosition && otherClientComponent.AuthorityState.Position == serverSetPosition);
+            WaitForMessageReceivedWithTimeTravel<NetworkTransformMessage>(m_ClientNetworkManagers.ToList());
 
             var percentChanged = 1f / 60f;
 
@@ -358,8 +378,12 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = GetServerComponent();
             serverComponent.Interpolate = false;
             serverComponent.transform.position = new Vector3(0, 1, 2);
+            var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
+            rpcComponent.MoveRpc(new Vector3(0, 1, 2));
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager>{m_ServerNetworkManager});
+
+            WaitForMessageReceivedWithTimeTravel<NetworkTransformMessage>(m_ClientNetworkManagers.ToList());
 
             Assert.AreEqual(new Vector3(0, 6, 2), testComponent.transform.position);
             Assert.AreEqual(new Vector3(0, 6, 2), testComponent.AnticipatedState.Position);

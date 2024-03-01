@@ -237,21 +237,18 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    if (transform_.position != Transform.m_AuthorityTransform.Position || transform_.rotation != Transform.m_AuthorityTransform.Rotation || transform_.localScale != Transform.m_AuthorityTransform.Scale)
+                    Transform.m_AuthorityTransform = new TransformState
                     {
-                        Transform.m_AuthorityTransform = new TransformState
-                        {
-                            Position = transform_.position,
-                            Rotation = transform_.rotation,
-                            Scale = transform_.localScale
-                        };
-                        if (Transform.m_CurrentSmoothTime >= Transform.m_SmoothDuration)
-                        {
-                            // If we've had a call to Smooth() we'll continue interpolating.
-                            // Otherwise we'll go ahead and make the visual and actual locations
-                            // match.
-                            Transform.m_AnticipatedTransform = Transform.m_AuthorityTransform;
-                        }
+                        Position = transform_.position,
+                        Rotation = transform_.rotation,
+                        Scale = transform_.localScale
+                    };
+                    if (Transform.m_CurrentSmoothTime >= Transform.m_SmoothDuration)
+                    {
+                        // If we've had a call to Smooth() we'll continue interpolating.
+                        // Otherwise we'll go ahead and make the visual and actual locations
+                        // match.
+                        Transform.m_AnticipatedTransform = Transform.m_AuthorityTransform;
                     }
 
                     transform_.position = Transform.m_AnticipatedTransform.Position;
@@ -300,13 +297,23 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkDespawn()
         {
-            NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+            if (m_EventReceiver != null)
+            {
+                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+                m_EventReceiver = null;
+            }
+
             base.OnNetworkDespawn();
         }
 
         public override void OnDestroy()
         {
-            NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+            if (m_EventReceiver != null)
+            {
+                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
+                m_EventReceiver = null;
+            }
+
             base.OnDestroy();
         }
 

@@ -56,12 +56,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Updated after Monobehaviour.LateUpdate, but BEFORE rendering
         /// </summary>
-        PostScriptLateUpdate = 7,
+        // Yes, these numbers are out of order due to backward compatibility requirements.
+        // The enum values are listed in the order they will be called.
+        PostScriptLateUpdate = 8,
         /// <summary>
         /// Updated after the Monobehaviour.LateUpdate for all components is invoked
         /// and all rendering is complete
         /// </summary>
-        PostLateUpdate = 8
+        PostLateUpdate = 7
     }
 
     /// <summary>

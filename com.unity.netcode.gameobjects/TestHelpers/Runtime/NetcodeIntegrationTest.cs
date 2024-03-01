@@ -1655,8 +1655,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public static void SimulateOneFrame()
         {
-            foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {
+                var stage = updateStage;
+                // These two are out of order numerically due to backward compatibility
+                // requirements. We have to swap them to maintain correct execution
+                // order.
+                if (stage == NetworkUpdateStage.PostScriptLateUpdate)
+                {
+                    stage = NetworkUpdateStage.PostLateUpdate;
+                }
+                else if(stage == NetworkUpdateStage.PostLateUpdate)
+                {
+                    stage = NetworkUpdateStage.PostScriptLateUpdate;
+                }
                 NetworkUpdateLoop.RunNetworkUpdateStage(stage);
                 string methodName = string.Empty;
                 switch (stage)
