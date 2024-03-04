@@ -278,7 +278,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(RpcMessage),
                 typeof(RpcMessage),
                 typeof(RpcMessage),
-            }, new List<NetworkManager>{m_ServerNetworkManager});
+            }, new List<NetworkManager> { m_ServerNetworkManager });
 
             WaitForMessageReceivedWithTimeTravel<NetworkTransformMessage>(m_ClientNetworkManagers.ToList());
 
@@ -381,7 +381,7 @@ namespace Unity.Netcode.RuntimeTests
             var rpcComponent = testComponent.GetComponent<NetworkTransformAnticipationComponent>();
             rpcComponent.MoveRpc(new Vector3(0, 1, 2));
 
-            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager>{m_ServerNetworkManager});
+            WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
 
             WaitForMessageReceivedWithTimeTravel<NetworkTransformMessage>(m_ClientNetworkManagers.ToList());
 

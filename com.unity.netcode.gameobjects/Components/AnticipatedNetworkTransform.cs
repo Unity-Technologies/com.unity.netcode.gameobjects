@@ -309,6 +309,7 @@ namespace Unity.Netcode.Components
             ApplyAuthoritativeState();
             m_EventReceiver = new AnticipationEventReceiver { Transform = this };
             NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_EventReceiver);
+            NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects += 1;
         }
 
         public override void OnNetworkDespawn()
@@ -317,6 +318,7 @@ namespace Unity.Netcode.Components
             {
                 NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
                 m_EventReceiver = null;
+                NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
             }
 
             base.OnNetworkDespawn();
@@ -328,6 +330,7 @@ namespace Unity.Netcode.Components
             {
                 NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
                 m_EventReceiver = null;
+                NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
             }
 
             base.OnDestroy();

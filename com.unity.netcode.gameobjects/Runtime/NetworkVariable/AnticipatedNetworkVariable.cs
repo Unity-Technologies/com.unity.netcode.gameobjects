@@ -118,6 +118,10 @@ namespace Unity.Netcode
         {
             m_AuthoritativeValue.Initialize(m_NetworkBehaviour);
             m_AnticipatedValue = m_AuthoritativeValue.Value;
+            if (m_NetworkBehaviour != null && m_NetworkBehaviour.NetworkManager != null && m_NetworkBehaviour.NetworkManager.AnticipationSystem != null)
+            {
+                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects += 1;
+            }
         }
 
         public override bool ExceedsDirtinessThreshold()
@@ -218,6 +222,11 @@ namespace Unity.Netcode
             if (m_IsDisposed)
             {
                 return;
+            }
+
+            if (m_NetworkBehaviour != null && m_NetworkBehaviour.NetworkManager != null && m_NetworkBehaviour.NetworkManager.AnticipationSystem != null)
+            {
+                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
             }
 
             m_IsDisposed = true;

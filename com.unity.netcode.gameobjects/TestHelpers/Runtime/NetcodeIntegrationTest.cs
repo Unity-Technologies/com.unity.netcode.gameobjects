@@ -1665,7 +1665,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     stage = NetworkUpdateStage.PostLateUpdate;
                 }
-                else if(stage == NetworkUpdateStage.PostLateUpdate)
+                else if (stage == NetworkUpdateStage.PostLateUpdate)
                 {
                     stage = NetworkUpdateStage.PostScriptLateUpdate;
                 }
