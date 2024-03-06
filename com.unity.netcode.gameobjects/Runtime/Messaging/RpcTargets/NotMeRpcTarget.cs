@@ -49,6 +49,10 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+                    if (clientId == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
                     m_GroupSendTarget.Add(clientId);
                 }
             }
