@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal struct AnticipationCounterSyncPingMessage : INetworkMessage, INetworkSerializeByMemcpy
+    internal struct AnticipationCounterSyncPingMessage : INetworkMessage
     {
         public int Version => 0;
 
@@ -35,7 +35,7 @@ namespace Unity.Netcode
             }
         }
     }
-    internal struct AnticipationCounterSyncPongMessage : INetworkMessage, INetworkSerializeByMemcpy
+    internal struct AnticipationCounterSyncPongMessage : INetworkMessage
     {
         public int Version => 0;
 

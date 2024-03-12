@@ -14,18 +14,18 @@ namespace Unity.Netcode.Components
     /// <list type="bullet">
     ///
     /// <item><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="OnReanticipate"/> callback),
+    /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
     /// resulting in a "snap" to the new value if it is different from the anticipated value.</item>
     ///
     /// <item><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="OnReanticipate"/> callback that calls
+    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
     /// <see cref="Smooth"/> from the anticipated value to the authority value with an appropriate
     /// <see cref="Mathf.Lerp"/>-style smooth function), when a more up-to-date value is received from the authority,
     /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</item>
     ///
     /// <item><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="OnReanticipate"/> that calculates a
+    /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
     /// new anticipated value based on the current authoritative value), when a more up-to-date value is received from
     /// the authority, user code calculates a new anticipated value, possibly calling <see cref="Smooth"/> to interpolate
     /// between the previous anticipation and the new anticipation. This is useful for values that change frequently and
@@ -34,7 +34,7 @@ namespace Unity.Netcode.Components
     ///
     /// </list>
     ///
-    /// Note that these three modes may be combined. For example, if an <see cref="OnReanticipate"/> callback
+    /// Note that these three modes may be combined. For example, if an <see cref="NetworkBehaviour.OnReanticipate"/> callback
     /// does not call either <see cref="Smooth"/> or one of the Anticipate methods, the result will be a snap to the
     /// authoritative value, enabling for a callback that may conditionally call <see cref="Smooth"/> when the
     /// difference between the anticipated and authoritative values is within some threshold, but fall back to
@@ -55,6 +55,7 @@ namespace Unity.Netcode.Components
 
         private TransformState m_AuthorityTransform = new TransformState();
         private TransformState m_AnticipatedTransform = new TransformState();
+        private TransformState m_PreviousAnticipatedTransform = new TransformState();
         private ulong m_LastAnticipaionCounter;
         private double m_LastAnticipationTime;
         private ulong m_LastAuthorityUpdateCounter;
@@ -101,9 +102,34 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Contains the current anticipated state, which will match the values of this object's
-        /// actual <see cref="MonoBehaviour.transform"/>.
+        /// actual <see cref="MonoBehaviour.transform"/>. When a server
+        /// update arrives, this value will be overwritten by the new
+        /// server value (unless stale data handling is set to "Ignore"
+        /// and the update is determined to be stale). This value will
+        /// be duplicated in <see cref="PreviousAnticipatedState"/>, which
+        /// will NOT be overwritten in server updates.
         /// </summary>
         public TransformState AnticipatedState => m_AnticipatedTransform;
+
+        /// <summary>
+        /// Indicates whether this transform currently needs
+        /// reanticipation. If this is true, the anticipated value
+        /// has been overwritten by the authoritative value from the
+        /// server; the previous anticipated value is stored in <see cref="PreviousAnticipatedState"/>
+        /// </summary>
+        public bool ShouldReanticipate
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Holds the most recent anticipated state, whatever was
+        /// most recently set using the Anticipate methods. Unlike
+        /// <see cref="AnticipatedState"/>, this does not get overwritten
+        /// when a server update arrives.
+        /// </summary>
+        public TransformState PreviousAnticipatedState => m_PreviousAnticipatedTransform;
 
         /// <summary>
         /// Anticipate that, at the end of one round trip to the server, this transform will be in the given
@@ -122,6 +148,8 @@ namespace Unity.Netcode.Components
             {
                 m_AuthorityTransform.Position = newPosition;
             }
+
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
@@ -148,6 +176,8 @@ namespace Unity.Netcode.Components
                 m_AuthorityTransform.Rotation = newRotation;
             }
 
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
+
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
 
@@ -172,6 +202,8 @@ namespace Unity.Netcode.Components
             {
                 m_AuthorityTransform.Scale = newScale;
             }
+
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
@@ -200,6 +232,8 @@ namespace Unity.Netcode.Components
             {
                 m_AuthorityTransform = newState;
             }
+
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
             m_LastAnticipationTime = NetworkManager.LocalTime.Time;
@@ -234,6 +268,7 @@ namespace Unity.Netcode.Components
                     Rotation = Quaternion.Slerp(m_SmoothFrom.Rotation, m_SmoothTo.Rotation, pct),
                     Scale = Vector3.Lerp(m_SmoothFrom.Scale, m_SmoothTo.Scale, pct)
                 };
+                m_PreviousAnticipatedTransform = m_AnticipatedTransform;
                 if (!CanCommitToTransform)
                 {
                     transform_.position = m_AnticipatedTransform.Position;
@@ -243,7 +278,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal class AnticipationEventReceiver : IAnticipationEventReceiver
+        internal class AnticipatedObject : IAnticipationEventReceiver, IAnticipatedObject
         {
             public AnticipatedNetworkTransform Transform;
 
@@ -283,9 +318,21 @@ namespace Unity.Netcode.Components
                     transform_.localScale = Transform.m_AuthorityTransform.Scale;
                 }
             }
+
+            public void Update()
+            {
+                // No need to do this, it's handled by NetworkBehaviour.Update
+            }
+
+            public void ResetAnticipation()
+            {
+                Transform.ShouldReanticipate = false;
+            }
+
+            public NetworkObject OwnerObject => Transform.NetworkObject;
         }
 
-        private AnticipationEventReceiver m_EventReceiver = null;
+        private AnticipatedObject m_AnticipatedObject = null;
 
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
@@ -305,20 +352,22 @@ namespace Unity.Netcode.Components
                 Scale = transform_.localScale
             };
             m_AnticipatedTransform = m_AuthorityTransform;
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
             m_OutstandingAuthorityChange = true;
             ApplyAuthoritativeState();
-            m_EventReceiver = new AnticipationEventReceiver { Transform = this };
-            NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_EventReceiver);
-            NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects += 1;
+            m_AnticipatedObject = new AnticipatedObject { Transform = this };
+            NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+            NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
         }
 
         public override void OnNetworkDespawn()
         {
-            if (m_EventReceiver != null)
+            if (m_AnticipatedObject != null)
             {
-                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
-                m_EventReceiver = null;
-                NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
+                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
+                m_AnticipatedObject = null;
             }
 
             base.OnNetworkDespawn();
@@ -326,11 +375,12 @@ namespace Unity.Netcode.Components
 
         public override void OnDestroy()
         {
-            if (m_EventReceiver != null)
+            if (m_AnticipatedObject != null)
             {
-                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_EventReceiver);
-                m_EventReceiver = null;
-                NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
+                NetworkManager.AnticipationSystem.DeregisterForAnticipationEvents(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
+                m_AnticipatedObject = null;
             }
 
             base.OnDestroy();
@@ -350,6 +400,7 @@ namespace Unity.Netcode.Components
             if (durationSeconds <= 0)
             {
                 m_AnticipatedTransform = to;
+                m_PreviousAnticipatedTransform = m_AnticipatedTransform;
                 transform_.position = to.Position;
                 transform_.rotation = to.Rotation;
                 transform_.localScale = to.Scale;
@@ -358,6 +409,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_AnticipatedTransform = from;
+            m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             if (!CanCommitToTransform)
             {
@@ -371,16 +423,6 @@ namespace Unity.Netcode.Components
             m_SmoothDuration = durationSeconds;
             m_CurrentSmoothTime = 0;
         }
-
-        public delegate void OnReanticipateDelegate(AnticipatedNetworkTransform anticipatedNetworkTransform, TransformState anticipatedValue, double anticipationTime, TransformState authorityValue, double authorityTime);
-
-#pragma warning disable IDE0001
-        /// <summary>
-        /// Invoked whenever new data is received from the server, unless <see cref="StaleDataHandling"/> is
-        /// <see cref="Netcode.StaleDataHandling.Ignore"/> and the data is determined to be stale.
-        /// </summary>
-#pragma warning restore IDE0001
-        public OnReanticipateDelegate OnReanticipate;
 
         protected override void OnBeforeUpdateTransformState()
         {
@@ -397,14 +439,14 @@ namespace Unity.Netcode.Components
 
         protected override void OnTransformUpdated()
         {
-            if (CanCommitToTransform)
+            if (CanCommitToTransform || m_AnticipatedObject == null)
             {
                 return;
             }
             // this is called pretty much every frame and will change the transform
             // If we've overridden the transform with an anticipated state, we need to be able to change it back
             // to the anticipated state (while updating the authority state accordingly) or else
-            // call the OnReanticipate callback
+            // mark this transform for reanticipation
             var transform_ = transform;
 
             var previousAnticipatedTransform = m_AnticipatedTransform;
@@ -432,31 +474,13 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            NetworkManager.AnticipationSystem.NetworkBehaviourReanticipationCallbacks[this] =
-                new AnticipationSystem.NetworkBehaviourCallbackData
-                {
-                    Behaviour = this,
-                    Callback = s_CachedDelegate
-                };
-        }
-
-        private void Reanticipate()
-        {
-            var previousAnticipatedTransform = m_AnticipatedTransform;
-
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
             m_OutstandingAuthorityChange = false;
             m_AnticipatedTransform = m_AuthorityTransform;
 
-            OnReanticipate?.Invoke(this, previousAnticipatedTransform, m_LastAnticipationTime, m_AuthorityTransform, NetworkManager.AnticipationSystem.LastAnticipationAckTime);
+            ShouldReanticipate = true;
+            NetworkManager.AnticipationSystem.ObjectsToReanticipate.Add(m_AnticipatedObject);
         }
-
-        private static void ReanticipateCallback(NetworkBehaviour networkTransform)
-        {
-            ((AnticipatedNetworkTransform)networkTransform).Reanticipate();
-        }
-
-        private static AnticipationSystem.NetworkBehaviourReanticipateDelegate s_CachedDelegate = ReanticipateCallback;
     }
 }

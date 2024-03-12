@@ -13,21 +13,22 @@ namespace Unity.Netcode.RuntimeTests
         public AnticipatedNetworkVariable<float> SmoothOnAnticipationFailVariable = new AnticipatedNetworkVariable<float>(0, StaleDataHandling.Reanticipate);
         public AnticipatedNetworkVariable<float> ReanticipateOnAnticipationFailVariable = new AnticipatedNetworkVariable<float>(0, StaleDataHandling.Reanticipate);
 
-        public void Awake()
+        public override void OnReanticipate(double lastRoundTripTime)
         {
-            SmoothOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTime, in float authoritativeValue, double authoritativeTime) =>
+            if (SmoothOnAnticipationFailVariable.ShouldReanticipate)
             {
-                if (Mathf.Abs(authoritativeValue - anticipatedValue) > Mathf.Epsilon)
+                if (Mathf.Abs(SmoothOnAnticipationFailVariable.AuthoritativeValue - SmoothOnAnticipationFailVariable.PreviousAnticipatedValue) > Mathf.Epsilon)
                 {
-                    variable.Smooth(anticipatedValue, authoritativeValue, 1, Mathf.Lerp);
+                    SmoothOnAnticipationFailVariable.Smooth(SmoothOnAnticipationFailVariable.PreviousAnticipatedValue, SmoothOnAnticipationFailVariable.AuthoritativeValue, 1, Mathf.Lerp);
                 }
-            };
-            ReanticipateOnAnticipationFailVariable.OnReanticipate = (AnticipatedNetworkVariable<float> variable, in float anticipatedValue, double anticipatedTime, in float authoritativeValue, double authoritativeTime) =>
+            }
+
+            if (ReanticipateOnAnticipationFailVariable.ShouldReanticipate)
             {
                 // Would love to test some stuff about anticipation based on time, but that is difficult to test accurately.
                 // This reanticipating variable will just always anticipate a value 5 higher than the server value.
-                variable.Anticipate(authoritativeValue + 5);
-            };
+                ReanticipateOnAnticipationFailVariable.Anticipate(ReanticipateOnAnticipationFailVariable.AuthoritativeValue + 5);
+            }
         }
 
         public bool SnapRpcResponseReceived = false;

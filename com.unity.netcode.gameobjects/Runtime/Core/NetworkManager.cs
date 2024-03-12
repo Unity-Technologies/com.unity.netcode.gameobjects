@@ -55,6 +55,7 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
+                        AnticipationSystem.Update();
                     }
                     break;
                 case NetworkUpdateStage.PostScriptLateUpdate:
@@ -283,7 +284,7 @@ namespace Unity.Netcode
             remove => ConnectionManager.OnTransportFailure -= value;
         }
 
-        public delegate void ReanticipateDelegate(HashSet<NetworkVariableBase> changedVariables, HashSet<NetworkBehaviour> changedTransforms, double authorityTime);
+        public delegate void ReanticipateDelegate(double lastRoundTripTime);
 
         /// <summary>
         /// This callback is called after all individual OnReanticipate calls on AnticipatedNetworkVariable

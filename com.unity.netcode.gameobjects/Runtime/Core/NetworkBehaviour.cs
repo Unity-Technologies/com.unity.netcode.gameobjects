@@ -1088,6 +1088,11 @@ namespace Unity.Netcode
 
         }
 
+        public virtual void OnReanticipate(double lastRoundTripTime)
+        {
+
+        }
+
         /// <summary>
         /// The relative client identifier targeted for the serialization of this <see cref="NetworkBehaviour"/> instance.
         /// </summary>

@@ -21,18 +21,18 @@ namespace Unity.Netcode
     /// <list type="bullet">
     ///
     /// <item><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and no <see cref="OnReanticipate"/> callback),
+    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
     /// resulting in a "snap" to the new value if it is different from the anticipated value.</item>
     ///
     /// <item><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="OnReanticipate"/> callback that calls
+    /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
     /// <see cref="Smooth"/> from the anticipated value to the authority value with an appropriate
     /// <see cref="Mathf.Lerp"/>-style smooth function), when a more up-to-date value is received from the authority,
     /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</item>
     ///
     /// <item><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
-    /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="OnReanticipate"/> that calculates a
+    /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
     /// new anticipated value based on the current authoritative value), when a more up-to-date value is received from
     /// the authority, user code calculates a new anticipated value, possibly calling <see cref="Smooth"/> to interpolate
     /// between the previous anticipation and the new anticipation. This is useful for values that change frequently and
@@ -41,7 +41,7 @@ namespace Unity.Netcode
     ///
     /// </list>
     ///
-    /// Note that these three modes may be combined. For example, if an <see cref="OnReanticipate"/> callback
+    /// Note that these three modes may be combined. For example, if an <see cref="NetworkBehaviour.OnReanticipate"/> callback
     /// does not call either <see cref="Smooth"/> or <see cref="Anticipate"/>, the result will be a snap to the
     /// authoritative value, enabling for a callback that may conditionally call <see cref="Smooth"/> when the
     /// difference between the anticipated and authoritative values is within some threshold, but fall back to
@@ -57,10 +57,8 @@ namespace Unity.Netcode
         private NetworkVariable<T> m_AuthoritativeValue;
         private T m_AnticipatedValue;
         private T m_PreviousAnticipatedValue;
-        private bool m_HasPreviousAnticipatedValue;
         private ulong m_LastAuthorityUpdateCounter = 0;
         private ulong m_LastAnticipationCounter = 0;
-        private double m_LastAnticipationTime = 0;
         private bool m_IsDisposed = false;
         private bool m_SettingAuthoritativeValue = false;
 
@@ -77,25 +75,15 @@ namespace Unity.Netcode
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Ignore"/>, the stale data will be ignored and the authoritative
         /// value will not replace the anticipated value until the anticipation time is reached. <see cref="OnAuthoritativeValueChanged"/>
-        /// and <see cref="OnReanticipate"/> will also not be invoked for this stale data.
+        /// and <see cref="NetworkBehaviour.OnReanticipate"/> will also not be invoked for this stale data.
         /// <br/><br/>
         /// If this is <see cref="Netcode.StaleDataHandling.Reanticipate"/>, the stale data will replace the anticipated data and
-        /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="OnReanticipate"/> will be invoked.
-        /// In this case, the authoritativeTime value passed to <see cref="OnReanticipate"/> will be lower than
+        /// <see cref="OnAuthoritativeValueChanged"/> and <see cref="NetworkBehaviour.OnReanticipate"/> will be invoked.
+        /// In this case, the authoritativeTime value passed to <see cref="NetworkBehaviour.OnReanticipate"/> will be lower than
         /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
 #pragma warning restore IDE0001
         public StaleDataHandling StaleDataHandling;
-
-        public delegate void OnReanticipateDelegate(AnticipatedNetworkVariable<T> variable, in T anticipatedValue, double anticipationTime, in T authoritativeValue, double authoritativeTime);
-
-#pragma warning disable IDE0001
-        /// <summary>
-        /// Invoked whenever new data is received from the server, unless <see cref="StaleDataHandling"/> is
-        /// <see cref="Netcode.StaleDataHandling.Ignore"/> and the data is determined to be stale.
-        /// </summary>
-#pragma warning restore IDE0001
-        public OnReanticipateDelegate OnReanticipate = null;
 
         public delegate void OnAuthoritativeValueChangedDelegate(AnticipatedNetworkVariable<T> variable, in T previousValue, in T newValue);
 
@@ -114,13 +102,34 @@ namespace Unity.Netcode
             remove => m_AuthoritativeValue.CheckExceedsDirtinessThreshold -= value;
         }
 
+        private class AnticipatedObject : IAnticipatedObject
+        {
+            public AnticipatedNetworkVariable<T> Variable;
+
+            public void Update()
+            {
+                Variable.Update();
+            }
+
+            public void ResetAnticipation()
+            {
+                Variable.ShouldReanticipate = false;
+            }
+
+            public NetworkObject OwnerObject => Variable.m_NetworkBehaviour.NetworkObject;
+        }
+
+        private AnticipatedObject m_AnticipatedObject;
+
         public override void OnInitialize()
         {
             m_AuthoritativeValue.Initialize(m_NetworkBehaviour);
-            m_AnticipatedValue = m_AuthoritativeValue.Value;
+            NetworkVariableSerialization<T>.Duplicate(m_AuthoritativeValue.Value, ref m_AnticipatedValue);
+            NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
             if (m_NetworkBehaviour != null && m_NetworkBehaviour.NetworkManager != null && m_NetworkBehaviour.NetworkManager.AnticipationSystem != null)
             {
-                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects += 1;
+                m_AnticipatedObject = new AnticipatedObject { Variable = this };
+                m_NetworkBehaviour.NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
             }
         }
 
@@ -133,12 +142,36 @@ namespace Unity.Netcode
         /// Retrieves the current value for the variable.
         /// This is the "display value" for this variable, and is affected by <see cref="Anticipate"/> and
         /// <see cref="Smooth"/>, as well as by updates from the authority, depending on <see cref="StaleDataHandling"/>
-        /// and the behavior of any <see cref="OnReanticipate"/> callbacks.
+        /// and the behavior of any <see cref="NetworkBehaviour.OnReanticipate"/> callbacks.
+        /// <br /><br />
+        /// When a server update arrives, this value will be overwritten
+        /// by the new server value (unless stale data handling is set
+        /// to "Ignore" and the update is determined to be stale).
+        /// This value will be duplicated in
+        /// <see cref="PreviousAnticipatedValue"/>, which
+        /// will NOT be overwritten in server updates.
         /// </summary>
-        public T Value
+        public T Value => m_AnticipatedValue;
+
+        /// <summary>
+        /// Indicates whether this variable currently needs
+        /// reanticipation. If this is true, the anticipated value
+        /// has been overwritten by the authoritative value from the
+        /// server; the previous anticipated value is stored in <see cref="PreviousAnticipatedState"/>
+        /// </summary>
+        public bool ShouldReanticipate
         {
-            get => m_AnticipatedValue;
+            get;
+            private set;
         }
+
+        /// <summary>
+        /// Holds the most recent anticipated value, whatever was
+        /// most recently set using <see cref="Anticipate"/>. Unlike
+        /// <see cref="Value"/>, this does not get overwritten
+        /// when a server update arrives.
+        /// </summary>
+        public T PreviousAnticipatedValue => m_PreviousAnticipatedValue;
 
         /// <summary>
         /// Sets the current value of the variable on the expectation that the authority will set the variable
@@ -155,6 +188,7 @@ namespace Unity.Netcode
             m_CurrentSmoothTime = 0;
             m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
             m_AnticipatedValue = value;
+            NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
             if (CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
             {
                 AuthoritativeValue = value;
@@ -179,6 +213,7 @@ namespace Unity.Netcode
                 {
                     m_AuthoritativeValue.Value = value;
                     m_AnticipatedValue = value;
+                    NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
                 }
                 finally
                 {
@@ -207,13 +242,14 @@ namespace Unity.Netcode
             };
         }
 
-        public override void Update()
+        public void Update()
         {
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
                 m_CurrentSmoothTime += m_NetworkBehaviour.NetworkManager.RealTimeProvider.DeltaTime;
                 var pct = math.min(m_CurrentSmoothTime / m_SmoothDuration, 1f);
                 m_AnticipatedValue = m_SmoothDelegate(m_SmoothFrom, m_SmoothTo, pct);
+                NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
             }
         }
 
@@ -226,7 +262,12 @@ namespace Unity.Netcode
 
             if (m_NetworkBehaviour != null && m_NetworkBehaviour.NetworkManager != null && m_NetworkBehaviour.NetworkManager.AnticipationSystem != null)
             {
-                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NumberOfAnticipatedObjects -= 1;
+                if (m_AnticipatedObject != null)
+                {
+                    m_NetworkBehaviour.NetworkManager.AnticipationSystem.AllAnticipatedObjects.Remove(m_AnticipatedObject);
+                    m_NetworkBehaviour.NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
+                    m_AnticipatedObject = null;
+                }
             }
 
             m_IsDisposed = true;
@@ -238,12 +279,11 @@ namespace Unity.Netcode
             }
 
             m_AnticipatedValue = default;
-            if (m_HasPreviousAnticipatedValue && m_PreviousAnticipatedValue is IDisposable previousValueDisposable)
+            if (m_PreviousAnticipatedValue is IDisposable previousValueDisposable)
             {
                 previousValueDisposable.Dispose();
                 m_PreviousAnticipatedValue = default;
             }
-            m_HasPreviousAnticipatedValue = false;
 
             if (m_HasSmoothValues)
             {
@@ -279,43 +319,16 @@ namespace Unity.Netcode
                 }
 
 
-                m_NetworkBehaviour.NetworkManager.AnticipationSystem.NetworkVariableReanticipationCallbacks[this] =
-                    new AnticipationSystem.NetworkVariableCallbackData
-                    {
-                        Variable = this,
-                        Callback = s_CachedDelegate
-                    };
+                ShouldReanticipate = true;
+                m_NetworkBehaviour.NetworkManager.AnticipationSystem.ObjectsToReanticipate.Add(m_AnticipatedObject);
             }
-
-            OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
-        }
-
-        private void Reanticipate()
-        {
-            // Immediately set the value to the new value.
-            // Done with Duplicate() here for two reasons:
-            // 1 - Duplicate handles disposable types correctly without any leaks, and
-            // 2 - If the user is using a NativeArray or other native collection type, we do not want them
-            // to be able to (unintentionally) modify the authority value by modifying the anticipated value
-            // Note that Duplicate() does not create new values unless the current value is null; it will
-            // copy newValue over m_AnticipatedValue in-place on most occasions.
-            m_HasPreviousAnticipatedValue = true;
-            NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
 
             NetworkVariableSerialization<T>.Duplicate(AuthoritativeValue, ref m_AnticipatedValue);
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
-
-            OnReanticipate?.Invoke(this, m_PreviousAnticipatedValue, m_LastAnticipationTime, AuthoritativeValue, m_NetworkBehaviour.NetworkManager.AnticipationSystem.LastAnticipationAckTime);
+            OnAuthoritativeValueChanged?.Invoke(this, previousValue, newValue);
         }
-
-        private static void ReanticipateCallback(NetworkVariableBase variable)
-        {
-            ((AnticipatedNetworkVariable<T>)variable).Reanticipate();
-        }
-
-        private static AnticipationSystem.NetworkVariableReanticipationDelegate s_CachedDelegate = ReanticipateCallback;
 
         /// <summary>
         /// Interpolate this variable from <see cref="from"/> to <see cref="to"/> over <see cref="durationSeconds"/> of
@@ -367,7 +380,8 @@ namespace Unity.Netcode
         public override void ReadField(FastBufferReader reader)
         {
             m_AuthoritativeValue.ReadField(reader);
-            m_AnticipatedValue = m_AuthoritativeValue.Value;
+            NetworkVariableSerialization<T>.Duplicate(m_AuthoritativeValue.Value, ref m_AnticipatedValue);
+            NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)

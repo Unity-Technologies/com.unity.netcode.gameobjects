@@ -28,6 +28,27 @@ namespace Unity.Netcode.RuntimeTests
         {
             transform.rotation = newRotation;
         }
+
+        public bool ShouldSmooth = false;
+        public bool ShouldMove = false;
+
+        public override void OnReanticipate(double lastRoundTripTime)
+        {
+            var transform_ = GetComponent<AnticipatedNetworkTransform>();
+            if (transform_.ShouldReanticipate)
+            {
+                if (ShouldSmooth)
+                {
+                    transform_.Smooth(transform_.PreviousAnticipatedState, transform_.AuthorityState, 1);
+                }
+
+                if (ShouldMove)
+                {
+                    transform_.AnticipateMove(transform_.AuthorityState.Position + new Vector3(0, 5, 0));
+
+                }
+            }
+        }
     }
 
     public class NetworkTransformAnticipationTests : NetcodeIntegrationTest
@@ -248,11 +269,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverComponent = GetServerComponent();
             serverComponent.Interpolate = false;
 
-            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTime, authorityValue, authorityTime) =>
-            {
-                transform.Smooth(anticipedValue, authorityValue, 1);
-            };
-            otherClientComponent.OnReanticipate = testComponent.OnReanticipate;
+            testComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
+            otherClientComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldSmooth = true;
 
             var startPosition = testComponent.transform.position;
             var startScale = testComponent.transform.localScale;
@@ -369,11 +387,9 @@ namespace Unity.Netcode.RuntimeTests
         {
             var testComponent = GetTestComponent();
             var otherClientComponent = GetOtherClientComponent();
-            testComponent.OnReanticipate = (transform, anticipedValue, anticipationTime, authorityValue, authorityTime) =>
-            {
-                transform.AnticipateMove(authorityValue.Position + new Vector3(0, 5, 0));
-            };
-            otherClientComponent.OnReanticipate = testComponent.OnReanticipate;
+
+            testComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldMove = true;
+            otherClientComponent.GetComponent<NetworkTransformAnticipationComponent>().ShouldMove = true;
 
             var serverComponent = GetServerComponent();
             serverComponent.Interpolate = false;

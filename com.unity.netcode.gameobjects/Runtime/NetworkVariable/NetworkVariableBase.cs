@@ -163,14 +163,6 @@ namespace Unity.Netcode
             LastUpdateSent = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
         }
 
-        /// <summary>
-        /// Called once per frame.
-        /// </summary>
-        public virtual void Update()
-        {
-
-        }
-
         protected void MarkNetworkBehaviourDirty()
         {
             if (m_NetworkBehaviour == null)
