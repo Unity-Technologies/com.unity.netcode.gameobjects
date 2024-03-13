@@ -39,12 +39,12 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (ShouldSmooth)
                 {
-                    transform_.Smooth(transform_.PreviousAnticipatedState, transform_.AuthorityState, 1);
+                    transform_.Smooth(transform_.PreviousAnticipatedState, transform_.AuthoritativeState, 1);
                 }
 
                 if (ShouldMove)
                 {
-                    transform_.AnticipateMove(transform_.AuthorityState.Position + new Vector3(0, 5, 0));
+                    transform_.AnticipateMove(transform_.AuthoritativeState.Position + new Vector3(0, 5, 0));
 
                 }
             }
@@ -145,9 +145,9 @@ namespace Unity.Netcode.RuntimeTests
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
             testComponent.AnticipateRotate(Quaternion.LookRotation(new Vector3(2, 3, 4)));
 
-            Assert.AreEqual(startPosition, testComponent.AuthorityState.Position);
-            Assert.AreEqual(startScale, testComponent.AuthorityState.Scale);
-            Assert.AreEqual(startRotation, testComponent.AuthorityState.Rotation);
+            Assert.AreEqual(startPosition, testComponent.AuthoritativeState.Position);
+            Assert.AreEqual(startScale, testComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(startRotation, testComponent.AuthoritativeState.Rotation);
         }
 
         [Test]
@@ -165,18 +165,18 @@ namespace Unity.Netcode.RuntimeTests
 
             var serverComponent = GetServerComponent();
 
-            Assert.AreEqual(startPosition, serverComponent.AuthorityState.Position);
-            Assert.AreEqual(startScale, serverComponent.AuthorityState.Scale);
-            Assert.AreEqual(startRotation, serverComponent.AuthorityState.Rotation);
+            Assert.AreEqual(startPosition, serverComponent.AuthoritativeState.Position);
+            Assert.AreEqual(startScale, serverComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(startRotation, serverComponent.AuthoritativeState.Rotation);
             Assert.AreEqual(startPosition, serverComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, serverComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, serverComponent.AnticipatedState.Rotation);
 
             TimeTravel(2, 120);
 
-            Assert.AreEqual(startPosition, serverComponent.AuthorityState.Position);
-            Assert.AreEqual(startScale, serverComponent.AuthorityState.Scale);
-            Assert.AreEqual(startRotation, serverComponent.AuthorityState.Rotation);
+            Assert.AreEqual(startPosition, serverComponent.AuthoritativeState.Position);
+            Assert.AreEqual(startScale, serverComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(startRotation, serverComponent.AuthoritativeState.Rotation);
             Assert.AreEqual(startPosition, serverComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, serverComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, serverComponent.AnticipatedState.Rotation);
@@ -197,18 +197,18 @@ namespace Unity.Netcode.RuntimeTests
 
             var otherClientComponent = GetOtherClientComponent();
 
-            Assert.AreEqual(startPosition, otherClientComponent.AuthorityState.Position);
-            Assert.AreEqual(startScale, otherClientComponent.AuthorityState.Scale);
-            Assert.AreEqual(startRotation, otherClientComponent.AuthorityState.Rotation);
+            Assert.AreEqual(startPosition, otherClientComponent.AuthoritativeState.Position);
+            Assert.AreEqual(startScale, otherClientComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(startRotation, otherClientComponent.AuthoritativeState.Rotation);
             Assert.AreEqual(startPosition, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, otherClientComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, otherClientComponent.AnticipatedState.Rotation);
 
             TimeTravel(2, 120);
 
-            Assert.AreEqual(startPosition, otherClientComponent.AuthorityState.Position);
-            Assert.AreEqual(startScale, otherClientComponent.AuthorityState.Scale);
-            Assert.AreEqual(startRotation, otherClientComponent.AuthorityState.Rotation);
+            Assert.AreEqual(startPosition, otherClientComponent.AuthoritativeState.Position);
+            Assert.AreEqual(startScale, otherClientComponent.AuthoritativeState.Scale);
+            Assert.AreEqual(startRotation, otherClientComponent.AuthoritativeState.Rotation);
             Assert.AreEqual(startPosition, otherClientComponent.AnticipatedState.Position);
             Assert.AreEqual(startScale, otherClientComponent.AnticipatedState.Scale);
             Assert.AreEqual(startRotation, otherClientComponent.AnticipatedState.Rotation);
@@ -231,15 +231,15 @@ namespace Unity.Netcode.RuntimeTests
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
             var otherClientComponent = GetOtherClientComponent();
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
+            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthoritativeState.Position == serverComponent.transform.position && otherClientComponent.AuthoritativeState.Position == serverComponent.transform.position);
 
             Assert.AreEqual(serverComponent.transform.position, testComponent.transform.position);
             Assert.AreEqual(serverComponent.transform.position, testComponent.AnticipatedState.Position);
-            Assert.AreEqual(serverComponent.transform.position, testComponent.AuthorityState.Position);
+            Assert.AreEqual(serverComponent.transform.position, testComponent.AuthoritativeState.Position);
 
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.transform.position);
             Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AnticipatedState.Position);
-            Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AuthorityState.Position);
+            Assert.AreEqual(serverComponent.transform.position, otherClientComponent.AuthoritativeState.Position);
         }
 
         public void AssertQuaternionsAreEquivalent(Quaternion a, Quaternion b)
@@ -310,9 +310,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.AnticipatedState.Scale);
             AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
 
-            AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthorityState.Position);
-            AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthorityState.Scale);
-            AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthorityState.Rotation);
+            AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthoritativeState.Rotation);
 
             AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.transform.position);
             AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.transform.localScale);
@@ -322,9 +322,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.AnticipatedState.Scale);
             AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
 
-            AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthorityState.Position);
-            AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthorityState.Scale);
-            AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthorityState.Rotation);
+            AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
 
             for (var i = 1; i < 60; ++i)
             {
@@ -339,9 +339,9 @@ namespace Unity.Netcode.RuntimeTests
                 AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.AnticipatedState.Scale);
                 AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
 
-                AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthorityState.Position);
-                AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthorityState.Scale);
-                AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthorityState.Rotation);
+                AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthoritativeState.Position);
+                AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthoritativeState.Scale);
+                AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthoritativeState.Rotation);
 
                 AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.transform.position);
                 AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.transform.localScale);
@@ -351,9 +351,9 @@ namespace Unity.Netcode.RuntimeTests
                 AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.AnticipatedState.Scale);
                 AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
 
-                AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthorityState.Position);
-                AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthorityState.Scale);
-                AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthorityState.Rotation);
+                AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
+                AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
+                AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
             }
             TimeTravel(1f / 60f, 1);
 
@@ -365,9 +365,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(serverSetScale, testComponent.AnticipatedState.Scale);
             AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AnticipatedState.Rotation);
 
-            AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthorityState.Position);
-            AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthorityState.Scale);
-            AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthorityState.Rotation);
+            AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, testComponent.AuthoritativeState.Rotation);
 
             AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.transform.position);
             AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.transform.localScale);
@@ -377,9 +377,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AnticipatedState.Scale);
             AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AnticipatedState.Rotation);
 
-            AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthorityState.Position);
-            AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthorityState.Scale);
-            AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthorityState.Rotation);
+            AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
+            AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
+            AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
         }
 
         [Test]
@@ -403,11 +403,11 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(new Vector3(0, 6, 2), testComponent.transform.position);
             Assert.AreEqual(new Vector3(0, 6, 2), testComponent.AnticipatedState.Position);
-            Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AuthorityState.Position);
+            Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AuthoritativeState.Position);
 
             Assert.AreEqual(new Vector3(0, 6, 2), otherClientComponent.transform.position);
             Assert.AreEqual(new Vector3(0, 6, 2), otherClientComponent.AnticipatedState.Position);
-            Assert.AreEqual(new Vector3(0, 1, 2), otherClientComponent.AuthorityState.Position);
+            Assert.AreEqual(new Vector3(0, 1, 2), otherClientComponent.AuthoritativeState.Position);
         }
 
         [Test]
@@ -445,7 +445,7 @@ namespace Unity.Netcode.RuntimeTests
             // before the next update and we move to 4, 5, 6, or the tick rate is fast enough that the next update is sent out
             // before the RPC is received and we get the update for the move to 1, 2, 3. Both are valid, what we want to assert
             // here is that the anticipated state never becomes 1, 2, 3.
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == new Vector3(1, 2, 3) || testComponent.AuthorityState.Position == new Vector3(4, 5, 6));
+            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthoritativeState.Position == new Vector3(1, 2, 3) || testComponent.AuthoritativeState.Position == new Vector3(4, 5, 6));
 
             if (testComponent.AnticipatedState.Position == new Vector3(4, 5, 6))
             {
@@ -453,12 +453,12 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(new Vector3(4, 5, 6), testComponent.transform.position);
                 Assert.AreEqual(new Vector3(4, 5, 6), testComponent.AnticipatedState.Position);
                 // However, the authoritative value still gets updated
-                Assert.AreEqual(new Vector3(4, 5, 6), testComponent.AuthorityState.Position);
+                Assert.AreEqual(new Vector3(4, 5, 6), testComponent.AuthoritativeState.Position);
 
                 // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
                 Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.transform.position);
                 Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.AnticipatedState.Position);
-                Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.AuthorityState.Position);
+                Assert.AreEqual(new Vector3(4, 5, 6), otherClientComponent.AuthoritativeState.Position);
             }
             else
             {
@@ -466,12 +466,12 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(new Vector3(0, 5, 0), testComponent.transform.position);
                 Assert.AreEqual(new Vector3(0, 5, 0), testComponent.AnticipatedState.Position);
                 // However, the authoritative value still gets updated
-                Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
+                Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthoritativeState.Position);
 
                 // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
                 Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.transform.position);
                 Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AnticipatedState.Position);
-                Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthorityState.Position);
+                Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthoritativeState.Position);
             }
         }
 
@@ -504,18 +504,18 @@ namespace Unity.Netcode.RuntimeTests
 
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(new List<NetworkManager> { m_ServerNetworkManager });
 
-            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthorityState.Position == serverComponent.transform.position && otherClientComponent.AuthorityState.Position == serverComponent.transform.position);
+            WaitForConditionOrTimeOutWithTimeTravel(() => testComponent.AuthoritativeState.Position == serverComponent.transform.position && otherClientComponent.AuthoritativeState.Position == serverComponent.transform.position);
 
             // Anticiped client received this data for a time earlier than its anticipation, and should have prioritized the anticiped value
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.transform.position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Position);
             // However, the authoritative value still gets updated
-            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthorityState.Position);
+            Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AuthoritativeState.Position);
 
             // Other client got the server value and had made no anticipation, so it applies it to the anticiped value as well.
             Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.transform.position);
             Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AnticipatedState.Position);
-            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthorityState.Position);
+            Assert.AreEqual(new Vector3(1, 2, 3), otherClientComponent.AuthoritativeState.Position);
         }
     }
 }

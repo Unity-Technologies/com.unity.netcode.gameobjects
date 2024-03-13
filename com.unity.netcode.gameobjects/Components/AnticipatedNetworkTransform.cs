@@ -53,7 +53,7 @@ namespace Unity.Netcode.Components
             public Vector3 Scale;
         }
 
-        private TransformState m_AuthorityTransform = new TransformState();
+        private TransformState m_authoritativeTransform = new TransformState();
         private TransformState m_AnticipatedTransform = new TransformState();
         private TransformState m_PreviousAnticipatedTransform = new TransformState();
         private ulong m_LastAnticipaionCounter;
@@ -98,7 +98,7 @@ namespace Unity.Netcode.Components
         /// Note that, on the server side, this gets updated at the end of the frame, and will not immediately reflect
         /// changes to the transform.
         /// </summary>
-        public TransformState AuthorityState => m_AuthorityTransform;
+        public TransformState AuthoritativeState => m_authoritativeTransform;
 
         /// <summary>
         /// Contains the current anticipated state, which will match the values of this object's
@@ -146,7 +146,7 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform.Position = newPosition;
             if (CanCommitToTransform)
             {
-                m_AuthorityTransform.Position = newPosition;
+                m_authoritativeTransform.Position = newPosition;
             }
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
@@ -173,7 +173,7 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform.Rotation = newRotation;
             if (CanCommitToTransform)
             {
-                m_AuthorityTransform.Rotation = newRotation;
+                m_authoritativeTransform.Rotation = newRotation;
             }
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
@@ -200,7 +200,7 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform.Scale = newScale;
             if (CanCommitToTransform)
             {
-                m_AuthorityTransform.Scale = newScale;
+                m_authoritativeTransform.Scale = newScale;
             }
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
@@ -230,7 +230,7 @@ namespace Unity.Netcode.Components
             m_AnticipatedTransform = newState;
             if (CanCommitToTransform)
             {
-                m_AuthorityTransform = newState;
+                m_authoritativeTransform = newState;
             }
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
@@ -288,7 +288,7 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    Transform.m_AuthorityTransform = new TransformState
+                    Transform.m_authoritativeTransform = new TransformState
                     {
                         Position = transform_.position,
                         Rotation = transform_.rotation,
@@ -299,7 +299,7 @@ namespace Unity.Netcode.Components
                         // If we've had a call to Smooth() we'll continue interpolating.
                         // Otherwise we'll go ahead and make the visual and actual locations
                         // match.
-                        Transform.m_AnticipatedTransform = Transform.m_AuthorityTransform;
+                        Transform.m_AnticipatedTransform = Transform.m_authoritativeTransform;
                     }
 
                     transform_.position = Transform.m_AnticipatedTransform.Position;
@@ -313,9 +313,9 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    transform_.position = Transform.m_AuthorityTransform.Position;
-                    transform_.rotation = Transform.m_AuthorityTransform.Rotation;
-                    transform_.localScale = Transform.m_AuthorityTransform.Scale;
+                    transform_.position = Transform.m_authoritativeTransform.Position;
+                    transform_.rotation = Transform.m_authoritativeTransform.Rotation;
+                    transform_.localScale = Transform.m_authoritativeTransform.Scale;
                 }
             }
 
@@ -337,13 +337,13 @@ namespace Unity.Netcode.Components
         private void ResetAnticipatedState()
         {
             var transform_ = transform;
-            m_AuthorityTransform = new TransformState
+            m_authoritativeTransform = new TransformState
             {
                 Position = transform_.position,
                 Rotation = transform_.rotation,
                 Scale = transform_.localScale
             };
-            m_AnticipatedTransform = m_AuthorityTransform;
+            m_AnticipatedTransform = m_authoritativeTransform;
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_SmoothDuration = 0;
@@ -466,9 +466,9 @@ namespace Unity.Netcode.Components
             var previousAnticipatedTransform = m_AnticipatedTransform;
 
             // Update authority state to catch any possible interpolation data
-            m_AuthorityTransform.Position = transform_.position;
-            m_AuthorityTransform.Rotation = transform_.rotation;
-            m_AuthorityTransform.Scale = transform_.localScale;
+            m_authoritativeTransform.Position = transform_.position;
+            m_authoritativeTransform.Rotation = transform_.rotation;
+            m_authoritativeTransform.Scale = transform_.localScale;
 
             if (!m_OutstandingAuthorityChange)
             {
@@ -491,7 +491,7 @@ namespace Unity.Netcode.Components
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
             m_OutstandingAuthorityChange = false;
-            m_AnticipatedTransform = m_AuthorityTransform;
+            m_AnticipatedTransform = m_authoritativeTransform;
 
             ShouldReanticipate = true;
             NetworkManager.AnticipationSystem.ObjectsToReanticipate.Add(m_AnticipatedObject);
