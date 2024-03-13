@@ -334,16 +334,8 @@ namespace Unity.Netcode.Components
 
         private AnticipatedObject m_AnticipatedObject = null;
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        private void ResetAnticipatedState()
         {
-            m_OutstandingAuthorityChange = true;
-            base.OnSynchronize(ref serializer);
-            ApplyAuthoritativeState();
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
             var transform_ = transform;
             m_AuthorityTransform = new TransformState
             {
@@ -353,8 +345,29 @@ namespace Unity.Netcode.Components
             };
             m_AnticipatedTransform = m_AuthorityTransform;
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
+
+            m_SmoothDuration = 0;
+            m_CurrentSmoothTime = 0;
+        }
+
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            base.OnSynchronize(ref serializer);
+            if (!CanCommitToTransform)
+            {
+                m_OutstandingAuthorityChange = true;
+                ApplyAuthoritativeState();
+                ResetAnticipatedState();
+            }
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
             m_OutstandingAuthorityChange = true;
             ApplyAuthoritativeState();
+            ResetAnticipatedState();
+
             m_AnticipatedObject = new AnticipatedObject { Transform = this };
             NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
             NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
@@ -369,6 +382,7 @@ namespace Unity.Netcode.Components
                 NetworkManager.AnticipationSystem.ObjectsToReanticipate.Remove(m_AnticipatedObject);
                 m_AnticipatedObject = null;
             }
+            ResetAnticipatedState();
 
             base.OnNetworkDespawn();
         }
