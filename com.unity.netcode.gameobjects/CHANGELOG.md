@@ -28,7 +28,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed a compile error when compiling for IL2CPP targets when using the new `[Rpc]` attribute. (#2824)
 
-
 ## [1.8.0] - 2023-12-12
 
 ### Added
