@@ -54,15 +54,21 @@ namespace Unity.Netcode.RuntimeTests
             // We don't assert on timeout here because we want to log this information during PostAllChildrenLocalTransformValuesMatch
             yield return WaitForConditionOrTimeOut(() => AllInstancesKeptLocalTransformValues(useSubChild));
             var success = true;
-            m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 var waitForMs = new WaitForSeconds(0.001f);
                 // If we timed out, then wait for a full range of ticks to assure all data has been synchronized before declaring this a failed test.
                 for (int j = 0; j < m_ServerNetworkManager.NetworkConfig.TickRate; j++)
                 {
+                    m_InfoMessage.Clear();
+                    m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
                     var instances = useSubChild ? ChildObjectComponent.SubInstances : ChildObjectComponent.Instances;
                     success = PostAllChildrenLocalTransformValuesMatch(useSubChild);
+                    // If we pass, then exit loop
+                    if (success)
+                    {
+                        break;
+                    }
                     yield return waitForMs;
                 }
             }
