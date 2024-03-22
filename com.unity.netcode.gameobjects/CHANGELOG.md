@@ -21,6 +21,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
 - Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
 
+## [1.8.1] - 2024-02-05
+
+### Fixed
+
+- Fixed a compile error when compiling for IL2CPP targets when using the new `[Rpc]` attribute. (#2824)
+
 ## [1.8.0] - 2023-12-12
 
 ### Added
