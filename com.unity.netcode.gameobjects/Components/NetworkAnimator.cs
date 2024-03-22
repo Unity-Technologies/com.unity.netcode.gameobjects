@@ -164,7 +164,6 @@ namespace Unity.Netcode.Components
     /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
     [AddComponentMenu("Netcode/Network Animator")]
-    [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
     {
         [Serializable]
