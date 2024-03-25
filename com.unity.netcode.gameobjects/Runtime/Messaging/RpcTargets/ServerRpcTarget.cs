@@ -2,7 +2,7 @@ namespace Unity.Netcode
 {
     internal class ServerRpcTarget : BaseRpcTarget
     {
-        private BaseRpcTarget m_UnderlyingTarget;
+        protected BaseRpcTarget m_UnderlyingTarget;
 
         public override void Dispose()
         {
@@ -15,6 +15,14 @@ namespace Unity.Netcode
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
         {
+#if NGO_DAMODE
+            if (behaviour.NetworkManager.DistributedAuthorityMode && behaviour.NetworkManager.CMBServiceConnection)
+            {
+                UnityEngine.Debug.LogWarning("Sending to Server in Distributed Authority mode is not allowed!");
+                return;
+            }
+#endif
+
             if (m_UnderlyingTarget == null)
             {
                 if (behaviour.NetworkManager.IsServer)

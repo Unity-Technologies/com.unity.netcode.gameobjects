@@ -181,11 +181,6 @@ namespace TestProject.RuntimeTests
 
         private StringBuilder m_ValidationErrors;
 
-        private string GetVector3Values(ref Vector3 vector3)
-        {
-            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
-        }
-
         /// <summary>
         /// Validates all transform instance values match the authority's
         /// </summary>

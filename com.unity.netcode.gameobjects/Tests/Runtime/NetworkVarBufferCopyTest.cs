@@ -6,6 +6,10 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
+    [TestFixture(HostOrServer.Host)]
     public class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
         public class DummyNetVar : NetworkVariableBase
@@ -67,22 +71,52 @@ namespace Unity.Netcode.RuntimeTests
 
                 DeltaRead = true;
             }
+
+            public DummyNetVar(
+            NetworkVariableReadPermission readPerm = DefaultReadPerm,
+            NetworkVariableWritePermission writePerm = DefaultWritePerm) : base(readPerm, writePerm) { }
         }
 
         public class DummyNetBehaviour : NetworkBehaviour
         {
-            public DummyNetVar NetVar = new DummyNetVar();
+#if NGO_DAMODE
+            public static bool DistributedAuthority;
+#endif
+            public DummyNetVar NetVar;
+
+            private void Awake()
+            {
+#if NGO_DAMODE
+                if (DistributedAuthority)
+                {
+                    NetVar = new DummyNetVar(writePerm: NetworkVariableWritePermission.Owner);
+                }
+                else
+#endif
+                {
+                    NetVar = new DummyNetVar();
+                }
+            }
 
             public override void OnNetworkSpawn()
             {
+#if NGO_DAMODE
+                if ((NetworkManager.DistributedAuthorityMode && !IsOwner) || (!NetworkManager.DistributedAuthorityMode && !IsServer))
+                {
+                    ClientDummyNetBehaviourSpawned(this);
+                }
+#else
                 if (!IsServer)
                 {
                     ClientDummyNetBehaviourSpawned(this);
                 }
+#endif
                 base.OnNetworkSpawn();
             }
         }
         protected override int NumberOfClients => 1;
+
+        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
@@ -98,7 +132,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
+
+#if NGO_DAMODE
+            DummyNetBehaviour.DistributedAuthority = m_DistributedAuthority;
             m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
+#else
+            m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
+#endif
         }
 
         [UnityTest]
@@ -127,27 +167,34 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Check that FieldWritten is written when dirty
-            serverComponent.NetVar.SetDirty(true);
+#if NGO_DAMODE
+            var authorityComponent = m_DistributedAuthority ? clientComponent : serverComponent;
+            var nonAuthorityComponent = m_DistributedAuthority ? serverComponent : clientComponent;
+#else
+            var authorityComponent = serverComponent;
+            var nonAuthorityComponent = clientComponent;
+#endif
+            authorityComponent.NetVar.SetDirty(true);
             yield return s_DefaultWaitForTick;
-            Assert.True(serverComponent.NetVar.FieldWritten);
-
+            Assert.True(authorityComponent.NetVar.FieldWritten);
             // Check that DeltaWritten is written when dirty
-            serverComponent.NetVar.SetDirty(true);
+            authorityComponent.NetVar.SetDirty(true);
             yield return s_DefaultWaitForTick;
-            Assert.True(serverComponent.NetVar.DeltaWritten);
+            Assert.True(authorityComponent.NetVar.DeltaWritten);
+
 
             // Check that both FieldRead and DeltaRead were invoked on the client side
-            yield return WaitForConditionOrTimeOut(() => clientComponent.NetVar.FieldRead == true && clientComponent.NetVar.DeltaRead == true);
+            yield return WaitForConditionOrTimeOut(() => nonAuthorityComponent.NetVar.FieldRead == true && nonAuthorityComponent.NetVar.DeltaRead == true);
 
             var timedOutMessage = "Timed out waiting for client reads: ";
             if (s_GlobalTimeoutHelper.TimedOut)
             {
-                if (!clientComponent.NetVar.FieldRead)
+                if (!nonAuthorityComponent.NetVar.FieldRead)
                 {
                     timedOutMessage += "[FieldRead]";
                 }
 
-                if (!clientComponent.NetVar.DeltaRead)
+                if (!nonAuthorityComponent.NetVar.DeltaRead)
                 {
                     timedOutMessage += "[DeltaRead]";
                 }

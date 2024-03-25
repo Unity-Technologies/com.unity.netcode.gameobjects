@@ -80,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void NetworkTickSystemOnTick()
         {
-            Debug.Log(m_Client.NetworkTickSystem.ServerTime.Tick);
+            //Debug.Log(m_Client.NetworkTickSystem.ServerTime.Tick);
             m_ClientTickCounter++;
         }
 
@@ -88,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // client connected to server
             m_ConnectedTick = m_Client.NetworkTickSystem.ServerTime.Tick;
-            Debug.Log($"Connected tick: {m_ConnectedTick}");
+            //Debug.Log($"Connected tick: {m_ConnectedTick}");
         }
 
         [UnityTearDown]

@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Unity.Netcode
 {
     internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
@@ -6,10 +8,57 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
         public bool DestroyGameObject;
+#if NGO_DAMODE
+        private byte m_DestroyFlags;
+
+        internal int DeferredDespawnTick;
+        // Temporary until we make this a list
+        internal ulong TargetClientId;
+
+        internal bool IsDistributedAuthority;
+
+        internal const byte ClientTargetedDestroy = 0x01;
+
+        internal bool IsTargetedDestroy
+        {
+            get
+            {
+                return GetFlag(ClientTargetedDestroy);
+            }
+
+            set
+            {
+                SetFlag(value, ClientTargetedDestroy);
+            }
+        }
+
+        private bool GetFlag(int flag)
+        {
+            return (m_DestroyFlags & flag) != 0;
+        }
+
+        private void SetFlag(bool set, byte flag)
+        {
+            if (set) { m_DestroyFlags = (byte)(m_DestroyFlags | flag); }
+            else { m_DestroyFlags = (byte)(m_DestroyFlags & ~flag); }
+        }
+#endif
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+#if NGO_DAMODE
+            if (IsDistributedAuthority)
+            {
+                writer.WriteByteSafe(m_DestroyFlags);
+
+                if (IsTargetedDestroy)
+                {
+                    BytePacker.WriteValueBitPacked(writer, TargetClientId);
+                }
+                BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
+            }
+#endif
             writer.WriteValueSafe(DestroyGameObject);
         }
 
@@ -22,12 +71,33 @@ namespace Unity.Netcode
             }
 
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+#if NGO_DAMODE
+            if (networkManager.DistributedAuthorityMode)
+            {
+                reader.ReadByteSafe(out m_DestroyFlags);
+                if (IsTargetedDestroy)
+                {
+                    ByteUnpacker.ReadValueBitPacked(reader, out TargetClientId);
+                }
+                ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
+            }
+#endif
+
             reader.ReadValueSafe(out DestroyGameObject);
 
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
+#if NGO_DAMODE
+                // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
+                if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
+                {
+                    networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
+                }
+#else
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
                 return false;
+#endif
+
             }
             return true;
         }
@@ -35,14 +105,87 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+
+            var networkObject = (NetworkObject)null;
+#if NGO_DAMODE
+            if (!networkManager.DistributedAuthorityMode)
             {
-                // This is the same check and log message that happens inside OnDespawnObject, but we have to do it here
-                return;
+                // If this NetworkObject does not exist on this instance then exit early
+                if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out networkObject))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out networkObject);
+                if (!networkManager.DAHost && networkObject == null)
+                {
+                    // If this NetworkObject does not exist on this instance then exit early
+                    return;
+                }
+            }
+            // DANGO-TODO: This is just a quick way to foward despawn messages to the remaining clients
+            if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
+            {
+                var message = new DestroyObjectMessage
+                {
+                    NetworkObjectId = NetworkObjectId,
+                    DestroyGameObject = DestroyGameObject,
+                    IsDistributedAuthority = true,
+                    IsTargetedDestroy = IsTargetedDestroy,
+                    TargetClientId = TargetClientId, // Just always populate this value whether we write it or not
+                    DeferredDespawnTick = DeferredDespawnTick,
+                };
+                var ownerClientId = networkObject == null ? context.SenderId : networkObject.OwnerClientId;
+                var clientIds = networkObject == null ? networkManager.ConnectedClientsIds.ToList() : networkObject.Observers.ToList();
+
+                foreach (var clientId in clientIds)
+                {
+                    if (clientId == networkManager.LocalClientId || clientId == ownerClientId)
+                    {
+                        continue;
+                    }
+                    networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                }
             }
 
-            networkManager.NetworkMetrics.TrackObjectDestroyReceived(context.SenderId, networkObject, context.MessageSize);
-            networkManager.SpawnManager.OnDespawnObject(networkObject, DestroyGameObject);
+            // If we are deferring the despawn, then add it to the deferred despawn queue
+            if (networkManager.DistributedAuthorityMode)
+            {
+                if (DeferredDespawnTick > 0)
+                {
+                    // Clients always add it to the queue while DAHost will only add it to the queue if it is not a targeted destroy or it is and the target is the
+                    // DAHost client.
+                    if (!networkManager.DAHost || (networkManager.DAHost && (!IsTargetedDestroy || (IsTargetedDestroy && TargetClientId == 0))))
+                    {
+                        networkObject.DeferredDespawnTick = DeferredDespawnTick;
+                        var hasCallback = networkObject.OnDeferredDespawnComplete != null;
+                        networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback);
+                        return;
+                    }
+                }
+
+                // If this is targeted and we are not the target, then just update our local observers for this object
+                if (IsTargetedDestroy && TargetClientId != networkManager.LocalClientId && networkObject != null)
+                {
+                    networkObject.Observers.Remove(TargetClientId);
+                    return;
+                }
+            }
+#else
+            // If this NetworkObject does not exist on this instance then exit early
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out networkObject))
+            {
+                return;
+            }
+#endif
+            if (networkObject != null)
+            {
+                // Otherwise just despawn the NetworkObject right now
+                networkManager.SpawnManager.OnDespawnObject(networkObject, DestroyGameObject);
+                networkManager.NetworkMetrics.TrackObjectDestroyReceived(context.SenderId, networkObject, context.MessageSize);
+            }
         }
     }
 }

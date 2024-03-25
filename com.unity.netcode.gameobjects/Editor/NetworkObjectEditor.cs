@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -49,6 +50,12 @@ namespace Unity.Netcode.Editor
             {
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
+#if NGO_DAMODE
+                if (m_NetworkObject.NetworkManager.DistributedAuthorityMode)
+                {
+                    EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NetworkObject.Ownership)));
+                }
+#endif
                 EditorGUILayout.TextField(nameof(NetworkObject.GlobalObjectIdHash), m_NetworkObject.GlobalObjectIdHash.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.NetworkObjectId), m_NetworkObject.NetworkObjectId.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.OwnerClientId), m_NetworkObject.OwnerClientId.ToString());
@@ -138,4 +145,50 @@ namespace Unity.Netcode.Editor
             NetworkBehaviourEditor.CheckForNetworkObject(m_GameObject, true);
         }
     }
+
+#if NGO_DAMODE
+    [CustomPropertyDrawer(typeof(NetworkObject.OwnershipStatus))]
+    public class NetworkObjectOwnership : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            label = EditorGUI.BeginProperty(position, label, property);
+            // Don't allow modification while in play mode
+            EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+
+            // This is a temporary work around due to EditorGUI.EnumFlagsField having a bug in how it displays mask values.
+            // For now, we will just display the flags as a toggle and handle the masking of the value ourselves.
+            EditorGUILayout.BeginHorizontal();
+            var names = System.Enum.GetNames(typeof(NetworkObject.OwnershipStatus)).ToList();
+            names.RemoveAt(0);
+            var value = property.enumValueFlag;
+            var compareValue = 0x01;
+            GUILayout.Label(label);
+            foreach (var name in names)
+            {
+                var isSet = (value & compareValue) > 0;
+                isSet = GUILayout.Toggle(isSet, name);
+                if (isSet)
+                {
+                    value |= compareValue;
+                }
+                else
+                {
+                    value &= ~compareValue;
+                }
+                compareValue = compareValue << 1;
+            }
+            property.enumValueFlag = value;
+            EditorGUILayout.EndHorizontal();
+
+            // The below can cause visual anomalies and/or throws an exception within the EditorGUI itself (index out of bounds of the array). and has
+            // The visual anomaly is when you select one field it is set in the drop down but then the flags selection in the popup menu selects more items
+            // even though if you exit the popup menu the flag setting is correct. 
+            //var ownership = (NetworkObject.OwnershipStatus)EditorGUI.EnumFlagsField(position, label, (NetworkObject.OwnershipStatus)property.enumValueFlag);
+            //property.enumValueFlag = (int)ownership;
+            EditorGUI.EndDisabledGroup();
+            EditorGUI.EndProperty();
+        }
+    }
+#endif
 }

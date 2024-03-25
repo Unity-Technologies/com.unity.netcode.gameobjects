@@ -410,11 +410,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     networkManager.SceneManager.ScenesLoaded.Add(scene.handle, scene);
                 }
+#if NGO_DAMODE
+                // In distributed authority we need to check if this scene is already added
+                if (networkManager.DistributedAuthorityMode)
+                {
+                    if (!networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(scene.handle))
+                    {
+                        networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
+                    }
+
+                    if (!networkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(scene.handle))
+                    {
+                        networkManager.SceneManager.ClientSceneHandleToServerSceneHandle.Add(scene.handle, scene.handle);
+                    }
+                    return;
+                }
+#endif
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }
         }
 
         public delegate void BeforeClientStartCallback();
+
+        internal static bool Start(bool host, bool startServer, NetworkManager server, NetworkManager[] clients)
+        {
+            return Start(host, server, clients, null, startServer);
+        }
 
         /// <summary>
         /// Starts NetworkManager instances created by the Create method.
@@ -424,7 +445,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
         /// <returns></returns>
-        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
+        public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
         {
             if (s_IsStarted)
             {
@@ -433,24 +454,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             s_IsStarted = true;
             s_ClientCount = clients.Length;
-
-            if (host)
+            var hooks = (MultiInstanceHooks)null;
+            if (startServer)
             {
-                server.StartHost();
+                if (host)
+                {
+                    server.StartHost();
+                }
+                else
+                {
+                    server.StartServer();
+                }
+
+                hooks = new MultiInstanceHooks();
+                server.ConnectionManager.MessageManager.Hook(hooks);
+                s_Hooks[server] = hooks;
+
+                // Register the server side handler (always pass true for server)
+                RegisterHandlers(server, true);
+                callback?.Invoke();
             }
-            else
-            {
-                server.StartServer();
-            }
-
-            var hooks = new MultiInstanceHooks();
-            server.ConnectionManager.MessageManager.Hook(hooks);
-            s_Hooks[server] = hooks;
-
-            // Register the server side handler (always pass true for server)
-            RegisterHandlers(server, true);
-
-            callback?.Invoke();
 
             for (int i = 0; i < clients.Length; i++)
             {

@@ -1267,6 +1267,15 @@ namespace Unity.Netcode
             NetworkVariableSerialization<long>.AreEqual = NetworkVariableSerialization<long>.ValueEquals;
             NetworkVariableSerialization<ulong>.Serializer = new UlongSerializer();
             NetworkVariableSerialization<ulong>.AreEqual = NetworkVariableSerialization<ulong>.ValueEquals;
+
+#if NGO_DAMODE
+            NetworkVariableSerialization<short>.Type = CollectionItemType.Short;
+            NetworkVariableSerialization<ushort>.Type = CollectionItemType.UShort;
+            NetworkVariableSerialization<int>.Type = CollectionItemType.Int;
+            NetworkVariableSerialization<uint>.Type = CollectionItemType.UInt;
+            NetworkVariableSerialization<long>.Type = CollectionItemType.Long;
+            NetworkVariableSerialization<ulong>.Type = CollectionItemType.ULong;
+#endif
         }
 
         /// <summary>
@@ -1276,6 +1285,9 @@ namespace Unity.Netcode
         public static void InitializeSerializer_UnmanagedByMemcpy<T>() where T : unmanaged
         {
             NetworkVariableSerialization<T>.Serializer = new UnmanagedTypeSerializer<T>();
+#if NGO_DAMODE
+            NetworkVariableSerialization<T>.Type = CollectionItemType.Unmanaged;
+#endif
         }
 
         /// <summary>
@@ -1554,6 +1566,14 @@ namespace Unity.Netcode
     {
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
+
+#if NGO_DAMODE
+        /// <summary>
+        /// The collection item type tells the CMB server how to read the bytes of each item in the collection
+        /// </summary>
+        internal static CollectionItemType Type = CollectionItemType.Unknown;
+#endif
+
         /// <summary>
         /// A callback to check if two values are equal.
         /// </summary>
@@ -1725,8 +1745,14 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UTP_TRANSPORT_2_0_ABOVE
+            var aptr = a.GetUnsafePtr();
+            var bptr = b.GetUnsafePtr();
+#else
             var aptr = (TValueType*)a.GetUnsafePtr();
             var bptr = (TValueType*)b.GetUnsafePtr();
+#endif
+
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType) * a.Length) == 0;
         }
 #endif
@@ -1855,8 +1881,13 @@ namespace Unity.Netcode
                 return false;
             }
 
+#if UTP_TRANSPORT_2_0_ABOVE
+            var aptr = a.GetUnsafePtr();
+            var bptr = b.GetUnsafePtr();
+#else
             var aptr = (TValueType*)a.GetUnsafePtr();
             var bptr = (TValueType*)b.GetUnsafePtr();
+#endif
             for (var i = 0; i < a.Length; ++i)
             {
                 if (!EqualityEquals(ref aptr[i], ref bptr[i]))
@@ -1880,7 +1911,11 @@ namespace Unity.Netcode
                 return true;
             }
 
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (a.Count != b.Count)
+#else
             if (a.Count() != b.Count())
+#endif
             {
                 return false;
             }
@@ -1993,7 +2028,11 @@ namespace Unity.Netcode
                 return true;
             }
 
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (a.Count != b.Count)
+#else
             if (a.Count() != b.Count())
+#endif
             {
                 return false;
             }

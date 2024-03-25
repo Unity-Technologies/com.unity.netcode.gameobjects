@@ -1,11 +1,14 @@
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
+    [TestFixture(HostOrServer.Host)]
     public class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
         private ulong serverSideClientId => NetworkManager.ServerClientId;
@@ -13,6 +16,8 @@ namespace Unity.Netcode.RuntimeTests
         private ulong otherClientSideClientId => m_ClientNetworkManagers[1].LocalClientId;
 
         protected override int NumberOfClients => 2;
+
+        public NetworkSpawnManagerTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         [Test]
         public void TestServerCanAccessItsOwnPlayer()
@@ -23,9 +28,16 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(serverSideClientId, serverSideServerPlayerObject.OwnerClientId);
         }
 
-        [Test]
-        public void TestServerCanAccessOtherPlayers()
+
+        /// <summary>
+        /// Test was converted from a Test to UnityTest so distributed authority mode will pass this test.
+        /// In distributed authority mode, client-side player spawning is enabled by default which requires
+        /// all client (including DAHost) instances to wait for all players to be spawned.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestServerCanAccessOtherPlayers()
         {
+            yield return null;
             // server can access other players
             var serverSideClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(clientSideClientId);
             Assert.NotNull(serverSideClientPlayerObject);
@@ -34,11 +46,19 @@ namespace Unity.Netcode.RuntimeTests
             var serverSideOtherClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
             Assert.NotNull(serverSideOtherClientPlayerObject);
             Assert.AreEqual(otherClientSideClientId, serverSideOtherClientPlayerObject.OwnerClientId);
+
         }
 
         [Test]
         public void TestClientCantAccessServerPlayer()
         {
+#if NGO_DAMODE
+            if (m_DistributedAuthority)
+            {
+                VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_SessionModeType} mode.");
+                return;
+            }
+#endif
             // client can't access server player
             Assert.Throws<NotServerException>(() =>
             {
@@ -54,10 +74,32 @@ namespace Unity.Netcode.RuntimeTests
             Assert.NotNull(clientSideClientPlayerObject);
             Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
         }
+#if NGO_DAMODE
+        [Test]
+        public void TestClientCanAccessOtherPlayer()
+        {
+
+            if (!m_DistributedAuthority)
+            {
+                VerboseDebug($"Ignoring test: Clients do not have access to other player objects in {m_SessionModeType} mode.");
+                return;
+            }
+
+            var otherClientPlayer = m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
+            Assert.NotNull(otherClientPlayer, $"Failed to obtain Client{otherClientSideClientId}'s player object!");
+        }
+#endif
 
         [Test]
         public void TestClientCantAccessOtherPlayer()
         {
+#if NGO_DAMODE
+            if (m_DistributedAuthority)
+            {
+                VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_SessionModeType} mode.");
+                return;
+            }
+#endif
             // client can't access other player
             Assert.Throws<NotServerException>(() =>
             {
@@ -97,18 +139,8 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestConnectAndDisconnect()
         {
             // test when client connects, player object is now available
-
-            // connect new client
-            if (!NetcodeIntegrationTestHelpers.CreateNewClients(1, out NetworkManager[] clients))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
-            var newClientNetworkManager = clients[0];
-            newClientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            newClientNetworkManager.StartClient();
-            yield return NetcodeIntegrationTestHelpers.WaitForClientConnected(newClientNetworkManager);
-            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients.ContainsKey(newClientNetworkManager.LocalClientId));
+            yield return CreateAndStartNewClient();
+            var newClientNetworkManager = m_ClientNetworkManagers[NumberOfClients];
             var newClientLocalClientId = newClientNetworkManager.LocalClientId;
 
             // test new client can get that itself locally

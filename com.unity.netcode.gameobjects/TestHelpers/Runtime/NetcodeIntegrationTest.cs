@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
@@ -29,6 +30,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
 
         public NetcodeLogAssert NetcodeLogAssert;
+        public enum SceneManagementState
+        {
+            SceneManagementEnabled,
+            SceneManagementDisabled
+        }
+
+        private StringBuilder m_InternalErrorLog = new StringBuilder();
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -112,7 +120,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public enum HostOrServer
         {
             Host,
-            Server
+            Server,
+#if NGO_DAMODE
+            DAHost
+#endif
         }
 
         protected GameObject m_PlayerPrefab;
@@ -129,6 +140,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
+#if NGO_DAMODE
+        protected bool m_DistributedAuthority;
+        protected SessionModeTypes m_SessionModeType = SessionModeTypes.ClientServer;
+
+        protected virtual bool UseCMBService()
+        {
+            return false;
+        }
+
+        protected virtual SessionModeTypes OnGetSessionmode()
+        {
+            return m_SessionModeType;
+        }
+
+        protected void SetDistributedAuthorityProperties(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.SessionMode = m_SessionModeType;
+            networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_DistributedAuthority;
+            networkManager.NetworkConfig.UseCMBService = UseCMBService() && m_DistributedAuthority;
+        }
+
+#endif
         protected int m_TargetFrameRate = 60;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
@@ -338,6 +371,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 else
                 {
                     yield return StartServerAndClients();
+
                 }
             }
 
@@ -367,6 +401,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_PlayerPrefab = new GameObject("Player");
             OnPlayerPrefabGameObjectCreated();
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
+            networkObject.IsSceneObject = false;
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -455,6 +490,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+#if NGO_DAMODE
+            SetDistributedAuthorityProperties(networkManager);
+#endif
 
             // Notification that the new client (NetworkManager) has been created
             // in the event any modifications need to be made before starting the client
@@ -483,11 +521,67 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.DestroyImmediate(networkManager.gameObject);
                 }
 
-                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
+                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
                 ClientNetworkManagerPostStart(networkManager);
+#if NGO_DAMODE
+                if (networkManager.DistributedAuthorityMode)
+                {
+                    yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
+                    AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
+                }
+#endif
+
                 VerboseDebug($"[{networkManager.name}] Created and connected!");
             }
         }
+
+#if NGO_DAMODE
+        private bool AllPlayerObjectClonesSpawned(NetworkManager joinedClient)
+        {
+            m_InternalErrorLog.Clear();
+            // Continue to populate the PlayerObjects list until all player object (local and clone) are found
+            ClientNetworkManagerPostStart(joinedClient);
+
+            var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+            if (playerObjectRelative == null)
+            {
+                m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
+                return false;
+            }
+            else
+            {
+                // Go ahead and create an entry for this new client
+                if (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
+                {
+                    m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
+                }
+            }
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager.LocalClientId == joinedClient.LocalClientId)
+                {
+                    continue;
+                }
+
+                playerObjectRelative = clientNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+                if (playerObjectRelative == null)
+                {
+                    m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Client-{clientNetworkManager.LocalClientId}] Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
+                    return false;
+                }
+                else
+                {
+                    // Go ahead and create an entry for this new client
+                    if (!m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
+                    {
+                        m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
+                    }
+                }
+            }
+            return true;
+        }
+#endif
 
         /// <summary>
         /// This will create, start, and connect a new client while in the middle of an
@@ -497,6 +591,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+#if NGO_DAMODE
+            SetDistributedAuthorityProperties(networkManager);
+#endif
 
             // Notification that the new client (NetworkManager) has been created
             // in the event any modifications need to be made before starting the client
@@ -584,9 +681,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
+#if NGO_DAMODE
+            SetDistributedAuthorityProperties(m_ServerNetworkManager);
+#endif
+
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+#if NGO_DAMODE
+                SetDistributedAuthorityProperties(client);
+#endif
             }
 
             // Provides opportunity to allow child derived classes to
@@ -733,21 +837,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
+
+#if NGO_DAMODE
+                // When using the CMBService, don't start the server.
+                bool startServer = !(UseCMBService() && m_DistributedAuthority);
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, startServer, m_ServerNetworkManager, m_ClientNetworkManagers))
+#else
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+#endif
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
 
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
-                // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients 
+                // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
                 // to load their own scenes.
                 if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    var scenesLoaded = m_ServerNetworkManager.SceneManager.ScenesLoaded;
-                    m_ServerNetworkManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, m_ServerNetworkManager);
+#if NGO_DAMODE
+                    if (startServer)
+#endif
+                    {
+                        var scenesLoaded = m_ServerNetworkManager.SceneManager.ScenesLoaded;
+                        m_ServerNetworkManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, m_ServerNetworkManager);
+                    }
                 }
-
 
                 if (LogAllMessages)
                 {
@@ -765,7 +880,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     // Wait for all clients to connect
                     yield return WaitForClientsConnectedOrTimeOut();
 
-                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
                     if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
@@ -786,9 +901,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                         }
                     }
-
+#if NGO_DAMODE
+                    if (m_DistributedAuthority)
+                    {
+                        //yield return WaitForConditionOrTimeOut(AllClientPlayersSpawned);
+                        //AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn all player objects!");
+                        foreach (var networkManager in m_ClientNetworkManagers)
+                        {
+                            if (networkManager.DistributedAuthorityMode)
+                            {
+                                yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
+                                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
+                            }
+                        }
+                        if (m_ServerNetworkManager != null)
+                        {
+                            yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
+                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
+                        }
+                    }
+#endif
                     ClientNetworkManagerPostStartInit();
-
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
                     yield return OnServerAndClientsConnected();
@@ -810,7 +943,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
+#if NGO_DAMODE
+                // When using the CMBService, don't start the server.
+                var usingCMBService = UseCMBService() && m_DistributedAuthority;
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !usingCMBService, m_ServerNetworkManager, m_ClientNetworkManagers))
+#else
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+#endif
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
@@ -859,6 +998,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                         }
                     }
+
+#if NGO_DAMODE
+                    if (m_DistributedAuthority)
+                    {
+
+                        foreach (var networkManager in m_ClientNetworkManagers)
+                        {
+                            if (networkManager.DistributedAuthorityMode)
+                            {
+                                WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
+                                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
+                            }
+                        }
+                        if (m_ServerNetworkManager != null)
+                        {
+                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
+                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!");
+                        }
+                    }
+#endif
 
                     ClientNetworkManagerPostStartInit();
 
@@ -968,6 +1127,45 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
         }
 
+        protected IEnumerator CoroutineShutdownAndCleanUp()
+        {
+            VerboseDebug($"Entering {nameof(ShutdownAndCleanUp)}");
+            // Shutdown and clean up both of our NetworkManager instances
+            try
+            {
+                DeRegisterSceneManagerHandler();
+
+                NetcodeIntegrationTestHelpers.Destroy();
+
+                m_PlayerNetworkObjects.Clear();
+                s_GlobalNetworkObjects.Clear();
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            finally
+            {
+                if (m_PlayerPrefab != null)
+                {
+                    Object.DestroyImmediate(m_PlayerPrefab);
+                    m_PlayerPrefab = null;
+                }
+            }
+
+            // Allow time for NetworkManagers to fully shutdown
+            yield return s_DefaultWaitForTick;
+
+            // Cleanup any remaining NetworkObjects
+            DestroySceneNetworkObjects();
+
+            UnloadRemainingScenes();
+
+            // reset the m_ServerWaitForTick for the next test to initialize
+            s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
+            VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+        }
+
         /// <summary>
         /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> mode
         /// this is called before ShutdownAndCleanUp.
@@ -997,7 +1195,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
-                ShutdownAndCleanUp();
+                if (m_TearDownIsACoroutine)
+                {
+                    yield return CoroutineShutdownAndCleanUp();
+                }
+                else
+                {
+                    ShutdownAndCleanUp();
+                }
             }
 
             if (m_EnableTimeTravel)
@@ -1233,11 +1438,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clientsToCheck">An array of clients to be checked</param>
         protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
+            yield return WaitForConditionOrTimeOut(() => CheckClientsConnected(clientsToCheck));
+        }
 
-            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                         m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+        /// <summary>
+        /// Validation for clients connected that includes additional information for easier troubleshooting purposes.
+        /// </summary>
+        private bool CheckClientsConnected(NetworkManager[] clientsToCheck)
+        {
+            m_InternalErrorLog.Clear();
+            var allClientsConnected = true;
+
+            for (int i = 0; i < clientsToCheck.Length; i++)
+            {
+                if (!clientsToCheck[i].IsConnectedClient)
+                {
+                    allClientsConnected = false;
+                    m_InternalErrorLog.AppendLine($"[Client-{i + 1}] Client is not connected!");
+                }
+            }
+            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
+            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
+
+            if (currentCount != expectedCount)
+            {
+                allClientsConnected = false;
+                m_InternalErrorLog.AppendLine($"[Server-Side] Expected {expectedCount} clients to connect but only {currentCount} connected!");
+            }
+
+            return allClientsConnected;
         }
 
         /// <summary>
@@ -1289,7 +1518,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
             yield return WaitForConditionOrTimeOut(hooks);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut);
+            AssertOnTimeout($"Timed out waiting for message type {typeof(T).Name}!");
         }
 
         internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> waitForReceivedBy, ReceiptType type = ReceiptType.Handled)
@@ -1309,7 +1538,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
             yield return WaitForConditionOrTimeOut(hooks);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut);
+            var stringBuilder = new StringBuilder();
+            foreach (var messageType in messagesInOrder)
+            {
+                stringBuilder.Append($"{messageType.Name},");
+            }
+            AssertOnTimeout($"Timed out waiting for message types: {stringBuilder}!");
         }
 
 
@@ -1326,7 +1560,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
-            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks));
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks), $"[Message Not Recieved] {hooks.GetHooksStillWaiting()}");
         }
 
         internal void WaitForMessagesReceivedWithTimeTravel(List<Type> messagesInOrder, List<NetworkManager> waitForReceivedBy, ReceiptType type = ReceiptType.Handled)
@@ -1345,7 +1579,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
-            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks));
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks), $"[Messages Not Recieved] {hooks.GetHooksStillWaiting()}");
         }
 
         /// <summary>
@@ -1361,8 +1595,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                                           $"but before {nameof(OnStartedServerAndClients)}!";
             Assert.IsNotNull(m_ServerNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
-
-            return NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
+            var prefabObject = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
+#if NGO_DAMODE
+            // DANGO-TODO: Ownership flags could require us to change this
+            // For testing purposes, we default to true for the distribute ownership property when in distirbuted authority session mode.
+            prefabObject.GetComponent<NetworkObject>().Ownership |= NetworkObject.OwnershipStatus.Distributable;
+#endif
+            return prefabObject;
         }
 
         /// <summary>
@@ -1376,17 +1615,75 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Overloaded method <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
+        /// </summary>
+        protected GameObject SpawnPlayerObject(GameObject prefabGameObject, NetworkManager owner, bool destroyWithScene = false)
+        {
+            var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
+            Assert.IsNotNull(prefabNetworkObject, $"{nameof(GameObject)} {prefabGameObject.name} does not have a {nameof(NetworkObject)} component!");
+            return SpawnObject(prefabNetworkObject, owner, destroyWithScene, true);
+        }
+
+        /// <summary>
         /// Spawn a NetworkObject prefab instance
         /// </summary>
         /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="destroyWithScene">default is false</param>
         /// <returns>GameObject instance spawned</returns>
-        private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false)
+        private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
         {
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
+
+#if NGO_DAMODE
+            if (owner.NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority)
+            {
+                networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
+                if (isPlayerObject)
+                {
+                    networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                }
+                else
+                {
+                    networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                }
+            }
+            else
+            {
+                networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
+                if (owner == m_ServerNetworkManager)
+                {
+                    if (m_UseHost)
+                    {
+                        if (isPlayerObject)
+                        {
+                            networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                        }
+                        else
+                        {
+                            networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                        }
+                    }
+                    else
+                    {
+                        networkObjectToSpawn.Spawn(destroyWithScene);
+                    }
+                }
+                else
+                {
+                    if (isPlayerObject)
+                    {
+                        networkObjectToSpawn.SpawnAsPlayerObject(owner.LocalClientId, destroyWithScene);
+                    }
+                    else
+                    {
+                        networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
+                    }
+                }
+            }
+#else
             networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
             if (owner == m_ServerNetworkManager)
             {
@@ -1403,6 +1700,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
             }
+#endif
+
 
             return newInstance;
         }
@@ -1441,7 +1740,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public NetcodeIntegrationTest()
         {
+#if NGO_DAMODE
+            m_SessionModeType = OnGetSessionmode();
+            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
+#endif
+
         }
+
+#if NGO_DAMODE
+        public NetcodeIntegrationTest(SessionModeTypes sessionMode)
+        {
+            m_SessionModeType = sessionMode;
+            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+        }
+#endif
 
         /// <summary>
         /// Optional Host or Server integration tests
@@ -1461,7 +1774,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="hostOrServer"></param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
-            m_UseHost = hostOrServer == HostOrServer.Host ? true : false;
+#if NGO_DAMODE
+            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
+            m_SessionModeType = hostOrServer == HostOrServer.DAHost ? SessionModeTypes.DistributedAuthority : SessionModeTypes.ClientServer;
+            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+#else
+            m_UseHost = hostOrServer == HostOrServer.Host;
+#endif
         }
 
         /// <summary>
@@ -1492,7 +1811,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private System.Text.StringBuilder m_WaitForLog = new System.Text.StringBuilder();
+        private StringBuilder m_WaitForLog = new StringBuilder();
 
         private void LogWaitForMessages()
         {

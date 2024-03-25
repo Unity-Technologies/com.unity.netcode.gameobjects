@@ -61,6 +61,20 @@ namespace Unity.Netcode
         /// If the server is running in dedicated server mode, this is the same as <see cref="NotServer" />.
         /// </summary>
         ClientsAndHost,
+#if NGO_DAMODE
+        /// <summary>
+        /// Send this RPC to the authority.
+        /// In distributed authority mode, this will be the owner of the NetworkObject.
+        /// In normal client-server mode, this is basically the exact same thing as a server rpc.
+        /// </summary>
+        Authority,
+        /// <summary>
+        /// Send this RPC to all non-authority instances.
+        /// In distributed authority mode, this will be the non-owners of the NetworkObject.
+        /// In normal client-server mode, this is basically the exact same thing as a client rpc.
+        /// </summary>
+        NotAuthority,
+#endif
         /// <summary>
         /// This RPC cannot be sent without passing in a target in RpcSendParams.
         /// </summary>
@@ -100,7 +114,10 @@ namespace Unity.Netcode
             NotMe = new NotMeRpcTarget(manager);
             Me = new LocalSendRpcTarget(manager);
             ClientsAndHost = new ClientsAndHostRpcTarget(manager);
-
+#if NGO_DAMODE
+            Authority = new AuthorityRpcTarget(manager);
+            NotAuthority = new NotAuthorityRpcTarget(manager);
+#endif
             m_CachedProxyRpcTargetGroup = new ProxyRpcTargetGroup(manager);
             m_CachedTargetGroup = new RpcTargetGroup(manager);
             m_CachedDirectSendTarget = new DirectSendRpcTarget(manager);
@@ -122,7 +139,10 @@ namespace Unity.Netcode
             NotMe.Dispose();
             Me.Dispose();
             ClientsAndHost.Dispose();
-
+#if NGO_DAMODE
+            Authority.Dispose();
+            NotAuthority.Dispose();
+#endif
             m_CachedProxyRpcTargetGroup.Unlock();
             m_CachedTargetGroup.Unlock();
             m_CachedDirectSendTarget.Unlock();
@@ -133,7 +153,6 @@ namespace Unity.Netcode
             m_CachedDirectSendTarget.Dispose();
             m_CachedProxyRpcTarget.Dispose();
         }
-
 
         /// <summary>
         /// Send to the NetworkObject's current owner.
@@ -195,6 +214,22 @@ namespace Unity.Netcode
         /// If the server is running in dedicated server mode, this is the same as <see cref="NotServer" />.
         /// </summary>
         public BaseRpcTarget ClientsAndHost;
+
+#if NGO_DAMODE
+        /// <summary>
+        /// Send this RPC to the authority.
+        /// In distributed authority mode, this will be the owner of the NetworkObject.
+        /// In normal client-server mode, this is basically the exact same thing as a server rpc.
+        /// </summary>
+        public BaseRpcTarget Authority;
+
+        /// <summary>
+        /// Send this RPC to all non-authority instances.
+        /// In distributed authority mode, this will be the non-owners of the NetworkObject.
+        /// In normal client-server mode, this is basically the exact same thing as a client rpc.
+        /// </summary>
+        public BaseRpcTarget NotAuthority;
+#endif
 
         /// <summary>
         /// Send to a specific single client ID.

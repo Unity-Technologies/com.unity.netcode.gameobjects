@@ -31,11 +31,26 @@ namespace Unity.Netcode
 
         public unsafe void Handle(ref NetworkContext context)
         {
-
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(WrappedMessage.Metadata.NetworkObjectId, out var networkObject))
             {
-                throw new InvalidOperationException($"An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
+#if NGO_DAMODE
+                // With distributed authority mode, we can send Rpcs before we have been notified the NetworkObject is despawned.
+                // DANGO-TODO: Should the CMB Service cull out any Rpcs targeting recently despawned NetworkObjects?
+                // DANGO-TODO: This would require the service to keep track of despawned NetworkObjects since we re-use NetworkObject identifiers.
+                if (networkManager.DistributedAuthorityMode)
+                {
+                    if (networkManager.LogLevel == LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"[{WrappedMessage.Metadata.NetworkObjectId}, {WrappedMessage.Metadata.NetworkBehaviourId}, {WrappedMessage.Metadata.NetworkRpcMethodId}]An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
+                    }
+                    return;
+                }
+                else
+#endif
+                {
+                    throw new InvalidOperationException($"[{WrappedMessage.Metadata.NetworkObjectId}, {WrappedMessage.Metadata.NetworkBehaviourId}, {WrappedMessage.Metadata.NetworkRpcMethodId}]An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
+                }
             }
 
             var observers = networkObject.Observers;

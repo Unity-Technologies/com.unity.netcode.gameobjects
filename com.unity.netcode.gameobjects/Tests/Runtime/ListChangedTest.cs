@@ -1,4 +1,5 @@
 using System.Collections;
+using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -45,6 +46,10 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+#if NGO_DAMODE
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
+#endif
     public class NetworkListChangedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -53,6 +58,10 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_NetSpawnedObject1;
+
+#if NGO_DAMODE
+        public NetworkListChangedTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+#endif
 
         protected override void OnServerAndClientsCreated()
         {

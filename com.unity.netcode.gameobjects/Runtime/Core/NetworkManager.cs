@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+#if NGO_DAMODE
+using System.Linq;
+#endif
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -34,6 +37,140 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+#if NGO_DAMODE
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Returns true if the current session is running in distributed authority mode.
+        /// </summary>
+        public bool DistributedAuthorityMode
+        {
+            get
+            {
+                return NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority;
+            }
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Gets whether the NetworkManager is connected to a distributed authority state service.
+        /// <see cref="NetworkClient.DAHost"/> to determine if the instance is mocking the state service.
+        /// </summary>
+        public bool CMBServiceConnection
+        {
+            get
+            {
+                return NetworkConfig.UseCMBService;
+            }
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// When enabled, the player prefab will be automatically spawned on the newly connected client-side.
+        /// </summary>
+        /// <remarks>
+        /// Refer to <see cref="NetworkConfig.AutoSpawnPlayerPrefabClientSide"/> to enable/disable automatic spawning of the player prefab.
+        /// Alternately, override the <see cref="FetchLocalPlayerPrefabToSpawn"/> to control what prefab the player should spawn.
+        /// </remarks>
+        public bool AutoSpawnPlayerPrefabClientSide
+        {
+            get
+            {
+                return NetworkConfig.AutoSpawnPlayerPrefabClientSide;
+            }
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Delegate definition for <see cref="FetchLocalPlayerPrefabToSpawn"/>
+        /// </summary>
+        /// <returns>Player Prefab <see cref="GameObject"/></returns>
+        public delegate GameObject OnFetchLocalPlayerPrefabToSpawnDelegateHandler();
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// When a callback is assigned, this provides control over what player prefab a client will be using.
+        /// This is invoked only when <see cref="NetworkConfig.AutoSpawnPlayerPrefabClientSide"/> is enabled.
+        /// </summary>
+        public OnFetchLocalPlayerPrefabToSpawnDelegateHandler OnFetchLocalPlayerPrefabToSpawn;
+
+        internal GameObject FetchLocalPlayerPrefabToSpawn()
+        {
+            if (!AutoSpawnPlayerPrefabClientSide)
+            {
+                Debug.LogError($"[{nameof(FetchLocalPlayerPrefabToSpawn)}] Invoked when {nameof(NetworkConfig.AutoSpawnPlayerPrefabClientSide)} was not set! Check call paths!");
+                return null;
+            }
+            if (OnFetchLocalPlayerPrefabToSpawn == null && NetworkConfig.PlayerPrefab == null)
+            {
+                return null;
+            }
+
+            if (OnFetchLocalPlayerPrefabToSpawn != null)
+            {
+                return OnFetchLocalPlayerPrefabToSpawn();
+            }
+            return NetworkConfig.PlayerPrefab;
+        }
+
+        /// <summary>
+        /// Distributed Authority Mode
+        /// Gets whether the current NetworkManager is running as a mock distributed authority state service (DAHost)
+        /// </summary>
+        public bool DAHost
+        {
+            get
+            {
+                return LocalClient.DAHost;
+            }
+        }
+
+        // DANGO-TODO-MVP: Remove these properties once the service handles object distribution
+        internal ulong ClientToRedistribute;
+        internal bool RedistributeToClient;
+        internal int TickToRedistribute;
+
+        internal List<NetworkObject> DeferredDespawnObjects = new List<NetworkObject>();
+
+        public ulong CurrentSessionOwner { get; internal set; }
+
+        internal void SetSessionOwner(ulong sessionOwner)
+        {
+            CurrentSessionOwner = sessionOwner;
+            LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
+        }
+
+
+
+#if NGO_DAMODE
+
+        // TODO: Make this internal after testing
+        public void PromoteSessionOwner(ulong clientId)
+        {
+            if (!DistributedAuthorityMode)
+            {
+                NetworkLog.LogErrorServer($"[SceneManagement][NotDA] Invoking promote session owner while not in distributed authority mode!");
+                return;
+            }
+            if (!DAHost)
+            {
+                NetworkLog.LogErrorServer($"[SceneManagement][NotDAHost] Client is attempting to promote another client as the session owner!");
+                return;
+            }
+            SetSessionOwner(clientId);
+            var sessionOwnerMessage = new SessionOwnerMessage()
+            {
+                SessionOwner = clientId,
+            };
+            var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
+            foreach (var targetClient in clients)
+            {
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableSequenced, targetClient);
+            }
+        }
+#endif
+
+#endif
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -56,6 +193,14 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
                     {
+#if NGO_DAMODE
+                        // Handle deferred despawning
+                        if (DistributedAuthorityMode)
+                        {
+                            SpawnManager.DeferredDespawnUpdate(ServerTime);
+                        }
+#endif
+
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 
@@ -70,6 +215,18 @@ namespace Unity.Netcode
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
+
+#if NGO_DAMODE
+                        // DANGO-TODO-MVP: Remove this once the service handles object distribution
+                        // NOTE: This needs to be the last thing done and should happen exactly at this point
+                        // in the update
+                        if (RedistributeToClient && ServerTime.Tick <= TickToRedistribute)
+                        {
+                            RedistributeToClient = false;
+                            SpawnManager.DistributeNetworkObjects(ClientToRedistribute);
+                            ClientToRedistribute = 0;
+                        }
+#endif
 
                         if (m_ShuttingDown)
                         {
@@ -171,17 +328,31 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Gets a dictionary of connected clients and their clientId keys.
+        /// </summary>
+#if NGO_DAMODE
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => ConnectionManager.ConnectedClients;
+#else
+        /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
         /// </summary>
         public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => IsServer ? ConnectionManager.ConnectedClients : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
+#endif
 
+        /// <summary>
+        /// Gets a list of connected clients.
+        /// </summary>
+#if NGO_DAMODE
+        public IReadOnlyList<NetworkClient> ConnectedClientsList => ConnectionManager.ConnectedClientsList;
+#else
         /// <summary>
         /// Gets a list of connected clients. This is only accessible on the server.
         /// </summary>
         public IReadOnlyList<NetworkClient> ConnectedClientsList => IsServer ? ConnectionManager.ConnectedClientsList : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
+#endif
 
         /// <summary>
-        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
+        /// Gets a list of just the IDs of all connected clients.
         /// </summary>
         public IReadOnlyList<ulong> ConnectedClientsIds => ConnectionManager.ConnectedClientIds;
 
@@ -780,6 +951,10 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+#if NGO_DAMODE
+            NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;
+#endif
+
             // Make sure the ServerShutdownState is reset when initializing
             if (server)
             {
@@ -930,7 +1105,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(true, false, this);
+            if (!ConnectionManager.LocalClient.SetRole(true, false, this))
+            {
+                return false;
+            }
             ConnectionManager.LocalClient.ClientId = ServerClientId;
 
             Initialize(true);
@@ -976,7 +1154,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(false, true, this);
+            if (!ConnectionManager.LocalClient.SetRole(false, true, this))
+            {
+                return false;
+            }
 
             Initialize(false);
 
@@ -1019,7 +1200,11 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ConnectionManager.LocalClient.SetRole(true, true, this);
+            if (!ConnectionManager.LocalClient.SetRole(true, true, this))
+            {
+                return false;
+            }
+
             Initialize(true);
             try
             {
@@ -1072,12 +1257,22 @@ namespace Unity.Netcode
             }
             else
             {
+#if NGO_DAMODE
+                var response = new ConnectionApprovalResponse
+                {
+                    Approved = true,
+                    // Distributed authority always returns true since the client side handles spawning (whether automatically or manually)
+                    CreatePlayerObject = DistributedAuthorityMode || NetworkConfig.PlayerPrefab != null,
+                };
+                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+#else
                 var response = new ConnectionApprovalResponse
                 {
                     Approved = true,
                     CreatePlayerObject = NetworkConfig.PlayerPrefab != null
                 };
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+#endif
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -1223,6 +1418,7 @@ namespace Unity.Netcode
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
         }
+
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()

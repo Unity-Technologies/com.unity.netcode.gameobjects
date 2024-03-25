@@ -9,6 +9,10 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
+#endif 
     public class ClientSynchronizationValidationTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
@@ -21,6 +25,9 @@ namespace TestProject.RuntimeTests
 
         private List<ClientSceneVerificationHandler> m_ClientSceneVerifiers = new List<ClientSceneVerificationHandler>();
 
+#if NGO_DAMODE
+        public ClientSynchronizationValidationTest(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+#endif
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
             if (m_IncludeSceneVerificationHandler)

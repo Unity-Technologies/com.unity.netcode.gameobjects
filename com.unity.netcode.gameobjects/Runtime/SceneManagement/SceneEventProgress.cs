@@ -55,6 +55,12 @@ namespace Unity.Netcode
         /// This is returned when a client attempts to perform a server only action
         /// </summary>
         ServerOnlyAction,
+#if NGO_DAMODE
+        /// <summary>
+        /// This is returned when a client that is not the session owner attempts to perform a session owner only action
+        /// </summary>
+        SessionOwnerOnlyAction,
+#endif
     }
 
     /// <summary>
@@ -157,22 +163,30 @@ namespace Unity.Netcode
             if (status == SceneEventProgressStatus.Started)
             {
                 m_NetworkManager = networkManager;
-
+#if NGO_DAMODE
+                WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
+                if ((networkManager.IsServer && !networkManager.DistributedAuthorityMode) || (networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner))
+                {
+#else
                 if (networkManager.IsServer)
                 {
+                    WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
+#endif
                     m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
                     // Track the clients that were connected when we started this event
                     foreach (var connectedClientId in networkManager.ConnectedClientsIds)
                     {
-                        // Ignore the host client
+#if NGO_DAMODE
+                        // Ignore the host or session owner
+                        if ((!networkManager.DistributedAuthorityMode && NetworkManager.ServerClientId == connectedClientId) || (networkManager.DistributedAuthorityMode && networkManager.CurrentSessionOwner == connectedClientId))
+#else
                         if (NetworkManager.ServerClientId == connectedClientId)
+#endif
                         {
                             continue;
                         }
                         ClientsProcessingSceneEvent.Add(connectedClientId, false);
                     }
-
-                    WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
                     m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
                 }
             }

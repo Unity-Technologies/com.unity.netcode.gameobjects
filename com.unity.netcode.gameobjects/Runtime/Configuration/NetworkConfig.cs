@@ -129,9 +129,9 @@ namespace Unity.Netcode
         public int LoadSceneTimeOut = 120;
 
         /// <summary>
-        /// The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped.
+        /// The amount of time a message will be held (deferred) if the destination NetworkObject needed to process the message doesn't exist yet. If the NetworkObject is not spawned within this time period, all deferred messages for that NetworkObject will be dropped.
         /// </summary>
-        [Tooltip("The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped")]
+        [Tooltip("The amount of time a message will be held (deferred) if the destination NetworkObject needed to process the message doesn't exist yet. If the NetworkObject is not spawned within this time period, all deferred messages for that NetworkObject will be dropped.")]
         public float SpawnTimeout = 10f;
 
         /// <summary>
@@ -148,6 +148,19 @@ namespace Unity.Netcode
         /// The number of slots used for RTT calculations. This is the maximum amount of in-flight messages
         /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
+
+
+#if NGO_DAMODE
+
+        [Tooltip("Determines if the network session will run in clinet-server or distributed authority mode.")]
+        public SessionModeTypes SessionMode;
+
+        [HideInInspector]
+        public bool UseCMBService;
+
+        [Tooltip("When enabled (default), the player prefab will automatically be spawned (client-side) upon the client being approved and synchronized.")]
+        public bool AutoSpawnPlayerPrefabClientSide = true;
+#endif
 
         /// <summary>
         /// Returns a base64 encoded version of the configuration

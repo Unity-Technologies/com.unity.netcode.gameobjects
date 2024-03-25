@@ -73,7 +73,11 @@ namespace TestProject.RuntimeTests
         {
             OnInSceneObjectDespawned?.Invoke(NetworkObject);
             m_HasNotifiedSpawned = false;
-            Debug.Log($"{NetworkManager.name} de-spawned {gameObject.name}.");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"{NetworkManager.name} de-spawned {gameObject.name}.");
+            }
+
             SpawnedInstances.Remove(this);
             if (DisableOnDespawn)
             {
@@ -89,7 +93,10 @@ namespace TestProject.RuntimeTests
             // We do this so the ObjectNameIdentifier has a chance to label it properly
             if (IsSpawned && !m_HasNotifiedSpawned)
             {
-                Debug.Log($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.Log($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
+                }
                 m_HasNotifiedSpawned = true;
             }
         }

@@ -12,8 +12,11 @@ using Assert = UnityEngine.Assertions.Assert;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(HostOrServer.Server)]
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     public class AddressablesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;

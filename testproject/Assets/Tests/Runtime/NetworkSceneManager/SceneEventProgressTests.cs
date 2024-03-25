@@ -10,6 +10,10 @@ using Random = UnityEngine.Random;
 
 namespace TestProject.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
+#endif 
     public class SceneEventProgressTests : NetcodeIntegrationTest
     {
         private const string k_SceneUsedToGetAsyncOperation = "EmptyScene";
@@ -22,6 +26,10 @@ namespace TestProject.RuntimeTests
 
         private List<ulong> m_ClientThatShouldNotHaveCompleted = new List<ulong>();
         private List<ulong> m_ClientThatShouldHaveCompleted = new List<ulong>();
+
+#if NGO_DAMODE
+        public SceneEventProgressTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+#endif
 
         private bool SceneEventProgressComplete(SceneEventProgress sceneEventProgress)
         {

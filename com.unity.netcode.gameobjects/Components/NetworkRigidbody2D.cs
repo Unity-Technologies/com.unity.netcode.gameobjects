@@ -21,11 +21,6 @@ namespace Unity.Netcode.Components
         // Used to cache the authority state of this rigidbody during the last frame
         private bool m_IsAuthority;
 
-        /// <summary>
-        /// Gets a bool value indicating whether this <see cref="NetworkRigidbody2D"/> on this peer currently holds authority.
-        /// </summary>
-        private bool HasAuthority => m_NetworkTransform.CanCommitToTransform;
-
         private void Awake()
         {
             m_Rigidbody = GetComponent<Rigidbody2D>();
@@ -41,9 +36,9 @@ namespace Unity.Netcode.Components
         {
             if (IsSpawned)
             {
-                if (HasAuthority != m_IsAuthority)
+                if (m_NetworkTransform.CanCommitToTransform != m_IsAuthority)
                 {
-                    m_IsAuthority = HasAuthority;
+                    m_IsAuthority = m_NetworkTransform.CanCommitToTransform;
                     UpdateRigidbodyKinematicMode();
                 }
             }
@@ -72,7 +67,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
-            m_IsAuthority = HasAuthority;
+            m_IsAuthority = m_NetworkTransform.CanCommitToTransform;
             m_OriginalKinematic = m_Rigidbody.isKinematic;
             m_OriginalInterpolation = m_Rigidbody.interpolation;
             UpdateRigidbodyKinematicMode();

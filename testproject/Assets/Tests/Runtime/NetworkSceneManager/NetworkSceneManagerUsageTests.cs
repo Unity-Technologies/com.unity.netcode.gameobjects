@@ -7,6 +7,9 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerUsageTests : NetcodeIntegrationTest
@@ -65,7 +68,15 @@ namespace TestProject.RuntimeTests
         {
             m_CurrentSceneName = k_AdditiveScene1;
             var statusResult = m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
-            Assert.True(statusResult == SceneEventProgressStatus.ServerOnlyAction, $"[Client][Load][{loadSceneMode}] Failed to receive a {nameof(SceneEventProgressStatus.ServerOnlyAction)} response!");
+            var expectedResult = SceneEventProgressStatus.ServerOnlyAction;
+#if NGO_DAMODE
+            if (m_DistributedAuthority)
+            {
+                expectedResult = SceneEventProgressStatus.SessionOwnerOnlyAction;
+            }
+#endif
+
+            Assert.True(statusResult == expectedResult, $"[Client][Load][{loadSceneMode}] Failed to receive a {nameof(expectedResult)} response!");
 
             // Check that a client cannot call UnloadScene
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
@@ -82,7 +93,9 @@ namespace TestProject.RuntimeTests
 
             // Now try to unload the scene as a client
             statusResult = m_ClientNetworkManagers[0].SceneManager.UnloadScene(m_CurrentScene);
-            Assert.True(statusResult == SceneEventProgressStatus.ServerOnlyAction, $"[Client][Unload] Failed to receive a {nameof(SceneEventProgressStatus.ServerOnlyAction)} response!");
+
+
+            Assert.True(statusResult == expectedResult, $"[Client][Unload] Failed to receive a {nameof(expectedResult)} response!");
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {

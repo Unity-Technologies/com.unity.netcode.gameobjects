@@ -10,6 +10,8 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkObjectOwnershipComponent : NetworkBehaviour
     {
+        public static Dictionary<ulong, NetworkObjectOwnershipComponent> SpawnedInstances = new Dictionary<ulong, NetworkObjectOwnershipComponent>();
+
         public bool OnLostOwnershipFired = false;
         public bool OnGainedOwnershipFired = false;
 
@@ -23,6 +25,15 @@ namespace Unity.Netcode.RuntimeTests
             OnGainedOwnershipFired = true;
         }
 
+        public override void OnNetworkSpawn()
+        {
+            if (!SpawnedInstances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                SpawnedInstances.Add(NetworkManager.LocalClientId, this);
+            }
+            base.OnNetworkSpawn();
+        }
+
         public void ResetFlags()
         {
             OnLostOwnershipFired = false;
@@ -30,6 +41,9 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkObjectOwnershipTests : NetcodeIntegrationTest
@@ -48,10 +62,22 @@ namespace Unity.Netcode.RuntimeTests
             Remove
         }
 
+        protected override IEnumerator OnSetup()
+        {
+            NetworkObjectOwnershipComponent.SpawnedInstances.Clear();
+            return base.OnSetup();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
             m_OwnershipPrefab.AddComponent<NetworkObjectOwnershipComponent>();
+#if NGO_DAMODE
+            if (m_DistributedAuthority)
+            {
+                m_OwnershipPrefab.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
+            }
+#endif
             base.OnServerAndClientsCreated();
         }
 
@@ -67,6 +93,23 @@ namespace Unity.Netcode.RuntimeTests
             Assert.NotNull(clientPlayerObject, $"Client Id {m_ClientNetworkManagers[0].LocalClientId} does not have its local player marked as an owned object using local client!");
         }
 
+        private bool AllObjectsSpawnedOnClients()
+        {
+            if (!NetworkObjectOwnershipComponent.SpawnedInstances.ContainsKey(m_ServerNetworkManager.LocalClientId))
+            {
+                return false;
+            }
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (!NetworkObjectOwnershipComponent.SpawnedInstances.ContainsKey(client.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         [UnityTest]
         public IEnumerator TestOwnershipCallbacks([Values] OwnershipChecks ownershipChecks)
         {
@@ -74,6 +117,9 @@ namespace Unity.Netcode.RuntimeTests
             m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+
+            yield return WaitForConditionOrTimeOut(AllObjectsSpawnedOnClients);
+            AssertOnTimeout($"Timed out waiting for all clients to spawn the ownership object!");
 
             var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
             Assert.That(ownershipNetworkObjectId, Is.GreaterThan(0));
@@ -123,18 +169,26 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 // Validates that when ownership is removed the server gets an OnGainedOwnership notification
+#if NGO_DAMODE
+                // In distributed authority mode, the current owner just rolls the ownership back over to the DAHost client (i.e. host mocking CMB Service)
+                if (m_DistributedAuthority)
+                {
+                    clientObject.ChangeOwnership(NetworkManager.ServerClientId);
+                }
+                else
+                {
+                    serverObject.RemoveOwnership();
+                }
+#else
                 serverObject.RemoveOwnership();
+#endif
             }
 
-            yield return s_DefaultWaitForTick;
+            yield return WaitForConditionOrTimeOut(() => serverComponent.OnGainedOwnershipFired && serverComponent.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+            AssertOnTimeout($"Timed out waiting for ownership to be transfered back to the host instance!");
 
-            Assert.That(serverComponent.OnGainedOwnershipFired);
-            Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
-
-            yield return WaitForConditionOrTimeOut(() => clientComponent.OnLostOwnershipFired);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to lose ownership!");
-            Assert.That(clientComponent.OnLostOwnershipFired);
-            Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => clientComponent.OnLostOwnershipFired && clientComponent.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+            AssertOnTimeout($"Timed out waiting for client-side lose ownership event to trigger or owner identifier to be equal to the host!");
         }
 
         /// <summary>
@@ -193,11 +247,11 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
             var serverObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
             Assert.That(serverObject, Is.Not.Null);
-
+            var clientObject = (NetworkObject)null;
             var clientObjects = new List<NetworkObject>();
             for (int i = 0; i < NumberOfClients; i++)
             {
-                var clientObject = m_ClientNetworkManagers[i].SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
+                clientObject = m_ClientNetworkManagers[i].SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
                 Assert.That(clientObject, Is.Not.Null);
                 clientObjects.Add(clientObject);
             }
@@ -217,9 +271,10 @@ namespace Unity.Netcode.RuntimeTests
 
             // After the 1st client has been given ownership to the object, this will be used to make sure each previous owner properly received the remove ownership message
             var previousClientComponent = (NetworkObjectOwnershipComponent)null;
+
             for (int clientIndex = 0; clientIndex < NumberOfClients; clientIndex++)
             {
-                var clientObject = clientObjects[clientIndex];
+                clientObject = clientObjects[clientIndex];
                 var clientId = m_ClientNetworkManagers[clientIndex].LocalClientId;
 
                 Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(clientId));
@@ -271,7 +326,19 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 // Validates that when ownership is removed the server gets an OnGainedOwnership notification
+#if NGO_DAMODE
+                // In distributed authority mode, the current owner just rolls the ownership back over to the DAHost client (i.e. host mocking CMB Service)
+                if (m_DistributedAuthority)
+                {
+                    clientObject.ChangeOwnership(NetworkManager.ServerClientId);
+                }
+                else
+                {
+                    serverObject.RemoveOwnership();
+                }
+#else
                 serverObject.RemoveOwnership();
+#endif
             }
 
             yield return WaitForConditionOrTimeOut(ownershipMessageHooks);
