@@ -1,10 +1,4 @@
 {
-    "ErrorExceptions": [
-      {
-        "ValidationTest": "API Validation",
-        "ExceptionMessage": "Breaking changes require a new major version.",
-        "PackageVersion": "2.0.0-exp"
-      }
-    ],
+    "ErrorExceptions": [],
     "WarningExceptions": []
 }
