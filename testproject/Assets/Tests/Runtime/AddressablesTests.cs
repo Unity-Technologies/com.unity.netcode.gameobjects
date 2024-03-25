@@ -12,9 +12,7 @@ using Assert = UnityEngine.Assertions.Assert;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class AddressablesTests : NetcodeIntegrationTest
@@ -35,7 +33,6 @@ namespace TestProject.RuntimeTests
         {
             return NetworkManagerInstatiationMode.DoNotCreate;
         }
-
 
         protected override void OnInlineTearDown()
         {

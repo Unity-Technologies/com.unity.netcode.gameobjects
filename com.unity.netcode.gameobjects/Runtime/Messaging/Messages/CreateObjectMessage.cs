@@ -10,7 +10,6 @@ namespace Unity.Netcode
         public NetworkObject.SceneObject ObjectInfo;
         private FastBufferReader m_ReceivedNetworkVariableData;
 
-#if NGO_DAMODE
         // DA - NGO CMB SERVICE NOTES:
         // The ObserverIds and ExistingObserverIds will only be populated if k_UpdateObservers is set
         // ObserverIds is the full list of observers (see below)
@@ -83,11 +82,9 @@ namespace Unity.Netcode
             if (set) { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags | flag); }
             else { m_CreateObjectMessageTypeFlags = (byte)(m_CreateObjectMessageTypeFlags & ~flag); }
         }
-#endif
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-#if NGO_DAMODE
             writer.WriteValueSafe(m_CreateObjectMessageTypeFlags);
 
             if (UpdateObservers)
@@ -116,9 +113,6 @@ namespace Unity.Netcode
             {
                 BytePacker.WriteValuePacked(writer, NetworkObjectId);
             }
-#else
-            ObjectInfo.Serialize(writer);
-#endif
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -129,7 +123,6 @@ namespace Unity.Netcode
                 return false;
             }
 
-#if NGO_DAMODE
             reader.ReadValueSafe(out m_CreateObjectMessageTypeFlags);
             if (UpdateObservers)
             {
@@ -172,19 +165,6 @@ namespace Unity.Netcode
                 return false;
             }
             m_ReceivedNetworkVariableData = reader;
-#else
-            if (!networkManager.IsClient)
-            {
-                return false;
-            }
-            ObjectInfo.Deserialize(reader);
-            if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectInfo))
-            {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Hash, reader, ref context);
-                return false;
-            }
-            m_ReceivedNetworkVariableData = reader;
-#endif
 
             return true;
         }
@@ -195,15 +175,10 @@ namespace Unity.Netcode
             // If a client receives a create object message and it is still synchronizing, then defer the object creation until it has finished synchronizing
             if (networkManager.SceneManager.ShouldDeferCreateObject())
             {
-#if NGO_DAMODE
                 networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
-#else
-                networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData);
-#endif
             }
             else
             {
-#if NGO_DAMODE
                 if (networkManager.DistributedAuthorityMode && !IncludesSerializedObject && UpdateObservers)
                 {
                     ObjectInfo = new NetworkObject.SceneObject()
@@ -212,14 +187,9 @@ namespace Unity.Netcode
                     };
                 }
                 CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
-#else
-                CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData);
-#endif
             }
         }
 
-
-#if NGO_DAMODE
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void CreateObject(ref NetworkManager networkManager, ref NetworkSceneManager.DeferredObjectCreation deferredObjectCreation)
         {
@@ -231,20 +201,13 @@ namespace Unity.Netcode
             var networkVariableData = deferredObjectCreation.FastBufferReader;
             CreateObject(ref networkManager, senderId, messageSize, sceneObject, networkVariableData, observerIds, newObserverIds);
         }
-#endif
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if NGO_DAMODE
         internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData, ulong[] observerIds, ulong[] newObserverIds)
-#else
-        internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData)
-#endif
         {
             var networkObject = (NetworkObject)null;
             try
             {
-#if NGO_DAMODE
                 if (!networkManager.DistributedAuthorityMode)
                 {
                     networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager);
@@ -332,9 +295,6 @@ namespace Unity.Netcode
                         }
                     }
                 }
-#else
-                networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager);
-#endif
                 if (networkObject != null)
                 {
                     networkManager.NetworkMetrics.TrackObjectSpawnReceived(senderId, networkObject, messageSize);

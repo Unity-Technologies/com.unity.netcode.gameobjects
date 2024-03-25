@@ -50,10 +50,8 @@ namespace Unity.Netcode
             if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkObject?.NetworkManager)
             {
                 m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
-#if NGO_DAMODE
                 // When in distributed authority mode, there is no such thing as server write permissions
                 InternalWritePerm = m_InternalNetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
-#endif
             }
         }
 
@@ -78,11 +76,7 @@ namespace Unity.Netcode
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
         {
             ReadPerm = readPerm;
-#if NGO_DAMODE
             InternalWritePerm = writePerm;
-#else
-            WritePerm = writePerm;
-#endif
         }
 
         /// <summary>
@@ -102,7 +96,6 @@ namespace Unity.Netcode
         /// </summary>
         public readonly NetworkVariableReadPermission ReadPerm;
 
-#if NGO_DAMODE
         /// <summary>
         /// The write permission for this var
         /// </summary>
@@ -114,15 +107,9 @@ namespace Unity.Netcode
             }
         }
 
-        // DANGO TODO: We have to change the Write Permission in distributed authority.
+        // We had to change the Write Permission in distributed authority.
         // (It is too bad we initially declared it as readonly)
         internal NetworkVariableWritePermission InternalWritePerm;
-#else
-        /// <summary>
-        /// The write permission for this var
-        /// </summary>
-        public readonly NetworkVariableWritePermission WritePerm;
-#endif
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -182,13 +169,11 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to read</returns>
         public bool CanClientRead(ulong clientId)
         {
-#if NGO_DAMODE
             // When in distributed authority mode, everyone can read (but only the owner can write)
             if (m_NetworkManager != null && m_NetworkManager.DistributedAuthorityMode)
             {
                 return true;
             }
-#endif
             switch (ReadPerm)
             {
                 default:

@@ -1268,14 +1268,13 @@ namespace Unity.Netcode
             NetworkVariableSerialization<ulong>.Serializer = new UlongSerializer();
             NetworkVariableSerialization<ulong>.AreEqual = NetworkVariableSerialization<ulong>.ValueEquals;
 
-#if NGO_DAMODE
+            // DANGO-EXP TODO: Determine if this is distributed authority only and impacts of this in client-server
             NetworkVariableSerialization<short>.Type = CollectionItemType.Short;
             NetworkVariableSerialization<ushort>.Type = CollectionItemType.UShort;
             NetworkVariableSerialization<int>.Type = CollectionItemType.Int;
             NetworkVariableSerialization<uint>.Type = CollectionItemType.UInt;
             NetworkVariableSerialization<long>.Type = CollectionItemType.Long;
             NetworkVariableSerialization<ulong>.Type = CollectionItemType.ULong;
-#endif
         }
 
         /// <summary>
@@ -1285,9 +1284,8 @@ namespace Unity.Netcode
         public static void InitializeSerializer_UnmanagedByMemcpy<T>() where T : unmanaged
         {
             NetworkVariableSerialization<T>.Serializer = new UnmanagedTypeSerializer<T>();
-#if NGO_DAMODE
+            // DANGO-EXP TODO: Determine if this is distributed authority only and impacts of this in client-server
             NetworkVariableSerialization<T>.Type = CollectionItemType.Unmanaged;
-#endif
         }
 
         /// <summary>
@@ -1566,13 +1564,11 @@ namespace Unity.Netcode
     {
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
-
-#if NGO_DAMODE
         /// <summary>
         /// The collection item type tells the CMB server how to read the bytes of each item in the collection
         /// </summary>
+        /// DANGO-EXP TODO: Determine if this is distributed authority only and impacts of this in client-server
         internal static CollectionItemType Type = CollectionItemType.Unknown;
-#endif
 
         /// <summary>
         /// A callback to check if two values are equal.

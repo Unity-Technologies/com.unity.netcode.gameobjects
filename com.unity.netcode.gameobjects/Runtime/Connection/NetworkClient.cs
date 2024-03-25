@@ -4,13 +4,11 @@ using UnityEngine;
 namespace Unity.Netcode
 {
 
-#if NGO_DAMODE
     public enum SessionModeTypes
     {
         ClientServer,
         DistributedAuthority
     }
-#endif
 
     /// <summary>
     /// A NetworkClient
@@ -43,7 +41,6 @@ namespace Unity.Netcode
         /// </summary>
         internal bool IsApproved { get; set; }
 
-#if NGO_DAMODE
         public SessionModeTypes SessionModeType { get; internal set; }
 
         public bool DAHost { get; internal set; }
@@ -52,7 +49,6 @@ namespace Unity.Netcode
         /// Is true when the client has been assigned session ownership in distributed authority mode
         /// </summary>
         public bool IsSessionOwner { get; internal set; }
-#endif
 
         /// <summary>
         /// The ClientId of the NetworkClient
@@ -81,7 +77,6 @@ namespace Unity.Netcode
             if (networkManager != null)
             {
                 SpawnManager = networkManager.SpawnManager;
-#if NGO_DAMODE
                 SessionModeType = networkManager.NetworkConfig.SessionMode;
 
                 if (SessionModeType == SessionModeTypes.DistributedAuthority)
@@ -101,7 +96,6 @@ namespace Unity.Netcode
                         return false;
                     }
                 }
-#endif
             }
             return true;
         }
@@ -120,9 +114,7 @@ namespace Unity.Netcode
                 IsConnected = false;
                 IsApproved = false;
                 SpawnManager = null;
-#if NGO_DAMODE
                 DAHost = false;
-#endif
             }
         }
 

@@ -7,10 +7,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif
     public class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
     {
         private GameObject m_TestNetworkObjectPrefab;
@@ -31,9 +29,7 @@ namespace Unity.Netcode.RuntimeTests
         private const string k_WithObserversError = "Not all clients spawned the";
         private const string k_WithoutObserversError = "A client spawned the";
 
-#if NGO_DAMODE
         public NetworkObjectOnSpawnTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         protected override void OnServerAndClientsCreated()
         {
@@ -109,14 +105,12 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (sceneManagement == SceneManagementState.SceneManagementDisabled)
             {
-#if NGO_DAMODE
                 // When scene management is disabled, we need this wait period for all clients to be up to date with
                 // all other clients before beginning the process of stopping all clients.
                 if (m_DistributedAuthority)
                 {
                     yield return new WaitForSeconds(0.5f);
                 }
-#endif
                 // Disable prefabs to prevent them from being destroyed
                 foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
                 {

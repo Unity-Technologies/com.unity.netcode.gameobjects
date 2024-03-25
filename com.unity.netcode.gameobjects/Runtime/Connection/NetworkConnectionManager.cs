@@ -7,9 +7,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using UnityEngine;
-#if !NGO_DAMODE
-using Object = UnityEngine.Object;
-#endif
 
 namespace Unity.Netcode
 {
@@ -446,12 +443,8 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-#if NGO_DAMODE
                     var serverOrService = NetworkManager.DistributedAuthorityMode ? NetworkManager.CMBServiceConnection ? "service" : "DAHost" : "server";
                     NetworkLog.LogInfo($"[Approval Pending][Client] Transport connection with {serverOrService} established! Awaiting connection approval...");
-#else
-                    NetworkLog.LogInfo("[Pending Client] Transport connection with server established! Awaiting connection approval...");
-#endif
                 }
 
                 SendConnectionRequest();
@@ -558,11 +551,10 @@ namespace Unity.Netcode
         {
             var message = new ConnectionRequestMessage
             {
-#if NGO_DAMODE
                 CMBServiceConnection = NetworkManager.CMBServiceConnection,
                 TickRate = NetworkManager.NetworkConfig.TickRate,
                 EnableSceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement,
-#endif
+
                 // Since only a remote client will send a connection request, we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkManager.NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkManager.NetworkConfig.ConnectionApproval,
@@ -743,11 +735,7 @@ namespace Unity.Netcode
                 RemovePendingClient(ownerClientId);
 
                 var client = AddClient(ownerClientId);
-#if NGO_DAMODE
                 if (!NetworkManager.DistributedAuthorityMode && response.CreatePlayerObject && NetworkManager.NetworkConfig.PlayerPrefab != null)
-#else
-                if (response.CreatePlayerObject && NetworkManager.NetworkConfig.PlayerPrefab != null)
-#endif
                 {
                     var prefabNetworkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
                     var playerPrefabHash = response.PlayerPrefabHash ?? prefabNetworkObject.GlobalObjectIdHash;
@@ -762,9 +750,7 @@ namespace Unity.Netcode
                         HasTransform = prefabNetworkObject.SynchronizeTransform,
                         Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
-#if NGO_DAMODE
                         DontDestroyWithOwner = prefabNetworkObject.DontDestroyWithOwner,
-#endif
                         Transform = new NetworkObject.SceneObject.TransformData
                         {
                             Position = response.Position.GetValueOrDefault(),
@@ -794,9 +780,7 @@ namespace Unity.Netcode
                     {
                         OwnerClientId = ownerClientId,
                         NetworkTick = NetworkManager.LocalTime.Tick,
-#if NGO_DAMODE
                         IsDistributedAuthority = NetworkManager.DistributedAuthorityMode,
-#endif
                         ConnectedClientIds = new NativeArray<ulong>(ConnectedClientIds.Count, Allocator.Temp)
                     };
 
@@ -854,20 +838,16 @@ namespace Unity.Netcode
                         {
                             InvokeOnPeerConnectedCallback(ownerClientId);
                         }
-#if NGO_DAMODE
                         NetworkManager.SpawnManager.DistributeNetworkObjects(ownerClientId);
-#endif
 
                     }
                     else // Otherwise, let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     {
-#if NGO_DAMODE
                         if (NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClient.IsSessionOwner)
                         {
                             NetworkManager.SceneManager.SynchronizeNetworkObjects(ownerClientId);
                         }
                         else if (!NetworkManager.DistributedAuthorityMode)
-#endif
                         {
                             NetworkManager.SceneManager.SynchronizeNetworkObjects(ownerClientId);
                         }
@@ -878,7 +858,6 @@ namespace Unity.Netcode
                     LocalClient = client;
                     NetworkManager.SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                     LocalClient.IsConnected = true;
-#if NGO_DAMODE
                     // If running mock service, then set the instance as the default session owner
                     if (NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost)
                     {
@@ -890,7 +869,6 @@ namespace Unity.Netcode
                     {
                         CreateAndSpawnPlayer(ownerClientId);
                     }
-#endif
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkManager.NetworkConfig.PlayerPrefab == null))
@@ -898,13 +876,11 @@ namespace Unity.Netcode
                     return;
                 }
 
-#if NGO_DAMODE
                 // Players are always spawned by their respective client, exit early. (DAHost mode anyway, CMB Service will never spawn player prefab)
                 if (NetworkManager.DistributedAuthorityMode)
                 {
                     return;
                 }
-#endif
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
                 ApprovedPlayerSpawn(ownerClientId, response.PlayerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
@@ -923,7 +899,6 @@ namespace Unity.Netcode
             }
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Client-Side Spawning in distributed authority mode uses this to spawn the player.
         /// </summary>
@@ -941,7 +916,6 @@ namespace Unity.Netcode
                 }
             }
         }
-#endif
 
         /// <summary>
         /// Spawns the newly approved player
@@ -963,10 +937,9 @@ namespace Unity.Netcode
                 var message = new CreateObjectMessage
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key),
-#if NGO_DAMODE
                     IncludesSerializedObject = true,
-#endif
                 };
+
                 message.ObjectInfo.Hash = playerPrefabHash;
                 message.ObjectInfo.IsSceneObject = false;
                 message.ObjectInfo.HasParent = false;
@@ -1007,7 +980,6 @@ namespace Unity.Netcode
                 ConnectedClientsList.Add(networkClient);
             }
 
-#if NGO_DAMODE
             if (NetworkManager.LocalClientId != clientId)
             {
                 if ((!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer) ||
@@ -1038,16 +1010,9 @@ namespace Unity.Netcode
                     networkObject.Observers.Add(clientId);
                 }
             }
-#else
-            var message = new ClientConnectedMessage { ClientId = clientId };
-            NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
-            ConnectedClientIds.Add(clientId);
-#endif
 
             return networkClient;
         }
-
-#if NGO_DAMODE
 
         /// <summary>
         /// Invoked on clients when another client disconnects
@@ -1071,7 +1036,6 @@ namespace Unity.Netcode
                 networkObject.Observers.Remove(clientId);
             }
         }
-#endif
 
         /// <summary>
         /// DANGO-TODO: Until we have the CMB Server end-to-end with all features verified working via integration tests,
@@ -1105,7 +1069,6 @@ namespace Unity.Netcode
                 {
                     if (!playerObject.DontDestroyWithOwner)
                     {
-#if NGO_DAMODE
                         // DANGO-TODO: This is something that would be best for CMB Service to handle as it is part of the disconnection process
                         // If a player NetworkObject is being despawned, make sure to remove all children if they are marked to not be destroyed
                         // with the owner.
@@ -1125,17 +1088,14 @@ namespace Unity.Netcode
                                 }
                             }
                         }
-#endif
 
                         if (NetworkManager.PrefabHandler.ContainsHandler(playerObject.GlobalObjectIdHash))
                         {
-#if NGO_DAMODE
                             if (NetworkManager.DAHost && NetworkManager.DistributedAuthorityMode)
                             {
                                 NetworkManager.SpawnManager.DespawnObject(playerObject, true, NetworkManager.DistributedAuthorityMode);
                             }
                             else
-#endif
                             {
                                 NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(playerObject);
                             }
@@ -1144,11 +1104,7 @@ namespace Unity.Netcode
                         {
                             // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked on the server-side (when the client side disconnected).
                             // This prevents the issue (when just destroying the GameObject) where any NetworkBehaviour component(s) destroyed before the NetworkObject would not have OnNetworkDespawn invoked.
-#if NGO_DAMODE
                             NetworkManager.SpawnManager.DespawnObject(playerObject, true, NetworkManager.DistributedAuthorityMode);
-#else
-                            NetworkManager.SpawnManager.DespawnObject(playerObject, true);
-#endif
                         }
                     }
                     else if (!NetworkManager.ShutdownInProgress)
@@ -1174,11 +1130,9 @@ namespace Unity.Netcode
                 else
                 {
                     // Handle changing ownership and prefab handlers
-#if NGO_DAMODE
                     var clientCounter = 0;
                     var predictedClientCount = ConnectedClientsList.Count - 1;
                     var remainingClients = NetworkManager.DistributedAuthorityMode ? ConnectedClientsList.Where((c) => c.ClientId != clientId).ToList() : null;
-#endif
                     for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = clientOwnedObjects[i];
@@ -1188,23 +1142,16 @@ namespace Unity.Netcode
                             {
                                 if (NetworkManager.PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
                                 {
-#if NGO_DAMODE
                                     NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
-#endif
                                     NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
                                 }
                                 else
                                 {
-#if NGO_DAMODE
                                     NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
-#else
-                                    Object.Destroy(ownedObject.gameObject);
-#endif
                                 }
                             }
                             else if (!NetworkManager.ShutdownInProgress)
                             {
-#if NGO_DAMODE
                                 // NOTE: All of the below code only handles ownership transfer.
                                 // For client-server, we just remove the ownership.
                                 // For distributed authority, we need to change ownership based on parenting
@@ -1258,7 +1205,6 @@ namespace Unity.Netcode
                                     }
                                 }
                                 else
-#endif
                                 {
                                     ownedObject.RemoveOwnership();
                                 }
@@ -1283,7 +1229,6 @@ namespace Unity.Netcode
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
                 MessageManager?.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
 
-#if NGO_DAMODE
                 if (NetworkManager.DistributedAuthorityMode && !NetworkManager.ShutdownInProgress && NetworkManager.IsListening)
                 {
                     var newSessionOwner = NetworkManager.LocalClientId;
@@ -1314,7 +1259,6 @@ namespace Unity.Netcode
                     MessageManager?.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
                     NetworkManager.SetSessionOwner(newSessionOwner);
                 }
-#endif
             }
 
             // If the client ID transport map exists

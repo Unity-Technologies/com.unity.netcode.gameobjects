@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-#if NGO_DAMODE
 using System.Linq;
-#endif
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -37,7 +35,6 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-#if NGO_DAMODE
         /// <summary>
         /// Distributed Authority Mode
         /// Returns true if the current session is running in distributed authority mode.
@@ -139,10 +136,6 @@ namespace Unity.Netcode
             LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
         }
 
-
-
-#if NGO_DAMODE
-
         // TODO: Make this internal after testing
         public void PromoteSessionOwner(ulong clientId)
         {
@@ -167,9 +160,6 @@ namespace Unity.Netcode
                 ConnectionManager.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableSequenced, targetClient);
             }
         }
-#endif
-
-#endif
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
@@ -193,13 +183,11 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
                     {
-#if NGO_DAMODE
                         // Handle deferred despawning
                         if (DistributedAuthorityMode)
                         {
                             SpawnManager.DeferredDespawnUpdate(ServerTime);
                         }
-#endif
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
@@ -216,7 +204,6 @@ namespace Unity.Netcode
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
 
-#if NGO_DAMODE
                         // DANGO-TODO-MVP: Remove this once the service handles object distribution
                         // NOTE: This needs to be the last thing done and should happen exactly at this point
                         // in the update
@@ -226,7 +213,6 @@ namespace Unity.Netcode
                             SpawnManager.DistributeNetworkObjects(ClientToRedistribute);
                             ClientToRedistribute = 0;
                         }
-#endif
 
                         if (m_ShuttingDown)
                         {
@@ -330,26 +316,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys.
         /// </summary>
-#if NGO_DAMODE
         public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => ConnectionManager.ConnectedClients;
-#else
-        /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
-        /// </summary>
-        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => IsServer ? ConnectionManager.ConnectedClients : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
-#endif
 
         /// <summary>
         /// Gets a list of connected clients.
         /// </summary>
-#if NGO_DAMODE
         public IReadOnlyList<NetworkClient> ConnectedClientsList => ConnectionManager.ConnectedClientsList;
-#else
-        /// <summary>
-        /// Gets a list of connected clients. This is only accessible on the server.
-        /// </summary>
-        public IReadOnlyList<NetworkClient> ConnectedClientsList => IsServer ? ConnectionManager.ConnectedClientsList : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
-#endif
 
         /// <summary>
         /// Gets a list of just the IDs of all connected clients.
@@ -951,10 +923,9 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
-#if NGO_DAMODE
-            // TODO: Remove this before finalizing the experimental release
+
+            //DANGOEXP TODO: Remove this before finalizing the experimental release
             NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;
-#endif
 
             // Make sure the ServerShutdownState is reset when initializing
             if (server)
@@ -1258,7 +1229,6 @@ namespace Unity.Netcode
             }
             else
             {
-#if NGO_DAMODE
                 var response = new ConnectionApprovalResponse
                 {
                     Approved = true,
@@ -1266,14 +1236,6 @@ namespace Unity.Netcode
                     CreatePlayerObject = DistributedAuthorityMode || NetworkConfig.PlayerPrefab != null,
                 };
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response);
-#else
-                var response = new ConnectionApprovalResponse
-                {
-                    Approved = true,
-                    CreatePlayerObject = NetworkConfig.PlayerPrefab != null
-                };
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
-#endif
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();

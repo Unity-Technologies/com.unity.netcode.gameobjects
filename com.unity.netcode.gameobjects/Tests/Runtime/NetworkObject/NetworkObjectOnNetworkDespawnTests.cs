@@ -10,10 +10,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests that check OnNetworkDespawn being invoked
     /// </summary>
-
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
@@ -95,12 +92,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             var networkManager = despawnCheck == InstanceTypes.Server ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
             var networkManagerOwner = m_ServerNetworkManager;
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 networkManagerOwner = networkManager;
             }
-#endif
 
             // Spawn the test object
             var spawnedObject = SpawnObject(m_ObjectToSpawn, networkManagerOwner);

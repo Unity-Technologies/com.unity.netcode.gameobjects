@@ -6,10 +6,9 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
+
     [TestFixture(SessionModeTypes.ClientServer)]
     [TestFixture(SessionModeTypes.DistributedAuthority)]
-#endif
     public class NetworkObjectSpawnManyObjectsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -19,9 +18,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkPrefab m_PrefabToSpawn;
 
-#if NGO_DAMODE
         public NetworkObjectSpawnManyObjectsTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
         // Using this component assures we will know precisely how many prefabs were spawned on the client
         public class SpawnObjecTrackingComponent : NetworkBehaviour
         {

@@ -9,13 +9,11 @@ namespace TestProject.ManualTests
         {
             if (IsServer && IsOwner)
             {
-#if NGO_DAMODE
                 // Client-Server mode, the server handles parenting the players
                 if (!NetworkManager.DistributedAuthorityMode)
                 {
                     NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
                 }
-#endif
                 // Server player is parented under this NetworkObject
                 SetPlayerParent(NetworkManager.LocalClientId);
             }
@@ -34,37 +32,14 @@ namespace TestProject.ManualTests
         {
             if (IsSpawned)
             {
-#if NGO_DAMODE
                 var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
                 if (playerObject.gameObject.scene != gameObject.scene)
                 {
                     SceneManager.MoveGameObjectToScene(playerObject.gameObject, gameObject.scene);
                 }
                 playerObject.TrySetParent(NetworkObject, false);
-#else
-                // As long as the client (player) is in the connected clients list
-                if (NetworkManager.ConnectedClients.ContainsKey(clientId))
-                {
-                    var playerObject = NetworkManager.ConnectedClients[clientId].PlayerObject;
-                    if (playerObject.gameObject.scene != gameObject.scene)
-                    {
-                        SceneManager.MoveGameObjectToScene(playerObject.gameObject, gameObject.scene);
-                    }
-                    // Set the player as a child of this in-scene placed NetworkObject
-                    // We parent in local space by setting the WorldPositionStays value to false
-                    NetworkManager.ConnectedClients[clientId].PlayerObject.TrySetParent(NetworkObject, false);
-                }
-#endif
             }
         }
-
-#if NGO_DAMODE
-        [ServerRpc(RequireOwnership = false)]
-        private void SetParentServerRpc()
-        {
-            SetPlayerParent(NetworkManager.LocalClientId);
-        }
-#endif
 
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {

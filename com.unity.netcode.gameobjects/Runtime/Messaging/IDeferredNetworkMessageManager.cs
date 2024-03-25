@@ -18,11 +18,7 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-#if NGO_DAMODE
         void DeferMessage(TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context, string messageType = null);
-#else
-        void DeferMessage(TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context);
-#endif
 
         /// <summary>
         /// Cleans up any trigger that's existed for more than a second.

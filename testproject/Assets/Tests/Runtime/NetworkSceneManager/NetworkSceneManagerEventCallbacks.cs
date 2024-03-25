@@ -10,9 +10,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventCallbacks : NetcodeIntegrationTest

@@ -25,10 +25,8 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-#if NGO_DAMODE
             // All modes support removing NetworkClients
             networkManager.ConnectionManager.RemoveClient(ClientId);
-#endif
             networkManager.ConnectionManager.ConnectedClientIds.Remove(ClientId);
             if (networkManager.IsConnectedClient)
             {

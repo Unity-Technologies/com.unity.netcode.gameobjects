@@ -1,5 +1,3 @@
-
-#if NGO_DAMODE
 namespace Unity.Netcode
 {
     internal struct SessionOwnerMessage : INetworkMessage
@@ -26,4 +24,3 @@ namespace Unity.Netcode
         }
     }
 }
-#endif

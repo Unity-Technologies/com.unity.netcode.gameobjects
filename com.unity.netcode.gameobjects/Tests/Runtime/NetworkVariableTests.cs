@@ -18,13 +18,11 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
             {
-#if NGO_DAMODE
-                // DAMODE-TODO: Add support for distributed authority mode
+                // DANGO-EXP TODO: Add support for distributed authority mode
                 if (hostOrServer == HostOrServer.DAHost)
-                {
+                {                    
                     continue;
                 }
-#endif
                 yield return new TestFixtureData(hostOrServer);
             }
         }

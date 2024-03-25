@@ -12,10 +12,7 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Rigidbody")]
     public class NetworkRigidbody : NetworkBehaviour
     {
-#if NGO_DAMODE
         public bool UseRigidBodyForMotion;
-#endif
-
         private Rigidbody m_Rigidbody;
         private NetworkTransform m_NetworkTransform;
         private RigidbodyInterpolation m_OriginalInterpolation;
@@ -43,12 +40,10 @@ namespace Unity.Netcode.Components
         private void SetupRigidbody()
         {
             m_OriginalInterpolation = m_Rigidbody.interpolation;
-#if NGO_DAMODE
             if (m_NetworkTransform != null)
             {
                 m_NetworkTransform.RegisterRigidbody(this, m_Rigidbody);
             }
-#endif
             m_Rigidbody.isKinematic = true;
         }
 
@@ -70,7 +65,6 @@ namespace Unity.Netcode.Components
             UpdateOwnershipAuthority();
         }
 
-#if NGO_DAMODE
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             if (NetworkManager.LocalClientId == current || NetworkManager.LocalClientId == previous)
@@ -79,7 +73,6 @@ namespace Unity.Netcode.Components
             }
             base.OnOwnershipChanged(previous, current);
         }
-#endif
 
         /// <summary>
         /// Sets the authority differently depending upon
@@ -87,14 +80,12 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void UpdateOwnershipAuthority()
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 // When in distributed authority mode, always use HasAuthority
                 m_IsAuthority = HasAuthority;
             }
             else
-#endif
             {
                 if (m_NetworkTransform.IsServerAuthoritative())
                 {
@@ -108,7 +99,6 @@ namespace Unity.Netcode.Components
 
             m_Rigidbody.isKinematic = !m_IsAuthority;
 
-#if NGO_DAMODE
             if (UseRigidBodyForMotion)
             {
                 if (m_Rigidbody.isKinematic)
@@ -132,7 +122,6 @@ namespace Unity.Netcode.Components
                 }
             }
             else
-#endif
             {
                 m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : (m_NetworkTransform.Interpolate ? RigidbodyInterpolation.None : m_OriginalInterpolation);
             }
@@ -155,7 +144,6 @@ namespace Unity.Netcode.Components
             m_Rigidbody.interpolation = m_OriginalInterpolation;
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// When using <see cref="NetworkRigidbody"/> with a <see cref="NetworkTransform"/> and <see cref="UseRigidBodyForMotion"/> is
         /// enabled, the <see cref="NetworkTransform"/> will update Kinematic instances using the <see cref="Rigidbody"/> move methods.
@@ -173,7 +161,6 @@ namespace Unity.Netcode.Components
             }
             m_NetworkTransform.OnFixedUpdate();
         }
-#endif
     }
 }
 #endif // COM_UNITY_MODULES_PHYSICS

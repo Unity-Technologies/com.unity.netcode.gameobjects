@@ -6,9 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     public class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
@@ -79,20 +77,16 @@ namespace Unity.Netcode.RuntimeTests
 
         public class DummyNetBehaviour : NetworkBehaviour
         {
-#if NGO_DAMODE
             public static bool DistributedAuthority;
-#endif
             public DummyNetVar NetVar;
 
             private void Awake()
             {
-#if NGO_DAMODE
                 if (DistributedAuthority)
                 {
                     NetVar = new DummyNetVar(writePerm: NetworkVariableWritePermission.Owner);
                 }
                 else
-#endif
                 {
                     NetVar = new DummyNetVar();
                 }
@@ -100,17 +94,10 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
-#if NGO_DAMODE
                 if ((NetworkManager.DistributedAuthorityMode && !IsOwner) || (!NetworkManager.DistributedAuthorityMode && !IsServer))
                 {
                     ClientDummyNetBehaviourSpawned(this);
                 }
-#else
-                if (!IsServer)
-                {
-                    ClientDummyNetBehaviourSpawned(this);
-                }
-#endif
                 base.OnNetworkSpawn();
             }
         }
@@ -132,13 +119,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-
-#if NGO_DAMODE
             DummyNetBehaviour.DistributedAuthority = m_DistributedAuthority;
             m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
-#else
-            m_PlayerPrefab.AddComponent<DummyNetBehaviour>();
-#endif
         }
 
         [UnityTest]
@@ -167,13 +149,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Check that FieldWritten is written when dirty
-#if NGO_DAMODE
             var authorityComponent = m_DistributedAuthority ? clientComponent : serverComponent;
             var nonAuthorityComponent = m_DistributedAuthority ? serverComponent : clientComponent;
-#else
-            var authorityComponent = serverComponent;
-            var nonAuthorityComponent = clientComponent;
-#endif
             authorityComponent.NetVar.SetDirty(true);
             yield return s_DefaultWaitForTick;
             Assert.True(authorityComponent.NetVar.FieldWritten);

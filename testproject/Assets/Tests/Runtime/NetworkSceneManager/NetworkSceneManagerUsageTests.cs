@@ -7,9 +7,7 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerUsageTests : NetcodeIntegrationTest
@@ -69,12 +67,10 @@ namespace TestProject.RuntimeTests
             m_CurrentSceneName = k_AdditiveScene1;
             var statusResult = m_ClientNetworkManagers[0].SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode);
             var expectedResult = SceneEventProgressStatus.ServerOnlyAction;
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 expectedResult = SceneEventProgressStatus.SessionOwnerOnlyAction;
             }
-#endif
 
             Assert.True(statusResult == expectedResult, $"[Client][Load][{loadSceneMode}] Failed to receive a {nameof(expectedResult)} response!");
 

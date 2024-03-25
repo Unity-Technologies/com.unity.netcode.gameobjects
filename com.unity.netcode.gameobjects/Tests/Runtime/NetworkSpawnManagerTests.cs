@@ -5,9 +5,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     public class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
@@ -52,13 +50,11 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestClientCantAccessServerPlayer()
         {
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_SessionModeType} mode.");
                 return;
             }
-#endif
             // client can't access server player
             Assert.Throws<NotServerException>(() =>
             {
@@ -74,7 +70,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.NotNull(clientSideClientPlayerObject);
             Assert.AreEqual(clientSideClientId, clientSideClientPlayerObject.OwnerClientId);
         }
-#if NGO_DAMODE
+
         [Test]
         public void TestClientCanAccessOtherPlayer()
         {
@@ -88,18 +84,16 @@ namespace Unity.Netcode.RuntimeTests
             var otherClientPlayer = m_ClientNetworkManagers[0].SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
             Assert.NotNull(otherClientPlayer, $"Failed to obtain Client{otherClientSideClientId}'s player object!");
         }
-#endif
 
         [Test]
         public void TestClientCantAccessOtherPlayer()
         {
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 VerboseDebug($"Ignoring test: Clients have access to other player objects in {m_SessionModeType} mode.");
                 return;
             }
-#endif
+
             // client can't access other player
             Assert.Throws<NotServerException>(() =>
             {

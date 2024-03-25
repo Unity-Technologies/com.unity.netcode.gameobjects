@@ -81,20 +81,11 @@ namespace Unity.Netcode
                 {
                     return;
                 }
-
-                // DANGO-TODO: NetworkVariable permissions need to be sorted out/implemented for distributed authority mode
-#if NGO_DAMODE
+                
                 if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");
                 }
-#else
-                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
-                {
-                    throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");
-                }
-#endif
-
 
                 Set(value);
                 m_IsDisposed = false;

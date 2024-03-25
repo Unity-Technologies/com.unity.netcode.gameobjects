@@ -131,19 +131,20 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-#if NGO_DAMODE
-            writer.WriteValueSafe(NetworkVariableSerialization<T>.Type);
-            if (NetworkVariableSerialization<T>.Type == CollectionItemType.Unmanaged)
+            if (m_NetworkManager.DistributedAuthorityMode)
             {
-                // Write the size of the unmanaged serialized type as it has a fixed size. This allows the CMB runtime to correctly read the unmanged type.
-                var placeholder = new T();
-                var startPos = writer.Position;
-                NetworkVariableSerialization<T>.Write(writer, ref placeholder);
-                var size = writer.Position - startPos;
-                writer.Seek(startPos);
-                BytePacker.WriteValueBitPacked(writer, size);
+                writer.WriteValueSafe(NetworkVariableSerialization<T>.Type);
+                if (NetworkVariableSerialization<T>.Type == CollectionItemType.Unmanaged)
+                {
+                    // Write the size of the unmanaged serialized type as it has a fixed size. This allows the CMB runtime to correctly read the unmanged type.
+                    var placeholder = new T();
+                    var startPos = writer.Position;
+                    NetworkVariableSerialization<T>.Write(writer, ref placeholder);
+                    var size = writer.Position - startPos;
+                    writer.Seek(startPos);
+                    BytePacker.WriteValueBitPacked(writer, size);
+                }
             }
-#endif
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
@@ -155,14 +156,15 @@ namespace Unity.Netcode
         public override void ReadField(FastBufferReader reader)
         {
             m_List.Clear();
-#if NGO_DAMODE
-            // Collection item type is used by the CMB rust service, drop value here.
-            reader.ReadValueSafe(out CollectionItemType type);
-            if (type == CollectionItemType.Unmanaged)
+            if (m_NetworkManager.DistributedAuthorityMode)
             {
-                ByteUnpacker.ReadValueBitPacked(reader, out int _);
+                // Collection item type is used by the CMB rust service, drop value here.
+                reader.ReadValueSafe(out CollectionItemType type);
+                if (type == CollectionItemType.Unmanaged)
+                {
+                    ByteUnpacker.ReadValueBitPacked(reader, out int _);
+                }
             }
-#endif
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {

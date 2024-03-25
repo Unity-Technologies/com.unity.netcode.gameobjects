@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Mathematics;
-#if NGO_DAMODE
 using Unity.Netcode.Transports.UTP;
-#endif
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -1338,7 +1336,7 @@ namespace Unity.Netcode.Components
         private Vector3 m_TargetScale;
         private Quaternion m_CurrentRotation;
         private Vector3 m_TargetRotation;
-#if NGO_DAMODE
+
         private bool m_UseRigidbodyForMotion;
         private Rigidbody m_RigidbodyInternal;
         private NetworkRigidbody m_NetworkRigidbody;
@@ -1352,8 +1350,6 @@ namespace Unity.Netcode.Components
                 m_RigidbodyInternal = rigidbody;
             }
         }
-#endif
-
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
@@ -1411,13 +1407,8 @@ namespace Unity.Netcode.Components
         {
             if (!IsServerAuthoritative() && NetworkObject.OwnerClientId == targetClientId)
             {
-#if NGO_DAMODE
                 // In distributed authority mode we want to synchronize the half float if we are the owner.
                 return (!NetworkManager.DistributedAuthorityMode && NetworkObject.IsOwnedByServer) || (NetworkManager.DistributedAuthorityMode);
-#else
-                // Return false for all client owners but return true for the server
-                return NetworkObject.IsOwnedByServer;
-#endif
             }
             return true;
         }
@@ -1455,7 +1446,6 @@ namespace Unity.Netcode.Components
 
             if (serializer.IsWriter)
             {
-#if NGO_DAMODE
                 // DANGO-TODO: This magic value is sent to the server in order to identify the network transform.
                 // The server discards it before forwarding synchronization data to other clients.
                 if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
@@ -1463,7 +1453,6 @@ namespace Unity.Netcode.Components
                     var writer = serializer.GetFastBufferWriter();
                     writer.WriteValueSafe(k_NetworkTransformStateMagic);
                 }
-#endif
 
                 synchronizationState.IsTeleportingNextFrame = true;
                 var transformToCommit = transform;
@@ -2118,13 +2107,8 @@ namespace Unity.Netcode.Components
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
-#if NGO_DAMODE
             var adjustedPosition = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : m_CurrentPosition;
             var adjustedRotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : m_CurrentRotation;
-#else
-            var adjustedPosition = m_CurrentPosition;
-            var adjustedRotation = m_CurrentRotation;
-#endif
             var adjustedRotAngles = adjustedRotation.eulerAngles;
             var adjustedScale = m_CurrentScale;
 
@@ -2250,14 +2234,12 @@ namespace Unity.Netcode.Components
                 {
                     m_CurrentPosition = adjustedPosition;
                 }
-#if NGO_DAMODE
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.MovePosition(m_CurrentPosition);
                     transform.position = m_RigidbodyInternal.position;
                 }
                 else
-#endif
                 {
                     if (InLocalSpace)
                     {
@@ -2279,14 +2261,12 @@ namespace Unity.Netcode.Components
                     m_CurrentRotation = adjustedRotation;
                 }
 
-#if NGO_DAMODE
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.MoveRotation(m_CurrentRotation);
                     transform.rotation = m_RigidbodyInternal.rotation;
                 }
                 else
-#endif
                 {
                     if (InLocalSpace)
                     {
@@ -2401,12 +2381,10 @@ namespace Unity.Netcode.Components
                     transform.position = currentPosition;
                 }
 
-#if NGO_DAMODE
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.position = transform.position;
                 }
-#endif
 
                 if (Interpolate)
                 {
@@ -2502,13 +2480,11 @@ namespace Unity.Netcode.Components
                     transform.rotation = currentRotation;
                 }
 
-#if NGO_DAMODE
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.rotation = transform.rotation;
                     m_RigidbodyInternal.MoveRotation(transform.rotation);
                 }
-#endif
 
                 if (Interpolate)
                 {
@@ -2831,12 +2807,10 @@ namespace Unity.Netcode.Components
 
             Initialize();
 
-#if NGO_DAMODE
             if (CanCommitToTransform)
             {
                 SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
             }
-#endif
         }
 
         private void CleanUpOnDestroyOrDespawn()
@@ -2885,13 +2859,8 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-#if NGO_DAMODE
             var position = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : GetSpaceRelativeRotation();
-#else
-            var position = GetSpaceRelativePosition();
-            var rotation = GetSpaceRelativeRotation();
-#endif
 
             UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
@@ -2915,7 +2884,6 @@ namespace Unity.Netcode.Components
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
 
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 RegisterNetworkManagerForTickUpdate(NetworkManager);
@@ -2933,7 +2901,6 @@ namespace Unity.Netcode.Components
                 m_RigidbodyInternal.position = currentPosition;
                 m_RigidbodyInternal.rotation = currentRotation;
             }
-#endif
 
             if (CanCommitToTransform)
             {
@@ -3109,13 +3076,11 @@ namespace Unity.Netcode.Components
                 transform.SetPositionAndRotation(pos, rot);
             }
 
-#if NGO_DAMODE
             if (m_UseRigidbodyForMotion && shouldTeleport)
             {
                 m_RigidbodyInternal.position = transform.position;
                 m_RigidbodyInternal.rotation = transform.rotation;
             }
-#endif
 
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
@@ -3192,9 +3157,7 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region UPDATES AND AUTHORITY CHECKS
-#if NGO_DAMODE
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
-#endif
         private void UpdateInterpolation()
         {
             // Non-Authority
@@ -3203,7 +3166,6 @@ namespace Unity.Netcode.Components
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
                 var offset = 0f;
-#if NGO_DAMODE
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
@@ -3214,13 +3176,6 @@ namespace Unity.Netcode.Components
                     ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
                     offset = m_NetworkTransformTickRegistration.Offset;
                 }
-#else
-                // With owner authoritative mode, non-authority clients can lag behind
-                // by more than 1 tick period of time. The current "solution" for now
-                // is to make their cachedRenderTime run 2 ticks behind.
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
-                var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
-#endif
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
 
@@ -3254,11 +3209,7 @@ namespace Unity.Netcode.Components
         protected virtual void Update()
         {
             // If not spawned or this instance has authority, exit early
-#if NGO_DAMODE
             if (!IsSpawned || CanCommitToTransform || m_UseRigidbodyForMotion)
-#else
-            if (!IsSpawned || CanCommitToTransform)
-#endif
             {
                 return;
             }
@@ -3270,7 +3221,7 @@ namespace Unity.Netcode.Components
             ApplyAuthoritativeState();
         }
 
-#if NGO_DAMODE
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3294,9 +3245,6 @@ namespace Unity.Netcode.Components
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }
-#endif
-
-
 
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
@@ -3304,12 +3252,10 @@ namespace Unity.Netcode.Components
         /// <returns>(<see cref="true"/> or <see cref="false"/>) where when false it runs as owner-client authoritative</returns>
         protected virtual bool OnIsServerAuthoritative()
         {
-#if NGO_DAMODE
             if (m_CachedNetworkManager)
             {
                 return !m_CachedNetworkManager.DistributedAuthorityMode;
             }
-#endif
             return true;
         }
 
@@ -3370,11 +3316,9 @@ namespace Unity.Netcode.Components
                 NetworkObjectId = NetworkObjectId,
                 NetworkBehaviourId = NetworkBehaviourId,
                 State = m_LocalAuthoritativeNetworkState,
-#if NGO_DAMODE
                 DistributedAuthorityMode = m_CachedNetworkManager.DistributedAuthorityMode,
                 // Don't populate if we are the DAHost as we send directly to each client
                 TargetIds = m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.DAHost ? NetworkObject.Observers.ToArray() : null,
-#endif
             };
 
 
@@ -3416,7 +3360,6 @@ namespace Unity.Netcode.Components
         #region NETWORK TICK REGISTRATOIN AND HANDLING
         private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
 
-#if NGO_DAMODE
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (s_NetworkTickRegistration.ContainsKey(networkManager))
@@ -3451,7 +3394,6 @@ namespace Unity.Netcode.Components
         {
             return GetTickLatencyInSeconds(NetworkManager.Singleton);
         }
-#endif
 
         private static void RemoveTickUpdate(NetworkManager networkManager)
         {
@@ -3482,12 +3424,10 @@ namespace Unity.Netcode.Components
                 RemoveTickUpdate(m_NetworkManager);
             }
 
-#if NGO_DAMODE
             internal float TicksAgoInSeconds()
             {
                 return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
             }
-#endif
 
             /// <summary>
             /// Invoked once per network tick, this will update any registered
@@ -3495,7 +3435,6 @@ namespace Unity.Netcode.Components
             /// </summary>
             private void TickUpdate()
             {
-#if NGO_DAMODE
                 if (m_UnityTransport != null)
                 {
                     // Determine the desired ticks ago by the RTT (this really should be the combination of the
@@ -3515,7 +3454,6 @@ namespace Unity.Netcode.Components
                     // the relative starting interpolation point for the next update
                     Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
                 }
-#endif
 
                 // TODO FIX: The local NetworkTickSystem can invoke with the same network tick as before
                 if (m_NetworkManager.ServerTime.Tick <= m_LastTick)
@@ -3532,7 +3470,7 @@ namespace Unity.Netcode.Components
                 m_LastTick = m_NetworkManager.ServerTime.Tick;
             }
 
-#if NGO_DAMODE
+
             private UnityTransport m_UnityTransport;
             private float m_TickFrequency;
             private float m_OffsetTickFrequency;
@@ -3544,14 +3482,12 @@ namespace Unity.Netcode.Components
             private float m_PreviousTicksAgo;
 
             private List<float> m_TicksAgoSamples = new List<float>();
-#endif
 
             public NetworkTransformTickRegistration(NetworkManager networkManager)
             {
                 m_NetworkManager = networkManager;
                 m_NetworkTickUpdate = new Action(TickUpdate);
                 networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
-#if NGO_DAMODE
                 m_TickRate = (int)m_NetworkManager.NetworkConfig.TickRate;
                 m_TickFrequency = 1.0f / m_TickRate;
                 // For the offset, it uses the fractional remainder of the tick to determine the offset.
@@ -3567,7 +3503,6 @@ namespace Unity.Netcode.Components
                 }
                 TicksAgo = 1f;
                 m_PreviousTicksAgo = 1f;
-#endif
                 if (networkManager.IsServer)
                 {
                     networkManager.OnServerStopped += OnNetworkManagerStopped;
@@ -3587,7 +3522,6 @@ namespace Unity.Netcode.Components
             m_NextTickSync = NetworkManager.ServerTime.Tick + (s_TickSynchPosition % (int)NetworkManager.NetworkConfig.TickRate);
         }
 
-#if NGO_DAMODE
         private static void RegisterNetworkManagerForTickUpdate(NetworkManager networkManager)
         {
             if (!s_NetworkTickRegistration.ContainsKey(networkManager))
@@ -3595,7 +3529,6 @@ namespace Unity.Netcode.Components
                 s_NetworkTickRegistration.Add(networkManager, new NetworkTransformTickRegistration(networkManager));
             }
         }
-#endif
 
         /// <summary>
         /// Will register the NetworkTransform instance for the single tick update entry point.
@@ -3605,17 +3538,11 @@ namespace Unity.Netcode.Components
         /// <param name="networkTransform"></param>
         private static void RegisterForTickUpdate(NetworkTransform networkTransform)
         {
-#if NGO_DAMODE
+
             if (!networkTransform.NetworkManager.DistributedAuthorityMode && !s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
             {
                 s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
             }
-#else
-            if (!s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
-            {
-                s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
-            }
-#endif
 
             networkTransform.RegisterForTickSynchronization();
             s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Add(networkTransform);
@@ -3635,19 +3562,11 @@ namespace Unity.Netcode.Components
             if (s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
             {
                 s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Remove(networkTransform);
-#if NGO_DAMODE
                 if (!networkTransform.NetworkManager.DistributedAuthorityMode && s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Count == 0)
                 {
                     var registrationEntry = s_NetworkTickRegistration[networkTransform.NetworkManager];
                     registrationEntry.Remove();
                 }
-#else
-                if (s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Count == 0)
-                {
-                    var registrationEntry = s_NetworkTickRegistration[networkTransform.NetworkManager];
-                    registrationEntry.Remove();
-                }
-#endif
             }
         }
         #endregion

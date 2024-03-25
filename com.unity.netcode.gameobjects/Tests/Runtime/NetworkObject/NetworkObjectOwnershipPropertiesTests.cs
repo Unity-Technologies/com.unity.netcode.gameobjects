@@ -8,10 +8,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif
     public class NetworkObjectOwnershipPropertiesTests : NetcodeIntegrationTest
     {
         private class DummyNetworkBehaviour : NetworkBehaviour
@@ -32,9 +30,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_InitialOwnerOwnedBySever;
         private bool m_TargetOwnerOwnedBySever;
 
-#if NGO_DAMODE
         public NetworkObjectOwnershipPropertiesTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         protected override IEnumerator OnTearDown()
         {
@@ -49,9 +45,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("ClientOwnedObject");
             m_PrefabToSpawn.gameObject.AddComponent<DummyNetworkBehaviour>();
-#if NGO_DAMODE
             m_PrefabToSpawn.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
-#endif
         }
 
         public enum InstanceTypes
@@ -65,7 +59,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             var conditionMet = true;
             m_OwnershipPropagatedFailures.Clear();
-#if NGO_DAMODE
             // In distributed authority mode, we will check client owner to DAHost owner with InstanceTypes.Server and client owner to client
             // when InstanceTypes.Client
             if (m_DistributedAuthority)
@@ -102,21 +95,6 @@ namespace Unity.Netcode.RuntimeTests
                     m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
                 }
             }
-#else
-            if (m_NextTargetOwner != m_ServerNetworkManager)
-            {
-                if (!m_NextTargetOwner.SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
-                {
-                    conditionMet = false;
-                    m_OwnershipPropagatedFailures.AppendLine($"Client-{m_NextTargetOwner.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
-                }
-            }
-            if (!m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
-            {
-                conditionMet = false;
-                m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
-            }
-#endif
             return conditionMet;
         }
 
@@ -147,7 +125,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_NextTargetOwner = instanceType == InstanceTypes.Server ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
             m_InitialOwner = instanceType == InstanceTypes.Client ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
-#if NGO_DAMODE
+
             // In distributed authority mode, we will check client owner to DAHost owner with InstanceTypes.Server and client owner to client
             // when InstanceTypes.Client
             if (m_DistributedAuthority)
@@ -159,7 +137,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 m_PrefabToSpawn.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
             }
-#endif
+
             m_InitialOwnerId = m_InitialOwner.LocalClientId;
             m_TargetOwnerId = m_NextTargetOwner.LocalClientId;
             m_InitialOwnerOwnedBySever = m_InitialOwner.IsServer;
@@ -185,7 +163,6 @@ namespace Unity.Netcode.RuntimeTests
             // The authority always changes the ownership
             // Client-Server: It will always be the host instance
             // Distributed Authority: It can be either the DAHost or the client
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 // Use the target client's instance to change ownership
@@ -208,11 +185,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Provide enough time for the client to receive and process the change in ownership message.
                 yield return WaitForMessageReceived<ChangeOwnershipMessage>(m_ClientNetworkManagers.ToList());
             }
-#else
-            m_OwnerSpawnedInstance.ChangeOwnership(m_NextTargetOwner.LocalClientId);
-            // Provide enough time for the client to receive and process the change in ownership message.
-            yield return WaitForMessageReceived<ChangeOwnershipMessage>(m_ClientNetworkManagers.ToList());
-#endif
 
             // Ensure it's the ownership tables are updated 
             yield return WaitForConditionOrTimeOut(OwnershipPropagated);

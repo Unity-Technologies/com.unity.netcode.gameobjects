@@ -1,4 +1,3 @@
-#if NGO_DAMODE
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -265,4 +264,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-#endif

@@ -6,8 +6,6 @@ namespace Unity.Netcode
         float UnscaledTime { get; }
         float UnscaledDeltaTime { get; }
         float DeltaTime { get; }
-#if NGO_DAMODE
         float FixedDeltaTime { get; }
-#endif
     }
 }

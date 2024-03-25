@@ -88,11 +88,7 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             // Non-Authority will register each NetworkObject when it is spawned
-#if NGO_DAMODE
             if ((NetworkManager.DistributedAuthorityMode && !IsOwner) || (!NetworkManager.DistributedAuthorityMode && !IsServer))
-#else
-            if (!IsServer)
-#endif
             {
                 NetworkBehaviourUpdaterTests.ClientSideNotifyObjectSpawned(gameObject);
             }
@@ -104,11 +100,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         public void SetNetworkVariableValues()
         {
-#if NGO_DAMODE
             if ((NetworkManager.DistributedAuthorityMode && IsOwner) || (!NetworkManager.DistributedAuthorityMode && IsServer))
-#else
-            if (IsServer)
-#endif
             {
                 switch (NumberOfNetVarsToCheck)
                 {
@@ -144,14 +136,12 @@ namespace Unity.Netcode.RuntimeTests
     /// Server and Distributed Authority modes require at least 1 client while the host does not.
     /// </summary>
     /// [Session Mode][Number of Clients][First NetVar Type][Second NetVar Type]
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.DAHost, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
     [TestFixture(HostOrServer.DAHost, 2, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.DAHost, 2, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
-#endif
     [TestFixture(HostOrServer.Server, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
     [TestFixture(HostOrServer.Server, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.Server, 1, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
@@ -212,21 +202,19 @@ namespace Unity.Netcode.RuntimeTests
             // GameObject of this prefab
             var netVarContainer = m_PrefabToSpawn.AddComponent<NetVarContainer>();
             netVarContainer.NumberOfNetVarsToCheck = m_NetVarCombinationTypes.FirstType;
-#if NGO_DAMODE
             if (m_SessionModeType == SessionModeTypes.DistributedAuthority)
             {
                 netVarContainer.SetOwnerWrite();
             }
-#endif
+
             netVarContainer.ValueToSetNetVarTo = NetVarValueToSet;
             netVarContainer = m_PrefabToSpawn.AddComponent<NetVarContainer>();
 
-#if NGO_DAMODE
             if (m_SessionModeType == SessionModeTypes.DistributedAuthority)
             {
                 netVarContainer.SetOwnerWrite();
             }
-#endif
+
             netVarContainer.NumberOfNetVarsToCheck = m_NetVarCombinationTypes.SecondType;
             netVarContainer.ValueToSetNetVarTo = NetVarValueToSet;
 
@@ -255,11 +243,8 @@ namespace Unity.Netcode.RuntimeTests
             // the appropriate number of NetworkObjects with the NetVarContainer behaviour
             var numberOfObjectsToSpawn = numToSpawn * NumberOfClients;
 
-#if NGO_DAMODE
             var authority = m_SessionModeType == SessionModeTypes.DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-#else
-            var authority = m_ServerNetworkManager;
-#endif
+
             // spawn the objects
             for (int i = 0; i < numToSpawn; i++)
             {

@@ -61,7 +61,6 @@ namespace Unity.Netcode
         /// If the server is running in dedicated server mode, this is the same as <see cref="NotServer" />.
         /// </summary>
         ClientsAndHost,
-#if NGO_DAMODE
         /// <summary>
         /// Send this RPC to the authority.
         /// In distributed authority mode, this will be the owner of the NetworkObject.
@@ -74,7 +73,6 @@ namespace Unity.Netcode
         /// In normal client-server mode, this is basically the exact same thing as a client rpc.
         /// </summary>
         NotAuthority,
-#endif
         /// <summary>
         /// This RPC cannot be sent without passing in a target in RpcSendParams.
         /// </summary>
@@ -114,10 +112,8 @@ namespace Unity.Netcode
             NotMe = new NotMeRpcTarget(manager);
             Me = new LocalSendRpcTarget(manager);
             ClientsAndHost = new ClientsAndHostRpcTarget(manager);
-#if NGO_DAMODE
             Authority = new AuthorityRpcTarget(manager);
             NotAuthority = new NotAuthorityRpcTarget(manager);
-#endif
             m_CachedProxyRpcTargetGroup = new ProxyRpcTargetGroup(manager);
             m_CachedTargetGroup = new RpcTargetGroup(manager);
             m_CachedDirectSendTarget = new DirectSendRpcTarget(manager);
@@ -139,10 +135,8 @@ namespace Unity.Netcode
             NotMe.Dispose();
             Me.Dispose();
             ClientsAndHost.Dispose();
-#if NGO_DAMODE
             Authority.Dispose();
             NotAuthority.Dispose();
-#endif
             m_CachedProxyRpcTargetGroup.Unlock();
             m_CachedTargetGroup.Unlock();
             m_CachedDirectSendTarget.Unlock();
@@ -215,7 +209,6 @@ namespace Unity.Netcode
         /// </summary>
         public BaseRpcTarget ClientsAndHost;
 
-#if NGO_DAMODE
         /// <summary>
         /// Send this RPC to the authority.
         /// In distributed authority mode, this will be the owner of the NetworkObject.
@@ -229,7 +222,6 @@ namespace Unity.Netcode
         /// In normal client-server mode, this is basically the exact same thing as a client rpc.
         /// </summary>
         public BaseRpcTarget NotAuthority;
-#endif
 
         /// <summary>
         /// Send to a specific single client ID.

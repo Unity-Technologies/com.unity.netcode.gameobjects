@@ -1,4 +1,3 @@
-#if NGO_DAMODE
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
@@ -227,4 +226,3 @@ namespace Unity.Netcode.Components
         }
     }
 }
-#endif

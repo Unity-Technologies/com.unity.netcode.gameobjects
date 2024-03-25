@@ -15,9 +15,7 @@ namespace Unity.Netcode
         }
         protected struct TriggerInfo
         {
-#if NGO_DAMODE
             public string MessageType;
-#endif
             public float Expiry;
             public NativeList<TriggerData> TriggerData;
         }
@@ -39,11 +37,7 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-#if NGO_DAMODE
         public virtual unsafe void DeferMessage(IDeferredNetworkMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context, string messageType)
-#else
-        public virtual unsafe void DeferMessage(IDeferredNetworkMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
-#endif
         {
             if (!m_Triggers.TryGetValue(trigger, out var triggers))
             {
@@ -55,9 +49,7 @@ namespace Unity.Netcode
             {
                 triggerInfo = new TriggerInfo
                 {
-#if NGO_DAMODE
                     MessageType = messageType,
-#endif
                     Expiry = m_NetworkManager.RealTimeProvider.RealTimeSinceStartup + m_NetworkManager.NetworkConfig.SpawnTimeout,
                     TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
                 };
@@ -100,7 +92,6 @@ namespace Unity.Netcode
             }
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Used for testing purposes
         /// </summary>
@@ -117,21 +108,11 @@ namespace Unity.Netcode
                 return $"Deferred messages were received for a trigger of type {triggerType} associated with id ({key}), but the {nameof(NetworkObject)} was not received within the timeout period {spawnTimeout} second(s).";
             }
         }
-#else
-        private string GetWarningMessage(IDeferredNetworkMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo, float spawnTimeout)
-        {
-            return $"Deferred messages were received for a trigger of type {triggerType} associated with id ({key}), but the {nameof(NetworkObject)} was not received within the timeout period {spawnTimeout} second(s).";
-        }
-#endif
 
         protected virtual void PurgeTrigger(IDeferredNetworkMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo)
         {
-#if NGO_DAMODE
             var logLevel = m_NetworkManager.DistributedAuthorityMode ? LogLevel.Developer : LogLevel.Normal;
             if (NetworkLog.CurrentLogLevel <= logLevel)
-#else
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-#endif
             {
                 NetworkLog.LogWarning(GetWarningMessage(triggerType, key, triggerInfo, m_NetworkManager.NetworkConfig.SpawnTimeout));
             }

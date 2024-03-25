@@ -8,9 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
@@ -39,7 +37,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => client.SpawnManager.GetClientOwnedObjects(clientId).Count() == k_NumberObjectsToSpawn + 1);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to have 33 NetworkObjects spawned! Only {client.SpawnManager.GetClientOwnedObjects(clientId).Count()} were assigned!");
 
-#if NGO_DAMODE
             // Since clients spawn their objects locally in distributed authority mode, we have to rebuild the list of the client
             // owned objects on the (DAHost) server-side because when the client disconnects it will destroy its local instances.
             if (m_DistributedAuthority)
@@ -55,7 +52,6 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
             }
-#endif
 
             // disconnect the client that owns all the clients
             NetcodeIntegrationTestHelpers.StopOneClient(client);

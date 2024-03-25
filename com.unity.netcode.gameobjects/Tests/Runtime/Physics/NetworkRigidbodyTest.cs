@@ -8,19 +8,14 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(RigidbodyInterpolation.Interpolate, true, true)] // This should be allowed under all condistions when using Rigidbody motion
     [TestFixture(RigidbodyInterpolation.Extrapolate, true, true)] // This should not allow extrapolation on non-auth instances when using Rigidbody motion & NT interpolation
     [TestFixture(RigidbodyInterpolation.Extrapolate, false, true)] // This should allow extrapolation on non-auth instances when using Rigidbody & NT has no interpolation
     [TestFixture(RigidbodyInterpolation.Interpolate, true, false)] // This should not allow kinematic instances to have Rigidbody interpolation enabled
     [TestFixture(RigidbodyInterpolation.Interpolate, false, false)] // Testing that rigid body interpolation remains the same if NT interpolate is disabled
-#endif
-
     public class NetworkRigidbodyTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-
-#if NGO_DAMODE
         private bool m_NetworkTransformInterpolate;
         private bool m_UseRigidBodyForMotion;
         private RigidbodyInterpolation m_RigidbodyInterpolation;
@@ -31,23 +26,15 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkTransformInterpolate = networkTransformInterpolate;
             m_UseRigidBodyForMotion = useRigidbodyForMotion;
         }
-#endif
 
         protected override void OnCreatePlayerPrefab()
         {
-#if NGO_DAMODE
             var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransform>();
             networkTransform.Interpolate = m_NetworkTransformInterpolate;
             var rigidbody = m_PlayerPrefab.AddComponent<Rigidbody>();
             rigidbody.interpolation = m_RigidbodyInterpolation;
             var networkRigidbody = m_PlayerPrefab.AddComponent<NetworkRigidbody>();
             networkRigidbody.UseRigidBodyForMotion = m_UseRigidBodyForMotion;
-#else
-            m_PlayerPrefab.AddComponent<NetworkTransform>();
-            m_PlayerPrefab.AddComponent<Rigidbody>();
-            m_PlayerPrefab.AddComponent<NetworkRigidbody>();
-            m_PlayerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-#endif
         }
 
         /// <summary>
@@ -68,7 +55,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var serverClientInstanceRigidBody = serverClientPlayerInstance.GetComponent<Rigidbody>();
             var clientRigidBody = clientPlayerInstance.GetComponent<Rigidbody>();
-#if NGO_DAMODE
+
             if (m_UseRigidBodyForMotion)
             {
                 // Server authoritative NT should yield non-kinematic mode for the server-side player instance
@@ -86,7 +73,6 @@ namespace Unity.Netcode.RuntimeTests
                     $"player's {nameof(Rigidbody)}'s interpolation is {clientRigidBody.interpolation} and not {nameof(RigidbodyInterpolation.Interpolate)}!");
             }
             else
-#endif
             {
                 // server rigidbody has authority and should not be kinematic
                 Assert.False(serverClientInstanceRigidBody.isKinematic, $"[Server-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} player's {nameof(Rigidbody)} is kinematic!");
@@ -96,7 +82,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Server authoritative NT should yield kinematic mode for the client-side player instance
                 Assert.True(clientRigidBody.isKinematic, $"[Client-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} player's {nameof(Rigidbody)} is not kinematic!");
 
-#if NGO_DAMODE
                 // client rigidbody has no authority with NT interpolation disabled should allow Rigidbody interpolation
                 if (!m_NetworkTransformInterpolate)
                 {
@@ -104,7 +89,6 @@ namespace Unity.Netcode.RuntimeTests
                         $"player's {nameof(Rigidbody)}'s interpolation is {clientRigidBody.interpolation} and not {nameof(RigidbodyInterpolation.Interpolate)}!");
                 }
                 else
-#endif
                 {
                     Assert.AreEqual(RigidbodyInterpolation.None, clientRigidBody.interpolation, $"[Client-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} " +
                         $"player's {nameof(Rigidbody)}'s interpolation is {clientRigidBody.interpolation} and not {nameof(RigidbodyInterpolation.None)}!");

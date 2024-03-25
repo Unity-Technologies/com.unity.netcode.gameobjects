@@ -19,9 +19,7 @@ namespace TestProject.RuntimeTests
     /// Possibly we could build this at runtime, but for now it uses the same animator controller as the manual
     /// test does.
     /// </summary>
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost, OwnerShipMode.ClientOwner, AuthoritativeMode.OwnerAuth)]
-#endif
     [TestFixture(HostOrServer.Host, OwnerShipMode.ServerOwner, AuthoritativeMode.OwnerAuth)]
     [TestFixture(HostOrServer.Host, OwnerShipMode.ServerOwner, AuthoritativeMode.ServerAuth)]
     [TestFixture(HostOrServer.Host, OwnerShipMode.ClientOwner, AuthoritativeMode.OwnerAuth)]

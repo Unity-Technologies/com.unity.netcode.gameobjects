@@ -168,7 +168,6 @@ namespace Unity.Netcode
                     RegisterMessageType(type);
                 }
 
-#if NGO_DAMODE
 #if UNITY_EDITOR
                 if (EnableMessageOrderConsoleLog)
                 {
@@ -190,7 +189,6 @@ namespace Unity.Netcode
                     }
                 }
 #endif
-#endif
             }
             catch (Exception)
             {
@@ -199,9 +197,7 @@ namespace Unity.Netcode
             }
         }
 
-#if NGO_DAMODE
         internal static bool EnableMessageOrderConsoleLog = false;
-#endif
 
         public void Dispose()
         {

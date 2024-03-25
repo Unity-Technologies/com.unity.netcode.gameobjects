@@ -9,10 +9,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost, LoadSceneMode.Single)]
     [TestFixture(HostOrServer.DAHost, LoadSceneMode.Additive)]
-#endif
     [TestFixture(HostOrServer.Host, LoadSceneMode.Single)]
     [TestFixture(HostOrServer.Host, LoadSceneMode.Additive)]
     [TestFixture(HostOrServer.Server, LoadSceneMode.Single)]

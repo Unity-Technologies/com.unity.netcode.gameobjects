@@ -10,10 +10,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class ParentingInSceneObjectsTests : IntegrationTestWithApproximation
     {
         private const string k_BaseSceneToLoad = "UnitTestBaseScene";
@@ -26,9 +24,8 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
-#if NGO_DAMODE
         public ParentingInSceneObjectsTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
+
         protected override void OnOneTimeSetup()
         {
             NetworkManagerTestDisabler.IsIntegrationTest = true;

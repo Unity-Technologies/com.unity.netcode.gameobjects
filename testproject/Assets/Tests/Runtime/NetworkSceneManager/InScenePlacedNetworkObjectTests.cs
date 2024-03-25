@@ -12,10 +12,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class InScenePlacedNetworkObjectTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -24,9 +22,8 @@ namespace TestProject.RuntimeTests
         private Scene m_ServerSideSceneLoaded;
         private bool m_CanStartServerAndClients;
 
-#if NGO_DAMODE
         public InScenePlacedNetworkObjectTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
+
         protected override IEnumerator OnSetup()
         {
             NetworkObjectTestComponent.Reset();

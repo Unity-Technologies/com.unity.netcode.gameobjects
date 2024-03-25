@@ -1,8 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-#if NGO_DAMODE
 using NUnit.Framework;
-#endif
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -29,10 +27,8 @@ namespace TestProject.RuntimeTests
         }
     }
 
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class ParentDynamicUnderInScenePlaced : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "GenericInScenePlacedObject";
@@ -40,9 +36,7 @@ namespace TestProject.RuntimeTests
         private GameObject m_DynamicallySpawned;
         private bool m_SceneIsLoaded;
 
-#if NGO_DAMODE
         public ParentDynamicUnderInScenePlaced(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         protected override IEnumerator OnSetup()
         {
@@ -111,9 +105,7 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
-#if NGO_DAMODE
         private ulong m_TargetScenePlacedId;
-#endif
         /// <summary>
         /// Integration test that validates parenting dynamically spawned NetworkObjects
         /// under an in-scene placed NetworkObject works properly.
@@ -136,9 +128,7 @@ namespace TestProject.RuntimeTests
             // Wait for the host-server's player to be parented under the in-scene placed NetworkObject
             yield return WaitForConditionOrTimeOut(TestParentedAndNotInScenePlaced);
             AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.IsSceneObject.Value}) | Was Parented ({m_FailedValidation.transform.position != null})");
-#if NGO_DAMODE
             m_TargetScenePlacedId = m_ServerNetworkManager.LocalClient.PlayerObject.transform.parent.GetComponent<NetworkObject>().NetworkObjectId;
-#endif
 
             // Now dynamically spawn a NetworkObject to also test dynamically spawned NetworkObjects being parented
             // under in-scene placed NetworkObjects
@@ -148,19 +138,16 @@ namespace TestProject.RuntimeTests
             for (int i = 0; i < 5; i++)
             {
                 yield return CreateAndStartNewClient();
-#if NGO_DAMODE
                 if (m_DistributedAuthority)
                 {
                     yield return WaitForConditionOrTimeOut(() => ParentPlayerToInSceneNetworkObjectFound(i));
                     AssertOnTimeout($"[Client-{i + 1}] Failed to find in-scene placed NetworkObject or failed to parent under it!");
                 }
-#endif
                 yield return WaitForConditionOrTimeOut(TestParentedAndNotInScenePlaced);
                 AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.IsSceneObject.Value}) | Was Parented ({m_FailedValidation.transform.position != null})");
             }
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// For distributed authority mode, we have to find the in-scene placed object to parent the newly spawned player under
         /// </summary>
@@ -188,7 +175,7 @@ namespace TestProject.RuntimeTests
 
             return true;
         }
-#endif
+
         private void SceneManager_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
         {
             if (clientId == m_ServerNetworkManager.LocalClientId && sceneName == k_SceneToLoad)

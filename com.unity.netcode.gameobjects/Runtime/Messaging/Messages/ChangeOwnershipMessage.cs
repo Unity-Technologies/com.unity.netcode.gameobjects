@@ -7,9 +7,8 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
-
-#if NGO_DAMODE
-        // DA-NGO CMB SERVICE NOTES:
+        // DANGOEXP TODO: Remove these notes or change their format
+        // SERVICE NOTES:
         // When forwarding the message to clients on the CMB Service side,
         // you can set the ClientIdCount to 0 and skip writing the ClientIds.
         // See the NetworkObjet.OwnershipRequest for more potential service side additions
@@ -109,13 +108,11 @@ namespace Unity.Netcode
             if (set) { m_OwnershipMessageTypeFlags = (byte)(m_OwnershipMessageTypeFlags | flag); }
             else { m_OwnershipMessageTypeFlags = (byte)(m_OwnershipMessageTypeFlags & ~flag); }
         }
-#endif
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
-#if NGO_DAMODE
             if (DistributedAuthorityMode)
             {
                 BytePacker.WriteValueBitPacked(writer, ClientIdCount);
@@ -150,7 +147,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-#endif
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -163,7 +159,6 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
 
-#if NGO_DAMODE
             if (networkManager.DistributedAuthorityMode)
             {
                 ByteUnpacker.ReadValueBitPacked(reader, out ClientIdCount);
@@ -205,11 +200,6 @@ namespace Unity.Netcode
             if (!networkManager.DAHost && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
-#else
-            if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
-            {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
-#endif
                 return false;
             }
             return true;
@@ -219,7 +209,6 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
-#if NGO_DAMODE
             // If we are the DAHost then forward this message
             if (networkManager.DAHost)
             {
@@ -298,37 +287,7 @@ namespace Unity.Netcode
                 // Otherwise, we handle and extended ownership update
                 HandleExtendedOwnershipUpdate(ref context);
             }
-#else
-            var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-            var originalOwner = networkObject.OwnerClientId;
-            networkObject.OwnerClientId = OwnerClientId;
-            // We are current owner.
-            if (originalOwner == networkManager.LocalClientId)
-            {
-                networkObject.InvokeBehaviourOnLostOwnership();
-            }
-
-            // We are new owner.
-            if (OwnerClientId == networkManager.LocalClientId)
-            {
-                networkObject.InvokeBehaviourOnGainedOwnership();
-            }
-
-            // For all other clients that are neither the former or current owner, update the behaviours' properties
-            if (OwnerClientId != networkManager.LocalClientId && originalOwner != networkManager.LocalClientId)
-            {
-                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
-                {
-                    networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
-                }
-            }
-
-            networkObject.InvokeOwnershipChanged(originalOwner, OwnerClientId);
-            networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);
-#endif
         }
-
-#if NGO_DAMODE
 
         /// <summary>
         /// Handle the 
@@ -436,7 +395,5 @@ namespace Unity.Netcode
 
             networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);
         }
-#endif
-
     }
 }

@@ -73,9 +73,8 @@ namespace Unity.Netcode.RuntimeTests
             NetworkUpdateLoop.RegisterAllNetworkUpdates(this);
         }
     }
-#if NGO_DAMODE
+
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     public class OwnerModifiedTests : NetcodeIntegrationTest
     {

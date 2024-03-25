@@ -87,9 +87,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return new Vector3(Random.Range(min, max), Random.Range(min, max), Random.Range(min, max));
         }
 
-#if NGO_DAMODE
         public IntegrationTestWithApproximation(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         public IntegrationTestWithApproximation(HostOrServer hostOrServer) : base(hostOrServer) { }
 

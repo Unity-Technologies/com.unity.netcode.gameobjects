@@ -39,13 +39,11 @@ namespace Unity.Netcode
         /// <param name="message">The message to log</param>
         public static void LogInfoServer(string message) => LogServer(message, LogType.Info);
 
-#if NGO_DAMODE
         /// <summary>
         /// Logs an info log locally and on the session owner if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
         public static void LogInfoSessionOwner(string message) => LogServer(message, LogType.Info);
-#endif
 
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
@@ -66,12 +64,8 @@ namespace Unity.Netcode
             var networkManager = NetworkManagerOverride ??= NetworkManager.Singleton;
             // Get the sender of the local log
             ulong localId = networkManager?.LocalClientId ?? 0;
-#if NGO_DAMODE
             bool isServer = networkManager && networkManager.DistributedAuthorityMode ? networkManager.LocalClient.IsSessionOwner :
                 networkManager && !networkManager.DistributedAuthorityMode ? networkManager.IsServer : true;
-#else
-            bool isServer = networkManager?.IsServer ?? true;
-#endif
             switch (logType)
             {
                 case LogType.Info:
@@ -112,9 +106,7 @@ namespace Unity.Netcode
                 {
                     LogType = logType,
                     Message = message,
-#if NGO_DAMODE
                     SenderId = localId
-#endif
                 };
                 var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
 
@@ -122,7 +114,6 @@ namespace Unity.Netcode
             }
         }
 
-#if NGO_DAMODE
         private static string Header()
         {
             var networkManager = NetworkManagerOverride ??= NetworkManager.Singleton;
@@ -136,14 +127,6 @@ namespace Unity.Netcode
         internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[{Header()} Sender={sender}] {message}");
         internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[{Header()} Sender={sender}] {message}");
         internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[{Header()} Sender={sender}] {message}");
-
-#else
-        internal static void LogInfoServerLocal(string message, ulong sender) => Debug.Log($"[Netcode-Server Sender={sender}] {message}");
-        internal static void LogWarningServerLocal(string message, ulong sender) => Debug.LogWarning($"[Netcode-Server Sender={sender}] {message}");
-        internal static void LogErrorServerLocal(string message, ulong sender) => Debug.LogError($"[Netcode-Server Sender={sender}] {message}");
-#endif
-
-
 
         internal enum LogType : byte
         {

@@ -11,10 +11,8 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class ParentingWorldPositionStaysTests : IntegrationTestWithApproximation
     {
         private const int k_NestedChildren = 10;
@@ -160,9 +158,7 @@ namespace TestProject.RuntimeTests
         private Quaternion m_ChildStartRotation = Quaternion.Euler(-35.0f, 0.0f, -180.0f);
         private Vector3 m_ChildStartScale = Vector3.one;
 
-#if NGO_DAMODE
         public ParentingWorldPositionStaysTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         protected override IEnumerator OnSetup()
         {

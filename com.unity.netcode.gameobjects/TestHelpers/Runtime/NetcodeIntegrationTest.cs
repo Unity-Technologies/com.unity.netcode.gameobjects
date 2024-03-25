@@ -121,9 +121,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             Host,
             Server,
-#if NGO_DAMODE
             DAHost
-#endif
         }
 
         protected GameObject m_PlayerPrefab;
@@ -140,7 +138,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
-#if NGO_DAMODE
         protected bool m_DistributedAuthority;
         protected SessionModeTypes m_SessionModeType = SessionModeTypes.ClientServer;
 
@@ -161,7 +158,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.UseCMBService = UseCMBService() && m_DistributedAuthority;
         }
 
-#endif
         protected int m_TargetFrameRate = 60;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
@@ -490,9 +486,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-#if NGO_DAMODE
             SetDistributedAuthorityProperties(networkManager);
-#endif
 
             // Notification that the new client (NetworkManager) has been created
             // in the event any modifications need to be made before starting the client
@@ -523,19 +517,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
                 ClientNetworkManagerPostStart(networkManager);
-#if NGO_DAMODE
                 if (networkManager.DistributedAuthorityMode)
                 {
                     yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
                     AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
                 }
-#endif
 
                 VerboseDebug($"[{networkManager.name}] Created and connected!");
             }
         }
 
-#if NGO_DAMODE
         private bool AllPlayerObjectClonesSpawned(NetworkManager joinedClient)
         {
             m_InternalErrorLog.Clear();
@@ -581,7 +572,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             return true;
         }
-#endif
 
         /// <summary>
         /// This will create, start, and connect a new client while in the middle of an
@@ -591,9 +581,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-#if NGO_DAMODE
             SetDistributedAuthorityProperties(networkManager);
-#endif
 
             // Notification that the new client (NetworkManager) has been created
             // in the event any modifications need to be made before starting the client
@@ -681,16 +669,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
-#if NGO_DAMODE
             SetDistributedAuthorityProperties(m_ServerNetworkManager);
-#endif
 
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-#if NGO_DAMODE
                 SetDistributedAuthorityProperties(client);
-#endif
             }
 
             // Provides opportunity to allow child derived classes to
@@ -838,13 +822,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
 
-#if NGO_DAMODE
                 // When using the CMBService, don't start the server.
                 bool startServer = !(UseCMBService() && m_DistributedAuthority);
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, startServer, m_ServerNetworkManager, m_ClientNetworkManagers))
-#else
-                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
-#endif
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
@@ -855,9 +835,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // to load their own scenes.
                 if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-#if NGO_DAMODE
                     if (startServer)
-#endif
                     {
                         var scenesLoaded = m_ServerNetworkManager.SceneManager.ScenesLoaded;
                         m_ServerNetworkManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, m_ServerNetworkManager);
@@ -901,7 +879,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                         }
                     }
-#if NGO_DAMODE
                     if (m_DistributedAuthority)
                     {
                         //yield return WaitForConditionOrTimeOut(AllClientPlayersSpawned);
@@ -920,7 +897,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                         }
                     }
-#endif
                     ClientNetworkManagerPostStartInit();
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
@@ -943,13 +919,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-#if NGO_DAMODE
                 // When using the CMBService, don't start the server.
                 var usingCMBService = UseCMBService() && m_DistributedAuthority;
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !usingCMBService, m_ServerNetworkManager, m_ClientNetworkManagers))
-#else
-                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
-#endif
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
@@ -999,7 +971,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         }
                     }
 
-#if NGO_DAMODE
                     if (m_DistributedAuthority)
                     {
 
@@ -1017,7 +988,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!");
                         }
                     }
-#endif
 
                     ClientNetworkManagerPostStartInit();
 
@@ -1596,11 +1566,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(m_ServerNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
             var prefabObject = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
-#if NGO_DAMODE
             // DANGO-TODO: Ownership flags could require us to change this
             // For testing purposes, we default to true for the distribute ownership property when in distirbuted authority session mode.
             prefabObject.GetComponent<NetworkObject>().Ownership |= NetworkObject.OwnershipStatus.Distributable;
-#endif
             return prefabObject;
         }
 
@@ -1637,7 +1605,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
 
-#if NGO_DAMODE
             if (owner.NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority)
             {
                 networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
@@ -1683,26 +1650,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                 }
             }
-#else
-            networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
-            if (owner == m_ServerNetworkManager)
-            {
-                if (m_UseHost)
-                {
-                    networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
-                }
-                else
-                {
-                    networkObjectToSpawn.Spawn(destroyWithScene);
-                }
-            }
-            else
-            {
-                networkObjectToSpawn.SpawnWithOwnership(owner.LocalClientId, destroyWithScene);
-            }
-#endif
-
-
             return newInstance;
         }
 
@@ -1740,21 +1687,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public NetcodeIntegrationTest()
         {
-#if NGO_DAMODE
             m_SessionModeType = OnGetSessionmode();
             m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
             NetworkMessageManager.EnableMessageOrderConsoleLog = false;
-#endif
-
         }
 
-#if NGO_DAMODE
         public NetcodeIntegrationTest(SessionModeTypes sessionMode)
         {
             m_SessionModeType = sessionMode;
             m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
         }
-#endif
 
         /// <summary>
         /// Optional Host or Server integration tests
@@ -1774,13 +1716,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="hostOrServer"></param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
-#if NGO_DAMODE
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
             m_SessionModeType = hostOrServer == HostOrServer.DAHost ? SessionModeTypes.DistributedAuthority : SessionModeTypes.ClientServer;
             m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
-#else
-            m_UseHost = hostOrServer == HostOrServer.Host;
-#endif
         }
 
         /// <summary>

@@ -1,4 +1,3 @@
-#if NGO_DAMODE
 namespace Unity.Netcode
 {
     internal class AuthorityRpcTarget : ServerRpcTarget
@@ -74,4 +73,3 @@ namespace Unity.Netcode
         }
     }
 }
-#endif

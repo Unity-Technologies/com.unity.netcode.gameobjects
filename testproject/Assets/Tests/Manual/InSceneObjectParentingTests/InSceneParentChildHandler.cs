@@ -127,11 +127,7 @@ namespace TestProject.ManualTests
         /// <returns></returns>
         private bool CheckForAuthority()
         {
-#if NGO_DAMODE
             return NetworkObject.HasAuthority;
-#else
-            return IsServer;
-#endif
         }
 
         public void DeparentAllChildren(bool worldPositionStays = true)
@@ -279,11 +275,7 @@ namespace TestProject.ManualTests
 
         public void CheckChildren()
         {
-#if NGO_DAMODE
             if (!NetworkObject.HasAuthority || m_RequestSent || AuthorityRootParent != this)
-#else
-            if (!NetworkManager.IsServer || m_RequestSent || AuthorityRootParent != this)
-#endif
             {
                 return;
             }

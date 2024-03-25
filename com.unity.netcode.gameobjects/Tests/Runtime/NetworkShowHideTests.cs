@@ -126,10 +126,8 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.ClientServer)]
     [TestFixture(SessionModeTypes.DistributedAuthority)]
-#endif
     public class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
@@ -145,9 +143,8 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
 
-#if NGO_DAMODE
         public NetworkShowHideTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
+
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("ShowHideObject");
@@ -427,11 +424,9 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForTicks(m_ServerNetworkManager, 3);
 
-#if NGO_DAMODE
             // When in client-server, the server can spawn a NetworkObject without any observers (even when running as a host the host-client should not have visibility)
             // When in distributed authority mode, the owner client has to be an observer of the object
             if (!m_DistributedAuthority)
-#endif
             {
                 // No observers should be assigned at this point
                 Assert.True(m_ObserverTestObject.Observers.Count == m_ClientsWithVisibility.Count, $"Expected the observer count to be {m_ClientsWithVisibility.Count} but it was {m_ObserverTestObject.Observers.Count}!");
@@ -532,7 +527,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitForSeconds(1.25f);
 
             LogAssert.NoUnexpectedReceived();
-#if NGO_DAMODE
+            // Show the object again to check nothing unexpected happens
             if (m_DistributedAuthority)
             {
                 Assert.True(m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(m_NetSpawnedObject1.NetworkObjectId), $"Client-{m_ClientNetworkManagers[0].LocalClientId} has no spawned object with an ID of: {m_NetSpawnedObject1.NetworkObjectId}!");
@@ -544,10 +539,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_NetSpawnedObject1.NetworkShow(m_ClientNetworkManagers[1].LocalClientId);
             }
-#else
-            // Show the object again to check nothing unexpected happens
-            m_NetSpawnedObject1.NetworkShow(m_ClientNetworkManagers[1].LocalClientId);
-#endif
 
             yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 1);
 

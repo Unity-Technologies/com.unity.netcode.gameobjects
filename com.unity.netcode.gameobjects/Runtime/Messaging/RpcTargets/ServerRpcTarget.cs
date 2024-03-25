@@ -15,13 +15,11 @@ namespace Unity.Netcode
 
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
         {
-#if NGO_DAMODE
             if (behaviour.NetworkManager.DistributedAuthorityMode && behaviour.NetworkManager.CMBServiceConnection)
             {
-                UnityEngine.Debug.LogWarning("Sending to Server in Distributed Authority mode is not allowed!");
+                UnityEngine.Debug.LogWarning("[Invalid Target] There is no server to send to when in Distributed Authority mode!");
                 return;
             }
-#endif
 
             if (m_UnderlyingTarget == null)
             {

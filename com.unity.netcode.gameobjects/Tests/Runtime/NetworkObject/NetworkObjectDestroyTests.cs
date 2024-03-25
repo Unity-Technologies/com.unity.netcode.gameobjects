@@ -14,17 +14,13 @@ namespace Unity.Netcode.RuntimeTests
     /// - Client destroy spawned => throw exception.
     /// </summary>
 
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif
     public class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
-#if NGO_DAMODE
         public NetworkObjectDestroyTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
@@ -45,7 +41,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsNotNull(clientClientPlayerResult.Result.gameObject);
 
             var targetNetworkManager = m_ClientNetworkManagers[0];
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 targetNetworkManager = m_ClientNetworkManagers[1];
@@ -53,7 +48,6 @@ namespace Unity.Netcode.RuntimeTests
                 Object.Destroy(clientClientPlayerResult.Result.gameObject);
             }
             else
-#endif
             {
                 // destroy the authoritative player (client-server)
                 Object.Destroy(serverClientPlayerResult.Result.gameObject);
@@ -95,14 +89,12 @@ namespace Unity.Netcode.RuntimeTests
             //destroying a NetworkObject while shutting down is allowed
             if (isShuttingDown)
             {
-#if NGO_DAMODE
                 if (m_DistributedAuthority)
                 {
                     // Shutdown the 2nd client
                     m_ClientNetworkManagers[1].Shutdown();
                 }
                 else
-#endif
                 {
                     // Shutdown the 
                     m_ClientNetworkManagers[0].Shutdown();
@@ -116,7 +108,6 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ClientPlayerName = clientPlayer.gameObject.name;
             m_ClientNetworkObjectId = clientPlayer.NetworkObjectId;
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 m_ClientPlayerName = m_PlayerNetworkObjects[m_ClientNetworkManagers[1].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject.name;
@@ -130,7 +121,6 @@ namespace Unity.Netcode.RuntimeTests
                 Object.DestroyImmediate(m_PlayerNetworkObjects[m_ClientNetworkManagers[1].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject);
             }
             else
-#endif
             {
                 // the 1st client attempts to destroy its own player object (if shutting down then "ok" if not then not "ok")
                 Object.DestroyImmediate(m_ClientNetworkManagers[0].LocalClient.PlayerObject.gameObject);
@@ -146,7 +136,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool HaveLogsBeenReceived()
         {
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] [Invalid Destroy][{m_ClientPlayerName}][NetworkObjectId:{m_ClientNetworkObjectId}] Destroy a spawned {nameof(NetworkObject)} on a non-owner client is not valid during a distributed authority session. Call Destroy or Despawn on the client-owner instead."))
@@ -166,19 +155,6 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
             }
-#else
-            {
-                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
-                {
-                    return false;
-                }
-
-                if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
-                {
-                    return false;
-                }
-            }
-#endif
             return true;
         }
 

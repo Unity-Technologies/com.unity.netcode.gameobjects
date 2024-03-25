@@ -9,38 +9,27 @@ using UnityEngine;
 using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(HostOrServer.DAHost, MotionModels.UseTransform)]
     [TestFixture(HostOrServer.DAHost, MotionModels.UseRigidbody)]
     [TestFixture(HostOrServer.Host, MotionModels.UseTransform)]
-#else
-    [TestFixture(HostOrServer.Host)]
-#endif
     public class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
     {
-#if NGO_DAMODE
         public enum MotionModels
         {
             UseRigidbody,
             UseTransform
         }
-#endif
         protected override int NumberOfClients => 1;
 
         private GameObject m_ClientNetworkTransformPrefab;
         private GameObject m_NetworkTransformPrefab;
-#if NGO_DAMODE
-        private MotionModels m_MotionModel;
-#endif
 
-#if NGO_DAMODE
+        private MotionModels m_MotionModel;
+
         public NetworkTransformOwnershipTests(HostOrServer hostOrServer, MotionModels motionModel) : base(hostOrServer)
         {
             m_MotionModel = motionModel;
         }
-#else
-        public NetworkTransformOwnershipTests(HostOrServer hostOrServer) : base(hostOrServer) {}
-#endif
 
         protected override void OnServerAndClientsCreated()
         {
@@ -55,9 +44,7 @@ namespace Unity.Netcode.RuntimeTests
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
             var networkRigidbody = m_ClientNetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-#if NGO_DAMODE
             networkRigidbody.UseRigidBodyForMotion = m_MotionModel == MotionModels.UseRigidbody;
-#endif
             m_ClientNetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
 
             m_NetworkTransformPrefab = CreateNetworkObjectPrefab("ServerAuthorityTest");
@@ -68,9 +55,7 @@ namespace Unity.Netcode.RuntimeTests
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
             networkRigidbody = m_NetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-#if NGO_DAMODE
             networkRigidbody.UseRigidBodyForMotion = m_MotionModel == MotionModels.UseRigidbody;
-#endif
             m_NetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
             networkTransform.Interpolate = false;
             networkTransform.UseHalfFloatPrecision = false;
@@ -153,8 +138,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait one frame so the NetworkTransform can apply the owner's last state received on the late joining client side
             // (i.e. prevent the non-owner from changing the transform)
-
-#if NGO_DAMODE
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
                 // Allow fixed update to run twice for values to propogate to Unity transform
@@ -162,7 +145,6 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForFixedUpdate();
             }
             else
-#endif
             {
                 yield return null;
             }
@@ -258,7 +240,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Change ownership and wait for the non-owner to reflect the change
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 ownerInstance.NetworkObject.ChangeOwnership(networkManagerNonOwner.LocalClientId);
@@ -267,9 +248,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_ServerNetworkManager.SpawnManager.ChangeOwnership(serverSideInstance.GetComponent<NetworkObject>(), networkManagerNonOwner.LocalClientId, true);
             }
-#else
-            m_ServerNetworkManager.SpawnManager.ChangeOwnership(serverSideInstance.GetComponent<NetworkObject>(), networkManagerNonOwner.LocalClientId);
-#endif
             yield return WaitForConditionOrTimeOut(() => nonOwnerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
 
@@ -298,7 +276,7 @@ namespace Unity.Netcode.RuntimeTests
             valueSetByOwner = Vector3.one * 10;
             ownerInstance.transform.localScale = valueSetByOwner;
             rotation.eulerAngles = valueSetByOwner;
-#if NGO_DAMODE            
+
             // Allow scale to update first when using rigid body motion
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
@@ -313,7 +291,6 @@ namespace Unity.Netcode.RuntimeTests
                 rigidBody.Move(valueSetByOwner, rotation);
             }
             else
-#endif
             {
                 m_UseAdjustedVariance = false;
                 ownerInstance.transform.position = valueSetByOwner;

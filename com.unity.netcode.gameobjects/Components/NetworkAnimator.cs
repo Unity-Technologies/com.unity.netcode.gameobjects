@@ -25,13 +25,12 @@ namespace Unity.Netcode.Components
         {
             foreach (var animationUpdate in m_SendAnimationUpdates)
             {
-#if NGO_DAMODE
+
                 if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
                 {
                     m_NetworkAnimator.SendAnimStateRpc(animationUpdate.AnimationMessage);
                 }
                 else
-#endif
                 {
                     m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
                 }
@@ -41,13 +40,11 @@ namespace Unity.Netcode.Components
 
             foreach (var sendEntry in m_SendParameterUpdates)
             {
-#if NGO_DAMODE
                 if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
                 {
                     m_NetworkAnimator.SendParametersUpdateRpc(sendEntry.ParametersUpdateMessage);
                 }
                 else
-#endif
                 {
                     m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
                 }
@@ -56,13 +53,11 @@ namespace Unity.Netcode.Components
 
             foreach (var sendEntry in m_SendTriggerUpdates)
             {
-#if NGO_DAMODE
                 if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
                 {
                     m_NetworkAnimator.SendAnimTriggerRpc(sendEntry.AnimationTriggerMessage);
                 }
                 else
-#endif
                 {
                     if (!sendEntry.SendToServer)
                     {
@@ -932,13 +927,11 @@ namespace Unity.Netcode.Components
             // Send an AnimationMessage only if there are dirty AnimationStates to send
             if (m_AnimationMessage.IsDirtyCount > 0)
             {
-#if NGO_DAMODE
                 if (NetworkManager.DistributedAuthorityMode)
                 {
                     SendAnimStateRpc(m_AnimationMessage);
                 }
                 else
-#endif
                 if (!IsServer && IsOwner)
                 {
                     SendAnimStateServerRpc(m_AnimationMessage);
@@ -963,7 +956,6 @@ namespace Unity.Netcode.Components
             {
                 Parameters = m_ParameterWriter.ToArray()
             };
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 if (IsOwner)
@@ -993,23 +985,6 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-#else
-            if (!IsServer)
-            {
-                SendParametersUpdateServerRpc(parametersMessage);
-            }
-            else
-            {
-                if (sendDirect)
-                {
-                    SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
-                }
-                else
-                {
-                    m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersMessage, clientRpcParams);
-                }
-            }
-#endif
         }
 
         /// <summary>
@@ -1286,7 +1261,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Distributed Authority: Updates the client's animator's parameters
         /// </summary>
@@ -1295,7 +1269,6 @@ namespace Unity.Netcode.Components
         {
             m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
         }
-#endif
 
         /// <summary>
         /// Client-Server: Updates the client's animator's parameters
@@ -1354,7 +1327,6 @@ namespace Unity.Netcode.Components
             ProcessAnimStates(animationMessage);
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Distributed Authority: Internally-called RPC non-authority receiving function to update animation states
         /// </summary>
@@ -1363,11 +1335,9 @@ namespace Unity.Netcode.Components
         {
             ProcessAnimStates(animationMessage);
         }
-#endif
 
         private void ProcessAnimStates(AnimationMessage animationMessage)
         {
-#if NGO_DAMODE
             if (HasAuthority)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
@@ -1378,16 +1348,7 @@ namespace Unity.Netcode.Components
                 }
                 return;
             }
-#else
-            if (NetworkManager.IsHost)
-            {
-                if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogWarning("Detected the Host is sending itself animation updates! Please report this issue.");
-                }
-                return;
-            }
-#endif
+
             foreach (var animationState in animationMessage.AnimationStates)
             {
                 UpdateAnimationState(animationState);
@@ -1439,7 +1400,6 @@ namespace Unity.Netcode.Components
             m_Animator.SetBool(hash, isSet);
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Distributed Authority: Internally-called RPC client receiving function to update a trigger when the server wants to forward
         ///   a trigger for a client to play / reset
@@ -1450,7 +1410,6 @@ namespace Unity.Netcode.Components
         {
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
-#endif
 
         /// <summary>
         /// Client Server: Internally-called RPC client receiving function to update a trigger when the server wants to forward
@@ -1491,16 +1450,12 @@ namespace Unity.Netcode.Components
             // will happen when SendAnimTriggerClientRpc is called.  For a client owner, we call the
             // SendAnimTriggerServerRpc and then trigger locally when running in owner authority mode.
             var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode && HasAuthority)
             {
                 m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animTriggerMessage);
                 InternalSetTrigger(hash, setTrigger);
             }
             else if (!NetworkManager.DistributedAuthorityMode && (IsOwner || IsServer))
-#else
-            if (IsOwner || IsServer)
-#endif
             {
                 if (IsServer)
                 {

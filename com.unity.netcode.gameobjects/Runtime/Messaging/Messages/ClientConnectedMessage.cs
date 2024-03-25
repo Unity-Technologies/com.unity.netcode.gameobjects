@@ -6,17 +6,13 @@ namespace Unity.Netcode
 
         public ulong ClientId;
 
-#if NGO_DAMODE
         public bool ShouldSynchronize;
-#endif
 
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, ClientId);
-#if NGO_DAMODE
             writer.WriteValueSafe(ShouldSynchronize);
-#endif
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -27,9 +23,7 @@ namespace Unity.Netcode
                 return false;
             }
             ByteUnpacker.ReadValueBitPacked(reader, out ClientId);
-#if NGO_DAMODE
             reader.ReadValueSafe(out ShouldSynchronize);
-#endif
 
             return true;
         }
@@ -37,7 +31,6 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-#if NGO_DAMODE
             if ((ShouldSynchronize || networkManager.CMBServiceConnection) && networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
             {
                 networkManager.SceneManager.SynchronizeNetworkObjects(ClientId);
@@ -47,7 +40,6 @@ namespace Unity.Netcode
                 // All modes support adding NetworkClients
                 networkManager.ConnectionManager.AddClient(ClientId);
             }
-#endif
             if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(ClientId))
             {
                 networkManager.ConnectionManager.ConnectedClientIds.Add(ClientId);
@@ -57,7 +49,6 @@ namespace Unity.Netcode
                 networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(ClientId);
             }
 
-#if NGO_DAMODE
             // DANGO-TODO: Remove the session owner object distribution check once the service handles object distribution
             if (networkManager.DistributedAuthorityMode && networkManager.CMBServiceConnection && !networkManager.NetworkConfig.EnableSceneManagement)
             {
@@ -70,7 +61,6 @@ namespace Unity.Netcode
                     networkManager.TickToRedistribute = networkManager.ServerTime.Tick + 20;
                 }
             }
-#endif
         }
     }
 }

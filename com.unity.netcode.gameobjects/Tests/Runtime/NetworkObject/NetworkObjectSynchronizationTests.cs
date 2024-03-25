@@ -8,9 +8,8 @@ using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
-#if NGO_DAMODE
+
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.DAHost)]
-#endif
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Server)]
@@ -42,12 +41,10 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnCreatePlayerPrefab()
         {
             var component = m_PlayerPrefab.AddComponent<NetworkBehaviourWithOwnerNetworkVariables>();
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 component.SetWritePermissions(NetworkVariableWritePermission.Owner);
             }
-#endif
             base.OnCreatePlayerPrefab();
         }
 
@@ -155,11 +152,7 @@ namespace Unity.Netcode.RuntimeTests
                 var serverSideHostPlayerComponent = m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
                 var clientSidePlayerComponent = m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
                 var clientSideHostPlayerComponent = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ServerNetworkManager.LocalClientId].GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
-#if NGO_DAMODE
                 var modeText = m_DistributedAuthority ? "owner" : "server";
-#else
-                var modeText = "server";
-#endif
                 // Validate that the client side player values match the server side value of the client's player
                 Assert.IsTrue(serverSideClientPlayerComponent.NetworkVariableData1.Value == clientSidePlayerComponent.NetworkVariableData1.Value,
                     $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData1.Value})" +
@@ -174,11 +167,9 @@ namespace Unity.Netcode.RuntimeTests
                     $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData4.Value})" +
                     $" does not equal the {modeText} side value ({serverSideClientPlayerComponent.NetworkVariableData4.Value})!");
 
-#if NGO_DAMODE
                 // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
                 // to only allow the service to write. For now, we will skip this validation for distributed authority
                 if (!m_DistributedAuthority)
-#endif
                 {
                     // Validate that only the 2nd and 4th NetworkVariable on the client side instance of the host's player is the same and the other two do not match
                     // (i.e. NetworkVariables owned by the server should not get synchronized on client)
@@ -228,11 +219,9 @@ namespace Unity.Netcode.RuntimeTests
                     $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Player-{clientOneId}] Client-{clientOneId} value ({clientSide1PlayerComponent.NetworkVariableData4.Value})" +
                     $" does not equal Client-{clientTwoId}'s clone side value ({clientSide2Player1Clone.NetworkVariableData4.Value})!");
 
-#if NGO_DAMODE
                 // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
                 // to only allow the service to write. For now, we will skip this validation for distributed authority
                 if (!m_DistributedAuthority)
-#endif
                 {
                     // Validate that client two's 2nd and 4th NetworkVariables for the local and clone instances match and the other two do not
                     Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData1.Value != clientSide1Player2Clone.NetworkVariableData1.Value,
@@ -253,11 +242,9 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-#if NGO_DAMODE
             // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
             // to only allow the service to write. For now, we will skip this validation for distributed authority
             if (!m_DistributedAuthority)
-#endif
             {
                 // Now validate all of the NetworkVariable values match to assure everything synchronized properly
                 foreach (var spawnedObject in validSpawnedNetworkObjects)
@@ -457,7 +444,6 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkBehaviourWithOwnerNetworkVariables : NetworkBehaviour
     {
-#if NGO_DAMODE
         private NetworkVariableWritePermission m_NetworkVariableWritePermission = NetworkVariableWritePermission.Server;
         /// <summary>
         /// For distributed authority, there is no such thing as a server and only owners
@@ -476,8 +462,6 @@ namespace Unity.Netcode.RuntimeTests
             // Should synchronize with everyone
             NetworkVariableData4 = new NetworkVariable<ushort>(default, NetworkVariableReadPermission.Everyone, networkVariableWritePermission);
         }
-#endif
-
 
         // Should not synchronize on non-owners
         public NetworkVariable<int> NetworkVariableData1 = new NetworkVariable<int>(default, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
@@ -491,13 +475,8 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             // Adjustment for distributed authority mode
-#if NGO_DAMODE
             if ((m_NetworkVariableWritePermission == NetworkVariableWritePermission.Server && IsServer && !NetworkManager.DistributedAuthorityMode) ||
                 (m_NetworkVariableWritePermission == NetworkVariableWritePermission.Owner && IsOwner && NetworkManager.DistributedAuthorityMode))
-#else
-            if (IsServer)
-#endif
-
             {
                 NetworkVariableData1.Value = Random.Range(1, 1000);
                 NetworkVariableData2.Value = Random.Range(1, 1000);

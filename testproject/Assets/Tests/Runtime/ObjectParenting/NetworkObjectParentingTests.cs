@@ -10,10 +10,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class NetworkObjectParentingTests
     {
         private const int k_ClientInstanceCount = 1;
@@ -34,13 +32,11 @@ namespace TestProject.RuntimeTests
         private Scene m_InitScene;
         private Scene m_TestScene;
 
-#if NGO_DAMODE
         private SessionModeTypes m_SessionModeType;
         public NetworkObjectParentingTests(SessionModeTypes sessionModeType)
         {
             m_SessionModeType = sessionModeType;
         }
-#endif
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
@@ -75,7 +71,6 @@ namespace TestProject.RuntimeTests
             Assert.That(m_ClientNetworkManagers, Is.Not.Null);
             Assert.That(m_ClientNetworkManagers.Length, Is.EqualTo(k_ClientInstanceCount));
 
-#if NGO_DAMODE
             m_ServerNetworkManager.NetworkConfig.SessionMode = m_SessionModeType;
             m_ServerNetworkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_SessionModeType == SessionModeTypes.DistributedAuthority;
 
@@ -84,7 +79,7 @@ namespace TestProject.RuntimeTests
                 client.NetworkConfig.SessionMode = m_SessionModeType;
                 client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_SessionModeType == SessionModeTypes.DistributedAuthority;
             }
-#endif
+
             m_Dude_NetObjs = new Transform[setCount];
             m_Dude_LeftArm_NetObjs = new Transform[setCount];
             m_Dude_RightArm_NetObjs = new Transform[setCount];

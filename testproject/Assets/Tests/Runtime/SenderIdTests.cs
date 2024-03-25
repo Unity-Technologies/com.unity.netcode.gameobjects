@@ -10,10 +10,9 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
+
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class SenderIdTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -21,9 +20,7 @@ namespace TestProject.RuntimeTests
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
 
-#if NGO_DAMODE
         public SenderIdTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()

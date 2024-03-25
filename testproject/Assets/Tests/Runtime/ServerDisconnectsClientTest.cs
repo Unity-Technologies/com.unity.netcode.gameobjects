@@ -8,17 +8,14 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-#if NGO_DAMODE
+
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-#endif 
     public class ServerDisconnectsClientTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
-#if NGO_DAMODE
         public ServerDisconnectsClientTest(SessionModeTypes sessionModeType) : base(sessionModeType) { }
-#endif
 
         protected override void OnCreatePlayerPrefab()
         {

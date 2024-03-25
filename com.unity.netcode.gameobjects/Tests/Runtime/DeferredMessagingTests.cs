@@ -85,19 +85,11 @@ namespace Unity.Netcode.RuntimeTests
 
             return 0;
         }
-#if NGO_DAMODE
         public override void DeferMessage(IDeferredNetworkMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context, string messageType)
-#else
-        public override void DeferMessage(IDeferredNetworkMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
-#endif
         {
             OnBeforeDefer?.Invoke(this, key);
             DeferMessageCalled = true;
-#if NGO_DAMODE
             base.DeferMessage(trigger, key, reader, ref context, messageType);
-#else
-            base.DeferMessage(trigger, key, reader, ref context);
-#endif
         }
 
         public override void ProcessTriggers(IDeferredNetworkMessageManager.TriggerType trigger, ulong key)
@@ -211,10 +203,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnInlineSetup()
         {
-#if NGO_DAMODE
             // Revert back to standard deferred message format for tests (for now)
             DeferredMessageManager.IncludeMessageType = false;
-#endif
 
             DeferredMessageTestRpcAndNetworkVariableComponent.ClientInstances.Clear();
             DeferredMessageTestRpcComponent.ClientInstances.Clear();

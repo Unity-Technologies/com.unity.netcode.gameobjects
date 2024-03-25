@@ -50,12 +50,10 @@ namespace Unity.Netcode.Editor
             {
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
-#if NGO_DAMODE
                 if (m_NetworkObject.NetworkManager.DistributedAuthorityMode)
                 {
                     EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(NetworkObject.Ownership)));
                 }
-#endif
                 EditorGUILayout.TextField(nameof(NetworkObject.GlobalObjectIdHash), m_NetworkObject.GlobalObjectIdHash.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.NetworkObjectId), m_NetworkObject.NetworkObjectId.ToString());
                 EditorGUILayout.TextField(nameof(NetworkObject.OwnerClientId), m_NetworkObject.OwnerClientId.ToString());
@@ -146,7 +144,7 @@ namespace Unity.Netcode.Editor
         }
     }
 
-#if NGO_DAMODE
+
     [CustomPropertyDrawer(typeof(NetworkObject.OwnershipStatus))]
     public class NetworkObjectOwnership : PropertyDrawer
     {
@@ -190,5 +188,4 @@ namespace Unity.Netcode.Editor
             EditorGUI.EndProperty();
         }
     }
-#endif
 }

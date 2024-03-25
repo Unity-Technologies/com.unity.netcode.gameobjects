@@ -8,7 +8,6 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
         public bool DestroyGameObject;
-#if NGO_DAMODE
         private byte m_DestroyFlags;
 
         internal int DeferredDespawnTick;
@@ -42,12 +41,10 @@ namespace Unity.Netcode
             if (set) { m_DestroyFlags = (byte)(m_DestroyFlags | flag); }
             else { m_DestroyFlags = (byte)(m_DestroyFlags & ~flag); }
         }
-#endif
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
-#if NGO_DAMODE
             if (IsDistributedAuthority)
             {
                 writer.WriteByteSafe(m_DestroyFlags);
@@ -58,7 +55,6 @@ namespace Unity.Netcode
                 }
                 BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
             }
-#endif
             writer.WriteValueSafe(DestroyGameObject);
         }
 
@@ -71,7 +67,6 @@ namespace Unity.Netcode
             }
 
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
-#if NGO_DAMODE
             if (networkManager.DistributedAuthorityMode)
             {
                 reader.ReadByteSafe(out m_DestroyFlags);
@@ -81,23 +76,16 @@ namespace Unity.Netcode
                 }
                 ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
             }
-#endif
 
             reader.ReadValueSafe(out DestroyGameObject);
 
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-#if NGO_DAMODE
                 // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
                 if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
                 {
                     networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
                 }
-#else
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
-                return false;
-#endif
-
             }
             return true;
         }
@@ -107,7 +95,6 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
 
             var networkObject = (NetworkObject)null;
-#if NGO_DAMODE
             if (!networkManager.DistributedAuthorityMode)
             {
                 // If this NetworkObject does not exist on this instance then exit early
@@ -173,13 +160,7 @@ namespace Unity.Netcode
                     return;
                 }
             }
-#else
-            // If this NetworkObject does not exist on this instance then exit early
-            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out networkObject))
-            {
-                return;
-            }
-#endif
+
             if (networkObject != null)
             {
                 // Otherwise just despawn the NetworkObject right now

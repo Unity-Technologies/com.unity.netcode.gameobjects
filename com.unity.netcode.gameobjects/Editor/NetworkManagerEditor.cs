@@ -30,9 +30,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
-#if NGO_DAMODE
         private SerializedProperty m_SessionModeProperty;
-#endif
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
@@ -99,9 +97,7 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-#if NGO_DAMODE
             m_SessionModeProperty = m_NetworkConfigProperty.FindPropertyRelative("SessionMode");
-#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
@@ -134,9 +130,7 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-#if NGO_DAMODE
             m_SessionModeProperty = m_NetworkConfigProperty.FindPropertyRelative("SessionMode");
-#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
@@ -170,9 +164,7 @@ namespace Unity.Netcode.Editor
                 serializedObject.Update();
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
-#if NGO_DAMODE
                 EditorGUILayout.PropertyField(m_SessionModeProperty);
-#endif
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);

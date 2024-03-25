@@ -149,9 +149,6 @@ namespace Unity.Netcode
         /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
 
-
-#if NGO_DAMODE
-
         [Tooltip("Determines if the network session will run in client-server or distributed authority mode.")]
         public SessionModeTypes SessionMode;
 
@@ -160,7 +157,6 @@ namespace Unity.Netcode
 
         [Tooltip("When enabled (default), the player prefab will automatically be spawned (client-side) upon the client being approved and synchronized.")]
         public bool AutoSpawnPlayerPrefabClientSide = true;
-#endif
 
         /// <summary>
         /// Returns a base64 encoded version of the configuration

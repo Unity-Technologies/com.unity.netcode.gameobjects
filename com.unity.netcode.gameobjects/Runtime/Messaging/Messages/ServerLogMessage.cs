@@ -4,9 +4,7 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
-#if NGO_DAMODE
         public ulong SenderId;
-#endif
 
         public NetworkLog.LogType LogType;
         // It'd be lovely to be able to replace this with FixedString or NativeArray...
@@ -20,24 +18,17 @@ namespace Unity.Netcode
         {
             writer.WriteValueSafe(LogType);
             BytePacker.WriteValuePacked(writer, Message);
-#if NGO_DAMODE
             BytePacker.WriteValueBitPacked(writer, SenderId);
-#endif
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
-#if NGO_DAMODE
             if ((networkManager.IsServer || networkManager.LocalClient.IsSessionOwner) && networkManager.NetworkConfig.EnableNetworkLogs)
-#else
-            if (networkManager.IsServer && networkManager.NetworkConfig.EnableNetworkLogs)
-#endif
             {
                 reader.ReadValueSafe(out LogType);
                 ByteUnpacker.ReadValuePacked(reader, out Message);
-#if NGO_DAMODE
                 ByteUnpacker.ReadValuePacked(reader, out SenderId);
                 // If in distributed authority mode and the DAHost is not the session owner, then the DAHost will just forward the message.
                 if (networkManager.DAHost && networkManager.CurrentSessionOwner != networkManager.LocalClientId)
@@ -47,21 +38,15 @@ namespace Unity.Netcode
                     networkManager.NetworkMetrics.TrackServerLogSent(networkManager.CurrentSessionOwner, (uint)LogType, size);
                     return false;
                 }
-#endif
                 return true;
             }
-
             return false;
         }
 
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-#if NGO_DAMODE
             var senderId = networkManager.DistributedAuthorityMode ? SenderId : context.SenderId;
-#else
-            var senderId = context.SenderId;
-#endif
 
             networkManager.NetworkMetrics.TrackServerLogReceived(senderId, (uint)LogType, context.MessageSize);
 

@@ -14,11 +14,7 @@ namespace Unity.Netcode
             writer.WriteBytesSafe(payload.GetUnsafePtr(), payload.Length);
         }
 
-#if NGO_DAMODE
         public static unsafe bool Deserialize(ref FastBufferReader reader, ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload, string messageType)
-#else
-        public static unsafe bool Deserialize(ref FastBufferReader reader, ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload)
-#endif
         {
             ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkObjectId);
             ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkBehaviourId);
@@ -27,11 +23,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(metadata.NetworkObjectId))
             {
-#if NGO_DAMODE
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, metadata.NetworkObjectId, reader, ref context, messageType);
-#else
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, metadata.NetworkObjectId, reader, ref context);
-#endif
                 return false;
             }
 
@@ -114,11 +106,7 @@ namespace Unity.Netcode
 
         public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
-#if NGO_DAMODE
             return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
-#else
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
-#endif
         }
 
         public void Handle(ref NetworkContext context)
@@ -153,11 +141,7 @@ namespace Unity.Netcode
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
-#if NGO_DAMODE
             return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
-#else
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
-#endif
         }
 
         public void Handle(ref NetworkContext context)
@@ -195,11 +179,7 @@ namespace Unity.Netcode
         {
             ByteUnpacker.ReadValuePacked(reader, out SenderClientId);
 
-#if NGO_DAMODE
             return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
-#else
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
-#endif
         }
 
         public void Handle(ref NetworkContext context)
@@ -218,7 +198,7 @@ namespace Unity.Netcode
         }
     }
 
-#if NGO_DAMODE
+    // DANGO-EXP TODO: REMOVE THIS
     internal struct ForwardServerRpcMessage : INetworkMessage
     {
         public int Version => 0;
@@ -277,6 +257,7 @@ namespace Unity.Netcode
 
     }
 
+    // DANGO-EXP TODO: REMOVE THIS
     internal struct ForwardClientRpcMessage : INetworkMessage
     {
         public int Version => 0;
@@ -350,6 +331,4 @@ namespace Unity.Netcode
             ClientRpcMessage.ReadBuffer.Dispose();
         }
     }
-#endif
-
 }

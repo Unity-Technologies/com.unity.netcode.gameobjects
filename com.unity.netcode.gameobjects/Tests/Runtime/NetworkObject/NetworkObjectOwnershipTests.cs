@@ -41,9 +41,8 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-#if NGO_DAMODE
+
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkObjectOwnershipTests : NetcodeIntegrationTest
@@ -72,12 +71,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
             m_OwnershipPrefab.AddComponent<NetworkObjectOwnershipComponent>();
-#if NGO_DAMODE
             if (m_DistributedAuthority)
             {
                 m_OwnershipPrefab.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
             }
-#endif
             base.OnServerAndClientsCreated();
         }
 
@@ -169,7 +166,6 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 // Validates that when ownership is removed the server gets an OnGainedOwnership notification
-#if NGO_DAMODE
                 // In distributed authority mode, the current owner just rolls the ownership back over to the DAHost client (i.e. host mocking CMB Service)
                 if (m_DistributedAuthority)
                 {
@@ -179,9 +175,6 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     serverObject.RemoveOwnership();
                 }
-#else
-                serverObject.RemoveOwnership();
-#endif
             }
 
             yield return WaitForConditionOrTimeOut(() => serverComponent.OnGainedOwnershipFired && serverComponent.OwnerClientId == m_ServerNetworkManager.LocalClientId);
@@ -326,7 +319,6 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 // Validates that when ownership is removed the server gets an OnGainedOwnership notification
-#if NGO_DAMODE
                 // In distributed authority mode, the current owner just rolls the ownership back over to the DAHost client (i.e. host mocking CMB Service)
                 if (m_DistributedAuthority)
                 {
@@ -336,9 +328,6 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     serverObject.RemoveOwnership();
                 }
-#else
-                serverObject.RemoveOwnership();
-#endif
             }
 
             yield return WaitForConditionOrTimeOut(ownershipMessageHooks);

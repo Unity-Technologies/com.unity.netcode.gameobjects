@@ -11,7 +11,6 @@ namespace Unity.Netcode
         public int Version => 0;
         public ulong NetworkObjectId;
         public int NetworkBehaviourId;
-#if NGO_DAMODE
         // This is only used when serializing but not serialized
         public bool DistributedAuthorityMode;
         // Might get removed
@@ -25,7 +24,7 @@ namespace Unity.Netcode
             }
             return 0;
         }
-#endif
+
         public NetworkTransform.NetworkTransformState State;
 
         private NetworkTransform m_ReceiverNetworkTransform;
@@ -47,7 +46,6 @@ namespace Unity.Netcode
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
                 BytePacker.WriteValueBitPacked(writer, NetworkBehaviourId);
                 writer.WriteNetworkSerializable(State);
-#if NGO_DAMODE
                 if (DistributedAuthorityMode)
                 {
                     var length = GetTargetIdLength();
@@ -62,7 +60,6 @@ namespace Unity.Netcode
                         BytePacker.WriteValuePacked(writer, target);
                     }
                 }
-#endif
             }
         }
 
@@ -77,12 +74,9 @@ namespace Unity.Netcode
             var currentPosition = reader.Position;
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             var isSpawnedLocally = networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId);
-#if NGO_DAMODE
+
             // Only defer if the NetworkObject is not spawned yet and the local NetworkManager is not running as a DAHost.
             if (!isSpawnedLocally && !networkManager.DAHost)
-#else
-            if (!isSpawnedLocally)
-#endif
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
                 return false;
@@ -101,7 +95,6 @@ namespace Unity.Netcode
             // Deserialize the state
             reader.ReadNetworkSerializableInPlace(ref State);
 
-#if NGO_DAMODE
             if (networkManager.DistributedAuthorityMode)
             {
                 var targetCount = 0;
@@ -117,7 +110,6 @@ namespace Unity.Netcode
                     TargetIds[i] = targetId;
                 }
             }
-#endif
 
             if (isSpawnedLocally)
             {
@@ -127,13 +119,11 @@ namespace Unity.Netcode
                 isServerAuthoritative = m_ReceiverNetworkTransform.IsServerAuthoritative();
                 ownerAuthoritativeServerSide = !isServerAuthoritative && networkManager.IsServer;
             }
-#if NGO_DAMODE
             else
             {
                 // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message
                 ownerAuthoritativeServerSide = networkManager.DAHost && !isSpawnedLocally;
             }
-#endif
 
             if (ownerAuthoritativeServerSide)
             {
@@ -149,28 +139,23 @@ namespace Unity.Netcode
                         return true;
                     }
                 }
-#if NGO_DAMODE
                 else if (networkManager.DAHost)
                 {
                     // Specific to distributed authority mode, the only sender of state updates will be the owner 
                     ownerClientId = context.SenderId;
                 }
-#endif
 
                 var networkDelivery = State.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
                 // Forward the state update if there are any remote clients to foward it to
                 if (networkManager.ConnectionManager.ConnectedClientsList.Count > (networkManager.IsHost ? 2 : 1))
                 {
-#if NGO_DAMODE
                     var clientCount = networkManager.DistributedAuthorityMode ? GetTargetIdLength() : networkManager.ConnectionManager.ConnectedClientsList.Count;
                     if (clientCount == 0)
                     {
                         return true;
                     }
-#else
-                    var clientCount = networkManager.ConnectionManager.ConnectedClientsList.Count;
-#endif
+
                     // This is only to copy the existing and already serialized struct for forwarding purposes only.
                     // This will not include any changes made to this struct at this particular stage of processing the message.
                     var currentMessage = this;
@@ -182,14 +167,9 @@ namespace Unity.Netcode
 
                     for (int i = 0; i < clientCount; i++)
                     {
-#if NGO_DAMODE
                         var clientId = networkManager.DistributedAuthorityMode ? TargetIds[i] : networkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
                         if (NetworkManager.ServerClientId == clientId || (!isServerAuthoritative && clientId == ownerClientId) ||
                             (!networkManager.DistributedAuthorityMode && !networkObject.Observers.Contains(clientId)))
-#else
-                        var clientId = networkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
-                        if (NetworkManager.ServerClientId == clientId || (!isServerAuthoritative && clientId == ownerClientId) || !networkObject.Observers.Contains(clientId))
-#endif                        
                         {
                             continue;
                         }
@@ -212,7 +192,6 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-#if NGO_DAMODE
             var networkManager = context.SystemOwner as NetworkManager;
             // Only if the local NetworkManager instance is running as the DAHost we just exit if there is no local
             // NetworkTransform component to apply the state update to (i.e. it is hidden from the DAHost and it
@@ -221,7 +200,6 @@ namespace Unity.Netcode
             {
                 return;
             }
-#endif
 
             if (m_ReceiverNetworkTransform == null)
             {
