@@ -152,7 +152,7 @@ namespace Unity.Netcode
 
 #if NGO_DAMODE
 
-        [Tooltip("Determines if the network session will run in clinet-server or distributed authority mode.")]
+        [Tooltip("Determines if the network session will run in client-server or distributed authority mode.")]
         public SessionModeTypes SessionMode;
 
         [HideInInspector]

@@ -952,6 +952,7 @@ namespace Unity.Netcode
         internal void Initialize(bool server)
         {
 #if NGO_DAMODE
+            // TODO: Remove this before finalizing the experimental release
             NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;
 #endif
 
