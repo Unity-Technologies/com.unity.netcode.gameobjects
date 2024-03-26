@@ -55,8 +55,8 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnServerAndClientsConnected()
         {
             // DANGO-TODO: For now, logging all transfers of ownership due to client connect and disconnect.
-            m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = true;
-            m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = true;
+            m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = m_EnableVerboseDebug;
+            m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = m_EnableVerboseDebug;
             return base.OnServerAndClientsConnected();
         }
 
@@ -142,7 +142,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ErrorLog.Clear();
             var hostId = m_ServerNetworkManager.LocalClientId;
-            var expectedEntries = m_ClientNetworkManagers.Count() + 1;
+            var expectedEntries = m_ClientNetworkManagers.Where((c)=> c.IsListening && c.IsConnectedClient).Count() + 1;
             // Make sure all clients have an table created
             if (DistributeObjectsTestHelper.DistributedObjects.Count < expectedEntries)
             {
@@ -313,12 +313,13 @@ namespace Unity.Netcode.RuntimeTests
                 DistributeObjectsTestHelper.RemoveClient(client.LocalClientId);
 
                 // Disconnect the client
-                yield return StopOneClient(client);
+                yield return StopOneClient(client, true);
 
-                yield return new WaitForSeconds(0.3f);
+                //yield return new WaitForSeconds(0.1f);
 
                 // Validate all tables match
                 yield return WaitForConditionOrTimeOut(ValidateOwnershipTablesMatch);
+
                 AssertOnTimeout($"[Client-{j + 1}][OnwershipTable Mismatch] {m_ErrorLog}");
 
                 // When ownership changes, the new owner will randomly pick a new target to move towards and will move towards the target.
@@ -345,7 +346,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ErrorLog.AppendLine($"[Client-{entry.Key}][Owned Objects: {entry.Value.Count}]");
             }
 
-            Debug.Log($"{m_ErrorLog}");
+            VerboseDebug($"{m_ErrorLog}");
         }
 
         /// <summary>
