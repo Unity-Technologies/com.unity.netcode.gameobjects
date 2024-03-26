@@ -81,7 +81,7 @@ namespace Unity.Netcode
                 {
                     return;
                 }
-                
+
                 if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");

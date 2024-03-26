@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // DANGO-EXP TODO: Add support for distributed authority mode
                 if (hostOrServer == HostOrServer.DAHost)
-                {                    
+                {
                     continue;
                 }
                 yield return new TestFixtureData(hostOrServer);

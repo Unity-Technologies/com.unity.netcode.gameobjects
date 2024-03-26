@@ -141,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ErrorLog.Clear();
             var hostId = m_ServerNetworkManager.LocalClientId;
-            var expectedEntries = m_ClientNetworkManagers.Where((c)=> c.IsListening && c.IsConnectedClient).Count() + 1;
+            var expectedEntries = m_ClientNetworkManagers.Where((c) => c.IsListening && c.IsConnectedClient).Count() + 1;
             // Make sure all clients have an table created
             if (DistributeObjectsTestHelper.DistributedObjects.Count < expectedEntries)
             {
