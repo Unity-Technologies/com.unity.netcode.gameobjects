@@ -1337,6 +1337,8 @@ namespace Unity.Netcode.Components
         private Quaternion m_CurrentRotation;
         private Vector3 m_TargetRotation;
 
+        // DANGO-EXP TODO: ADD Rigidbody2D
+#if COM_UNITY_MODULES_PHYSICS
         private bool m_UseRigidbodyForMotion;
         private Rigidbody m_RigidbodyInternal;
         private NetworkRigidbody m_NetworkRigidbody;
@@ -1350,6 +1352,7 @@ namespace Unity.Netcode.Components
                 m_RigidbodyInternal = rigidbody;
             }
         }
+#endif
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
@@ -2107,8 +2110,13 @@ namespace Unity.Netcode.Components
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
+#if COM_UNITY_MODULES_PHYSICS
             var adjustedPosition = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : m_CurrentPosition;
             var adjustedRotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : m_CurrentRotation;
+#else
+            var adjustedPosition = m_CurrentPosition;
+            var adjustedRotation = m_CurrentRotation;
+#endif
             var adjustedRotAngles = adjustedRotation.eulerAngles;
             var adjustedScale = m_CurrentScale;
 
@@ -2234,12 +2242,14 @@ namespace Unity.Netcode.Components
                 {
                     m_CurrentPosition = adjustedPosition;
                 }
+#if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.MovePosition(m_CurrentPosition);
                     transform.position = m_RigidbodyInternal.position;
                 }
                 else
+#endif
                 {
                     if (InLocalSpace)
                     {
@@ -2261,12 +2271,14 @@ namespace Unity.Netcode.Components
                     m_CurrentRotation = adjustedRotation;
                 }
 
+#if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.MoveRotation(m_CurrentRotation);
                     transform.rotation = m_RigidbodyInternal.rotation;
                 }
                 else
+#endif
                 {
                     if (InLocalSpace)
                     {
@@ -2381,10 +2393,12 @@ namespace Unity.Netcode.Components
                     transform.position = currentPosition;
                 }
 
+#if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.position = transform.position;
                 }
+#endif
 
                 if (Interpolate)
                 {
@@ -2480,11 +2494,13 @@ namespace Unity.Netcode.Components
                     transform.rotation = currentRotation;
                 }
 
+#if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
                     m_RigidbodyInternal.rotation = transform.rotation;
                     m_RigidbodyInternal.MoveRotation(transform.rotation);
                 }
+#endif
 
                 if (Interpolate)
                 {
@@ -2859,8 +2875,13 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
+#if COM_UNITY_MODULES_PHYSICS
             var position = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : GetSpaceRelativeRotation();
+#else
+            var position = GetSpaceRelativePosition();
+            var rotation = GetSpaceRelativeRotation();
+#endif
 
             UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
@@ -2890,6 +2911,7 @@ namespace Unity.Netcode.Components
                 m_NetworkTransformTickRegistration = s_NetworkTickRegistration[m_CachedNetworkManager];
             }
 
+#if COM_UNITY_MODULES_PHYSICS
             // Depending upon order of operations, we invoke this in order to assure that proper settings are applied.
             if (m_NetworkRigidbody)
             {
@@ -2901,6 +2923,7 @@ namespace Unity.Netcode.Components
                 m_RigidbodyInternal.position = currentPosition;
                 m_RigidbodyInternal.rotation = currentRotation;
             }
+#endif
 
             if (CanCommitToTransform)
             {
@@ -3076,11 +3099,13 @@ namespace Unity.Netcode.Components
                 transform.SetPositionAndRotation(pos, rot);
             }
 
+#if COM_UNITY_MODULES_PHYSICS
             if (m_UseRigidbodyForMotion && shouldTeleport)
             {
                 m_RigidbodyInternal.position = transform.position;
                 m_RigidbodyInternal.rotation = transform.rotation;
             }
+#endif
 
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
@@ -3166,11 +3191,19 @@ namespace Unity.Netcode.Components
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
                 var offset = 0f;
+#if COM_UNITY_MODULES_PHYSICS
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
+#else
+                var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
+#endif
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
+#if COM_UNITY_MODULES_PHYSICS
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_UseRigidbodyForMotion ? 2 : 1;
+#else
+                var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
+#endif
                 if (m_CachedNetworkManager.DistributedAuthorityMode)
                 {
                     ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
@@ -3209,7 +3242,11 @@ namespace Unity.Netcode.Components
         protected virtual void Update()
         {
             // If not spawned or this instance has authority, exit early
+#if COM_UNITY_MODULES_PHYSICS
             if (!IsSpawned || CanCommitToTransform || m_UseRigidbodyForMotion)
+#else
+            if (!IsSpawned || CanCommitToTransform)
+#endif
             {
                 return;
             }
@@ -3222,6 +3259,7 @@ namespace Unity.Netcode.Components
         }
 
 
+#if COM_UNITY_MODULES_PHYSICS
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3245,6 +3283,7 @@ namespace Unity.Netcode.Components
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }
+#endif
 
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
