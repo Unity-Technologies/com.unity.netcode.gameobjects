@@ -542,7 +542,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
-            AddRemoveNetworkManager(networkManager, false);
+            if (destroy)
+            {
+                AddRemoveNetworkManager(networkManager, false);
+            }
             yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
         }
 

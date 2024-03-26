@@ -912,7 +912,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                 }
             }
-            m_UniversalRpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsTypeDef);
+            m_UniversalRpcParams_TypeRef = moduleDefinition.ImportReference(universalRpcParamsTypeDef);
             foreach (var fieldDef in rpcParamsTypeDef.Fields)
             {
                 switch (fieldDef.Name)

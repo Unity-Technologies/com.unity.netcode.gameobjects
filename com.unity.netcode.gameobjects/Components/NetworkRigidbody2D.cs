@@ -30,6 +30,11 @@ namespace Unity.Netcode.Components
         {
             m_Rigidbody = GetComponent<Rigidbody2D>();
             m_NetworkTransform = GetComponent<NetworkTransform>();
+
+            // Turn off physics for the rigid body until spawned, otherwise
+            // clients can run fixed update before the first full
+            // NetworkTransform update
+            m_Rigidbody.isKinematic = true;
         }
 
         private void FixedUpdate()

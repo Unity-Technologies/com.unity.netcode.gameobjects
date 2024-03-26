@@ -20,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the host was not invoking `OnClientDisconnectCallback` for its own local client when internally shutting down. (#2822)
 - Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
 - Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
 
@@ -27,6 +28,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
 - Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
+## [1.8.1] - 2024-02-05
+
+### Fixed
+
+- Fixed a compile error when compiling for IL2CPP targets when using the new `[Rpc]` attribute. (#2824)
 
 ## [1.8.0] - 2023-12-12
 

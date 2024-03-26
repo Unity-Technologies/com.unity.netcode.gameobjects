@@ -1218,6 +1218,12 @@ namespace Unity.Netcode
             IsListening = false;
             m_ShuttingDown = false;
 
+            // Generate a local notification that the host client is disconnected
+            if (IsHost)
+            {
+                ConnectionManager.InvokeOnClientDisconnectCallback(LocalClientId);
+            }
+
             if (ConnectionManager.LocalClient.IsClient)
             {
                 // If we were a client, we want to know if we were a host
