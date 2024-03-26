@@ -100,7 +100,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-// Reducing tools integration test footprint
 #if !MULTIPLAYER_TOOLS
         /// <summary>
         /// Validates that transform values remain the same when a NetworkTransform is
@@ -388,6 +387,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 #endif
+
         /// <summary>
         /// Tests changing all axial values one at a time.
         /// These tests are performed:
