@@ -580,7 +580,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    1: NGO_DAMODE;UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT 
+    1: UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT 
   additionalCompilerArguments:
     1:
     - -warnaserror
