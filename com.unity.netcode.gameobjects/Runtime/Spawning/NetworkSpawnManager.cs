@@ -1432,7 +1432,7 @@ namespace Unity.Netcode
                         }
                     }
                 }
-                else // DANGO-TODO: If we not the server, distributed authority mode is enabled, and we are the owner then inform the DAHost to despawn the NetworkObject
+                else // DANGO-TODO: If we are not the server, distributed authority mode is enabled, and we are the owner then inform the DAHost to despawn the NetworkObject
                 if (!NetworkManager.IsServer && distributedAuthority && networkObject.OwnerClientId == NetworkManager.LocalClientId)
                 {
                     // DANGO-TODO: If a shutdown is not in progress or a shutdown is in progress and we can destroy with the owner then notify the DAHost
