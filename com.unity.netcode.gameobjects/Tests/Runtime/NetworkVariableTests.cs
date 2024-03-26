@@ -431,7 +431,10 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+
+#if !MULTIPLAYER_TOOLS
     [TestFixture(true)]
+#endif
     [TestFixture(false)]
     public class NetworkVariableTests : NetcodeIntegrationTest
     {
@@ -542,6 +545,7 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelToNextTick();
         }
 
+#if !MULTIPLAYER_TOOLS
         /// <summary>
         /// Runs generalized tests on all predefined NetworkVariable types
         /// </summary>
@@ -960,6 +964,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyCallback));
         }
+#endif
 
         [Test]
         public void TestINetworkSerializableStructCallsNetworkSerialize([Values] HostOrServer useHost)
@@ -5101,6 +5106,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.OnTearDown();
         }
     }
+
 
     /// <summary>
     /// Handles the more generic conditional logic for NetworkList tests

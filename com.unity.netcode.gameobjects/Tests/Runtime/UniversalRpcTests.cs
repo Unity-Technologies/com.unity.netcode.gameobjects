@@ -1,3 +1,4 @@
+#if !MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -2128,3 +2129,4 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 }
+#endif
