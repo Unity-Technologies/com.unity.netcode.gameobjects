@@ -410,7 +410,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     networkManager.SceneManager.ScenesLoaded.Add(scene.handle, scene);
                 }
-#if NGO_DAMODE
                 // In distributed authority we need to check if this scene is already added
                 if (networkManager.DistributedAuthorityMode)
                 {
@@ -425,7 +424,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                     return;
                 }
-#endif
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }
         }
