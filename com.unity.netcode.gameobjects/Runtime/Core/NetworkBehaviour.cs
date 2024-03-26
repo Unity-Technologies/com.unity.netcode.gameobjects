@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-#if NGO_DAMODE
 using System.Linq;
-#endif
 using Unity.Collections;
 using UnityEngine;
 
@@ -103,12 +101,7 @@ namespace Unity.Netcode
             var rpcWriteSize = 0;
             // Authority just no ops and sends to itself
             // Client-Server: Only the server-host sends to self
-            // DA Mode: Only the owner sends to self
-#if NGO_DAMODE
-            if (networkManager.DistributedAuthorityMode && IsOwner || !networkManager.DistributedAuthorityMode && IsServer)
-#else
             if (IsServer)
-#endif
             {
                 using var tempBuffer = new FastBufferReader(bufferWriter, Allocator.Temp);
                 var context = new NetworkContext
@@ -128,34 +121,7 @@ namespace Unity.Netcode
             }
             else
             {
-#if NGO_DAMODE
-                // If not connected to the CMB state service
-                if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection)
-                {
-                    // DAHost sends directly to the owner
-                    if (networkManager.DAHost || !networkManager.DAHost && NetworkManager.ServerClientId == OwnerClientId)
-                    {
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, OwnerClientId);
-                    }
-                    else
-                    {
-                        // Clients forward the message to the DAHost who forwards it to the owner
-                        var forwardServerRpc = new ForwardServerRpcMessage()
-                        {
-                            OwnerId = OwnerClientId,
-                            NetworkDelivery = networkDelivery,
-                            ServerRpcMessage = serverRpcMessage,
-                        };
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref forwardServerRpc, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                }
-                else // Client-Server or CMB Service mode: Send it to the server or service (service forwards to the owner)
-                {
-                    rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-                }
-#else
                 rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-#endif
             }
 
             bufferWriter.Dispose();
@@ -186,15 +152,6 @@ namespace Unity.Netcode
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             var networkManager = NetworkManager;
-#if NGO_DAMODE
-            // When in distributed authority mode, owners are only allowed to send to clients (unless in mock mode with a DAHost)
-            if (networkManager.DistributedAuthorityMode && networkManager.LocalClientId != OwnerClientId && !networkManager.DAHost)
-            {
-                NetworkLog.LogError($"Client-{networkManager.LocalClientId} Does not currently own {gameObject.name} (Current Owner: {OwnerClientId})! In distributed authority mode, only the owners of {nameof(NetworkObject)}s can send ClientRpc messages!");
-                bufferWriter.Dispose();
-                return;
-            }
-#endif
             var clientRpcMessage = new ClientRpcMessage
             {
                 Metadata = new RpcMetadata
@@ -229,190 +186,40 @@ namespace Unity.Netcode
             bool shouldInvokeLocally = false;
             if (clientRpcParams.Send.TargetClientIds != null)
             {
-#if NGO_DAMODE
-                if (networkManager.DistributedAuthorityMode)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                 {
-                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
-                        if ((networkManager.CMBServiceConnection && clientRpcParams.Send.TargetClientIds.Contains(OwnerClientId))
-                            || (!networkManager.CMBServiceConnection && clientRpcParams.Send.TargetClientIds.Contains(NetworkManager.ServerClientId)))
-                        {
-                            shouldInvokeLocally = true;
-                            continue;
-                        }
-                        // Check to make sure we are sending to only observers, if not log an error.
-                        if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
-                        {
-                            NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
-                        }
+                        shouldInvokeLocally = true;
+                        continue;
+                    }
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
-                else
-#endif
-                {
-                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
-                    {
-                        if (targetClientId == NetworkManager.ServerClientId)
-                        {
-                            shouldInvokeLocally = true;
-                            continue;
-                        }
-                        // Check to make sure we are sending to only observers, if not log an error.
-                        if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
-                        {
-                            NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
-                        }
-                    }
-                }
-
-#if NGO_DAMODE
-                // For now, if running as the DAHost or in client-server mode, then send the message to the targeted client identifiers
-                if (networkManager.DAHost || !networkManager.DistributedAuthorityMode && networkManager.IsServer)
-                {
-                    rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
-                }
-                else
-                {
-                    // Clients sending to other clients when in mock DAHost mode need to have the DAHost forward the message via ForwardOwnerClientRpc
-                    if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection)
-                    {
-                        // Clients forward the message to the DAHost who forwards it to the owner
-                        var forwardClientRpc = new ForwardClientRpcMessage()
-                        {
-                            TargetClientIds = clientRpcParams.Send.TargetClientIds.ToArray(),
-                            NetworkDelivery = networkDelivery,
-                            ClientRpcMessage = clientRpcMessage,
-                        };
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref forwardClientRpc, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                    else // If CMB service connection, then just send to the server (server address)
-                    if (networkManager.CMBServiceConnection)
-                    {
-
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                }
-#else
                 rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
-#endif
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
-#if NGO_DAMODE
-                if (networkManager.DistributedAuthorityMode)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
-                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
-                        if ((networkManager.CMBServiceConnection && clientRpcParams.Send.TargetClientIdsNativeArray.Contains(OwnerClientId))
-                            || (!networkManager.CMBServiceConnection && clientRpcParams.Send.TargetClientIdsNativeArray.Contains(NetworkManager.ServerClientId)))
-                        {
-                            shouldInvokeLocally = true;
-                            continue;
-                        }
-                        // Check to make sure we are sending to only observers, if not log an error.
-                        if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
-                        {
-                            NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
-                        }
+                        shouldInvokeLocally = true;
+                        continue;
+                    }
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
-                else
-#endif
-                {
-                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
-                    {
-                        if (targetClientId == NetworkManager.ServerClientId)
-                        {
-                            shouldInvokeLocally = true;
-                            continue;
-                        }
-                        // Check to make sure we are sending to only observers, if not log an error.
-                        if (networkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
-                        {
-                            NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
-                        }
-                    }
-                }
-
-#if NGO_DAMODE
-                // For now, if running as the DAHost or in client-server mode, then send the message to the targeted client identifiers
-                if (networkManager.DAHost || !networkManager.DistributedAuthorityMode && networkManager.IsServer)
-                {
-                    rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
-                }
-                else
-                {
-                    // Clients sending to other clients when in mock DAHost mode need to have the DAHost forward the message via ForwardOwnerClientRpc
-                    if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection)
-                    {
-                        // Clients forward the message to the DAHost who forwards it to the owner
-                        var forwardClientRpc = new ForwardClientRpcMessage()
-                        {
-                            TargetClientIds = clientRpcParams.Send.TargetClientIdsNativeArray.Value.ToArray(),
-                            NetworkDelivery = networkDelivery,
-                            ClientRpcMessage = clientRpcMessage,
-                        };
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref forwardClientRpc, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                    else // If CMB service connection, then just send to the server (server address)
-                    if (networkManager.CMBServiceConnection)
-                    {
-                        // DANGO-TODO: Determine a way to communicate specific client identifiers to the CMB service.
-                        rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                }
-#else
                 rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
-#endif
             }
             else
             {
-#if NGO_DAMODE
-                // For now, if running as the DAHost or in client-server mode, then send the message to the targeted client identifiers
-                if (networkManager.DAHost || !networkManager.DistributedAuthorityMode && networkManager.IsServer)
-                {
-                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
-                    while (observerEnumerator.MoveNext())
-                    {
-                        // Skip over the host
-                        if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
-                        {
-                            shouldInvokeLocally = true;
-                            continue;
-                        }
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
-                    }
-                }
-                else
-                {
-                    // Clients sending to other clients when in mock DAHost mode need to have the DAHost forward the message via ForwardOwnerClientRpc
-                    if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection)
-                    {
-                        if (NetworkObject.Observers.Count > 1)
-                        {
-                            var remoteClients = NetworkObject.Observers.Where((c) => c != NetworkManager.ServerClientId);
-
-                            // Clients forward the message to the DAHost who forwards it to the owner
-                            var forwardClientRpc = new ForwardClientRpcMessage()
-                            {
-                                TargetClientIds = remoteClients.ToArray(),
-                                NetworkDelivery = networkDelivery,
-                                ClientRpcMessage = clientRpcMessage,
-                            };
-                            // Send the forward message
-                            rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref forwardClientRpc, networkDelivery, NetworkManager.ServerClientId);
-                        }
-                        // Send the message to the DAHost directly
-                        rpcWriteSize += networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                    else // If CMB service connection, then just send to the server (server address)
-                    if (networkManager.CMBServiceConnection)
-                    {
-                        // DANGO-TODO: Determine a way to communicate specific client identifiers to the CMB service.
-                        rpcWriteSize = networkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ServerClientId);
-                    }
-                }
-#else
                 var observerEnumerator = NetworkObject.Observers.GetEnumerator();
                 while (observerEnumerator.MoveNext())
                 {
@@ -424,7 +231,6 @@ namespace Unity.Netcode
                     }
                     rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
                 }
-#endif
             }
 
             // If we are a server/host then we just no op and send to ourself
@@ -565,14 +371,12 @@ namespace Unity.Netcode
                     case SendTo.ClientsAndHost:
                         rpcParams.Send.Target = RpcTarget.ClientsAndHost;
                         break;
-#if NGO_DAMODE
                     case SendTo.Authority:
                         rpcParams.Send.Target = RpcTarget.Authority;
                         break;
                     case SendTo.NotAuthority:
                         rpcParams.Send.Target = RpcTarget.NotAuthority;
                         break;
-#endif
                     case SendTo.SpecifiedInParams:
                         throw new RpcException("This method requires a runtime-specified send target.");
                 }
@@ -657,10 +461,12 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsServer { get; private set; }
 
-#if NGO_DAMODE
-
+        /// <summary>
+        /// Determines if the local client has authority over the associated NetworkObject
+        /// Client-Server: This will return true if IsServer or IsHost
+        /// Distributed Authority: This will return true if IsOwner
+        /// </summary>
         public bool HasAuthority { get; internal set; }
-
 
         internal NetworkClient LocalClient { get; private set; }
 
@@ -679,7 +485,6 @@ namespace Unity.Netcode
                 return LocalClient.IsSessionOwner;
             }
         }
-#endif
 
         /// <summary>
         /// Gets if the server (local or remote) is a host - i.e., also a client
@@ -831,10 +636,8 @@ namespace Unity.Netcode
                     IsHost = networkManager.IsListening && networkManager.IsHost;
                     IsClient = networkManager.IsListening && networkManager.IsClient;
                     IsServer = networkManager.IsListening && networkManager.IsServer;
-#if NGO_DAMODE
                     LocalClient = networkManager.LocalClient;
                     HasAuthority = networkObject.HasAuthority;
-#endif
                     ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
                 }
             }
@@ -843,14 +646,11 @@ namespace Unity.Netcode
                 OwnerClientId = NetworkObjectId = default;
                 IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = ServerIsHost = default;
                 NetworkBehaviourId = default;
-#if NGO_DAMODE
                 LocalClient = default;
                 HasAuthority = default;
-#endif
             }
         }
 
-#if NGO_DAMODE
         /// <summary>
         /// Distributed Authority Mode Only
         /// Invoked only on the authority instance when a <see cref="NetworkObject"/> is deferring its despawn on non-authoritative instances.
@@ -860,7 +660,6 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="despawnTick">the future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
         public virtual void OnDeferringDespawn(int despawnTick) { }
-#endif
 
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
@@ -892,11 +691,7 @@ namespace Unity.Netcode
 
             InitializeVariables();
 
-#if NGO_DAMODE
             if (NetworkObject.HasAuthority)
-#else
-            if (IsServer)
-#endif
             {
                 // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
                 // NetworkList, we need to mark the object as free of updates.
@@ -1122,7 +917,6 @@ namespace Unity.Netcode
                         break;
                     }
                 }
-#if NGO_DAMODE
                 // All of this is just to prevent the DA Host from re-sending a NetworkVariable update it received from the client owner
                 // If this NetworkManager is running as a DAHost:
                 // - Only when the write permissions is owner (to pass existing integration tests running as DAHost)
@@ -1135,7 +929,7 @@ namespace Unity.Netcode
                 {
                     shouldSend = false;
                 }
-#endif
+
                 if (!shouldSend)
                 {
                     continue;
@@ -1203,19 +997,16 @@ namespace Unity.Netcode
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             var networkManager = NetworkManager;
-#if NGO_DAMODE
             if (networkManager.DistributedAuthorityMode)
             {
                 writer.WriteValueSafe((ushort)NetworkVariableFields.Count);
             }
-#endif
 
             if (NetworkVariableFields.Count == 0)
             {
                 return;
             }
 
-#if NGO_DAMODE
             // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
             // Worth either merging or more cleanly separating these codepaths.
             for (int j = 0; j < NetworkVariableFields.Count; j++)
@@ -1258,39 +1049,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-#else
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
-            {
-                if (NetworkVariableFields[j].CanClientRead(targetClientId))
-                {
-                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                    {
-                        var writePos = writer.Position;
-                        // Note: This value can't be packed because we don't know how large it will be in advance
-                        // we reserve space for it, then write the data, then come back and fill in the space
-                        // to pack here, we'd have to write data to a temporary buffer and copy it in - which
-                        // isn't worth possibly saving one byte if and only if the data is less than 63 bytes long...
-                        // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
-                        writer.WriteValueSafe((ushort)0);
-                        var startPos = writer.Position;
-                        NetworkVariableFields[j].WriteField(writer);
-                        var size = writer.Position - startPos;
-                        writer.Seek(writePos);
-                        writer.WriteValueSafe((ushort)size);
-                        writer.Seek(startPos + size);
-                    }
-                    else
-                    {
-                        NetworkVariableFields[j].WriteField(writer);
-                    }
-                }
-                else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
-                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
-                {
-                    writer.WriteValueSafe((ushort)0);
-                }
-            }
-#endif
         }
 
         /// <summary>
@@ -1304,7 +1062,6 @@ namespace Unity.Netcode
         internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
             var networkManager = NetworkManager;
-#if NGO_DAMODE
             if (networkManager.DistributedAuthorityMode)
             {
                 reader.ReadValueSafe(out ushort variableCount);
@@ -1314,7 +1071,6 @@ namespace Unity.Netcode
                     return;
                 }
             }
-#endif
 
             if (NetworkVariableFields.Count == 0)
             {
@@ -1339,7 +1095,6 @@ namespace Unity.Netcode
                 else // If the client cannot read this field, then skip it
                 if (!NetworkVariableFields[j].CanClientRead(clientId))
                 {
-#if NGO_DAMODE
                     if (networkManager.DistributedAuthorityMode)
                     {
                         reader.ReadValueSafe(out ushort size);
@@ -1348,11 +1103,9 @@ namespace Unity.Netcode
                             Debug.LogError("Expected zero size");
                         }
                     }
-#endif
                     continue;
                 }
 
-#if NGO_DAMODE
                 if (networkManager.DistributedAuthorityMode)
                 {
                     // Explicit setting of the NetworkVariableType is only needed for CMB Runtime
@@ -1366,7 +1119,6 @@ namespace Unity.Netcode
                     }
                 }
                 else
-#endif
                 {
                     NetworkVariableFields[j].ReadField(reader);
                 }
