@@ -54,7 +54,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            // DANGO-TODO: For now, logging all transfers of ownership due to client connect and disconnect.
             m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = m_EnableVerboseDebug;
             m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = m_EnableVerboseDebug;
             return base.OnServerAndClientsConnected();
