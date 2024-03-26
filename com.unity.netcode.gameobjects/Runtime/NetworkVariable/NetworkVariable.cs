@@ -21,6 +21,7 @@ namespace Unity.Netcode
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
+        internal override NetworkVariableType Type => NetworkVariableType.Value;
 
         /// <summary>
         /// Constructor for <see cref="NetworkVariable{T}"/>
@@ -41,6 +42,19 @@ namespace Unity.Netcode
             // it in the constructor might not give users enough time to set the
             // DuplicateValue callback if they're using UserNetworkVariableSerialization
             m_PreviousValue = default;
+        }
+
+        /// <summary>
+        /// Resets the NetworkVariable when the associated NetworkObject is not spawned
+        /// </summary>
+        /// <param name="value">the value to reset the NetworkVariable to (if none specified it resets to the default)</param>
+        public void Reset(T value = default)
+        {
+            if (m_NetworkBehaviour == null || m_NetworkBehaviour != null && !m_NetworkBehaviour.NetworkObject.IsSpawned)
+            {
+                m_InternalValue = value;
+                m_PreviousValue = default;
+            }
         }
 
         /// <summary>
@@ -68,10 +82,19 @@ namespace Unity.Netcode
                     return;
                 }
 
-                if (m_NetworkBehaviour && !CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                // DANGO-TODO: NetworkVariable permissions need to be sorted out/implemented for distributed authority mode
+#if NGO_DAMODE
+                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
                 {
-                    throw new InvalidOperationException("Client is not allowed to write to this NetworkVariable");
+                    throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");
                 }
+#else
+                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
+                {
+                    throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");
+                }
+#endif
+
 
                 Set(value);
                 m_IsDisposed = false;
@@ -104,6 +127,8 @@ namespace Unity.Netcode
             }
 
             m_PreviousValue = default;
+
+            base.Dispose();
         }
 
         ~NetworkVariable()

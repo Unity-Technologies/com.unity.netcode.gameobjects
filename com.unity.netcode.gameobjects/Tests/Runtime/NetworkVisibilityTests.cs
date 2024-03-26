@@ -7,20 +7,27 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(SceneManagementState.SceneManagementEnabled, SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementEnabled, SessionModeTypes.ClientServer)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.ClientServer)]
+#else
     [TestFixture(SceneManagementState.SceneManagementEnabled)]
     [TestFixture(SceneManagementState.SceneManagementDisabled)]
+#endif
     public class NetworkVisibilityTests : NetcodeIntegrationTest
     {
-        public enum SceneManagementState
-        {
-            SceneManagementEnabled,
-            SceneManagementDisabled
-        }
+
         protected override int NumberOfClients => 1;
         private GameObject m_TestNetworkPrefab;
         private bool m_SceneManagementEnabled;
 
+#if NGO_DAMODE
+        public NetworkVisibilityTests(SceneManagementState sceneManagementState, SessionModeTypes sessionModeType) : base(sessionModeType)
+#else
         public NetworkVisibilityTests(SceneManagementState sceneManagementState)
+#endif
         {
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
         }

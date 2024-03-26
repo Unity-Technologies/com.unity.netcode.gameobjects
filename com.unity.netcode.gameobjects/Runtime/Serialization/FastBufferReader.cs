@@ -245,6 +245,11 @@ namespace Unity.Netcode
         /// </summary>
         public unsafe void Dispose()
         {
+            if (Handle == null)
+            {
+                return;
+            }
+
             UnsafeUtility.Free(Handle, Handle->Allocator);
             Handle = null;
         }

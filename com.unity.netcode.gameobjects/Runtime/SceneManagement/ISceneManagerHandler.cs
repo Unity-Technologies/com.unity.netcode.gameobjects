@@ -32,5 +32,8 @@ namespace Unity.Netcode
         void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
 
         bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager);
+#if NGO_DAMODE
+        bool IsIntegrationTest();
+#endif
     }
 }

@@ -10,6 +10,9 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventNotifications : NetcodeIntegrationTest
@@ -262,7 +265,7 @@ namespace TestProject.RuntimeTests
                 AssertOnTimeout($"Timed out waiting for all clients to switch to scene {m_CurrentSceneName}!");
 
 
-                // Now single mode load a a new scene (i.e. "scene switch")
+                // Now single mode load a new scene (i.e. "scene switch")
                 m_CurrentSceneName = k_BaseUnitTestSceneName;
                 ResetWait();
                 Assert.AreEqual(m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, loadSceneMode), SceneEventProgressStatus.Started);

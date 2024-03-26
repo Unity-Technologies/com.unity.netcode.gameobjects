@@ -2654,6 +2654,9 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkBehaviour_rpc_exec_stage_FieldRef));
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)NetworkBehaviour.__RpcExecStage.Execute));
                     instructions.Add(processor.Create(OpCodes.Ceq));
+#if NGO_DAMODE
+                    instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
+#else
                     instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
                     // if (networkManager.IsServer || networkManager.IsHost) -> ServerRpc
@@ -2664,6 +2667,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                     instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsHost_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
+#endif
                     instructions.Add(returnInstr);
                     instructions.Add(lastInstr);
 

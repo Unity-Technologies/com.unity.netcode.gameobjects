@@ -889,9 +889,9 @@ namespace Unity.Netcode.RuntimeTests
                     clientObject.OnReceived = o =>
                     {
                         receivedValue = o;
-                        Debug.Log($"Received value {o}");
+                        VerboseDebug($"Received value {o}");
                     };
-                    Debug.Log($"Sending first RPC with {firstTest}");
+                    VerboseDebug($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -904,7 +904,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     receivedValue = null;
 
-                    Debug.Log($"Sending second RPC with {secondTest}");
+                    VerboseDebug($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -943,9 +943,9 @@ namespace Unity.Netcode.RuntimeTests
                     clientObject.OnReceived = o =>
                     {
                         receivedValue = o;
-                        Debug.Log($"Received value {o}");
+                        VerboseDebug($"Received value {o}");
                     };
-                    Debug.Log($"Sending first RPC with {firstTest}");
+                    VerboseDebug($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -958,7 +958,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     receivedValue = null;
 
-                    Debug.Log($"Sending second RPC with {secondTest}");
+                    VerboseDebug($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -1005,9 +1005,9 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.AreEqual(o.GetType(), typeof(NativeArray<T>));
                         var oAsArray = (NativeArray<T>)o;
                         receivedValue = new NativeArray<T>(oAsArray, Allocator.Persistent);
-                        Debug.Log($"Received value {o}");
+                        VerboseDebug($"Received value {o}");
                     };
-                    Debug.Log($"Sending first RPC with {firstTest}");
+                    VerboseDebug($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -1020,7 +1020,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     receivedValue = new NativeArray<T>();
 
-                    Debug.Log($"Sending second RPC with {secondTest}");
+                    VerboseDebug($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -1066,9 +1066,9 @@ namespace Unity.Netcode.RuntimeTests
                         {
                             receivedValue.Add(item);
                         }
-                        Debug.Log($"Received value {o}");
+                        VerboseDebug($"Received value {o}");
                     };
-                    Debug.Log($"Sending first RPC with {firstTest}");
+                    VerboseDebug($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
@@ -1081,7 +1081,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     receivedValue = new NativeList<T>();
 
-                    Debug.Log($"Sending second RPC with {secondTest}");
+                    VerboseDebug($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
                     yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());

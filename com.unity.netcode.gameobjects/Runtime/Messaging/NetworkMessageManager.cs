@@ -167,6 +167,30 @@ namespace Unity.Netcode
                 {
                     RegisterMessageType(type);
                 }
+
+#if NGO_DAMODE
+#if UNITY_EDITOR
+                if (EnableMessageOrderConsoleLog)
+                {
+                    // DANGO-TODO: Remove this when we have some form of message type indices stability in place
+                    // For now, just log the messages and their assigned types for reference purposes.
+                    var networkManager = m_Owner as NetworkManager;
+                    if (networkManager != null)
+                    {
+                        if (networkManager.DistributedAuthorityMode)
+                        {
+                            var messageListing = new StringBuilder();
+                            messageListing.AppendLine("NGO Message Index to Type Listing:");
+                            foreach (var message in m_MessageTypes)
+                            {
+                                messageListing.AppendLine($"[{message.Value}][{message.Key.Name}]");
+                            }
+                            Debug.Log(messageListing);
+                        }
+                    }
+                }
+#endif
+#endif
             }
             catch (Exception)
             {
@@ -174,6 +198,10 @@ namespace Unity.Netcode
                 throw;
             }
         }
+
+#if NGO_DAMODE
+        internal static bool EnableMessageOrderConsoleLog = false;
+#endif
 
         public void Dispose()
         {
@@ -823,7 +851,11 @@ namespace Unity.Netcode
         internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeList<ulong> clientIds)
             where T : INetworkMessage
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds.GetUnsafePtr(), clientIds.Length));
+#else
             return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
+#endif
         }
 
         internal unsafe void ProcessSendQueues()

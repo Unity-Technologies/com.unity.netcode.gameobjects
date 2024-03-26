@@ -23,6 +23,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             public Scene Scene;
         }
 
+#if NGO_DAMODE
+        public bool IsIntegrationTest() { return true; }
+#endif
+
         internal static Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>> SceneNameToSceneHandles = new Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>>();
 
         // All IntegrationTestSceneHandler instances register their associated NetworkManager

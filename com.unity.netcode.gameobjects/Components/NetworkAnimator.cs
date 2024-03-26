@@ -25,26 +25,53 @@ namespace Unity.Netcode.Components
         {
             foreach (var animationUpdate in m_SendAnimationUpdates)
             {
-                m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
+#if NGO_DAMODE
+                if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
+                {
+                    m_NetworkAnimator.SendAnimStateRpc(animationUpdate.AnimationMessage);
+                }
+                else
+#endif
+                {
+                    m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
+                }
             }
 
             m_SendAnimationUpdates.Clear();
 
             foreach (var sendEntry in m_SendParameterUpdates)
             {
-                m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
+#if NGO_DAMODE
+                if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
+                {
+                    m_NetworkAnimator.SendParametersUpdateRpc(sendEntry.ParametersUpdateMessage);
+                }
+                else
+#endif
+                {
+                    m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
+                }
             }
             m_SendParameterUpdates.Clear();
 
             foreach (var sendEntry in m_SendTriggerUpdates)
             {
-                if (!sendEntry.SendToServer)
+#if NGO_DAMODE
+                if (m_NetworkAnimator.NetworkManager.DistributedAuthorityMode)
                 {
-                    m_NetworkAnimator.SendAnimTriggerClientRpc(sendEntry.AnimationTriggerMessage, sendEntry.ClientRpcParams);
+                    m_NetworkAnimator.SendAnimTriggerRpc(sendEntry.AnimationTriggerMessage);
                 }
                 else
+#endif
                 {
-                    m_NetworkAnimator.SendAnimTriggerServerRpc(sendEntry.AnimationTriggerMessage);
+                    if (!sendEntry.SendToServer)
+                    {
+                        m_NetworkAnimator.SendAnimTriggerClientRpc(sendEntry.AnimationTriggerMessage, sendEntry.ClientRpcParams);
+                    }
+                    else
+                    {
+                        m_NetworkAnimator.SendAnimTriggerServerRpc(sendEntry.AnimationTriggerMessage);
+                    }
                 }
             }
             m_SendTriggerUpdates.Clear();
@@ -652,17 +679,14 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogWarningServer($"[{gameObject.name}][{nameof(NetworkAnimator)}] {nameof(Animator)} is not assigned! Animation synchronization will not work for this instance!");
             }
 
-            if (IsServer)
+            m_ClientSendList = new List<ulong>(128);
+            m_ClientRpcParams = new ClientRpcParams
             {
-                m_ClientSendList = new List<ulong>(128);
-                m_ClientRpcParams = new ClientRpcParams
+                Send = new ClientRpcSendParams
                 {
-                    Send = new ClientRpcSendParams
-                    {
-                        TargetClientIds = m_ClientSendList
-                    }
-                };
-            }
+                    TargetClientIds = m_ClientSendList
+                }
+            };
 
             // Create a handler for state changes
             m_NetworkAnimatorStateChangeHandler = new NetworkAnimatorStateChangeHandler(this);
@@ -908,6 +932,13 @@ namespace Unity.Netcode.Components
             // Send an AnimationMessage only if there are dirty AnimationStates to send
             if (m_AnimationMessage.IsDirtyCount > 0)
             {
+#if NGO_DAMODE
+                if (NetworkManager.DistributedAuthorityMode)
+                {
+                    SendAnimStateRpc(m_AnimationMessage);
+                }
+                else
+#endif
                 if (!IsServer && IsOwner)
                 {
                     SendAnimStateServerRpc(m_AnimationMessage);
@@ -932,7 +963,37 @@ namespace Unity.Netcode.Components
             {
                 Parameters = m_ParameterWriter.ToArray()
             };
-
+#if NGO_DAMODE
+            if (NetworkManager.DistributedAuthorityMode)
+            {
+                if (IsOwner)
+                {
+                    SendParametersUpdateRpc(parametersMessage);
+                }
+                else
+                {
+                    Debug.LogError($"[{name}][Client-{NetworkManager.LocalClientId}] Attempting to send parameter updates but not the owner!");
+                }
+            }
+            else
+            {
+                if (!IsServer)
+                {
+                    SendParametersUpdateServerRpc(parametersMessage);
+                }
+                else
+                {
+                    if (sendDirect)
+                    {
+                        SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
+                    }
+                    else
+                    {
+                        m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersMessage, clientRpcParams);
+                    }
+                }
+            }
+#else
             if (!IsServer)
             {
                 SendParametersUpdateServerRpc(parametersMessage);
@@ -948,6 +1009,7 @@ namespace Unity.Netcode.Components
                     m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersMessage, clientRpcParams);
                 }
             }
+#endif
         }
 
         /// <summary>
@@ -1224,11 +1286,22 @@ namespace Unity.Netcode.Components
             }
         }
 
+#if NGO_DAMODE
         /// <summary>
-        /// Updates the client's animator's parameters
+        /// Distributed Authority: Updates the client's animator's parameters
+        /// </summary>
+        [Rpc(SendTo.NotAuthority)]
+        internal void SendParametersUpdateRpc(ParametersUpdateMessage parametersUpdate)
+        {
+            m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
+        }
+#endif
+
+        /// <summary>
+        /// Client-Server: Updates the client's animator's parameters
         /// </summary>
         [ClientRpc]
-        internal unsafe void SendParametersUpdateClientRpc(ParametersUpdateMessage parametersUpdate, ClientRpcParams clientRpcParams = default)
+        internal void SendParametersUpdateClientRpc(ParametersUpdateMessage parametersUpdate, ClientRpcParams clientRpcParams = default)
         {
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
@@ -1242,7 +1315,7 @@ namespace Unity.Netcode.Components
         /// The server sets its local state and then forwards the message to the remaining clients
         /// </summary>
         [ServerRpc]
-        private unsafe void SendAnimStateServerRpc(AnimationMessage animationMessage, ServerRpcParams serverRpcParams = default)
+        private void SendAnimStateServerRpc(AnimationMessage animationMessage, ServerRpcParams serverRpcParams = default)
         {
             if (IsServerAuthoritative())
             {
@@ -1273,13 +1346,40 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Internally-called RPC client receiving function to update some animation state on a client
+        /// Client-Server: Internally-called RPC client-side receiving function to update animation states
         /// </summary>
         [ClientRpc]
-        internal unsafe void SendAnimStateClientRpc(AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
+        internal void SendAnimStateClientRpc(AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
         {
-            // This should never happen
-            if (IsHost)
+            ProcessAnimStates(animationMessage);
+        }
+
+#if NGO_DAMODE
+        /// <summary>
+        /// Distributed Authority: Internally-called RPC non-authority receiving function to update animation states
+        /// </summary>
+        [Rpc(SendTo.NotAuthority)]
+        internal void SendAnimStateRpc(AnimationMessage animationMessage)
+        {
+            ProcessAnimStates(animationMessage);
+        }
+#endif
+
+        private void ProcessAnimStates(AnimationMessage animationMessage)
+        {
+#if NGO_DAMODE
+            if (HasAuthority)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    var hostOrOwner = NetworkManager.DistributedAuthorityMode ? "Owner" : "Host";
+                    var clientServerOrDAMode = NetworkManager.DistributedAuthorityMode ? "distributed authority" : "client-server";
+                    NetworkLog.LogWarning($"Detected the {hostOrOwner} is sending itself animation updates in {clientServerOrDAMode} mode! Please report this issue.");
+                }
+                return;
+            }
+#else
+            if (NetworkManager.IsHost)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
@@ -1287,11 +1387,14 @@ namespace Unity.Netcode.Components
                 }
                 return;
             }
+#endif
             foreach (var animationState in animationMessage.AnimationStates)
             {
                 UpdateAnimationState(animationState);
             }
         }
+
+
 
         /// <summary>
         /// Server-side trigger state update request
@@ -1336,8 +1439,21 @@ namespace Unity.Netcode.Components
             m_Animator.SetBool(hash, isSet);
         }
 
+#if NGO_DAMODE
         /// <summary>
-        /// Internally-called RPC client receiving function to update a trigger when the server wants to forward
+        /// Distributed Authority: Internally-called RPC client receiving function to update a trigger when the server wants to forward
+        ///   a trigger for a client to play / reset
+        /// </summary>
+        /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
+        [Rpc(SendTo.NotAuthority)]
+        internal void SendAnimTriggerRpc(AnimationTriggerMessage animationTriggerMessage)
+        {
+            InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
+        }
+#endif
+
+        /// <summary>
+        /// Client Server: Internally-called RPC client receiving function to update a trigger when the server wants to forward
         ///   a trigger for a client to play / reset
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
@@ -1362,15 +1478,30 @@ namespace Unity.Netcode.Components
         /// <param name="setTrigger">sets (true) or resets (false) the trigger. The default is to set it (true).</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
+            if (!IsSpawned)
+            {
+                NetworkLog.LogError($"[{gameObject.name}] Cannot set a synchronized trigger when the {nameof(NetworkObject)} is not spawned!");
+                return;
+            }
+
             // MTT-3564:
             // After fixing the issue with trigger controlled Transitions being synchronized twice,
             // it exposed additional issues with this logic.  Now, either the owner or the server can
             // update triggers. Since server-side RPCs are immediately invoked, for a host a trigger
             // will happen when SendAnimTriggerClientRpc is called.  For a client owner, we call the
             // SendAnimTriggerServerRpc and then trigger locally when running in owner authority mode.
-            if (IsOwner || IsServer)
+            var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
+#if NGO_DAMODE
+            if (NetworkManager.DistributedAuthorityMode && HasAuthority)
             {
-                var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
+                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animTriggerMessage);
+                InternalSetTrigger(hash, setTrigger);
+            }
+            else if (!NetworkManager.DistributedAuthorityMode && (IsOwner || IsServer))
+#else
+            if (IsOwner || IsServer)
+#endif
+            {
                 if (IsServer)
                 {
                     /// <see cref="UpdatePendingTriggerStates"/> as to why we queue

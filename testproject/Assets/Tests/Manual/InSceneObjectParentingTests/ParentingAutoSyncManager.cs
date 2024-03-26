@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 
-namespace TestProject.RuntimeTests
+namespace TestProject.ManualTests
 {
     /// <summary>
     /// Helper class that builds 4 transform lists based on parent-child hierarchy

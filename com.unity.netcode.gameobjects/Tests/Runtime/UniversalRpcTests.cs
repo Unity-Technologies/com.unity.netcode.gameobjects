@@ -96,6 +96,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             OnRpcReceived();
         }
 
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority)]
+        public void DefaultToAuthorityRpc()
+        {
+            OnRpcReceived();
+        }
+
+        [Rpc(SendTo.NotAuthority)]
+        public void DefaultToNotAuthorityRpc()
+        {
+            OnRpcReceived();
+        }
+#endif
+
         // RPCs with parameters
 
         [Rpc(SendTo.Everyone)]
@@ -145,6 +159,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             OnRpcReceivedWithParams(i, b, f, s);
         }
+
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority)]
+        public void DefaultToAuthorityWithParamsRpc(int i, bool b, float f, string s)
+        {
+            OnRpcReceivedWithParams(i, b, f, s);
+        }
+
+        [Rpc(SendTo.NotAuthority)]
+        public void DefaultToNotAuthorityWithParamsRpc(int i, bool b, float f, string s)
+        {
+            OnRpcReceivedWithParams(i, b, f, s);
+        }
+#endif
 
         // RPCs with RPC parameters
 
@@ -204,6 +232,22 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             ReceivedFrom = rpcParams.Receive.SenderClientId;
         }
 
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority)]
+        public void DefaultToAuthorityWithRpcParamsRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+            ReceivedFrom = rpcParams.Receive.SenderClientId;
+        }
+
+        [Rpc(SendTo.NotAuthority)]
+        public void DefaultToNotAuthorityWithRpcParamsRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+            ReceivedFrom = rpcParams.Receive.SenderClientId;
+        }
+#endif
+
 
         // RPCs with parameters and RPC parameters
 
@@ -254,6 +298,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             OnRpcReceivedWithParams(i, b, f, s);
         }
+
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority)]
+        public void DefaultToAuthorityWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
+        {
+            OnRpcReceivedWithParams(i, b, f, s);
+        }
+
+        [Rpc(SendTo.NotAuthority)]
+        public void DefaultToNotAuthorityWithParamsAndRpcParamsRpc(int i, bool b, float f, string s, RpcParams rpcParams)
+        {
+            OnRpcReceivedWithParams(i, b, f, s);
+        }
+#endif
 
         // RPCs with AllowTargetOverride = true
 
@@ -313,6 +371,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             OnRpcReceived();
         }
 
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority, AllowTargetOverride = true)]
+        public void DefaultToAuthorityAllowOverrideRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+        }
+
+        [Rpc(SendTo.NotAuthority, AllowTargetOverride = true)]
+        public void DefaultToNotAuthorityAllowOverrideRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+        }
+#endif
+
         // RPCs with DeferLocal = true
 
         [Rpc(SendTo.Everyone, DeferLocal = true)]
@@ -356,6 +428,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             OnRpcReceived();
         }
+
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority, DeferLocal = true)]
+        public void DefaultToAuthorityDeferLocalRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+        }
+
+        [Rpc(SendTo.NotAuthority, DeferLocal = true)]
+        public void DefaultToNotAuthorityDeferLocalRpc(RpcParams rpcParams)
+        {
+            OnRpcReceived();
+        }
+#endif
 
         // RPCs with RequireOwnership = true
 
@@ -412,6 +498,20 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             OnRpcReceived();
         }
+
+#if NGO_DAMODE
+        [Rpc(SendTo.Authority, RequireOwnership = true)]
+        public void DefaultToAuthorityRequireOwnershipRpc()
+        {
+            OnRpcReceived();
+        }
+
+        [Rpc(SendTo.NotAuthority, RequireOwnership = true)]
+        public void DefaultToNotAuthorityRequireOwnershipRpc()
+        {
+            OnRpcReceived();
+        }
+#endif
 
 
         // Mutual RPC Recursion
@@ -814,6 +914,28 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             VerifySentToNotId(objectOwner, sender, sender, methodName, false);
         }
 
+#if NGO_DAMODE
+        public void VerifySentToAuthority(ulong objectOwner, ulong sender, string methodName)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToId(objectOwner, sender, receiver, methodName, false);
+        }
+
+        public void VerifySentToNotAuthority(ulong objectOwner, ulong sender, string methodName)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToNotId(objectOwner, sender, receiver, methodName, false);
+        }
+#endif
+
         public void VerifySentToOwnerWithReceivedFrom(ulong objectOwner, ulong sender, string methodName)
         {
             VerifySentToId(objectOwner, sender, objectOwner, methodName, true);
@@ -855,6 +977,28 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             VerifySentToNotId(objectOwner, sender, sender, methodName, true);
         }
+
+#if NGO_DAMODE
+        public void VerifySentToAuthorityWithReceivedFrom(ulong objectOwner, ulong sender, string methodName)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToId(objectOwner, sender, receiver, methodName, true);
+        }
+
+        public void VerifySentToNotAuthorityWithReceivedFrom(ulong objectOwner, ulong sender, string methodName)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToNotId(objectOwner, sender, receiver, methodName, true);
+        }
+#endif
 
         public void VerifySentToOwnerWithParams(ulong objectOwner, ulong sender, string methodName, int i, bool b, float f, string s)
         {
@@ -898,6 +1042,28 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             VerifySentToNotIdWithParams(objectOwner, sender, sender, methodName, i, b, f, s);
         }
 
+#if NGO_DAMODE
+        public void VerifySentToAuthorityWithParams(ulong objectOwner, ulong sender, string methodName, int i, bool b, float f, string s)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToIdWithParams(objectOwner, sender, receiver, methodName, i, b, f, s);
+        }
+
+        public void VerifySentToNotAuthorityWithParams(ulong objectOwner, ulong sender, string methodName, int i, bool b, float f, string s)
+        {
+            var receiver = objectOwner;
+            if (!m_DistributedAuthority)
+            {
+                receiver = NetworkManager.ServerClientId;
+            }
+            VerifySentToNotIdWithParams(objectOwner, sender, receiver, methodName, i, b, f, s);
+        }
+#endif
+
         public void RethrowTargetInvocationException(Action action)
         {
             try
@@ -911,6 +1077,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverride : UniversalRpcTestsBase
@@ -923,7 +1092,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestSendingNoOverride(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer,
+            SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender
         )
@@ -941,6 +1115,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSenderClientId : UniversalRpcTestsBase
@@ -953,7 +1130,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestSenderClientId(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender
         )
@@ -971,6 +1152,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverrideWithParams : UniversalRpcTestsBase
@@ -983,7 +1167,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestSendingNoOverrideWithParams(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender
         )
@@ -1013,6 +1201,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverrideWithParamsAndRpcParams : UniversalRpcTestsBase
@@ -1025,7 +1216,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestSendingNoOverrideWithParamsAndRpcParams(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender
         )
@@ -1055,6 +1250,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestRequireOwnership : UniversalRpcTestsBase
@@ -1067,7 +1265,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestRequireOwnership(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender
         )
@@ -1091,6 +1293,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestDisallowedOverride : UniversalRpcTestsBase
@@ -1100,10 +1305,15 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         }
 
+        // Add both authority and nonauthority
         [Test]
         public void TestDisallowedOverride(
             // Excludes SendTo.SpecifiedInParams
+#if NGO_DAMODE
+            [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost, SendTo.Authority, SendTo.NotAuthority)] SendTo sendTo,
+#else
             [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo,
+#endif
             [Values(0u, 1u, 2u)] ulong objectOwner,
             [Values(0u, 1u, 2u)] ulong sender)
         {
@@ -1135,6 +1345,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         }
 
+        // Look at the implementations and add both
         [Test]
         public void TestSendingWithTargetOverride(
             [Values] SendTo defaultSendTo,
@@ -1391,6 +1602,9 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost)]
+#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestDeferLocal : UniversalRpcTestsBase
@@ -1447,6 +1661,18 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [TestCase(SendTo.ClientsAndHost, 2u, 0u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 1u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 2u)]
+
+#if NGO_DAMODE
+        [TestCase(SendTo.Authority, 0u, 0u)]
+        [TestCase(SendTo.Authority, 1u, 1u)]
+        [TestCase(SendTo.Authority, 2u, 2u)]
+        [TestCase(SendTo.NotAuthority, 0u, 1u)]
+        [TestCase(SendTo.NotAuthority, 0u, 2u)]
+        [TestCase(SendTo.NotAuthority, 1u, 0u)]
+        [TestCase(SendTo.NotAuthority, 1u, 2u)]
+        [TestCase(SendTo.NotAuthority, 2u, 0u)]
+        [TestCase(SendTo.NotAuthority, 2u, 1u)]
+#endif
         public void TestDeferLocal(
             SendTo defaultSendTo,
             ulong objectOwner,
@@ -1459,6 +1685,15 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                 // Just consider this case a success...
                 return;
             }
+
+#if NGO_DAMODE
+            // Similar to above, since Server and NotServer are already tested we can consider this a success
+            if (!m_DistributedAuthority && defaultSendTo == SendTo.Authority || defaultSendTo == SendTo.NotAuthority)
+            {
+                return;
+            }
+#endif
+
             var sendMethodName = $"DefaultTo{defaultSendTo}DeferLocalRpc";
             var verifyMethodName = $"VerifySentTo{defaultSendTo}";
             var senderObject = GetPlayerObject(objectOwner, sender);
@@ -1521,6 +1756,17 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [TestCase(SendTo.ClientsAndHost, 2u, 0u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 1u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 2u)]
+#if NGO_DAMODE
+        [TestCase(SendTo.Authority, 0u, 0u)]
+        [TestCase(SendTo.Authority, 1u, 1u)]
+        [TestCase(SendTo.Authority, 2u, 2u)]
+        [TestCase(SendTo.NotAuthority, 0u, 1u)]
+        [TestCase(SendTo.NotAuthority, 0u, 2u)]
+        [TestCase(SendTo.NotAuthority, 1u, 0u)]
+        [TestCase(SendTo.NotAuthority, 1u, 2u)]
+        [TestCase(SendTo.NotAuthority, 2u, 0u)]
+        [TestCase(SendTo.NotAuthority, 2u, 1u)]
+#endif
         public void TestDeferLocalOverrideToTrue(
             SendTo defaultSendTo,
             ulong objectOwner,
@@ -1533,6 +1779,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                 // Just consider this case a success...
                 return;
             }
+#if NGO_DAMODE
+            // Similar to above, since Server and NotServer are already tested we can consider this a success
+            if (!m_DistributedAuthority && defaultSendTo == SendTo.Authority || defaultSendTo == SendTo.NotAuthority)
+            {
+                return;
+            }
+#endif
+
             var sendMethodName = $"DefaultTo{defaultSendTo}WithRpcParamsRpc";
             var verifyMethodName = $"VerifySentTo{defaultSendTo}";
             var senderObject = GetPlayerObject(objectOwner, sender);
@@ -1595,6 +1849,17 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [TestCase(SendTo.ClientsAndHost, 2u, 0u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 1u)]
         [TestCase(SendTo.ClientsAndHost, 2u, 2u)]
+#if NGO_DAMODE
+        [TestCase(SendTo.Authority, 0u, 0u)]
+        [TestCase(SendTo.Authority, 1u, 1u)]
+        [TestCase(SendTo.Authority, 2u, 2u)]
+        [TestCase(SendTo.NotAuthority, 0u, 1u)]
+        [TestCase(SendTo.NotAuthority, 0u, 2u)]
+        [TestCase(SendTo.NotAuthority, 1u, 0u)]
+        [TestCase(SendTo.NotAuthority, 1u, 2u)]
+        [TestCase(SendTo.NotAuthority, 2u, 0u)]
+        [TestCase(SendTo.NotAuthority, 2u, 1u)]
+#endif
         public void TestDeferLocalOverrideToFalse(
             SendTo defaultSendTo,
             ulong objectOwner,
@@ -1607,6 +1872,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                 // Just consider this case a success...
                 return;
             }
+#if NGO_DAMODE
+            // Similar to above, since Server and NotServer are already tested we can consider this a success
+            if (!m_DistributedAuthority && defaultSendTo == SendTo.Authority || defaultSendTo == SendTo.NotAuthority)
+            {
+                return;
+            }
+#endif
+
             var sendMethodName = $"DefaultTo{defaultSendTo}DeferLocalRpc";
             var verifyMethodName = $"VerifySentTo{defaultSendTo}";
             var senderObject = GetPlayerObject(objectOwner, sender);

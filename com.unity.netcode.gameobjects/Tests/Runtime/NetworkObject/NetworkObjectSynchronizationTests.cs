@@ -8,6 +8,9 @@ using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.DAHost)]
+#endif
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Server)]
@@ -29,17 +32,22 @@ namespace Unity.Netcode.RuntimeTests
         {
             DisableNetVarSafety,
             EnabledNetVarSafety,
-        }
+        };
 
-        public NetworkObjectSynchronizationTests(VariableLengthSafety variableLengthSafety, HostOrServer hostOrServer)
+        public NetworkObjectSynchronizationTests(VariableLengthSafety variableLengthSafety, HostOrServer hostOrServer) : base(hostOrServer)
         {
             m_VariableLengthSafety = variableLengthSafety;
-            m_UseHost = hostOrServer == HostOrServer.Host;
         }
 
         protected override void OnCreatePlayerPrefab()
         {
-            m_PlayerPrefab.AddComponent<NetworkBehaviourWithOwnerNetworkVariables>();
+            var component = m_PlayerPrefab.AddComponent<NetworkBehaviourWithOwnerNetworkVariables>();
+#if NGO_DAMODE
+            if (m_DistributedAuthority)
+            {
+                component.SetWritePermissions(NetworkVariableWritePermission.Owner);
+            }
+#endif
             base.OnCreatePlayerPrefab();
         }
 
@@ -123,40 +131,70 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_UseHost)
             {
+                var delayCounter = 0;
+                while (m_ClientNetworkManagers.Length == 0)
+                {
+                    delayCounter++;
+                    Assert.True(delayCounter < 30, "TimeOut waiting for client to spawn!");
+                    yield return s_DefaultWaitForTick;
+                }
+                delayCounter = 0;
+                while (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientNetworkManagers[0].LocalClientId))
+                {
+                    delayCounter++;
+                    if (delayCounter >= 30)
+                    {
+                        VerboseDebug("Trap!");
+                    }
+                    Assert.True(delayCounter < 30, "TimeOut waiting for client to spawn!");
+                    yield return s_DefaultWaitForTick;
+                }
+
+
                 var serverSideClientPlayerComponent = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
                 var serverSideHostPlayerComponent = m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
                 var clientSidePlayerComponent = m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
                 var clientSideHostPlayerComponent = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ServerNetworkManager.LocalClientId].GetComponent<NetworkBehaviourWithOwnerNetworkVariables>();
-
+#if NGO_DAMODE
+                var modeText = m_DistributedAuthority ? "owner" : "server";
+#else
+                var modeText = "server";
+#endif
                 // Validate that the client side player values match the server side value of the client's player
                 Assert.IsTrue(serverSideClientPlayerComponent.NetworkVariableData1.Value == clientSidePlayerComponent.NetworkVariableData1.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Client Player] Client side value ({serverSideClientPlayerComponent.NetworkVariableData1.Value})" +
-                    $" does not equal the server side value ({serverSideClientPlayerComponent.NetworkVariableData1.Value})!");
+                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData1.Value})" +
+                    $" does not equal the {modeText} side value ({serverSideClientPlayerComponent.NetworkVariableData1.Value})!");
                 Assert.IsTrue(serverSideClientPlayerComponent.NetworkVariableData2.Value == clientSidePlayerComponent.NetworkVariableData2.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Client Player] Client side value ({serverSideClientPlayerComponent.NetworkVariableData2.Value})" +
-                    $" does not equal the server side value ({serverSideClientPlayerComponent.NetworkVariableData2.Value})!");
+                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData2.Value})" +
+                    $" does not equal the {modeText} side value ({serverSideClientPlayerComponent.NetworkVariableData2.Value})!");
                 Assert.IsTrue(serverSideClientPlayerComponent.NetworkVariableData3.Value == clientSidePlayerComponent.NetworkVariableData3.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Client Player] Client side value ({serverSideClientPlayerComponent.NetworkVariableData3.Value})" +
-                    $" does not equal the server side value ({serverSideClientPlayerComponent.NetworkVariableData3.Value})!");
+                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData3.Value})" +
+                    $" does not equal the {modeText} side value ({serverSideClientPlayerComponent.NetworkVariableData3.Value})!");
                 Assert.IsTrue(serverSideClientPlayerComponent.NetworkVariableData4.Value == clientSidePlayerComponent.NetworkVariableData4.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Client Player] Client side value ({serverSideClientPlayerComponent.NetworkVariableData4.Value})" +
-                    $" does not equal the server side value ({serverSideClientPlayerComponent.NetworkVariableData4.Value})!");
+                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Client Player-{clientSidePlayerComponent.OwnerClientId}] Client side value ({clientSidePlayerComponent.NetworkVariableData4.Value})" +
+                    $" does not equal the {modeText} side value ({serverSideClientPlayerComponent.NetworkVariableData4.Value})!");
 
-
-                // Validate that only the 2nd and 4th NetworkVariable on the client side instance of the host's player is the same and the other two do not match
-                // (i.e. NetworkVariables owned by the server should not get synchronized on client)
-                Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData1.Value != clientSideHostPlayerComponent.NetworkVariableData1.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Host Player] Client side value ({serverSideHostPlayerComponent.NetworkVariableData1.Value})" +
-                    $" should not be equal to the server side value ({clientSideHostPlayerComponent.NetworkVariableData1.Value})!");
-                Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData2.Value == clientSideHostPlayerComponent.NetworkVariableData2.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Host Player] Client side value ({serverSideHostPlayerComponent.NetworkVariableData2.Value})" +
-                    $" does not equal the server side value ({clientSideHostPlayerComponent.NetworkVariableData2.Value})!");
-                Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData3.Value != clientSideHostPlayerComponent.NetworkVariableData3.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Host Player] Client side value ({serverSideHostPlayerComponent.NetworkVariableData3.Value})" +
-                    $" should not be equal to the server side value ({clientSideHostPlayerComponent.NetworkVariableData3.Value})!");
-                Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData4.Value == clientSideHostPlayerComponent.NetworkVariableData4.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Host Player] Client side value ({serverSideHostPlayerComponent.NetworkVariableData4.Value})" +
-                    $" does not equal the server side value ({clientSideHostPlayerComponent.NetworkVariableData4.Value})!");
+#if NGO_DAMODE
+                // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
+                // to only allow the service to write. For now, we will skip this validation for distributed authority
+                if (!m_DistributedAuthority)
+#endif
+                {
+                    // Validate that only the 2nd and 4th NetworkVariable on the client side instance of the host's player is the same and the other two do not match
+                    // (i.e. NetworkVariables owned by the server should not get synchronized on client)
+                    Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData1.Value != clientSideHostPlayerComponent.NetworkVariableData1.Value,
+                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Host Player] Client side value ({clientSideHostPlayerComponent.NetworkVariableData1.Value})" +
+                    $" should not be equal to the server side value ({serverSideHostPlayerComponent.NetworkVariableData1.Value})!");
+                    Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData2.Value == clientSideHostPlayerComponent.NetworkVariableData2.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Host Player] Client side value ({clientSideHostPlayerComponent.NetworkVariableData2.Value})" +
+                        $" does not equal the server side value ({serverSideHostPlayerComponent.NetworkVariableData2.Value})!");
+                    Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData3.Value != clientSideHostPlayerComponent.NetworkVariableData3.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Host Player] Client side value ({clientSideHostPlayerComponent.NetworkVariableData3.Value})" +
+                        $" should not be equal to the server side value ({serverSideHostPlayerComponent.NetworkVariableData3.Value})!");
+                    Assert.IsTrue(serverSideHostPlayerComponent.NetworkVariableData4.Value == serverSideHostPlayerComponent.NetworkVariableData4.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Host Player] Client side value ({clientSideHostPlayerComponent.NetworkVariableData4.Value})" +
+                        $" does not equal the server side value ({serverSideHostPlayerComponent.NetworkVariableData4.Value})!");
+                }
             }
             else
             {
@@ -190,44 +228,57 @@ namespace Unity.Netcode.RuntimeTests
                     $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Player-{clientOneId}] Client-{clientOneId} value ({clientSide1PlayerComponent.NetworkVariableData4.Value})" +
                     $" does not equal Client-{clientTwoId}'s clone side value ({clientSide2Player1Clone.NetworkVariableData4.Value})!");
 
+#if NGO_DAMODE
+                // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
+                // to only allow the service to write. For now, we will skip this validation for distributed authority
+                if (!m_DistributedAuthority)
+#endif
+                {
+                    // Validate that client two's 2nd and 4th NetworkVariables for the local and clone instances match and the other two do not
+                    Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData1.Value != clientSide1Player2Clone.NetworkVariableData1.Value,
+                       $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData1.Value})" +
+                       $" should not be equal to Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData1.Value})!");
 
-                // Validate that client two's 2nd and 4th NetworkVariables for the local and clone instances match and the other two do not
-                Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData1.Value != clientSide1Player2Clone.NetworkVariableData1.Value,
-                   $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData1)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData1.Value})" +
-                   $" should not be equal to Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData1.Value})!");
+                    Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData2.Value == clientSide1Player2Clone.NetworkVariableData2.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData2.Value})" +
+                        $" does not equal Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData2.Value})!");
 
-                Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData2.Value == clientSide1Player2Clone.NetworkVariableData2.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData2)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData2.Value})" +
-                    $" does not equal Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData2.Value})!");
+                    Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData3.Value != clientSide1Player2Clone.NetworkVariableData3.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData3.Value})" +
+                        $" should not be equal to Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData3.Value})!");
 
-                Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData3.Value != clientSide1Player2Clone.NetworkVariableData3.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData3)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData3.Value})" +
-                    $" should not be equal to Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData3.Value})!");
-
-                Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData4.Value == clientSide1Player2Clone.NetworkVariableData4.Value,
-                    $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData4.Value})" +
-                    $" does not equal Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData4.Value})!");
+                    Assert.IsTrue(clientSide2PlayerComponent.NetworkVariableData4.Value == clientSide1Player2Clone.NetworkVariableData4.Value,
+                        $"[{nameof(NetworkBehaviourWithOwnerNetworkVariables.NetworkVariableData4)}][Player-{clientTwoId}] Client-{clientTwoId} value ({clientSide2PlayerComponent.NetworkVariableData4.Value})" +
+                        $" does not equal Client-{clientOneId}'s clone side value ({clientSide1Player2Clone.NetworkVariableData4.Value})!");
+                }
             }
 
-            // Now validate all of the NetworkVariable values match to assure everything synchronized properly
-            foreach (var spawnedObject in validSpawnedNetworkObjects)
+#if NGO_DAMODE
+            // DANGO-TODO: This scenario is only possible to do if we add a DA-Server to mock the CMB Service or we integrate the CMB Service AND we have updated NetworkVariable permissions
+            // to only allow the service to write. For now, we will skip this validation for distributed authority
+            if (!m_DistributedAuthority)
+#endif
             {
-                foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                // Now validate all of the NetworkVariable values match to assure everything synchronized properly
+                foreach (var spawnedObject in validSpawnedNetworkObjects)
                 {
-                    //Validate that the connected client has spawned all of the instances that shouldn't have failed.
-                    var clientSideNetworkObjects = s_GlobalNetworkObjects[clientNetworkManager.LocalClientId];
+                    foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                    {
+                        //Validate that the connected client has spawned all of the instances that shouldn't have failed.
+                        var clientSideNetworkObjects = s_GlobalNetworkObjects[clientNetworkManager.LocalClientId];
 
-                    Assert.IsTrue(NetworkBehaviourWithNetworkVariables.ClientSpawnCount[clientNetworkManager.LocalClientId] == validSpawnedNetworkObjects.Count, $"Client-{clientNetworkManager.LocalClientId} spawned " +
-                        $"({NetworkBehaviourWithNetworkVariables.ClientSpawnCount}) {nameof(NetworkObject)}s but the expected number of {nameof(NetworkObject)}s should have been ({validSpawnedNetworkObjects.Count})!");
+                        Assert.IsTrue(NetworkBehaviourWithNetworkVariables.ClientSpawnCount[clientNetworkManager.LocalClientId] == validSpawnedNetworkObjects.Count, $"Client-{clientNetworkManager.LocalClientId} spawned " +
+                            $"({NetworkBehaviourWithNetworkVariables.ClientSpawnCount}) {nameof(NetworkObject)}s but the expected number of {nameof(NetworkObject)}s should have been ({validSpawnedNetworkObjects.Count})!");
 
-                    var spawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-                    Assert.IsTrue(clientSideNetworkObjects.ContainsKey(spawnedNetworkObject.NetworkObjectId), $"Failed to find valid spawned {nameof(NetworkObject)} on the client-side with a " +
-                        $"{nameof(NetworkObject.NetworkObjectId)} of {spawnedNetworkObject.NetworkObjectId}");
+                        var spawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
+                        Assert.IsTrue(clientSideNetworkObjects.ContainsKey(spawnedNetworkObject.NetworkObjectId), $"Failed to find valid spawned {nameof(NetworkObject)} on the client-side with a " +
+                            $"{nameof(NetworkObject.NetworkObjectId)} of {spawnedNetworkObject.NetworkObjectId}");
 
-                    var clientSideObject = clientSideNetworkObjects[spawnedNetworkObject.NetworkObjectId];
-                    Assert.IsTrue(clientSideObject.NetworkManager == clientNetworkManager, $"Client-side object {clientSideObject}'s {nameof(NetworkManager)} is not valid!");
+                        var clientSideObject = clientSideNetworkObjects[spawnedNetworkObject.NetworkObjectId];
+                        Assert.IsTrue(clientSideObject.NetworkManager == clientNetworkManager, $"Client-side object {clientSideObject}'s {nameof(NetworkManager)} is not valid!");
 
-                    ValidateNetworkBehaviourWithNetworkVariables(spawnedNetworkObject, clientSideObject);
+                        ValidateNetworkBehaviourWithNetworkVariables(spawnedNetworkObject, clientSideObject);
+                    }
                 }
             }
         }
@@ -259,6 +310,22 @@ namespace Unity.Netcode.RuntimeTests
                 $"does not match the client side instance value ({clientSideComponent.NetworkVariableData4.Value})!");
         }
 
+
+        private bool ClientSpawnedNetworkObjects(List<GameObject> spawnedObjectList)
+        {
+            var clientSideNetworkObjects = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
+
+            foreach (var spawnedObject in spawnedObjectList)
+            {
+                var serverSideSpawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
+                if (!clientSideNetworkObjects.ContainsKey(serverSideSpawnedNetworkObject.NetworkObjectId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>
         /// This validates that when a NetworkBehaviour fails serialization or deserialization during synchronizations that other NetworkBehaviours
         /// will still be initialized properly
@@ -287,6 +354,9 @@ namespace Unity.Netcode.RuntimeTests
             // Validate that when a NetworkBehaviour fails to synchronize and is skipped over it does not
             // impact the rest of the NetworkBehaviours.
             var clientSideNetworkObjects = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
+            yield return WaitForConditionOrTimeOut(() => ClientSpawnedNetworkObjects(spawnedObjectList));
+            AssertOnTimeout($"Timed out waiting for newly joined client to spawn all NetworkObjects!");
+
             foreach (var spawnedObject in spawnedObjectList)
             {
                 var serverSideSpawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
@@ -387,6 +457,27 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkBehaviourWithOwnerNetworkVariables : NetworkBehaviour
     {
+#if NGO_DAMODE
+        private NetworkVariableWritePermission m_NetworkVariableWritePermission = NetworkVariableWritePermission.Server;
+        /// <summary>
+        /// For distributed authority, there is no such thing as a server and only owners
+        /// DANGO-TODO: When NetworkVariable permissions are updated, this test might need to be updated
+        /// </summary>
+        /// <param name="networkVariableWritePermission"></param>
+        public void SetWritePermissions(NetworkVariableWritePermission networkVariableWritePermission)
+        {
+            m_NetworkVariableWritePermission = networkVariableWritePermission;
+            // Should synchronize with everyone
+            NetworkVariableData1 = new NetworkVariable<int>(default, NetworkVariableReadPermission.Everyone, networkVariableWritePermission);
+            // Should synchronize with everyone
+            NetworkVariableData2 = new NetworkVariable<long>(default, NetworkVariableReadPermission.Everyone, networkVariableWritePermission);
+            // Should synchronize with everyone
+            NetworkVariableData3 = new NetworkVariable<byte>(default, NetworkVariableReadPermission.Everyone, networkVariableWritePermission);
+            // Should synchronize with everyone
+            NetworkVariableData4 = new NetworkVariable<ushort>(default, NetworkVariableReadPermission.Everyone, networkVariableWritePermission);
+        }
+#endif
+
 
         // Should not synchronize on non-owners
         public NetworkVariable<int> NetworkVariableData1 = new NetworkVariable<int>(default, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
@@ -399,7 +490,14 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
+            // Adjustment for distributed authority mode
+#if NGO_DAMODE
+            if ((m_NetworkVariableWritePermission == NetworkVariableWritePermission.Server && IsServer && !NetworkManager.DistributedAuthorityMode) ||
+                (m_NetworkVariableWritePermission == NetworkVariableWritePermission.Owner && IsOwner && NetworkManager.DistributedAuthorityMode))
+#else
             if (IsServer)
+#endif
+
             {
                 NetworkVariableData1.Value = Random.Range(1, 1000);
                 NetworkVariableData2.Value = Random.Range(1, 1000);

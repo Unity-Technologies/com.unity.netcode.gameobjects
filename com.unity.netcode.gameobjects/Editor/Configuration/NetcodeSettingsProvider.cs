@@ -19,7 +19,7 @@ namespace Unity.Netcode.Editor.Configuration
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Settings window for the Project scope.
-            var provider = new SettingsProvider("Project/NetcodeForGameObjects", SettingsScope.Project)
+            var provider = new SettingsProvider("Project/Multiplayer/NetcodeForGameObjects", SettingsScope.Project)
             {
                 label = "Netcode for GameObjects",
                 keywords = new[] { "netcode", "editor" },

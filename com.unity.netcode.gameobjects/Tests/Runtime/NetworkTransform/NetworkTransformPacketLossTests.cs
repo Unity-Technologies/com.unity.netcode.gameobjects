@@ -14,6 +14,14 @@ namespace Unity.Netcode.RuntimeTests
     /// models for each operating mode when packet loss and latency is
     /// present.
     /// </summary>
+#if NGO_DAMODE
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+#endif
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
@@ -54,13 +62,18 @@ namespace Unity.Netcode.RuntimeTests
             // We don't assert on timeout here because we want to log this information during PostAllChildrenLocalTransformValuesMatch
             yield return WaitForConditionOrTimeOut(() => AllInstancesKeptLocalTransformValues(useSubChild));
             var success = true;
-            m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
             if (s_GlobalTimeoutHelper.TimedOut)
             {
-                var waitForMs = new WaitForSeconds(0.001f);
+                var waitForMs = new WaitForSeconds(0.0025f);
+                if (m_Precision == Precision.Half)
+                {
+                    m_CurrentHalfPrecision = 0.2156f;
+                }
                 // If we timed out, then wait for a full range of ticks to assure all data has been synchronized before declaring this a failed test.
                 for (int j = 0; j < m_ServerNetworkManager.NetworkConfig.TickRate; j++)
                 {
+                    m_InfoMessage.Clear();
+                    m_InfoMessage.AppendLine($"[{checkType}][{useSubChild}] Timed out waiting for all children to have the correct local space values:\n");
                     var instances = useSubChild ? ChildObjectComponent.SubInstances : ChildObjectComponent.Instances;
                     success = PostAllChildrenLocalTransformValuesMatch(useSubChild);
                     yield return waitForMs;
@@ -99,6 +112,11 @@ namespace Unity.Netcode.RuntimeTests
             var serverSideParent = SpawnObject(m_ParentObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
             var serverSideChild = SpawnObject(m_ChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
             var serverSideSubChild = SpawnObject(m_SubChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+
+            yield return s_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
 
             // Assure all of the child object instances are spawned before proceeding to parenting
             yield return WaitForConditionOrTimeOut(AllChildObjectInstancesAreSpawned);

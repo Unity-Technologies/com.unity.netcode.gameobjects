@@ -95,11 +95,19 @@ namespace Unity.Netcode
             {
                 if (serializer.IsReader)
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    serializer.GetFastBufferReader().ReadBytesSafe(ptr, length);
+#else
                     serializer.GetFastBufferReader().ReadBytesSafe((byte*)ptr, length);
+#endif
                 }
                 else
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    serializer.GetFastBufferWriter().WriteBytesSafe(ptr, length);
+#else
                     serializer.GetFastBufferWriter().WriteBytesSafe((byte*)ptr, length);
+#endif
                 }
             }
         }

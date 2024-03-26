@@ -23,6 +23,8 @@ namespace Unity.Netcode
 
         private FastBufferReader m_ReceivedNetworkVariableData;
 
+        // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
+        // Worth either merging or more cleanly separating these codepaths.
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) + FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
@@ -35,12 +37,25 @@ namespace Unity.Netcode
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
+#if NGO_DAMODE
+            if (networkManager.DistributedAuthorityMode)
+            {
+                writer.WriteValueSafe((ushort)NetworkBehaviour.NetworkVariableFields.Count);
+            }
+#endif
 
             for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
                 if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
+#if NGO_DAMODE
                     // This var does not belong to the currently iterating delivery group.
+                    if (networkManager.DistributedAuthorityMode)
+                    {
+                        writer.WriteValueSafe<ushort>(0);
+                    }
+                    else
+#endif
                     if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         BytePacker.WriteValueBitPacked(writer, (ushort)0);
@@ -76,7 +91,16 @@ namespace Unity.Netcode
                 {
                     shouldWrite = false;
                 }
-
+#if NGO_DAMODE
+                if (networkManager.DistributedAuthorityMode)
+                {
+                    if (!shouldWrite)
+                    {
+                        writer.WriteValueSafe<ushort>(0);
+                    }
+                }
+                else
+#endif
                 if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
                     if (!shouldWrite)
@@ -106,7 +130,28 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        networkVariable.WriteDelta(writer);
+#if NGO_DAMODE
+                        // DANGO-TODO:
+                        // Complex types with custom type serialization (either registered custom types or INetworkSerializable implementations) will be problematic
+                        // Non-complex types always provide a full state update per delta
+                        // DANGO-TODO: Add NetworkListEvent<T>.EventType awareness to the cloud-state server
+                        if (networkManager.DistributedAuthorityMode)
+                        {
+                            var size_marker = writer.Position;
+                            writer.WriteValueSafe<ushort>(0);
+                            var start_marker = writer.Position;
+                            networkVariable.WriteDelta(writer);
+                            var end_marker = writer.Position;
+                            writer.Seek(size_marker);
+                            var size = end_marker - start_marker;
+                            writer.WriteValueSafe((ushort)size);
+                            writer.Seek(end_marker);
+                        }
+                        else
+#endif
+                        {
+                            networkVariable.WriteDelta(writer);
+                        }
                     }
                     networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
@@ -128,6 +173,8 @@ namespace Unity.Netcode
             return true;
         }
 
+        // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
+        // Worth either merging or more cleanly separating these codepaths.
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
@@ -145,9 +192,33 @@ namespace Unity.Netcode
                 }
                 else
                 {
+#if NGO_DAMODE
+                    if (networkManager.DistributedAuthorityMode)
+                    {
+                        m_ReceivedNetworkVariableData.ReadValueSafe(out ushort variableCount);
+                        if (variableCount != networkBehaviour.NetworkVariableFields.Count)
+                        {
+                            UnityEngine.Debug.LogError("Variable count mismatch");
+                        }
+                    }
+#endif
+
                     for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
                     {
                         int varSize = 0;
+#if NGO_DAMODE
+                        if (networkManager.DistributedAuthorityMode)
+                        {
+                            m_ReceivedNetworkVariableData.ReadValueSafe(out ushort variableSize);
+                            varSize = variableSize;
+
+                            if (varSize == 0)
+                            {
+                                continue;
+                            }
+                        }
+                        else
+#endif
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out varSize);
@@ -200,6 +271,7 @@ namespace Unity.Netcode
                         }
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
+                        // Read Delta so we also notify any subscribers to a change in the NetworkVariable
                         networkVariable.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
 
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
@@ -209,7 +281,11 @@ namespace Unity.Netcode
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
 
+#if NGO_DAMODE
+                        if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety || networkManager.DistributedAuthorityMode)
+#else
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+#endif
                         {
                             if (m_ReceivedNetworkVariableData.Position > (readStartPos + varSize))
                             {
@@ -235,7 +311,14 @@ namespace Unity.Netcode
             }
             else
             {
+                // DANGO-TODO: Fix me!
+                // When a client-spawned NetworkObject is despawned by the owner client, the owner client will still get messages for deltas and cause this to
+                // log a warning. The issue is primarily how NetworkVariables handle updating and will require some additional re-factoring.
+#if NGO_DAMODE
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context, GetType().Name);
+#else
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
+#endif
             }
         }
     }

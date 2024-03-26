@@ -8,6 +8,12 @@ namespace Unity.Netcode
 
         public ulong ConfigHash;
 
+#if NGO_DAMODE
+        public bool CMBServiceConnection;
+        public uint TickRate;
+        public bool EnableSceneManagement;
+#endif
+
         public byte[] ConnectionData;
 
         public bool ShouldSendConnectionData;
@@ -30,6 +36,13 @@ namespace Unity.Netcode
             // END FORBIDDEN SEGMENT
             // ============================================================
 
+#if NGO_DAMODE
+            if (CMBServiceConnection)
+            {
+                writer.WriteValueSafe(TickRate);
+                writer.WriteValueSafe(EnableSceneManagement);
+            }
+#endif
             if (ShouldSendConnectionData)
             {
                 writer.WriteValueSafe(ConfigHash);
@@ -148,11 +161,19 @@ namespace Unity.Netcode
             }
             else
             {
+#if NGO_DAMODE
+                var response = new NetworkManager.ConnectionApprovalResponse
+                {
+                    Approved = true,
+                    CreatePlayerObject = networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide ? false : networkManager.NetworkConfig.PlayerPrefab != null
+                };
+#else
                 var response = new NetworkManager.ConnectionApprovalResponse
                 {
                     Approved = true,
                     CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null
                 };
+#endif
                 networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
             }
         }

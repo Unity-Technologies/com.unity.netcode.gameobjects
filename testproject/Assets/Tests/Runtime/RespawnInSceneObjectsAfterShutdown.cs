@@ -8,12 +8,20 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+#if NGO_DAMODE
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
+#endif 
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";
         private const string k_InSceneObjectName = "InSceneObject";
         protected override int NumberOfClients => 0;
         protected Scene m_SceneLoaded;
+
+#if NGO_DAMODE
+        public RespawnInSceneObjectsAfterShutdown(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+#endif
 
         protected override void OnOneTimeSetup()
         {
