@@ -1,4 +1,4 @@
-#if !MULTIPLAYER_TOOLS
+#if !MULTIPLAYER_TOOLS && !NGO_MINIMALPROJECT
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

@@ -896,7 +896,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public NetworkVariable<T> TheVar2;
     }
-
+#if !NGO_MINIMALPROJECT
     public class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>
     {
 
@@ -912,6 +912,7 @@ namespace Unity.Netcode.RuntimeTests
     {
 
     }
+#endif
 
     public struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
     {

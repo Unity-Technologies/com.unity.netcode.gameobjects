@@ -1306,6 +1306,7 @@ namespace Unity.Netcode
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
+            var isConnectedCMBService = NetworkManager.CMBServiceConnection;
             for (int i = 0; i < networkObjects.Length; i++)
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
@@ -1320,7 +1321,17 @@ namespace Unity.Netcode
                         {
                             ownerId = NetworkManager.LocalClientId;
                         }
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        // DANGO-EXP TODO: Once the service consumes the initial SceneEventType.Synchronize sent to it,
+                        // we should remove this.
+                        if (isConnectedCMBService)
+                        {
+                            networkObjects[i].IsSceneObject = true;
+                            networkObjects[i].Spawn(true);
+                        }
+                        else
+                        {
+                            SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        }
                     }
                 }
             }

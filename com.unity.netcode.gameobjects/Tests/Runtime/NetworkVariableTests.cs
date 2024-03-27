@@ -1,3 +1,4 @@
+#if !NGO_MINIMALPROJECT
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5486,3 +5487,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif
