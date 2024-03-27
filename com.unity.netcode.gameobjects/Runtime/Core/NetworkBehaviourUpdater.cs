@@ -44,13 +44,12 @@ namespace Unity.Netcode
                         for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
                         {
                             var client = m_ConnectionManager.ConnectedClientsList[i];
-
-                            if (dirtyObj.IsNetworkVisibleTo(client.ClientId))
+                            if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
                             {
                                 // Sync just the variables for just the objects this client sees
                                 for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                                 {
-                                    dirtyObj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
+                                    dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId);
                                 }
                             }
                         }
@@ -69,7 +68,7 @@ namespace Unity.Netcode
                             }
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
-                                sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.ServerClientId);
+                                sobj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId);
                             }
                         }
                     }
@@ -95,6 +94,8 @@ namespace Unity.Netcode
                 foreach (var dirtyobj in m_DirtyNetworkObjects)
                 {
                     dirtyobj.PostNetworkVariableWrite();
+                    // Once done processing, we set the previous owner id to the current owner id
+                    dirtyobj.PreviousOwnerId = dirtyobj.OwnerClientId;
                 }
                 m_DirtyNetworkObjects.Clear();
             }

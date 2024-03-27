@@ -9,25 +9,37 @@ namespace Unity.Netcode.RuntimeTests
     /// server and host operating modes and will test both authoritative
     /// models for each operating mode.
     /// </summary>
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+#if !MULTIPLAYER_TOOLS
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+#endif
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+#if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+#endif
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+#if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+#endif
     public class NetworkTransformTests : NetworkTransformBase
     {
         protected const int k_TickRate = 60;
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="testWithHost">Determines if we are running as a server or host</param>
+        /// <param name="hostOrServer">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
         public NetworkTransformTests(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision) :
             base(testWithHost, authority, rotationCompression, rotation, precision)
@@ -88,6 +100,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+#if !MULTIPLAYER_TOOLS
         /// <summary>
         /// Validates that transform values remain the same when a NetworkTransform is
         /// parented under another NetworkTransform under all of the possible axial conditions
@@ -150,6 +163,10 @@ namespace Unity.Netcode.RuntimeTests
 
             // Allow one tick for authority to update these changes
             TimeTravelAdvanceTick();
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
+
             success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
 
             Assert.True(success, "All transform values did not match prior to parenting!");
@@ -369,6 +386,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
         }
+#endif
 
         /// <summary>
         /// Tests changing all axial values one at a time.

@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class PlayerObjectTests : NetcodeIntegrationTest
@@ -25,6 +26,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnAndReplaceExistingPlayerObject()
         {
+            yield return WaitForConditionOrTimeOut(() => m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+            AssertOnTimeout("Timed out waiting for client-side player object to spawn!");
             // Get the server-side player NetworkObject
             var originalPlayer = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
             // Get the client-side player NetworkObject
@@ -33,7 +36,8 @@ namespace Unity.Netcode.RuntimeTests
             // Create a new player prefab instance
             var newPlayer = Object.Instantiate(m_NewPlayerToSpawn);
             var newPlayerNetworkObject = newPlayer.GetComponent<NetworkObject>();
-            newPlayerNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            // In distributed authority mode, the client owner spawns its new player
+            newPlayerNetworkObject.NetworkManagerOwner = m_DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
             // Spawn this instance as a new player object for the client who already has an assigned player object
             newPlayerNetworkObject.SpawnAsPlayerObject(m_ClientNetworkManagers[0].LocalClientId);
 

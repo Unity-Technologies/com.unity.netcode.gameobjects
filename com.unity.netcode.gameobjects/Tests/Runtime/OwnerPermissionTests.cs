@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             Objects[CurrentlySpawning, NetworkManager.LocalClientId] = GetComponent<OwnerPermissionObject>();
-            Debug.Log($"Object index ({CurrentlySpawning}) spawned on client {NetworkManager.LocalClientId}");
+            //Debug.Log($"Object index ({CurrentlySpawning}) spawned on client {NetworkManager.LocalClientId}");
         }
 
         private void Awake()
@@ -131,7 +131,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     // ==== Server-writable NetworkVariable ====
                     var gotException = false;
-                    Debug.Log($"Writing to server-write variable on object {objectIndex} on client {clientWriting}");
+                    VerboseDebug($"Writing to server-write variable on object {objectIndex} on client {clientWriting}");
 
                     try
                     {
@@ -148,7 +148,7 @@ namespace Unity.Netcode.RuntimeTests
 
                     // ==== Owner-writable NetworkVariable ====
                     gotException = false;
-                    Debug.Log($"Writing to owner-write variable on object {objectIndex} on client {clientWriting}");
+                    VerboseDebug($"Writing to owner-write variable on object {objectIndex} on client {clientWriting}");
 
                     try
                     {
@@ -165,7 +165,6 @@ namespace Unity.Netcode.RuntimeTests
 
                     // ==== Server-writable NetworkList ====
                     gotException = false;
-                    Debug.Log($"Writing to server-write list on object {objectIndex} on client {clientWriting}");
 
                     try
                     {
@@ -182,7 +181,6 @@ namespace Unity.Netcode.RuntimeTests
 
                     // ==== Owner-writable NetworkList ====
                     gotException = false;
-                    Debug.Log($"Writing to owner-write list on object {objectIndex} on client {clientWriting}");
 
                     try
                     {

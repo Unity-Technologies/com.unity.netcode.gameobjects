@@ -18,6 +18,8 @@ namespace Unity.Netcode.RuntimeTests
 
         internal static int Updates = 0;
 
+        public static bool EnableVerbose;
+
         private void Awake()
         {
             MyNetworkList = new NetworkList<int>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -34,7 +36,11 @@ namespace Unity.Netcode.RuntimeTests
                 expected++;
                 listString += i.ToString();
             }
-            Debug.Log($"[{NetworkManager.LocalClientId}] Value changed to {listString}");
+            if (EnableVerbose)
+            {
+                Debug.Log($"[{NetworkManager.LocalClientId}] Value changed to {listString}");
+            }
+
             Updates++;
         }
 
@@ -68,9 +74,13 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
     public class OwnerModifiedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
+
+        public OwnerModifiedTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -80,6 +90,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator OwnerModifiedTest()
         {
+            OwnerModifiedObject.EnableVerbose = m_EnableVerboseDebug;
             // We use this to assure we are the "last client" connected.
             yield return CreateAndStartNewClient();
             var ownerModLastClient = m_ClientNetworkManagers[2].LocalClient.PlayerObject.GetComponent<OwnerModifiedObject>();
@@ -89,7 +100,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var updateLoopType in System.Enum.GetValues(typeof(NetworkUpdateStage)))
             {
                 ownerModLastClient.NetworkUpdateStageToCheck = (NetworkUpdateStage)updateLoopType;
-                Debug.Log($"Testing Update Stage: {ownerModLastClient.NetworkUpdateStageToCheck}");
+                VerboseDebug($"Testing Update Stage: {ownerModLastClient.NetworkUpdateStageToCheck}");
                 ownerModLastClient.AddValues = true;
                 yield return WaitForTicks(m_ServerNetworkManager, 5);
             }

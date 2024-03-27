@@ -24,6 +24,7 @@ namespace Unity.Netcode
         /// The callback to be invoked when the list gets changed
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
+        internal override NetworkVariableType Type => NetworkVariableType.NetworkList;
 
         /// <summary>
         /// Constructor method for <see cref="NetworkList"/>
@@ -98,7 +99,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            writer.WriteValueSafe(element.Index);
+                            BytePacker.WriteValueBitPacked(writer, element.Index);
                             NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
@@ -109,12 +110,12 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            writer.WriteValueSafe(element.Index);
+                            BytePacker.WriteValueBitPacked(writer, element.Index);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            writer.WriteValueSafe(element.Index);
+                            BytePacker.WriteValueBitPacked(writer, element.Index);
                             NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
@@ -130,6 +131,20 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
+            if (m_NetworkManager.DistributedAuthorityMode)
+            {
+                writer.WriteValueSafe(NetworkVariableSerialization<T>.Type);
+                if (NetworkVariableSerialization<T>.Type == CollectionItemType.Unmanaged)
+                {
+                    // Write the size of the unmanaged serialized type as it has a fixed size. This allows the CMB runtime to correctly read the unmanged type.
+                    var placeholder = new T();
+                    var startPos = writer.Position;
+                    NetworkVariableSerialization<T>.Write(writer, ref placeholder);
+                    var size = writer.Position - startPos;
+                    writer.Seek(startPos);
+                    BytePacker.WriteValueBitPacked(writer, size);
+                }
+            }
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
@@ -141,6 +156,15 @@ namespace Unity.Netcode
         public override void ReadField(FastBufferReader reader)
         {
             m_List.Clear();
+            if (m_NetworkManager.DistributedAuthorityMode)
+            {
+                // Collection item type is used by the CMB rust service, drop value here.
+                reader.ReadValueSafe(out CollectionItemType type);
+                if (type == CollectionItemType.Unmanaged)
+                {
+                    ByteUnpacker.ReadValueBitPacked(reader, out int _);
+                }
+            }
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
@@ -189,7 +213,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            reader.ReadValueSafe(out int index);
+                            ByteUnpacker.ReadValueBitPacked(reader, out int index);
                             var value = new T();
                             NetworkVariableSerialization<T>.Read(reader, ref value);
 
@@ -261,7 +285,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            reader.ReadValueSafe(out int index);
+                            ByteUnpacker.ReadValueBitPacked(reader, out int index);
                             T value = m_List[index];
                             m_List.RemoveAt(index);
 
@@ -289,7 +313,7 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            reader.ReadValueSafe(out int index);
+                            ByteUnpacker.ReadValueBitPacked(reader, out int index);
                             var value = new T();
                             NetworkVariableSerialization<T>.Read(reader, ref value);
                             if (index >= m_List.Length)
@@ -367,7 +391,7 @@ namespace Unity.Netcode
         public void Add(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -388,7 +412,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -414,7 +438,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -449,7 +473,7 @@ namespace Unity.Netcode
         public void Insert(int index, T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -478,7 +502,7 @@ namespace Unity.Netcode
         public void RemoveAt(int index)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -503,7 +527,7 @@ namespace Unity.Netcode
             set
             {
                 // check write permissions
-                if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                if (!CanClientWrite(m_NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
                 }
@@ -551,6 +575,7 @@ namespace Unity.Netcode
         {
             m_List.Dispose();
             m_DirtyEvents.Dispose();
+            base.Dispose();
         }
     }
 

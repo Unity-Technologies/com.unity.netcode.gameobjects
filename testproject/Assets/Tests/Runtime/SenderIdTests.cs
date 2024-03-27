@@ -10,12 +10,17 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
     public class SenderIdTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
+
+        public SenderIdTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
 
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()

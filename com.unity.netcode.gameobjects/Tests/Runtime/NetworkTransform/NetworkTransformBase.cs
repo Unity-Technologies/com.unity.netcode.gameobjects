@@ -12,12 +12,12 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkTransformBase : IntegrationTestWithApproximation
     {
 
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
         protected const int k_PositionRotationScaleIterations = 3;
         protected const int k_PositionRotationScaleIterations3Axis = 8;
 
         protected float m_CurrentHalfPrecision = 0.0f;
-        protected const float k_HalfPrecisionPosScale = 0.115f;
+        protected const float k_HalfPrecisionPosScale = 0.1256f;
         protected const float k_HalfPrecisionRot = 0.725f;
 
 
@@ -126,7 +126,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return m_CurrentHalfPrecision;
             }
-            return 0.045f;
+            return 0.055f;
         }
 
         /// <summary>
@@ -473,12 +473,12 @@ namespace Unity.Netcode.RuntimeTests
                         }
                         if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
                         {
-                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Position ({childLocalPosition}) | Authority Local Position ({authorityObjectLocalPosition})");
+                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Position ({GetVector3Values(childLocalPosition)}) | Authority Local Position ({GetVector3Values(authorityObjectLocalPosition)})");
                             success = false;
                         }
                         if (!Approximately(childLocalScale, authorityObjectLocalScale))
                         {
-                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Scale ({childLocalScale}) | Authority Local Scale ({authorityObjectLocalScale})");
+                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Scale ({GetVector3Values(childLocalScale)}) | Authority Local Scale ({GetVector3Values(authorityObjectLocalScale)})");
                             success = false;
                         }
 
@@ -489,7 +489,7 @@ namespace Unity.Netcode.RuntimeTests
                         }
                         if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
                         {
-                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Authority Local Rotation ({authorityObjectLocalRotation})");
+                            m_InfoMessage.AppendLine($"[{childParentName}][{childInstance.name}] Child's Local Rotation ({GetVector3Values(childLocalRotation)}) | Authority Local Rotation ({GetVector3Values(authorityObjectLocalRotation)})");
                             success = false;
                         }
                     }

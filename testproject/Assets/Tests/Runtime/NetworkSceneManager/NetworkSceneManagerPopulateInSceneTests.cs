@@ -10,12 +10,17 @@ using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
     public class NetworkSceneManagerPopulateInSceneTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
 
 
         protected Dictionary<uint, GameObject> m_InSceneObjectList = new Dictionary<uint, GameObject>();
+
+        public NetworkSceneManagerPopulateInSceneTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
 
         protected override IEnumerator OnSetup()
         {

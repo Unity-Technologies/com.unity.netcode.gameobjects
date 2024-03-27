@@ -1,3 +1,4 @@
+#if !NGO_MINIMALPROJECT
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,16 +19,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
             {
+                // DANGO-EXP TODO: Add support for distributed authority mode
+                if (hostOrServer == HostOrServer.DAHost)
+                {
+                    continue;
+                }
                 yield return new TestFixtureData(hostOrServer);
             }
         }
 
         protected override int NumberOfClients => 3;
 
-        public NetworkVariablePermissionTests(HostOrServer hostOrServer)
-            : base(hostOrServer)
-        {
-        }
+        public NetworkVariablePermissionTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private GameObject m_TestObjPrefab;
         private ulong m_TestObjId = 0;
@@ -429,7 +432,10 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+
+#if !MULTIPLAYER_TOOLS
     [TestFixture(true)]
+#endif
     [TestFixture(false)]
     public class NetworkVariableTests : NetcodeIntegrationTest
     {
@@ -540,6 +546,7 @@ namespace Unity.Netcode.RuntimeTests
             TimeTravelToNextTick();
         }
 
+#if !MULTIPLAYER_TOOLS
         /// <summary>
         /// Runs generalized tests on all predefined NetworkVariable types
         /// </summary>
@@ -958,6 +965,7 @@ namespace Unity.Netcode.RuntimeTests
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyCallback));
         }
+#endif
 
         [Test]
         public void TestINetworkSerializableStructCallsNetworkSerialize([Values] HostOrServer useHost)
@@ -1210,7 +1218,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void TestValueTypeNativeArray<T>(NativeArray<T> testValue, NativeArray<T> changedValue) where T : unmanaged
         {
-            Debug.Log($"Changing {ArrayStr(testValue)} to {ArrayStr(changedValue)}");
+            VerboseDebug($"Changing {ArrayStr(testValue)} to {ArrayStr(changedValue)}");
             var serverVariable = new NetworkVariable<NativeArray<T>>(testValue);
             var clientVariable = new NetworkVariable<NativeArray<T>>(new NativeArray<T>(1, Allocator.Persistent));
             using var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
@@ -1277,7 +1285,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void TestList<T>(List<T> testValue, List<T> changedValue)
         {
-            Debug.Log($"Changing {ListStr(testValue)} to {ListStr(changedValue)}");
+            VerboseDebug($"Changing {ListStr(testValue)} to {ListStr(changedValue)}");
             var serverVariable = new NetworkVariable<List<T>>(testValue);
             var inPlaceList = new List<T>();
             var clientVariable = new NetworkVariable<List<T>>(inPlaceList);
@@ -1341,7 +1349,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void TestHashSet<T>(HashSet<T> testValue, HashSet<T> changedValue) where T : IEquatable<T>
         {
-            Debug.Log($"Changing {HashSetStr(testValue)} to {HashSetStr(changedValue)}");
+            VerboseDebug($"Changing {HashSetStr(testValue)} to {HashSetStr(changedValue)}");
             var serverVariable = new NetworkVariable<HashSet<T>>(testValue);
             var inPlaceList = new HashSet<T>();
             var clientVariable = new NetworkVariable<HashSet<T>>(inPlaceList);
@@ -1409,7 +1417,7 @@ namespace Unity.Netcode.RuntimeTests
         private void TestDictionary<TKey, TVal>(Dictionary<TKey, TVal> testValue, Dictionary<TKey, TVal> changedValue)
             where TKey : IEquatable<TKey>
         {
-            Debug.Log($"Changing {DictionaryStr(testValue)} to {DictionaryStr(changedValue)}");
+            VerboseDebug($"Changing {DictionaryStr(testValue)} to {DictionaryStr(changedValue)}");
             var serverVariable = new NetworkVariable<Dictionary<TKey, TVal>>(testValue);
             var inPlaceList = new Dictionary<TKey, TVal>();
             var clientVariable = new NetworkVariable<Dictionary<TKey, TVal>>(inPlaceList);
@@ -1480,7 +1488,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
         {
-            Debug.Log($"Changing {NativeListStr(testValue)} to {NativeListStr(changedValue)}");
+            VerboseDebug($"Changing {NativeListStr(testValue)} to {NativeListStr(changedValue)}");
             var serverVariable = new NetworkVariable<NativeList<T>>(testValue);
             var inPlaceList = new NativeList<T>(1, Allocator.Temp);
             var clientVariable = new NetworkVariable<NativeList<T>>(inPlaceList);
@@ -1548,7 +1556,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void TestValueTypeNativeHashSet<T>(NativeHashSet<T> testValue, NativeHashSet<T> changedValue) where T : unmanaged, IEquatable<T>
         {
-            Debug.Log($"Changing {NativeHashSetStr(testValue)} to {NativeHashSetStr(changedValue)}");
+            VerboseDebug($"Changing {NativeHashSetStr(testValue)} to {NativeHashSetStr(changedValue)}");
             var serverVariable = new NetworkVariable<NativeHashSet<T>>(testValue);
             var inPlaceList = new NativeHashSet<T>(1, Allocator.Temp);
             var clientVariable = new NetworkVariable<NativeHashSet<T>>(inPlaceList);
@@ -1623,7 +1631,7 @@ namespace Unity.Netcode.RuntimeTests
             where TKey : unmanaged, IEquatable<TKey>
             where TVal : unmanaged
         {
-            Debug.Log($"Changing {NativeHashMapStr(testValue)} to {NativeHashMapStr(changedValue)}");
+            VerboseDebug($"Changing {NativeHashMapStr(testValue)} to {NativeHashMapStr(changedValue)}");
             var serverVariable = new NetworkVariable<NativeHashMap<TKey, TVal>>(testValue);
             var inPlaceList = new NativeHashMap<TKey, TVal>(1, Allocator.Temp);
             var clientVariable = new NetworkVariable<NativeHashMap<TKey, TVal>>(inPlaceList);
@@ -2166,10 +2174,10 @@ namespace Unity.Netcode.RuntimeTests
                 changed2[originalSize + i] = item;
             }
 
-            Debug.Log($"Original: {ArrayStr(original)}");
-            Debug.Log($"Changed: {ArrayStr(changed)}");
-            Debug.Log($"Original2: {ArrayStr(original2)}");
-            Debug.Log($"Changed2: {ArrayStr(changed2)}");
+            VerboseDebug($"Original: {ArrayStr(original)}");
+            VerboseDebug($"Changed: {ArrayStr(changed)}");
+            VerboseDebug($"Original2: {ArrayStr(original2)}");
+            VerboseDebug($"Changed2: {ArrayStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -2461,10 +2469,10 @@ namespace Unity.Netcode.RuntimeTests
 
             }
 
-            Debug.Log($"Original: {ListStr(original)}");
-            Debug.Log($"Changed: {ListStr(changed)}");
-            Debug.Log($"Original2: {ListStr(original2)}");
-            Debug.Log($"Changed2: {ListStr(changed2)}");
+            VerboseDebug($"Original: {ListStr(original)}");
+            VerboseDebug($"Changed: {ListStr(changed)}");
+            VerboseDebug($"Original2: {ListStr(original2)}");
+            VerboseDebug($"Changed2: {ListStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -2528,10 +2536,10 @@ namespace Unity.Netcode.RuntimeTests
                 changed2.Add(item);
             }
 
-            Debug.Log($"Original: {HashSetStr(original)}");
-            Debug.Log($"Changed: {HashSetStr(changed)}");
-            Debug.Log($"Original2: {HashSetStr(original2)}");
-            Debug.Log($"Changed2: {HashSetStr(changed2)}");
+            VerboseDebug($"Original: {HashSetStr(original)}");
+            VerboseDebug($"Changed: {HashSetStr(changed)}");
+            VerboseDebug($"Original2: {HashSetStr(original2)}");
+            VerboseDebug($"Changed2: {HashSetStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -2619,10 +2627,10 @@ namespace Unity.Netcode.RuntimeTests
                 changed2.Add(key, val);
             }
 
-            Debug.Log($"Original: {DictionaryStr(original)}");
-            Debug.Log($"Changed: {DictionaryStr(changed)}");
-            Debug.Log($"Original2: {DictionaryStr(original2)}");
-            Debug.Log($"Changed2: {DictionaryStr(changed2)}");
+            VerboseDebug($"Original: {DictionaryStr(original)}");
+            VerboseDebug($"Changed: {DictionaryStr(changed)}");
+            VerboseDebug($"Original2: {DictionaryStr(original2)}");
+            VerboseDebug($"Changed2: {DictionaryStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -3908,10 +3916,10 @@ namespace Unity.Netcode.RuntimeTests
 
             }
 
-            Debug.Log($"Original: {NativeListStr(original)}");
-            Debug.Log($"Changed: {NativeListStr(changed)}");
-            Debug.Log($"Original2: {NativeListStr(original2)}");
-            Debug.Log($"Changed2: {NativeListStr(changed2)}");
+            VerboseDebug($"Original: {NativeListStr(original)}");
+            VerboseDebug($"Changed: {NativeListStr(changed)}");
+            VerboseDebug($"Original2: {NativeListStr(original2)}");
+            VerboseDebug($"Changed2: {NativeListStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -3950,7 +3958,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -3975,10 +3987,10 @@ namespace Unity.Netcode.RuntimeTests
                 changed2.Add(item);
             }
 
-            Debug.Log($"Original: {NativeHashSetStr(original)}");
-            Debug.Log($"Changed: {NativeHashSetStr(changed)}");
-            Debug.Log($"Original2: {NativeHashSetStr(original2)}");
-            Debug.Log($"Changed2: {NativeHashSetStr(changed2)}");
+            VerboseDebug($"Original: {NativeHashSetStr(original)}");
+            VerboseDebug($"Changed: {NativeHashSetStr(changed)}");
+            VerboseDebug($"Original2: {NativeHashSetStr(original2)}");
+            VerboseDebug($"Changed2: {NativeHashSetStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -4023,7 +4035,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4040,7 +4056,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {
@@ -4067,10 +4087,10 @@ namespace Unity.Netcode.RuntimeTests
                 changed2.Add(key, val);
             }
 
-            Debug.Log($"Original: {NativeHashMapStr(original)}");
-            Debug.Log($"Changed: {NativeHashMapStr(changed)}");
-            Debug.Log($"Original2: {NativeHashMapStr(original2)}");
-            Debug.Log($"Changed2: {NativeHashMapStr(changed2)}");
+            VerboseDebug($"Original: {NativeHashMapStr(original)}");
+            VerboseDebug($"Changed: {NativeHashMapStr(changed)}");
+            VerboseDebug($"Original2: {NativeHashMapStr(original2)}");
+            VerboseDebug($"Changed2: {NativeHashMapStr(changed2)}");
             return (original, original2, changed, changed2);
         }
 
@@ -5088,6 +5108,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+
     /// <summary>
     /// Handles the more generic conditional logic for NetworkList tests
     /// which can be used with the <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"/>
@@ -5466,3 +5487,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

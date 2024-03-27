@@ -8,6 +8,10 @@ namespace Unity.Netcode
 
         public ulong ConfigHash;
 
+        public bool CMBServiceConnection;
+        public uint TickRate;
+        public bool EnableSceneManagement;
+
         public byte[] ConnectionData;
 
         public bool ShouldSendConnectionData;
@@ -29,6 +33,12 @@ namespace Unity.Netcode
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
+
+            if (CMBServiceConnection)
+            {
+                writer.WriteValueSafe(TickRate);
+                writer.WriteValueSafe(EnableSceneManagement);
+            }
 
             if (ShouldSendConnectionData)
             {
@@ -151,7 +161,7 @@ namespace Unity.Netcode
                 var response = new NetworkManager.ConnectionApprovalResponse
                 {
                     Approved = true,
-                    CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null
+                    CreatePlayerObject = networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide ? false : networkManager.NetworkConfig.PlayerPrefab != null
                 };
                 networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
             }

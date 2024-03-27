@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
-using Debug = UnityEngine.Debug;
 using Vector3 = UnityEngine.Vector3;
 
 namespace Unity.Netcode.RuntimeTests
@@ -121,7 +120,7 @@ namespace Unity.Netcode.RuntimeTests
 
             localClienRpcTestNB.OnClient_Rpc += () =>
             {
-                Debug.Log("ClientRpc received on client object");
+                VerboseDebug("ClientRpc received on client object");
                 hasReceivedClientRpcRemotely = true;
             };
 
@@ -139,14 +138,14 @@ namespace Unity.Netcode.RuntimeTests
 
             serverClientRpcTestNB.OnServer_Rpc += (clientId, param) =>
             {
-                Debug.Log("ServerRpc received on server object");
+                VerboseDebug("ServerRpc received on server object");
                 Assert.True(param.Receive.SenderClientId == clientId);
                 hasReceivedServerRpc = true;
             };
 
             serverClientRpcTestNBFloat.OnServer_Rpc += (clientId, param) =>
             {
-                Debug.Log("ServerRpc (float) received on server object");
+                VerboseDebug("ServerRpc (float) received on server object");
                 Assert.True(param.Receive.SenderClientId == clientId);
                 hasReceivedFloatServerRpc = true;
             };
@@ -154,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
             serverClientRpcTestNB.OnClient_Rpc += () =>
             {
                 // The RPC invoked locally. (Weaver failure?)
-                Debug.Log("ClientRpc received on server object");
+                VerboseDebug("ClientRpc received on server object");
                 hasReceivedClientRpcLocally = true;
             };
 
@@ -167,7 +166,7 @@ namespace Unity.Netcode.RuntimeTests
 #endif
                 param4) =>
             {
-                Debug.Log("TypedServerRpc received on server object");
+                VerboseDebug("TypedServerRpc received on server object");
                 Assert.AreEqual(param1, vector3);
                 Assert.AreEqual(param2.Length, vector3s.Length);
                 Assert.AreEqual(param2[0], vector3s[0]);

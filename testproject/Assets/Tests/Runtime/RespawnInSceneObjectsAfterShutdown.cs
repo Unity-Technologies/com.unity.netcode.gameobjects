@@ -8,12 +8,16 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(SessionModeTypes.ClientServer)]
     public class RespawnInSceneObjectsAfterShutdown : NetcodeIntegrationTest
     {
         public const string SceneToLoad = "InSceneNetworkObject";
         private const string k_InSceneObjectName = "InSceneObject";
         protected override int NumberOfClients => 0;
         protected Scene m_SceneLoaded;
+
+        public RespawnInSceneObjectsAfterShutdown(SessionModeTypes sessionModeType) : base(sessionModeType) { }
 
         protected override void OnOneTimeSetup()
         {

@@ -1,3 +1,4 @@
+#if !MULTIPLAYER_TOOLS
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -221,8 +222,9 @@ namespace Unity.Netcode.RuntimeTests
             // and how they move
             var timeOutHelper = new TimeoutFrameCountHelper(10);
             yield return WaitForConditionOrTimeOut(spawnedObjectNetworkTransform.ReachedTargetLocalSpaceTransitionCount, timeOutHelper);
-            Debug.Log($"[TransformInterpolationTest] Wait condition reached or timed out. Frame Count ({timeOutHelper.GetFrameCount()}) | Time Elapsed ({timeOutHelper.GetTimeElapsed()})");
+            VerboseDebug($"[TransformInterpolationTest] Wait condition reached or timed out. Frame Count ({timeOutHelper.GetFrameCount()}) | Time Elapsed ({timeOutHelper.GetTimeElapsed()})");
             AssertOnTimeout($"Failed to reach desired local to world space transitions in the given time!", timeOutHelper);
         }
     }
 }
+#endif

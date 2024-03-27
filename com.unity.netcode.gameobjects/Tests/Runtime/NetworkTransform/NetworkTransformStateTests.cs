@@ -1,3 +1,4 @@
+#if !MULTIPLAYER_TOOLS
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -233,6 +234,8 @@ namespace Unity.Netcode.RuntimeTests
 
             var manager = new GameObject($"Test-{nameof(NetworkManager)}.{nameof(TestSyncAxes)}");
             var networkManager = manager.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig();
+
             networkObject.NetworkManagerOwner = networkManager;
 
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
@@ -905,3 +908,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif

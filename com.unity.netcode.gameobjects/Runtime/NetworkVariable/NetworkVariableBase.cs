@@ -18,6 +18,22 @@ namespace Unity.Netcode
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
 
+        private NetworkManager m_InternalNetworkManager;
+
+        internal virtual NetworkVariableType Type => NetworkVariableType.Custom;
+
+        private protected NetworkManager m_NetworkManager
+        {
+            get
+            {
+                if (m_InternalNetworkManager == null && m_NetworkBehaviour && m_NetworkBehaviour.NetworkObject?.NetworkManager)
+                {
+                    m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
+                }
+                return m_InternalNetworkManager;
+            }
+        }
+
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;
@@ -29,7 +45,14 @@ namespace Unity.Netcode
         /// <param name="networkBehaviour">The NetworkBehaviour the NetworkVariable belongs to</param>
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
+            m_InternalNetworkManager = null;
             m_NetworkBehaviour = networkBehaviour;
+            if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkObject?.NetworkManager)
+            {
+                m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
+                // When in distributed authority mode, there is no such thing as server write permissions
+                InternalWritePerm = m_InternalNetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
+            }
         }
 
         /// <summary>
@@ -53,7 +76,7 @@ namespace Unity.Netcode
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
         {
             ReadPerm = readPerm;
-            WritePerm = writePerm;
+            InternalWritePerm = writePerm;
         }
 
         /// <summary>
@@ -76,7 +99,17 @@ namespace Unity.Netcode
         /// <summary>
         /// The write permission for this var
         /// </summary>
-        public readonly NetworkVariableWritePermission WritePerm;
+        public NetworkVariableWritePermission WritePerm
+        {
+            get
+            {
+                return InternalWritePerm;
+            }
+        }
+
+        // We had to change the Write Permission in distributed authority.
+        // (It is too bad we initially declared it as readonly)
+        internal NetworkVariableWritePermission InternalWritePerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -109,7 +142,7 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+            m_NetworkBehaviour.NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 
         /// <summary>
@@ -136,6 +169,11 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to read</returns>
         public bool CanClientRead(ulong clientId)
         {
+            // When in distributed authority mode, everyone can read (but only the owner can write)
+            if (m_NetworkManager != null && m_NetworkManager.DistributedAuthorityMode)
+            {
+                return true;
+            }
             switch (ReadPerm)
             {
                 default:
@@ -201,6 +239,50 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void Dispose()
         {
+            m_InternalNetworkManager = null;
         }
     }
+
+    /// <summary>
+    /// Enum representing the different types of Network Variables.
+    /// </summary>
+    public enum NetworkVariableType : byte
+    {
+        /// <summary>
+        /// Value
+        /// Used for all of the basic NetworkVariables that contain a single value
+        /// </summary>
+        Value = 0,
+
+        /// <summary>
+        /// Custom
+        /// For any custom implemented extension of the NetworkVariableBase
+        /// </summary>
+        Custom = 1,
+
+        /// <summary>
+        /// NetworkList
+        /// </summary>
+        NetworkList = 2
+    }
+
+    public enum CollectionItemType : byte
+    {
+        /// <summary>
+        /// For any type that is not valid inside a NetworkVariable collection
+        /// </summary>
+        Unknown = 0,
+
+        /// <summary>
+        /// The following types are valid types inside of NetworkVariable collections
+        /// </summary>
+        Short = 1,
+        UShort = 2,
+        Int = 3,
+        UInt = 4,
+        Long = 5,
+        ULong = 6,
+        Unmanaged = 7,
+    }
+
 }

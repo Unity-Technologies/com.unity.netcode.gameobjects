@@ -176,7 +176,9 @@ namespace TestProject.ManualTests
             }
         }
         private const int k_StatesToLog = 80;
-        private bool m_StopLoggingStates = false;
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
+        private bool m_StopLoggingStates;
+#endif
         private Dictionary<ulong, Dictionary<ulong, List<HalfPosDebugStates>>> m_FirstInitialStateUpdates = new Dictionary<ulong, Dictionary<ulong, List<HalfPosDebugStates>>>();
 
         private void InternalAddLogEntry(ref NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false)
@@ -219,7 +221,11 @@ namespace TestProject.ManualTests
             ownerTable[localClientId].Add(state);
             if (ownerTable[localClientId].Count >= m_StatesToLog)
             {
-                m_StopLoggingStates = true;
+                if (DebugTransform && !m_StopLoggingStates)
+                {
+                    m_StopLoggingStates = true;
+                }
+
                 if (IsServer)
                 {
                     LogInitialTransformStates(localClientId, ownerId);

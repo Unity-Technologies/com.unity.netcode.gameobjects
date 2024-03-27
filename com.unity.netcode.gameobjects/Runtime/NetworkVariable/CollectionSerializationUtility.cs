@@ -505,8 +505,13 @@ namespace Unity.Netcode
             writer.WriteValueSafe(changes);
             unsafe
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var ptr = value.GetUnsafePtr();
+                var prevPtr = previousValue.GetUnsafePtr();
+#else
                 var ptr = (T*)value.GetUnsafePtr();
                 var prevPtr = (T*)previousValue.GetUnsafePtr();
+#endif
                 for (int i = 0; i < value.Length; ++i)
                 {
                     if (changes.IsSet(i))
@@ -549,7 +554,11 @@ namespace Unity.Netcode
 
                 unsafe
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    var ptr = value.GetUnsafePtr();
+#else
                     var ptr = (T*)value.GetUnsafePtr();
+#endif
                     for (var i = 0; i < value.Length; ++i)
                     {
                         if (changes.IsSet(i))
@@ -571,8 +580,8 @@ namespace Unity.Netcode
         public static unsafe void WriteNativeHashSetDelta<T>(FastBufferWriter writer, ref NativeHashSet<T> value, ref NativeHashSet<T> previousValue) where T : unmanaged, IEquatable<T>
         {
             // See WriteHashSet; this is the same algorithm, adjusted for the NativeHashSet API
-            var added = stackalloc T[value.Count()];
-            var removed = stackalloc T[previousValue.Count()];
+            var added = stackalloc T[value.Count];
+            var removed = stackalloc T[previousValue.Count];
             var addedCount = 0;
             var removedCount = 0;
             foreach (var item in value)
@@ -592,8 +601,11 @@ namespace Unity.Netcode
                     ++removedCount;
                 }
             }
-
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (addedCount + removedCount >= value.Count)
+#else
             if (addedCount + removedCount >= value.Count())
+#endif
             {
                 writer.WriteByteSafe(1);
                 writer.WriteValueSafe(value);
@@ -643,14 +655,21 @@ namespace Unity.Netcode
             where TVal : unmanaged
         {
             // See WriteDictionary; this is the same algorithm, adjusted for the NativeHashMap API
+#if UTP_TRANSPORT_2_0_ABOVE
+            var added = stackalloc KVPair<TKey, TVal>[value.Count];
+            var changed = stackalloc KVPair<TKey, TVal>[value.Count];
+            var removed = stackalloc KVPair<TKey, TVal>[previousValue.Count];
+#else
             var added = stackalloc KeyValue<TKey, TVal>[value.Count()];
             var changed = stackalloc KeyValue<TKey, TVal>[value.Count()];
             var removed = stackalloc KeyValue<TKey, TVal>[previousValue.Count()];
+#endif
             var addedCount = 0;
             var changedCount = 0;
             var removedCount = 0;
             foreach (var item in value)
             {
+
                 var hasPrevVal = previousValue.TryGetValue(item.Key, out var prevVal);
                 if (!hasPrevVal)
                 {
@@ -673,7 +692,11 @@ namespace Unity.Netcode
                 }
             }
 
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (addedCount + removedCount + changedCount >= value.Count)
+#else
             if (addedCount + removedCount + changedCount >= value.Count())
+#endif
             {
                 writer.WriteByteSafe(1);
                 writer.WriteValueSafe(value);
