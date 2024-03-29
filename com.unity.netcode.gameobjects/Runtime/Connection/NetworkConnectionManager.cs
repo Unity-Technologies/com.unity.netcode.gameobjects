@@ -510,6 +510,15 @@ namespace Unity.Netcode
                 // as the client ID is no longer valid.
                 NetworkManager.Shutdown(true);
             }
+
+            if (NetworkManager.IsServer)
+            {
+                MessageManager.ClientDisconnected(clientId);
+            }
+            else
+            {
+                MessageManager.ClientDisconnected(NetworkManager.ServerClientId);
+            }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportDisconnect.End();
 #endif

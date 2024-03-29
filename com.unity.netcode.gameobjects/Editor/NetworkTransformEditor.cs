@@ -37,6 +37,8 @@ namespace Unity.Netcode.Editor
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
+        public virtual bool HideInterpolateValue => false;
+
         /// <inheritdoc/>
         public void OnEnable()
         {
@@ -137,7 +139,11 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
-            EditorGUILayout.PropertyField(m_InterpolateProperty);
+            if (!HideInterpolateValue)
+            {
+                EditorGUILayout.PropertyField(m_InterpolateProperty);
+            }
+
             EditorGUILayout.PropertyField(m_SlerpPosition);
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
