@@ -1340,16 +1340,14 @@ namespace Unity.Netcode.Components
         // DANGO-EXP TODO: ADD Rigidbody2D
 #if COM_UNITY_MODULES_PHYSICS
         private bool m_UseRigidbodyForMotion;
-        private Rigidbody m_RigidbodyInternal;
-        private NetworkRigidbody m_NetworkRigidbody;
+        private NetworkRigidbodyBase m_NetworkRigidbodyInternal;
 
-        internal void RegisterRigidbody(NetworkRigidbody networkRigidbody, Rigidbody rigidbody)
+        internal void RegisterRigidbody(NetworkRigidbodyBase networkRigidbody)
         {
             if (networkRigidbody != null)
             {
-                m_NetworkRigidbody = networkRigidbody;
-                m_UseRigidbodyForMotion = m_NetworkRigidbody.UseRigidBodyForMotion;
-                m_RigidbodyInternal = rigidbody;
+                m_NetworkRigidbodyInternal = networkRigidbody;
+                m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
         }
 #endif
@@ -1686,11 +1684,16 @@ namespace Unity.Netcode.Components
             var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
             var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
 
+#if COM_UNITY_MODULES_PHYSICS
+            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
+            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+#else
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
+            var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+#endif
+            var rotAngles = rotation.eulerAngles;
             var scale = transformToUse.localScale;
             networkState.IsSynchronizing = isSynchronization;
-
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
@@ -2111,8 +2114,8 @@ namespace Unity.Netcode.Components
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
 #if COM_UNITY_MODULES_PHYSICS
-            var adjustedPosition = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : m_CurrentPosition;
-            var adjustedRotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : m_CurrentRotation;
+            var adjustedPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : m_CurrentPosition;
+            var adjustedRotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : m_CurrentRotation;
 #else
             var adjustedPosition = m_CurrentPosition;
             var adjustedRotation = m_CurrentRotation;
@@ -2245,8 +2248,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_RigidbodyInternal.MovePosition(m_CurrentPosition);
-                    transform.position = m_RigidbodyInternal.position;
+                    m_NetworkRigidbodyInternal.MovePosition(m_CurrentPosition);
                 }
                 else
 #endif
@@ -2274,8 +2276,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_RigidbodyInternal.MoveRotation(m_CurrentRotation);
-                    transform.rotation = m_RigidbodyInternal.rotation;
+                    m_NetworkRigidbodyInternal.MoveRotation(m_CurrentRotation);
                 }
                 else
 #endif
@@ -2396,7 +2397,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_RigidbodyInternal.position = transform.position;
+                    m_NetworkRigidbodyInternal.SetPosition(transform.position);
                 }
 #endif
 
@@ -2497,8 +2498,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_RigidbodyInternal.rotation = transform.rotation;
-                    m_RigidbodyInternal.MoveRotation(transform.rotation);
+                    m_NetworkRigidbodyInternal.SetRotation(transform.rotation);
                 }
 #endif
 
@@ -2876,8 +2876,8 @@ namespace Unity.Netcode.Components
         {
             var serverTime = NetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS
-            var position = m_UseRigidbodyForMotion ? m_RigidbodyInternal.position : GetSpaceRelativePosition();
-            var rotation = m_UseRigidbodyForMotion ? m_RigidbodyInternal.rotation : GetSpaceRelativeRotation();
+            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
 #else
             var position = GetSpaceRelativePosition();
             var rotation = GetSpaceRelativeRotation();
@@ -2913,15 +2913,15 @@ namespace Unity.Netcode.Components
 
 #if COM_UNITY_MODULES_PHYSICS
             // Depending upon order of operations, we invoke this in order to assure that proper settings are applied.
-            if (m_NetworkRigidbody)
+            if (m_NetworkRigidbodyInternal)
             {
-                m_NetworkRigidbody.UpdateOwnershipAuthority();
+                m_NetworkRigidbodyInternal.UpdateOwnershipAuthority();
             }
 
             if (m_UseRigidbodyForMotion)
             {
-                m_RigidbodyInternal.position = currentPosition;
-                m_RigidbodyInternal.rotation = currentRotation;
+                m_NetworkRigidbodyInternal.SetPosition(currentPosition);
+                m_NetworkRigidbodyInternal.SetRotation(currentRotation);
             }
 #endif
 
@@ -3005,8 +3005,15 @@ namespace Unity.Netcode.Components
             // Only if we are not authority
             if (!CanCommitToTransform)
             {
-                m_TargetPosition = m_CurrentPosition = GetSpaceRelativePosition();
-                m_CurrentRotation = GetSpaceRelativeRotation();
+#if COM_UNITY_MODULES_PHYSICS
+                var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+#else
+                var position = GetSpaceRelativePosition();
+                var rotation = GetSpaceRelativeRotation();
+#endif
+                m_TargetPosition = m_CurrentPosition = position;
+                m_CurrentRotation = rotation;
                 m_TargetRotation = m_CurrentRotation.eulerAngles;
                 m_TargetScale = m_CurrentScale = GetScale();
 
@@ -3058,9 +3065,15 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError(errorMessage);
                 return;
             }
-
-            Vector3 pos = posIn == null ? GetSpaceRelativePosition() : posIn.Value;
-            Quaternion rot = rotIn == null ? GetSpaceRelativeRotation() : rotIn.Value;
+#if COM_UNITY_MODULES_PHYSICS
+            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+#else
+            var position = GetSpaceRelativePosition();
+            var rotation = GetSpaceRelativeRotation();
+#endif
+            Vector3 pos = posIn == null ? position : posIn.Value;
+            Quaternion rot = rotIn == null ? rotation : rotIn.Value;
             Vector3 scale = scaleIn == null ? transform.localScale : scaleIn.Value;
 
             if (!CanCommitToTransform)
@@ -3089,23 +3102,25 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void SetStateInternal(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
-            if (InLocalSpace)
+#if COM_UNITY_MODULES_PHYSICS
+            if (m_UseRigidbodyForMotion)
             {
-                transform.localPosition = pos;
-                transform.localRotation = rot;
+                m_NetworkRigidbodyInternal.SetPosition(pos);
+                m_NetworkRigidbodyInternal.SetRotation(rot);
             }
             else
-            {
-                transform.SetPositionAndRotation(pos, rot);
-            }
-
-#if COM_UNITY_MODULES_PHYSICS
-            if (m_UseRigidbodyForMotion && shouldTeleport)
-            {
-                m_RigidbodyInternal.position = transform.position;
-                m_RigidbodyInternal.rotation = transform.rotation;
-            }
 #endif
+            {
+                if (InLocalSpace)
+                {
+                    transform.localPosition = pos;
+                    transform.localRotation = rot;
+                }
+                else
+                {
+                    transform.SetPositionAndRotation(pos, rot);
+                }
+            }
 
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
@@ -3129,7 +3144,6 @@ namespace Unity.Netcode.Components
             // in between a fractional tick period and the current explicit set state did not find any deltas that we preserve any
             // previous dirty state.
             m_LocalAuthoritativeNetworkState.IsDirty = m_LocalAuthoritativeNetworkState.ExplicitSet;
-
         }
 
         /// <summary>
@@ -3272,10 +3286,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (m_RigidbodyInternal.IsSleeping())
-            {
-                m_RigidbodyInternal.WakeUp();
-            }
+            m_NetworkRigidbodyInternal.WakeIfSleeping();
 
             // Update interpolation
             UpdateInterpolation();

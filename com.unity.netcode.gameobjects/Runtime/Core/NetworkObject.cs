@@ -1143,12 +1143,6 @@ namespace Unity.Netcode
             return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
         }
 
-        private void Awake()
-        {
-            SetCachedParent(transform.parent);
-            SceneOrigin = gameObject.scene;
-        }
-
         /// <summary>
         /// Makes the previously hidden <see cref="NetworkObject"/> "netcode visible" to the targeted client.
         /// </summary>
@@ -1937,6 +1931,13 @@ namespace Unity.Netcode
 
             if (NetworkManager == null || !NetworkManager.IsListening)
             {
+                // DANGO-TODO: Review as to whether we want to provide a better way to handle changing parenting of objects when the
+                // object is not spawned. Really, we shouldn't care about these types of changes.
+                if (NetworkManager.DistributedAuthorityMode && m_CachedParent != null && transform.parent == null)
+                {
+                    m_CachedParent = null;
+                    return;
+                }
                 transform.parent = m_CachedParent;
                 Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
                 return;
@@ -2212,6 +2213,11 @@ namespace Unity.Netcode
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
+            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
+            {
+                AddNetworkObjectToSceneChangedUpdates(this);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
@@ -2239,6 +2245,11 @@ namespace Unity.Netcode
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
+            }
+
+            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
+            {
+                RemoveNetworkObjectFromSceneChangedUpdates(this);
             }
         }
 
@@ -3013,6 +3024,37 @@ namespace Unity.Netcode
             }
         }
 
+        internal static Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
+
+        internal static void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
+        {
+            if (!NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
+            {
+                NetworkObjectsToSynchronizeSceneChanges.Add(networkObject.NetworkObjectId, networkObject);
+            }
+
+            networkObject.UpdateForSceneChanges();
+        }
+
+        internal static void RemoveNetworkObjectFromSceneChangedUpdates(NetworkObject networkObject)
+        {
+            NetworkObjectsToSynchronizeSceneChanges.Remove(networkObject.NetworkObjectId);
+        }
+
+        internal static void UpdateNetworkObjectSceneChanges()
+        {
+            foreach(var entry in NetworkObjectsToSynchronizeSceneChanges)
+            {
+                entry.Value.UpdateForSceneChanges();
+            }
+        }
+
+        private void Awake()
+        {
+            SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
+        }
+
         /// <summary>
         /// Update
         /// Detects if a NetworkObject's scene has changed for both server and client instances
@@ -3024,13 +3066,13 @@ namespace Unity.Netcode
         /// to add this same functionality to in-scene placed NetworkObjects until we have a way to generate
         /// per-NetworkObject-instance unique GlobalObjectIdHash values for in-scene placed NetworkObjects.
         /// </remarks>
-        private void Update()
+        internal void UpdateForSceneChanges()
         {
             // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
-            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress
-                || IsSceneObject != false || gameObject.scene.handle == SceneOriginHandle)
+            if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
+                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || gameObject.scene.handle == SceneOriginHandle)
             {
                 return;
             }

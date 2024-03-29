@@ -189,6 +189,9 @@ namespace Unity.Netcode
                             SpawnManager.DeferredDespawnUpdate(ServerTime);
                         }
 
+                        // Update any NetworkObject's registered to notify of scene migration changes.
+                        NetworkObject.UpdateNetworkObjectSceneChanges();
+
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 

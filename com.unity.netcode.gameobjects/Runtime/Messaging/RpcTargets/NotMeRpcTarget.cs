@@ -57,7 +57,9 @@ namespace Unity.Netcode
                 }
             }
             m_GroupSendTarget.Target.Send(behaviour, ref message, delivery, rpcParams);
-            if (!behaviour.IsServer)
+
+            // In distributed authority mode, we don't need to send to the server identifier
+            if (!behaviour.IsServer && !m_NetworkManager.DistributedAuthorityMode)
             {
                 m_ServerRpcTarget.Send(behaviour, ref message, delivery, rpcParams);
             }

@@ -174,14 +174,7 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        if (clientId > 1)
-                        {
-                            networkManager.MessageManager.SendMessage(ref currentMessage, networkDelivery, clientId);
-                        }
-                        else
-                        {
-                            networkManager.MessageManager.SendMessage(ref currentMessage, networkDelivery, clientId);
-                        }
+                        networkManager.MessageManager.SendMessage(ref currentMessage, networkDelivery, clientId);
                     }
                     // Dispose of the reader used for forwarding
                     currentMessage.m_CurrentReader.Dispose();
