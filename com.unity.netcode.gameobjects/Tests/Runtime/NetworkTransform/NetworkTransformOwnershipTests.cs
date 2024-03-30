@@ -235,10 +235,12 @@ namespace Unity.Netcode.RuntimeTests
             nonOwnerInstance.transform.position = Vector3.zero;
 
             yield return s_DefaultWaitForTick;
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
 
-            var testPosition = m_MotionModel == MotionModels.UseRigidbody ? nonOwnerInstance.GetComponent<Rigidbody>().position : nonOwnerInstance.transform.position;
-
-            Assert.True(Approximately(testPosition, valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{nonOwnerInstance.transform.position}");
+            Assert.True(Approximately(GetNonOwnerPosition(), valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{GetNonOwnerPosition()}");
 
             // Change ownership and wait for the non-owner to reflect the change
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
@@ -279,11 +281,10 @@ namespace Unity.Netcode.RuntimeTests
             ownerInstance.transform.localScale = valueSetByOwner;
             rotation.eulerAngles = valueSetByOwner;
 
+            yield return s_DefaultWaitForTick;
             // Allow scale to update first when using rigid body motion
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
-                yield return s_DefaultWaitForTick;
-                yield return new WaitForFixedUpdate();
                 yield return new WaitForFixedUpdate();
             }
 
