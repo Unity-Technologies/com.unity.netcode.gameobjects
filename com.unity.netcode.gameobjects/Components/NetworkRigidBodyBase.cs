@@ -372,6 +372,12 @@ namespace Unity.Netcode.Components
                 m_Rigidbody.isKinematic = isKinematic;
             }
 
+            // If we are not spawned, then exit early
+            if (!IsSpawned)
+            {
+                return;
+            }
+
             if (UseRigidBodyForMotion)
             {
                 // Only if the NetworkTransform is set to interpolate do we need to check for extrapolation

@@ -59,7 +59,9 @@ namespace Unity.Netcode
             m_GroupSendTarget.Target.Send(behaviour, ref message, delivery, rpcParams);
 
             // In distributed authority mode, we don't need to send to the server identifier
-            if (!behaviour.IsServer && !m_NetworkManager.DistributedAuthorityMode)
+            // DANGO-TODO: Adding this causes UniversalRpc tests to fail.
+            // Get with Kitty to figure out the best way to update the UniversalRpc Tests for this update
+            if (!behaviour.IsServer)// && !m_NetworkManager.DistributedAuthorityMode)
             {
                 m_ServerRpcTarget.Send(behaviour, ref message, delivery, rpcParams);
             }

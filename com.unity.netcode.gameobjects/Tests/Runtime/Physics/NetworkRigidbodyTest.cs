@@ -58,19 +58,21 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_UseRigidBodyForMotion)
             {
+                var interpolateCompareNonAuthoritative = m_NetworkTransformInterpolate ? RigidbodyInterpolation.Interpolate : m_RigidbodyInterpolation;
+
                 // Server authoritative NT should yield non-kinematic mode for the server-side player instance
                 Assert.False(serverClientInstanceRigidBody.isKinematic, $"[Server-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} player's {nameof(Rigidbody)} is kinematic!");
 
                 // The authoritative instance can be None, Interpolate, or Extrapolate for the Rigidbody interpolation settings.
                 Assert.AreEqual(m_RigidbodyInterpolation, serverClientInstanceRigidBody.interpolation, $"[Server-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} " +
-                    $"player's {nameof(Rigidbody)}'s interpolation is {serverClientInstanceRigidBody.interpolation} and not {nameof(RigidbodyInterpolation.Interpolate)}!");
+                    $"player's {nameof(Rigidbody)}'s interpolation is {serverClientInstanceRigidBody.interpolation} and not {m_RigidbodyInterpolation}!");
 
                 // Server authoritative NT should yield kinematic mode for the client-side player instance
                 Assert.True(clientRigidBody.isKinematic, $"[Client-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} player's {nameof(Rigidbody)} is not kinematic!");
 
                 // When using Rigidbody motion, authoritative and non-authoritative Rigidbody interpolation settings should be preserved (except when extrapolation is used
-                Assert.AreEqual(RigidbodyInterpolation.Interpolate, clientRigidBody.interpolation, $"[Client-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} " +
-                    $"player's {nameof(Rigidbody)}'s interpolation is {clientRigidBody.interpolation} and not {nameof(RigidbodyInterpolation.Interpolate)}!");
+                Assert.AreEqual(interpolateCompareNonAuthoritative, clientRigidBody.interpolation, $"[Client-Side] Client-{m_ClientNetworkManagers[0].LocalClientId} " +
+                    $"player's {nameof(Rigidbody)}'s interpolation is {clientRigidBody.interpolation} and not {interpolateCompareNonAuthoritative}!");
             }
             else
             {

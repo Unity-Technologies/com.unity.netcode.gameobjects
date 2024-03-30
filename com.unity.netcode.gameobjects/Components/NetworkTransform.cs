@@ -2113,13 +2113,9 @@ namespace Unity.Netcode.Components
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
-#if COM_UNITY_MODULES_PHYSICS
-            var adjustedPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : m_CurrentPosition;
-            var adjustedRotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : m_CurrentRotation;
-#else
             var adjustedPosition = m_CurrentPosition;
             var adjustedRotation = m_CurrentRotation;
-#endif
+
             var adjustedRotAngles = adjustedRotation.eulerAngles;
             var adjustedScale = m_CurrentScale;
 
