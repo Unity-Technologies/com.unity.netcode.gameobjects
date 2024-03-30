@@ -3043,7 +3043,7 @@ namespace Unity.Netcode
 
         internal static void UpdateNetworkObjectSceneChanges()
         {
-            foreach(var entry in NetworkObjectsToSynchronizeSceneChanges)
+            foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
             {
                 entry.Value.UpdateForSceneChanges();
             }

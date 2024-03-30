@@ -225,7 +225,7 @@ namespace Unity.Netcode.RuntimeTests
             };
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
+            yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -267,7 +267,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
             transformToTest = nonOwnerInstance.transform;
 
-            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
+            yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -323,7 +323,7 @@ namespace Unity.Netcode.RuntimeTests
                 ownerInstance.transform.position = valueSetByOwner;
                 ownerInstance.transform.rotation = rotation;
             }
-            
+
             yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
