@@ -40,6 +40,7 @@ namespace Unity.Netcode.RuntimeTests
             clientNetworkTransform.UseHalfFloatPrecision = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            rigidBody.interpolation = RigidbodyInterpolation.None;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -51,6 +52,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkTransform = m_NetworkTransformPrefab.AddComponent<NetworkTransform>();
             rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            rigidBody.interpolation = RigidbodyInterpolation.None;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -281,12 +283,7 @@ namespace Unity.Netcode.RuntimeTests
             ownerInstance.transform.localScale = valueSetByOwner;
             rotation.eulerAngles = valueSetByOwner;
 
-            yield return s_DefaultWaitForTick;
-            // Allow scale to update first when using rigid body motion
-            if (m_MotionModel == MotionModels.UseRigidbody)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+
 
             Vector3 GetNonOwnerPosition()
             {
@@ -324,6 +321,12 @@ namespace Unity.Netcode.RuntimeTests
                 ownerInstance.transform.position = valueSetByOwner;
                 ownerInstance.transform.rotation = rotation;
             }
+           
+            // Allow scale to update first when using rigid body motion
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
 
             yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
@@ -334,6 +337,11 @@ namespace Unity.Netcode.RuntimeTests
             // The last check is to verify non-owners cannot change transform values after ownership has changed
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
+            // Allow scale to update first when using rigid body motion
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
             Assert.True(Approximately(GetNonOwnerPosition(), valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{GetNonOwnerPosition()}");
         }
 
@@ -366,6 +374,12 @@ namespace Unity.Netcode.RuntimeTests
                 eulerAngles = valueSetByOwner
             };
             ownerInstance.transform.rotation = rotation;
+
+            // Allow scale to update first when using rigid body motion
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
             var transformToTest = nonOwnerInstance.transform;
             yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {m_ClientNetworkManagers[0].name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
