@@ -394,6 +394,11 @@ namespace Unity.Netcode.RuntimeTests
             // The last check is to verify clients cannot change transform values
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
+            // Allow scale to update first when using rigid body motion
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
             Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{m_ClientNetworkManagers[0].name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
