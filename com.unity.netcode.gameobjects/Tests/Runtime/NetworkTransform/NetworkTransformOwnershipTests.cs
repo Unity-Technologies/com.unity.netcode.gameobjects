@@ -321,7 +321,7 @@ namespace Unity.Netcode.RuntimeTests
                 ownerInstance.transform.position = valueSetByOwner;
                 ownerInstance.transform.rotation = rotation;
             }
-           
+
             // Allow scale to update first when using rigid body motion
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
