@@ -125,12 +125,17 @@ namespace Unity.Netcode
             }
         }
 
+        internal static bool IgnoreInitializeWarning;
+
         protected void MarkNetworkBehaviourDirty()
         {
             if (m_NetworkBehaviour == null)
             {
-                Debug.LogWarning($"NetworkVariable is written to, but doesn't know its NetworkBehaviour yet. " +
-                                 "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
+                if (!IgnoreInitializeWarning)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to, but doesn't know its NetworkBehaviour yet. " +
+                                     "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
+                }
                 return;
             }
             if (m_NetworkBehaviour.NetworkManager.ShutdownInProgress)
