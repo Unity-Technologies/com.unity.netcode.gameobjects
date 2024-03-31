@@ -1321,17 +1321,8 @@ namespace Unity.Netcode
                         {
                             ownerId = NetworkManager.LocalClientId;
                         }
-                        // DANGO-EXP TODO: Once the service consumes the initial SceneEventType.Synchronize sent to it,
-                        // we should remove this.
-                        if (isConnectedCMBService)
-                        {
-                            networkObjects[i].IsSceneObject = true;
-                            networkObjects[i].Spawn(true);
-                        }
-                        else
-                        {
-                            SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
-                        }
+
+                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
                     }
                 }
             }

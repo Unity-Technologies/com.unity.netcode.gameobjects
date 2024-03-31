@@ -281,6 +281,7 @@ namespace TestProject.RuntimeTests
                     {
                         additionalInfo += $"{sceneName},";
                     }
+                    Debug.Break();
                 }
                 AssertOnTimeout($"{nameof(m_ScenesLoaded)} still contains some of the scenes that were expected to be unloaded!\n {additionalInfo}");
             }

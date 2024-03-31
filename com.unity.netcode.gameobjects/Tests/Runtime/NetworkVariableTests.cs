@@ -17,6 +17,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public static IEnumerable<TestFixtureData> TestDataSource()
         {
+            NetworkVariableBase.IgnoreInitializeWarning = true;
             foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
             {
                 // DANGO-EXP TODO: Add support for distributed authority mode
@@ -26,6 +27,8 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 yield return new TestFixtureData(hostOrServer);
             }
+
+            NetworkVariableBase.IgnoreInitializeWarning = false;
         }
 
         protected override int NumberOfClients => 3;
@@ -477,6 +480,18 @@ namespace Unity.Netcode.RuntimeTests
         protected override bool CanStartServerAndClients()
         {
             return false;
+        }
+
+        protected override void OnOneTimeSetup()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = true;
+            base.OnOneTimeSetup();
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = false;
+            base.OnOneTimeTearDown();
         }
 
         /// <summary>
@@ -5359,6 +5374,18 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_TestObjectPrefab;
         private ulong m_TestObjectId = 0;
 
+        protected override void OnOneTimeSetup()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = true;
+            base.OnOneTimeSetup();
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = false;
+            base.OnOneTimeTearDown();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_TestObjectPrefab = CreateNetworkObjectPrefab($"[{nameof(NetworkVariableInheritanceTests)}.{nameof(m_TestObjectPrefab)}]");
@@ -5453,6 +5480,18 @@ namespace Unity.Netcode.RuntimeTests
         protected override int NumberOfClients => 1;
 
         private GameObject m_TestPrefab;
+
+        protected override void OnOneTimeSetup()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = true;
+            base.OnOneTimeSetup();
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            NetworkVariableBase.IgnoreInitializeWarning = false;
+            base.OnOneTimeTearDown();
+        }
 
         protected override void OnServerAndClientsCreated()
         {

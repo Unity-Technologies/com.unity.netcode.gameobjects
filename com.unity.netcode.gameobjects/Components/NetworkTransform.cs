@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.Mathematics;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -2071,12 +2072,19 @@ namespace Unity.Netcode.Components
             // As long as we are still authority
             if (CanCommitToTransform)
             {
+                if (m_CachedNetworkManager.DistributedAuthorityMode && !IsOwner)
+                {
+                    Debug.LogError($"Non-owner Client-{m_CachedNetworkManager.LocalClientId} is being updated by network tick still!!!!");
+                }
                 // Update any changes to the transform
                 var transformSource = transform;
                 OnUpdateAuthoritativeState(ref transformSource);
-
+#if COM_UNITY_MODULES_PHYSICS
+                m_CurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+#else
                 m_CurrentPosition = GetSpaceRelativePosition();
                 m_TargetPosition = GetSpaceRelativePosition();
+#endif
             }
             else // If we are no longer authority, unsubscribe to the tick event
             if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
@@ -2103,6 +2111,8 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
+        internal bool LogMotion;
 
         /// <summary>
         /// Applies the authoritative state to the transform
@@ -2245,6 +2255,11 @@ namespace Unity.Netcode.Components
                 if (m_UseRigidbodyForMotion)
                 {
                     m_NetworkRigidbodyInternal.MovePosition(m_CurrentPosition);
+                    if (LogMotion)
+                    {
+                        Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}][Interpolate: {networkState.UseInterpolation}][TransPos: {transform.position}][RBPos: {m_NetworkRigidbodyInternal.GetPosition()}][CurrentPos: {m_CurrentPosition}");
+                    }
+
                 }
                 else
 #endif
@@ -2676,7 +2691,7 @@ namespace Unity.Netcode.Components
 
         }
 
-
+        internal bool LogStateUpdate;
         /// <summary>
         /// Only non-authoritative instances should invoke this method
         /// </summary>
@@ -2698,6 +2713,24 @@ namespace Unity.Netcode.Components
             // Get the time when this new state was sent
             newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
 
+            if (LogStateUpdate)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine($"[Client-{m_CachedNetworkManager.LocalClientId}][State Update: {newState.GetNetworkTick()}][HasPos: {newState.HasPositionChange}][Has Rot: {newState.HasRotAngleChange}][Has Scale: {newState.HasScaleChange}]");
+                if (newState.HasPositionChange)
+                {
+                    builder.AppendLine($"Position = {newState.GetPosition()}");
+                }
+                if (newState.HasRotAngleChange)
+                {
+                    builder.AppendLine($"Rotation = {newState.GetRotation()}");
+                }
+                if (newState.HasScaleChange)
+                {
+                    builder.AppendLine($"Scale = {newState.GetScale()}");
+                }
+                Debug.Log(builder);
+            }
             // Apply the new state
             ApplyUpdatedState(newState);
 
@@ -3324,8 +3357,12 @@ namespace Unity.Netcode.Components
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
         /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ref NetworkTransformState networkTransformState)
+        internal void TransformStateUpdate(ref NetworkTransformState networkTransformState, ulong senderId)
         {
+            if (CanCommitToTransform)
+            {
+                Debug.LogError($"Authority receiving transform update from Client-{senderId}!");
+            }
             // Store the previous/old state
             m_OldState = m_LocalAuthoritativeNetworkState;
 
@@ -3364,7 +3401,7 @@ namespace Unity.Netcode.Components
                 State = m_LocalAuthoritativeNetworkState,
                 DistributedAuthorityMode = m_CachedNetworkManager.DistributedAuthorityMode,
                 // Don't populate if we are the DAHost as we send directly to each client
-                TargetIds = m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.DAHost ? NetworkObject.Observers.ToArray() : null,
+                TargetIds = m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.DAHost ? NetworkObject.Observers.Where((c) => c != m_CachedNetworkManager.LocalClientId).ToArray() : null,
             };
 
 

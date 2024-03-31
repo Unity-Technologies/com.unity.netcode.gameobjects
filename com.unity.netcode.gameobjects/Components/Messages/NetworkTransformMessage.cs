@@ -199,7 +199,7 @@ namespace Unity.Netcode
                 Debug.LogError($"[{nameof(NetworkTransformMessage)}][Dropped] Reciever {nameof(NetworkTransform)} was not set!");
                 return;
             }
-            m_ReceiverNetworkTransform.TransformStateUpdate(ref State);
+            m_ReceiverNetworkTransform.TransformStateUpdate(ref State, context.SenderId);
         }
     }
 }

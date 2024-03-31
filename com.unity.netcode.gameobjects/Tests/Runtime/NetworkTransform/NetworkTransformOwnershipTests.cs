@@ -41,6 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
             rigidBody.interpolation = RigidbodyInterpolation.None;
+            rigidBody.maxLinearVelocity = 0;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -53,6 +54,7 @@ namespace Unity.Netcode.RuntimeTests
             rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
             rigidBody.interpolation = RigidbodyInterpolation.None;
+            rigidBody.maxLinearVelocity = 0;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -198,10 +200,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator OwnerAuthoritativeTest([Values] StartingOwnership startingOwnership)
         {
-            if (m_DistributedAuthority)
-            {
-                yield break;
-            }
             // Get the current ownership layout
             var networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
             var networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
@@ -216,78 +214,9 @@ namespace Unity.Netcode.RuntimeTests
             var nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
             Assert.NotNull(ownerInstance);
             Assert.NotNull(nonOwnerInstance);
-
-            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
-            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
-            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
-
-            // Owner changes transform values
-            var valueSetByOwner = Vector3.one * 2;
-            ownerInstance.transform.position = valueSetByOwner;
-            ownerInstance.transform.localScale = valueSetByOwner;
-            var rotation = new Quaternion
-            {
-                eulerAngles = valueSetByOwner
-            };
-            ownerInstance.transform.rotation = rotation;
-            var transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
-                $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
-                $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
-                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
-
-            // Verify non-owners cannot change transform values
-            nonOwnerInstance.transform.position = Vector3.zero;
-
-            yield return s_DefaultWaitForTick;
-            if (m_MotionModel == MotionModels.UseRigidbody)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
-            Assert.True(Approximately(GetNonOwnerPosition(), valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{GetNonOwnerPosition()}");
-
-            // Change ownership and wait for the non-owner to reflect the change
-            VerifyObjectIsSpawnedOnClient.ResetObjectTable();
-            if (m_DistributedAuthority)
-            {
-                ownerInstance.NetworkObject.ChangeOwnership(networkManagerNonOwner.LocalClientId);
-            }
-            else
-            {
-                m_ServerNetworkManager.SpawnManager.ChangeOwnership(serverSideInstance.GetComponent<NetworkObject>(), networkManagerNonOwner.LocalClientId, true);
-            }
-            yield return WaitForConditionOrTimeOut(() => nonOwnerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
-
-            // Re-assign the ownership references and wait for the non-owner instance to be notified of ownership change
-            networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-            networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
-            ownerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerOwner.LocalClientId);
-            Assert.NotNull(ownerInstance);
-            yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId) != null);
-            nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
-            Assert.NotNull(nonOwnerInstance);
-
-            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
-            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
-            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
-            transformToTest = nonOwnerInstance.transform;
-
-            yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
-                $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
-                $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
-                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
-
-
-            // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
-            valueSetByOwner = Vector3.one * 10;
-            ownerInstance.transform.localScale = valueSetByOwner;
-            rotation.eulerAngles = valueSetByOwner;
-
-
+            Assert.True(networkManagerOwner.LocalClientId != networkManagerNonOwner.LocalClientId);
+            Assert.True(nonOwnerInstance.OwnerClientId != networkManagerNonOwner.LocalClientId);
+            Assert.True(nonOwnerInstance.NetworkManager.LocalClientId == networkManagerNonOwner.LocalClientId);
 
             Vector3 GetNonOwnerPosition()
             {
@@ -313,11 +242,124 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
+            void LogNonOwnerRigidBody(int stage)
+            {
+                if (m_MotionModel == MotionModels.UseRigidbody && m_EnableVerboseDebug)
+                {
+                    var rigidbody = nonOwnerInstance.GetComponent<Rigidbody>();
+                    Debug.Log($"[{stage}][Rigidbody-NonOwner][Owner:{nonOwnerInstance.OwnerClientId} [Client-{nonOwnerInstance.NetworkManager.LocalClientId}][Gravity: {rigidbody.useGravity}][Kinematic: {rigidbody.isKinematic}][RB-Pos: {rigidbody.position}][RB-Rotation: {rigidbody.rotation}]");
+                }
+            }
+
+            void LogOwnerRigidBody(int stage)
+            {
+                if (m_MotionModel == MotionModels.UseRigidbody && m_EnableVerboseDebug)
+                {
+                    var rigidbody = ownerInstance.GetComponent<Rigidbody>();
+                    Debug.Log($"[{stage}][Rigidbody-Owner][Owner:{ownerInstance.OwnerClientId} [Client-{ownerInstance.NetworkManager.LocalClientId}][Gravity: {rigidbody.useGravity}][Kinematic: {rigidbody.isKinematic}][RB-Pos: {rigidbody.position}][RB-Rotation: {rigidbody.rotation}]");
+                }
+            }
+
+            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
+            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
+            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                nonOwnerInstance.GetComponent<NetworkTransform>().LogStateUpdate = m_EnableVerboseDebug;
+            }
+            // Owner changes transform values
+            var valueSetByOwner = Vector3.one * 2;
+            var rotation = new Quaternion
+            {
+                eulerAngles = valueSetByOwner
+            };
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                var ownerRigidbody = ownerInstance.GetComponent<Rigidbody>();
+                ownerRigidbody.Move(valueSetByOwner, rotation);
+                ownerRigidbody.velocity = Vector3.zero;
+                yield return s_DefaultWaitForTick;
+                ownerInstance.transform.localScale = valueSetByOwner;
+            }
+            else
+            {
+                ownerInstance.transform.position = valueSetByOwner;
+                ownerInstance.transform.rotation = rotation;
+                ownerInstance.transform.localScale = valueSetByOwner;
+            }
+
+            var transformToTest = nonOwnerInstance.transform;
+            LogNonOwnerRigidBody(1);
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
+                $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
+                $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
+                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
+
+            // Verify non-owners cannot change transform values
+            nonOwnerInstance.transform.position = Vector3.zero;
+            yield return s_DefaultWaitForTick;
+            if (m_MotionModel == MotionModels.UseRigidbody)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            LogNonOwnerRigidBody(2);
+            Assert.True(Approximately(GetNonOwnerPosition(), valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{GetNonOwnerPosition()}");
+
+            // Change ownership and wait for the non-owner to reflect the change
+            VerifyObjectIsSpawnedOnClient.ResetObjectTable();
+            if (m_DistributedAuthority)
+            {
+                ownerInstance.NetworkObject.ChangeOwnership(networkManagerNonOwner.LocalClientId);
+            }
+            else
+            {
+                m_ServerNetworkManager.SpawnManager.ChangeOwnership(serverSideInstance.GetComponent<NetworkObject>(), networkManagerNonOwner.LocalClientId, true);
+            }
+            LogNonOwnerRigidBody(3);
+            yield return WaitForConditionOrTimeOut(() => nonOwnerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
+
+            LogNonOwnerRigidBody(4);
+            // Re-assign the ownership references and wait for the non-owner instance to be notified of ownership change
+            networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
+            ownerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerOwner.LocalClientId);
+            Assert.NotNull(ownerInstance);
+            yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId) != null);
+            nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
+            Assert.NotNull(nonOwnerInstance);
+
+            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
+            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
+            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
+            transformToTest = nonOwnerInstance.transform;
+            Assert.True(networkManagerOwner.LocalClientId != networkManagerNonOwner.LocalClientId);
+            Assert.True(nonOwnerInstance.OwnerClientId != networkManagerNonOwner.LocalClientId);
+            Assert.True(nonOwnerInstance.NetworkManager.LocalClientId == networkManagerNonOwner.LocalClientId);
+
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
+                $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
+                $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
+                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
+
+            LogNonOwnerRigidBody(5);
+            // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
+            valueSetByOwner = Vector3.one * 10;
+            ownerInstance.transform.localScale = valueSetByOwner;
+            rotation.eulerAngles = valueSetByOwner;
+            LogOwnerRigidBody(1);
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
                 m_UseAdjustedVariance = true;
-                var rigidBody = ownerInstance.GetComponent<Rigidbody>();
-                rigidBody.Move(valueSetByOwner, rotation);
+                var ownerRigidbody = ownerInstance.GetComponent<Rigidbody>();
+                ownerRigidbody.Move(valueSetByOwner, rotation);
+                LogOwnerRigidBody(2);
+                ownerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
+                nonOwnerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
+                ownerRigidbody.velocity = Vector3.zero;
             }
             else
             {
@@ -326,13 +368,14 @@ namespace Unity.Netcode.RuntimeTests
                 ownerInstance.transform.rotation = rotation;
             }
 
-            // Allow scale to update first when using rigid body motion
-            if (m_MotionModel == MotionModels.UseRigidbody)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-
+            LogOwnerRigidBody(3);
+            LogNonOwnerRigidBody(6);
             yield return WaitForConditionOrTimeOut(() => Approximately(GetNonOwnerPosition(), valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(GetNonOwnerRotation(), rotation));
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                LogOwnerRigidBody(4);
+                LogNonOwnerRigidBody(7);
+            }
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -341,7 +384,6 @@ namespace Unity.Netcode.RuntimeTests
             // The last check is to verify non-owners cannot change transform values after ownership has changed
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
-            // Allow scale to update first when using rigid body motion
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
                 yield return new WaitForFixedUpdate();
@@ -472,24 +514,24 @@ namespace Unity.Netcode.RuntimeTests
         [DisallowMultipleComponent]
         public class TestClientNetworkTransform : NetworkTransform
         {
-            public override void OnNetworkSpawn()
-            {
-                base.OnNetworkSpawn();
-                CanCommitToTransform = IsOwner;
-            }
+            //public override void OnNetworkSpawn()
+            //{
+            //    base.OnNetworkSpawn();
+            //    CanCommitToTransform = IsOwner;
+            //}
 
-            protected override void Update()
-            {
-                CanCommitToTransform = IsOwner;
-                base.Update();
-                if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
-                {
-                    if (CanCommitToTransform)
-                    {
-                        TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-                    }
-                }
-            }
+            //protected override void Update()
+            //{
+            //    CanCommitToTransform = IsOwner;
+            //    base.Update();
+            //    if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
+            //    {
+            //        if (CanCommitToTransform)
+            //        {
+            //            TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+            //        }
+            //    }
+            //}
 
             protected override bool OnIsServerAuthoritative()
             {
