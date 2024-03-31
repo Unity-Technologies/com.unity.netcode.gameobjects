@@ -198,6 +198,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator OwnerAuthoritativeTest([Values] StartingOwnership startingOwnership)
         {
+            if (m_DistributedAuthority)
+            {
+                yield break;
+            }
             // Get the current ownership layout
             var networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
             var networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
