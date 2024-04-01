@@ -665,6 +665,7 @@ namespace Unity.Netcode
 
             // Write our count place holder (must not be packed!)
             writer.WriteValueSafe((ushort)0);
+            var distributedAuthority = m_NetworkManager.DistributedAuthorityMode;
 
             foreach (var keyValuePairByGlobalObjectIdHash in m_NetworkManager.SceneManager.ScenePlacedObjects)
             {
@@ -673,7 +674,7 @@ namespace Unity.Netcode
                     if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId))
                     {
                         // Serialize the NetworkObject
-                        var sceneObject = keyValuePairBySceneHandle.Value.GetMessageSceneObject(TargetClientId);
+                        var sceneObject = keyValuePairBySceneHandle.Value.GetMessageSceneObject(TargetClientId, distributedAuthority);
                         sceneObject.Serialize(writer);
                         numberOfObjects++;
                     }

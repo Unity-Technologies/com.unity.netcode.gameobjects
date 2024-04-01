@@ -1089,7 +1089,7 @@ namespace Unity.Netcode
 
             var message = new CreateObjectMessage
             {
-                ObjectInfo = networkObject.GetMessageSceneObject(clientId),
+                ObjectInfo = networkObject.GetMessageSceneObject(clientId, NetworkManager.DistributedAuthorityMode),
                 IncludesSerializedObject = true,
                 UpdateObservers = NetworkManager.DistributedAuthorityMode,
                 ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
