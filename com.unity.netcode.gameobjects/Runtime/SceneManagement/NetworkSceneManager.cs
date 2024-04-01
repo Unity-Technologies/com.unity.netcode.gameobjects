@@ -2336,13 +2336,28 @@ namespace Unity.Netcode
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             if (NetworkManager.DistributedAuthorityMode)
                             {
-                                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                                if (NetworkManager.CMBServiceConnection)
                                 {
-                                    if (clientId == NetworkManager.LocalClientId)
+                                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
                                     {
-                                        continue;
+                                        if (clientId == NetworkManager.LocalClientId)
+                                        {
+                                            continue;
+                                        }
+                                        sceneEventData.TargetClientId = clientId;
+                                        sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                                        var message = new SceneEventMessage
+                                        {
+                                            EventData = sceneEventData,
+                                        };
+                                        var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                                        var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                                        NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
                                     }
-                                    sceneEventData.TargetClientId = clientId;
+                                }
+                                else
+                                {
+                                    sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
                                     sceneEventData.SenderClientId = NetworkManager.LocalClientId;
                                     var message = new SceneEventMessage
                                     {
