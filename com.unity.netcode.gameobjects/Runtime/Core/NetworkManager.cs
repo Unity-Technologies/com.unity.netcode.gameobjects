@@ -132,8 +132,24 @@ namespace Unity.Netcode
 
         internal void SetSessionOwner(ulong sessionOwner)
         {
+            var previousSessionOwner = CurrentSessionOwner;
             CurrentSessionOwner = sessionOwner;
             LocalClient.IsSessionOwner = LocalClientId == sessionOwner;
+            if (LocalClient.IsSessionOwner)
+            {
+                foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
+                {
+                    var networkObject = networkObjectEntry.Value;
+                    if (!networkObject.IsSceneObject.Value)
+                    {
+                        continue;
+                    }
+                    if (networkObject.OwnerClientId != LocalClientId)
+                    {
+                        SpawnManager.ChangeOwnership(networkObject, LocalClientId, true);
+                    }
+                }
+            }
         }
 
         // TODO: Make this internal after testing
