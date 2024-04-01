@@ -49,7 +49,8 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    if (clientId == NetworkManager.ServerClientId)
+                    // In distributed authority mode, we send to target id 0 (which would be a DAHost) via the group
+                    if (clientId == NetworkManager.ServerClientId && !m_NetworkManager.DistributedAuthorityMode)
                     {
                         continue;
                     }
@@ -58,10 +59,8 @@ namespace Unity.Netcode
             }
             m_GroupSendTarget.Target.Send(behaviour, ref message, delivery, rpcParams);
 
-            // In distributed authority mode, we don't need to send to the server identifier
-            // DANGO-TODO: Adding this causes UniversalRpc tests to fail.
-            // Get with Kitty to figure out the best way to update the UniversalRpc Tests for this update
-            if (!behaviour.IsServer)// && !m_NetworkManager.DistributedAuthorityMode)
+            // In distributed authority mode, we don't use ServerRpc
+            if (!behaviour.IsServer && !m_NetworkManager.DistributedAuthorityMode)
             {
                 m_ServerRpcTarget.Send(behaviour, ref message, delivery, rpcParams);
             }
