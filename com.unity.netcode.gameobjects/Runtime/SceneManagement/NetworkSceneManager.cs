@@ -2336,15 +2336,22 @@ namespace Unity.Netcode
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             if (NetworkManager.DistributedAuthorityMode)
                             {
-                                sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
-                                sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                                var message = new SceneEventMessage
+                                foreach (var clientId in NetworkManager.ConnectedClientsIds)
                                 {
-                                    EventData = sceneEventData,
-                                };
-                                var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
-                                NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
+                                    if (clientId == NetworkManager.LocalClientId)
+                                    {
+                                        continue;
+                                    }
+                                    sceneEventData.TargetClientId = clientId;
+                                    sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                                    var message = new SceneEventMessage
+                                    {
+                                        EventData = sceneEventData,
+                                    };
+                                    var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                                    NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
+                                }
                             }
                             else
                             {
@@ -2493,13 +2500,17 @@ namespace Unity.Netcode
                     }
                 case SceneEventType.SynchronizeComplete:
                     {
-
-
                         // At this point the client is considered fully "connected"
                         if ((NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClient.IsSessionOwner) || !NetworkManager.DistributedAuthorityMode)
                         {
                             if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
                             {
+                                // DANGO-EXP TODO: Remove this once service is sending the synchronization message to all clients
+                                if (NetworkManager.ConnectedClients.ContainsKey(clientId) && NetworkManager.ConnectionManager.ConnectedClientIds.Contains(clientId) && NetworkManager.ConnectedClientsList.Contains(NetworkManager.ConnectedClients[clientId]))
+                                {
+                                    EndSceneEvent(sceneEventId);
+                                    return;
+                                }
                                 NetworkManager.ConnectionManager.AddClient(clientId);
                             }
 
@@ -2517,6 +2528,10 @@ namespace Unity.Netcode
                         }
                         else
                         {
+                            // DANGO-EXP TODO: Remove this once service distributes objects
+                            // Non-session owners receive this notification from newly connected clients and upon receiving
+                            // the event they will redistribute their NetworkObjects
+                            NetworkManager.SpawnManager.DistributeNetworkObjects(clientId);
                             EndSceneEvent(sceneEventId);
                             return;
                         }

@@ -140,7 +140,7 @@ namespace Unity.Netcode
                 foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
                 {
                     var networkObject = networkObjectEntry.Value;
-                    if (!networkObject.IsSceneObject.Value)
+                    if (networkObject.IsSceneObject == null || !networkObject.IsSceneObject.Value)
                     {
                         continue;
                     }
