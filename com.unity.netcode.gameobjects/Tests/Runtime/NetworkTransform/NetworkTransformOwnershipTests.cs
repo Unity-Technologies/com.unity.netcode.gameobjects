@@ -277,7 +277,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var ownerRigidbody = ownerInstance.GetComponent<Rigidbody>();
                 ownerRigidbody.Move(valueSetByOwner, rotation);
-                ownerRigidbody.velocity = Vector3.zero;
+                ownerRigidbody.linearVelocity = Vector3.zero;
                 yield return s_DefaultWaitForTick;
                 ownerInstance.transform.localScale = valueSetByOwner;
             }
@@ -359,7 +359,7 @@ namespace Unity.Netcode.RuntimeTests
                 LogOwnerRigidBody(2);
                 ownerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
                 nonOwnerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
-                ownerRigidbody.velocity = Vector3.zero;
+                ownerRigidbody.linearVelocity = Vector3.zero;
             }
             else
             {

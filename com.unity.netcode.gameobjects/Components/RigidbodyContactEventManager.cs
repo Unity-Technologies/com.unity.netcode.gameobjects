@@ -170,28 +170,28 @@ namespace Unity.Netcode.Components
                 int count = 0;
                 int collisionStaycount = 0;
                 int positionCount = 0;
-                for (int j = 0; j < PairedHeaders[index].PairCount; j++)
+                for (int j = 0; j < PairedHeaders[index].pairCount; j++)
                 {
                     ref readonly var pair = ref PairedHeaders[index].GetContactPair(j);
 
-                    if (pair.IsCollisionExit)
+                    if (pair.isCollisionExit)
                     {
                         continue;
                     }
 
-                    for (int k = 0; k < pair.ContactCount; k++)
+                    for (int k = 0; k < pair.contactCount; k++)
                     {
                         ref readonly var contact = ref pair.GetContactPoint(k);
-                        averagePoint += contact.Position;
+                        averagePoint += contact.position;
                         positionCount++;
-                        if (!pair.IsCollisionStay)
+                        if (!pair.isCollisionStay)
                         {
-                            averageNormal += contact.Normal;
+                            averageNormal += contact.normal;
                             count++;
                         }
                         else
                         {
-                            averageCollisionStay += contact.Normal;
+                            averageCollisionStay += contact.normal;
                             collisionStaycount++;
                         }
                     }
@@ -214,8 +214,8 @@ namespace Unity.Netcode.Components
 
                 var result = new JobResultStruct()
                 {
-                    ThisInstanceID = PairedHeaders[index].BodyInstanceID,
-                    OtherInstanceID = PairedHeaders[index].OtherBodyInstanceID,
+                    ThisInstanceID = PairedHeaders[index].bodyInstanceID,
+                    OtherInstanceID = PairedHeaders[index].otherBodyInstanceID,
                     AverageNormal = averageNormal,
                     HasCollisionStay = collisionStaycount != 0,
                     AverageCollisionStayNormal = averageCollisionStay,
