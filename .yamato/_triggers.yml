@@ -62,6 +62,7 @@ pull_request_trigger:
         only:
           - "master"
           - "develop"
+          - "develop-2.0.0"
           - "/release\/.*/"
           
 # Currently, we need to have a trigger to updated badges
