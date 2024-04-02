@@ -6,9 +6,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.0.0-exp.1] - 2024-04-02
 
 ### Added
+- Added distributed authority permissions feature.
+- Added updates to all internal messages to account for a distributed authority network session connection.
+- Added `NetworkRigidbodyBase` that provides users with a more customizable network rigidbody, handles both `Rigidbody` and `Rigidbody2D`, and provides an option to make `NetworkTransform` use the rigid body for motion.
+  - For a customized `NetworkRigidbodyBase` class:
+    - `NetworkRigidbodyBase.AutoUpdateKinematicState` provides control on whether the kinematic setting will be automatically set or not when ownership changes.
+    - `NetworkRigidbodyBase.AutoSetKinematicOnDespawn` provides control on whether isKinematic will automatically be set to true when the associated `NetworkObject` is despawned.
+    - `NetworkRigidbodyBase.Initialize` is a protected method that, when invoked, will initialize the instance. This includes options to:
+      - Set whether using a `RigidbodyTypes.Rigidbody` or `RigidbodyTypes.Rigidbody2D`.
+      - Includes additional optional parameters to set the `NetworkTransform`, `Rigidbody`, and `Rigidbody2d` to use.
+  - Provides additional public methods:
+    - `NetworkRigidbodyBase.GetPosition` to return the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.GetRotation` to return the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.MovePosition` to move to the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.MoveRotation` to move to the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.Move` to move to the position and rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.Move` to move to the position and rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.SetPosition` to set the position of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.SetRotation` to set the rotation of the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.ApplyCurrentTransform` to set the position and rotation of the `Rigidbody` or `Rigidbody2d` based on the associated `GameObject` transform (depending upon its initialized setting).
+    - `NetworkRigidbodyBase.WakeIfSleeping` to wake up the rigid body if sleeping.
+    - `NetworkRigidbodyBase.SleepRigidbody` to put the rigid body to sleep.
+    - `NetworkRigidbodyBase.IsKinematic` to determine if the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) is currently kinematic.
+    - `NetworkRigidbodyBase.SetIsKinematic` to set the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) current kinematic state.
+    - `NetworkRigidbodyBase.ResetInterpolation` to reset the `Rigidbody` or `Rigidbody2d` (depending upon its initialized setting) back to its original interpolation value when initialized.
+  - Now includes a `MonoBehaviour.FixedUpdate` implementation that will update the assigned `NetworkTransform` when `NetworkRigidbodyBase.UseRigidBodyForMotion` is true.
+- Added `RigidbodyContactEventManager` that provides a more optimized way to process collision enter and collision stay events as opposed to the `Monobehaviour` approach.
+  - Can be used in client-server and distributed authority modes, but is particularly useful in distributed authority.
+- Added rigid body motion updates to `NetworkTransform` which allows users to set interolation on rigid bodies.
+  - Extrapolation is only allowed on authoritative instances, but custom class derived from `NetworkRigidbodyBase` or `NetworkRigidbody` or `NetworkRigidbody2D` automatically switches non-authoritative instances to interpolation if set to extrapolation.
+- Added distributed authority mode support to `NetworkAnimator`.
+- Added session mode selection to `NetworkManager` inspector view.
+- Added distributed authority mode specific `NetworkObject` permissions flags (Distributable, Transferable, and RequestRequired).
+- Added distributed authority mode specific `NetworkObject.SetOwnershipStatus` method that applies one or more `NetworkObject` instance's ownership flags. If updated when spawned, the ownership permission changes are synchronized with the other connected clients.
+- Added distributed authority mode specific `NetworkObject.RemoveOwnershipStatus` method that removes one or more `NetworkObject` instance's ownership flags. If updated when spawned, the ownership permission changes are synchronized with the other connected clients.
+- Added distributed authority mode specific `NetworkObject.HasOwnershipStatus` method that will return (true or false) whether one or more ownership flags is set.
+- Added distributed authority mode specific `NetworkObject.SetOwnershipLock` method that locks ownership of a `NetworkObject` to prevent ownership from changing until the current owner releases the lock.
+- Added distributed authority mode specific `NetworkObject.RequestOwnership` method that sends an ownership request to the current owner of a spawned `NetworkObject` instance.
+- Added distributed authority mode specific `NetworkObject.OnOwnershipRequested` callback handler that is invoked on the owner/authoritative side when a non-owner requests ownership. Depending upon the boolean returned value depends upon whether the request is approved or denied.
+- Added distributed authority mode specific `NetworkObject.OnOwnershipRequestResponse` callback handler that is invoked when a non-owner's request has been processed. This callback includes a `NetworkObjet.OwnershipRequestResponseStatus` response parameter that describes whether the request was approved or the reason why it was not approved.
+- Added distributed authority mode specific `NetworkObject.DeferDespawn` method that defers the despawning of `NetworkObject` instances on non-authoritative clients based on the tick offset parameter.
+- Added distributed authority mode specific `NetworkObject.OnDeferredDespawnComplete` callback handler that can be used to further control when deferring the despawning of a `NetworkObject` on non-authoritative instances.
+- Added `NetworkClient.SessionModeType` as one way to determine the current session mode of the network session a client is connected to.
+- Added distributed authority mode specific `NetworkClient.IsSessionOwner` property to determine if the current local client is the current session owner of a distributed authority session.
+- Added distributed authority mode specific client side spawning capabilities. When running in distributed authority mode, clients can instantiate and spawn `NetworkObject` instances (the local client is authomatically the owner of the spawned object).
+  - This is useful to better visually synchronize owner authoritative motion models and newly spawned `NetworkObject` instances (i.e. projectiles for example).
+- Added distributed authority mode specific client side player spawning capabilities. Clients will automatically spawn their associated player object locally.
+- Added distributed authority mode specific `NetworkConfig.AutoSpawnPlayerPrefabClientSide` property (default is true) to provide control over the automatic spawning of player prefabs on the local client side.
+- Added distributed authority mode specific `NetworkManager.OnFetchLocalPlayerPrefabToSpawn` callback that, when assigned, will allow the local client to provide the player prefab to be spawned for the local client.
+  - This is only invoked if the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` property is set to true.
+- Added distributed authority mode specific `NetworkBehaviour.HasAuthority` property that determines if the local client has authority over the associated `NetworkObject` instance (typical use case is within a `NetworkBehaviour` script much like that of `IsServer` or `IsClient`).
+- Added distributed authority mode specific `NetworkBehaviour.IsSessionOwner` property that determines if the local client is the session owner (typical use case would be to determine if the local client can has scene management authority within a `NetworkBehaviour` script).
+- Added support for distributed authority mode scene management where the currently assigned session owner can start scene events (i.e. scene loading and scene unloading).
+
 
 ### Fixed
 
@@ -17,7 +70,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
 
 ### Changed
-
+- Changed client side awareness of other clients is now the same as a server or host.
+- Changed `NetworkManager.ConnectedClients` can now be accessed by both server and clients.
+- Changed `NetworkManager.ConnectedClientsList` can now be accessed by both server and clients.
+- Changed `NetworkTransform` defaults to owner authoritative when connected to a distributed authority session.
+- Changed `NetworkVariable` defaults to owner write and everyone read permissions when connected to a distributed authority session (even if declared with server read or write permissions).
+- Changed `NetworkObject` no longer implements the `MonoBehaviour.Update` method in order to determine whether a `NetworkObject` instance has been migrated to a different scene. Instead, only `NetworkObjects` with the `SceneMigrationSynchronization` property set will be updated internally during the `NetworkUpdateStage.PostLateUpdate` by `NetworkManager`.  
+- Changed `NetworkManager` inspector view layout where properties are now organized by category.
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
 - Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
 
