@@ -3,7 +3,7 @@
     "displayName": "Netcode for GameObjects",
     "description": "Netcode for GameObjects is a high-level netcode SDK that provides networking capabilities to GameObject/MonoBehaviour workflows within Unity and sits on top of underlying transport layer.",
     "version": "2.0.0-exp.1",
-    "unity": "2022.3",
+    "unity": "6000.0",
     "dependencies": {
         "com.unity.nuget.mono-cecil": "1.11.4",
         "com.unity.transport": "2.2.1"
