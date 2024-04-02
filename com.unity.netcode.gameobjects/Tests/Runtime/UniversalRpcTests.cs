@@ -1,3 +1,4 @@
+#if !MULTIPLAYER_TOOLS && !NGO_MINIMALPROJECT
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -1947,3 +1948,4 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 }
+#endif
