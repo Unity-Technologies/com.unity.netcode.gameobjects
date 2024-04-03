@@ -542,10 +542,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
-            if (destroy)
-            {
-                AddRemoveNetworkManager(networkManager, false);
-            }
+            AddRemoveNetworkManager(networkManager, false);
             yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
         }
 
@@ -1043,6 +1040,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
+            if (m_EnableTimeTravel)
+            {
+                if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
+                {
+                    MockTransport.ClearQueues();
+                }
+                else
+                {
+                    MockTransport.Reset();
+                }
+            }
         }
 
         /// <summary>
@@ -1592,8 +1600,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="amountOfTimeInSeconds"></param>
         /// <param name="numFramesToSimulate"></param>
-        protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate)
+        protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate = -1)
         {
+            if (numFramesToSimulate < 0)
+            {
+                var frameRate = Application.targetFrameRate;
+                if (frameRate <= 0)
+                {
+                    frameRate = 60;
+                }
+                numFramesToSimulate = Math.Max((int)(amountOfTimeInSeconds / frameRate), 1);
+            }
             var interval = amountOfTimeInSeconds / numFramesToSimulate;
             for (var i = 0; i < numFramesToSimulate; ++i)
             {
@@ -1651,6 +1668,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             TimeTravel(timePassed, frames);
         }
 
+        private struct UpdateData
+        {
+            public MethodInfo Update;
+            public MethodInfo FixedUpdate;
+            public MethodInfo LateUpdate;
+        }
+
+        private static object[] s_EmptyObjectArray = { };
+        private static Dictionary<Type, UpdateData> s_UpdateFunctionCache = new Dictionary<Type, UpdateData>();
+
         /// <summary>
         /// Simulates one SDK frame. This can be used even without TimeTravel, though it's of somewhat less use
         /// without TimeTravel, as, without the mock transport, it will likely not provide enough time for any
@@ -1673,34 +1700,34 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     stage = NetworkUpdateStage.PostScriptLateUpdate;
                 }
                 NetworkUpdateLoop.RunNetworkUpdateStage(stage);
-                string methodName = string.Empty;
-                switch (stage)
-                {
-                    case NetworkUpdateStage.FixedUpdate:
-                        methodName = "FixedUpdate"; // mapping NetworkUpdateStage.FixedUpdate to MonoBehaviour.FixedUpdate
-                        break;
-                    case NetworkUpdateStage.Update:
-                        methodName = "Update"; // mapping NetworkUpdateStage.Update to MonoBehaviour.Update
-                        break;
-                    case NetworkUpdateStage.PreLateUpdate:
-                        methodName = "LateUpdate"; // mapping NetworkUpdateStage.PreLateUpdate to MonoBehaviour.LateUpdate
-                        break;
-                }
 
-                if (!string.IsNullOrEmpty(methodName))
+                if (stage == NetworkUpdateStage.Update || stage == NetworkUpdateStage.FixedUpdate || stage == NetworkUpdateStage.PreLateUpdate)
                 {
-#if UNITY_2023_1_OR_NEWER
-                    foreach (var obj in Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID))
-#else
-                    foreach (var obj in Object.FindObjectsOfType<NetworkObject>())
-#endif
+                    foreach (var behaviour in Object.FindObjectsByType<NetworkBehaviour>(FindObjectsSortMode.None))
                     {
-                        var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                        method?.Invoke(obj, new object[] { });
-                        foreach (var behaviour in obj.ChildNetworkBehaviours)
+                        var type = behaviour.GetType();
+                        if (!s_UpdateFunctionCache.TryGetValue(type, out var updateData))
                         {
-                            var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                            behaviourMethod?.Invoke(behaviour, new object[] { });
+                            updateData = new UpdateData
+                            {
+                                Update = type.GetMethod("Update", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance),
+                                FixedUpdate = type.GetMethod("FixedUpdate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance),
+                                LateUpdate = type.GetMethod("LateUpdate", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance),
+                            };
+                            s_UpdateFunctionCache[type] = updateData;
+                        }
+
+                        switch (stage)
+                        {
+                            case NetworkUpdateStage.FixedUpdate:
+                                updateData.FixedUpdate?.Invoke(behaviour, new object[] { });
+                                break;
+                            case NetworkUpdateStage.Update:
+                                updateData.Update?.Invoke(behaviour, new object[] { });
+                                break;
+                            case NetworkUpdateStage.PreLateUpdate:
+                                updateData.LateUpdate?.Invoke(behaviour, new object[] { });
+                                break;
                         }
                     }
                 }
