@@ -1888,7 +1888,7 @@ namespace Unity.Netcode
             OnLoadComplete?.Invoke(NetworkManager.LocalClientId, SceneNameFromHash(sceneEventData.SceneHash), sceneEventData.LoadSceneMode);
 
             //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
-            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && NetworkManager.IsHost)
+            if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && NetworkManager.IsClient)
             {
                 SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(NetworkManager.LocalClientId);
             }
