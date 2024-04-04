@@ -5,7 +5,9 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
-    /// The network time system maintains both a local and a server time. The local time is based on
+    /// The network time system maintains both a local and a server time. The local time is based on the server time
+    /// as last received from the server plus an offset based on the current RTT - in other words, it is a best-guess
+    /// effort at predicting what the server tick will be when a given network action is processed on the server.
     /// </summary>
     public class NetworkTimeSystem
     {

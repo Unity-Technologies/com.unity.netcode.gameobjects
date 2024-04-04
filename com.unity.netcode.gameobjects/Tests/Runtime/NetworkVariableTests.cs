@@ -380,9 +380,12 @@ namespace Unity.Netcode.RuntimeTests
 
     // Used just to create a NetworkVariable in the templated NetworkBehaviour type that isn't referenced anywhere else
     // Please do not reference this class anywhere else!
-    public class TestClass_ReferencedOnlyByTemplateNetworkBehavourType : TestClass
+    public class TestClass_ReferencedOnlyByTemplateNetworkBehavourType : TestClass, IEquatable<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
     {
-
+        public bool Equals(TestClass_ReferencedOnlyByTemplateNetworkBehavourType other)
+        {
+            return Equals((TestClass)other);
+        }
     }
 
     public class NetworkVariableTest : NetworkBehaviour

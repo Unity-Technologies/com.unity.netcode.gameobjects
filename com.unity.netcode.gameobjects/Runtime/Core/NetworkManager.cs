@@ -45,15 +45,25 @@ namespace Unity.Netcode
 
                         DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnNextFrame, 0);
 
+                        AnticipationSystem.SetupForUpdate();
                         MessageManager.ProcessIncomingMessageQueue();
                         MessageManager.CleanupDisconnectedClients();
+
+                        AnticipationSystem.ProcessReanticipation();
                     }
                     break;
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
+                        AnticipationSystem.Update();
                     }
                     break;
+                case NetworkUpdateStage.PostScriptLateUpdate:
+
+                    AnticipationSystem.Sync();
+                    AnticipationSystem.SetupForRender();
+                    break;
+
                 case NetworkUpdateStage.PostLateUpdate:
                     {
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
@@ -272,6 +282,25 @@ namespace Unity.Netcode
         {
             add => ConnectionManager.OnTransportFailure += value;
             remove => ConnectionManager.OnTransportFailure -= value;
+        }
+
+        public delegate void ReanticipateDelegate(double lastRoundTripTime);
+
+        /// <summary>
+        /// This callback is called after all individual OnReanticipate calls on AnticipatedNetworkVariable
+        /// and AnticipatedNetworkTransform values have been invoked. The first parameter is a hash set of
+        /// all the variables that have been changed on this frame (you can detect a particular variable by
+        /// checking if the set contains it), while the second parameter is a set of all anticipated network
+        /// transforms that have been changed. Both are passed as their base class type.
+        ///
+        /// The third parameter is the local time corresponding to the current authoritative server state
+        /// (i.e., to determine the amount of time that needs to be re-simulated, you will use
+        /// NetworkManager.LocalTime.Time - authorityTime).
+        /// </summary>
+        public event ReanticipateDelegate OnReanticipate
+        {
+            add => AnticipationSystem.OnReanticipate += value;
+            remove => AnticipationSystem.OnReanticipate -= value;
         }
 
         /// <summary>
@@ -517,6 +546,8 @@ namespace Unity.Netcode
         /// Accessor property for the <see cref="NetworkTickSystem"/> of the NetworkManager.
         /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
+
+        internal AnticipationSystem AnticipationSystem { get; private set; }
 
         /// <summary>
         /// Used for time mocking in tests
@@ -813,6 +844,7 @@ namespace Unity.Netcode
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostScriptLateUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             // ComponentFactory needs to set its defaults next
@@ -845,6 +877,7 @@ namespace Unity.Netcode
             // The remaining systems can then be initialized
             NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
+            AnticipationSystem = new AnticipationSystem(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);

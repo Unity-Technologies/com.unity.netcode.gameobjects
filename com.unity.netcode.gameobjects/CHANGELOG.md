@@ -9,6 +9,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+-Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
+- Added AnticipatedNetworkTransform, which adds support for client anticipation of NetworkTransforms (#2820)
+- Added NetworkVariableBase.ExceedsDirtinessThreshold to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in NetworkVariable<T> with the callback NetworkVariable<T>.CheckExceedsDirtinessThreshold) (#2820)
+- Added NetworkVariableUpdateTraits, which add additional throttling support: MinSecondsBetweenUpdates will prevent the NetworkVariable from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while MaxSecondsBetweenUpdates will force a dirty NetworkVariable to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2820)
+- Added virtual method NetworkVariableBase.OnInitialize() which can be used by NetworkVariable subclasses to add initialization code (#2820)
+- Added virtual method NetworkVariableBase.Update(), which is called once per frame to support behaviors such as interpolation between an anticipated value and an authoritative one. (#2820)
+- Added NetworkTime.TickWithPartial, which represents the current tick as a double that includes the fractional/partial tick value. (#2820)
+- Added NetworkTickSystem.AnticipationTick, which can be helpful with implementation of client anticipation. This value represents the tick the current local client was at at the beginning of the most recent network round trip, which enables it to correlate server update ticks with the client tick that may have triggered them. (#2820)
 
 ### Fixed
 
