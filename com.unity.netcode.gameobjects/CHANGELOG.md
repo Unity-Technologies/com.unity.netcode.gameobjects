@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [1.9.0] - 2024-04-04
 
 ### Added
 -Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
