@@ -17,9 +17,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added virtual method NetworkVariableBase.Update(), which is called once per frame to support behaviors such as interpolation between an anticipated value and an authoritative one. (#2820)
 - Added NetworkTime.TickWithPartial, which represents the current tick as a double that includes the fractional/partial tick value. (#2820)
 - Added NetworkTickSystem.AnticipationTick, which can be helpful with implementation of client anticipation. This value represents the tick the current local client was at at the beginning of the most recent network round trip, which enables it to correlate server update ticks with the client tick that may have triggered them. (#2820)
+- `NetworkVariable` now includes built-in support for `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, and `Dictionary` (#2813)
+- `NetworkVariable` now includes delta compression for collection values (`NativeList`, `NativeArray`, `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, `Dictionary`, and `FixedString` types) to save bandwidth by only sending the values that changed. (Note: For `NativeList`, `NativeArray`, and `List`, this algorithm works differently than that used in `NetworkList`. This algorithm will use less bandwidth for "set" and "add" operations, but `NetworkList` is more bandwidth-efficient if you are performing frequent "insert" operations.) (#2813)
+- `UserNetworkVariableSerialization` now has optional callbacks for `WriteDelta` and `ReadDelta`. If both are provided, they will be used for all serialization operations on NetworkVariables of that type except for the first one for each client. If either is missing, the existing `Write` and `Read` will always be used. (#2813)
+- Network variables wrapping `INetworkSerializable` types can perform delta serialization by setting `UserNetworkVariableSerialization<T>.WriteDelta` and `UserNetworkVariableSerialization<T>.ReadDelta` for those types. The built-in `INetworkSerializable` serializer will continue to be used for all other serialization operations, but if those callbacks are set, it will call into them on all but the initial serialization to perform delta serialization. (This could be useful if you have a large struct where most values do not change regularly and you want to send only the fields that did change.) (#2813)
 
 ### Fixed
 
+- Fixed issue where NetworkTransformEditor would throw and exception if you excluded the physics package. (#2871)
 - Fixed issue where `NetworkTransform` could not properly synchronize its base position when using half float precision. (#2845)
 - Fixed issue where the host was not invoking `OnClientDisconnectCallback` for its own local client when internally shutting down. (#2822)
 - Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
