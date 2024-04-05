@@ -32,7 +32,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed `NetworkObjectReference` and `NetworkBehaviourReference` can handle null references. (#2874)
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2874)
 - Changed `NetworkAnimator` no longer requires the `Animator` component to exist on the same `GameObject`. (#2872)
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
 - Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
