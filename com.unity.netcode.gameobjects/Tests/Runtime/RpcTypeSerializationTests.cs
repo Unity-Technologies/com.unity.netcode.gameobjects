@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Quaternion = UnityEngine.Quaternion;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -20,6 +18,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_UseHost = false;
         }
+
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => true;
+        protected override bool m_TearDownIsACoroutine => true;
 
         public class RpcTestNB : NetworkBehaviour
         {
@@ -866,7 +868,7 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<RpcTestNB>();
         }
 
-        public IEnumerator TestValueType<T>(T firstTest, T secondTest) where T : unmanaged
+        public void TestValueType<T>(T firstTest, T secondTest) where T : unmanaged
         {
             var methods = typeof(RpcTestNB).GetMethods();
             foreach (var method in methods)
@@ -894,7 +896,7 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsNotNull(receivedValue);
 
@@ -907,20 +909,20 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsNotNull(receivedValue);
 
                     Assert.AreEqual(receivedValue.GetType(), typeof(T));
                     value = (T)receivedValue;
                     Assert.IsTrue(NetworkVariableSerialization<T>.AreEqual(ref value, ref secondTest));
-                    yield break;
+                    return;
                 }
             }
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
 
-        public IEnumerator TestValueTypeArray<T>(T[] firstTest, T[] secondTest) where T : unmanaged
+        public void TestValueTypeArray<T>(T[] firstTest, T[] secondTest) where T : unmanaged
         {
             var methods = typeof(RpcTestNB).GetMethods();
             foreach (var method in methods)
@@ -948,7 +950,7 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsNotNull(receivedValue);
 
@@ -961,7 +963,7 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsNotNull(receivedValue);
 
@@ -971,16 +973,16 @@ namespace Unity.Netcode.RuntimeTests
 
                     method.Invoke(serverObject, new object[] { null });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsNull(receivedValue);
-                    yield break;
+                    return;
                 }
             }
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
 
-        public IEnumerator TestValueTypeNativeArray<T>(NativeArray<T> firstTest, NativeArray<T> secondTest) where T : unmanaged
+        public void TestValueTypeNativeArray<T>(NativeArray<T> firstTest, NativeArray<T> secondTest) where T : unmanaged
         {
             var methods = typeof(RpcTestNB).GetMethods();
             foreach (var method in methods)
@@ -1010,7 +1012,7 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsTrue(receivedValue.IsCreated);
 
@@ -1023,21 +1025,21 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsTrue(receivedValue.IsCreated);
 
                     Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref receivedValue, ref secondTest));
                     receivedValue.Dispose();
                     secondTest.Dispose();
-                    yield break;
+                    return;
                 }
             }
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public IEnumerator TestValueTypeNativeList<T>(NativeList<T> firstTest, NativeList<T> secondTest) where T : unmanaged
+        public void TestValueTypeNativeList<T>(NativeList<T> firstTest, NativeList<T> secondTest) where T : unmanaged
         {
             var methods = typeof(RpcTestNB).GetMethods();
             foreach (var method in methods)
@@ -1071,7 +1073,7 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending first RPC with {firstTest}");
                     method.Invoke(serverObject, new object[] { firstTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsTrue(receivedValue.IsCreated);
 
@@ -1084,22 +1086,22 @@ namespace Unity.Netcode.RuntimeTests
                     Debug.Log($"Sending second RPC with {secondTest}");
                     method.Invoke(serverObject, new object[] { secondTest });
 
-                    yield return WaitForMessageReceived<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
+                    WaitForMessageReceivedWithTimeTravel<ClientRpcMessage>(m_ClientNetworkManagers.ToList());
 
                     Assert.IsTrue(receivedValue.IsCreated);
 
                     Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref receivedValue, ref secondTest));
                     receivedValue.Dispose();
                     secondTest.Dispose();
-                    yield break;
+                    return;
                 }
             }
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
 #endif
 
-        [UnityTest]
-        public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
+        [Test]
+        public void WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
@@ -1111,156 +1113,156 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                yield return TestValueType<byte>(byte.MinValue + 5, byte.MaxValue);
+                TestValueType<byte>(byte.MinValue + 5, byte.MaxValue);
             }
             else if (testType == typeof(sbyte))
             {
-                yield return TestValueType<sbyte>(sbyte.MinValue + 5, sbyte.MaxValue);
+                TestValueType<sbyte>(sbyte.MinValue + 5, sbyte.MaxValue);
             }
             else if (testType == typeof(short))
             {
-                yield return TestValueType<short>(short.MinValue + 5, short.MaxValue);
+                TestValueType<short>(short.MinValue + 5, short.MaxValue);
             }
             else if (testType == typeof(ushort))
             {
-                yield return TestValueType<ushort>(ushort.MinValue + 5, ushort.MaxValue);
+                TestValueType<ushort>(ushort.MinValue + 5, ushort.MaxValue);
             }
             else if (testType == typeof(int))
             {
-                yield return TestValueType(int.MinValue + 5, int.MaxValue);
+                TestValueType(int.MinValue + 5, int.MaxValue);
             }
             else if (testType == typeof(uint))
             {
-                yield return TestValueType(uint.MinValue + 5, uint.MaxValue);
+                TestValueType(uint.MinValue + 5, uint.MaxValue);
             }
             else if (testType == typeof(long))
             {
-                yield return TestValueType(long.MinValue + 5, long.MaxValue);
+                TestValueType(long.MinValue + 5, long.MaxValue);
             }
             else if (testType == typeof(ulong))
             {
-                yield return TestValueType(ulong.MinValue + 5, ulong.MaxValue);
+                TestValueType(ulong.MinValue + 5, ulong.MaxValue);
             }
             else if (testType == typeof(bool))
             {
-                yield return TestValueType(true, false);
+                TestValueType(true, false);
             }
             else if (testType == typeof(char))
             {
-                yield return TestValueType('z', ' ');
+                TestValueType('z', ' ');
             }
             else if (testType == typeof(float))
             {
-                yield return TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
+                TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
             }
             else if (testType == typeof(double))
             {
-                yield return TestValueType(double.MinValue + 5.12345678, double.MaxValue);
+                TestValueType(double.MinValue + 5.12345678, double.MaxValue);
             }
             else if (testType == typeof(ByteEnum))
             {
-                yield return TestValueType(ByteEnum.B, ByteEnum.C);
+                TestValueType(ByteEnum.B, ByteEnum.C);
             }
             else if (testType == typeof(SByteEnum))
             {
-                yield return TestValueType(SByteEnum.B, SByteEnum.C);
+                TestValueType(SByteEnum.B, SByteEnum.C);
             }
             else if (testType == typeof(ShortEnum))
             {
-                yield return TestValueType(ShortEnum.B, ShortEnum.C);
+                TestValueType(ShortEnum.B, ShortEnum.C);
             }
             else if (testType == typeof(UShortEnum))
             {
-                yield return TestValueType(UShortEnum.B, UShortEnum.C);
+                TestValueType(UShortEnum.B, UShortEnum.C);
             }
             else if (testType == typeof(IntEnum))
             {
-                yield return TestValueType(IntEnum.B, IntEnum.C);
+                TestValueType(IntEnum.B, IntEnum.C);
             }
             else if (testType == typeof(UIntEnum))
             {
-                yield return TestValueType(UIntEnum.B, UIntEnum.C);
+                TestValueType(UIntEnum.B, UIntEnum.C);
             }
             else if (testType == typeof(LongEnum))
             {
-                yield return TestValueType(LongEnum.B, LongEnum.C);
+                TestValueType(LongEnum.B, LongEnum.C);
             }
             else if (testType == typeof(ULongEnum))
             {
-                yield return TestValueType(ULongEnum.B, ULongEnum.C);
+                TestValueType(ULongEnum.B, ULongEnum.C);
             }
             else if (testType == typeof(Vector2))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Vector2(5, 10),
                     new Vector2(15, 20));
             }
             else if (testType == typeof(Vector3))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Vector3(5, 10, 15),
                     new Vector3(20, 25, 30));
             }
             else if (testType == typeof(Vector2Int))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Vector2Int(5, 10),
                     new Vector2Int(15, 20));
             }
             else if (testType == typeof(Vector3Int))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Vector3Int(5, 10, 15),
                     new Vector3Int(20, 25, 30));
             }
             else if (testType == typeof(Vector4))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Vector4(5, 10, 15, 20),
                     new Vector4(25, 30, 35, 40));
             }
             else if (testType == typeof(Quaternion))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Quaternion(5, 10, 15, 20),
                     new Quaternion(25, 30, 35, 40));
             }
             else if (testType == typeof(Color))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Color(1, 0, 0),
                     new Color(0, 1, 1));
             }
             else if (testType == typeof(Color32))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Color32(255, 0, 0, 128),
                     new Color32(0, 255, 255, 255));
             }
             else if (testType == typeof(Ray))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
                     new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)));
             }
             else if (testType == typeof(Ray2D))
             {
-                yield return TestValueType(
+                TestValueType(
                     new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
                     new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                yield return TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
+                TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                yield return TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
+                TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
             }
         }
 
-        [UnityTest]
-        public IEnumerator WhenSendingAnArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
+        [Test]
+        public void WhenSendingAnArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
@@ -1272,175 +1274,175 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new byte[] { byte.MinValue + 5, byte.MaxValue },
                     new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 });
             }
             else if (testType == typeof(sbyte))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue },
                     new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
             }
             else if (testType == typeof(short))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new short[] { short.MinValue + 5, short.MaxValue },
                     new short[] { 0, short.MinValue + 10, short.MaxValue - 10 });
             }
             else if (testType == typeof(ushort))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new ushort[] { ushort.MinValue + 5, ushort.MaxValue },
                     new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
             }
             else if (testType == typeof(int))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new int[] { int.MinValue + 5, int.MaxValue },
                     new int[] { 0, int.MinValue + 10, int.MaxValue - 10 });
             }
             else if (testType == typeof(uint))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new uint[] { uint.MinValue + 5, uint.MaxValue },
                     new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 });
             }
             else if (testType == typeof(long))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new long[] { long.MinValue + 5, long.MaxValue },
                     new long[] { 0, long.MinValue + 10, long.MaxValue - 10 });
             }
             else if (testType == typeof(ulong))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new ulong[] { ulong.MinValue + 5, ulong.MaxValue },
                     new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
             }
             else if (testType == typeof(bool))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new bool[] { true, false, true },
                     new bool[] { false, true, false, true, false });
             }
             else if (testType == typeof(char))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new char[] { 'z', ' ', '?' },
                     new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
             }
             else if (testType == typeof(float))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new float[] { float.MinValue + 5.12345678f, float.MaxValue },
                     new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
             }
             else if (testType == typeof(double))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new double[] { double.MinValue + 5.12345678, double.MaxValue },
                     new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
             }
             else if (testType == typeof(ByteEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A },
                     new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
             }
             else if (testType == typeof(SByteEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A },
                     new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
             }
             else if (testType == typeof(ShortEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A },
                     new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
             }
             else if (testType == typeof(UShortEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A },
                     new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
             }
             else if (testType == typeof(IntEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A },
                     new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
             }
             else if (testType == typeof(UIntEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A },
                     new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
             }
             else if (testType == typeof(LongEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A },
                     new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
             }
             else if (testType == typeof(ULongEnum))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A },
                     new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
             }
             else if (testType == typeof(Vector2))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) },
                     new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
             }
             else if (testType == typeof(Vector3))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
                     new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
             }
             else if (testType == typeof(Vector2Int))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) },
                     new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
             }
             else if (testType == typeof(Vector3Int))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
                     new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
             }
             else if (testType == typeof(Vector4))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
                     new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
             }
             else if (testType == typeof(Quaternion))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
                     new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
             }
             else if (testType == typeof(Color))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
                     new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
             }
             else if (testType == typeof(Color32))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
                     new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
             }
             else if (testType == typeof(Ray))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Ray[]
                     {
                         new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
@@ -1455,7 +1457,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Ray2D))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new Ray2D[]
                     {
                         new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
@@ -1470,7 +1472,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new NetworkVariableTestStruct[]
                     {
                         NetworkVariableTestStruct.GetTestStruct(),
@@ -1485,7 +1487,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                yield return TestValueTypeArray(
+                TestValueTypeArray(
                     new FixedString32Bytes[]
                     {
                         new FixedString32Bytes("foobar"),
@@ -1500,8 +1502,8 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        [UnityTest]
-        public IEnumerator WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
+        [Test]
+        public void WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
@@ -1513,175 +1515,175 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<byte>(new byte[] { byte.MinValue + 5, byte.MaxValue }, Allocator.Persistent),
                     new NativeArray<byte>(new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(sbyte))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<sbyte>(new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue }, Allocator.Persistent),
                     new NativeArray<sbyte>(new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(short))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<short>(new short[] { short.MinValue + 5, short.MaxValue }, Allocator.Persistent),
                     new NativeArray<short>(new short[] { 0, short.MinValue + 10, short.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(ushort))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<ushort>(new ushort[] { ushort.MinValue + 5, ushort.MaxValue }, Allocator.Persistent),
                     new NativeArray<ushort>(new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(int))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<int>(new int[] { int.MinValue + 5, int.MaxValue }, Allocator.Persistent),
                     new NativeArray<int>(new int[] { 0, int.MinValue + 10, int.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(uint))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<uint>(new uint[] { uint.MinValue + 5, uint.MaxValue }, Allocator.Persistent),
                     new NativeArray<uint>(new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(long))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<long>(new long[] { long.MinValue + 5, long.MaxValue }, Allocator.Persistent),
                     new NativeArray<long>(new long[] { 0, long.MinValue + 10, long.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(ulong))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<ulong>(new ulong[] { ulong.MinValue + 5, ulong.MaxValue }, Allocator.Persistent),
                     new NativeArray<ulong>(new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 }, Allocator.Persistent));
             }
             else if (testType == typeof(bool))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<bool>(new bool[] { true, false, true }, Allocator.Persistent),
                     new NativeArray<bool>(new bool[] { false, true, false, true, false }, Allocator.Persistent));
             }
             else if (testType == typeof(char))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<char>(new char[] { 'z', ' ', '?' }, Allocator.Persistent),
                     new NativeArray<char>(new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' }, Allocator.Persistent));
             }
             else if (testType == typeof(float))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<float>(new float[] { float.MinValue + 5.12345678f, float.MaxValue }, Allocator.Persistent),
                     new NativeArray<float>(new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f }, Allocator.Persistent));
             }
             else if (testType == typeof(double))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<double>(new double[] { double.MinValue + 5.12345678, double.MaxValue }, Allocator.Persistent),
                     new NativeArray<double>(new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 }, Allocator.Persistent));
             }
             else if (testType == typeof(ByteEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A }, Allocator.Persistent),
                     new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(SByteEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A }, Allocator.Persistent),
                     new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(ShortEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A }, Allocator.Persistent),
                     new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(UShortEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A }, Allocator.Persistent),
                     new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(IntEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<IntEnum>(new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A }, Allocator.Persistent),
                     new NativeArray<IntEnum>(new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(UIntEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A }, Allocator.Persistent),
                     new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(LongEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<LongEnum>(new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A }, Allocator.Persistent),
                     new NativeArray<LongEnum>(new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(ULongEnum))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A }, Allocator.Persistent),
                     new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C }, Allocator.Persistent));
             }
             else if (testType == typeof(Vector2))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector2>(new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) }, Allocator.Persistent),
                     new NativeArray<Vector2>(new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) }, Allocator.Persistent));
             }
             else if (testType == typeof(Vector3))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector3>(new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) }, Allocator.Persistent),
                     new NativeArray<Vector3>(new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) }, Allocator.Persistent));
             }
             else if (testType == typeof(Vector2Int))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) }, Allocator.Persistent),
                     new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) }, Allocator.Persistent));
             }
             else if (testType == typeof(Vector3Int))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) }, Allocator.Persistent),
                     new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) }, Allocator.Persistent));
             }
             else if (testType == typeof(Vector4))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector4>(new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) }, Allocator.Persistent),
                     new NativeArray<Vector4>(new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) }, Allocator.Persistent));
             }
             else if (testType == typeof(Quaternion))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) }, Allocator.Persistent),
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) }, Allocator.Persistent));
             }
             else if (testType == typeof(Color))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Color>(new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) }, Allocator.Persistent),
                     new NativeArray<Color>(new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) }, Allocator.Persistent));
             }
             else if (testType == typeof(Color32))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Color32>(new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) }, Allocator.Persistent),
                     new NativeArray<Color32>(new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) }, Allocator.Persistent));
             }
             else if (testType == typeof(Ray))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Ray>(new Ray[]
                     {
                         new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
@@ -1696,7 +1698,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Ray2D))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Ray2D>(new Ray2D[]
                     {
                         new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
@@ -1711,7 +1713,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<NetworkVariableTestStruct>(new NetworkVariableTestStruct[]
                     {
                         NetworkVariableTestStruct.GetTestStruct(),
@@ -1726,7 +1728,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
                     {
                         new FixedString32Bytes("foobar"),
@@ -1742,8 +1744,8 @@ namespace Unity.Netcode.RuntimeTests
         }
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        [UnityTest]
-        public IEnumerator WhenSendingANativeListOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
+        [Test]
+        public void WhenSendingANativeListOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
@@ -1755,175 +1757,175 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<byte>(Allocator.Persistent) { byte.MinValue + 5, byte.MaxValue },
                     new NativeList<byte>(Allocator.Persistent) { 0, byte.MinValue + 10, byte.MaxValue - 10 });
             }
             else if (testType == typeof(sbyte))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<sbyte>(Allocator.Persistent) { sbyte.MinValue + 5, sbyte.MaxValue },
                     new NativeList<sbyte>(Allocator.Persistent) { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
             }
             else if (testType == typeof(short))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<short>(Allocator.Persistent) { short.MinValue + 5, short.MaxValue },
                     new NativeList<short>(Allocator.Persistent) { 0, short.MinValue + 10, short.MaxValue - 10 });
             }
             else if (testType == typeof(ushort))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<ushort>(Allocator.Persistent) { ushort.MinValue + 5, ushort.MaxValue },
                     new NativeList<ushort>(Allocator.Persistent) { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
             }
             else if (testType == typeof(int))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<int>(Allocator.Persistent) { int.MinValue + 5, int.MaxValue },
                     new NativeList<int>(Allocator.Persistent) { 0, int.MinValue + 10, int.MaxValue - 10 });
             }
             else if (testType == typeof(uint))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<uint>(Allocator.Persistent) { uint.MinValue + 5, uint.MaxValue },
                     new NativeList<uint>(Allocator.Persistent) { 0, uint.MinValue + 10, uint.MaxValue - 10 });
             }
             else if (testType == typeof(long))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<long>(Allocator.Persistent) { long.MinValue + 5, long.MaxValue },
                     new NativeList<long>(Allocator.Persistent) { 0, long.MinValue + 10, long.MaxValue - 10 });
             }
             else if (testType == typeof(ulong))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<ulong>(Allocator.Persistent) { ulong.MinValue + 5, ulong.MaxValue },
                     new NativeList<ulong>(Allocator.Persistent) { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
             }
             else if (testType == typeof(bool))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<bool>(Allocator.Persistent) { true, false, true },
                     new NativeList<bool>(Allocator.Persistent) { false, true, false, true, false });
             }
             else if (testType == typeof(char))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<char>(Allocator.Persistent) { 'z', ' ', '?' },
                     new NativeList<char>(Allocator.Persistent) { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
             }
             else if (testType == typeof(float))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<float>(Allocator.Persistent) { float.MinValue + 5.12345678f, float.MaxValue },
                     new NativeList<float>(Allocator.Persistent) { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
             }
             else if (testType == typeof(double))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<double>(Allocator.Persistent) { double.MinValue + 5.12345678, double.MaxValue },
                     new NativeList<double>(Allocator.Persistent) { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
             }
             else if (testType == typeof(ByteEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<ByteEnum>(Allocator.Persistent) { ByteEnum.C, ByteEnum.B, ByteEnum.A },
                     new NativeList<ByteEnum>(Allocator.Persistent) { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
             }
             else if (testType == typeof(SByteEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<SByteEnum>(Allocator.Persistent) { SByteEnum.C, SByteEnum.B, SByteEnum.A },
                     new NativeList<SByteEnum>(Allocator.Persistent) { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
             }
             else if (testType == typeof(ShortEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<ShortEnum>(Allocator.Persistent) { ShortEnum.C, ShortEnum.B, ShortEnum.A },
                     new NativeList<ShortEnum>(Allocator.Persistent) { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
             }
             else if (testType == typeof(UShortEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<UShortEnum>(Allocator.Persistent) { UShortEnum.C, UShortEnum.B, UShortEnum.A },
                     new NativeList<UShortEnum>(Allocator.Persistent) { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
             }
             else if (testType == typeof(IntEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<IntEnum>(Allocator.Persistent) { IntEnum.C, IntEnum.B, IntEnum.A },
                     new NativeList<IntEnum>(Allocator.Persistent) { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
             }
             else if (testType == typeof(UIntEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<UIntEnum>(Allocator.Persistent) { UIntEnum.C, UIntEnum.B, UIntEnum.A },
                     new NativeList<UIntEnum>(Allocator.Persistent) { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
             }
             else if (testType == typeof(LongEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<LongEnum>(Allocator.Persistent) { LongEnum.C, LongEnum.B, LongEnum.A },
                     new NativeList<LongEnum>(Allocator.Persistent) { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
             }
             else if (testType == typeof(ULongEnum))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<ULongEnum>(Allocator.Persistent) { ULongEnum.C, ULongEnum.B, ULongEnum.A },
                     new NativeList<ULongEnum>(Allocator.Persistent) { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
             }
             else if (testType == typeof(Vector2))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Vector2>(Allocator.Persistent) { new Vector2(5, 10), new Vector2(15, 20) },
                     new NativeList<Vector2>(Allocator.Persistent) { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
             }
             else if (testType == typeof(Vector3))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Vector3>(Allocator.Persistent) { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
                     new NativeList<Vector3>(Allocator.Persistent) { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
             }
             else if (testType == typeof(Vector2Int))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Vector2Int>(Allocator.Persistent) { new Vector2Int(5, 10), new Vector2Int(15, 20) },
                     new NativeList<Vector2Int>(Allocator.Persistent) { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
             }
             else if (testType == typeof(Vector3Int))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Vector3Int>(Allocator.Persistent) { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
                     new NativeList<Vector3Int>(Allocator.Persistent) { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
             }
             else if (testType == typeof(Vector4))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Vector4>(Allocator.Persistent) { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
                     new NativeList<Vector4>(Allocator.Persistent) { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
             }
             else if (testType == typeof(Quaternion))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Quaternion>(Allocator.Persistent) { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
                     new NativeList<Quaternion>(Allocator.Persistent) { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
             }
             else if (testType == typeof(Color))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Color>(Allocator.Persistent) { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
                     new NativeList<Color>(Allocator.Persistent) { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
             }
             else if (testType == typeof(Color32))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Color32>(Allocator.Persistent) { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
                     new NativeList<Color32>(Allocator.Persistent) { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
             }
             else if (testType == typeof(Ray))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Ray>(Allocator.Persistent)
                     {
                         new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
@@ -1938,7 +1940,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Ray2D))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Ray2D>(Allocator.Persistent)
                     {
                         new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
@@ -1953,7 +1955,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<NetworkVariableTestStruct>(Allocator.Persistent)
                     {
                         NetworkVariableTestStruct.GetTestStruct(),
@@ -1968,7 +1970,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<FixedString32Bytes>(Allocator.Persistent)
                     {
                         new FixedString32Bytes("foobar"),

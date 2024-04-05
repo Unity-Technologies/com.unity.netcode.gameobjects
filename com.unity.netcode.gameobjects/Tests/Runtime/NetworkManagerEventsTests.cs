@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -35,7 +36,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
@@ -92,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerManager.OnServerStopped += onServerStopped;
             m_ServerManager.OnClientStopped += onClientStopped;
             m_ServerManager.Shutdown();
-            UnityEngine.Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(gameObject);
 
             yield return WaitUntilManagerShutsdown();
 
@@ -228,6 +229,18 @@ namespace Unity.Netcode.RuntimeTests
         public virtual IEnumerator Teardown()
         {
             NetcodeIntegrationTestHelpers.Destroy();
+            if (m_ServerManager != null)
+            {
+                m_ServerManager.ShutdownInternal();
+                Object.DestroyImmediate(m_ServerManager);
+                m_ServerManager = null;
+            }
+            if (m_ClientManager != null)
+            {
+                m_ClientManager.ShutdownInternal();
+                Object.DestroyImmediate(m_ClientManager);
+                m_ClientManager = null;
+            }
             yield return null;
         }
     }
