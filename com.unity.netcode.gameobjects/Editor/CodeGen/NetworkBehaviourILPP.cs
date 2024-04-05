@@ -408,6 +408,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
+                        m_Diagnostics.AddError($"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>");
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 
@@ -911,7 +912,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                 }
             }
-            m_UniversalRpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsTypeDef);
+            m_UniversalRpcParams_TypeRef = moduleDefinition.ImportReference(universalRpcParamsTypeDef);
             foreach (var fieldDef in rpcParamsTypeDef.Fields)
             {
                 switch (fieldDef.Name)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -37,7 +38,10 @@ namespace Unity.Netcode.RuntimeTests
         protected override int NumberOfClients => 1;
 
         private OwnerPersistence m_OwnerPersistence;
+        private ClientDisconnectType m_ClientDisconnectType;
         private bool m_ClientDisconnected;
+        private Dictionary<NetworkManager, ConnectionEventData> m_DisconnectedEvent = new Dictionary<NetworkManager, ConnectionEventData>();
+        private ulong m_DisconnectEventClientId;
         private ulong m_TransportClientId;
         private ulong m_ClientId;
 
@@ -89,6 +93,16 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientDisconnected = true;
         }
 
+        private void OnConnectionEvent(NetworkManager networkManager, ConnectionEventData connectionEventData)
+        {
+            if (connectionEventData.EventType != ConnectionEvent.ClientDisconnected)
+            {
+                return;
+            }
+
+            m_DisconnectedEvent.Add(networkManager, connectionEventData);
+        }
+
         /// <summary>
         /// Conditional check to assure the transport to client (and vice versa) mappings are cleaned up
         /// </summary>
@@ -126,25 +140,49 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ClientPlayerDisconnected([Values] ClientDisconnectType clientDisconnectType)
         {
             m_ClientId = m_ClientNetworkManagers[0].LocalClientId;
+            m_ClientDisconnectType = clientDisconnectType;
 
             var serverSideClientPlayer = m_ServerNetworkManager.ConnectionManager.ConnectedClients[m_ClientId].PlayerObject;
 
             m_TransportClientId = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
 
+            var clientManager = m_ClientNetworkManagers[0];
+
             if (clientDisconnectType == ClientDisconnectType.ServerDisconnectsClient)
             {
                 m_ClientNetworkManagers[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
+                m_ClientNetworkManagers[0].OnConnectionEvent += OnConnectionEvent;
+                m_ServerNetworkManager.OnConnectionEvent += OnConnectionEvent;
                 m_ServerNetworkManager.DisconnectClient(m_ClientId);
             }
             else
             {
                 m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                m_ServerNetworkManager.OnConnectionEvent += OnConnectionEvent;
+                m_ClientNetworkManagers[0].OnConnectionEvent += OnConnectionEvent;
 
                 yield return StopOneClient(m_ClientNetworkManagers[0]);
             }
 
             yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
             AssertOnTimeout("Timed out waiting for client to disconnect!");
+
+            if (clientDisconnectType == ClientDisconnectType.ServerDisconnectsClient)
+            {
+                Assert.IsTrue(m_DisconnectedEvent.ContainsKey(m_ServerNetworkManager), $"Could not find the server {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent[m_ServerNetworkManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the server {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent.ContainsKey(clientManager), $"Could not find the client {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent[clientManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the client {nameof(NetworkManager)} disconnect event entry!");
+                // Unregister for this event otherwise it will be invoked during teardown
+                m_ServerNetworkManager.OnConnectionEvent -= OnConnectionEvent;
+            }
+            else
+            {
+                Assert.IsTrue(m_DisconnectedEvent.ContainsKey(m_ServerNetworkManager), $"Could not find the server {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent[m_ServerNetworkManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the server {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent.ContainsKey(clientManager), $"Could not find the client {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent[clientManager].ClientId == m_ClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the client {nameof(NetworkManager)} disconnect event entry!");
+            }
 
             if (m_OwnerPersistence == OwnerPersistence.DestroyWithOwner)
             {
@@ -161,6 +199,21 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(TransportIdCleanedUp);
             AssertOnTimeout("Timed out waiting for transport and client id mappings to be cleaned up!");
+
+            // Validate the host-client generates a OnClientDisconnected event when it shutsdown.
+            // Only test when the test run is the client disconnecting from the server (otherwise the server will be shutdown already)
+            if (clientDisconnectType == ClientDisconnectType.ClientDisconnectsFromServer)
+            {
+                m_DisconnectedEvent.Clear();
+                m_ClientDisconnected = false;
+                m_ServerNetworkManager.Shutdown();
+
+                yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
+                AssertOnTimeout("Timed out waiting for host-client to generate disconnect message!");
+
+                Assert.IsTrue(m_DisconnectedEvent.ContainsKey(m_ServerNetworkManager), $"Could not find the server {nameof(NetworkManager)} disconnect event entry!");
+                Assert.IsTrue(m_DisconnectedEvent[m_ServerNetworkManager].ClientId == NetworkManager.ServerClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the server {nameof(NetworkManager)} disconnect event entry!");
+            }
         }
     }
 }

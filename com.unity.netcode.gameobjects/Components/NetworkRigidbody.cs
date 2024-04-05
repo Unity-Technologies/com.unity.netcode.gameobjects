@@ -29,15 +29,25 @@ namespace Unity.Netcode.Components
             m_NetworkTransform = GetComponent<NetworkTransform>();
             m_IsServerAuthoritative = m_NetworkTransform.IsServerAuthoritative();
 
+            SetupRigidBody();
+        }
+
+        /// <summary>
+        /// If the current <see cref="NetworkTransform"/> has authority,
+        /// then use the <see cref="RigidBody"/> interpolation strategy,
+        /// if the <see cref="NetworkTransform"/> is handling interpolation,
+        /// set interpolation to none on the <see cref="RigidBody"/>
+        /// <br/>
+        /// Turn off physics for the rigid body until spawned, otherwise
+        /// clients can run fixed update before the first
+        /// full <see cref="NetworkTransform"/> update
+        /// </summary>
+        private void SetupRigidBody()
+        {
             m_Rigidbody = GetComponent<Rigidbody>();
             m_OriginalInterpolation = m_Rigidbody.interpolation;
 
-            // Set interpolation to none if NetworkTransform is handling interpolation, otherwise it sets it to the original value
-            m_Rigidbody.interpolation = m_NetworkTransform.Interpolate ? RigidbodyInterpolation.None : m_OriginalInterpolation;
-
-            // Turn off physics for the rigid body until spawned, otherwise
-            // clients can run fixed update before the first full
-            // NetworkTransform update
+            m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : (m_NetworkTransform.Interpolate ? RigidbodyInterpolation.None : m_OriginalInterpolation);
             m_Rigidbody.isKinematic = true;
         }
 
