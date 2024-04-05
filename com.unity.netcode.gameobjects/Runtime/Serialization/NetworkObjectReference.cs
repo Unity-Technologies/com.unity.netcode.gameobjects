@@ -10,7 +10,7 @@ namespace Unity.Netcode
     public struct NetworkObjectReference : INetworkSerializable, IEquatable<NetworkObjectReference>
     {
         private ulong m_NetworkObjectId;
-        private static ulong nullId = ulong.MaxValue;
+        private static ulong s_NullId = ulong.MaxValue;
 
         /// <summary>
         /// The <see cref="NetworkObject.NetworkObjectId"/> of the referenced <see cref="NetworkObject"/>.
@@ -30,7 +30,7 @@ namespace Unity.Netcode
         {
             if (networkObject == null)
             {
-                m_NetworkObjectId = nullId;
+                m_NetworkObjectId = s_NullId;
                 return;
             }
 
@@ -51,12 +51,12 @@ namespace Unity.Netcode
         {
             if (gameObject == null)
             {
-                m_NetworkObjectId = nullId;
+                m_NetworkObjectId = s_NullId;
                 return;
             }
 
             var networkObject = gameObject.GetComponent<NetworkObject>();
-            if (networkObject == null)
+            if (!networkObject)
             {
                 throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
             }
@@ -89,8 +89,10 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject Resolve(NetworkObjectReference networkObjectRef, NetworkManager networkManager = null)
         {
-            if (networkObjectRef.m_NetworkObjectId == nullId)
+            if (networkObjectRef.m_NetworkObjectId == s_NullId)
+            {
                 return null;
+            }
             networkManager = networkManager ?? NetworkManager.Singleton;
             networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectRef.m_NetworkObjectId, out NetworkObject networkObject);
 
