@@ -11,6 +11,7 @@ namespace Unity.Netcode
     {
         private NetworkObjectReference m_NetworkObjectReference;
         private ushort m_NetworkBehaviourId;
+        private static ushort s_NullId = ushort.MaxValue;
 
         /// <summary>
         /// Creates a new instance of the <see cref="NetworkBehaviourReference{T}"/> struct.
@@ -21,7 +22,9 @@ namespace Unity.Netcode
         {
             if (networkBehaviour == null)
             {
-                throw new ArgumentNullException(nameof(networkBehaviour));
+                m_NetworkObjectReference = new NetworkObjectReference((NetworkObject)null);
+                m_NetworkBehaviourId = s_NullId;
+                return;
             }
             if (networkBehaviour.NetworkObject == null)
             {
@@ -60,6 +63,10 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkBehaviour GetInternal(NetworkBehaviourReference networkBehaviourRef, NetworkManager networkManager = null)
         {
+            if (networkBehaviourRef.m_NetworkBehaviourId == s_NullId)
+            {
+                return null;
+            }
             if (networkBehaviourRef.m_NetworkObjectReference.TryGet(out NetworkObject networkObject, networkManager))
             {
                 return networkObject.GetNetworkBehaviourAtOrderIndex(networkBehaviourRef.m_NetworkBehaviourId);
