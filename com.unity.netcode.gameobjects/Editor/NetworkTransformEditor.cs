@@ -156,9 +156,10 @@ namespace Unity.Netcode.Editor
             }
             EditorGUILayout.PropertyField(m_UseHalfFloatPrecision);
 
-#if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
             var go = ((NetworkTransform)target).gameObject;
+
+#if COM_UNITY_MODULES_PHYSICS
             if (go.TryGetComponent<Rigidbody>(out _) && go.TryGetComponent<NetworkRigidbody>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +

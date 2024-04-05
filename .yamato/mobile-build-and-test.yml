@@ -12,7 +12,7 @@ build_{{ project.name }}_tests_{{ editor }}_android:
       flavor: b1.xlarge
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - curl -s https://artifactory-slo.bf.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - python .yamato/disable-burst-if-requested.py --project-path testproject --platform Android
     - unity-downloader-cli -u {{ editor }} -c editor -c Android -w --fast
     - |
@@ -51,7 +51,7 @@ build_{{ project.name }}_tests_{{ editor }}_iOS:
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - unity-downloader-cli -u {{ editor }} -c editor -c iOS -w --fast
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    - curl -s https://artifactory-slo.bf.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
     - export UTR_VERSION=0.12.0
     - ./utr --artifacts_path=artifacts --timeout=1800 --testproject={{ project.name }} --editor-location=.Editor --suite=playmode --platform=iOS --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
@@ -88,7 +88,7 @@ run_{{ project.name }}_tests_{{ editor }}_iOS:
     - .yamato/mobile-build-and-test.yml#build_{{ project.name }}_tests_{{ editor }}_iOS
   commands:
     # Download standalone UnityTestRunner
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    - curl -s https://artifactory-slo.bf.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     # Give UTR execution permissions
     - chmod +x ./utr
     # Run the test build on the device
@@ -127,7 +127,7 @@ run_{{ project.name }}_tests_{{ editor }}_android:
   dependencies:
     - .yamato/mobile-build-and-test.yml#build_{{ project.name }}_tests_{{ editor }}_android
   commands:
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - curl -s https://artifactory-slo.bf.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - |
        set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
