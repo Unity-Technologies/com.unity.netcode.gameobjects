@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+#if MULTIPLAYER_SDK_INSTALLED
 using System.Linq;
+#endif
 using UnityEditor;
 using UnityEngine;
 
