@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Unity.Netcode
 {
 
-    public enum SessionModeTypes
+    public enum NetworkTopologyTypes
     {
         ClientServer,
         DistributedAuthority
@@ -41,7 +41,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool IsApproved { get; set; }
 
-        public SessionModeTypes SessionModeType { get; internal set; }
+        public NetworkTopologyTypes NetworkTopologyType { get; internal set; }
 
         public bool DAHost { get; internal set; }
 
@@ -77,9 +77,9 @@ namespace Unity.Netcode
             if (networkManager != null)
             {
                 SpawnManager = networkManager.SpawnManager;
-                SessionModeType = networkManager.NetworkConfig.SessionMode;
+                NetworkTopologyType = networkManager.NetworkConfig.NetworkTopology;
 
-                if (SessionModeType == SessionModeTypes.DistributedAuthority)
+                if (NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority)
                 {
                     DAHost = IsClient && IsServer;
 

@@ -27,8 +27,8 @@ namespace TestProject.RuntimeTests
         }
     }
 
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ParentDynamicUnderInScenePlaced : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "GenericInScenePlacedObject";
@@ -36,7 +36,7 @@ namespace TestProject.RuntimeTests
         private GameObject m_DynamicallySpawned;
         private bool m_SceneIsLoaded;
 
-        public ParentDynamicUnderInScenePlaced(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public ParentDynamicUnderInScenePlaced(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnSetup()
         {

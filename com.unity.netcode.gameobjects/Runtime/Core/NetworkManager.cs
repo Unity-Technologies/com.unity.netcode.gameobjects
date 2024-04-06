@@ -43,7 +43,7 @@ namespace Unity.Netcode
         {
             get
             {
-                return NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority;
+                return NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
             }
         }
 

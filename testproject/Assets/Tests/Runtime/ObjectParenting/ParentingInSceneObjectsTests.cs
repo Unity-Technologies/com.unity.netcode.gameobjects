@@ -10,8 +10,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ParentingInSceneObjectsTests : IntegrationTestWithApproximation
     {
         private const string k_BaseSceneToLoad = "UnitTestBaseScene";
@@ -24,7 +24,7 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
-        public ParentingInSceneObjectsTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public ParentingInSceneObjectsTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnOneTimeSetup()
         {

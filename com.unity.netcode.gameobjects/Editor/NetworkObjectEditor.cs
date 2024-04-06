@@ -150,6 +150,7 @@ namespace Unity.Netcode.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+#if MULTIPLAYER_SDK_INSTALLED
             label = EditorGUI.BeginProperty(position, label, property);
             // Don't allow modification while in play mode
             EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
@@ -186,6 +187,7 @@ namespace Unity.Netcode.Editor
             //property.enumValueFlag = (int)ownership;
             EditorGUI.EndDisabledGroup();
             EditorGUI.EndProperty();
+#endif
         }
     }
 }

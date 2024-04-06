@@ -7,8 +7,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
     {
         private GameObject m_TestNetworkObjectPrefab;
@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
         private const string k_WithObserversError = "Not all clients spawned the";
         private const string k_WithoutObserversError = "A client spawned the";
 
-        public NetworkObjectOnSpawnTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public NetworkObjectOnSpawnTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnServerAndClientsCreated()
         {

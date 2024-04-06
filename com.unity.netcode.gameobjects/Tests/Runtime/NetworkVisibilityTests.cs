@@ -7,10 +7,10 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(SceneManagementState.SceneManagementEnabled, SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SceneManagementState.SceneManagementEnabled, SessionModeTypes.ClientServer)]
-    [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.ClientServer)]
+    [TestFixture(SceneManagementState.SceneManagementEnabled, NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(SceneManagementState.SceneManagementEnabled, NetworkTopologyTypes.ClientServer)]
+    [TestFixture(SceneManagementState.SceneManagementDisabled, NetworkTopologyTypes.ClientServer)]
     public class NetworkVisibilityTests : NetcodeIntegrationTest
     {
 
@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_TestNetworkPrefab;
         private bool m_SceneManagementEnabled;
 
-        public NetworkVisibilityTests(SceneManagementState sceneManagementState, SessionModeTypes sessionModeType) : base(sessionModeType)
+        public NetworkVisibilityTests(SceneManagementState sceneManagementState, NetworkTopologyTypes networkTopologyType) : base(networkTopologyType)
         {
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
         }

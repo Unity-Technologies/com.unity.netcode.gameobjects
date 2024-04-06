@@ -12,8 +12,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class InScenePlacedNetworkObjectTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
         private Scene m_ServerSideSceneLoaded;
         private bool m_CanStartServerAndClients;
 
-        public InScenePlacedNetworkObjectTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public InScenePlacedNetworkObjectTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnSetup()
         {
