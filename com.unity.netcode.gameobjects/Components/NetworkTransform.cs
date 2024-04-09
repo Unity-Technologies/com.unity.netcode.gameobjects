@@ -1424,6 +1424,7 @@ namespace Unity.Netcode.Components
         /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
+            m_CachedNetworkManager = NetworkManager;
             var targetClientId = m_TargetIdBeingSynchronized;
             var synchronizationState = new NetworkTransformState()
             {
@@ -2764,6 +2765,11 @@ namespace Unity.Netcode.Components
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
+
+            if (CanCommitToTransform && UseHalfFloatPrecision)
+            {
+                SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
+            }
         }
 
         /// <inheritdoc/>
