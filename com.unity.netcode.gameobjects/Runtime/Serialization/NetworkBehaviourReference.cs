@@ -5,7 +5,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// A helper struct for serializing <see cref="NetworkBehaviour"/>s over the network. Can be used in RPCs and <see cref="NetworkVariable{T}"/>.
-    /// Note: network ids get recycled by the NetworkManager after a while. So a reference pointing to
+    /// Note: network IDs get recycled by the NetworkManager after a while. So a reference pointing to
     /// </summary>
     public struct NetworkBehaviourReference : INetworkSerializable, IEquatable<NetworkBehaviourReference>
     {
