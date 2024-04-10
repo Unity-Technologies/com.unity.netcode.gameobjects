@@ -202,11 +202,12 @@ namespace Unity.Netcode.Transports.UTP
             set => m_MaxPacketQueueSize = value;
         }
 
-        [Tooltip("The maximum size of an unreliable payload that can be handled by the transport.")]
+        [Tooltip("The maximum size of an unreliable payload that can be handled by the transport. The memory for MaxPayloadSize is only allocated once per session and is released when disconnecting from the session and shutting down the NetworkManager.")]
         [SerializeField]
         private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
         /// <summary>The maximum size of an unreliable payload that can be handled by the transport.</summary>
+        /// <remarks>The memory for MaxPayloadSize is only allocated once per session and is released when disconnecting from the session and shutting down the NetworkManager.</remarks>
         public int MaxPayloadSize
         {
             get => m_MaxPayloadSize;
