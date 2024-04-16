@@ -1285,6 +1285,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        // Extending timeout since the added yield return causes this test to commonly timeout
         [Timeout(360000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupOverride()
@@ -1379,6 +1380,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        // Extending timeout since the added yield return causes this test to commonly timeout
         [Timeout(360000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupNotOverride()
