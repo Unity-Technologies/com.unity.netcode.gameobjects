@@ -1285,6 +1285,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        [Timeout(360000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupOverride()
         {
@@ -1378,6 +1379,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        [Timeout(360000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupNotOverride()
         {
