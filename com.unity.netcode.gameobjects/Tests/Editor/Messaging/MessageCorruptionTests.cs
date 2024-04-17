@@ -92,7 +92,7 @@ namespace Unity.Netcode.EditorTests
                     case TypeOfCorruption.CorruptBytes:
                         {
                             batchData.Seek(batchData.Length - 4);
-                            for (int i = 0;i < 4; i++)
+                            for (int i = 0; i < 4; i++)
                             {
                                 var currentByte = batchData.GetUnsafePtr()[i];
                                 batchData.WriteByteSafe((byte)(currentByte == 0 ? 1 : 0));
