@@ -6,10 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [1.9.0] - 2024-04-04
+## [1.9.1] - 2024-04-18
 
 ### Added
--Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
+- Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
 - Added AnticipatedNetworkTransform, which adds support for client anticipation of NetworkTransforms (#2820)
 - Added NetworkVariableBase.ExceedsDirtinessThreshold to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in NetworkVariable<T> with the callback NetworkVariable<T>.CheckExceedsDirtinessThreshold) (#2820)
 - Added NetworkVariableUpdateTraits, which add additional throttling support: MinSecondsBetweenUpdates will prevent the NetworkVariable from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while MaxSecondsBetweenUpdates will force a dirty NetworkVariable to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2820)
