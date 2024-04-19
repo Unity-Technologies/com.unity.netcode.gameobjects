@@ -311,6 +311,7 @@ namespace Unity.Netcode
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public void SendNamedMessage(string messageName, IReadOnlyList<ulong> clientIds, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
+            private bool tests;
             if (!m_NetworkManager.IsServer)
             {
                 throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");

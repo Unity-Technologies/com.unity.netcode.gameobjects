@@ -48,7 +48,7 @@ namespace Unity.Netcode.Editor
 
         private bool m_AllowIncomingConnections;
         private bool m_Initialized;
-
+        private bool test1;
         private UnityTransport m_UnityTransport;
 
         private SerializedProperty m_ServerAddressProperty;
