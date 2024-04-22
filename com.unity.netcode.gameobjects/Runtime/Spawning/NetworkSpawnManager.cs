@@ -1781,6 +1781,9 @@ namespace Unity.Netcode
             DeferredDespawnObjects.Add(deferredDespawnObject);
         }
 
+        // Temporary list of DeferredDespawnObjects to be removed
+        private List<DeferredDespawnObject> m_DeferredDespawnObjectsToRemove = new List<DeferredDespawnObject>();
+
         /// <summary>
         /// Processes any deferred despawn entries
         /// </summary>
@@ -1791,12 +1794,16 @@ namespace Unity.Netcode
             {
                 return;
             }
+
             var currentTick = serverTime.Tick;
-            var deferredCallbackObjects = DeferredDespawnObjects.Where((c) => c.HasDeferredDespawnCheck);
-            var deferredCallbackCount = deferredCallbackObjects.Count();
+            var deferredCallbackCount = DeferredDespawnObjects.Count();
             for (int i = 0; i < deferredCallbackCount - 1; i++)
             {
-                var deferredObjectEntry = deferredCallbackObjects.ElementAt(i);
+                if (!DeferredDespawnObjects[i].HasDeferredDespawnCheck)
+                {
+                    continue;
+                }
+                var deferredObjectEntry = DeferredDespawnObjects[i];
                 var networkObject = SpawnedObjects[deferredObjectEntry.NetworkObjectId];
                 // Double check to make sure user did not remove the callback
                 if (networkObject.OnDeferredDespawnComplete != null)
@@ -1821,18 +1828,29 @@ namespace Unity.Netcode
                 }
             }
 
-            var despawnObjects = DeferredDespawnObjects.Where((c) => c.TickToDespawn < currentTick).ToList();
-            foreach (var deferredObjectEntry in despawnObjects)
+            for (int i = DeferredDespawnObjects.Count - 1; i > 0; i--)
             {
-                if (!SpawnedObjects.ContainsKey(deferredObjectEntry.NetworkObjectId))
+                // Ignore anything still being deferred
+                if (DeferredDespawnObjects[i].TickToDespawn > currentTick)
                 {
-                    DeferredDespawnObjects.Remove(deferredObjectEntry);
                     continue;
                 }
-                var networkObject = SpawnedObjects[deferredObjectEntry.NetworkObjectId];
-                // Local instance despawns the instance
+
+                // If the NetworkObject no longer exists, then remove the entry
+                if (!SpawnedObjects.ContainsKey(DeferredDespawnObjects[i].NetworkObjectId))
+                {
+                    DeferredDespawnObjects.Remove(DeferredDespawnObjects[i]);
+                    continue;
+                }
+
+                // Otherwise, get the NetworkObject
+                var networkObject = SpawnedObjects[DeferredDespawnObjects[i].NetworkObjectId];
+
+                // Despawn it locally
                 OnDespawnObject(networkObject, true);
-                DeferredDespawnObjects.Remove(deferredObjectEntry);
+
+                // Remove the entry from the list
+                DeferredDespawnObjects.Remove(DeferredDespawnObjects[i]);
             }
         }
     }
