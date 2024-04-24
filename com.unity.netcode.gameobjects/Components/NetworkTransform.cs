@@ -1682,6 +1682,15 @@ namespace Unity.Netcode.Components
             var scale = transformToUse.localScale;
             networkState.IsSynchronizing = isSynchronization;
 
+            // All of the checks below, up to the delta position checking portion, are to determine if the
+            // authority changed a property during runtime that requires a full synchronizing.
+            if (InLocalSpace != networkState.InLocalSpace)
+            {
+                networkState.InLocalSpace = InLocalSpace;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
             {
@@ -1735,15 +1744,6 @@ namespace Unity.Netcode.Components
                         networkState.InLocalSpace = true;
                     }
                 }
-            }
-
-            // All of the checks below, up to the delta position checking portion, are to determine if the
-            // authority changed a property during runtime that requires a full synchronizing.
-            if (InLocalSpace != networkState.InLocalSpace)
-            {
-                networkState.InLocalSpace = InLocalSpace;
-                isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
             }
 
             if (Interpolate != networkState.UseInterpolation)
