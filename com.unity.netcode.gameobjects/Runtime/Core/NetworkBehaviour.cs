@@ -681,7 +681,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Invoked on all clients, override this method to be notified of any
         /// ownership changes (even if the instance was niether the previous or
-        /// newly assigned current owner). 
+        /// newly assigned current owner).
         /// </summary>
         /// <param name="previous">the previous owner</param>
         /// <param name="current">the current owner</param>
@@ -1223,9 +1223,9 @@ namespace Unity.Netcode
 
 
         /// <summary>
-        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to.
-        /// NOTE:  If you override this, you will want to always invoke this base class version of this
-        /// <see cref="OnDestroy"/> method!!
+        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to is destroyed.
+        /// NOTE:  If you override this, you should invoke this base class version of this
+        /// <see cref="OnDestroy"/> method.
         /// </summary>
         public virtual void OnDestroy()
         {
