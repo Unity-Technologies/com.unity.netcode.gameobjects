@@ -1285,23 +1285,31 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        // Extending timeout since the added yield return causes this test to commonly timeout
+        [Timeout(600000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupOverride()
         {
+            var waitFor = new WaitForFixedUpdate();
             foreach (var defaultSendTo in Enum.GetValues(typeof(SendTo)))
             {
+                m_EnableVerboseDebug = true;
+                VerboseDebug($"Processing: {defaultSendTo}");
+                m_EnableVerboseDebug = false;
+
                 foreach (var recipient in RecipientGroups)
                 {
                     for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
                     {
                         for (ulong sender = 0u; sender <= 2u; ++sender)
                         {
+                            yield return waitFor;
                             foreach (var allocationType in Enum.GetValues(typeof(AllocationType)))
                             {
-                                if (++YieldCheck % YieldCycleCount == 0)
-                                {
-                                    yield return null;
-                                }
+                                //if (++YieldCheck % YieldCycleCount == 0)
+                                //{
+                                //    yield return null;
+                                //}
                                 OnInlineSetup();
                                 var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
@@ -1378,23 +1386,32 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
+        // Extending timeout since the added yield return causes this test to commonly timeout
+        [Timeout(600000)]
         [UnityTest]
         public IEnumerator TestSendingWithGroupNotOverride()
         {
+            var waitFor = new WaitForFixedUpdate();
             foreach (var defaultSendTo in Enum.GetValues(typeof(SendTo)))
             {
+                m_EnableVerboseDebug = true;
+                VerboseDebug($"Processing: {defaultSendTo}");
+                m_EnableVerboseDebug = false;
                 foreach (var recipient in RecipientGroups)
                 {
                     for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
                     {
                         for (ulong sender = 0u; sender <= 2u; ++sender)
                         {
+                            yield return waitFor;
+
                             foreach (var allocationType in Enum.GetValues(typeof(AllocationType)))
                             {
-                                if (++YieldCheck % YieldCycleCount == 0)
-                                {
-                                    yield return null;
-                                }
+                                //if (++YieldCheck % YieldCycleCount == 0)
+                                //{
+                                //    yield return waitFor;
+                                //}
+
                                 OnInlineSetup();
                                 var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
