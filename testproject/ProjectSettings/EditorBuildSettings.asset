@@ -143,6 +143,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Runtime/ObjectParenting/NetworkObjectParentingTests.unity
     guid: abe92ece17d830e41a66dff7edc9245d
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/InSceneUnderGameObject.unity
+    guid: 778ea62ad5daee5408d1ec1fce28673f
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/InSceneUnderGameObjectWithNT.unity
+    guid: 5a4f489df08d16c4d8c0167b099de2ca
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
+  m_UseUCBPForAssetBundles: 0

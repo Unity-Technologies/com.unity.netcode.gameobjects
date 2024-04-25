@@ -12,6 +12,7 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class NetworkObjectTestComponent : NetworkBehaviour
     {
+        public static bool VerboseDebug;
         public static bool DisableOnDespawn;
         public static bool DisableOnSpawn;
         public static NetworkObject ServerNetworkObjectInstance;
@@ -73,11 +74,7 @@ namespace TestProject.RuntimeTests
         {
             OnInSceneObjectDespawned?.Invoke(NetworkObject);
             m_HasNotifiedSpawned = false;
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"{NetworkManager.name} de-spawned {gameObject.name}.");
-            }
-
+            LogMessage($"{NetworkManager.name} de-spawned {gameObject.name}.");
             SpawnedInstances.Remove(this);
             if (DisableOnDespawn)
             {
@@ -93,11 +90,16 @@ namespace TestProject.RuntimeTests
             // We do this so the ObjectNameIdentifier has a chance to label it properly
             if (IsSpawned && !m_HasNotifiedSpawned)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                {
-                    Debug.Log($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
-                }
+                LogMessage($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
                 m_HasNotifiedSpawned = true;
+            }
+        }
+
+        private void LogMessage(string message)
+        {
+            if (VerboseDebug)
+            {
+                Debug.Log(message);
             }
         }
     }

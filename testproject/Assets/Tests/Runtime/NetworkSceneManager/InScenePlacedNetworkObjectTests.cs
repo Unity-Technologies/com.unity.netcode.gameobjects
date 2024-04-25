@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,21 +15,36 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-    public class InScenePlacedNetworkObjectTests : NetcodeIntegrationTest
+    public class InScenePlacedNetworkObjectTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 2;
 
         private const string k_SceneToLoad = "InSceneNetworkObject";
+        private const string k_InSceneUnder = "InSceneUnderGameObject";
+        private const string k_InSceneUnderWithNT = "InSceneUnderGameObjectWithNT";
         private Scene m_ServerSideSceneLoaded;
         private bool m_CanStartServerAndClients;
+        private string m_SceneLoading = k_SceneToLoad;
 
         public InScenePlacedNetworkObjectTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
 
         protected override IEnumerator OnSetup()
         {
             NetworkObjectTestComponent.Reset();
+            NetworkObjectTestComponent.VerboseDebug = m_EnableVerboseDebug;
             m_CanStartServerAndClients = false;
             return base.OnSetup();
+        }
+
+        /// <summary>
+        /// Very important to always have a backup "unloading" catch
+        /// in the event your test fails it could not potentially unload
+        /// a scene and the proceeding tests could be impacted by this!
+        /// </summary>
+        /// <returns></returns>
+        protected override IEnumerator OnTearDown()
+        {
+            yield return CleanUpLoadedScene();
         }
 
         protected override bool CanStartServerAndClients()
@@ -187,7 +203,7 @@ namespace TestProject.RuntimeTests
 
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == k_SceneToLoad && sceneEvent.ClientId == m_ClientNetworkManagers[0].LocalClientId)
+            if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == m_SceneLoading && sceneEvent.ClientId == m_ClientNetworkManagers[0].LocalClientId)
             {
                 m_ClientLoadedScene = sceneEvent.Scene;
             }
@@ -398,17 +414,168 @@ namespace TestProject.RuntimeTests
             m_SceneLoaded = SceneManager.GetSceneByName(sceneName);
         }
 
+        public enum ParentSyncSettings
+        {
+            ParentSync,
+            NoParentSync
+        }
 
+        public enum TransformSyncSettings
+        {
+            TransformSync,
+            NoTransformSync
+        }
+
+        public enum TransformSpace
+        {
+            World,
+            Local
+        }
 
         /// <summary>
-        /// Very important to always have a backup "unloading" catch
-        /// in the event your test fails it could not potentially unload
-        /// a scene and the proceeding tests could be impacted by this!
+        /// This test validates the initial synchronization of an in-scene placed NetworkObject parented
+        /// underneath a GameObject. There are two scenes for this tests where the child NetworkObject does
+        /// and does not have a NetworkTransform component.
         /// </summary>
-        /// <returns></returns>
-        protected override IEnumerator OnTearDown()
+        /// <param name="inSceneUnderToLoad">Scene to load</param>
+        /// <param name="parentSyncSettings"><see cref="NetworkObject.AutoObjectParentSync"/> settings</param>
+        /// <param name="transformSyncSettings"><see cref="NetworkObject.SynchronizeTransform"/> settings</param>
+        /// <param name="transformSpace"><see cref="NetworkTransform.InLocalSpace"/> setting (when available)</param>
+        [UnityTest]
+        public IEnumerator ParentedInSceneObjectUnderGameObject([Values(k_InSceneUnder, k_InSceneUnderWithNT)] string inSceneUnderToLoad,
+            [Values] ParentSyncSettings parentSyncSettings, [Values] TransformSyncSettings transformSyncSettings, [Values] TransformSpace transformSpace)
         {
-            yield return CleanUpLoadedScene();
+            var useNetworkTransform = m_SceneLoading == k_InSceneUnderWithNT;
+
+            m_SceneLoading = inSceneUnderToLoad;
+            // Because despawning a client will cause it to shutdown and clean everything in the
+            // scene hierarchy, we have to prevent one of the clients from spawning initially before
+            // we test synchronizing late joining clients.
+            // So, we prevent the automatic starting of the server and clients, remove the client we
+            // will be targeting to join late from the m_ClientNetworkManagers array, start the server
+            // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
+            // the clientToTest.
+            var clientToTest = m_ClientNetworkManagers[1];
+            var clients = m_ClientNetworkManagers.ToList();
+
+            // Note: This test is a modified copy of ParentedInSceneObjectLateJoiningClient.
+            // The 1st client is being ignored in this test and the focus is primarily on the late joining
+            // 2nd client after adjustments have been made to the child NetworkBehaviour and if applicable
+            // NetworkTransform.
+
+            clients.Remove(clientToTest);
+            m_ClientNetworkManagers = clients.ToArray();
+            m_CanStartServerAndClients = true;
+            yield return StartServerAndClients();
+            clients.Add(clientToTest);
+            m_ClientNetworkManagers = clients.ToArray();
+
+            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
+
+            m_ClientNetworkManagers[0].SceneManager.OnSceneEvent += OnSceneEvent;
+            m_ServerNetworkManager.SceneManager.LoadScene(m_SceneLoading, LoadSceneMode.Additive);
+            yield return WaitForConditionOrTimeOut(() => m_ClientLoadedScene.IsValid() && m_ClientLoadedScene.isLoaded);
+            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded!");
+
+            m_ClientNetworkManagers[0].SceneManager.OnSceneEvent -= OnSceneEvent;
+            var serverInSceneObjectInstance = NetworkObjectTestComponent.ServerNetworkObjectInstance;
+            Assert.IsNotNull(serverInSceneObjectInstance, $"Could not get the server-side registration of {nameof(NetworkObjectTestComponent)}!");
+            var firstClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.Where((c) => c.NetworkManager == m_ClientNetworkManagers[0]).FirstOrDefault();
+            Assert.IsNotNull(firstClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)}!");
+            Assert.IsTrue(firstClientInSceneObjectInstance.NetworkManager == m_ClientNetworkManagers[0]);
+
+            // Parent the object
+            var clientSideServerPlayer = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][NetworkManager.ServerClientId];
+
+            serverInSceneObjectInstance.AutoObjectParentSync = parentSyncSettings == ParentSyncSettings.ParentSync;
+            serverInSceneObjectInstance.SynchronizeTransform = transformSyncSettings == TransformSyncSettings.TransformSync;
+
+            var serverNetworkTransform = useNetworkTransform ? serverInSceneObjectInstance.GetComponent<NetworkTransform>() : null;
+            if (useNetworkTransform)
+            {
+                serverNetworkTransform.InLocalSpace = transformSpace == TransformSpace.Local;
+            }
+
+            // Now late join a client
+            NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
+            yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
+            AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
+
+            yield return s_DefaultWaitForTick;
+
+            // Update the newly joined client information
+            ClientNetworkManagerPostStartInit();
+
+            var lateJoinClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.Where((c) => c.NetworkManager == m_ClientNetworkManagers[1]).FirstOrDefault();
+            Assert.IsNotNull(lateJoinClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)} for the late joining client!");
+
+            // Now make sure the server and newly joined client transform values match.
+            RotationsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform, transformSpace == TransformSpace.Local);
+            PositionsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform, transformSpace == TransformSpace.Local);
+            // When testing local space we also do a sanity check and validate the world space values too.
+            if (transformSpace == TransformSpace.Local)
+            {
+                RotationsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
+                PositionsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
+            }
+            ScaleValuesMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
         }
+
+        protected bool RotationsMatch(Transform transformA, Transform transformB, bool inLocalSpace = false)
+        {
+            var authorityEulerRotation = inLocalSpace ? transformA.localRotation.eulerAngles : transformA.rotation.eulerAngles;
+            var nonAuthorityEulerRotation = inLocalSpace ? transformB.localRotation.eulerAngles : transformB.rotation.eulerAngles;
+            var xIsEqual = ApproximatelyEuler(authorityEulerRotation.x, nonAuthorityEulerRotation.x);
+            var yIsEqual = ApproximatelyEuler(authorityEulerRotation.y, nonAuthorityEulerRotation.y);
+            var zIsEqual = ApproximatelyEuler(authorityEulerRotation.z, nonAuthorityEulerRotation.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}]" +
+                    $"Authority rotation {authorityEulerRotation} != [{transformB.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
+            }
+            else if (m_EnableVerboseDebug)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}] " +
+                    $"Authority rotation {authorityEulerRotation} != [{transformB.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
+        protected bool PositionsMatch(Transform transformA, Transform transformB, bool inLocalSpace = false)
+        {
+            var authorityPosition = inLocalSpace ? transformA.localPosition : transformA.position;
+            var nonAuthorityPosition = inLocalSpace ? transformB.localPosition : transformB.position;
+            var xIsEqual = Approximately(authorityPosition.x, nonAuthorityPosition.x);
+            var yIsEqual = Approximately(authorityPosition.y, nonAuthorityPosition.y);
+            var zIsEqual = Approximately(authorityPosition.z, nonAuthorityPosition.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}] Authority position {authorityPosition} != [{transformB.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
+            }
+            else if (m_EnableVerboseDebug)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}] Authority position {authorityPosition} != [{transformB.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
+        protected bool ScaleValuesMatch(Transform transformA, Transform transformB)
+        {
+            var authorityScale = transformA.localScale;
+            var nonAuthorityScale = transformB.localScale;
+            var xIsEqual = Approximately(authorityScale.x, nonAuthorityScale.x);
+            var yIsEqual = Approximately(authorityScale.y, nonAuthorityScale.y);
+            var zIsEqual = Approximately(authorityScale.z, nonAuthorityScale.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}] Authority scale {authorityScale} != [{transformB.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
+            }
+            else if (m_EnableVerboseDebug)
+            {
+                VerboseDebug($"[{transformA.gameObject.name}] Authority scale {authorityScale} == [{transformB.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
     }
 }
