@@ -463,20 +463,21 @@ namespace Unity.Netcode
         public event Action OnServerStarted = null;
 
         /// <summary>
-        /// The callback to invoke once the local client is ready
+        /// The callback to invoke once the local client is ready.
         /// </summary>
         public event Action OnClientStarted = null;
 
         /// <summary>
         /// This callback is invoked once the local server is stopped.
         /// </summary>
+        /// <remarks>The bool parameter will be set to true when stopping a host instance and false when stopping a server instance.</remarks>
         /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
         public event Action<bool> OnServerStopped = null;
 
         /// <summary>
-        /// The callback to invoke once the local client stops
+        /// The callback to invoke once the local client stops.
         /// </summary>
-        /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        /// <remarks>The bool parameter will be set to true when stopping a host client and false when stopping a standard client instance.</remarks>
         /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
         public event Action<bool> OnClientStopped = null;
 
