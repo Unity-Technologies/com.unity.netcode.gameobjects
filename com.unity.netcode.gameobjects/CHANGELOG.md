@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+- Fixed: Issue where an in-scene placed NetworkObject with NetworkTransform that is also parented under a GameObject would not properly synchronize when the parent GameObject had a world space position other than 0,0,0. (#2898)
+
+### Changed
+
+
 ## [2.0.0-exp.2] - 2024-04-02
 
 ### Added
