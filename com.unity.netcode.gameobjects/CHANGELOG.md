@@ -12,7 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Issue where an in-scene placed NetworkObject with NetworkTransform that is also parented under a GameObject would not properly synchronize when the parent GameObject had a world space position other than 0,0,0. (#2898)
+- Fixed issue where an in-scene placed `NetworkObject` with `NetworkTransform` that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2898)
 
 ### Changed
 
