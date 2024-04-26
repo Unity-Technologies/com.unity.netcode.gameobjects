@@ -2077,6 +2077,12 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void OnNetworkTick()
         {
+            // If not active, then ignore the update
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
             // As long as we are still authority
             if (CanCommitToTransform)
             {
@@ -3369,7 +3375,9 @@ namespace Unity.Netcode.Components
         {
             if (CanCommitToTransform)
             {
-                Debug.LogError($"Authority receiving transform update from Client-{senderId}!");
+                // TODO: Investigate where this state should be applied or just discarded.
+                // For now, discard the state if we assumed ownership.
+                return;
             }
             // Store the previous/old state
             m_OldState = m_LocalAuthoritativeNetworkState;
