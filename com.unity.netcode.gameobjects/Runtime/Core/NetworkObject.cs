@@ -512,6 +512,7 @@ namespace Unity.Netcode
 
         private void Awake()
         {
+            m_ChildNetworkBehaviours = null;
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
@@ -1360,6 +1361,17 @@ namespace Unity.Netcode
             }
         }
 
+        internal void InvokeBehaviourNetworkPreSpawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkPreSpawn();
+                }
+            }
+        }
+
         internal void InvokeBehaviourNetworkSpawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
@@ -1380,6 +1392,17 @@ namespace Unity.Netcode
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
                 {
                     ChildNetworkBehaviours[i].VisibleOnNetworkSpawn();
+                }
+            }
+        }
+
+        internal void InvokeBehaviourNetworkPostSpawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkPostSpawn();
                 }
             }
         }
@@ -1890,8 +1913,14 @@ namespace Unity.Netcode
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
+            // Invoke NetworkBehaviour.OnPreSpawn methods
+            networkObject.InvokeBehaviourNetworkPreSpawn();
+
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
+
+            // Invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
 
             return networkObject;
         }
