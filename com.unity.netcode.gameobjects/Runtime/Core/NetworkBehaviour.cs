@@ -659,6 +659,15 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="despawnTick">the future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
         public virtual void OnDeferringDespawn(int despawnTick) { }
+        
+        /// Gets called after the <see cref="NetworkObject"/> is spawned. No NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked yet.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="NetworkBehaviour"/> will not have anything assigned to it at this point in time.
+        /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn related properties will not be set.
+        /// This can be used to handle things like initializing/instantiating a NetworkVariable or the like.
+        /// </remarks>
+        public virtual void OnNetworkPreSpawn() { }
 
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
@@ -666,9 +675,31 @@ namespace Unity.Netcode
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
+        /// Gets called after the <see cref="NetworkObject"/> is spawned. All NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked.
+        /// </summary>
+        /// <remarks>
+        /// Will be invoked on each <see cref="NetworkBehaviour"/> associated with the <see cref="NetworkObject"/> being spawned.
+        /// All associated <see cref="NetworkBehaviour"/> components will have had <see cref="OnNetworkSpawn"/> invoked on the spawned <see cref="NetworkObject"/>.
+        /// </remarks>
+        public virtual void OnNetworkPostSpawn() { }
+
+        /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
+
+
+        internal void NetworkPreSpawn()
+        {
+            try
+            {
+                OnNetworkPreSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
         internal void InternalOnNetworkSpawn()
         {
@@ -696,6 +727,18 @@ namespace Unity.Netcode
                 // NetworkList, we need to mark the object as free of updates.
                 // This should happen for all objects on the machine triggering the spawn.
                 PostNetworkVariableWrite(true);
+            }
+        }
+
+        internal void NetworkPostSpawn()
+        {
+            try
+            {
+                OnNetworkPostSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
 
