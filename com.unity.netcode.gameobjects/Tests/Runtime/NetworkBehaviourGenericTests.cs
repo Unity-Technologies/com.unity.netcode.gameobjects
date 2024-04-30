@@ -16,6 +16,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_AllowServerToStart;
 
+        private GameObject m_PrePostSpawnObject;
+
         protected override bool CanStartServerAndClients()
         {
             return m_AllowServerToStart;
@@ -32,10 +34,66 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        public class NetworkBehaviourPreSpawn : NetworkBehaviour
+        {
+            public static int ValueToSet;
+            public bool OnNetworkPreSpawnCalled;
+            public bool NetworkVarValueMatches;
+
+            public NetworkVariable<int> TestNetworkVariable;
+
+            public override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+            {
+                OnNetworkPreSpawnCalled = true;
+                var val = networkManager.IsServer ? ValueToSet : 0;
+                TestNetworkVariable = new NetworkVariable<int>(val, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+                base.OnNetworkPreSpawn(ref networkManager);
+            }
+
+            public override void OnNetworkSpawn()
+            {
+                // For the server this should
+                NetworkVarValueMatches = TestNetworkVariable.Value == ValueToSet;
+                base.OnNetworkSpawn();
+            }
+        }
+
+        public class NetworkBehaviourPostSpawn : NetworkBehaviour
+        {
+            public bool OnNetworkPostSpawnCalled;
+
+            private NetworkBehaviourPreSpawn m_NetworkBehaviourPreSpawn;
+
+            public int ValueSet;
+
+            public override void OnNetworkSpawn()
+            {
+                m_NetworkBehaviourPreSpawn = GetComponent<NetworkBehaviourPreSpawn>();
+                base.OnNetworkSpawn();
+            }
+
+            public override void OnNetworkPostSpawn()
+            {
+                OnNetworkPostSpawnCalled = true;
+                ValueSet = m_NetworkBehaviourPreSpawn.TestNetworkVariable.Value;
+                base.OnNetworkPostSpawn();
+            }
+
+        }
+
         protected override IEnumerator OnSetup()
         {
             m_AllowServerToStart = false;
             return base.OnSetup();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_PrePostSpawnObject = CreateNetworkObjectPrefab("PrePostSpawn");
+            // Reverse the order of the components to get inverted spawn sequence
+            m_PrePostSpawnObject.AddComponent<NetworkBehaviourPostSpawn>();
+            m_PrePostSpawnObject.AddComponent<NetworkBehaviourPreSpawn>();
+            base.OnServerAndClientsCreated();
         }
 
         /// <summary>
@@ -179,5 +237,51 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(serverSidePlayer.OnNetworkDespawnCalled, $"Server-side player clone did not invoke OnNetworkDespawn!");
         }
+
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
+            base.OnNewClientCreated(networkManager);
+        }
+
+        /// <summary>
+        /// This validates that upon a client disconnecting, the server-side
+        /// client's player clone will invoke NetworkBehaviour.OnNetworkDespawn
+        /// when the component precedes the NetworkObject component.(PR-2323)
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OnNetworkPreAndPostSpawn()
+        {
+            m_AllowServerToStart = true;
+            NetworkBehaviourPreSpawn.ValueToSet = Random.Range(1, 200);
+            yield return StartServerAndClients();
+
+            yield return CreateAndStartNewClient();
+
+            var serverInstance = SpawnObject(m_PrePostSpawnObject, m_ClientNetworkManagers[0]);
+            var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
+            var serverPreSpawn = serverInstance.GetComponent<NetworkBehaviourPreSpawn>();
+            var serverPostSpawn = serverInstance.GetComponent<NetworkBehaviourPostSpawn>();
+
+            yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(m_ClientNetworkManagers[0].LocalClientId)
+            && s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].ContainsKey(serverNetworkObject.NetworkObjectId));
+            AssertOnTimeout($"Client-{m_ClientNetworkManagers[0].LocalClientId} failed to spawn {nameof(NetworkObject)} id-{serverNetworkObject.NetworkObjectId}!");
+
+            var clientNetworkObject = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][serverNetworkObject.NetworkObjectId];
+            var clientPreSpawn = clientNetworkObject.GetComponent<NetworkBehaviourPreSpawn>();
+            var clientPostSpawn = clientNetworkObject.GetComponent<NetworkBehaviourPostSpawn>();
+
+            Assert.IsTrue(serverPreSpawn.OnNetworkPreSpawnCalled, $"[Server-side] OnNetworkPreSpawn not invoked!");
+            Assert.IsTrue(clientPreSpawn.OnNetworkPreSpawnCalled, $"[Client-side] OnNetworkPreSpawn not invoked!");
+            Assert.IsTrue(serverPostSpawn.OnNetworkPostSpawnCalled, $"[Server-side] OnNetworkPostSpawn not invoked!");
+            Assert.IsTrue(clientPostSpawn.OnNetworkPostSpawnCalled, $"[Client-side] OnNetworkPostSpawn not invoked!");
+
+            Assert.IsTrue(serverPreSpawn.NetworkVarValueMatches, $"[Server-side][PreSpawn] Value {NetworkBehaviourPreSpawn.ValueToSet} does not match {serverPreSpawn.TestNetworkVariable.Value}!");
+            Assert.IsTrue(clientPreSpawn.NetworkVarValueMatches, $"[Client-side][PreSpawn] Value {NetworkBehaviourPreSpawn.ValueToSet} does not match {clientPreSpawn.TestNetworkVariable.Value}!");
+
+            Assert.IsTrue(serverPostSpawn.ValueSet == NetworkBehaviourPreSpawn.ValueToSet, $"[Server-side][PostSpawn] Value {NetworkBehaviourPreSpawn.ValueToSet} does not match {serverPostSpawn.ValueSet}!");
+            Assert.IsTrue(clientPostSpawn.ValueSet == NetworkBehaviourPreSpawn.ValueToSet, $"[Client-side][PostSpawn] Value {NetworkBehaviourPreSpawn.ValueToSet} does not match {clientPostSpawn.ValueSet}!");
+        }
+
     }
 }
