@@ -2261,6 +2261,31 @@ namespace Unity.Netcode
             }
         }
 
+
+        internal void InternalNetworkSessionSynchronized()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkSessionSynchronized();
+                }
+            }
+        }
+
+        internal void InternalInSceneNetworkObjectsSpawned()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].InSceneNetworkObjectsSpawned();
+                }
+            }
+        }
+
+
+
         internal void InvokeBehaviourNetworkDespawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);

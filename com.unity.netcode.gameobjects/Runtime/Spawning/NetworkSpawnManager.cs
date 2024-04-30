@@ -1345,6 +1345,12 @@ namespace Unity.Netcode
                     }
                 }
             }
+
+            // Notify all in-scene placed NetworkObjects have been spawned
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                networkObject.InternalInSceneNetworkObjectsSpawned();
+            }
         }
 
         internal void OnDespawnObject(NetworkObject networkObject, bool destroyGameObject, bool modeDestroy = false)

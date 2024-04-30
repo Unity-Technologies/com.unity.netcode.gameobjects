@@ -31,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public NetworkVariable<int> TestNetworkVariable;
 
-            public override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+            protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
             {
                 OnNetworkPreSpawnCalled = true;
                 // If we are the server, then set the randomly generated value (1-200).
@@ -66,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkSpawn();
             }
 
-            public override void OnNetworkPostSpawn()
+            protected override void OnNetworkPostSpawn()
             {
                 OnNetworkPostSpawnCalled = true;
                 // We should be able to access the component we got during OnNetworkSpawn and all values should be set
@@ -100,7 +100,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This also assures that duruing post spawn all associated NetworkBehaviours have run through the OnNetworkSpawn pass (i.e. OnNetworkSpawn order is not an issue)
         /// </summary>
         [UnityTest]
-        public IEnumerator OnDynamicNetworkPreAndPostSpawn()
+        public IEnumerator OnNetworkPreAndPostSpawn()
         {
             m_AllowServerToStart = true;
             NetworkBehaviourPreSpawn.ValueToSet = Random.Range(1, 200);

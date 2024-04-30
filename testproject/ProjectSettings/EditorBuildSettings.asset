@@ -149,6 +149,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/InSceneUnderGameObjectWithNT.unity
     guid: 5a4f489df08d16c4d8c0167b099de2ca
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/SessionSynchronize.unity
+    guid: 468b795904b98234593ebc31bf0d578a
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
