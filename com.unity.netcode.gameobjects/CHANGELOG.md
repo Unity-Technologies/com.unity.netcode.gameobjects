@@ -11,6 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2906)
+- Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all `NetworkBehaviour`s after a newly joined client has finished synchronizing with the network session in progress. (#2906)
+- Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2906)
 
 ### Fixed
 

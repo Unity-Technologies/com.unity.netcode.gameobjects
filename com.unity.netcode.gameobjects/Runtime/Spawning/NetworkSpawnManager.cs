@@ -967,10 +967,15 @@ namespace Unity.Netcode
                 }
             }
 
-
             foreach (var networkObject in networkObjectsToSpawn)
             {
                 SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, networkObject.OwnerClientId, true);
+            }
+
+            // Notify all in-scene placed NetworkObjects have been spawned
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                networkObject.InternalInSceneNetworkObjectsSpawned();
             }
         }
 
