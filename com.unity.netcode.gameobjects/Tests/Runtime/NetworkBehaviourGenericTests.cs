@@ -45,14 +45,17 @@ namespace Unity.Netcode.RuntimeTests
             public override void OnNetworkPreSpawn(ref NetworkManager networkManager)
             {
                 OnNetworkPreSpawnCalled = true;
+                // If we are the server, then set the randomly generated value (1-200).
+                // Otherwise, just set the value to 0.
                 var val = networkManager.IsServer ? ValueToSet : 0;
+                // Instantiate the NetworkVariable as everyone read & owner write while also setting the value
                 TestNetworkVariable = new NetworkVariable<int>(val, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
                 base.OnNetworkPreSpawn(ref networkManager);
             }
 
             public override void OnNetworkSpawn()
             {
-                // For the server this should
+                // For both client and server this should match at this point
                 NetworkVarValueMatches = TestNetworkVariable.Value == ValueToSet;
                 base.OnNetworkSpawn();
             }
@@ -68,6 +71,8 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
+                // Obtain the NetworkBehaviourPreSpawn component
+                // (could also do this during OnNetworkPreSpawn if we wanted)
                 m_NetworkBehaviourPreSpawn = GetComponent<NetworkBehaviourPreSpawn>();
                 base.OnNetworkSpawn();
             }
@@ -75,6 +80,8 @@ namespace Unity.Netcode.RuntimeTests
             public override void OnNetworkPostSpawn()
             {
                 OnNetworkPostSpawnCalled = true;
+                // We should be able to access the component we got during OnNetworkSpawn and all values should be set
+                // (i.e. OnNetworkSpawn run on all NetworkObject relative NetworkBehaviours)
                 ValueSet = m_NetworkBehaviourPreSpawn.TestNetworkVariable.Value;
                 base.OnNetworkPostSpawn();
             }
