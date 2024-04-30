@@ -2211,11 +2211,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkPreSpawn()
         {
+            var networkManager = NetworkManager;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].NetworkPreSpawn();
+                    ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager);
                 }
             }
         }
@@ -2884,12 +2885,12 @@ namespace Unity.Netcode
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
             networkObject.OwnerClientId = sceneObject.OwnerClientId;
 
+            // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
+            networkObject.InvokeBehaviourNetworkPreSpawn();
+
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
-
-            // Invoke NetworkBehaviour.OnPreSpawn methods
-            networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
@@ -2943,10 +2944,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-            
-            // Invoke NetworkBehaviour.OnPostSpawn methods
-            networkObject.InvokeBehaviourNetworkPostSpawn();
-
             return networkObject;
         }
 

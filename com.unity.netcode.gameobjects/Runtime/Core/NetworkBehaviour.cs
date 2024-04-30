@@ -661,13 +661,15 @@ namespace Unity.Netcode
         public virtual void OnDeferringDespawn(int despawnTick) { }
         
         /// Gets called after the <see cref="NetworkObject"/> is spawned. No NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked yet.
+        /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (IsServer/IsClient)
         /// </summary>
         /// <remarks>
+        /// <param name="networkManager">a ref to the <see cref="NetworkManager"/> since this is not yet set on the <see cref="NetworkBehaviour"/></param>
         /// The <see cref="NetworkBehaviour"/> will not have anything assigned to it at this point in time.
         /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn related properties will not be set.
         /// This can be used to handle things like initializing/instantiating a NetworkVariable or the like.
         /// </remarks>
-        public virtual void OnNetworkPreSpawn() { }
+        public virtual void OnNetworkPreSpawn(ref NetworkManager networkManager) { }
 
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
@@ -689,11 +691,11 @@ namespace Unity.Netcode
         public virtual void OnNetworkDespawn() { }
 
 
-        internal void NetworkPreSpawn()
+        internal void NetworkPreSpawn(ref NetworkManager networkManager)
         {
             try
             {
-                OnNetworkPreSpawn();
+                OnNetworkPreSpawn(ref networkManager);
             }
             catch (Exception e)
             {
