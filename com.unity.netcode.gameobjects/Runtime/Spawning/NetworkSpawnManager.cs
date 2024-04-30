@@ -604,7 +604,12 @@ namespace Unity.Netcode
             return networkObject;
         }
 
-        // Ran on both server and client
+        /// <summary>
+        /// Invoked when spawning locally
+        /// </summary>
+        /// <remarks>
+        /// Pre and Post spawn methods *CAN* be invoked prior to invoking <see cref="SpawnNetworkObjectLocallyCommon"/>
+        /// </remarks>
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
@@ -625,11 +630,21 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+            // Invoke NetworkBehaviour.OnPreSpawn methods
+            networkObject.InvokeBehaviourNetworkPreSpawn();
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+
+            // Invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
-        // Ran on both server and client
+        /// <summary>
+        /// Invoked from AddSceneObject
+        /// </summary>
+        /// <remarks>
+        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
+        /// </remarks>
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
             if (networkObject == null)
@@ -642,7 +657,11 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
+            // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
+
+            // It is ok to invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
