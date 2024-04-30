@@ -1,4 +1,4 @@
-// NetSim Implementation compilation boilerplate
+﻿// NetSim Implementation compilation boilerplate
 // All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 #if UNITY_EDITOR || (DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE)
@@ -103,7 +103,7 @@ namespace Unity.Netcode.Transports.UTP
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
     [AddComponentMenu("Netcode/Unity Transport")]
-    public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
+    public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor, INetworkUpdateSystem
     {
         /// <summary>
         /// Enum type stating the type of protocol
@@ -429,6 +429,16 @@ namespace Unity.Netcode.Transports.UTP
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
+        /// <summary>
+        /// SendFlush Job, which runs on "PostLateUpdate" and will be completed by the next frame.
+        /// </summary>
+        private JobHandle m_SendJobHandle;
+
+        /// <summary>
+        /// If true, it is controlled by the NetworkUpdate lifecycle, not the MonoBehaviour lifecycle.
+        /// </summary>
+        private bool m_UseNetworkUpdateLifecycle;
+
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
@@ -478,6 +488,14 @@ namespace Unity.Netcode.Transports.UTP
 
         private void DisposeInternals()
         {
+            if (m_UseNetworkUpdateLifecycle)
+            {
+                this.UnregisterAllNetworkUpdates();
+
+                // Complete the Job before dispose the driver.
+                CompleteSendJob();
+            }
+
             if (m_Driver.IsCreated)
             {
                 m_Driver.Dispose();
@@ -493,6 +511,14 @@ namespace Unity.Netcode.Transports.UTP
             m_SendQueue.Clear();
 
             TransportDisposed?.Invoke(GetInstanceID());
+        }
+
+        private void CompleteSendJob()
+        {
+            if (m_UseNetworkUpdateLifecycle)
+            {
+                m_SendJobHandle.Complete();
+            }
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -806,6 +832,33 @@ namespace Unity.Netcode.Transports.UTP
             }.Run();
         }
 
+        // Batching the message on the Job system.
+        private JobHandle SendBatchedMessages(NetworkDriver.Concurrent driver, SendTarget sendTarget, BatchedSendQueue queue, JobHandle dependsOn)
+        {
+            if (!m_Driver.IsCreated)
+            {
+                return dependsOn;
+            }
+
+            var mtu = 0;
+            if (NetworkManager)
+            {
+                var ngoClientId = NetworkManager.ConnectionManager.TransportIdToClientId(sendTarget.ClientId);
+                mtu = NetworkManager.GetPeerMTU(ngoClientId);
+            }
+
+            var batchJob = new SendBatchedMessagesJob
+            {
+                Driver = driver,
+                Target = sendTarget,
+                Queue = queue,
+                ReliablePipeline = m_ReliableSequencedPipeline,
+                MTU = mtu,
+            };
+
+            return batchJob.Schedule(dependsOn);
+        }
+
         private bool AcceptConnection()
         {
             var connection = m_Driver.Accept();
@@ -913,7 +966,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private void Update()
         {
-            if (m_Driver.IsCreated)
+            if (m_Driver.IsCreated && !m_UseNetworkUpdateLifecycle)
             {
                 foreach (var kvp in m_SendQueue)
                 {
@@ -947,6 +1000,80 @@ namespace Unity.Netcode.Transports.UTP
                     ExtractNetworkMetrics();
                 }
 #endif
+            }
+        }
+
+        /// <summary>
+        /// Process input/output through network updates.
+        /// </summary>
+        /// <param name="updateStage"></param>
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        {
+            if (!m_Driver.IsCreated)
+            {
+                return;
+            }
+
+            switch (updateStage)
+            {
+                // Read the transport data before processing in NetworkManager.
+                case NetworkUpdateStage.Initialization:
+                    {
+                        CompleteSendJob();
+
+                        m_Driver.ScheduleUpdate().Complete();
+
+                        if (m_ProtocolType == ProtocolType.RelayUnityTransport && m_Driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
+                        {
+                            Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
+                                "Use NetworkManager.OnTransportFailure to be notified of such events programmatically.");
+
+                            InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
+                            return;
+                        }
+
+                        while (AcceptConnection() && m_Driver.IsCreated)
+                        {
+                            ;
+                        }
+
+                        while (ProcessEvent() && m_Driver.IsCreated)
+                        {
+                            ;
+                        }
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                        if (NetworkManager)
+                        {
+                            ExtractNetworkMetrics();
+                        }
+#endif
+                    }
+                    break;
+
+                // Send immediately the completed data in frame.
+                case NetworkUpdateStage.PostLateUpdate:
+                    {
+                        var driver = m_Driver.ToConcurrent();
+
+                        bool hasData = false;
+                        JobHandle handle = default;
+
+                        foreach (var kvp in m_SendQueue)
+                        {
+                            if (!kvp.Value.IsEmpty)
+                            {
+                                handle = SendBatchedMessages(driver, kvp.Key, kvp.Value, handle);
+                                hasData = true;
+                            }
+                        }
+
+                        if (hasData)
+                        {
+                            m_SendJobHandle = m_Driver.ScheduleFlushSend(handle);
+                        }
+                    }
+                    break;
             }
         }
 
@@ -1105,6 +1232,8 @@ namespace Unity.Netcode.Transports.UTP
 
         private void ClearSendQueuesForClientId(ulong clientId)
         {
+            CompleteSendJob();
+
             // NativeList and manual foreach avoids any allocations.
             using var keys = new NativeList<SendTarget>(16, Allocator.Temp);
             foreach (var key in m_SendQueue.Keys)
@@ -1124,6 +1253,8 @@ namespace Unity.Netcode.Transports.UTP
 
         private void FlushSendQueuesForClientId(ulong clientId)
         {
+            CompleteSendJob();
+
             foreach (var kvp in m_SendQueue)
             {
                 if (kvp.Key.ClientId == clientId)
@@ -1218,9 +1349,17 @@ namespace Unity.Netcode.Transports.UTP
 
             NetworkManager = networkManager;
 
-            if (NetworkManager && NetworkManager.PortOverride.Overidden)
+            if (NetworkManager)
             {
-                ConnectionData.Port = NetworkManager.PortOverride.Value;
+                if (NetworkManager.PortOverride.Overidden)
+                {
+                    ConnectionData.Port = NetworkManager.PortOverride.Value;
+                }
+
+                this.RegisterNetworkUpdate(NetworkUpdateStage.Initialization);
+                this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
+
+                m_UseNetworkUpdateLifecycle = true;
             }
 
             m_RealTimeProvider = NetworkManager ? NetworkManager.RealTimeProvider : new RealTimeProvider();
@@ -1417,6 +1556,8 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void Shutdown()
         {
+            CompleteSendJob();
+
             if (m_Driver.IsCreated)
             {
                 // Flush all send queues to the network. NGO can be configured to flush its message
