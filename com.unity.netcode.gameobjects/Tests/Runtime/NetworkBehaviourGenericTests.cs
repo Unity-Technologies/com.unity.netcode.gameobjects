@@ -16,8 +16,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_AllowServerToStart;
 
-        private GameObject m_PrePostSpawnObject;
-
         protected override bool CanStartServerAndClients()
         {
             return m_AllowServerToStart;
@@ -181,6 +179,5 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(serverSidePlayer.OnNetworkDespawnCalled, $"Server-side player clone did not invoke OnNetworkDespawn!");
         }
-
     }
 }
