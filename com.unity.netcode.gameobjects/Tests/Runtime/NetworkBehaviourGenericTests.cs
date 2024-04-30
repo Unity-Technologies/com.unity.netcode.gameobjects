@@ -245,9 +245,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// This validates that upon a client disconnecting, the server-side
-        /// client's player clone will invoke NetworkBehaviour.OnNetworkDespawn
-        /// when the component precedes the NetworkObject component.(PR-2323)
+        /// This validates that pre spawn can be used to instantiate and assign a NetworkVariable (or other prespawn tasks)
+        /// which can be useful for assigning a NetworkVariable value on the server side when the NetworkVariable has owner write permissions.
+        /// This also assures that duruing post spawn all associated NetworkBehaviours have run through the OnNetworkSpawn pass (i.e. OnNetworkSpawn order is not an issue)
         /// </summary>
         [UnityTest]
         public IEnumerator OnNetworkPreAndPostSpawn()
@@ -258,6 +258,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return CreateAndStartNewClient();
 
+            // Spawn the object with the newly joined client as the owner
             var serverInstance = SpawnObject(m_PrePostSpawnObject, m_ClientNetworkManagers[0]);
             var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
             var serverPreSpawn = serverInstance.GetComponent<NetworkBehaviourPreSpawn>();
