@@ -659,7 +659,7 @@ namespace Unity.Netcode
         /// </remarks>
         /// <param name="despawnTick">the future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
         public virtual void OnDeferringDespawn(int despawnTick) { }
-        
+
         /// Gets called after the <see cref="NetworkObject"/> is spawned. No NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked yet.
         /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (IsServer/IsClient)
         /// </summary>
