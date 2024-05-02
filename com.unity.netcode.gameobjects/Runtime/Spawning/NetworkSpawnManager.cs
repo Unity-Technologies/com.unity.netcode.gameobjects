@@ -924,6 +924,8 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+            // Invoke NetworkBehaviour.OnPreSpawn methods
+            networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
             // For now, this is the best place I could find to add all connected clients as observers for newly
@@ -964,12 +966,18 @@ namespace Unity.Netcode
                 }
             }
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+
+            // Invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         /// <summary>
         /// This is only invoked to instantiate a serialized NetworkObject via
         /// <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>
         /// </summary>
+        /// <remarks>
+        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
+        /// </remarks>
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
             if (networkObject == null)
@@ -982,7 +990,11 @@ namespace Unity.Netcode
                 throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
             }
 
+            // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
+
+            // It is ok to invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
@@ -1314,6 +1326,7 @@ namespace Unity.Netcode
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
             var isConnectedCMBService = NetworkManager.CMBServiceConnection;
+            var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
@@ -1330,9 +1343,17 @@ namespace Unity.Netcode
                         }
 
                         SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
             }
+
+            // Notify all in-scene placed NetworkObjects have been spawned
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                networkObject.InternalInSceneNetworkObjectsSpawned();
+            }
+            networkObjectsToSpawn.Clear();
         }
 
         internal void OnDespawnObject(NetworkObject networkObject, bool destroyGameObject, bool modeDestroy = false)

@@ -660,15 +660,68 @@ namespace Unity.Netcode
         /// <param name="despawnTick">the future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
         public virtual void OnDeferringDespawn(int despawnTick) { }
 
+        /// Gets called after the <see cref="NetworkObject"/> is spawned. No NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked yet.
+        /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (IsServer/IsClient)
+        /// </summary>
+        /// <remarks>
+        /// <param name="networkManager">a ref to the <see cref="NetworkManager"/> since this is not yet set on the <see cref="NetworkBehaviour"/></param>
+        /// The <see cref="NetworkBehaviour"/> will not have anything assigned to it at this point in time.
+        /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn related properties will not be set.
+        /// This can be used to handle things like initializing/instantiating a NetworkVariable or the like.
+        /// </remarks>
+        protected virtual void OnNetworkPreSpawn(ref NetworkManager networkManager) { }
+
         /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
         /// <summary>
+        /// Gets called after the <see cref="NetworkObject"/> is spawned. All NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked.
+        /// </summary>
+        /// <remarks>
+        /// Will be invoked on each <see cref="NetworkBehaviour"/> associated with the <see cref="NetworkObject"/> being spawned.
+        /// All associated <see cref="NetworkBehaviour"/> components will have had <see cref="OnNetworkSpawn"/> invoked on the spawned <see cref="NetworkObject"/>.
+        /// </remarks>
+        protected virtual void OnNetworkPostSpawn() { }
+
+        /// <summary>
+        /// [Client-Side Only]
+        /// When a new client joins it is synchronized with all spawned NetworkObjects and scenes loaded for the session joined. At the end of the synchronization process, when all
+        /// <see cref="NetworkObject"/>s and scenes (if scene management is enabled) have finished synchronizing, all NetworkBehaviour components associated with spawned <see cref="NetworkObject"/>s
+        /// will have this method invoked.
+        /// </summary>
+        /// <remarks>
+        /// This can be used to handle post synchronization actions where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
+        /// This is only invoked on clients during a client-server network topology session.
+        /// </remarks>
+        protected virtual void OnNetworkSessionSynchronized() { }
+
+        /// <summary>
+        /// [Client & Server Side]
+        /// When a scene is loaded an in-scene placed NetworkObjects are all spawned, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
+        /// </summary>
+        /// <remarks>
+        /// This can be used to handle post scene loaded actions for in-scene placed NetworkObjcts where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
+        /// </remarks>
+        protected virtual void OnInSceneObjectsSpawned() { }
+
+        /// <summary>
         /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
+
+        internal void NetworkPreSpawn(ref NetworkManager networkManager)
+        {
+            try
+            {
+                OnNetworkPreSpawn(ref networkManager);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
 
         internal void InternalOnNetworkSpawn()
         {
@@ -696,6 +749,42 @@ namespace Unity.Netcode
                 // NetworkList, we need to mark the object as free of updates.
                 // This should happen for all objects on the machine triggering the spawn.
                 PostNetworkVariableWrite(true);
+            }
+        }
+
+        internal void NetworkPostSpawn()
+        {
+            try
+            {
+                OnNetworkPostSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        internal void NetworkSessionSynchronized()
+        {
+            try
+            {
+                OnNetworkSessionSynchronized();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        internal void InSceneNetworkObjectsSpawned()
+        {
+            try
+            {
+                OnInSceneObjectsSpawned();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
 

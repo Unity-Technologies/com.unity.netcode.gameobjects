@@ -222,6 +222,12 @@ namespace Unity.Netcode
                 }
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
+
+                // For convenience, notify all NetworkBehaviours that synchronization is complete.
+                foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
+                {
+                    networkObject.InternalNetworkSessionSynchronized();
+                }
             }
             else
             {

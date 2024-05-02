@@ -1859,6 +1859,17 @@ namespace Unity.Netcode
                 }
             }
 
+            foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
+            {
+                foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
+                {
+                    if (!keyValuePairBySceneHandle.Value.IsPlayerObject)
+                    {
+                        keyValuePairBySceneHandle.Value.InternalInSceneNetworkObjectsSpawned();
+                    }
+                }
+            }
+
             // Add any despawned when spawned in-scene placed NetworkObjects to the scene event data
             sceneEventData.AddDespawnedInSceneNetworkObjects();
 
@@ -2413,6 +2424,12 @@ namespace Unity.Netcode
                             {
                                 NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}][Scene Management Enabled] Synchronization complete!");
                             }
+                            // For convenience, notify all NetworkBehaviours that synchronization is complete.
+                            foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
+                            {
+                                networkObject.InternalNetworkSessionSynchronized();
+                            }
+
                             EndSceneEvent(sceneEventId);
                         }
                         break;

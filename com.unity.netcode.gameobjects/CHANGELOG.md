@@ -10,8 +10,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2912)
+- Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all `NetworkBehaviour`s after a newly joined client has finished synchronizing with the network session in progress. (#2912)
+- Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2912)
+
 ### Fixed
 
+- Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2912)
 - Fixed issue where an in-scene placed `NetworkObject` with `NetworkTransform` that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2898)
 
 ### Changed
@@ -63,7 +68,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added distributed authority mode specific `NetworkObject.OnDeferredDespawnComplete` callback handler that can be used to further control when deferring the despawning of a `NetworkObject` on non-authoritative instances. (#2863)
 - Added `NetworkClient.SessionModeType` as one way to determine the current session mode of the network session a client is connected to. (#2863)
 - Added distributed authority mode specific `NetworkClient.IsSessionOwner` property to determine if the current local client is the current session owner of a distributed authority session. (#2863)
-- Added distributed authority mode specific client side spawning capabilities. When running in distributed authority mode, clients can instantiate and spawn `NetworkObject` instances (the local client is authomatically the owner of the spawned object). (#2863)
+- Added distributed authority mode specific client side spawning capabilities. When running in distributed authority mode, clients can instantiate and spawn `NetworkObject` instances (the local client is automatically the owner of the spawned object). (#2863)
   - This is useful to better visually synchronize owner authoritative motion models and newly spawned `NetworkObject` instances (i.e. projectiles for example).
 - Added distributed authority mode specific client side player spawning capabilities. Clients will automatically spawn their associated player object locally. (#2863)
 - Added distributed authority mode specific `NetworkConfig.AutoSpawnPlayerPrefabClientSide` property (default is true) to provide control over the automatic spawning of player prefabs on the local client side. (#2863)
@@ -87,6 +92,36 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkVariable` defaults to owner write and everyone read permissions when connected to a distributed authority session (even if declared with server read or write permissions).  (#2863)
 - Changed `NetworkObject` no longer implements the `MonoBehaviour.Update` method in order to determine whether a `NetworkObject` instance has been migrated to a different scene. Instead, only `NetworkObjects` with the `SceneMigrationSynchronization` property set will be updated internally during the `NetworkUpdateStage.PostLateUpdate` by `NetworkManager`. (#2863)
 - Changed `NetworkManager` inspector view layout where properties are now organized by category. (#2863)
+- Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
+- Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
+
+## [1.9.1] - 2024-04-18
+
+### Added
+- Added `AnticipatedNetworkVariable<T>`, which adds support for client anticipation of NetworkVariable values, allowing for more responsive game play (#2820)
+- Added `AnticipatedNetworkTransform`, which adds support for client anticipation of `NetworkTransform`s (#2820)
+- Added `NetworkVariableBase.ExceedsDirtinessThreshold` to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in NetworkVariable<T> with the callback NetworkVariable<T>.CheckExceedsDirtinessThreshold) (#2820)
+- Added `NetworkVariableUpdateTraits`, which add additional throttling support: `MinSecondsBetweenUpdates` will prevent the `NetworkVariable` from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while `MaxSecondsBetweenUpdates` will force a dirty `NetworkVariable` to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2820)
+- Added virtual method `NetworkVariableBase.OnInitialize()` which can be used by `NetworkVariable` subclasses to add initialization code (#2820)
+- Added virtual method `NetworkVariableBase.Update()`, which is called once per frame to support behaviors such as interpolation between an anticipated value and an authoritative one. (#2820)
+- Added `NetworkTime.TickWithPartial`, which represents the current tick as a double that includes the fractional/partial tick value. (#2820)
+- `NetworkVariable` now includes built-in support for `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, and `Dictionary` (#2813)
+- `NetworkVariable` now includes delta compression for collection values (`NativeList`, `NativeArray`, `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, `Dictionary`, and `FixedString` types) to save bandwidth by only sending the values that changed. (Note: For `NativeList`, `NativeArray`, and `List`, this algorithm works differently than that used in `NetworkList`. This algorithm will use less bandwidth for "set" and "add" operations, but `NetworkList` is more bandwidth-efficient if you are performing frequent "insert" operations.) (#2813)
+- `UserNetworkVariableSerialization` now has optional callbacks for `WriteDelta` and `ReadDelta`. If both are provided, they will be used for all serialization operations on NetworkVariables of that type except for the first one for each client. If either is missing, the existing `Write` and `Read` will always be used. (#2813)
+- Network variables wrapping `INetworkSerializable` types can perform delta serialization by setting `UserNetworkVariableSerialization<T>.WriteDelta` and `UserNetworkVariableSerialization<T>.ReadDelta` for those types. The built-in `INetworkSerializable` serializer will continue to be used for all other serialization operations, but if those callbacks are set, it will call into them on all but the initial serialization to perform delta serialization. (This could be useful if you have a large struct where most values do not change regularly and you want to send only the fields that did change.) (#2813)
+
+### Fixed
+
+- Fixed issue where `NetworkTransformEditor` would throw and exception if you excluded the physics package. (#2871)
+- Fixed issue where `NetworkTransform` could not properly synchronize its base position when using half float precision. (#2845)
+- Fixed issue where the host was not invoking `OnClientDisconnectCallback` for its own local client when internally shutting down. (#2822)
+- Fixed issue where NetworkTransform could potentially attempt to "unregister" a named message prior to it being registered. (#2807)
+- Fixed issue where in-scene placed `NetworkObject`s with complex nested children `NetworkObject`s (more than one child in depth) would not synchronize properly if WorldPositionStays was set to true. (#2796)
+
+### Changed
+
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2874)
+- Changed `NetworkAnimator` no longer requires the `Animator` component to exist on the same `GameObject`. (#2872)
 - Changed `NetworkTransform` to now use `NetworkTransformMessage` as opposed to named messages for NetworkTransformState updates. (#2810)
 - Changed `CustomMessageManager` so it no longer attempts to register or "unregister" a null or empty string and will log an error if this condition occurs. (#2807)
 
