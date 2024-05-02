@@ -1326,6 +1326,7 @@ namespace Unity.Netcode
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
             var isConnectedCMBService = NetworkManager.CMBServiceConnection;
+            var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
@@ -1342,6 +1343,7 @@ namespace Unity.Netcode
                         }
 
                         SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
             }
@@ -1351,6 +1353,7 @@ namespace Unity.Netcode
             {
                 networkObject.InternalInSceneNetworkObjectsSpawned();
             }
+            networkObjectsToSpawn.Clear();
         }
 
         internal void OnDespawnObject(NetworkObject networkObject, bool destroyGameObject, bool modeDestroy = false)
