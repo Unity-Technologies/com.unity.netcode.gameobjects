@@ -158,6 +158,12 @@ namespace Unity.Netcode
         [Tooltip("When enabled (default), the player prefab will automatically be spawned (client-side) upon the client being approved and synchronized.")]
         public bool AutoSpawnPlayerPrefabClientSide = true;
 
+#if MULTIPLAYER_TOOLS
+        public bool NetworkMessageMetrics = true;
+#endif
+
+        public bool NetworkProfilingMetrics = true;
+
         /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>

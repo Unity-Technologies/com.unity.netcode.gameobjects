@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
@@ -16,7 +15,6 @@ namespace Unity.Netcode.Components
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Network Transform")]
-    [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         #region NETWORK TRANSFORM STATE
@@ -1185,12 +1183,6 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         public bool CanCommitToTransform { get; protected set; }
-
-        /// <summary>
-        /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
-        /// was instantiated on the server side or not.
-        /// </summary>
-        protected bool m_CachedIsServer; // Note: we no longer use this and are only keeping it until we decide to deprecate it
 
         /// <summary>
         /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
@@ -2856,12 +2848,6 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            ///////////////////////////////////////////////////////////////
-            // NOTE: Legacy and no longer used (candidates for deprecation)
-            m_CachedIsServer = IsServer;
-            ///////////////////////////////////////////////////////////////
-
-            // Started using this again to avoid the getter processing cost of NetworkBehaviour.NetworkManager
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
@@ -2874,6 +2860,7 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
+            NetworkManager?.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, false);
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -2932,7 +2919,7 @@ namespace Unity.Netcode.Components
             m_ScaleInterpolator.ResetTo(transform.localScale, serverTime);
             m_RotationInterpolator.ResetTo(rotation, serverTime);
         }
-
+        private NetworkObject m_CachedNetworkObject;
         /// <summary>
         /// The internal initialzation method to allow for internal API adjustments
         /// </summary>
@@ -2943,7 +2930,7 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
+            m_CachedNetworkObject = NetworkObject;
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
@@ -2970,6 +2957,8 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
+                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
+                m_CachedNetworkManager.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -2987,6 +2976,8 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                // Non-authority needs to be added to updates for interpolation and applying state purposes
+                m_CachedNetworkManager.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
 
@@ -3296,7 +3287,7 @@ namespace Unity.Netcode.Components
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.
         /// </remarks>
-        protected virtual void Update()
+        public virtual void OnUpdate()
         {
             // If not spawned or this instance has authority, exit early
 #if COM_UNITY_MODULES_PHYSICS
@@ -3321,7 +3312,7 @@ namespace Unity.Netcode.Components
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
         /// </summary>
-        internal void OnFixedUpdate()
+        public virtual void OnFixedUpdate()
         {
             // If not spawned or this instance has authority, exit early
             if (!m_UseRigidbodyForMotion || !IsSpawned || CanCommitToTransform)
@@ -3367,11 +3358,21 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region MESSAGE HANDLING
+
+        internal NetworkTransformState InboundState = new NetworkTransformState();
+        internal NetworkTransformState OutboundState
+        {
+            get
+            {
+                return m_LocalAuthoritativeNetworkState;
+            }
+        }
+
         /// <summary>
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
         /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ref NetworkTransformState networkTransformState, ulong senderId)
+        internal void TransformStateUpdate(ulong senderId)
         {
             if (CanCommitToTransform)
             {
@@ -3383,10 +3384,35 @@ namespace Unity.Netcode.Components
             m_OldState = m_LocalAuthoritativeNetworkState;
 
             // Assign the new incoming state
-            m_LocalAuthoritativeNetworkState = networkTransformState;
+            m_LocalAuthoritativeNetworkState = InboundState;
 
             // Apply the state update
             OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
+        }
+
+        // Used to send outbound messages
+        private NetworkTransformMessage m_OutboundMessage = new NetworkTransformMessage();
+
+
+        internal void SerializeMessage(FastBufferWriter writer, int targetVersion)
+        {
+            var networkObject = NetworkObject;
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, (int)NetworkBehaviourId);
+            writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
+            if (m_CachedNetworkManager.DistributedAuthorityMode)
+            {
+                BytePacker.WriteValuePacked(writer, networkObject.Observers.Count - 1);
+
+                foreach (var targetId in networkObject.Observers)
+                {
+                    if (OwnerClientId == targetId)
+                    {
+                        continue;
+                    }
+                    BytePacker.WriteValuePacked(writer, targetId);
+                }
+            }
         }
 
         /// <summary>
@@ -3394,7 +3420,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void UpdateTransformState()
         {
-            if (m_CachedNetworkManager.ShutdownInProgress)
+            if (m_CachedNetworkManager.ShutdownInProgress || (m_CachedNetworkObject.Observers.Count - 1 == 0))
             {
                 return;
             }
@@ -3409,17 +3435,7 @@ namespace Unity.Netcode.Components
                 Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
             }
             var customMessageManager = m_CachedNetworkManager.CustomMessagingManager;
-
-            var networkTransformMessage = new NetworkTransformMessage()
-            {
-                NetworkObjectId = NetworkObjectId,
-                NetworkBehaviourId = NetworkBehaviourId,
-                State = m_LocalAuthoritativeNetworkState,
-                DistributedAuthorityMode = m_CachedNetworkManager.DistributedAuthorityMode,
-                // Don't populate if we are the DAHost as we send directly to each client
-                TargetIds = m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.DAHost ? NetworkObject.Observers.Where((c) => c != m_CachedNetworkManager.LocalClientId).ToArray() : null,
-            };
-
+            m_OutboundMessage.NetworkTransform = this;
 
             // Determine what network delivery method to use:
             // When to send reliable packets:
@@ -3445,13 +3461,13 @@ namespace Unity.Netcode.Components
                     {
                         continue;
                     }
-                    NetworkManager.MessageManager.SendMessage(ref networkTransformMessage, networkDelivery, clientId);
+                    NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
                 }
             }
             else
             {
                 // Clients (owner authoritative) send messages to the server-host
-                NetworkManager.MessageManager.SendMessage(ref networkTransformMessage, networkDelivery, NetworkManager.ServerClientId);
+                NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
         }
         #endregion

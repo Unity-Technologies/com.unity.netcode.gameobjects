@@ -6,6 +6,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        private const string k_Name = "DestroyObjectMessage";
+
         public ulong NetworkObjectId;
         public bool DestroyGameObject;
         private byte m_DestroyFlags;
@@ -84,7 +86,7 @@ namespace Unity.Netcode
                 // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
                 if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
                 {
-                    networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
+                    networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
                 }
             }
             return true;
