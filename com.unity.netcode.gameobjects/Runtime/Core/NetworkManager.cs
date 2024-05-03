@@ -179,7 +179,9 @@ namespace Unity.Netcode
         }
 
         internal Dictionary<ulong, NetworkTransform> NetworkTransformUpdate = new Dictionary<ulong, NetworkTransform>();
+#if COM_UNITY_MODULES_PHYSICS
         internal Dictionary<ulong, NetworkTransform> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkTransform>();
+#endif
 
         internal void NetworkTransformRegistration(NetworkTransform networkTransform, bool forUpdate = true, bool register = true)
         {
@@ -197,6 +199,7 @@ namespace Unity.Netcode
                     NetworkTransformUpdate.Remove(networkTransform.NetworkObjectId);
                 }
             }
+#if COM_UNITY_MODULES_PHYSICS
             else
             {
                 if (register)
@@ -211,6 +214,7 @@ namespace Unity.Netcode
                     NetworkTransformFixedUpdate.Remove(networkTransform.NetworkObjectId);
                 }
             }
+#endif
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
@@ -228,6 +232,7 @@ namespace Unity.Netcode
                         MessageManager.CleanupDisconnectedClients();
                     }
                     break;
+#if COM_UNITY_MODULES_PHYSICS
                 case NetworkUpdateStage.FixedUpdate:
                     {
                         foreach (var networkTransformEntry in NetworkTransformFixedUpdate)
@@ -239,6 +244,7 @@ namespace Unity.Netcode
                         }
                     }
                     break;
+#endif
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
@@ -997,7 +1003,9 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+#if COM_UNITY_MODULES_PHYSICS
             NetworkTransformFixedUpdate.Clear();
+#endif
             NetworkTransformUpdate.Clear();
 
             //DANGOEXP TODO: Remove this before finalizing the experimental release
@@ -1035,7 +1043,9 @@ namespace Unity.Netcode
             }
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+#if COM_UNITY_MODULES_PHYSICS
             this.RegisterNetworkUpdate(NetworkUpdateStage.FixedUpdate);
+#endif
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
