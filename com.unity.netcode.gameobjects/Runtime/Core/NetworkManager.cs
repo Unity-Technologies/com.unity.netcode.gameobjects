@@ -181,7 +181,7 @@ namespace Unity.Netcode
         internal Dictionary<ulong, NetworkTransform> NetworkTransformUpdate = new Dictionary<ulong, NetworkTransform>();
         internal Dictionary<ulong, NetworkTransform> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkTransform>();
 
-        internal void NetworkTransformRegistration(NetworkTransform networkTransform,bool forUpdate = true, bool register = true)
+        internal void NetworkTransformRegistration(NetworkTransform networkTransform, bool forUpdate = true, bool register = true)
         {
             if (forUpdate)
             {
@@ -230,7 +230,7 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.FixedUpdate:
                     {
-                        foreach(var networkTransformEntry in NetworkTransformFixedUpdate)
+                        foreach (var networkTransformEntry in NetworkTransformFixedUpdate)
                         {
                             if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
                             {

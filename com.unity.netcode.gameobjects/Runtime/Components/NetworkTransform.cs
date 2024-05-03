@@ -2860,7 +2860,13 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
-            NetworkManager?.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, false);
+
+#if COM_UNITY_MODULES_PHYSICS
+            var forUpdate = !m_UseRigidbodyForMotion;
+#else
+            var forUpdate = true;
+#endif
+            NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -2953,12 +2959,17 @@ namespace Unity.Netcode.Components
                 m_NetworkRigidbodyInternal.SetPosition(currentPosition);
                 m_NetworkRigidbodyInternal.SetRotation(currentRotation);
             }
+
+            var forUpdate = !m_UseRigidbodyForMotion;
+#else
+            var forUpdate = true;
 #endif
 
             if (CanCommitToTransform)
             {
+
                 // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, false);
+                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -2977,7 +2988,7 @@ namespace Unity.Netcode.Components
             else
             {
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
-                m_CachedNetworkManager.NetworkTransformRegistration(this, !m_UseRigidbodyForMotion, true);
+                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
 
