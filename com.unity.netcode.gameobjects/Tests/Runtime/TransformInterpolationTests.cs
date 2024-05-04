@@ -63,7 +63,7 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_MaxThresholdFailures = 4;
         private int m_ExceededThresholdCount;
 
-        public override void OnUpdate()
+        private void Update()
         {
             base.OnUpdate();
 
