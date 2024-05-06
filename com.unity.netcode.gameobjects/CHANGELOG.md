@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+- Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2906)
+- Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all `NetworkBehaviour`s after a newly joined client has finished synchronizing with the network session in progress. (#2906)
+- Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2906)
+
+### Fixed
+
+- Fixed issue where `NetworkRigidbody2D` would not properly change body type based on the instance's authority when spawned. (#2916)
+- Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2906)
+
+### Changed
+
+
 ## [1.9.1] - 2024-04-18
 
 ### Added
