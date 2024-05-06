@@ -236,6 +236,8 @@ namespace Unity.Netcode
                     // Mark the client being connected
                     networkManager.IsConnectedClient = true;
 
+                    networkManager.SceneManager.IsRestoringSession = IsRestoredSession;
+
                     if (!IsRestoredSession)
                     {
                         // Spawn any in-scene placed NetworkObjects

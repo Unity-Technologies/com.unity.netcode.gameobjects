@@ -444,6 +444,7 @@ namespace Unity.Netcode
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
         internal Dictionary<int, int> ClientSceneHandleToServerSceneHandle = new Dictionary<int, int>();
 
+        internal bool IsRestoringSession;
         /// <summary>
         /// Add the client to server (and vice versa) scene handle lookup.
         /// Add the client-side handle to scene entry in the HandleToScene table.
@@ -454,8 +455,8 @@ namespace Unity.Netcode
             if (!ServerSceneHandleToClientSceneHandle.ContainsKey(serverHandle))
             {
                 ServerSceneHandleToClientSceneHandle.Add(serverHandle, clientHandle);
-            }
-            else
+            }            
+            else if (!IsRestoringSession)
             {
                 return false;
             }
@@ -464,7 +465,7 @@ namespace Unity.Netcode
             {
                 ClientSceneHandleToServerSceneHandle.Add(clientHandle, serverHandle);
             }
-            else
+            else if (!IsRestoringSession)
             {
                 return false;
             }
@@ -2428,6 +2429,11 @@ namespace Unity.Netcode
                             foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
                             {
                                 networkObject.InternalNetworkSessionSynchronized();
+                            }
+
+                            if (NetworkManager.CurrentSessionOwner == NetworkManager.LocalClientId && IsRestoringSession)
+                            {
+                                IsRestoringSession = false;
                             }
 
                             EndSceneEvent(sceneEventId);
