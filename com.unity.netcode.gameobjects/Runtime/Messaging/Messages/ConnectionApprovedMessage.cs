@@ -242,16 +242,13 @@ namespace Unity.Netcode
                     {
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
-                    }
 
-                    // Spawn the local player of the session owner
-                    if (networkManager.AutoSpawnPlayerPrefabClientSide)
-                    {
-                        networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
-                    }
+                        // Spawn the local player of the session owner
+                        if (networkManager.AutoSpawnPlayerPrefabClientSide)
+                        {
+                            networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
+                        }
 
-                    if (!IsRestoredSession)
-                    {
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
                         networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
                     }
