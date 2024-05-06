@@ -19,14 +19,14 @@ namespace Unity.Netcode.Components
 
         private Rigidbody2D m_Rigidbody;
         private NetworkTransform m_NetworkTransform;
-        
+
         private RigidbodyInterpolation2D m_OriginalInterpolation;
 
         // Used to cache the authority state of this rigidbody during the last frame
         private bool m_IsAuthority;
 
         private void Awake()
-        {               
+        {
             m_NetworkTransform = GetComponent<NetworkTransform>();
             m_IsServerAuthoritative = m_NetworkTransform.IsServerAuthoritative();
 
