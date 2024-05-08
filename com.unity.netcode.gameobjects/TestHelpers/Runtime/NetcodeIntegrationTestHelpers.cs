@@ -378,7 +378,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // If VerifySceneBeforeLoading is not already set, then go ahead and set it so the host/server
             // will not try to synchronize clients to the TestRunner scene.  We only need to do this for the server.
-            if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
+            // All clients in distributed authority mode, should have this registered (since any one client can become the session owner).
+            if ((networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null) || networkManager.DistributedAuthorityMode)
             {
                 networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
 

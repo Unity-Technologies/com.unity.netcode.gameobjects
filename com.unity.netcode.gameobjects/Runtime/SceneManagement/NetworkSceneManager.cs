@@ -455,7 +455,7 @@ namespace Unity.Netcode
             if (!ServerSceneHandleToClientSceneHandle.ContainsKey(serverHandle))
             {
                 ServerSceneHandleToClientSceneHandle.Add(serverHandle, clientHandle);
-            }            
+            }
             else if (!IsRestoringSession)
             {
                 return false;
@@ -1046,7 +1046,7 @@ namespace Unity.Netcode
         /// <param name="targetClientIds">array of client identifiers to receive the scene event message</param>
         private void SendSceneEventData(uint sceneEventId, ulong[] targetClientIds)
         {
-            if (targetClientIds.Length == 0)
+            if (targetClientIds.Length == 0 && !NetworkManager.DistributedAuthorityMode)
             {
                 // This would be the Host/Server with no clients connected
                 // Silently return as there is nothing to be done
@@ -1057,6 +1057,16 @@ namespace Unity.Netcode
 
             if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
             {
+                if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority())
+                {
+                    sceneEvent.TargetClientId = NetworkManager.ServerClientId;
+                    var message = new SceneEventMessage
+                    {
+                        EventData = sceneEvent,
+                    };
+                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+                    NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
+                }
                 foreach (var clientId in targetClientIds)
                 {
                     sceneEvent.TargetClientId = clientId;
