@@ -855,7 +855,7 @@ namespace Unity.Netcode
                         // Leave destruction up to the handler
                         NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
                     }
-                    else
+                    else if (networkObjects[i].IsSpawned)
                     {
                         // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
                         // is unloaded. Otherwise, despawn and destroy it.
