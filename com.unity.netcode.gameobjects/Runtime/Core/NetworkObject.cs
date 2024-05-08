@@ -512,6 +512,7 @@ namespace Unity.Netcode
 
         private void Awake()
         {
+            m_ChildNetworkBehaviours = null;
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
@@ -1360,6 +1361,18 @@ namespace Unity.Netcode
             }
         }
 
+        internal void InvokeBehaviourNetworkPreSpawn()
+        {
+            var networkManager = NetworkManager;
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager);
+                }
+            }
+        }
+
         internal void InvokeBehaviourNetworkSpawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
@@ -1383,6 +1396,42 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        internal void InvokeBehaviourNetworkPostSpawn()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkPostSpawn();
+                }
+            }
+        }
+
+
+        internal void InternalNetworkSessionSynchronized()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].NetworkSessionSynchronized();
+                }
+            }
+        }
+
+        internal void InternalInSceneNetworkObjectsSpawned()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].InSceneNetworkObjectsSpawned();
+                }
+            }
+        }
+
+
 
         internal void InvokeBehaviourNetworkDespawn()
         {
@@ -1885,6 +1934,9 @@ namespace Unity.Netcode
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
             networkObject.OwnerClientId = sceneObject.OwnerClientId;
+
+            // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
+            networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
