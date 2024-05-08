@@ -1,4 +1,5 @@
 #if COM_UNITY_MODULES_PHYSICS2D || COM_UNITY_MODULES_PHYSICS
+using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 
@@ -24,10 +25,11 @@ namespace TestProject.RuntimeTests
     public class NetworkRigidbody2DTestComponent : NetworkRigidbody2D
     {
         public bool WasKinematicBeforeSpawn;
-        internal override void OnSetupRigidbody()
+
+        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             WasKinematicBeforeSpawn = GetComponent<Rigidbody2D>().isKinematic;
-            base.OnSetupRigidbody();
+            base.OnNetworkPreSpawn(ref networkManager);
         }
     }
 #endif
@@ -37,10 +39,10 @@ namespace TestProject.RuntimeTests
     public class NetworkRigidbodyTestComponent : NetworkRigidbody
     {
         public bool WasKinematicBeforeSpawn;
-        internal override void OnSetupRigidbody()
+        protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
         {
             WasKinematicBeforeSpawn = GetComponent<Rigidbody>().isKinematic;
-            base.OnSetupRigidbody();
+            base.OnNetworkPreSpawn(ref networkManager);
         }
     }
 #endif

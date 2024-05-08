@@ -53,12 +53,6 @@ namespace Unity.Netcode.Components
             // clients can run fixed update before the first full
             // NetworkTransform update
             m_Rigidbody.isKinematic = true;
-            OnSetupRigidbody();
-        }
-
-        internal virtual void OnSetupRigidbody()
-        {
-
         }
 
         /// <summary>

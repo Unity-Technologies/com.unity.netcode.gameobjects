@@ -49,13 +49,6 @@ namespace Unity.Netcode.Components
 
             m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : (m_NetworkTransform.Interpolate ? RigidbodyInterpolation.None : m_OriginalInterpolation);
             m_Rigidbody.isKinematic = true;
-
-            OnSetupRigidbody();
-        }
-
-        internal virtual void OnSetupRigidbody()
-        {
-
         }
 
         /// <summary>
