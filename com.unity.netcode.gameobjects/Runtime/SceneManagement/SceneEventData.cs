@@ -722,7 +722,7 @@ namespace Unity.Netcode
             {
                 // is not packed!
                 InternalBuffer.ReadValueSafe(out ushort newObjectsCount);
-
+                var sceneObjects = new List<NetworkObject>();
                 for (ushort i = 0; i < newObjectsCount; i++)
                 {
                     var sceneObject = new NetworkObject.SceneObject();
@@ -734,10 +734,22 @@ namespace Unity.Netcode
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
                     }
 
-                    NetworkObject.AddSceneObject(sceneObject, InternalBuffer, m_NetworkManager);
+                    var networkObject = NetworkObject.AddSceneObject(sceneObject, InternalBuffer, m_NetworkManager);
+
+                    if (sceneObject.IsSceneObject)
+                    {
+                        sceneObjects.Add(networkObject);
+                    }
                 }
                 // Now deserialize the despawned in-scene placed NetworkObjects list (if any)
                 DeserializeDespawnedInScenePlacedNetworkObjects();
+
+                // Notify all newly spawned in-scene placed NetworkObjects that all in-scene placed
+                // NetworkObjects have been spawned.
+                foreach (var networkObject in sceneObjects)
+                {
+                    networkObject.InternalInSceneNetworkObjectsSpawned();
+                }
             }
             finally
             {
@@ -980,6 +992,15 @@ namespace Unity.Netcode
                         {
                             m_NetworkObjectsSync.Add(spawnedNetworkObject);
                         }
+                    }
+                }
+
+                // Notify that all in-scene placed NetworkObjects have been spawned
+                foreach (var networkObject in m_NetworkObjectsSync)
+                {
+                    if (networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value)
+                    {
+                        networkObject.InternalInSceneNetworkObjectsSpawned();
                     }
                 }
 
