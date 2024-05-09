@@ -1,9 +1,9 @@
+using System.Collections;
 using NUnit.Framework;
-using UnityEngine;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using UnityEngine.TestTools;
-using System.Collections;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -109,7 +109,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 foreach (var c in clients)
                 {
-                    c.MessageManager.HandleIncomingData( server.LocalClientId, batchedMessage.ToArray(), 0);
+                    c.MessageManager.HandleIncomingData(server.LocalClientId, batchedMessage.ToArray(), 0);
                 }
             }
 
