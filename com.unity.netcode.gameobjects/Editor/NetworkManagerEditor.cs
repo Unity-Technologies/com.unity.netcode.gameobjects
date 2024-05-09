@@ -222,7 +222,7 @@ namespace Unity.Netcode.Editor
         private void DrawTransportField()
         {
 #if RELAY_INTEGRATION_AVAILABLE
-            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
+            var useRelay = EditorPrefs.GetBool(m_UseEasyRelayIntegrationKey, false);
 #else
             var useRelay = false;
 #endif
@@ -257,7 +257,7 @@ namespace Unity.Netcode.Editor
         }
 
 #if RELAY_INTEGRATION_AVAILABLE
-        private readonly string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay_" + Application.dataPath.GetHashCode();
+        private readonly string m_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay_" + Application.dataPath.GetHashCode();
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
         private string m_Region = "";
@@ -272,7 +272,7 @@ namespace Unity.Netcode.Editor
 
 #if RELAY_INTEGRATION_AVAILABLE
             // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
-            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
+            var useRelay = EditorPrefs.GetBool(m_UseEasyRelayIntegrationKey, false);
             GUILayout.BeginHorizontal();
             useRelay = GUILayout.Toggle(useRelay, "Try Relay in the Editor");
 
@@ -284,7 +284,7 @@ namespace Unity.Netcode.Editor
             }
             GUILayout.EndHorizontal();
 
-            EditorPrefs.SetBool(k_UseEasyRelayIntegrationKey, useRelay);
+            EditorPrefs.SetBool(m_UseEasyRelayIntegrationKey, useRelay);
             if (useRelay && !Application.isPlaying && !CloudProjectSettings.projectBound)
             {
                 EditorGUILayout.HelpBox("To use relay, you need to setup your project in the Project Settings in the Services section.", MessageType.Warning);
