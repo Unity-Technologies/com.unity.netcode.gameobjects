@@ -9,14 +9,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
--Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
+
+- Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2906)
+- Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all `NetworkBehaviour`s after a newly joined client has finished synchronizing with the network session in progress. (#2906)
+- Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2906)
+
+### Fixed
+
+- Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2906)
+
+### Changed
+
+
+## [1.9.1] - 2024-04-18
+
+### Added
+- Added AnticipatedNetworkVariable<T>, which adds support for client anticipation of NetworkVariable values, allowing for more responsive gameplay (#2820)
 - Added AnticipatedNetworkTransform, which adds support for client anticipation of NetworkTransforms (#2820)
 - Added NetworkVariableBase.ExceedsDirtinessThreshold to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in NetworkVariable<T> with the callback NetworkVariable<T>.CheckExceedsDirtinessThreshold) (#2820)
 - Added NetworkVariableUpdateTraits, which add additional throttling support: MinSecondsBetweenUpdates will prevent the NetworkVariable from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while MaxSecondsBetweenUpdates will force a dirty NetworkVariable to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2820)
 - Added virtual method NetworkVariableBase.OnInitialize() which can be used by NetworkVariable subclasses to add initialization code (#2820)
 - Added virtual method NetworkVariableBase.Update(), which is called once per frame to support behaviors such as interpolation between an anticipated value and an authoritative one. (#2820)
 - Added NetworkTime.TickWithPartial, which represents the current tick as a double that includes the fractional/partial tick value. (#2820)
-- Added NetworkTickSystem.AnticipationTick, which can be helpful with implementation of client anticipation. This value represents the tick the current local client was at at the beginning of the most recent network round trip, which enables it to correlate server update ticks with the client tick that may have triggered them. (#2820)
 - `NetworkVariable` now includes built-in support for `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, and `Dictionary` (#2813)
 - `NetworkVariable` now includes delta compression for collection values (`NativeList`, `NativeArray`, `NativeHashSet`, `NativeHashMap`, `List`, `HashSet`, `Dictionary`, and `FixedString` types) to save bandwidth by only sending the values that changed. (Note: For `NativeList`, `NativeArray`, and `List`, this algorithm works differently than that used in `NetworkList`. This algorithm will use less bandwidth for "set" and "add" operations, but `NetworkList` is more bandwidth-efficient if you are performing frequent "insert" operations.) (#2813)
 - `UserNetworkVariableSerialization` now has optional callbacks for `WriteDelta` and `ReadDelta`. If both are provided, they will be used for all serialization operations on NetworkVariables of that type except for the first one for each client. If either is missing, the existing `Write` and `Read` will always be used. (#2813)
