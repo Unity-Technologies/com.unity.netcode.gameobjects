@@ -2441,9 +2441,10 @@ namespace Unity.Netcode
                                 networkObject.InternalNetworkSessionSynchronized();
                             }
 
-                            if (NetworkManager.CurrentSessionOwner == NetworkManager.LocalClientId && IsRestoringSession)
+                            if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession)
                             {
                                 IsRestoringSession = false;
+                                PostSynchronizationSceneUnloading = m_OriginalPostSynchronizationSceneUnloading;
                             }
 
                             EndSceneEvent(sceneEventId);
@@ -2632,6 +2633,8 @@ namespace Unity.Netcode
         /// </summary>
         internal bool SkipSceneHandling;
 
+        private bool m_OriginalPostSynchronizationSceneUnloading;
+
         /// <summary>
         /// Both Client and Server: Incoming scene event entry point
         /// </summary>
@@ -2705,6 +2708,12 @@ namespace Unity.Netcode
                         // Only if ClientSynchronizationMode is Additive and the client receives a synchronize scene event
                         if (ClientSynchronizationMode == LoadSceneMode.Additive)
                         {
+                            if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession && clientId == NetworkManager.ServerClientId)
+                            {
+                                m_OriginalPostSynchronizationSceneUnloading = PostSynchronizationSceneUnloading;
+                                PostSynchronizationSceneUnloading = true;
+                            }
+
                             // Check for scenes already loaded and create a table of scenes already loaded (SceneEntries) that will be
                             // used if the server is synchronizing the same scenes (i.e. if a matching scene is already loaded on the
                             // client side, then that scene will be used as opposed to loading another scene). This allows for clients
