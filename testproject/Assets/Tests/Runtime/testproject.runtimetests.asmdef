@@ -41,6 +41,21 @@
             "name": "com.unity.transport",
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
+        },
+        {
+            "name": "com.unity.modules.animation",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_ANIMATION"
+        },
+        {
+            "name": "com.unity.modules.physics",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_PHYSICS"
+        },
+        {
+            "name": "com.unity.modules.physics2d",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_PHYSICS2D"
         }
     ],
     "noEngineReferences": false
