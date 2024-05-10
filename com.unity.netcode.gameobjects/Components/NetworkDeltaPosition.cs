@@ -31,7 +31,7 @@ namespace Unity.Netcode.Components
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {            
+        {
             if (!SynchronizeBase)
             {
                 HalfVector3.NetworkSerialize(serializer);
