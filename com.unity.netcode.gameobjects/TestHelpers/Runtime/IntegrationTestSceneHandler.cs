@@ -290,7 +290,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 SceneManager.sceneLoaded += Sever_SceneLoaded;
             }
             var operation = Addressables.LoadSceneAsync(sceneName, loadSceneMode);
-            sceneEventProgress.SetAsyncOperation(operation);
+            // sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
 

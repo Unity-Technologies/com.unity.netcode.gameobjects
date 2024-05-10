@@ -26,6 +26,11 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        public uint GetGlobalHash()
+        {
+            return GlobalObjectIdHash;
+        }
+
         /// <summary>
         /// Used to track the source GlobalObjectIdHash value of the associated network prefab.
         /// When an override exists or it is in-scene placed, GlobalObjectIdHash and PrefabGlobalObjectIdHash
@@ -34,7 +39,7 @@ namespace Unity.Netcode
         internal uint PrefabGlobalObjectIdHash;
 
         /// <summary>
-        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene 
+        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene
         /// placd NetworkObjects that are not prefab instances, dynamically spawned prefab instances,
         /// or for network prefab assets.
         /// </summary>
@@ -176,8 +181,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will 
-        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to 
+        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will
+        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to
         /// InScenePlacedSourceGlobalObjectIdHash and mark this as being in-scene placed.
         /// </summary>
         /// <remarks>

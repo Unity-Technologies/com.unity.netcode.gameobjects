@@ -1268,7 +1268,7 @@ namespace Unity.Netcode
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
-        private void OnDestroy()
+        public virtual void OnDestroy()
         {
             ShutdownInternal();
 

@@ -1,4 +1,6 @@
 using System.Runtime.CompilerServices;
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
@@ -10,6 +12,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
+            // Debug.Log($"CreateObjectMessage Serialize [v={targetVersion}] [H={ObjectInfo.Hash}] [id={ObjectInfo.NetworkObjectId}]");
             ObjectInfo.Serialize(writer);
         }
 
@@ -28,7 +31,7 @@ namespace Unity.Netcode
                 return false;
             }
             m_ReceivedNetworkVariableData = reader;
-
+            // Debug.Log($"CreateObjectMessage Deserialize [v={receivedMessageVersion}] [H={ObjectInfo.Hash}] [id={ObjectInfo.NetworkObjectId}]");
             return true;
         }
 

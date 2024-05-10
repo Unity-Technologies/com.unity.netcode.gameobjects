@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TrollKing.Core;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -135,6 +136,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager : IDisposable
     {
+        private static readonly NetworkLogScope Log = new NetworkLogScope(nameof(NetworkSceneManager));
+
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
         internal const int InvalidSceneNameOrPath = -1;
 
@@ -747,23 +750,26 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool ValidateSceneBeforeLoading(string sceneName, LoadSceneMode loadSceneMode)
         {
-            var validated = true;
-            var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
-            if (VerifySceneBeforeLoading != null)
-            {
-                validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
-            }
-            if (!validated && !m_DisableValidationWarningMessages)
-            {
-                var serverHostorClient = "Client";
-                if (NetworkManager.IsServer)
-                {
-                    serverHostorClient = NetworkManager.IsHost ? "Host" : "Server";
-                }
+            Log.Debug(() => $"ValidateSceneBeforeLoading {sceneName} {loadSceneMode}");
+            return true;
 
-                Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {sceneIndex} being loaded in {loadSceneMode} mode failed validation on the {serverHostorClient}!");
-            }
-            return validated;
+            // var validated = true;
+            // var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
+            // if (VerifySceneBeforeLoading != null)
+            // {
+            //     validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
+            // }
+            // if (!validated && !m_DisableValidationWarningMessages)
+            // {
+            //     var serverHostorClient = "Client";
+            //     if (NetworkManager.IsServer)
+            //     {
+            //         serverHostorClient = NetworkManager.IsHost ? "Host" : "Server";
+            //     }
+            //
+            //     Debug.LogWarning($"Scene {sceneName} of Scenes in Build Index {sceneIndex} being loaded in {loadSceneMode} mode failed validation on the {serverHostorClient}!");
+            // }
+            // return validated;
         }
 
         /// <summary>
@@ -1429,6 +1435,7 @@ namespace Unity.Netcode
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgress LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {
+            // Debug.Log($"[NetworkSceneManager] LoadScene sceneName={sceneName}");
             if (!s_ResourceLocationsBySceneName.TryGetValue(sceneName, out var found))
             {
                 var resourceLocationAsync = Addressables.LoadResourceLocationsAsync(sceneName);
@@ -1438,6 +1445,7 @@ namespace Unity.Netcode
                 }
             }
 
+            // Debug.Log($"[NetworkSceneManager] LoadScene Finished LoadResources sceneName={sceneName}");
             var sceneEventProgress = ValidateSceneEventLoading(sceneName);
             if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {
@@ -1489,7 +1497,9 @@ namespace Unity.Netcode
             // Now start loading the scene
             sceneEventProgress.SceneEventId = sceneEventId;
             sceneEventProgress.OnSceneEventCompleted = OnSceneLoaded;
+            // Debug.Log($"[NetworkSceneManager] BEGIN SceneManagerHandler.LoadSceneAsync sceneName={sceneName} loadSceneMode={loadSceneMode}");
             var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
+            // Debug.Log($"[NetworkSceneManager] END SceneManagerHandler.LoadSceneAsync sceneName={sceneName} loadSceneMode={loadSceneMode}");
             // Notify the local server that a scene loading event has begun
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1658,7 +1668,10 @@ namespace Unity.Netcode
                 SceneEventId = sceneEventId,
                 OnSceneEventCompleted = OnSceneLoaded
             };
+
+            // Debug.Log($"[NetworkSceneManager] BEGIN LoadSceneAsync on SceneManagerHandler={SceneManagerHandler.GetType()}");
             var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode, sceneEventProgress);
+            // Debug.Log($"[NetworkSceneManager] END LoadSceneAsync on SceneManagerHandler={SceneManagerHandler.GetType()}");
 
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1736,7 +1749,7 @@ namespace Unity.Netcode
         /// </summary>
         private void OnServerLoadedScene(uint sceneEventId, Scene scene)
         {
-            Debug.Log($"NetworkSceneManager - OnServerLoadedScene eventId:{sceneEventId} scene:{scene.name}");
+            // Debug.Log($"NetworkSceneManager - OnServerLoadedScene eventId:{sceneEventId} scene:{scene.name}");
 
             var sceneEventData = SceneEventDataStore[sceneEventId];
             // Register in-scene placed NetworkObjects with spawn manager
@@ -1987,7 +2000,9 @@ namespace Unity.Netcode
                     SceneEventId = sceneEventId,
                     OnSceneEventCompleted = ClientLoadedSynchronization
                 };
+                // Debug.Log($"[NetworkSceneManager] OnClientBeginSync BEGIN SceneManagerHandler.LoadSceneAsync sceneName={sceneName} loadSceneMode={loadSceneMode}");
                 sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
+                // Debug.Log($"[NetworkSceneManager] OnClientBeginSync END SceneManagerHandler.LoadSceneAsync sceneName={sceneName} loadSceneMode={loadSceneMode}");
 
                 // Notify local client that a scene load has begun
                 OnSceneEvent?.Invoke(new SceneEvent()
