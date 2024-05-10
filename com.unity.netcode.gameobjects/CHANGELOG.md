@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkRigidbody2D` would not properly change body type based on the instance's authority when spawned. (#2916)
 - Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2906)
 
 ### Changed
