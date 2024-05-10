@@ -3603,13 +3603,13 @@ namespace Unity.Netcode.Components
 
             private UnityTransport m_UnityTransport;
             private float m_TickFrequency;
-            private float m_OffsetTickFrequency;
-            private ulong m_TickInMS;
-            private int m_TickSampleIndex;
+            //private float m_OffsetTickFrequency;
+            //private ulong m_TickInMS;
+            //private int m_TickSampleIndex;
             private int m_TickRate;
             public float TicksAgo { get; private set; }
-            public float Offset { get; private set; }
-            private float m_PreviousTicksAgo;
+            //public float Offset { get; private set; }
+            //private float m_PreviousTicksAgo;
 
             private List<float> m_TicksAgoSamples = new List<float>();
 
@@ -3620,19 +3620,19 @@ namespace Unity.Netcode.Components
                 networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
                 m_TickRate = (int)m_NetworkManager.NetworkConfig.TickRate;
                 m_TickFrequency = 1.0f / m_TickRate;
-                // For the offset, it uses the fractional remainder of the tick to determine the offset.
-                // In order to keep within tick boundaries, we increment the tick rate by 1 to assure it
-                // will always be < the tick frequency.
-                m_OffsetTickFrequency = 1.0f / (m_TickRate + 1);
-                m_TickInMS = (ulong)(1000 * m_TickFrequency);
-                m_UnityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
-                // Fill the sample with a starting value of 1
-                for (int i = 0; i < m_TickRate; i++)
-                {
-                    m_TicksAgoSamples.Add(1f);
-                }
-                TicksAgo = 1f;
-                m_PreviousTicksAgo = 1f;
+                //// For the offset, it uses the fractional remainder of the tick to determine the offset.
+                //// In order to keep within tick boundaries, we increment the tick rate by 1 to assure it
+                //// will always be < the tick frequency.
+                //m_OffsetTickFrequency = 1.0f / (m_TickRate + 1);
+                //m_TickInMS = (ulong)(1000 * m_TickFrequency);
+                //m_UnityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
+                //// Fill the sample with a starting value of 1
+                //for (int i = 0; i < m_TickRate; i++)
+                //{
+                //    m_TicksAgoSamples.Add(1f);
+                //}
+                TicksAgo = 2f;
+                //m_PreviousTicksAgo = 1f;
                 if (networkManager.IsServer)
                 {
                     networkManager.OnServerStopped += OnNetworkManagerStopped;
