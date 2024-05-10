@@ -1188,7 +1188,6 @@ namespace Unity.Netcode
 
             // Everything is shutdown in the order of their dependencies
             DeferredMessageManager?.CleanupAllTriggers();
-            CustomMessagingManager = null;
 
             RpcTarget?.Dispose();
             RpcTarget = null;
@@ -1198,6 +1197,8 @@ namespace Unity.Netcode
 
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
+
+            CustomMessagingManager = null;
 
             if (MessageManager != null)
             {
