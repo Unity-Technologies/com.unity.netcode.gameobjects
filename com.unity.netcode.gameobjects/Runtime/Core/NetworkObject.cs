@@ -1128,8 +1128,9 @@ namespace Unity.Netcode
 
             if (NetworkManager == null || !NetworkManager.IsListening)
             {
-                transform.parent = m_CachedParent;
-                Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
+                // We should just let offline things happen. Acting otherwise is ridiculous
+                // transform.parent = m_CachedParent;
+                // Debug.LogException(new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before reparenting"));
                 return;
             }
 
@@ -1173,8 +1174,9 @@ namespace Unity.Netcode
             {
                 if (!transform.parent.TryGetComponent<NetworkObject>(out var parentObject))
                 {
-                    transform.parent = m_CachedParent;
-                    Debug.LogException(new InvalidParentException($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent"));
+                    Debug.LogWarning($"Moving NetworkObject to a non-Networked parent! Might have issues");
+                    // transform.parent = m_CachedParent;
+                    // Debug.LogException(new InvalidParentException($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent"));
                     return;
                 }
 

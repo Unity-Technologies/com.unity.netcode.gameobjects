@@ -704,6 +704,7 @@ namespace Unity.Netcode
 
             networkObject.IsPlayerObject = playerObject;
 
+
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 

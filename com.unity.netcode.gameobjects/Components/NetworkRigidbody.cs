@@ -85,7 +85,11 @@ namespace Unity.Netcode.Components
             }
 
             // If you have authority then you are not kinematic
-            m_Rigidbody.isKinematic = !m_IsAuthority;
+            if (!m_IsAuthority)
+            {
+                m_Rigidbody.isKinematic = true;
+            }
+
 
             // Set interpolation of the Rigidbody based on authority
             // With authority: let local transform handle interpolation

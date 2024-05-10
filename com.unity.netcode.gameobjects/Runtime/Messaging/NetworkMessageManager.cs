@@ -611,7 +611,7 @@ namespace Unity.Netcode
             }
 
             var largestSerializedSize = 0;
-            var sentMessageVersions = new NativeHashSet<int>(clientIds.Count, Allocator.Temp);
+            var sentMessageVersions = new NativeParallelHashSet<int>(clientIds.Count, Allocator.Temp);
             for (var i = 0; i < clientIds.Count; ++i)
             {
                 var messageVersion = 0;
