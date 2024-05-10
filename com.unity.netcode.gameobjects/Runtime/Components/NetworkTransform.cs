@@ -3263,11 +3263,12 @@ namespace Unity.Netcode.Components
 #else
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
 #endif
-                if (m_CachedNetworkManager.DistributedAuthorityMode)
-                {
-                    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                    offset = m_NetworkTransformTickRegistration.Offset;
-                }
+                // TODO: We need an RTT that updates regularly and not only when the client sends packets
+                //if (m_CachedNetworkManager.DistributedAuthorityMode)
+                //{
+                //    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
+                //    offset = m_NetworkTransformTickRegistration.Offset;
+                //}
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
 
@@ -3552,7 +3553,9 @@ namespace Unity.Netcode.Components
 
             internal float TicksAgoInSeconds()
             {
-                return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
+                return 2 * m_TickFrequency;
+                // TODO: We need an RTT that updates regularly and not just when the client sends packets
+                //return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
             }
 
             /// <summary>
@@ -3561,25 +3564,26 @@ namespace Unity.Netcode.Components
             /// </summary>
             private void TickUpdate()
             {
-                if (m_UnityTransport != null)
-                {
-                    // Determine the desired ticks ago by the RTT (this really should be the combination of the
-                    // authority and non-authority 1/2 RTT but in the end anything beyond 300ms is considered very poor
-                    // network quality so latent interpolation is going to be expected).
-                    var rtt = Mathf.Max(m_TickInMS, m_UnityTransport.GetCurrentRtt(NetworkManager.ServerClientId));
-                    m_TicksAgoSamples[m_TickSampleIndex] = Mathf.Max(1, (int)(rtt * m_TickFrequency));
-                    var tickAgoSum = 0.0f;
-                    foreach (var tickAgo in m_TicksAgoSamples)
-                    {
-                        tickAgoSum += tickAgo;
-                    }
-                    m_PreviousTicksAgo = TicksAgo;
-                    TicksAgo = Mathf.Lerp(m_PreviousTicksAgo, tickAgoSum / m_TickRate, m_TickFrequency);
-                    m_TickSampleIndex = (m_TickSampleIndex + 1) % m_TickRate;
-                    // Get the partial tick value for when this is all calculated to provide an offset for determining
-                    // the relative starting interpolation point for the next update
-                    Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
-                }
+                // TODO: We need an RTT that updates regularly and not just when the client sends packets
+                //if (m_UnityTransport != null)
+                //{
+                //    // Determine the desired ticks ago by the RTT (this really should be the combination of the
+                //    // authority and non-authority 1/2 RTT but in the end anything beyond 300ms is considered very poor
+                //    // network quality so latent interpolation is going to be expected).
+                //    var rtt = Mathf.Max(m_TickInMS, m_UnityTransport.GetCurrentRtt(NetworkManager.ServerClientId));
+                //    m_TicksAgoSamples[m_TickSampleIndex] = Mathf.Max(1, (int)(rtt * m_TickFrequency));
+                //    var tickAgoSum = 0.0f;
+                //    foreach (var tickAgo in m_TicksAgoSamples)
+                //    {
+                //        tickAgoSum += tickAgo;
+                //    }
+                //    m_PreviousTicksAgo = TicksAgo;
+                //    TicksAgo = Mathf.Lerp(m_PreviousTicksAgo, tickAgoSum / m_TickRate, m_TickFrequency);
+                //    m_TickSampleIndex = (m_TickSampleIndex + 1) % m_TickRate;
+                //    // Get the partial tick value for when this is all calculated to provide an offset for determining
+                //    // the relative starting interpolation point for the next update
+                //    Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
+                //}
 
                 // TODO FIX: The local NetworkTickSystem can invoke with the same network tick as before
                 if (m_NetworkManager.ServerTime.Tick <= m_LastTick)
