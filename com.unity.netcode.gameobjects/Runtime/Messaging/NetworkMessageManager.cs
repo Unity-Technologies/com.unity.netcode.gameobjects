@@ -558,6 +558,7 @@ namespace Unity.Netcode
 
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
+            // Debug.Log($"NetworkMessageManager::ReceiveMessage {reader.Length} - {context.SenderId} {context.MessageSize}");
             var message = new T();
             var messageVersion = 0;
             // Special cases because these are the messages that carry the version info - thus the version info isn't
@@ -639,6 +640,8 @@ namespace Unity.Netcode
                 using var tmpSerializer = new FastBufferWriter(NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>());
 
                 message.Serialize(tmpSerializer, messageVersion);
+
+                // Debug.Log($"Sending [CUSTOM] message with {delivery} - Size: {tmpSerializer.Position}");
 
                 var size = SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, clientIds, messageVersion);
                 largestSerializedSize = size > largestSerializedSize ? size : largestSerializedSize;

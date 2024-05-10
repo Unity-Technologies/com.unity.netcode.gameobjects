@@ -1411,6 +1411,14 @@ namespace Unity.Netcode
             return sceneEventProgress;
         }
 
+
+        private static Dictionary<string, string> s_ResourceLocationsBySceneName = new();
+
+        public bool PrepareToLoadScene(string sceneName, Action<bool> loaded)
+        {
+            return false;
+        }
+
         /// <summary>
         /// <b>Server side:</b>
         /// Loads the scene name in either additive or single loading mode.
@@ -1421,6 +1429,15 @@ namespace Unity.Netcode
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgress LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {
+            if (!s_ResourceLocationsBySceneName.TryGetValue(sceneName, out var found))
+            {
+                var resourceLocationAsync = Addressables.LoadResourceLocationsAsync(sceneName);
+                if (!resourceLocationAsync.IsValid())
+                {
+                    return null;
+                }
+            }
+
             var sceneEventProgress = ValidateSceneEventLoading(sceneName);
             if (sceneEventProgress.Status != SceneEventProgressStatus.Started)
             {

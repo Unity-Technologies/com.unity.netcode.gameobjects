@@ -32,6 +32,8 @@ namespace Unity.Netcode
 
         internal void InvokeUnnamedMessage(ulong clientId, FastBufferReader reader, int serializedHeaderSize)
         {
+            Debug.Log($"CustomMessageManager::InvokeUnnamedMessage [CUSTOM] {clientId} {reader.Length} {serializedHeaderSize}");
+
             if (OnUnnamedMessage != null)
             {
                 var pos = reader.Position;
