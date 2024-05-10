@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
 #if UNITY_2021_2_OR_NEWER
@@ -54,6 +55,8 @@ namespace Unity.Netcode
                 return GlobalObjectIdHash;
             }
         }
+
+        public NetworkTransform NetworkTransform { get; private set; }
 
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
@@ -2319,6 +2322,11 @@ namespace Unity.Netcode
                     if (networkBehaviours[i].NetworkObject == this)
                     {
                         m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
+                        var type = networkBehaviours[i].GetType();
+                        if (type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                        {
+                            NetworkTransform = networkBehaviours[i] as NetworkTransform;
+                        }
                     }
                 }
 

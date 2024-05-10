@@ -5,6 +5,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        private const string k_Name = "ChangeOwnershipMessage";
+
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
         // DANGOEXP TODO: Remove these notes or change their format
@@ -199,7 +201,7 @@ namespace Unity.Netcode
             // authority of the NetworkObject in question.
             if (!networkManager.DAHost && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
                 return false;
             }
             return true;

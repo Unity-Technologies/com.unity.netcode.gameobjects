@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
@@ -16,7 +15,6 @@ namespace Unity.Netcode.Components
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Network Transform")]
-    [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
         #region NETWORK TRANSFORM STATE
@@ -1185,12 +1183,6 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         public bool CanCommitToTransform { get; protected set; }
-
-        /// <summary>
-        /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
-        /// was instantiated on the server side or not.
-        /// </summary>
-        protected bool m_CachedIsServer; // Note: we no longer use this and are only keeping it until we decide to deprecate it
 
         /// <summary>
         /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
@@ -2856,12 +2848,6 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            ///////////////////////////////////////////////////////////////
-            // NOTE: Legacy and no longer used (candidates for deprecation)
-            m_CachedIsServer = IsServer;
-            ///////////////////////////////////////////////////////////////
-
-            // Started using this again to avoid the getter processing cost of NetworkBehaviour.NetworkManager
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
@@ -2874,6 +2860,13 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
+
+#if COM_UNITY_MODULES_PHYSICS
+            var forUpdate = !m_UseRigidbodyForMotion;
+#else
+            var forUpdate = true;
+#endif
+            NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -2932,7 +2925,7 @@ namespace Unity.Netcode.Components
             m_ScaleInterpolator.ResetTo(transform.localScale, serverTime);
             m_RotationInterpolator.ResetTo(rotation, serverTime);
         }
-
+        private NetworkObject m_CachedNetworkObject;
         /// <summary>
         /// The internal initialzation method to allow for internal API adjustments
         /// </summary>
@@ -2943,7 +2936,7 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
+            m_CachedNetworkObject = NetworkObject;
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
@@ -2966,10 +2959,17 @@ namespace Unity.Netcode.Components
                 m_NetworkRigidbodyInternal.SetPosition(currentPosition);
                 m_NetworkRigidbodyInternal.SetRotation(currentRotation);
             }
+
+            var forUpdate = !m_UseRigidbodyForMotion;
+#else
+            var forUpdate = true;
 #endif
 
             if (CanCommitToTransform)
             {
+
+                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
+                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -2987,6 +2987,8 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                // Non-authority needs to be added to updates for interpolation and applying state purposes
+                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
 
@@ -3261,11 +3263,12 @@ namespace Unity.Netcode.Components
 #else
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
 #endif
-                if (m_CachedNetworkManager.DistributedAuthorityMode)
-                {
-                    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                    offset = m_NetworkTransformTickRegistration.Offset;
-                }
+                // TODO: We need an RTT that updates regularly and not only when the client sends packets
+                //if (m_CachedNetworkManager.DistributedAuthorityMode)
+                //{
+                //    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
+                //    offset = m_NetworkTransformTickRegistration.Offset;
+                //}
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
 
@@ -3296,7 +3299,7 @@ namespace Unity.Netcode.Components
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.
         /// </remarks>
-        protected virtual void Update()
+        public virtual void OnUpdate()
         {
             // If not spawned or this instance has authority, exit early
 #if COM_UNITY_MODULES_PHYSICS
@@ -3321,7 +3324,7 @@ namespace Unity.Netcode.Components
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
         /// </summary>
-        internal void OnFixedUpdate()
+        public virtual void OnFixedUpdate()
         {
             // If not spawned or this instance has authority, exit early
             if (!m_UseRigidbodyForMotion || !IsSpawned || CanCommitToTransform)
@@ -3367,11 +3370,21 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region MESSAGE HANDLING
+
+        internal NetworkTransformState InboundState = new NetworkTransformState();
+        internal NetworkTransformState OutboundState
+        {
+            get
+            {
+                return m_LocalAuthoritativeNetworkState;
+            }
+        }
+
         /// <summary>
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
         /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ref NetworkTransformState networkTransformState, ulong senderId)
+        internal void TransformStateUpdate(ulong senderId)
         {
             if (CanCommitToTransform)
             {
@@ -3383,10 +3396,35 @@ namespace Unity.Netcode.Components
             m_OldState = m_LocalAuthoritativeNetworkState;
 
             // Assign the new incoming state
-            m_LocalAuthoritativeNetworkState = networkTransformState;
+            m_LocalAuthoritativeNetworkState = InboundState;
 
             // Apply the state update
             OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
+        }
+
+        // Used to send outbound messages
+        private NetworkTransformMessage m_OutboundMessage = new NetworkTransformMessage();
+
+
+        internal void SerializeMessage(FastBufferWriter writer, int targetVersion)
+        {
+            var networkObject = NetworkObject;
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, (int)NetworkBehaviourId);
+            writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
+            if (m_CachedNetworkManager.DistributedAuthorityMode)
+            {
+                BytePacker.WriteValuePacked(writer, networkObject.Observers.Count - 1);
+
+                foreach (var targetId in networkObject.Observers)
+                {
+                    if (OwnerClientId == targetId)
+                    {
+                        continue;
+                    }
+                    BytePacker.WriteValuePacked(writer, targetId);
+                }
+            }
         }
 
         /// <summary>
@@ -3394,7 +3432,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void UpdateTransformState()
         {
-            if (m_CachedNetworkManager.ShutdownInProgress)
+            if (m_CachedNetworkManager.ShutdownInProgress || (m_CachedNetworkManager.DistributedAuthorityMode && m_CachedNetworkObject.Observers.Count - 1 == 0))
             {
                 return;
             }
@@ -3409,17 +3447,7 @@ namespace Unity.Netcode.Components
                 Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
             }
             var customMessageManager = m_CachedNetworkManager.CustomMessagingManager;
-
-            var networkTransformMessage = new NetworkTransformMessage()
-            {
-                NetworkObjectId = NetworkObjectId,
-                NetworkBehaviourId = NetworkBehaviourId,
-                State = m_LocalAuthoritativeNetworkState,
-                DistributedAuthorityMode = m_CachedNetworkManager.DistributedAuthorityMode,
-                // Don't populate if we are the DAHost as we send directly to each client
-                TargetIds = m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.DAHost ? NetworkObject.Observers.Where((c) => c != m_CachedNetworkManager.LocalClientId).ToArray() : null,
-            };
-
+            m_OutboundMessage.NetworkTransform = this;
 
             // Determine what network delivery method to use:
             // When to send reliable packets:
@@ -3445,13 +3473,13 @@ namespace Unity.Netcode.Components
                     {
                         continue;
                     }
-                    NetworkManager.MessageManager.SendMessage(ref networkTransformMessage, networkDelivery, clientId);
+                    NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, clientId);
                 }
             }
             else
             {
                 // Clients (owner authoritative) send messages to the server-host
-                NetworkManager.MessageManager.SendMessage(ref networkTransformMessage, networkDelivery, NetworkManager.ServerClientId);
+                NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
         }
         #endregion
@@ -3525,7 +3553,9 @@ namespace Unity.Netcode.Components
 
             internal float TicksAgoInSeconds()
             {
-                return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
+                return 2 * m_TickFrequency;
+                // TODO: We need an RTT that updates regularly and not just when the client sends packets
+                //return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
             }
 
             /// <summary>
@@ -3534,25 +3564,26 @@ namespace Unity.Netcode.Components
             /// </summary>
             private void TickUpdate()
             {
-                if (m_UnityTransport != null)
-                {
-                    // Determine the desired ticks ago by the RTT (this really should be the combination of the
-                    // authority and non-authority 1/2 RTT but in the end anything beyond 300ms is considered very poor
-                    // network quality so latent interpolation is going to be expected).
-                    var rtt = Mathf.Max(m_TickInMS, m_UnityTransport.GetCurrentRtt(NetworkManager.ServerClientId));
-                    m_TicksAgoSamples[m_TickSampleIndex] = Mathf.Max(1, (int)(rtt * m_TickFrequency));
-                    var tickAgoSum = 0.0f;
-                    foreach (var tickAgo in m_TicksAgoSamples)
-                    {
-                        tickAgoSum += tickAgo;
-                    }
-                    m_PreviousTicksAgo = TicksAgo;
-                    TicksAgo = Mathf.Lerp(m_PreviousTicksAgo, tickAgoSum / m_TickRate, m_TickFrequency);
-                    m_TickSampleIndex = (m_TickSampleIndex + 1) % m_TickRate;
-                    // Get the partial tick value for when this is all calculated to provide an offset for determining
-                    // the relative starting interpolation point for the next update
-                    Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
-                }
+                // TODO: We need an RTT that updates regularly and not just when the client sends packets
+                //if (m_UnityTransport != null)
+                //{
+                //    // Determine the desired ticks ago by the RTT (this really should be the combination of the
+                //    // authority and non-authority 1/2 RTT but in the end anything beyond 300ms is considered very poor
+                //    // network quality so latent interpolation is going to be expected).
+                //    var rtt = Mathf.Max(m_TickInMS, m_UnityTransport.GetCurrentRtt(NetworkManager.ServerClientId));
+                //    m_TicksAgoSamples[m_TickSampleIndex] = Mathf.Max(1, (int)(rtt * m_TickFrequency));
+                //    var tickAgoSum = 0.0f;
+                //    foreach (var tickAgo in m_TicksAgoSamples)
+                //    {
+                //        tickAgoSum += tickAgo;
+                //    }
+                //    m_PreviousTicksAgo = TicksAgo;
+                //    TicksAgo = Mathf.Lerp(m_PreviousTicksAgo, tickAgoSum / m_TickRate, m_TickFrequency);
+                //    m_TickSampleIndex = (m_TickSampleIndex + 1) % m_TickRate;
+                //    // Get the partial tick value for when this is all calculated to provide an offset for determining
+                //    // the relative starting interpolation point for the next update
+                //    Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
+                //}
 
                 // TODO FIX: The local NetworkTickSystem can invoke with the same network tick as before
                 if (m_NetworkManager.ServerTime.Tick <= m_LastTick)
@@ -3572,13 +3603,13 @@ namespace Unity.Netcode.Components
 
             private UnityTransport m_UnityTransport;
             private float m_TickFrequency;
-            private float m_OffsetTickFrequency;
-            private ulong m_TickInMS;
-            private int m_TickSampleIndex;
+            //private float m_OffsetTickFrequency;
+            //private ulong m_TickInMS;
+            //private int m_TickSampleIndex;
             private int m_TickRate;
             public float TicksAgo { get; private set; }
-            public float Offset { get; private set; }
-            private float m_PreviousTicksAgo;
+            //public float Offset { get; private set; }
+            //private float m_PreviousTicksAgo;
 
             private List<float> m_TicksAgoSamples = new List<float>();
 
@@ -3589,19 +3620,19 @@ namespace Unity.Netcode.Components
                 networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
                 m_TickRate = (int)m_NetworkManager.NetworkConfig.TickRate;
                 m_TickFrequency = 1.0f / m_TickRate;
-                // For the offset, it uses the fractional remainder of the tick to determine the offset.
-                // In order to keep within tick boundaries, we increment the tick rate by 1 to assure it
-                // will always be < the tick frequency.
-                m_OffsetTickFrequency = 1.0f / (m_TickRate + 1);
-                m_TickInMS = (ulong)(1000 * m_TickFrequency);
-                m_UnityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
-                // Fill the sample with a starting value of 1
-                for (int i = 0; i < m_TickRate; i++)
-                {
-                    m_TicksAgoSamples.Add(1f);
-                }
-                TicksAgo = 1f;
-                m_PreviousTicksAgo = 1f;
+                //// For the offset, it uses the fractional remainder of the tick to determine the offset.
+                //// In order to keep within tick boundaries, we increment the tick rate by 1 to assure it
+                //// will always be < the tick frequency.
+                //m_OffsetTickFrequency = 1.0f / (m_TickRate + 1);
+                //m_TickInMS = (ulong)(1000 * m_TickFrequency);
+                //m_UnityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
+                //// Fill the sample with a starting value of 1
+                //for (int i = 0; i < m_TickRate; i++)
+                //{
+                //    m_TicksAgoSamples.Add(1f);
+                //}
+                TicksAgo = 2f;
+                //m_PreviousTicksAgo = 1f;
                 if (networkManager.IsServer)
                 {
                     networkManager.OnServerStopped += OnNetworkManagerStopped;

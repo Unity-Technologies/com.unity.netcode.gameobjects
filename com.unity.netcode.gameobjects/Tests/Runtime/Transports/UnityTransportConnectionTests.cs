@@ -208,7 +208,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_Clients[i].DisconnectLocalClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 5);
 
             // Check that we got the correct number of Disconnect events on the server.
             Assert.AreEqual(k_NumClients * 2, m_ServerEvents.Count);

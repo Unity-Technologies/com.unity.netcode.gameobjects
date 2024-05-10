@@ -475,10 +475,8 @@ namespace Unity.Netcode.RuntimeTests
                 m_ReachedTarget = false;
             }
 
-            protected override void Update()
+            public override void OnUpdate()
             {
-                base.Update();
-
                 if (CanCommitToTransform)
                 {
                     if (!m_ReachedTarget)

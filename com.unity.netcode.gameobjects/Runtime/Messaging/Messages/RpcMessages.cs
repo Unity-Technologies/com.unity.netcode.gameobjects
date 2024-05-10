@@ -99,6 +99,8 @@ namespace Unity.Netcode
         public FastBufferWriter WriteBuffer;
         public FastBufferReader ReadBuffer;
 
+        private const string k_Name = "ServerRpcMessage";
+
         public unsafe void Serialize(FastBufferWriter writer, int targetVersion)
         {
             RpcMessageHelpers.Serialize(ref writer, ref Metadata, ref WriteBuffer);
@@ -106,7 +108,7 @@ namespace Unity.Netcode
 
         public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
+            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, k_Name);
         }
 
         public void Handle(ref NetworkContext context)
@@ -134,6 +136,8 @@ namespace Unity.Netcode
         public FastBufferWriter WriteBuffer;
         public FastBufferReader ReadBuffer;
 
+        private const string k_Name = "ClientRpcMessage";
+
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             RpcMessageHelpers.Serialize(ref writer, ref Metadata, ref WriteBuffer);
@@ -141,7 +145,7 @@ namespace Unity.Netcode
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
+            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, k_Name);
         }
 
         public void Handle(ref NetworkContext context)
@@ -169,6 +173,8 @@ namespace Unity.Netcode
         public FastBufferWriter WriteBuffer;
         public FastBufferReader ReadBuffer;
 
+        private const string k_Name = "RpcMessage";
+
         public unsafe void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValuePacked(writer, SenderClientId);
@@ -179,7 +185,7 @@ namespace Unity.Netcode
         {
             ByteUnpacker.ReadValuePacked(reader, out SenderClientId);
 
-            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, GetType().Name);
+            return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer, k_Name);
         }
 
         public void Handle(ref NetworkContext context)

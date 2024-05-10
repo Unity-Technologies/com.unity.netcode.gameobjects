@@ -45,7 +45,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        protected override void Update()
+        public override void OnUpdate()
         {
             if (!IsSpawned)
             {
@@ -85,7 +85,7 @@ namespace TestProject.RuntimeTests
             }
             else
             {
-                base.Update();
+                base.OnUpdate();
             }
         }
     }

@@ -23,6 +23,8 @@ namespace Unity.Netcode
 
         private FastBufferReader m_ReceivedNetworkVariableData;
 
+        private const string k_Name = "NetworkVariableDeltaMessage";
+
         // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
         // Worth either merging or more cleanly separating these codepaths.
         public void Serialize(FastBufferWriter writer, int targetVersion)
@@ -296,7 +298,7 @@ namespace Unity.Netcode
                 // DANGO-TODO: Fix me!
                 // When a client-spawned NetworkObject is despawned by the owner client, the owner client will still get messages for deltas and cause this to
                 // log a warning. The issue is primarily how NetworkVariables handle updating and will require some additional re-factoring.
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context, GetType().Name);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context, k_Name);
             }
         }
     }

@@ -8,6 +8,7 @@ using UnityEditor;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Unity.Netcode.Components;
 
 namespace Unity.Netcode
 {
@@ -177,6 +178,45 @@ namespace Unity.Netcode
             }
         }
 
+        internal Dictionary<ulong, NetworkTransform> NetworkTransformUpdate = new Dictionary<ulong, NetworkTransform>();
+#if COM_UNITY_MODULES_PHYSICS
+        internal Dictionary<ulong, NetworkTransform> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkTransform>();
+#endif
+
+        internal void NetworkTransformRegistration(NetworkTransform networkTransform, bool forUpdate = true, bool register = true)
+        {
+            if (forUpdate)
+            {
+                if (register)
+                {
+                    if (!NetworkTransformUpdate.ContainsKey(networkTransform.NetworkObjectId))
+                    {
+                        NetworkTransformUpdate.Add(networkTransform.NetworkObjectId, networkTransform);
+                    }
+                }
+                else
+                {
+                    NetworkTransformUpdate.Remove(networkTransform.NetworkObjectId);
+                }
+            }
+#if COM_UNITY_MODULES_PHYSICS
+            else
+            {
+                if (register)
+                {
+                    if (!NetworkTransformFixedUpdate.ContainsKey(networkTransform.NetworkObjectId))
+                    {
+                        NetworkTransformFixedUpdate.Add(networkTransform.NetworkObjectId, networkTransform);
+                    }
+                }
+                else
+                {
+                    NetworkTransformFixedUpdate.Remove(networkTransform.NetworkObjectId);
+                }
+            }
+#endif
+        }
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -192,6 +232,19 @@ namespace Unity.Netcode
                         MessageManager.CleanupDisconnectedClients();
                     }
                     break;
+#if COM_UNITY_MODULES_PHYSICS
+                case NetworkUpdateStage.FixedUpdate:
+                    {
+                        foreach (var networkTransformEntry in NetworkTransformFixedUpdate)
+                        {
+                            if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
+                            {
+                                networkTransformEntry.Value.OnFixedUpdate();
+                            }
+                        }
+                    }
+                    break;
+#endif
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
@@ -203,6 +256,14 @@ namespace Unity.Netcode
                         if (DistributedAuthorityMode)
                         {
                             SpawnManager.DeferredDespawnUpdate(ServerTime);
+                        }
+
+                        foreach (var networkTransformEntry in NetworkTransformUpdate)
+                        {
+                            if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
+                            {
+                                networkTransformEntry.Value.OnUpdate();
+                            }
                         }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
@@ -942,6 +1003,10 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+#if COM_UNITY_MODULES_PHYSICS
+            NetworkTransformFixedUpdate.Clear();
+#endif
+            NetworkTransformUpdate.Clear();
 
             //DANGOEXP TODO: Remove this before finalizing the experimental release
             NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;
@@ -978,6 +1043,9 @@ namespace Unity.Netcode
             }
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+#if COM_UNITY_MODULES_PHYSICS
+            this.RegisterNetworkUpdate(NetworkUpdateStage.FixedUpdate);
+#endif
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
@@ -994,11 +1062,17 @@ namespace Unity.Netcode
                 MessageManager.Hook(new NetworkManagerHooks(this));
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                MessageManager.Hook(new ProfilingHooks());
+                if (NetworkConfig.NetworkProfilingMetrics)
+                {
+                    MessageManager.Hook(new ProfilingHooks());
+                }
 #endif
 
 #if MULTIPLAYER_TOOLS
-                MessageManager.Hook(new MetricHooks(this));
+                if (NetworkConfig.NetworkMessageMetrics)
+                {
+                    MessageManager.Hook(new MetricHooks(this));
+                }
 #endif
 
                 // Assures there is a server message queue available

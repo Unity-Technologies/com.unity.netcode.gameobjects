@@ -6,6 +6,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        private const string k_Name = "DestroyObjectMessage";
+
         public ulong NetworkObjectId;
 
         private byte m_BitField;
@@ -92,7 +94,7 @@ namespace Unity.Netcode
             // If the target NetworkObject does not exist =or= the target latest parent does not exist then defer the message
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId) || (LatestParent.HasValue && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(LatestParent.Value)))
             {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, GetType().Name);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
                 return false;
             }
             return true;

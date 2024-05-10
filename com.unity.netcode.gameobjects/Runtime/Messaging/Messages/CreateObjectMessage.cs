@@ -7,6 +7,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        private const string k_Name = "CreateObjectMessage";
+
         public NetworkObject.SceneObject ObjectInfo;
         private FastBufferReader m_ReceivedNetworkVariableData;
 
@@ -161,7 +163,7 @@ namespace Unity.Netcode
 
             if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectInfo))
             {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Hash, reader, ref context, GetType().Name);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Hash, reader, ref context, k_Name);
                 return false;
             }
             m_ReceivedNetworkVariableData = reader;
