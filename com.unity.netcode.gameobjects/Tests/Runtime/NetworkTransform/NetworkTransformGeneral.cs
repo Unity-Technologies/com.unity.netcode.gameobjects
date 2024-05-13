@@ -310,5 +310,64 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
             Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
         }
+
+        /// <summary>
+        /// Validates that the unreliable frame synchronization is correct on the
+        /// non-authority side when using half float precision.
+        /// </summary>
+        [Test]
+        public void UnreliableHalfPrecisionTest([Values] Interpolation interpolation)
+        {
+            var interpolate = interpolation != Interpolation.EnableInterpolate;
+            m_AuthoritativeTransform.Interpolate = interpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolate;
+            m_AuthoritativeTransform.UseHalfFloatPrecision = true;
+            m_NonAuthoritativeTransform.UseHalfFloatPrecision = true;
+            m_AuthoritativeTransform.UseUnreliableDeltas = true;
+            m_NonAuthoritativeTransform.UseUnreliableDeltas = true;
+            m_AuthoritativeTransform.AuthorityPushedTransformState += AuthorityPushedTransformState;
+            m_NonAuthoritativeTransform.NonAuthorityReceivedTransformState += NonAuthorityReceivedTransformState;
+            m_AuthoritativeTransform.MoveSpeed = 6.325f;
+            m_AuthoritativeTransform.AuthorityMove = true;
+            m_AuthoritativeTransform.DirectionToMove = GetRandomVector3(-1.0f, 1.0f);
+
+            // Iterate several times so the authority moves around enough where we get 10 frame synchs to compare against.
+            for (int i = 0; i < 10; i++)
+            {
+                m_AuthorityFrameSync = false;
+                m_NonAuthorityFrameSync = false;
+                VerboseDebug($"Starting with authority ({m_AuthoritativeTransform.transform.position}) and nonauthority({m_NonAuthoritativeTransform.transform.position})");
+                var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthorityFrameSync && m_NonAuthorityFrameSync, 320);
+                Assert.True(success, $"Timed out waiting for authority or nonauthority frame state synchronization!");
+                VerboseDebug($"Comparing authority ({m_AuthorityPosition}) with nonauthority({m_NonAuthorityPosition})");
+                Assert.True(Approximately(m_AuthorityPosition, m_NonAuthorityPosition), $"Non-Authoritative position {m_AuthorityPosition} does not match authortative position {m_NonAuthorityPosition}!");
+            }
+
+            m_AuthoritativeTransform.AuthorityMove = false;
+            m_AuthoritativeTransform.AuthorityPushedTransformState -= AuthorityPushedTransformState;
+            m_NonAuthoritativeTransform.NonAuthorityReceivedTransformState -= NonAuthorityReceivedTransformState;
+        }
+
+        private bool m_AuthorityFrameSync;
+        private Vector3 m_AuthorityPosition;
+        private bool m_NonAuthorityFrameSync;
+        private Vector3 m_NonAuthorityPosition;
+        private void AuthorityPushedTransformState(ref NetworkTransform.NetworkTransformState networkTransformState)
+        {
+            if (networkTransformState.UnreliableFrameSync)
+            {
+                m_AuthorityPosition = m_AuthoritativeTransform.GetSpaceRelativePosition();
+                m_AuthorityFrameSync = true;
+            }
+        }
+
+        private void NonAuthorityReceivedTransformState(ref NetworkTransform.NetworkTransformState networkTransformState)
+        {
+            if (networkTransformState.UnreliableFrameSync)
+            {
+                m_NonAuthorityPosition = networkTransformState.NetworkDeltaPosition.GetFullPosition();
+                m_NonAuthorityFrameSync = true;
+            }
+        }
     }
 }
