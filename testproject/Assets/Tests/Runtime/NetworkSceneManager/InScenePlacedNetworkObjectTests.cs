@@ -574,4 +574,52 @@ namespace TestProject.RuntimeTests
         }
 
     }
+
+    internal class InScenePlacedNetworkObjectClientTests : NetcodeIntegrationTest
+    {
+        private const string k_SceneToLoad = "InSceneNetworkObject";
+
+        protected override int NumberOfClients => 0;
+
+        private Scene m_Scene;
+
+        protected override IEnumerator OnSetup()
+        {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
+            return base.OnSetup();
+        }
+
+        private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            if (scene.name == k_SceneToLoad && loadSceneMode == LoadSceneMode.Additive)
+            {
+                m_Scene = scene;
+                SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
+            }
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            if (m_Scene.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(m_Scene);
+            }
+            return base.OnTearDown();
+        }
+
+        [UnityTest]
+        public IEnumerator DespawnAndDestroyNetworkObjects()
+        {
+            // Simulate a client disconnecting early by just invoking DespawnAndDestroyNetworkObjects to assure
+            // this method does not destroy in-scene placed NetworkObjects.
+            m_ServerNetworkManager.SpawnManager.DespawnAndDestroyNetworkObjects();
+
+            yield return s_DefaultWaitForTick;
+
+            var insceneObject = GameObject.Find("InSceneObject");
+            Assert.IsNotNull(insceneObject, $"Could not find the in-scene placed {nameof(NetworkObject)}: InSceneObject!");
+        }
+
+    }
 }
