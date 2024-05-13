@@ -12,76 +12,101 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Rigidbody 2D")]
     public class NetworkRigidbody2D : NetworkBehaviour
     {
+        /// <summary>
+        /// Determines if we are server (true) or owner (false) authoritative
+        /// </summary>
+        private bool m_IsServerAuthoritative;
+
         private Rigidbody2D m_Rigidbody;
         private NetworkTransform m_NetworkTransform;
 
-        private bool m_OriginalKinematic;
         private RigidbodyInterpolation2D m_OriginalInterpolation;
 
         // Used to cache the authority state of this rigidbody during the last frame
         private bool m_IsAuthority;
 
-        /// <summary>
-        /// Gets a bool value indicating whether this <see cref="NetworkRigidbody2D"/> on this peer currently holds authority.
-        /// </summary>
-        private bool HasAuthority => m_NetworkTransform.CanCommitToTransform;
-
         private void Awake()
         {
-            m_Rigidbody = GetComponent<Rigidbody2D>();
             m_NetworkTransform = GetComponent<NetworkTransform>();
+            m_IsServerAuthoritative = m_NetworkTransform.IsServerAuthoritative();
 
+            SetupRigidBody();
+        }
+
+        /// <summary>
+        /// If the current <see cref="NetworkTransform"/> has authority,
+        /// then use the <see cref="Rigidbody2D"/> interpolation strategy,
+        /// if the <see cref="NetworkTransform"/> is handling interpolation,
+        /// set interpolation to none on the <see cref="Rigidbody2D"/>
+        /// <br/>
+        /// Turn off physics for the rigid body until spawned, otherwise
+        /// clients can run fixed update before the first
+        /// full <see cref="NetworkTransform"/> update
+        /// </summary>
+        private void SetupRigidBody()
+        {
+            m_Rigidbody = GetComponent<Rigidbody2D>();
+            m_OriginalInterpolation = m_Rigidbody.interpolation;
+
+            m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : (m_NetworkTransform.Interpolate ? RigidbodyInterpolation2D.None : m_OriginalInterpolation);
             // Turn off physics for the rigid body until spawned, otherwise
             // clients can run fixed update before the first full
             // NetworkTransform update
             m_Rigidbody.isKinematic = true;
         }
 
-        private void FixedUpdate()
+        /// <summary>
+        /// For owner authoritative (i.e. ClientNetworkTransform)
+        /// we adjust our authority when we gain ownership
+        /// </summary>
+        public override void OnGainedOwnership()
         {
-            if (IsSpawned)
-            {
-                if (HasAuthority != m_IsAuthority)
-                {
-                    m_IsAuthority = HasAuthority;
-                    UpdateRigidbodyKinematicMode();
-                }
-            }
+            UpdateOwnershipAuthority();
         }
 
-        // Puts the rigidbody in a kinematic non-interpolated mode on everyone but the server.
-        private void UpdateRigidbodyKinematicMode()
+        /// <summary>
+        /// For owner authoritative(i.e. ClientNetworkTransform)
+        /// we adjust our authority when we have lost ownership
+        /// </summary>
+        public override void OnLostOwnership()
         {
-            if (m_IsAuthority == false)
-            {
-                m_OriginalKinematic = m_Rigidbody.isKinematic;
-                m_Rigidbody.isKinematic = true;
+            UpdateOwnershipAuthority();
+        }
 
-                m_OriginalInterpolation = m_Rigidbody.interpolation;
-                // Set interpolation to none, the NetworkTransform component interpolates the position of the object.
-                m_Rigidbody.interpolation = RigidbodyInterpolation2D.None;
+        /// <summary>
+        /// Sets the authority differently depending upon
+        /// whether it is server or owner authoritative
+        /// </summary>
+        private void UpdateOwnershipAuthority()
+        {
+            if (m_IsServerAuthoritative)
+            {
+                m_IsAuthority = NetworkManager.IsServer;
             }
             else
             {
-                // Resets the rigidbody back to it's non replication only state. Happens on shutdown and when authority is lost
-                m_Rigidbody.isKinematic = m_OriginalKinematic;
-                m_Rigidbody.interpolation = m_OriginalInterpolation;
+                m_IsAuthority = IsOwner;
             }
+
+            // If you have authority then you are not kinematic
+            m_Rigidbody.isKinematic = !m_IsAuthority;
+
+            // Set interpolation of the Rigidbody2D based on authority
+            // With authority: let local transform handle interpolation
+            // Without authority: let the NetworkTransform handle interpolation
+            m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : RigidbodyInterpolation2D.None;
         }
 
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
-            m_IsAuthority = HasAuthority;
-            m_OriginalKinematic = m_Rigidbody.isKinematic;
-            m_OriginalInterpolation = m_Rigidbody.interpolation;
-            UpdateRigidbodyKinematicMode();
+            UpdateOwnershipAuthority();
         }
 
         /// <inheritdoc />
         public override void OnNetworkDespawn()
         {
-            UpdateRigidbodyKinematicMode();
+            UpdateOwnershipAuthority();
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet(out NetworkBehaviour networkBehaviour, NetworkManager networkManager = null)
         {
-            networkBehaviour = GetInternal(this, null);
+            networkBehaviour = GetInternal(this, networkManager);
             return networkBehaviour != null;
         }
 
@@ -58,7 +58,7 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet<T>(out T networkBehaviour, NetworkManager networkManager = null) where T : NetworkBehaviour
         {
-            networkBehaviour = GetInternal(this, null) as T;
+            networkBehaviour = GetInternal(this, networkManager) as T;
             return networkBehaviour != null;
         }
 
