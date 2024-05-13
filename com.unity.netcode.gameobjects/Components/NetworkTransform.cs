@@ -1682,6 +1682,15 @@ namespace Unity.Netcode.Components
             var scale = transformToUse.localScale;
             networkState.IsSynchronizing = isSynchronization;
 
+            // All of the checks below, up to the delta position checking portion, are to determine if the
+            // authority changed a property during runtime that requires a full synchronizing.
+            if (InLocalSpace != networkState.InLocalSpace)
+            {
+                networkState.InLocalSpace = InLocalSpace;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
             {
@@ -1691,11 +1700,13 @@ namespace Unity.Netcode.Components
                 // values are applied.
                 var hasParentNetworkObject = false;
 
+                var parentNetworkObject = (NetworkObject)null;
+
                 // If the NetworkObject belonging to this NetworkTransform instance has a parent
                 // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
                 if (NetworkObject.transform.parent != null)
                 {
-                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+                    parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // In-scene placed NetworkObjects parented under a GameObject with no
                     // NetworkObject preserve their lossyScale when synchronizing.
@@ -1716,26 +1727,23 @@ namespace Unity.Netcode.Components
                 // the NetworkTransform is using world or local space synchronization.
                 // WorldPositionStays: (always use world space)
                 // !WorldPositionStays: (always use local space)
-                if (isSynchronization)
+                // Exception: If it is an in-scene placed NetworkObject and it is parented under a GameObject
+                // then always use local space unless AutoObjectParentSync is disabled and the NetworkTransform
+                // is synchronizing in world space.
+                if (isSynchronization && networkState.IsParented)
                 {
-                    if (NetworkObject.WorldPositionStays())
+                    var parentedUnderGameObject = NetworkObject.transform.parent != null && !parentNetworkObject && NetworkObject.IsSceneObject.Value;
+                    if (NetworkObject.WorldPositionStays() && (!parentedUnderGameObject || (parentedUnderGameObject && !NetworkObject.AutoObjectParentSync && !InLocalSpace)))
                     {
                         position = transformToUse.position;
+                        networkState.InLocalSpace = false;
                     }
                     else
                     {
                         position = transformToUse.localPosition;
+                        networkState.InLocalSpace = true;
                     }
                 }
-            }
-
-            // All of the checks below, up to the delta position checking portion, are to determine if the
-            // authority changed a property during runtime that requires a full synchronizing.
-            if (InLocalSpace != networkState.InLocalSpace)
-            {
-                networkState.InLocalSpace = InLocalSpace;
-                isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
             }
 
             if (Interpolate != networkState.UseInterpolation)
