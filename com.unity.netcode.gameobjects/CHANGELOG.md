@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where in-scene placed NetworkObjects could be destroyed if a client disconnects early and/or before approval. (#2923)
+- Fixed issue where `NetworkDeltaPosition` would "jitter" periodically if both unreliable delta state updates and half-floats were used together. (#2922)
 - Fixed issue where `NetworkRigidbody2D` would not properly change body type based on the instance's authority when spawned. (#2916)
 - Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2906)
 - Fixed issue where an in-scene placed `NetworkObject` with `NetworkTransform` that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2895)
