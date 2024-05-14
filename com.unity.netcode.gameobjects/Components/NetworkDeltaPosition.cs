@@ -32,9 +32,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            HalfVector3.NetworkSerialize(serializer);
-            if (SynchronizeBase)
+            if (!SynchronizeBase)
             {
+                HalfVector3.NetworkSerialize(serializer);
+            }
+            else
+            {
+                serializer.SerializeValue(ref DeltaPosition);
                 serializer.SerializeValue(ref CurrentBasePosition);
             }
         }
