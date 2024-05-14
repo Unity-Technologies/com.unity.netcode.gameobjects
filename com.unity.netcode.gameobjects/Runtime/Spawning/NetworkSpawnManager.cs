@@ -1245,7 +1245,7 @@ namespace Unity.Netcode
                     {
                         // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
                         // is unloaded. Otherwise, despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value);
+                        var shouldDestroy = !(networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value));
 
                         // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
                         if (shouldDestroy)
