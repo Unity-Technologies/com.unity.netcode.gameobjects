@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Change all the access modifiers of test class from Public to Internal (#2926)
 
 ## [1.9.1] - 2024-04-18
 
