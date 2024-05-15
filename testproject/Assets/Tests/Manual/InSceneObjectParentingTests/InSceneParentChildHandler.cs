@@ -132,7 +132,7 @@ namespace TestProject.ManualTests
 
         public void DeparentAllChildren(bool worldPositionStays = true)
         {
-            if (IsRootParent && CheckForAuthority())
+            if (IsRootParent && HasAuthority)
             {
                 var lastChild = GetLastChild(transform);
                 if (lastChild != null)
@@ -163,7 +163,7 @@ namespace TestProject.ManualTests
 
         public void ReParentAllChildren(bool worldPositionStays = true)
         {
-            if (IsRootParent && CheckForAuthority())
+            if (IsRootParent && HasAuthority)
             {
                 ParentChild(m_Child, worldPositionStays);
             }
@@ -171,7 +171,7 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkSpawn()
         {
-            if (CheckForAuthority())
+            if (HasAuthority)
             {
                 LogMessage($"[{NetworkObjectId}] Pos = ({m_TargetLocalPosition}) | Rotation ({m_TargetLocalRotation}) | Scale ({m_TargetLocalScale})");
                 if (AddNetworkTransform)
@@ -206,7 +206,7 @@ namespace TestProject.ManualTests
 
         public void DeparentSetValuesAndReparent()
         {
-            if (IsRootParent && CheckForAuthority())
+            if (IsRootParent && HasAuthority)
             {
                 // Back to back de-parenting and re-parenting
                 s_GenerateRandomValues = true;
@@ -222,7 +222,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            if (!CheckForAuthority() || !IsSpawned || parentNetworkObject != null || !s_GenerateRandomValues)
+            if (!HasAuthority || !IsSpawned || parentNetworkObject != null || !s_GenerateRandomValues)
             {
                 return;
             }
@@ -242,7 +242,7 @@ namespace TestProject.ManualTests
 
         private void LateUpdate()
         {
-            if (!IsSpawned || !CheckForAuthority() || NetworkManagerTestDisabler.IsIntegrationTest)
+            if (!IsSpawned || !HasAuthority || NetworkManagerTestDisabler.IsIntegrationTest)
             {
                 return;
             }

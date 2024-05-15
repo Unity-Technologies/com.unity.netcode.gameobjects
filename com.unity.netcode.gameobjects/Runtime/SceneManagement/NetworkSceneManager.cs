@@ -444,6 +444,7 @@ namespace Unity.Netcode
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
         internal Dictionary<int, int> ClientSceneHandleToServerSceneHandle = new Dictionary<int, int>();
 
+        internal bool IsRestoringSession;
         /// <summary>
         /// Add the client to server (and vice versa) scene handle lookup.
         /// Add the client-side handle to scene entry in the HandleToScene table.
@@ -455,7 +456,7 @@ namespace Unity.Netcode
             {
                 ServerSceneHandleToClientSceneHandle.Add(serverHandle, clientHandle);
             }
-            else
+            else if (!IsRestoringSession)
             {
                 return false;
             }
@@ -464,7 +465,7 @@ namespace Unity.Netcode
             {
                 ClientSceneHandleToServerSceneHandle.Add(clientHandle, serverHandle);
             }
-            else
+            else if (!IsRestoringSession)
             {
                 return false;
             }
@@ -1045,7 +1046,7 @@ namespace Unity.Netcode
         /// <param name="targetClientIds">array of client identifiers to receive the scene event message</param>
         private void SendSceneEventData(uint sceneEventId, ulong[] targetClientIds)
         {
-            if (targetClientIds.Length == 0)
+            if (targetClientIds.Length == 0 && !NetworkManager.DistributedAuthorityMode)
             {
                 // This would be the Host/Server with no clients connected
                 // Silently return as there is nothing to be done
@@ -1056,6 +1057,16 @@ namespace Unity.Netcode
 
             if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
             {
+                if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority())
+                {
+                    sceneEvent.TargetClientId = NetworkManager.ServerClientId;
+                    var message = new SceneEventMessage
+                    {
+                        EventData = sceneEvent,
+                    };
+                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+                    NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
+                }
                 foreach (var clientId in targetClientIds)
                 {
                     sceneEvent.TargetClientId = clientId;
@@ -1859,6 +1870,17 @@ namespace Unity.Netcode
                 }
             }
 
+            foreach (var keyValuePairByGlobalObjectIdHash in ScenePlacedObjects)
+            {
+                foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
+                {
+                    if (!keyValuePairBySceneHandle.Value.IsPlayerObject)
+                    {
+                        keyValuePairBySceneHandle.Value.InternalInSceneNetworkObjectsSpawned();
+                    }
+                }
+            }
+
             // Add any despawned when spawned in-scene placed NetworkObjects to the scene event data
             sceneEventData.AddDespawnedInSceneNetworkObjects();
 
@@ -2413,6 +2435,18 @@ namespace Unity.Netcode
                             {
                                 NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}][Scene Management Enabled] Synchronization complete!");
                             }
+                            // For convenience, notify all NetworkBehaviours that synchronization is complete.
+                            foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
+                            {
+                                networkObject.InternalNetworkSessionSynchronized();
+                            }
+
+                            if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession)
+                            {
+                                IsRestoringSession = false;
+                                PostSynchronizationSceneUnloading = m_OriginalPostSynchronizationSceneUnloading;
+                            }
+
                             EndSceneEvent(sceneEventId);
                         }
                         break;
@@ -2599,6 +2633,8 @@ namespace Unity.Netcode
         /// </summary>
         internal bool SkipSceneHandling;
 
+        private bool m_OriginalPostSynchronizationSceneUnloading;
+
         /// <summary>
         /// Both Client and Server: Incoming scene event entry point
         /// </summary>
@@ -2672,6 +2708,12 @@ namespace Unity.Netcode
                         // Only if ClientSynchronizationMode is Additive and the client receives a synchronize scene event
                         if (ClientSynchronizationMode == LoadSceneMode.Additive)
                         {
+                            if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession && clientId == NetworkManager.ServerClientId)
+                            {
+                                m_OriginalPostSynchronizationSceneUnloading = PostSynchronizationSceneUnloading;
+                                PostSynchronizationSceneUnloading = true;
+                            }
+
                             // Check for scenes already loaded and create a table of scenes already loaded (SceneEntries) that will be
                             // used if the server is synchronizing the same scenes (i.e. if a matching scene is already loaded on the
                             // client side, then that scene will be used as opposed to loading another scene). This allows for clients

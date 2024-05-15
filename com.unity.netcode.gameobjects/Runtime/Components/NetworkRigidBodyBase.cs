@@ -512,23 +512,6 @@ namespace Unity.Netcode.Components
             }
             SetInterpolation(m_OriginalInterpolation);
         }
-
-        /// <summary>
-        /// When <see cref="UseRigidBodyForMotion"/> is enabled, the <see cref="NetworkTransform"/> will update Kinematic instances using
-        /// the Rigidbody's move methods allowing Rigidbody interpolation settings to be taken into consideration by the physics simulation.
-        /// </summary>
-        /// <remarks>
-        /// This will update the associated <see cref="NetworkTransform"/> during FixedUpdate which also avoids the added expense of adding
-        /// a FixedUpdate to all <see cref="NetworkTransform"/> instances where some might not be using a Rigidbody.
-        /// </remarks>
-        private void FixedUpdate()
-        {
-            if (!IsSpawned || m_NetworkTransform == null || !UseRigidBodyForMotion)
-            {
-                return;
-            }
-            m_NetworkTransform.OnFixedUpdate();
-        }
     }
 }
 #endif // COM_UNITY_MODULES_PHYSICS

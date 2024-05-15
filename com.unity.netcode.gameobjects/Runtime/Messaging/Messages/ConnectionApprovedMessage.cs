@@ -222,6 +222,12 @@ namespace Unity.Netcode
                 }
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
+
+                // For convenience, notify all NetworkBehaviours that synchronization is complete.
+                foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
+                {
+                    networkObject.InternalNetworkSessionSynchronized();
+                }
             }
             else
             {
@@ -230,16 +236,22 @@ namespace Unity.Netcode
                     // Mark the client being connected
                     networkManager.IsConnectedClient = true;
 
-                    // Spawn any in-scene placed NetworkObjects
-                    networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+                    networkManager.SceneManager.IsRestoringSession = IsRestoredSession;
 
-                    // Spawn the local player of the session owner
-                    if (networkManager.AutoSpawnPlayerPrefabClientSide)
+                    if (!IsRestoredSession)
                     {
-                        networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
+                        // Spawn any in-scene placed NetworkObjects
+                        networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+                        // Spawn the local player of the session owner
+                        if (networkManager.AutoSpawnPlayerPrefabClientSide)
+                        {
+                            networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
+                        }
+
+                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
                     }
-                    // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                    networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
                 }
             }
             ConnectedClientIds.Dispose();
