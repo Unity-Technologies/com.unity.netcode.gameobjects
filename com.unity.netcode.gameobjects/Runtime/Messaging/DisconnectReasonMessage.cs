@@ -6,6 +6,8 @@ namespace Unity.Netcode
 
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.DisconnectReason;
+
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             string reasonSent = Reason ?? string.Empty;

@@ -94,6 +94,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ServerRpc;
+
         public RpcMetadata Metadata;
 
         public FastBufferWriter WriteBuffer;
@@ -131,6 +133,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ClientRpc;
+
         public RpcMetadata Metadata;
 
         public FastBufferWriter WriteBuffer;
@@ -166,6 +170,8 @@ namespace Unity.Netcode
     internal struct RpcMessage : INetworkMessage
     {
         public int Version => 0;
+
+        public NetworkMessageType MessageType => NetworkMessageType.Rpc;
 
         public RpcMetadata Metadata;
         public ulong SenderClientId;
@@ -208,6 +214,9 @@ namespace Unity.Netcode
     internal struct ForwardServerRpcMessage : INetworkMessage
     {
         public int Version => 0;
+
+        public NetworkMessageType MessageType => NetworkMessageType.ForwardServerRpc;
+
         public ulong OwnerId;
         public NetworkDelivery NetworkDelivery;
         public ServerRpcMessage ServerRpcMessage;
@@ -267,6 +276,9 @@ namespace Unity.Netcode
     internal struct ForwardClientRpcMessage : INetworkMessage
     {
         public int Version => 0;
+
+        public NetworkMessageType MessageType => NetworkMessageType.ForwardClientRpc;
+        
         public bool BroadCast;
         public ulong[] TargetClientIds;
         public NetworkDelivery NetworkDelivery;

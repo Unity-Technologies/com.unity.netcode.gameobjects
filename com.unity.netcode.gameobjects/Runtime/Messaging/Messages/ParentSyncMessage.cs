@@ -6,6 +6,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ParentSync;
+
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;

@@ -4,6 +4,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.SessionOwner;
+
         public ulong SessionOwner;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)

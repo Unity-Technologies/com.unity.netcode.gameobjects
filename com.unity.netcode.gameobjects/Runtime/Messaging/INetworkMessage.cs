@@ -35,7 +35,7 @@ namespace Unity.Netcode
     /// <see cref="NetworkManager.SendMessage{T}(T, NetworkDelivery, ulong, bool)"/>
     /// <see cref="NetworkManager.SendMessage{T}(T, NetworkDelivery, ulong*, int, bool)"/>
     /// <see cref="NetworkManager.SendMessage{T, U}(T, NetworkDelivery, U, bool)"/>
-    /// <see cref="NetworkManager.SendMessage{T}(T, NetworkDelivery, NativeArray{ulong}, bool)"/>
+    /// <see cref="NetworkManager.SendMessage{T}(T, NetworkDelivery, NativeArray{T}, bool)"/>
     /// </summary>
     internal interface INetworkMessage
     {
@@ -43,5 +43,39 @@ namespace Unity.Netcode
         bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion);
         void Handle(ref NetworkContext context);
         int Version { get; }
+        NetworkMessageType MessageType { get; }
+    }
+
+    /// <summary>
+    /// Enum representing the different types of messages that can be sent over the network.
+    /// The values cannot be changed, as they are used to serialize and deserialize messages.
+    /// Adding new messages should be done by adding new values to the end of the enum
+    /// (using the next free value).
+    /// </summary>
+    internal enum NetworkMessageType : uint
+    {
+        ConnectionApproved = 0,
+        ConnectionRequest = 1,
+        ChangeOwnership = 2,
+        ClientConnected = 3,
+        ClientDisconnected = 4,
+        ClientRpc = 5,
+        CreateObject = 6,
+        DestroyObject = 7,
+        DisconnectReason = 8,
+        ForwardClientRpc = 9,
+        ForwardServerRpc = 10,
+        NamedMessage = 11,
+        NetworkTransformMessage = 12,
+        NetworkVariableDelta = 13,
+        ParentSync = 14,
+        Proxy = 15,
+        Rpc = 16,
+        SceneEvent = 17,
+        ServerLog = 18,
+        ServerRpc = 19,
+        TimeSync = 20,
+        Unnamed = 21,
+        SessionOwner = 22
     }
 }

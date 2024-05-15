@@ -4,6 +4,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
+
         public FastBufferWriter SendData;
         private FastBufferReader m_ReceivedData;
 

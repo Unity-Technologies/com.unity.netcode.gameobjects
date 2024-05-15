@@ -4,6 +4,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.NamedMessage;
+
         public ulong Hash;
         public FastBufferWriter SendData;
 

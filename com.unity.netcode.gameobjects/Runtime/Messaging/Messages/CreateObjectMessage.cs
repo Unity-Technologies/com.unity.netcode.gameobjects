@@ -7,6 +7,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.CreateObject;
+
         private const string k_Name = "CreateObjectMessage";
 
         public NetworkObject.SceneObject ObjectInfo;
@@ -257,7 +259,7 @@ namespace Unity.Netcode
                     {
                         // DA - NGO CMB SERVICE NOTES:
                         // (*** See above notes fist ***)
-                        // If it is a player object freshly spawning and one or more clients all connect at the exact same time (i.e. received on effectively 
+                        // If it is a player object freshly spawning and one or more clients all connect at the exact same time (i.e. received on effectively
                         // the same frame), then we need to check the observers list to make sure all players are visible upon first spawning. At a later date,
                         // for area of interest we will need to have some form of follow up "observer update" message to cull out players not within each
                         // player's AOI.

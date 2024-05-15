@@ -4,6 +4,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ServerLog;
+
         public ulong SenderId;
 
         public NetworkLog.LogType LogType;

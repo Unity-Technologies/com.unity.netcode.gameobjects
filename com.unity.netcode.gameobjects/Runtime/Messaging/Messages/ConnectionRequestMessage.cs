@@ -6,6 +6,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ConnectionRequest;
+
         public ulong ConfigHash;
 
         public bool CMBServiceConnection;

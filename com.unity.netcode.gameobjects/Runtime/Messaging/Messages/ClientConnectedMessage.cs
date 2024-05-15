@@ -8,6 +8,7 @@ namespace Unity.Netcode
 
         public bool ShouldSynchronize;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ClientConnected;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {

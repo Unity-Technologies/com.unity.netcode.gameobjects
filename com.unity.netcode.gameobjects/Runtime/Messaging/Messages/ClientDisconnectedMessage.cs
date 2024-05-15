@@ -6,6 +6,8 @@ namespace Unity.Netcode
 
         public ulong ClientId;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ClientDisconnected;
+
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, ClientId);

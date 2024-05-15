@@ -14,6 +14,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.NetworkVariableDelta;
+
         public ulong NetworkObjectId;
         public ushort NetworkBehaviourIndex;
 

@@ -8,6 +8,8 @@ namespace Unity.Netcode
         private const int k_VersionAddClientIds = 1;
         public int Version => k_VersionAddClientIds;
 
+        public NetworkMessageType MessageType => NetworkMessageType.ConnectionApproved;
+
         public ulong OwnerClientId;
         public int NetworkTick;
         // The cloud state service should set this if we are restoring a session

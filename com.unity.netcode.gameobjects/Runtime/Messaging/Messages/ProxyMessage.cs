@@ -13,6 +13,8 @@ namespace Unity.Netcode
         // If ProxyMessage needs to change, increment RpcMessage's version
         public int Version => new RpcMessage().Version;
 
+        public NetworkMessageType MessageType => NetworkMessageType.Proxy;
+
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             writer.WriteValueSafe(TargetClientIds);

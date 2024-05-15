@@ -4,6 +4,8 @@ namespace Unity.Netcode
     {
         public int Version => 0;
 
+        public NetworkMessageType MessageType => NetworkMessageType.TimeSync;
+
         public int Tick;
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
