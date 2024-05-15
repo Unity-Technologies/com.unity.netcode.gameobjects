@@ -4,7 +4,7 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class NetworkBehaviourTests
+    internal class NetworkBehaviourTests
     {
         [Test]
         public void HasNetworkObjectTest()

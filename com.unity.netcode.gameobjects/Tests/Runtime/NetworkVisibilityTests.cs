@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(SceneManagementState.SceneManagementEnabled)]
     [TestFixture(SceneManagementState.SceneManagementDisabled)]
-    public class NetworkVisibilityTests : NetcodeIntegrationTest
+    internal class NetworkVisibilityTests : NetcodeIntegrationTest
     {
         public enum SceneManagementState
         {

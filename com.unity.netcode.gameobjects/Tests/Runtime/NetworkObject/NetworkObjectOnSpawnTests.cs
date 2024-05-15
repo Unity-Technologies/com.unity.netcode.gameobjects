@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
+    internal class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
     {
         private GameObject m_TestNetworkObjectPrefab;
         private GameObject m_TestNetworkObjectInstance;

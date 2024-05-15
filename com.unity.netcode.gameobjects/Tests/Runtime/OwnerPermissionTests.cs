@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class OwnerPermissionObject : NetworkBehaviour
+    internal class OwnerPermissionObject : NetworkBehaviour
     {
         // indexed by [object, machine]
         public static OwnerPermissionObject[,] Objects = new OwnerPermissionObject[3, 3];
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class OwnerPermissionHideTests : NetcodeIntegrationTest
+    internal class OwnerPermissionHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

@@ -116,7 +116,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DeferredMessageTestRpcComponent : NetworkBehaviour
+    internal class DeferredMessageTestRpcComponent : NetworkBehaviour
     {
         public bool ClientRpcCalled;
 
@@ -137,7 +137,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DeferredMessageTestNetworkVariableComponent : NetworkBehaviour
+    internal class DeferredMessageTestNetworkVariableComponent : NetworkBehaviour
     {
         public static readonly List<ulong> ClientInstances = new List<ulong>();
 
@@ -158,7 +158,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DeferredMessageTestRpcAndNetworkVariableComponent : NetworkBehaviour
+    internal class DeferredMessageTestRpcAndNetworkVariableComponent : NetworkBehaviour
     {
         public static readonly List<ulong> ClientInstances = new List<ulong>();
         public bool ClientRpcCalled;
@@ -185,7 +185,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DeferredMessagingTest : NetcodeIntegrationTest
+    internal class DeferredMessagingTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
 

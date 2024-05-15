@@ -5,12 +5,12 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkListChangedTestComponent : NetworkBehaviour
+    internal class NetworkListChangedTestComponent : NetworkBehaviour
     {
 
     }
 
-    public class ListChangedObject : NetworkBehaviour
+    internal class ListChangedObject : NetworkBehaviour
     {
         public int ExpectedPreviousValue = 0;
         public int ExpectedValue = 0;
@@ -45,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkListChangedTests : NetcodeIntegrationTest
+    internal class NetworkListChangedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

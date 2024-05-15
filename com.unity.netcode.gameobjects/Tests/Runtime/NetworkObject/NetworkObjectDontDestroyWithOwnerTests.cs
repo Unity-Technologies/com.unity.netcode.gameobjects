@@ -10,7 +10,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
+    internal class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
     {
         private const int k_NumberObjectsToSpawn = 32;
         protected override int NumberOfClients => 1;

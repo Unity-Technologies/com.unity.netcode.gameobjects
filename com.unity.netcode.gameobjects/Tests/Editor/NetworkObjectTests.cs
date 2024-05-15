@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class NetworkObjectTests
+    internal class NetworkObjectTests
     {
         [Test]
         public void NetworkManagerOverrideTest()

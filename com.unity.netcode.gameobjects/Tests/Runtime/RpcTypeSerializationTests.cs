@@ -12,7 +12,7 @@ using Vector4 = UnityEngine.Vector4;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class RpcTypeSerializationTests : NetcodeIntegrationTest
+    internal class RpcTypeSerializationTests : NetcodeIntegrationTest
     {
         public RpcTypeSerializationTests()
         {
@@ -23,7 +23,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override bool m_SetupIsACoroutine => true;
         protected override bool m_TearDownIsACoroutine => true;
 
-        public class RpcTestNB : NetworkBehaviour
+        internal class RpcTestNB : NetworkBehaviour
         {
             public delegate void OnReceivedDelegate(object obj);
             public OnReceivedDelegate OnReceived;

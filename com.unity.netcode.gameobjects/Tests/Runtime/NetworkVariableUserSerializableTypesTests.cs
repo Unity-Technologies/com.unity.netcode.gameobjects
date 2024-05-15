@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Used to help track instances of any child derived class
     /// </summary>
-    public class WorkingUserNetworkVariableComponentBase : NetworkBehaviour
+    internal class WorkingUserNetworkVariableComponentBase : NetworkBehaviour
     {
         private static Dictionary<ulong, WorkingUserNetworkVariableComponentBase> s_Instances = new Dictionary<ulong, WorkingUserNetworkVariableComponentBase>();
 
@@ -68,16 +68,16 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class WorkingUserNetworkVariableComponent : WorkingUserNetworkVariableComponentBase
+    internal class WorkingUserNetworkVariableComponent : WorkingUserNetworkVariableComponentBase
     {
         public NetworkVariable<MyTypeOne> NetworkVariable = new NetworkVariable<MyTypeOne>();
     }
 
-    public class WorkingUserNetworkVariableComponentUsingExtensionMethod : WorkingUserNetworkVariableComponentBase
+    internal class WorkingUserNetworkVariableComponentUsingExtensionMethod : WorkingUserNetworkVariableComponentBase
     {
         public NetworkVariable<MyTypeTwo> NetworkVariable = new NetworkVariable<MyTypeTwo>();
     }
-    public class NonWorkingUserNetworkVariableComponent : NetworkBehaviour
+    internal class NonWorkingUserNetworkVariableComponent : NetworkBehaviour
     {
         public NetworkVariable<MyTypeThree> NetworkVariable = new NetworkVariable<MyTypeThree>();
     }
@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkVariableUserSerializableTypesTests : NetcodeIntegrationTest
+    internal class NetworkVariableUserSerializableTypesTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

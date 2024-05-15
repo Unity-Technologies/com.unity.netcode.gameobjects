@@ -6,9 +6,9 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkVarBufferCopyTest : NetcodeIntegrationTest
+    internal class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
-        public class DummyNetVar : NetworkVariableBase
+        internal class DummyNetVar : NetworkVariableBase
         {
             private const int k_DummyValue = 0x13579BDF;
             public bool DeltaWritten;
@@ -69,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class DummyNetBehaviour : NetworkBehaviour
+        internal class DummyNetBehaviour : NetworkBehaviour
         {
             public DummyNetVar NetVar = new DummyNetVar();
 

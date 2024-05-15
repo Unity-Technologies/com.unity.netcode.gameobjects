@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     // Where the NetworkVariable updates would be repeated on some clients.
     // The twist comes fom the updates needing to happens very specifically for the issue to repro in tests
 
-    public class OwnerModifiedObject : NetworkBehaviour, INetworkUpdateSystem
+    internal class OwnerModifiedObject : NetworkBehaviour, INetworkUpdateSystem
     {
         public NetworkList<int> MyNetworkList;
 
@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class OwnerModifiedTests : NetcodeIntegrationTest
+    internal class OwnerModifiedTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

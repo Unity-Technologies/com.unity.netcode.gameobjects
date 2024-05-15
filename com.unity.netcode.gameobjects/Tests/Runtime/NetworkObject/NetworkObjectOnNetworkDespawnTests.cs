@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
+    internal class NetworkObjectOnNetworkDespawnTests : NetcodeIntegrationTest
     {
         private const string k_ObjectName = "TestDespawn";
         public enum InstanceType

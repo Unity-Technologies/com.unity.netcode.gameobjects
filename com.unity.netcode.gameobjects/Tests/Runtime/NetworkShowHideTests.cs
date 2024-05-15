@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class ShowHideObject : NetworkBehaviour
+    internal class ShowHideObject : NetworkBehaviour
     {
         public static List<ShowHideObject> ClientTargetedNetworkObjects = new List<ShowHideObject>();
         public static ulong ClientIdToTarget;
@@ -123,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkShowHideTests : NetcodeIntegrationTest
+    internal class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
 

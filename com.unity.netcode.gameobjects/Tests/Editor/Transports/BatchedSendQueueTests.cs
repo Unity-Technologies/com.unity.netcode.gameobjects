@@ -6,7 +6,7 @@ using Unity.Networking.Transport;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class BatchedSendQueueTests
+    internal class BatchedSendQueueTests
     {
         private const int k_TestQueueCapacity = 16 * 1024;
         private const int k_TestMessageSize = 1020;

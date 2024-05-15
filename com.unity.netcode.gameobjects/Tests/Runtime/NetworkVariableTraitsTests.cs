@@ -5,12 +5,12 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkVariableTraitsComponent : NetworkBehaviour
+    internal class NetworkVariableTraitsComponent : NetworkBehaviour
     {
         public NetworkVariable<float> TheVariable = new NetworkVariable<float>();
     }
 
-    public class NetworkVariableTraitsTests : NetcodeIntegrationTest
+    internal class NetworkVariableTraitsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

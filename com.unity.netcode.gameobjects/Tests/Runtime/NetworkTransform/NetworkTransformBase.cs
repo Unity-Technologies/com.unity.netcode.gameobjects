@@ -9,10 +9,10 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformBase : IntegrationTestWithApproximation
+    internal class NetworkTransformBase : IntegrationTestWithApproximation
     {
 
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
         protected const int k_PositionRotationScaleIterations = 3;
         protected const int k_PositionRotationScaleIterations3Axis = 8;
 
@@ -731,7 +731,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Helper component for all NetworkTransformTests
     /// </summary>
-    public class NetworkTransformTestComponent : NetworkTransform
+    internal class NetworkTransformTestComponent : NetworkTransform
     {
         public bool ServerAuthority;
         public bool ReadyToReceivePositionUpdate = false;
@@ -794,7 +794,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Helper component for NetworkTransform parenting tests when
     /// a child is a parent of another child (i.e. "sub child")
     /// </summary>
-    public class SubChildObjectComponent : ChildObjectComponent
+    internal class SubChildObjectComponent : ChildObjectComponent
     {
         protected override bool IsSubChild()
         {
@@ -805,7 +805,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Helper component for NetworkTransform parenting tests
     /// </summary>
-    public class ChildObjectComponent : NetworkTransform
+    internal class ChildObjectComponent : NetworkTransform
     {
         public static int TestCount;
         public static bool EnableChildLog;

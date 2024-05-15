@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
     /// - Server destroy spawned => Object gets destroyed and despawned/destroyed on all clients. Server does not run <see cref="NetworkPrefaInstanceHandler.HandleNetworkPrefabDestroy"/>. Client runs it.
     /// - Client destroy spawned => throw exception.
     /// </summary>
-    public class NetworkObjectDestroyTests : NetcodeIntegrationTest
+    internal class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

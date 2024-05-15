@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformAnticipationComponent : NetworkBehaviour
+    internal class NetworkTransformAnticipationComponent : NetworkBehaviour
     {
         [Rpc(SendTo.Server)]
         public void MoveRpc(Vector3 newPosition)
@@ -51,7 +51,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkTransformAnticipationTests : NetcodeIntegrationTest
+    internal class NetworkTransformAnticipationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

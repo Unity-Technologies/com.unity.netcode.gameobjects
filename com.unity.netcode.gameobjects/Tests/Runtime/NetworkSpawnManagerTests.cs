@@ -6,7 +6,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkSpawnManagerTests : NetcodeIntegrationTest
+    internal class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
         private ulong serverSideClientId => NetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;

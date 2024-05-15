@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
+    internal class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 1;
 
@@ -271,7 +271,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// NetworkTransformOwnershipTests helper behaviour
         /// </summary>
-        public class VerifyObjectIsSpawnedOnClient : NetworkBehaviour
+        internal class VerifyObjectIsSpawnedOnClient : NetworkBehaviour
         {
             private static Dictionary<ulong, VerifyObjectIsSpawnedOnClient> s_NetworkManagerRelativeSpawnedObjects = new Dictionary<ulong, VerifyObjectIsSpawnedOnClient>();
 
@@ -336,7 +336,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This will have to be used to verify the ownership authority
         /// </summary>
         [DisallowMultipleComponent]
-        public class TestClientNetworkTransform : NetworkTransform
+        internal class TestClientNetworkTransform : NetworkTransform
         {
             public override void OnNetworkSpawn()
             {

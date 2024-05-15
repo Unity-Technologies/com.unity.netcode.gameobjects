@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class BuildTests
+    internal class BuildTests
     {
         public const string DefaultBuildScenePath = "Tests/Editor/Build/BuildTestScene.unity";
 

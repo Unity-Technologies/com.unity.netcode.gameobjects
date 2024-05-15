@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(ApprovalTimedOutTypes.ServerDoesNotRespond)]
     [TestFixture(ApprovalTimedOutTypes.ClientDoesNotRequest)]
-    public class ConnectionApprovalTimeoutTests : NetcodeIntegrationTest
+    internal class ConnectionApprovalTimeoutTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

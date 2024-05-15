@@ -10,7 +10,7 @@ using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class UnityTransportConnectionTests
+    internal class UnityTransportConnectionTests
     {
         // For tests using multiple clients.
         private const int k_NumClients = 5;

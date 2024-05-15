@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class EmbeddedManagedNetworkSerializableType : INetworkSerializable
+    internal class EmbeddedManagedNetworkSerializableType : INetworkSerializable
     {
         public int Int;
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
             serializer.SerializeValue(ref Int);
         }
     }
-    public class ManagedNetworkSerializableType : INetworkSerializable, IEquatable<ManagedNetworkSerializableType>
+    internal class ManagedNetworkSerializableType : INetworkSerializable, IEquatable<ManagedNetworkSerializableType>
     {
         public string Str = "";
         public int[] Ints = Array.Empty<int>();

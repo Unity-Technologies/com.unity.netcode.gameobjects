@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class MessageRegistrationTests
+    internal class MessageRegistrationTests
     {
         private struct TestMessageOne : INetworkMessage, INetworkSerializeByMemcpy
         {

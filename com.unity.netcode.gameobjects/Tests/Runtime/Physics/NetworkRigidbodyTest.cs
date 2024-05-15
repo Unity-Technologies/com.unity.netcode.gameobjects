@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkRigidbodyTest : NetcodeIntegrationTest
+    internal class NetworkRigidbodyTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

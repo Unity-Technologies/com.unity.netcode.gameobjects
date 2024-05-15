@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkVariableAnticipationComponent : NetworkBehaviour
+    internal class NetworkVariableAnticipationComponent : NetworkBehaviour
     {
         public AnticipatedNetworkVariable<int> SnapOnAnticipationFailVariable = new AnticipatedNetworkVariable<int>(0, StaleDataHandling.Ignore);
         public AnticipatedNetworkVariable<float> SmoothOnAnticipationFailVariable = new AnticipatedNetworkVariable<float>(0, StaleDataHandling.Reanticipate);
@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkVariableAnticipationTests : NetcodeIntegrationTest
+    internal class NetworkVariableAnticipationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class NetworkManagerConfigurationTests
+    internal class NetworkManagerConfigurationTests
     {
         /// <summary>
         /// Does a simple check to make sure the nested network manager will

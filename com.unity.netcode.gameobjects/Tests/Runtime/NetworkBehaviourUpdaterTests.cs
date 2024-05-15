@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// This is a refactor of the original test's NetworkBehaviour INetVarInfo derived NetworkBehaviours
     /// </summary>
-    public class NetVarContainer : NetworkBehaviour
+    internal class NetVarContainer : NetworkBehaviour
     {
         /// <summary>
         /// Creates a prefab with two instances of this NetworkBehaviour
@@ -147,13 +147,13 @@ namespace Unity.Netcode.RuntimeTests
     /// Used to define how many NetworkVariables to use per NetVarContainer instance.
     /// There are always two
     /// </summary>
-    public struct NetVarCombinationTypes
+    internal struct NetVarCombinationTypes
     {
         public NetVarContainer.NetVarsToCheck FirstType;
         public NetVarContainer.NetVarsToCheck SecondType;
     }
 
-    public class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
+    internal class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
         protected override int NumberOfClients => 2;

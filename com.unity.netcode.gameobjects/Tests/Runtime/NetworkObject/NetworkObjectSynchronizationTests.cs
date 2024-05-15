@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Host)]
     [TestFixture(VariableLengthSafety.DisableNetVarSafety, HostOrServer.Server)]
     [TestFixture(VariableLengthSafety.EnabledNetVarSafety, HostOrServer.Server)]
-    public class NetworkObjectSynchronizationTests : NetcodeIntegrationTest
+    internal class NetworkObjectSynchronizationTests : NetcodeIntegrationTest
     {
         private const int k_NumberToSpawn = 30;
         protected override int NumberOfClients => 0;
@@ -325,7 +325,7 @@ namespace Unity.Netcode.RuntimeTests
     /// the synchronization process will continue (i.e. it will skip over that block
     /// of the reader buffer).
     /// </summary>
-    public class NetworkBehaviourWithNetworkVariables : NetworkBehaviour
+    internal class NetworkBehaviourWithNetworkVariables : NetworkBehaviour
     {
         public static int ServerSpawnCount { get; internal set; }
         public static readonly Dictionary<ulong, int> ClientSpawnCount = new Dictionary<ulong, int>();
@@ -385,7 +385,7 @@ namespace Unity.Netcode.RuntimeTests
     /// when variable length safety checks are off NetworkVariables still are updated
     /// properly.
     /// </summary>
-    public class NetworkBehaviourWithOwnerNetworkVariables : NetworkBehaviour
+    internal class NetworkBehaviourWithOwnerNetworkVariables : NetworkBehaviour
     {
 
         // Should not synchronize on non-owners
@@ -414,7 +414,7 @@ namespace Unity.Netcode.RuntimeTests
     /// and provides a synchronization success version to validate that synchronization
     /// will continue if user synchronization code fails.
     /// </summary>
-    public class NetworkBehaviourSynchronizeFailureComponent : NetworkBehaviour
+    internal class NetworkBehaviourSynchronizeFailureComponent : NetworkBehaviour
     {
         public static int NumberOfFailureTypes { get; internal set; }
         public static int ServerSpawnCount { get; internal set; }
@@ -584,7 +584,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkBehaviourOnSynchronizeComponent : NetworkBehaviour
+    internal class NetworkBehaviourOnSynchronizeComponent : NetworkBehaviour
     {
         public SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
 

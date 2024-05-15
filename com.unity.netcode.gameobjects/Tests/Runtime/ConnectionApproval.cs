@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class ConnectionApprovalTests
+    internal class ConnectionApprovalTests
     {
         private Guid m_ValidationToken;
         private bool m_IsValidated;
