@@ -751,11 +751,29 @@ namespace Unity.Netcode.RuntimeTests
             base.OnAuthorityPushTransformState(ref networkTransformState);
         }
 
+        public bool AuthorityMove;
+        public Vector3 DirectionToMove;
+        public float MoveSpeed;
+
+        protected override void Update()
+        {
+            if (CanCommitToTransform && AuthorityMove)
+            {
+                transform.position += DirectionToMove * MoveSpeed * Time.deltaTime;
+            }
+            base.Update();
+        }
+
+
+        public delegate void NonAuthorityReceivedTransformStateDelegateHandler(ref NetworkTransformState networkTransformState);
+
+        public event NonAuthorityReceivedTransformStateDelegateHandler NonAuthorityReceivedTransformState;
 
         public bool StateUpdated { get; internal set; }
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             StateUpdated = true;
+            NonAuthorityReceivedTransformState?.Invoke(ref newState);
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
         }
 
