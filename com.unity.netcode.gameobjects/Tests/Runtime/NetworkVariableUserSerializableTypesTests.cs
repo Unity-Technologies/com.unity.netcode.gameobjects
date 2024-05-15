@@ -9,15 +9,15 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public struct MyTypeOne
+    internal struct MyTypeOne
     {
         public int Value;
     }
-    public struct MyTypeTwo
+    internal struct MyTypeTwo
     {
         public int Value;
     }
-    public struct MyTypeThree
+    internal struct MyTypeThree
     {
         public int Value;
     }

@@ -123,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
+    internal struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
         where T : unmanaged
     {
         public T Value;
@@ -178,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
         C = ulong.MaxValue
     }
 
-    public struct HashableNetworkVariableTestStruct : INetworkSerializeByMemcpy, IEquatable<HashableNetworkVariableTestStruct>
+    internal struct HashableNetworkVariableTestStruct : INetworkSerializeByMemcpy, IEquatable<HashableNetworkVariableTestStruct>
     {
         public byte A;
         public short B;
@@ -220,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct HashMapKeyStruct : INetworkSerializeByMemcpy, IEquatable<HashMapKeyStruct>
+    internal struct HashMapKeyStruct : INetworkSerializeByMemcpy, IEquatable<HashMapKeyStruct>
     {
         public byte A;
         public short B;
@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct HashMapValStruct : INetworkSerializeByMemcpy, IEquatable<HashMapValStruct>
+    internal struct HashMapValStruct : INetworkSerializeByMemcpy, IEquatable<HashMapValStruct>
     {
         public byte A;
         public short B;
@@ -304,7 +304,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
+    internal struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
     {
         public byte A;
         public short B;
@@ -913,7 +913,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
+    internal struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
     {
         public int Value;
 

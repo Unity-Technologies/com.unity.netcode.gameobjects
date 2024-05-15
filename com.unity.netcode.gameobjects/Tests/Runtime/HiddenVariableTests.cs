@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HiddenVariableTests : NetcodeIntegrationTest
+    internal class HiddenVariableTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
 

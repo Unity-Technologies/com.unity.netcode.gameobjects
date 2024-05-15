@@ -298,7 +298,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
+    internal struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
         public uint SomeInt;
         public bool SomeBool;

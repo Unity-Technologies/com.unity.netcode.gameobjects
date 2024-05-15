@@ -146,12 +146,12 @@ namespace Unity.Netcode.EditorTests
             public int NetworkBehaviourIndex;
         }
 
-        public class EmptyNetworkBehaviour : NetworkBehaviour
+        internal class EmptyNetworkBehaviour : NetworkBehaviour
         {
 
         }
 
-        public class EmptyMonoBehaviour : MonoBehaviour
+        internal class EmptyMonoBehaviour : MonoBehaviour
         {
 
         }

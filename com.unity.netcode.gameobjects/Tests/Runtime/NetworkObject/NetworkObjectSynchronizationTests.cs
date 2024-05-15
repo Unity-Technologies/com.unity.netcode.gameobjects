@@ -588,7 +588,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
 
-        public struct SomeCustomSerializationData : INetworkSerializable
+        internal struct SomeCustomSerializationData : INetworkSerializable
         {
             public uint Value1;
             public bool Value2;
