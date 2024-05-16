@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Collections;
@@ -61,12 +62,12 @@ namespace Unity.Netcode
         internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager);
 
         internal delegate int VersionGetter();
+        internal delegate uint IndexGetter();
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
-        // These array will grow as we need more message handlers. 4 is just a starting size.
-        private MessageHandler[] m_MessageHandlers = new MessageHandler[4];
-        private Type[] m_ReverseTypeMap = new Type[4];
+        private Dictionary<uint, MessageHandler> m_MessageHandlers = new Dictionary<uint, MessageHandler>();
+        private Dictionary<uint, Type> m_ReverseTypeMap = new Dictionary<uint, Type>();
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
@@ -80,17 +81,16 @@ namespace Unity.Netcode
 
         private List<INetworkHooks> m_Hooks = new List<INetworkHooks>();
 
-        private uint m_HighMessageType;
         private object m_Owner;
         private INetworkMessageSender m_Sender;
         private bool m_Disposed;
 
         private ulong m_LocalClientId;
 
-        internal Type[] MessageTypes => m_ReverseTypeMap;
-        internal MessageHandler[] MessageHandlers => m_MessageHandlers;
+        internal Dictionary<uint, Type> MessageTypes => m_ReverseTypeMap;
+        internal Dictionary<uint, MessageHandler> MessageHandlers => m_MessageHandlers;
 
-        internal uint MessageHandlerCount => m_HighMessageType;
+        internal uint MessageHandlerCount => (uint)MessageHandlers.Count;
 
         internal uint GetMessageType(Type t)
         {
@@ -118,6 +118,7 @@ namespace Unity.Netcode
             public Type MessageType;
             public MessageHandler Handler;
             public VersionGetter GetVersion;
+            public IndexGetter IndexGetter;
         }
 
         internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
@@ -159,10 +160,17 @@ namespace Unity.Netcode
                     provider = new ILPPMessageProvider();
                 }
 
-                var allowedTypes = provider.GetMessages();
+                var allowedTypes = provider
+                    .GetMessages()
+                    .Where(m => m.GetIndex != null)
+                    .ToList();
 
-                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
-                allowedTypes = PrioritizeMessageOrder(allowedTypes);
+                allowedTypes.Sort((a, b) =>
+                {
+                    var aIndex = a.GetIndex();
+                    var bIndex = b.GetIndex();
+                    return aIndex.CompareTo(bIndex);
+                });
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
@@ -242,17 +250,19 @@ namespace Unity.Netcode
 
         private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
-            // If we are out of space, perform amortized linear growth
-            if (m_HighMessageType == m_MessageHandlers.Length)
+            var index = messageWithHandler.GetIndex();
+            if (!m_ReverseTypeMap.TryAdd(index, messageWithHandler.MessageType))
             {
-                Array.Resize(ref m_MessageHandlers, 2 * m_MessageHandlers.Length);
-                Array.Resize(ref m_ReverseTypeMap, 2 * m_ReverseTypeMap.Length);
+
+                var existingType = m_ReverseTypeMap[index];
+                throw new InvalidOperationException($"Message type {messageWithHandler.MessageType.FullName} has a duplicate index {index} with {existingType.FullName}");
             }
 
-            m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
-            m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
+            // Assume that the message type is not already in the dictionaries
+            m_MessageHandlers[index] = messageWithHandler.Handler;
             m_MessagesByHash[XXHash.Hash32(messageWithHandler.MessageType.FullName)] = messageWithHandler.MessageType;
-            m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
+
+            m_MessageTypes[messageWithHandler.MessageType] = index;
             m_LocalVersions[messageWithHandler.MessageType] = messageWithHandler.GetVersion();
         }
 
@@ -400,8 +410,8 @@ namespace Unity.Netcode
         {
             var oldHandlers = m_MessageHandlers;
             var oldTypes = m_MessageTypes;
-            m_ReverseTypeMap = new Type[messagesInIdOrder.Length];
-            m_MessageHandlers = new MessageHandler[messagesInIdOrder.Length];
+            m_ReverseTypeMap = new Dictionary<uint, Type>(messagesInIdOrder.Length);
+            m_MessageHandlers = new Dictionary<uint, MessageHandler>(messagesInIdOrder.Length);
             m_MessageTypes = new Dictionary<Type, uint>();
 
             for (var i = 0; i < messagesInIdOrder.Length; ++i)
@@ -425,7 +435,7 @@ namespace Unity.Netcode
         {
             using (reader)
             {
-                if (header.MessageType >= m_HighMessageType)
+                if (header.MessageType >= MessageHandlerCount)
                 {
                     Debug.LogWarning($"Received a message with invalid message type value {header.MessageType}");
                     return;
@@ -551,6 +561,11 @@ namespace Unity.Netcode
         public static int CreateMessageAndGetVersion<T>() where T : INetworkMessage, new()
         {
             return new T().Version;
+        }
+
+        public static uint CreateMessageAndGetMessageType<T>() where T : INetworkMessage, new()
+        {
+            return (uint)new T().MessageType;
         }
 
         internal int GetMessageVersion(Type type, ulong clientId, bool forReceive = false)

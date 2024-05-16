@@ -25,6 +25,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private struct TestMessageTwo : INetworkMessage, INetworkSerializeByMemcpy
@@ -47,6 +48,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
         private class TestMessageProviderOne : INetworkMessageProvider
         {
@@ -90,6 +92,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
         private class TestMessageProviderTwo : INetworkMessageProvider
         {
@@ -126,6 +129,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
         private class TestMessageProviderThree : INetworkMessageProvider
         {
@@ -208,6 +212,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
 #pragma warning disable IDE1006

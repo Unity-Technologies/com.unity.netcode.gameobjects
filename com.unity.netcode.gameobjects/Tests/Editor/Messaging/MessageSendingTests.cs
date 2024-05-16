@@ -35,6 +35,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private class TestMessageSender : INetworkMessageSender

@@ -51,6 +51,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private struct VersionedTestMessageV1 : INetworkMessage, INetworkSerializeByMemcpy
@@ -112,6 +113,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 1;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private struct VersionedTestMessage : INetworkMessage, INetworkSerializeByMemcpy
@@ -169,6 +171,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 2;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private class TestMessageProviderV0 : INetworkMessageProvider

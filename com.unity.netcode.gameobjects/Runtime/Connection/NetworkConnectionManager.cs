@@ -559,24 +559,33 @@ namespace Unity.Netcode
                 ConfigHash = NetworkManager.NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkManager.NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkManager.NetworkConfig.ConnectionData,
-                MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Length, Allocator.Temp)
+                MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Count, Allocator.Temp)
             };
 
-            for (int index = 0; index < MessageManager.MessageHandlers.Length; index++)
+            PopulateMessageVersions(ref message.MessageVersions);
+
+            SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
+            message.MessageVersions.Dispose();
+        }
+
+        private void PopulateMessageVersions(ref NativeArray<MessageVersionData> array)
+        {
+            var index = 0;
+            foreach (var pair in MessageManager.MessageHandlers)
             {
-                if (MessageManager.MessageTypes[index] != null)
+                if (MessageManager.MessageTypes[pair.Key] != null)
                 {
-                    var type = MessageManager.MessageTypes[index];
-                    message.MessageVersions[index] = new MessageVersionData
+                    // TODO: Include the index in the version data so CMB can properly handle the message type.
+                    var type = MessageManager.MessageTypes[pair.Key];
+                    array[index] = new MessageVersionData
                     {
                         Hash = XXHash.Hash32(type.FullName),
                         Version = MessageManager.GetLocalVersion(type)
                     };
                 }
-            }
 
-            SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
-            message.MessageVersions.Dispose();
+                ++index;
+            }
         }
 
         /// <summary>
@@ -801,19 +810,9 @@ namespace Unity.Netcode
                         }
                     }
 
-                    message.MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Length, Allocator.Temp);
-                    for (int index = 0; index < MessageManager.MessageHandlers.Length; index++)
-                    {
-                        if (MessageManager.MessageTypes[index] != null)
-                        {
-                            var type = MessageManager.MessageTypes[index];
-                            message.MessageVersions[index] = new MessageVersionData
-                            {
-                                Hash = XXHash.Hash32(type.FullName),
-                                Version = MessageManager.GetLocalVersion(type)
-                            };
-                        }
-                    }
+                    message.MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Count, Allocator.Temp);
+                    PopulateMessageVersions(ref message.MessageVersions);
+
                     if (!MockSkippingApproval)
                     {
                         SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);

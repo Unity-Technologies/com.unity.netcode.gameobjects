@@ -21,6 +21,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             public int Version => 0;
+            public NetworkMessageType MessageType => NetworkMessageType.Unnamed;
         }
 
         private class DisconnectOnSendMessageSender : INetworkMessageSender
@@ -42,7 +43,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     MessageType = typeof(TestMessage),
                     Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
-                    GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
+                    GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>,
                 }
             };
 
