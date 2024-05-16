@@ -118,7 +118,7 @@ namespace Unity.Netcode
             public Type MessageType;
             public MessageHandler Handler;
             public VersionGetter GetVersion;
-            public IndexGetter IndexGetter;
+            public IndexGetter GetIndex;
         }
 
         internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
