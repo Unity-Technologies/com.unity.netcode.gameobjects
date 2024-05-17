@@ -7,6 +7,18 @@ namespace Unity.Netcode.EditorTests
 {
     public class UnityTransportTests
     {
+        [SetUp]
+        public void OnSetup()
+        {
+            NetworkMessageManager.IntegrationTest = true;
+        }
+
+        [TearDown]
+        public void OnTearDown()
+        {
+            NetworkMessageManager.IntegrationTest = false;
+        }
+
         // Check that starting an IPv4 server succeeds.
         [Test]
         public void UnityTransport_BasicInitServer_IPv4()

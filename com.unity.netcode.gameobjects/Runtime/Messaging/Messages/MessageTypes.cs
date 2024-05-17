@@ -43,17 +43,48 @@ namespace Unity.Netcode
 
         internal static Dictionary<Type, NetworkMessageTypes> MessageTypes;
 
+        internal static List<NetworkMessageManager.MessageWithHandler> PrioritizeMessageOrder(List<NetworkMessageManager.MessageWithHandler> allowedTypes)
+        {
+            var prioritizedTypes = new List<NetworkMessageManager.MessageWithHandler>();
+
+            // First pass puts the priority message in the first indices
+            // Those are the messages that must be delivered in order to allow re-ordering the others later
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName == typeof(ConnectionRequestMessage).FullName ||
+                    t.MessageType.FullName == typeof(ConnectionApprovedMessage).FullName)
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
+
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName != typeof(ConnectionRequestMessage).FullName &&
+                    t.MessageType.FullName != typeof(ConnectionApprovedMessage).FullName)
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
+
+            return prioritizedTypes;
+        }
+
         /// <summary>
         /// Orders messages based on <see cref="NetworkMessageTypes"/>
         /// </summary>
-        /// <param name="allowedTypes"></param>
+        /// <param name="networkMessageProvider"></param>
+        /// <param name="usingDefault"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
+        /// <summary>
         internal static List<NetworkMessageManager.MessageWithHandler> Initialize(INetworkMessageProvider networkMessageProvider, bool usingDefault)
         {
             var allowedTypes = networkMessageProvider.GetMessages();
             if (!usingDefault)
             {
+                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
+                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 return allowedTypes;
             }
             var messageTypeCount = Enum.GetValues(typeof(NetworkMessageTypes)).Length;

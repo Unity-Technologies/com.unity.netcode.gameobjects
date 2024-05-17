@@ -147,6 +147,8 @@ namespace Unity.Netcode
             return prioritizedTypes;
         }
 
+        // Enable this to bypass the default message count and ordering in MessageTypes
+        internal static bool IntegrationTest;
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
@@ -157,7 +159,7 @@ namespace Unity.Netcode
                 if (provider == null)
                 {
                     provider = new ILPPMessageProvider();
-                    usingDefault = true;
+                    usingDefault = !IntegrationTest;
                 }
 
                 // This orders the message types by the NetworkMessageType enum order

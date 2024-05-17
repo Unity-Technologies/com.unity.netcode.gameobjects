@@ -11,6 +11,18 @@ namespace Unity.Netcode.EditorTests
 {
     public class NetworkManagerConfigurationTests
     {
+        [SetUp]
+        public void OnSetup()
+        {
+            NetworkMessageManager.IntegrationTest = true;
+        }
+
+        [TearDown]
+        public void OnTearDown()
+        {
+            NetworkMessageManager.IntegrationTest = false;
+        }
+
         /// <summary>
         /// Does a simple check to make sure the nested network manager will
         /// notify the user when in the editor.  This is just a unit test to
