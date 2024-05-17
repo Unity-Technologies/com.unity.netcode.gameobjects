@@ -49,9 +49,13 @@ namespace Unity.Netcode
         /// <param name="allowedTypes"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        internal static List<NetworkMessageManager.MessageWithHandler> Initialize(INetworkMessageProvider networkMessageProvider)
+        internal static List<NetworkMessageManager.MessageWithHandler> Initialize(INetworkMessageProvider networkMessageProvider, bool usingDefault)
         {
             var allowedTypes = networkMessageProvider.GetMessages();
+            if (!usingDefault)
+            {
+                return allowedTypes;
+            }
             var messageTypeCount = Enum.GetValues(typeof(NetworkMessageTypes)).Length;
             // Assure the allowed types count is the same as our NetworkMessageType enum count
             if (allowedTypes.Count != messageTypeCount)

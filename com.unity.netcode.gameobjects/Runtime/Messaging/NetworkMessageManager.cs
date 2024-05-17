@@ -153,14 +153,15 @@ namespace Unity.Netcode
             {
                 m_Sender = sender;
                 m_Owner = owner;
-
+                var usingDefault = false;
                 if (provider == null)
                 {
                     provider = new ILPPMessageProvider();
+                    usingDefault = true;
                 }
 
                 // This orders the message types by the NetworkMessageType enum order
-                var allowedTypes = MessageTypeDefines.Initialize(provider);
+                var allowedTypes = MessageTypeDefines.Initialize(provider, usingDefault);
 
                 foreach (var type in allowedTypes)
                 {
