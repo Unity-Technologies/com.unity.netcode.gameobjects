@@ -62,7 +62,7 @@ namespace Unity.Netcode
             // Populate with blanks to be replaced later
             var adjustedMessageTypes = new List<NetworkMessageManager.MessageWithHandler>();
             var blank = new NetworkMessageManager.MessageWithHandler();
-            for (int i = 0; i < messageTypeCount; i++) 
+            for (int i = 0; i < messageTypeCount; i++)
             {
                 adjustedMessageTypes.Add(blank);
             }
@@ -105,8 +105,8 @@ namespace Unity.Netcode
             }
 
             // Now order the allowed types list based on the order of the NetworkMessageType enum
-            foreach (var messageHandler in allowedTypes) 
-            { 
+            foreach (var messageHandler in allowedTypes)
+            {
                 if (!MessageTypes.ContainsKey(messageHandler.MessageType))
                 {
                     throw new Exception($"Missing message type from lookup table: {messageHandler.MessageType}");
