@@ -1,5 +1,6 @@
 using System;
 using Unity.Networking.Transport;
+using UnityEngine;
 #if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -48,13 +49,16 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="reader">The <see cref="DataStreamReader"/> to push the data of.</param>
         public void PushReader(DataStreamReader reader)
         {
+            Debug.Log("PushReader");
             // Resize the array and copy the existing data to the beginning if there's not enough
             // room to copy the reader's data at the end of the existing data.
             var available = m_Data.Length - (m_Offset + m_Length);
             if (available < reader.Length)
             {
+                Debug.Log("available < reader.Length");
                 if (m_Length > 0)
                 {
+                    Debug.Log("m_Length > 0");
                     Array.Copy(m_Data, m_Offset, m_Data, 0, m_Length);
                 }
 
@@ -62,6 +66,7 @@ namespace Unity.Netcode.Transports.UTP
 
                 while (m_Data.Length - m_Length < reader.Length)
                 {
+                    Debug.Log("m_Data.Length - m_Length < reader.Length");
                     Array.Resize(ref m_Data, m_Data.Length * 2);
                 }
             }
@@ -85,8 +90,10 @@ namespace Unity.Netcode.Transports.UTP
         /// <returns>The message, or the default value if no more full messages.</returns>
         public ArraySegment<byte> PopMessage()
         {
+            Debug.Log("PopMessage");
             if (m_Length < sizeof(int))
             {
+                Debug.Log("Too small");
                 return default;
             }
 
@@ -94,6 +101,7 @@ namespace Unity.Netcode.Transports.UTP
 
             if (m_Length - sizeof(int) < messageLength)
             {
+                Debug.Log("Too small");
                 return default;
             }
 
