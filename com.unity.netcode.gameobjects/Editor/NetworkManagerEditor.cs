@@ -30,7 +30,9 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
-        private SerializedProperty m_SessionModeProperty;
+#if MULTIPLAYER_SDK_INSTALLED
+        private SerializedProperty m_NetworkTopologyProperty;
+#endif
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
         private SerializedProperty m_ConnectionApprovalProperty;
         private SerializedProperty m_EnsureNetworkVariableLengthSafetyProperty;
@@ -100,7 +102,9 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-            m_SessionModeProperty = m_NetworkConfigProperty.FindPropertyRelative("SessionMode");
+#if MULTIPLAYER_SDK_INSTALLED
+            m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
@@ -138,7 +142,9 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-            m_SessionModeProperty = m_NetworkConfigProperty.FindPropertyRelative("SessionMode");
+#if MULTIPLAYER_SDK_INSTALLED
+            m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+#endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
             m_EnsureNetworkVariableLengthSafetyProperty = m_NetworkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
@@ -177,9 +183,12 @@ namespace Unity.Netcode.Editor
                 serializedObject.Update();
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
-                EditorGUILayout.PropertyField(m_SessionModeProperty);
+
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
+#if MULTIPLAYER_SDK_INSTALLED
+                EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
+#endif
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
                 EditorGUILayout.PropertyField(m_NetworkTransportProperty);
                 if (m_NetworkTransportProperty.objectReferenceValue == null)

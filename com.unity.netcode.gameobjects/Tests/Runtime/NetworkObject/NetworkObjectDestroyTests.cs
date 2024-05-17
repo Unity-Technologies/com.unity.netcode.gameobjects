@@ -14,13 +14,13 @@ namespace Unity.Netcode.RuntimeTests
     /// - Client destroy spawned => throw exception.
     /// </summary>
 
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
-        public NetworkObjectDestroyTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public NetworkObjectDestroyTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.

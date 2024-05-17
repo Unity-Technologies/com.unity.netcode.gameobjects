@@ -149,8 +149,8 @@ namespace Unity.Netcode
         /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
 
-        [Tooltip("Determines if the network session will run in client-server or distributed authority mode.")]
-        public SessionModeTypes SessionMode;
+        [Tooltip("Determines whether to use the client-server or distributed authority network topology.")]
+        public NetworkTopologyTypes NetworkTopology;
 
         [HideInInspector]
         public bool UseCMBService;

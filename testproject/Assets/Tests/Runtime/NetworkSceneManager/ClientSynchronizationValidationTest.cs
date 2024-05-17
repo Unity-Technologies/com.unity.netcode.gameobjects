@@ -9,8 +9,8 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ClientSynchronizationValidationTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
@@ -22,7 +22,7 @@ namespace TestProject.RuntimeTests
         private bool m_RuntimeSceneWasExcludedFromSynch;
 
         private List<ClientSceneVerificationHandler> m_ClientSceneVerifiers = new List<ClientSceneVerificationHandler>();
-        public ClientSynchronizationValidationTest(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public ClientSynchronizationValidationTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {

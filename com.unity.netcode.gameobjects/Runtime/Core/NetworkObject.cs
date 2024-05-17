@@ -401,8 +401,11 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Determines whether a NetworkObject can be distributed to other clients during
-        /// a <see cref="SessionModeTypes.DistributedAuthority"/> session.
+        /// a <see cref="NetworkTopologyTypes.DistributedAuthority"/> session.
         /// </summary>
+#if !MULTIPLAYER_SDK_INSTALLED
+        [HideInInspector]
+#endif
         [SerializeField]
         internal OwnershipStatus Ownership = OwnershipStatus.Distributable;
 

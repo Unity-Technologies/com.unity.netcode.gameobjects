@@ -22,6 +22,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkClient.SessionModeTypes` to `NetworkClient.NetworkTopologyTypes`. (#2875)
+- Changed `NetworkClient.SessionModeType` to `NetworkClient.NetworkTopologyType`. (#2875)
+- Changed `NetworkConfig.SessionMode` to `NeworkConfig.NetworkTopology`. (#2875)
+
 
 ## [2.0.0-exp.2] - 2024-04-02
 
