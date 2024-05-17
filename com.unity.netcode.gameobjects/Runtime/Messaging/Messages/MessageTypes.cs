@@ -73,8 +73,8 @@ namespace Unity.Netcode
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             MessageTypes = new Dictionary<Type, NetworkMessageTypes>
             {
-                { typeof(ConnectionApprovedMessage), NetworkMessageTypes.ConnectionApproved },
-                { typeof(ConnectionRequestMessage), NetworkMessageTypes.ConnectionRequest },
+                { typeof(ConnectionApprovedMessage), NetworkMessageTypes.ConnectionApproved }, // This MUST be first
+                { typeof(ConnectionRequestMessage), NetworkMessageTypes.ConnectionRequest }, // This MUST be second
                 { typeof(ChangeOwnershipMessage), NetworkMessageTypes.ChangeOwnership },
                 { typeof(ClientConnectedMessage), NetworkMessageTypes.ClientConnected },
                 { typeof(ClientDisconnectedMessage), NetworkMessageTypes.ClientDisconnected },
