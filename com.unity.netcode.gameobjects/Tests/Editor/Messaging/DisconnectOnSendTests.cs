@@ -44,6 +44,7 @@ namespace Unity.Netcode.EditorTests
                     MessageType = typeof(TestMessage),
                     Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
                     GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>,
+                    GetIndex = NetworkMessageManager.CreateMessageAndGetMessageType<TestMessage>,
                 }
             };
 
