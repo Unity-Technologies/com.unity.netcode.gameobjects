@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(SessionModeTypes.ClientServer)]
     [TestFixture(SessionModeTypes.DistributedAuthority)]
-    public class NetworkShowHideTests : NetcodeIntegrationTest
+    internal class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
 

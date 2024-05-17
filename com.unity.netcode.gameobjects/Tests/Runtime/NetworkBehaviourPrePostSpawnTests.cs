@@ -8,7 +8,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
-    public class NetworkBehaviourPrePostSpawnTests : NetcodeIntegrationTest
+    internal class NetworkBehaviourPrePostSpawnTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
 
@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        public class NetworkBehaviourPreSpawn : NetworkBehaviour
+        internal class NetworkBehaviourPreSpawn : NetworkBehaviour
         {
             public static int ValueToSet;
             public bool OnNetworkPreSpawnCalled;
@@ -55,7 +55,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class NetworkBehaviourPostSpawn : NetworkBehaviour
+        internal class NetworkBehaviourPostSpawn : NetworkBehaviour
         {
             public bool OnNetworkPostSpawnCalled;
 
