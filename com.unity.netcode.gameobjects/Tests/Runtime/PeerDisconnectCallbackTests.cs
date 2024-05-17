@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.Host)]
-    public class PeerDisconnectCallbackTests : NetcodeIntegrationTest
+    internal class PeerDisconnectCallbackTests : NetcodeIntegrationTest
     {
 
         public enum ClientDisconnectType

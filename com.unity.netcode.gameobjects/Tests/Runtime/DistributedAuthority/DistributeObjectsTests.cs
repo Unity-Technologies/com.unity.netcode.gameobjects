@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Validates that distributable NetworkObjects are distributed upon
     /// a client connecting or disconnecting.
     /// </summary>
-    public class DistributeObjectsTests : IntegrationTestWithApproximation
+    internal class DistributeObjectsTests : IntegrationTestWithApproximation
     {
         private GameObject m_DistributeObject;
 
@@ -352,7 +352,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This keeps track of each clients perspective of which NetworkObjects are owned by which client.
         /// It is used to validate that all clients are in synch with ownership updates.
         /// </summary>
-        public class DistributeObjectsTestHelper : NetworkBehaviour
+        internal class DistributeObjectsTestHelper : NetworkBehaviour
         {
             /// <summary>
             /// [Client Context][Client Owners][NetworkObjectId][NetworkObject]
@@ -426,7 +426,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This is used to validate that upon distributed ownership changes NetworkTransform sycnhronization
         /// still works properly.
         /// </summary>
-        public class DistributeTestTransform : NetworkTransform
+        internal class DistributeTestTransform : NetworkTransform
         {
             private float m_DeltaVarPosition = 0.15f;
             private float m_DeltaVarQauternion = 0.015f;

@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(SessionModeTypes.DistributedAuthority)]
     [TestFixture(SessionModeTypes.ClientServer)]
-    public class NetworkObjectDestroyTests : NetcodeIntegrationTest
+    internal class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 else
                 {
-                    // Shutdown the 
+                    // Shutdown the
                     m_ClientNetworkManagers[0].Shutdown();
                 }
             }

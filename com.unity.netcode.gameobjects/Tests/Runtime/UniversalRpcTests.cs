@@ -19,7 +19,7 @@ using Random = System.Random;
 // I put them in their own namespace so they would be easier to navigate in the test list.
 namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 {
-    public class UniversalRpcNetworkBehaviour : NetworkBehaviour
+    internal class UniversalRpcNetworkBehaviour : NetworkBehaviour
     {
         public bool Stop = false;
         public string Received = string.Empty;
@@ -534,7 +534,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
-    public class UniversalRpcTestsBase : NetcodeIntegrationTest
+    internal class UniversalRpcTestsBase : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 

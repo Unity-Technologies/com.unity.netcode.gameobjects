@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class UnityTransportTests
+    internal class UnityTransportTests
     {
         // Check that starting an IPv4 server succeeds.
         [Test]

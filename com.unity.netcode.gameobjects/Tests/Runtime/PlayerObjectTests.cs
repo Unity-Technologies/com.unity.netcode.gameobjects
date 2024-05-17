@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class PlayerObjectTests : NetcodeIntegrationTest
+    internal class PlayerObjectTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

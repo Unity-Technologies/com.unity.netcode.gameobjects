@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     [TestFixture(HostOrServer.DAHost)]
-    public class NetworkClientAndPlayerObjectTests : NetcodeIntegrationTest
+    internal class NetworkClientAndPlayerObjectTests : NetcodeIntegrationTest
     {
         private const int k_PlayerPrefabCount = 6;
         protected override int NumberOfClients => 2;
@@ -168,7 +168,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateNetworkClients()
         {
-            // Validate the initial clients created 
+            // Validate the initial clients created
             yield return WaitForConditionOrTimeOut(AllNetworkClientsValidated);
             AssertOnTimeout($"[Start] Not all NetworkClients were valid!\n{m_ErrorLogLevel1}");
 
@@ -190,7 +190,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// Verify that all NetworkClients are pointing to the correct player object, even if 
+        /// Verify that all NetworkClients are pointing to the correct player object, even if
         /// the player object is changed.
         /// </summary>
         private bool ValidatePlayerObjectOnClients(NetworkManager clientToValidate)
