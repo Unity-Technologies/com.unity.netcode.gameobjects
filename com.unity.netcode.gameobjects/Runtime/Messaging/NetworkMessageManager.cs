@@ -159,10 +159,9 @@ namespace Unity.Netcode
                     provider = new ILPPMessageProvider();
                 }
 
-                var allowedTypes = provider.GetMessages();
+                // This orders the message types by the NetworkMessageType enum order
+                var allowedTypes = MessageTypeDefines.Initialize(provider);
 
-                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
-                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
