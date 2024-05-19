@@ -120,50 +120,19 @@ namespace Unity.Netcode
             public VersionGetter GetVersion;
         }
 
-        internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
-        {
-            var prioritizedTypes = new List<MessageWithHandler>();
-
-            // First pass puts the priority message in the first indices
-            // Those are the messages that must be delivered in order to allow re-ordering the others later
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName == typeof(ConnectionRequestMessage).FullName ||
-                    t.MessageType.FullName == typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName != typeof(ConnectionRequestMessage).FullName &&
-                    t.MessageType.FullName != typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            return prioritizedTypes;
-        }
-
-        // Enable this to bypass the default message count and ordering in MessageTypes
-        internal static bool IntegrationTest;
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
             {
                 m_Sender = sender;
                 m_Owner = owner;
-                var usingDefault = false;
                 if (provider == null)
                 {
                     provider = new ILPPMessageProvider();
-                    usingDefault = !IntegrationTest;
                 }
 
-                // This orders the message types by the NetworkMessageType enum order
-                var allowedTypes = MessageTypeDefines.Initialize(provider, usingDefault);
+                // Get the presorted message types returned by the provider
+                var allowedTypes = provider.GetMessages();
 
                 foreach (var type in allowedTypes)
                 {

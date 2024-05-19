@@ -14,13 +14,13 @@ namespace Unity.Netcode.EditorTests
         [SetUp]
         public void OnSetup()
         {
-            NetworkMessageManager.IntegrationTest = true;
+            ILPPMessageProvider.IntegrationTestNoMessages = true;
         }
 
         [TearDown]
         public void OnTearDown()
         {
-            NetworkMessageManager.IntegrationTest = false;
+            ILPPMessageProvider.IntegrationTestNoMessages = false;
         }
 
         /// <summary>
