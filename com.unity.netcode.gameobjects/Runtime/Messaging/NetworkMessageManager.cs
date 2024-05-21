@@ -120,49 +120,20 @@ namespace Unity.Netcode
             public VersionGetter GetVersion;
         }
 
-        internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
-        {
-            var prioritizedTypes = new List<MessageWithHandler>();
-
-            // First pass puts the priority message in the first indices
-            // Those are the messages that must be delivered in order to allow re-ordering the others later
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName == typeof(ConnectionRequestMessage).FullName ||
-                    t.MessageType.FullName == typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            foreach (var t in allowedTypes)
-            {
-                if (t.MessageType.FullName != typeof(ConnectionRequestMessage).FullName &&
-                    t.MessageType.FullName != typeof(ConnectionApprovedMessage).FullName)
-                {
-                    prioritizedTypes.Add(t);
-                }
-            }
-
-            return prioritizedTypes;
-        }
-
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
             {
                 m_Sender = sender;
                 m_Owner = owner;
-
                 if (provider == null)
                 {
                     provider = new ILPPMessageProvider();
                 }
 
+                // Get the presorted message types returned by the provider
                 var allowedTypes = provider.GetMessages();
 
-                allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
-                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
