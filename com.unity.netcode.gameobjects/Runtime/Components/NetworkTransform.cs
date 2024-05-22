@@ -3249,7 +3249,7 @@ namespace Unity.Netcode.Components
             {
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
-                var offset = 0f;
+                var offset = (float)serverTime.TickOffset;
 #if COM_UNITY_MODULES_PHYSICS
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
@@ -3264,11 +3264,12 @@ namespace Unity.Netcode.Components
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
 #endif
                 // TODO: We need an RTT that updates regularly and not only when the client sends packets
-                //if (m_CachedNetworkManager.DistributedAuthorityMode)
-                //{
-                //    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                //    offset = m_NetworkTransformTickRegistration.Offset;
-                //}
+                if (m_CachedNetworkManager.DistributedAuthorityMode)
+                {
+                    ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
+                    //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
+                    //offset = m_NetworkTransformTickRegistration.Offset;
+                }
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
 
