@@ -27,5 +27,7 @@ namespace Unity.Netcode
         /// </summary>
         public ulong BatchHash;
 
+        public ulong BatchId;
+
     }
 }
