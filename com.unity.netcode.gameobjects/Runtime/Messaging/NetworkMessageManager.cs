@@ -275,13 +275,13 @@ namespace Unity.Netcode
 
                     if (batchHeader.Magic != NetworkBatchHeader.MagicValue)
                     {
-                        NetworkLog.LogError($"Received a packet ID: {batchHeader.BatchId} with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
                     if (batchHeader.BatchSize != data.Count)
                     {
-                        NetworkLog.LogError($"Received a packet ID: {batchHeader.BatchId} with an invalid Batch Size Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Expected Size: {batchHeader.BatchSize}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Batch Size Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Expected Size: {batchHeader.BatchSize}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
@@ -289,7 +289,7 @@ namespace Unity.Netcode
 
                     if (hash != batchHeader.BatchHash)
                     {
-                        NetworkLog.LogError($"Received a packet ID: {batchHeader.BatchId} with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
@@ -309,7 +309,7 @@ namespace Unity.Netcode
                         }
                         catch (OverflowException)
                         {
-                            NetworkLog.LogError($"Received a batch ID: {batchHeader.BatchId} that didn't have enough data for all of its batches, ending early!");
+                            NetworkLog.LogError($"{m_LocalClientId} Received a batch ID: {batchHeader.BatchId} that didn't have enough data for all of its batches, ending early!");
                             throw;
                         }
 
@@ -317,7 +317,7 @@ namespace Unity.Netcode
 
                         if (!batchReader.TryBeginRead((int)messageHeader.MessageSize))
                         {
-                            NetworkLog.LogError($"Received a message ID: {batchHeader.BatchId} that claimed a size larger than the packet, ending early!");
+                            NetworkLog.LogError($"{m_LocalClientId} Received a message ID: {batchHeader.BatchId} that claimed a size larger than the packet, ending early!");
                             return;
                         }
 
