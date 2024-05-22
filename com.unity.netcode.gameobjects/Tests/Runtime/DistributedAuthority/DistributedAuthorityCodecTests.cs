@@ -16,7 +16,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class DistributedAuthorityCodecTests : NetcodeIntegrationTest
+    internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
@@ -35,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private GameObject m_SpawnObject;
 
-        public class TestNetworkComponent : NetworkBehaviour
+        internal class TestNetworkComponent : NetworkBehaviour
         {
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
 

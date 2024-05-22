@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class NetworkManagerConfigurationTests
+    internal class NetworkManagerConfigurationTests
     {
         [SetUp]
         public void OnSetup()

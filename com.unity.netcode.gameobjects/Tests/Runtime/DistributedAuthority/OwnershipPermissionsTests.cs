@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class OwnershipPermissionsTests : IntegrationTestWithApproximation
+    internal class OwnershipPermissionsTests : IntegrationTestWithApproximation
     {
         private GameObject m_PermissionsObject;
 
@@ -332,7 +332,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"[Targeted Owner] Client-{daHostInstance.NetworkManager.LocalClientId} did not get the right request reponse: {daHostInstanceHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.Approved}!");
         }
 
-        public class OwnershipPermissionsTestHelper : NetworkBehaviour
+        internal class OwnershipPermissionsTestHelper : NetworkBehaviour
         {
             public static NetworkObject CurrentOwnedInstance;
 

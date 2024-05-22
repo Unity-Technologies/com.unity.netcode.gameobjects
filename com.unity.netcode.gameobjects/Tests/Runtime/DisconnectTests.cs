@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(OwnerPersistence.DestroyWithOwner)]
     [TestFixture(OwnerPersistence.DontDestroyWithOwner)]
-    public class DisconnectTests : NetcodeIntegrationTest
+    internal class DisconnectTests : NetcodeIntegrationTest
     {
         public enum OwnerPersistence
         {

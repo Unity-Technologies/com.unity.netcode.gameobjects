@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
 #endif
-    public class NetworkTransformTests : NetworkTransformBase
+    internal class NetworkTransformTests : NetworkTransformBase
     {
         protected const int k_TickRate = 60;
         /// <summary>
@@ -311,7 +311,7 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated), $"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
                 // For 3 axis, we will skip validating that the non-authority interpolates to its target point at least once.
-                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2 
+                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2
                 // of the axis are being updated to assure interpolation maintains the targeted axial value per axis.
                 // For 2 and 1 axis tests we always validate per delta update
                 if (m_AxisExcluded || axisCount < 3)

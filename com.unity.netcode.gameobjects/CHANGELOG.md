@@ -22,8 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Change all the access modifiers of test class from Public to Internal (#2930)
 - Changed messages are now sorted by enum values as opposed to ordinally sorting the messages by their type name. (#2929)
-
 
 ## [2.0.0-exp.2] - 2024-04-02
 

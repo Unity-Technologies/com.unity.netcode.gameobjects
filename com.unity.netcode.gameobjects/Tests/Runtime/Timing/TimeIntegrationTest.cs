@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests the times of two clients connecting to a server using the SIPTransport (returns 50ms RTT but has no latency simulation)
     /// </summary>
-    public class TimeIntegrationTest : NetcodeIntegrationTest
+    internal class TimeIntegrationTest : NetcodeIntegrationTest
     {
         private const double k_AdditionalTimeTolerance = 0.3333d; // magic number and in theory not needed but without this mac os test fail in Yamato because it looks like we get random framerate drops during unit test.
 

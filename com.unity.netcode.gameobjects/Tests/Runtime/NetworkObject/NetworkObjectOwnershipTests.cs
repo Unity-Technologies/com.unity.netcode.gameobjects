@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkObjectOwnershipComponent : NetworkBehaviour
+    internal class NetworkObjectOwnershipComponent : NetworkBehaviour
     {
         public static Dictionary<ulong, NetworkObjectOwnershipComponent> SpawnedInstances = new Dictionary<ulong, NetworkObjectOwnershipComponent>();
 
@@ -45,7 +45,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkObjectOwnershipTests : NetcodeIntegrationTest
+    internal class NetworkObjectOwnershipTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 9;
 

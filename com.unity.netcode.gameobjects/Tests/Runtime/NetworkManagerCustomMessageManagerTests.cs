@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkManagerCustomMessageManagerTests
+    internal class NetworkManagerCustomMessageManagerTests
     {
         [Test]
         public void CustomMessageManagerAssigned()

@@ -6,7 +6,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
-    public class NetworkTransformGeneral : NetworkTransformBase
+    internal class NetworkTransformGeneral : NetworkTransformBase
     {
         public NetworkTransformGeneral(HostOrServer testWithHost, Authority authority) :
             base(testWithHost, authority, RotationCompression.None, Rotation.Euler, Precision.Full)
@@ -66,7 +66,7 @@ namespace Unity.Netcode.RuntimeTests
             var halfThreshold = m_AuthoritativeTransform.RotAngleThreshold * 0.5001f;
 
             // Apply the current state prior to getting reference rotations which assures we have
-            // applied the most current rotation deltas and that all bitset flags are updated 
+            // applied the most current rotation deltas and that all bitset flags are updated
             var results = m_AuthoritativeTransform.ApplyState();
             TimeTravelAdvanceTick();
 

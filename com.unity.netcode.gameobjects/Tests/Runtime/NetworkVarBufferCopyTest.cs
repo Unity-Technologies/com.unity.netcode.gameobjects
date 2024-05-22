@@ -8,9 +8,9 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
-    public class NetworkVarBufferCopyTest : NetcodeIntegrationTest
+    internal class NetworkVarBufferCopyTest : NetcodeIntegrationTest
     {
-        public class DummyNetVar : NetworkVariableBase
+        internal class DummyNetVar : NetworkVariableBase
         {
             private const int k_DummyValue = 0x13579BDF;
             public bool DeltaWritten;
@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests
             NetworkVariableWritePermission writePerm = DefaultWritePerm) : base(readPerm, writePerm) { }
         }
 
-        public class DummyNetBehaviour : NetworkBehaviour
+        internal class DummyNetBehaviour : NetworkBehaviour
         {
             public static bool DistributedAuthority;
             public DummyNetVar NetVar;

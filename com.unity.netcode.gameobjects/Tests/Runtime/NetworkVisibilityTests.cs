@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.DistributedAuthority)]
     [TestFixture(SceneManagementState.SceneManagementEnabled, SessionModeTypes.ClientServer)]
     [TestFixture(SceneManagementState.SceneManagementDisabled, SessionModeTypes.ClientServer)]
-    public class NetworkVisibilityTests : NetcodeIntegrationTest
+    internal class NetworkVisibilityTests : NetcodeIntegrationTest
     {
 
         protected override int NumberOfClients => 1;

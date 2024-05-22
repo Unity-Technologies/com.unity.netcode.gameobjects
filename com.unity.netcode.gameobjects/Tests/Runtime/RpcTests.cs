@@ -9,14 +9,14 @@ using Vector3 = UnityEngine.Vector3;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class RpcTests : NetcodeIntegrationTest
+    internal class RpcTests : NetcodeIntegrationTest
     {
-        public class CompileTimeNoRpcsBaseClassTest : NetworkBehaviour
+        internal class CompileTimeNoRpcsBaseClassTest : NetworkBehaviour
         {
 
         }
 
-        public class CompileTimeHasRpcsChildClassDerivedFromNoRpcsBaseClassTest : CompileTimeNoRpcsBaseClassTest
+        internal class CompileTimeHasRpcsChildClassDerivedFromNoRpcsBaseClassTest : CompileTimeNoRpcsBaseClassTest
         {
             [ServerRpc]
             public void SomeDummyServerRpc()
@@ -25,7 +25,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class GenericRpcTestNB<T> : NetworkBehaviour where T : unmanaged
+        internal class GenericRpcTestNB<T> : NetworkBehaviour where T : unmanaged
         {
             public event Action<T, ServerRpcParams> OnServer_Rpc;
 
@@ -36,11 +36,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class RpcTestNBFloat : GenericRpcTestNB<float>
+        internal class RpcTestNBFloat : GenericRpcTestNB<float>
         {
         }
 
-        public class RpcTestNB : GenericRpcTestNB<ulong>
+        internal class RpcTestNB : GenericRpcTestNB<ulong>
         {
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             public event Action<NativeList<ulong>, ServerRpcParams> OnNativeListServer_Rpc;
