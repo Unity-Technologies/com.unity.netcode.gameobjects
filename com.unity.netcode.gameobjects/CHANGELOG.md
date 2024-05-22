@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkClient.SessionModeTypes` to `NetworkClient.NetworkTopologyTypes`. (#2875)
 - Changed `NetworkClient.SessionModeType` to `NetworkClient.NetworkTopologyType`. (#2875)
 - Changed `NetworkConfig.SessionMode` to `NeworkConfig.NetworkTopology`. (#2875)
+- Changed messages are now sorted by enum values as opposed to ordinally sorting the messages by their type name. (#2929)
 
 
 ## [2.0.0-exp.2] - 2024-04-02
