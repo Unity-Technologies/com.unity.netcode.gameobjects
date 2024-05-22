@@ -10,7 +10,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
-    public class NetworkObjectOwnershipPropertiesTests : NetcodeIntegrationTest
+    internal class NetworkObjectOwnershipPropertiesTests : NetcodeIntegrationTest
     {
         private class DummyNetworkBehaviour : NetworkBehaviour
         {
@@ -186,7 +186,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForMessageReceived<ChangeOwnershipMessage>(m_ClientNetworkManagers.ToList());
             }
 
-            // Ensure it's the ownership tables are updated 
+            // Ensure it's the ownership tables are updated
             yield return WaitForConditionOrTimeOut(OwnershipPropagated);
             AssertOnTimeout($"Timed out waiting for ownership to propagate!\n{m_OwnershipPropagatedFailures}");
 

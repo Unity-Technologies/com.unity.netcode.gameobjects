@@ -7,7 +7,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
-    public class NetworkSpawnManagerTests : NetcodeIntegrationTest
+    internal class NetworkSpawnManagerTests : NetcodeIntegrationTest
     {
         private ulong serverSideClientId => NetworkManager.ServerClientId;
         private ulong clientSideClientId => m_ClientNetworkManagers[0].LocalClientId;

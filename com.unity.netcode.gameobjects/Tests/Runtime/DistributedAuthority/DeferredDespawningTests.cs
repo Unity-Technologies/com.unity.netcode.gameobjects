@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class DeferredDespawningTests : IntegrationTestWithApproximation
+    internal class DeferredDespawningTests : IntegrationTestWithApproximation
     {
         private const int k_DaisyChainedCount = 5;
         protected override int NumberOfClients => 2;
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
     /// prefab driven by the authority. This repeats for the number specified in the integration
     /// test.
     /// </summary>
-    public class DeferredDespawnDaisyChained : NetworkBehaviour
+    internal class DeferredDespawnDaisyChained : NetworkBehaviour
     {
         public static bool EnableVerbose;
         public static Action<ulong> ReachedLastChainInstance;

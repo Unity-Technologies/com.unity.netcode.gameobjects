@@ -7,7 +7,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkManagerEventsTests
+    internal class NetworkManagerEventsTests
     {
         private NetworkManager m_ClientManager;
         private NetworkManager m_ServerManager;

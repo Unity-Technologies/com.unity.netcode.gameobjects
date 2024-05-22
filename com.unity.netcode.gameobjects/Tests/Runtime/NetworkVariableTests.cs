@@ -13,7 +13,7 @@ using Random = UnityEngine.Random;
 namespace Unity.Netcode.RuntimeTests
 {
     [TestFixtureSource(nameof(TestDataSource))]
-    public class NetworkVariablePermissionTests : NetcodeIntegrationTest
+    internal class NetworkVariablePermissionTests : NetcodeIntegrationTest
     {
         public static IEnumerable<TestFixtureData> TestDataSource()
         {
@@ -304,7 +304,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
+    internal struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
         public uint SomeInt;
         public bool SomeBool;
@@ -344,7 +344,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class TestClass : INetworkSerializable, IEquatable<TestClass>
+    internal class TestClass : INetworkSerializable, IEquatable<TestClass>
     {
         public uint SomeInt;
         public bool SomeBool;
@@ -386,12 +386,12 @@ namespace Unity.Netcode.RuntimeTests
 
     // Used just to create a NetworkVariable in the templated NetworkBehaviour type that isn't referenced anywhere else
     // Please do not reference this class anywhere else!
-    public class TestClass_ReferencedOnlyByTemplateNetworkBehavourType : TestClass
+    internal class TestClass_ReferencedOnlyByTemplateNetworkBehavourType : TestClass
     {
 
     }
 
-    public class NetworkVariableTest : NetworkBehaviour
+    internal class NetworkVariableTest : NetworkBehaviour
     {
         public enum SomeEnum
         {
@@ -440,7 +440,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(true)]
 #endif
     [TestFixture(false)]
-    public class NetworkVariableTests : NetcodeIntegrationTest
+    internal class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
         private static readonly FixedString32Bytes k_FixedStringTestValue = k_StringTestValue;
@@ -5130,7 +5130,7 @@ namespace Unity.Netcode.RuntimeTests
     /// that accepts anything derived from the <see cref="ConditionalPredicateBase"/> class
     /// as a parameter.
     /// </summary>
-    public class NetworkListTestPredicate : ConditionalPredicateBase
+    internal class NetworkListTestPredicate : ConditionalPredicateBase
     {
         private const int k_MaxRandomValue = 1000;
 
@@ -5296,7 +5296,7 @@ namespace Unity.Netcode.RuntimeTests
     }
 
     [TestFixtureSource(nameof(TestDataSource))]
-    public class NetworkVariableInheritanceTests : NetcodeIntegrationTest
+    internal class NetworkVariableInheritanceTests : NetcodeIntegrationTest
     {
         public NetworkVariableInheritanceTests(HostOrServer hostOrServer)
             : base(hostOrServer)
@@ -5308,7 +5308,7 @@ namespace Unity.Netcode.RuntimeTests
         public static IEnumerable<TestFixtureData> TestDataSource() =>
             Enum.GetValues(typeof(HostOrServer)).OfType<HostOrServer>().Select(x => new TestFixtureData(x));
 
-        public class ComponentA : NetworkBehaviour
+        internal class ComponentA : NetworkBehaviour
         {
             public NetworkVariable<int> PublicFieldA = new NetworkVariable<int>(1);
             protected NetworkVariable<int> m_ProtectedFieldA = new NetworkVariable<int>(2);
@@ -5329,7 +5329,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class ComponentB : ComponentA
+        internal class ComponentB : ComponentA
         {
             public NetworkVariable<int> PublicFieldB = new NetworkVariable<int>(11);
             protected NetworkVariable<int> m_ProtectedFieldB = new NetworkVariable<int>(22);
@@ -5350,7 +5350,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public class ComponentC : ComponentB
+        internal class ComponentC : ComponentB
         {
             public NetworkVariable<int> PublicFieldC = new NetworkVariable<int>(111);
             protected NetworkVariable<int> m_ProtectedFieldC = new NetworkVariable<int>(222);
@@ -5447,7 +5447,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetvarDespawnShutdown : NetworkBehaviour
+    internal class NetvarDespawnShutdown : NetworkBehaviour
     {
         private NetworkVariable<int> m_IntNetworkVariable = new NetworkVariable<int>();
         private NetworkList<int> m_IntList;
@@ -5475,7 +5475,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Validates that setting values for NetworkVariable or NetworkList during the
     /// OnNetworkDespawn method will not cause an exception to occur.
     /// </summary>
-    public class NetworkVariableModifyOnNetworkDespawn : NetcodeIntegrationTest
+    internal class NetworkVariableModifyOnNetworkDespawn : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

@@ -13,7 +13,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(RigidbodyInterpolation.Extrapolate, false, true)] // This should allow extrapolation on non-auth instances when using Rigidbody & NT has no interpolation
     [TestFixture(RigidbodyInterpolation.Interpolate, true, false)] // This should not allow kinematic instances to have Rigidbody interpolation enabled
     [TestFixture(RigidbodyInterpolation.Interpolate, false, false)] // Testing that rigid body interpolation remains the same if NT interpolate is disabled
-    public class NetworkRigidbodyTest : NetcodeIntegrationTest
+    internal class NetworkRigidbodyTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
         private bool m_NetworkTransformInterpolate;

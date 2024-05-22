@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(NetworkTopologyTypes.ClientServer)]
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
-    public class NetworkObjectSpawnManyObjectsTests : NetcodeIntegrationTest
+    internal class NetworkObjectSpawnManyObjectsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
         // "many" in this case means enough to exceed a ushort_max message size written in the header
@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObjectSpawnManyObjectsTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
         // Using this component assures we will know precisely how many prefabs were spawned on the client
-        public class SpawnObjecTrackingComponent : NetworkBehaviour
+        internal class SpawnObjecTrackingComponent : NetworkBehaviour
         {
             public static int SpawnedObjects;
             public override void OnNetworkSpawn()

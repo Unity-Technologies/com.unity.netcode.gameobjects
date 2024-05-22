@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
-    public class NetworkTransformPacketLossTests : NetworkTransformBase
+    internal class NetworkTransformPacketLossTests : NetworkTransformBase
     {
         private const int k_Latency = 50;
         private const int k_PacketLoss = 2;
@@ -490,7 +490,7 @@ namespace Unity.Netcode.RuntimeTests
             // Match the first position update
             if (Approximately(m_RandomPosition, networkTransformState.GetPosition()))
             {
-                // Teleport to the m_RandomPosition plus the 
+                // Teleport to the m_RandomPosition plus the
                 m_AuthoritativeTransform.SetState(m_TeleportOffset + m_RandomPosition, null, null, false);
                 m_AuthoritativeTransform.AuthorityPushedTransformState -= OnAuthorityPushedTransformState;
                 m_Teleported = true;

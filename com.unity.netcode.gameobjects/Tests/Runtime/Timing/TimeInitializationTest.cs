@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Tests that the time and tick system are initialized properly
     /// </summary>
-    public class TimeInitializationTest
+    internal class TimeInitializationTest
     {
         private int m_ClientTickCounter;
         private int m_ConnectedTick;

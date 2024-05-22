@@ -8,7 +8,7 @@ using Unity.Networking.Transport;
 
 namespace Unity.Netcode.EditorTests
 {
-    public class BatchedReceiveQueueTests
+    internal class BatchedReceiveQueueTests
     {
         [Test]
         public void BatchedReceiveQueue_EmptyReader()

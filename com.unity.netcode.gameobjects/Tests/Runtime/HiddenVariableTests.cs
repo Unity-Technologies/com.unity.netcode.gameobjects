@@ -7,11 +7,11 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class HiddenVariableTest : NetworkBehaviour
+    internal class HiddenVariableTest : NetworkBehaviour
     {
     }
 
-    public class HiddenVariableObject : NetworkBehaviour
+    internal class HiddenVariableObject : NetworkBehaviour
     {
         public static List<NetworkObject> ClientInstancesSpawned = new List<NetworkObject>();
 
@@ -69,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HiddenVariableTests : NetcodeIntegrationTest
+    internal class HiddenVariableTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
 
