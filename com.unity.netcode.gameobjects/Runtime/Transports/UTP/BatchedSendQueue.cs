@@ -95,7 +95,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>Write a raw buffer to a DataStreamWriter.</summary>
         private unsafe void WriteBytes(ref DataStreamWriter writer, byte* data, int length)
         {
-            Debug.Log($"Write bytes {length} {writer.Capacity - writer.Length}");
 #if UTP_TRANSPORT_2_0_ABOVE
             writer.WriteBytesUnsafe(data, length);
 #else
@@ -106,7 +105,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>Append data at the tail of the queue. No safety checks.</summary>
         private void AppendDataAtTail(ArraySegment<byte> data)
         {
-            Debug.Log("AppendDataAtTail");
             unsafe
             {
                 var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, Capacity - TailIndex);
@@ -130,7 +128,6 @@ namespace Unity.Netcode.Transports.UTP
         /// </returns>
         public bool PushMessage(ArraySegment<byte> message)
         {
-            Debug.Log("PushMessage");
             if (!IsCreated)
             {
                 return false;
@@ -139,7 +136,6 @@ namespace Unity.Netcode.Transports.UTP
             // Check if there's enough room after the current tail index.
             if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
-                Debug.Log("First if pass");
                 AppendDataAtTail(message);
                 return true;
             }
@@ -148,7 +144,11 @@ namespace Unity.Netcode.Transports.UTP
             // the message, or we'll grow m_Data and will want the data at the beginning anyway.
             if (HeadIndex > 0 && Length > 0)
             {
-                Debug.Log("Second if pass");
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    Debug.Log("Moving send queue data");
+                }
+
                 unsafe
                 {
                     UnsafeUtility.MemMove(m_Data.GetUnsafePtr(), (byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
@@ -163,12 +163,15 @@ namespace Unity.Netcode.Transports.UTP
             // more than 75% of m_Data unused after adding the new message.
             if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
-                Debug.Log("Third if pass");
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    Debug.Log("Shrinking send queue");
+                }
+
                 AppendDataAtTail(message);
 
                 while (TailIndex < Capacity / 4 && Capacity > m_MinimumCapacity)
                 {
-                    Debug.Log("Shrink");
                     m_Data.ResizeUninitialized(Capacity / 2);
                 }
 
@@ -178,18 +181,24 @@ namespace Unity.Netcode.Transports.UTP
             // If we get here we need to grow m_Data until the data fits (or it's too large).
             while (Capacity - TailIndex < sizeof(int) + message.Count)
             {
-                Debug.Log("Grow");
+                if (NetworkManager.Singleton.IsServer)
+                {
+                    Debug.Log("Growing send queue");
+                }
+
                 // Can't grow m_Data anymore. Message simply won't fit.
                 if (Capacity * 2 > m_MaximumCapacity)
                 {
-                    Debug.Log("Hit max capacity");
+                    if (NetworkManager.Singleton.IsServer)
+                    {
+                        Debug.Log("Hit max capacity");
+                    }
+
                     return false;
                 }
 
                 m_Data.ResizeUninitialized(Capacity * 2);
             }
-
-            Debug.Log("Finish message");
 
             // If we get here we know there's now enough room for the message.
             AppendDataAtTail(message);
@@ -218,7 +227,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <returns>How many bytes were written to the writer.</returns>
         public int FillWriterWithMessages(ref DataStreamWriter writer, int softMaxBytes = 0)
         {
-            Debug.Log("FillWriterWithMessages");
             if (!IsCreated || Length == 0)
             {
                 return 0;
@@ -243,7 +251,6 @@ namespace Unity.Netcode.Transports.UTP
 
                 if (bytesToWrite > softMaxBytes && bytesToWrite <= writer.Capacity)
                 {
-                    Debug.Log($"If pass, write {messageLength}");
                     writer.WriteInt(messageLength);
                     WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
 
@@ -251,7 +258,6 @@ namespace Unity.Netcode.Transports.UTP
                 }
                 else
                 {
-                    Debug.Log("Else pass");
                     var bytesWritten = 0;
 
                     while (readerOffset < TailIndex)
@@ -262,7 +268,6 @@ namespace Unity.Netcode.Transports.UTP
 
                         if (bytesWritten + bytesToWrite <= softMaxBytes)
                         {
-                            Debug.Log($"Write {messageLength}");
                             writer.WriteInt(messageLength);
                             WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
 
@@ -271,7 +276,11 @@ namespace Unity.Netcode.Transports.UTP
                         }
                         else
                         {
-                            Debug.Log("Hit soft max");
+                            if (NetworkManager.Singleton.IsServer)
+                            {
+                                Debug.Log("Hit soft max");
+                            }
+
                             break;
                         }
                     }
@@ -299,7 +308,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <returns>How many bytes were written to the writer.</returns>
         public int FillWriterWithBytes(ref DataStreamWriter writer, int maxBytes = 0)
         {
-            Debug.Log("FillWriterWithBytes");
             if (!IsCreated || Length == 0)
             {
                 return 0;
@@ -324,7 +332,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="size">Number of bytes to consume from the queue.</param>
         public void Consume(int size)
         {
-            Debug.Log($"Consume {size}");
             // Adjust the head/tail indices such that we consume the given size.
             if (size >= Length)
             {

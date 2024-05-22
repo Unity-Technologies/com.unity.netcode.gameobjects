@@ -893,7 +893,10 @@ namespace Unity.Netcode
 
                     try
                     {
-                        Debug.Log($"Sending batch to {clientId}: Id: {queueItem.BatchHeader.BatchId}, Size: {queueItem.Writer.Length}, Expected Size: {alignedLength}, Full send array: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
+                        if (NetworkManager.Singleton.IsServer)
+                        {
+                            Debug.Log($"Sending batch to {clientId}: Id: {queueItem.BatchHeader.BatchId}, Size: {queueItem.Writer.Length}, Expected Size: {alignedLength}, Full send array"); //: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
+                        }
 
                         m_Sender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
 
