@@ -198,69 +198,43 @@ namespace Unity.Netcode.Transports.UTP
         /// could lead to a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
-        /// <param name="softMaxBytes">
-        /// Maximum number of bytes to copy (0 means writer capacity). This is a soft limit only.
-        /// If a message is larger than that but fits in the writer, it will be written. In effect,
-        /// this parameter is the maximum size that small messages can be coalesced together.
-        /// </param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriterWithMessages(ref DataStreamWriter writer, int softMaxBytes = 0)
+        public int FillWriterWithMessages(ref DataStreamWriter writer)
         {
             if (!IsCreated || Length == 0)
             {
                 return 0;
             }
 
-            softMaxBytes = softMaxBytes == 0 ? writer.Capacity : Math.Min(softMaxBytes, writer.Capacity);
-
             unsafe
             {
                 var reader = new DataStreamReader(m_Data.AsArray());
+
+                var writerAvailable = writer.Capacity;
                 var readerOffset = HeadIndex;
 
-                reader.SeekSet(readerOffset);
-                var messageLength = reader.ReadInt();
-                var bytesToWrite = messageLength + sizeof(int);
-
-                // Our behavior here depends on the size of the first message in the queue. If it's
-                // larger than the soft limit, then add only that message to the writer (we want
-                // large payloads to be fragmented on their own). Otherwise coalesce all small
-                // messages until we hit the soft limit (which presumably means they won't be
-                // fragmented, which is the desired behavior for smaller messages).
-
-                if (bytesToWrite > softMaxBytes && bytesToWrite <= writer.Capacity)
+                while (readerOffset < TailIndex)
                 {
-                    writer.WriteInt(messageLength);
-                    WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
+                    reader.SeekSet(readerOffset);
+                    var messageLength = reader.ReadInt();
 
-                    return bytesToWrite;
-                }
-                else
-                {
-                    var bytesWritten = 0;
-
-                    while (readerOffset < TailIndex)
+                    if (writerAvailable < sizeof(int) + messageLength)
                     {
-                        reader.SeekSet(readerOffset);
-                        messageLength = reader.ReadInt();
-                        bytesToWrite = messageLength + sizeof(int);
-
-                        if (bytesWritten + bytesToWrite <= softMaxBytes)
-                        {
-                            writer.WriteInt(messageLength);
-                            WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
-
-                            readerOffset += bytesToWrite;
-                            bytesWritten += bytesToWrite;
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        break;
                     }
+                    else
+                    {
+                        writer.WriteInt(messageLength);
 
-                    return bytesWritten;
+                        var messageOffset = reader.GetBytesRead();
+                        WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
+
+                        writerAvailable -= sizeof(int) + messageLength;
+                        readerOffset += sizeof(int) + messageLength;
+                    }
                 }
+
+                return writer.Capacity - writerAvailable;
             }
         }
 
@@ -268,7 +242,7 @@ namespace Unity.Netcode.Transports.UTP
         /// Fill the given <see cref="DataStreamWriter"/> with as many bytes from the queue as
         /// possible, disregarding message boundaries.
         /// </summary>
-        /// <remarks>
+        ///<remarks>
         /// This does NOT actually consume anything from the queue. That is, calling this method
         /// does not reduce the length of the queue. Callers are expected to call
         /// <see cref="Consume"/> with the value returned by this method afterwards if the data can
@@ -278,17 +252,15 @@ namespace Unity.Netcode.Transports.UTP
         /// this could lead to reading messages from a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
-        /// <param name="maxBytes">Max number of bytes to copy (0 means writer capacity).</param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriterWithBytes(ref DataStreamWriter writer, int maxBytes = 0)
+        public int FillWriterWithBytes(ref DataStreamWriter writer)
         {
             if (!IsCreated || Length == 0)
             {
                 return 0;
             }
 
-            var maxLength = maxBytes == 0 ? writer.Capacity : Math.Min(maxBytes, writer.Capacity);
-            var copyLength = Math.Min(maxLength, Length);
+            var copyLength = Math.Min(writer.Capacity, Length);
 
             unsafe
             {
