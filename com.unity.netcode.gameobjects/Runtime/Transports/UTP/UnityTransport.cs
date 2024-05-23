@@ -813,7 +813,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool AcceptConnection()
         {
-            var connection = m_Driver.Accept(out var payload);
+            var connection = m_Driver.Accept();
 
             if (connection == default)
             {
@@ -822,7 +822,7 @@ namespace Unity.Netcode.Transports.UTP
 
             InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                 ParseClientId(connection),
-                new ArraySegment<byte>(payload.ToArray()),
+                default,
                 m_RealTimeProvider.RealTimeSinceStartup);
 
             return true;
