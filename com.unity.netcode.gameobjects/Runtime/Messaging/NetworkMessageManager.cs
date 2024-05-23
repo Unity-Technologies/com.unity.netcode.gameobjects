@@ -266,12 +266,7 @@ namespace Unity.Netcode
 
                     batchReader.ReadValue(out NetworkBatchHeader batchHeader);
 
-                    /*Debug.Log($"{m_LocalClientId}: Received batch: ID: {batchHeader.BatchId}, Offset: {data.Offset}, Size: {data.Count}, Expected Size: {batchHeader.BatchSize}, Full receive array:");
-                    var str = ByteArrayToString(data.Array, 0, data.Array.Length);
-                    for (var i = 0; i < str.Length; i += 512)
-                    {
-                        Debug.Log(str.Substring(i, math.min(512, str.Length - i)));
-                    }*/
+                    Debug.Log($"{m_LocalClientId}: Received batch: ID: {batchHeader.BatchId}");
 
                     if (batchHeader.Magic != NetworkBatchHeader.MagicValue)
                     {
@@ -895,7 +890,7 @@ namespace Unity.Netcode
                     {
                         if (NetworkManager.Singleton.IsServer)
                         {
-                            Debug.Log($"Sending batch to {clientId}: Id: {queueItem.BatchHeader.BatchId}, Size: {queueItem.Writer.Length}, Expected Size: {alignedLength}, Full send array"); //: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
+                            Debug.Log($"Sending batch to {clientId}: Id: {queueItem.BatchHeader.BatchId}, Delivery: {queueItem.NetworkDelivery}, Size: {queueItem.Writer.Length}, Expected Size: {alignedLength}, Full send array: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
                         }
 
                         m_Sender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
