@@ -723,7 +723,7 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
-        [BurstCompile]
+        //[BurstCompile]
         private struct SendBatchedMessagesJob : IJob
         {
             public NetworkDriver.Concurrent Driver;
