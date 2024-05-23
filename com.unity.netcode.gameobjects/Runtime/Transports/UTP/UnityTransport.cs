@@ -138,11 +138,6 @@ namespace Unity.Netcode.Transports.UTP
         public const int InitialMaxPayloadSize = 6 * 1024;
 
         /// <summary>
-        /// Payload to send along with a new connection
-        /// </summary>
-        public NativeArray<byte> ConnectPayload = new(0, Allocator.Temp);
-
-        /// <summary>
         /// The default maximum send queue size
         /// </summary>
         [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", false)]
@@ -431,10 +426,11 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int> TransportDisposed;
         internal NetworkDriver NetworkDriver => m_Driver;
 
+        protected NetworkDriver m_Driver;
+
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
         private State m_State = State.Disconnected;
-        private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
@@ -559,10 +555,15 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var serverConnection = m_Driver.Connect(serverEndpoint, ConnectPayload);
+            var serverConnection = Connect(serverEndpoint);
             m_ServerClientId = ParseClientId(serverConnection);
 
             return true;
+        }
+
+        protected virtual NetworkConnection Connect(NetworkEndpoint serverEndpoint)
+        {
+            return m_Driver.Connect(serverEndpoint);
         }
 
         private bool ServerBindAndListen(NetworkEndpoint endPoint)
