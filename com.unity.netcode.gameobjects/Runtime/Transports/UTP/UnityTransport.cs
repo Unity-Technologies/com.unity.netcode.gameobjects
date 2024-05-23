@@ -138,6 +138,11 @@ namespace Unity.Netcode.Transports.UTP
         public const int InitialMaxPayloadSize = 6 * 1024;
 
         /// <summary>
+        /// Payload to send along with a new connection
+        /// </summary>
+        public NativeArray<byte> ConnectPayload = new (0, Allocator.Temp);
+
+        /// <summary>
         /// The default maximum send queue size
         /// </summary>
         [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", false)]
@@ -554,7 +559,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var serverConnection = m_Driver.Connect(serverEndpoint);
+            var serverConnection = m_Driver.Connect(serverEndpoint, ConnectPayload);
             m_ServerClientId = ParseClientId(serverConnection);
 
             return true;
