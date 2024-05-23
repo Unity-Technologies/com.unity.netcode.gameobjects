@@ -140,7 +140,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Payload to send along with a new connection
         /// </summary>
-        public NativeArray<byte> ConnectPayload = new (0, Allocator.Temp);
+        public NativeArray<byte> ConnectPayload = new(0, Allocator.Temp);
 
         /// <summary>
         /// The default maximum send queue size
