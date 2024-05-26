@@ -507,7 +507,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkDespawn()
         {
-            if (UseRigidBodyForMotion)
+            if (UseRigidBodyForMotion && HasAuthority)
             {
                 DetachFromFixedJoint();
                 NetworkRigidbodyConnections.Clear();
