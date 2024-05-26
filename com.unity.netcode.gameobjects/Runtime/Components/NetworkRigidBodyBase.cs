@@ -507,6 +507,12 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkDespawn()
         {
+            if (UseRigidBodyForMotion)
+            {
+                DetachFromFixedJoint();
+                NetworkRigidbodyConnections.Clear();
+            }
+
             // If we are automatically handling the kinematic state...
             if (AutoUpdateKinematicState || AutoSetKinematicOnDespawn)
             {
