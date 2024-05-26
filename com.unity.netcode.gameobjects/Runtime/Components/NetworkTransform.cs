@@ -1556,13 +1556,14 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
-
+#if COM_UNITY_MODULES_PHYSICS
             // TODO: Make this an authority flag
             // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
             if (m_NetworkRigidbodyInternal != null)
             {
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
+#endif
 
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
@@ -1609,6 +1610,7 @@ namespace Unity.Netcode.Components
                     m_DeltaSynch = true;
                 }
 
+#if COM_UNITY_MODULES_PHYSICS
                 // We handle updating attached bodies when the "parent" body has a state update in order to keep their delta state updates tick synchronized.
                 if (m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.NetworkRigidbodyConnections.Count > 0)
                 {
@@ -1617,6 +1619,7 @@ namespace Unity.Netcode.Components
                         childRigidbody.NetworkTransform.OnNetworkTick(true);
                     }
                 }
+#endif
             }
         }
 
@@ -2111,11 +2114,13 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
+#if COM_UNITY_MODULES_PHYSICS
                 // Let the parent handle the updating of this to keep the two synchronized
                 if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
                 {
                     return;
                 }
+#endif
 
                 // Update any changes to the transform
                 var transformSource = transform;
@@ -2159,12 +2164,14 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ApplyAuthoritativeState()
         {
+#if COM_UNITY_MODULES_PHYSICS
             // TODO: Make this an authority flag
             // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
             if (m_NetworkRigidbodyInternal != null)
             {
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
+#endif
             var networkState = m_LocalAuthoritativeNetworkState;
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
