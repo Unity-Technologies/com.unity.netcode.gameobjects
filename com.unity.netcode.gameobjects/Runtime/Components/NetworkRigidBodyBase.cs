@@ -23,6 +23,7 @@ namespace Unity.Netcode.Components
         /// extrapolation and <see cref="NetworkTransform.Interpolate"/> is enabled, then non-authoritative instances will automatically be adjusted to use Rigidbody
         /// interpolation while the authoritative instance will still use extrapolation.
         /// </remarks>
+        [Tooltip("When enabled and a NetworkTransform component is attached, the NetworkTransform will use the rigid body for motion and detecting changes in state.")]
         public bool UseRigidBodyForMotion;
 
         /// <summary>
@@ -218,7 +219,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.MoveRotation(rotation);
+                var quaternion = Quaternion.identity;
+                var angles = quaternion.eulerAngles;
+                angles.z = m_Rigidbody2D.rotation;
+                quaternion.eulerAngles = angles;
+                m_Rigidbody2D.MoveRotation(quaternion);
             }
             else
             {
@@ -511,6 +516,130 @@ namespace Unity.Netcode.Components
                 SetIsKinematic(true);
             }
             SetInterpolation(m_OriginalInterpolation);
+        }
+
+        // TODO: Possibly provide a NetworkJoint that allows for more options than fixed.
+        // Rigidbodies do not have the concept of "local space", and as such using a fixed joint will hold the object
+        // in place relative to the parent so jitter/stutter does not occur.
+        // Alternately, users can affix the fixed joint to a child GameObject (without a rigid body) of the parent NetworkObject
+        // and then add a NetworkTransform to that in order to get the parented child NetworkObject to move around in "local space"
+        public FixedJoint FixedJoint { get; private set; }
+        public FixedJoint2D FixedJoint2D { get; private set; }
+        public NetworkObject CurrentParent { get; private set; }
+
+        private bool m_FixedJoint2DUsingGravity;
+        private bool m_OriginalGravitySetting;
+        private float m_OriginalGravityScale;
+
+        protected virtual void OnFixedJointCreated()
+        {
+
+        }
+
+        protected virtual void OnFixedJoint2DCreated()
+        {
+
+        }
+
+        private void ApplyFixedJoint(NetworkRigidbodyBase parentRigidbody, Vector3 jointPosition, float connectedMassScale = 0.001f, float massScale = 0.001f, bool useGravity = false, bool zeroVelocity = true)
+        {
+            FixedJoint = gameObject.AddComponent<FixedJoint>();
+            FixedJoint.connectedBody = parentRigidbody.m_Rigidbody;
+            FixedJoint.connectedMassScale = connectedMassScale;
+            FixedJoint.massScale = massScale;
+            m_OriginalGravitySetting = m_Rigidbody.useGravity;
+            m_Rigidbody.useGravity = useGravity;
+            if (zeroVelocity)
+            {
+                m_Rigidbody.linearVelocity = Vector3.zero;
+                m_Rigidbody.angularVelocity = Vector3.zero;
+            }
+            transform.position = jointPosition;
+            m_Rigidbody.position = jointPosition;
+            OnFixedJointCreated();
+        }
+
+        private void ApplyFixedJoint2D(NetworkRigidbodyBase parentRigidbody, Vector3 jointPosition, float connectedMassScale = 0.001f, float massScale = 0.001f, bool useGravity = false, bool zeroVelocity = true)
+        {
+            FixedJoint2D = gameObject.AddComponent<FixedJoint2D>();
+            FixedJoint2D.connectedBody = parentRigidbody.m_Rigidbody2D;
+            m_OriginalGravitySetting = m_Rigidbody.useGravity;
+            m_FixedJoint2DUsingGravity = useGravity;
+            if (!useGravity)
+            {
+                m_OriginalGravityScale = m_Rigidbody2D.gravityScale;
+                m_Rigidbody2D.gravityScale = 0.0f;
+            }
+
+            if (zeroVelocity)
+            {
+                m_Rigidbody2D.velocity = Vector2.zero;
+                m_Rigidbody2D.angularVelocity = 0.0f;
+            }
+            transform.position = jointPosition;
+            m_Rigidbody.position = jointPosition;
+            OnFixedJoint2DCreated();
+        }
+
+        public bool ParentUnderFixedJoint(Vector3 jointPosition, float connectedMassScale = 0.0f, float massScale = 0.001f, bool lockMotionToJoint = true, bool useGravity = false, bool zeroVelocity = true)
+        {
+            if (CurrentParent != null && UseRigidBodyForMotion)
+            {
+                var parentRigidbody = CurrentParent.NetworkRigidbodyBase;
+                if (parentRigidbody != null)
+                {
+                    if (m_IsRigidbody2D)
+                    {
+                        ApplyFixedJoint2D(parentRigidbody, jointPosition, connectedMassScale, massScale, useGravity, zeroVelocity);
+                    }
+                    else
+                    {
+                        ApplyFixedJoint(parentRigidbody, jointPosition, connectedMassScale, massScale, useGravity, zeroVelocity);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            if (parentNetworkObject != null)
+            {
+                CurrentParent = parentNetworkObject;
+            }
+            else
+            {
+                CurrentParent = null;
+                if (UseRigidBodyForMotion)
+                {
+                    if (m_IsRigidbody2D)
+                    {
+                        if (FixedJoint2D != null)
+                        {
+                            FixedJoint2D.connectedBody = null;
+                            if (!m_FixedJoint2DUsingGravity)
+                            {
+                                m_Rigidbody2D.gravityScale = m_OriginalGravityScale;
+                            }
+                            FixedJoint2D.connectedBody = null;
+                            Destroy(FixedJoint2D);
+                            FixedJoint2D = null;
+                        }
+                    }
+                    else
+                    {
+                        if (FixedJoint != null)
+                        {
+                            FixedJoint.connectedBody = null;
+                            Destroy(FixedJoint);
+                            m_Rigidbody.useGravity = m_OriginalGravitySetting;
+                            FixedJoint = null;
+                        }
+                    }
+                }
+            }
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
     }
 }

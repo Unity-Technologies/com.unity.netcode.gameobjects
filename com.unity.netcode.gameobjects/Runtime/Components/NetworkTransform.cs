@@ -1557,6 +1557,13 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // TODO: Make this an authority flag
+            // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
+            if (m_NetworkRigidbodyInternal != null)
+            {
+                m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
+            }
+
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
@@ -1690,12 +1697,23 @@ namespace Unity.Netcode.Components
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
             // authority changed a property during runtime that requires a full synchronizing.
+#if COM_UNITY_MODULES_PHYSICS
+            if (InLocalSpace != networkState.InLocalSpace && !m_UseRigidbodyForMotion)
+#else
             if (InLocalSpace != networkState.InLocalSpace)
+#endif
             {
                 networkState.InLocalSpace = InLocalSpace;
                 isDirty = true;
                 networkState.IsTeleportingNextFrame = true;
             }
+#if COM_UNITY_MODULES_PHYSICS
+            else if (InLocalSpace && m_UseRigidbodyForMotion)
+            {
+                // TODO: Provide more options than just FixedJoint
+                Debug.LogError($"[Rigidbody] WHen using a Rigidbody for motion, you cannot use {nameof(InLocalSpace)}! If parenting, use the integrated FixedJoint or use a Joint on Authority side.");
+            }
+#endif
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
@@ -1968,7 +1986,7 @@ namespace Unity.Netcode.Components
                 }
                 if (isRotationDirty)
                 {
-                    networkState.Rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+                    networkState.Rotation = rotation;
                     networkState.HasRotAngleX = true;
                     networkState.HasRotAngleY = true;
                     networkState.HasRotAngleZ = true;
@@ -2125,6 +2143,12 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ApplyAuthoritativeState()
         {
+            // TODO: Make this an authority flag
+            // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
+            if (m_NetworkRigidbodyInternal != null)
+            {
+                m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
+            }
             var networkState = m_LocalAuthoritativeNetworkState;
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
@@ -3258,18 +3282,14 @@ namespace Unity.Netcode.Components
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
-#if COM_UNITY_MODULES_PHYSICS
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_UseRigidbodyForMotion ? 2 : 1;
-#else
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
-#endif
+                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode ? 2 : 1;
                 // TODO: We need an RTT that updates regularly and not only when the client sends packets
-                if (m_CachedNetworkManager.DistributedAuthorityMode)
-                {
-                    ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
+                //if (m_CachedNetworkManager.DistributedAuthorityMode)
+                //{
+                    //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
                     //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
                     //offset = m_NetworkTransformTickRegistration.Offset;
-                }
+                //}
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
 
@@ -3321,6 +3341,7 @@ namespace Unity.Netcode.Components
 
 
 #if COM_UNITY_MODULES_PHYSICS
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.

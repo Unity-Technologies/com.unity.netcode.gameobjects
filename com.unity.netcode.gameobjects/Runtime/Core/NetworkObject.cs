@@ -57,6 +57,7 @@ namespace Unity.Netcode
         }
 
         public NetworkTransform NetworkTransform { get; private set; }
+        public NetworkRigidbodyBase NetworkRigidbodyBase { get; private set; }
 
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
@@ -2329,6 +2330,10 @@ namespace Unity.Netcode
                         if (type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
                         {
                             NetworkTransform = networkBehaviours[i] as NetworkTransform;
+                        }
+                        else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
+                        {
+                            NetworkRigidbodyBase = networkBehaviours[i] as NetworkRigidbodyBase;
                         }
                     }
                 }
