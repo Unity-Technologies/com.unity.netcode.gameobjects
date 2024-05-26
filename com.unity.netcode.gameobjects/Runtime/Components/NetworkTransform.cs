@@ -1608,6 +1608,15 @@ namespace Unity.Netcode.Components
                 {
                     m_DeltaSynch = true;
                 }
+
+                // We handle updating attached bodies when the "parent" body has a state update in order to keep their delta state updates tick synchronized.
+                if (m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.NetworkRigidbodyConnections.Count > 0)
+                {
+                    foreach (var childRigidbody in m_NetworkRigidbodyInternal.NetworkRigidbodyConnections)
+                    {
+                        childRigidbody.NetworkTransform.OnNetworkTick(true);
+                    }
+                }
             }
         }
 
@@ -2085,7 +2094,7 @@ namespace Unity.Netcode.Components
         /// Authority subscribes to network tick events and will invoke
         /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
         /// </summary>
-        private void OnNetworkTick()
+        private void OnNetworkTick(bool isCalledFromParent = false)
         {
             // If not active, then ignore the update
             if (!gameObject.activeInHierarchy)
@@ -2099,7 +2108,15 @@ namespace Unity.Netcode.Components
                 if (m_CachedNetworkManager.DistributedAuthorityMode && !IsOwner)
                 {
                     Debug.LogError($"Non-owner Client-{m_CachedNetworkManager.LocalClientId} is being updated by network tick still!!!!");
+                    return;
                 }
+
+                // Let the parent handle the updating of this to keep the two synchronized
+                if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+                {
+                    return;
+                }
+
                 // Update any changes to the transform
                 var transformSource = transform;
                 OnUpdateAuthoritativeState(ref transformSource);
@@ -2110,10 +2127,9 @@ namespace Unity.Netcode.Components
                 m_TargetPosition = GetSpaceRelativePosition();
 #endif
             }
-            else // If we are no longer authority, unsubscribe to the tick event
-            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            else // If we are no longer authority, unsubscribe to the tick event          
             {
-                NetworkManager.NetworkTickSystem.Tick -= OnNetworkTick;
+                DeregisterForTickUpdate(this);
             }
         }
         #endregion
@@ -3286,9 +3302,9 @@ namespace Unity.Netcode.Components
                 // TODO: We need an RTT that updates regularly and not only when the client sends packets
                 //if (m_CachedNetworkManager.DistributedAuthorityMode)
                 //{
-                    //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
-                    //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                    //offset = m_NetworkTransformTickRegistration.Offset;
+                //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
+                //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
+                //offset = m_NetworkTransformTickRegistration.Offset;
                 //}
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;

@@ -44,7 +44,7 @@ namespace Unity.Netcode.Components
         private bool m_IsAuthority;
         private Rigidbody m_Rigidbody;
         private Rigidbody2D m_Rigidbody2D;
-        private NetworkTransform m_NetworkTransform;
+        internal NetworkTransform NetworkTransform;
         private enum InterpolationTypes
         {
             None,
@@ -86,7 +86,7 @@ namespace Unity.Netcode.Components
             RigidbodyType = rigidbodyType;
             m_Rigidbody2D = rigidbody2D;
             m_Rigidbody = rigidbody;
-            m_NetworkTransform = networkTransform;
+            NetworkTransform = networkTransform;
 
             if (m_IsRigidbody2D && m_Rigidbody2D == null)
             {
@@ -100,14 +100,14 @@ namespace Unity.Netcode.Components
 
             SetOriginalInterpolation();
 
-            if (m_NetworkTransform == null)
+            if (NetworkTransform == null)
             {
-                m_NetworkTransform = GetComponent<NetworkTransform>();
+                NetworkTransform = GetComponent<NetworkTransform>();
             }
 
-            if (m_NetworkTransform != null)
+            if (NetworkTransform != null)
             {
-                m_NetworkTransform.RegisterRigidbody(this);
+                NetworkTransform.RegisterRigidbody(this);
             }
             else
             {
@@ -386,7 +386,7 @@ namespace Unity.Netcode.Components
             if (UseRigidBodyForMotion)
             {
                 // Only if the NetworkTransform is set to interpolate do we need to check for extrapolation
-                if (m_NetworkTransform.Interpolate && m_OriginalInterpolation == InterpolationTypes.Extrapolate)
+                if (NetworkTransform.Interpolate && m_OriginalInterpolation == InterpolationTypes.Extrapolate)
                 {
                     if (IsKinematic())
                     {
@@ -407,7 +407,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                SetInterpolation(m_IsAuthority ? m_OriginalInterpolation : (m_NetworkTransform.Interpolate ? InterpolationTypes.None : m_OriginalInterpolation));
+                SetInterpolation(m_IsAuthority ? m_OriginalInterpolation : (NetworkTransform.Interpolate ? InterpolationTypes.None : m_OriginalInterpolation));
             }
         }
 
@@ -482,7 +482,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (m_NetworkTransform.IsServerAuthoritative())
+                if (NetworkTransform.IsServerAuthoritative())
                 {
                     m_IsAuthority = NetworkManager.IsServer;
                 }
@@ -525,46 +525,40 @@ namespace Unity.Netcode.Components
         // and then add a NetworkTransform to that in order to get the parented child NetworkObject to move around in "local space"
         public FixedJoint FixedJoint { get; private set; }
         public FixedJoint2D FixedJoint2D { get; private set; }
-        public NetworkObject CurrentParent { get; private set; }
+
+        internal System.Collections.Generic.List<NetworkRigidbodyBase> NetworkRigidbodyConnections = new System.Collections.Generic.List<NetworkRigidbodyBase>();
+        internal NetworkRigidbodyBase ParentBody;
 
         private bool m_FixedJoint2DUsingGravity;
         private bool m_OriginalGravitySetting;
         private float m_OriginalGravityScale;
 
+        /// <summary>
+        /// When using a custom <see cref="NetworkRigidbodyBase"/>, this virtual method is invoked when the
+        /// <see cref="FixedJoint"/> is created in the event any additional adjustments are needed.
+        /// </summary>
         protected virtual void OnFixedJointCreated()
         {
 
         }
 
+        /// <summary>
+        /// When using a custom <see cref="NetworkRigidbodyBase"/>, this virtual method is invoked when the
+        /// <see cref="FixedJoint2D"/> is created in the event any additional adjustments are needed.
+        /// </summary>
         protected virtual void OnFixedJoint2DCreated()
         {
 
         }
 
-        private void ApplyFixedJoint(NetworkRigidbodyBase parentRigidbody, Vector3 jointPosition, float connectedMassScale = 0.001f, float massScale = 0.001f, bool useGravity = false, bool zeroVelocity = true)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ApplyFixedJoint2D(NetworkRigidbodyBase bodyToConnect, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
         {
-            FixedJoint = gameObject.AddComponent<FixedJoint>();
-            FixedJoint.connectedBody = parentRigidbody.m_Rigidbody;
-            FixedJoint.connectedMassScale = connectedMassScale;
-            FixedJoint.massScale = massScale;
-            m_OriginalGravitySetting = m_Rigidbody.useGravity;
-            m_Rigidbody.useGravity = useGravity;
-            if (zeroVelocity)
-            {
-                m_Rigidbody.linearVelocity = Vector3.zero;
-                m_Rigidbody.angularVelocity = Vector3.zero;
-            }
-            transform.position = jointPosition;
-            m_Rigidbody.position = jointPosition;
-            OnFixedJointCreated();
-        }
-
-        private void ApplyFixedJoint2D(NetworkRigidbodyBase parentRigidbody, Vector3 jointPosition, float connectedMassScale = 0.001f, float massScale = 0.001f, bool useGravity = false, bool zeroVelocity = true)
-        {
-            FixedJoint2D = gameObject.AddComponent<FixedJoint2D>();
-            FixedJoint2D.connectedBody = parentRigidbody.m_Rigidbody2D;
-            m_OriginalGravitySetting = m_Rigidbody.useGravity;
+            transform.position = position;
+            m_Rigidbody2D.position = position;
+            m_OriginalGravitySetting = bodyToConnect.m_Rigidbody.useGravity;
             m_FixedJoint2DUsingGravity = useGravity;
+
             if (!useGravity)
             {
                 m_OriginalGravityScale = m_Rigidbody2D.gravityScale;
@@ -576,70 +570,145 @@ namespace Unity.Netcode.Components
                 m_Rigidbody2D.velocity = Vector2.zero;
                 m_Rigidbody2D.angularVelocity = 0.0f;
             }
-            transform.position = jointPosition;
-            m_Rigidbody.position = jointPosition;
+
+            FixedJoint2D = gameObject.AddComponent<FixedJoint2D>();
+            FixedJoint2D.connectedBody = bodyToConnect.m_Rigidbody2D;
             OnFixedJoint2DCreated();
         }
 
-        public bool ParentUnderFixedJoint(Vector3 jointPosition, float connectedMassScale = 0.0f, float massScale = 0.001f, bool lockMotionToJoint = true, bool useGravity = false, bool zeroVelocity = true)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ApplyFixedJoint(NetworkRigidbodyBase bodyToConnectTo, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
         {
-            if (CurrentParent != null && UseRigidBodyForMotion)
+            transform.position = position;
+            m_Rigidbody.position = position;
+            if (zeroVelocity)
             {
-                var parentRigidbody = CurrentParent.NetworkRigidbodyBase;
-                if (parentRigidbody != null)
+                m_Rigidbody.linearVelocity = Vector3.zero;
+                m_Rigidbody.angularVelocity = Vector3.zero;
+            }
+            m_OriginalGravitySetting = m_Rigidbody.useGravity;
+            m_Rigidbody.useGravity = useGravity;
+            FixedJoint = gameObject.AddComponent<FixedJoint>();
+            FixedJoint.connectedBody = bodyToConnectTo.m_Rigidbody;
+            FixedJoint.connectedMassScale = connectedMassScale;
+            FixedJoint.massScale = massScale;
+            OnFixedJointCreated();
+        }
+
+
+        /// <summary>
+        /// Authority Only:
+        /// When invoked and not already attached to a fixed joint, this will connect two rigid bodies with <see cref="UseRigidBodyForMotion"/> enabled.
+        /// Invoke this method on the rigid body you wish to attach to another (i.e. weapon to player, sticky bomb to player/object, etc).
+        /// <seealso cref="FixedJoint"/>
+        /// <seealso cref="FixedJoint2D"/>
+        /// </summary>
+        /// <remarks>
+        /// Parenting relative:
+        /// - This instance can be viewed as the child.
+        /// - The <param name="objectToConnectTo"/> can be viewed as the parent.
+        /// <br/>
+        /// This is the recommended way, as opposed to parenting, to attached/detatch two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
+        /// For more details on using <see cref="UnityEngine.FixedJoint"/> and <see cref="UnityEngine.FixedJoint2D"/>.
+        /// <br/>
+        /// This provides a simple joint solution between two rigid bodies and serves as an example. You can add different joint types by creating a customized/derived
+        /// version of <see cref="NetworkRigidbodyBase"/>.
+        /// </remarks>
+        /// <param name="objectToConnectTo">The target object to attach to.</param>
+        /// <param name="positionOfConnection">The position of the connection (i.e. where you want the object to be affixed).</param>
+        /// <param name="connectedMassScale">The target object's mass scale relative to this object being attached.</param>
+        /// <param name="massScale">This object's mass scale relative to the target object's.</param>
+        /// <param name="useGravity">Determines if this object will have gravity applied to it along with the object you are connecting this one to (the default is to not use gravity for this object)</param>
+        /// <param name="zeroVelocity">When true (the default), both linear and angular velocities of this object are set to zero.</param>
+        /// <param name="teleportObject">When true (the default), this object will teleport itself to the position of connection.</param>
+        /// <returns>true (success) false (failed)</returns>
+        public bool AttachToFixedJoint(NetworkRigidbodyBase objectToConnectTo, Vector3 positionOfConnection, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true, bool teleportObject = true)
+        {
+            if (!UseRigidBodyForMotion)
+            {
+                Debug.LogError($"[{GetType().Name}] {name} does not have {nameof(UseRigidBodyForMotion)} set! Either enable {nameof(UseRigidBodyForMotion)} on this component or do not use a {nameof(FixedJoint)} when parenting under a {nameof(NetworkObject)}.");
+                return false;
+            }
+
+            if (IsKinematic())
+            {
+                Debug.LogError($"[{GetType().Name}] {name} is currently kinematic! You cannot use a {nameof(FixedJoint)} with Kinematic bodies!");
+                return false;
+            }
+
+            if (objectToConnectTo != null)
+            {
+                if (m_IsRigidbody2D)
                 {
-                    if (m_IsRigidbody2D)
-                    {
-                        ApplyFixedJoint2D(parentRigidbody, jointPosition, connectedMassScale, massScale, useGravity, zeroVelocity);
-                    }
-                    else
-                    {
-                        ApplyFixedJoint(parentRigidbody, jointPosition, connectedMassScale, massScale, useGravity, zeroVelocity);
-                    }
-                    return true;
+                    ApplyFixedJoint2D(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
                 }
+                else
+                {
+                    ApplyFixedJoint(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
+                }
+
+                ParentBody = objectToConnectTo;
+                ParentBody.NetworkRigidbodyConnections.Add(this);
+                if (teleportObject)
+                {
+                    NetworkTransform.SetState(teleportDisabled: false);
+                }
+                return true;
             }
             return false;
         }
 
-        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RemoveFromParentBody()
         {
-            if (parentNetworkObject != null)
+            ParentBody.NetworkRigidbodyConnections.Remove(this);
+            ParentBody = null;
+        }
+
+        /// <summary>
+        /// Authority Only:
+        /// When invoked and already connected to an object via <see cref="FixedJoint"/> or <see cref="FixedJoint2D"/> (depending upon the type of rigid body),
+        /// this will detach from the fixed joint and destroy the fixed joint component.
+        /// </summary>
+        /// <remarks>
+        /// This is the recommended way, as opposed to parenting, to attached/detatch two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
+        /// </remarks>
+        public void DetachFromFixedJoint()
+        {
+            if (!HasAuthority)
             {
-                CurrentParent = parentNetworkObject;
+                Debug.LogError($"[{name}] Only authority can invoke {nameof(DetachFromFixedJoint)}!");
             }
-            else
+            if (UseRigidBodyForMotion)
             {
-                CurrentParent = null;
-                if (UseRigidBodyForMotion)
+                if (m_IsRigidbody2D)
                 {
-                    if (m_IsRigidbody2D)
+                    if (FixedJoint2D != null)
                     {
-                        if (FixedJoint2D != null)
+                        if (!m_FixedJoint2DUsingGravity)
                         {
-                            FixedJoint2D.connectedBody = null;
-                            if (!m_FixedJoint2DUsingGravity)
-                            {
-                                m_Rigidbody2D.gravityScale = m_OriginalGravityScale;
-                            }
-                            FixedJoint2D.connectedBody = null;
-                            Destroy(FixedJoint2D);
-                            FixedJoint2D = null;
+                            FixedJoint2D.connectedBody.gravityScale = m_OriginalGravityScale;
                         }
+                        FixedJoint2D.connectedBody = null;
+                        Destroy(FixedJoint2D);
+                        FixedJoint2D = null;
+                        ResetInterpolation();
+                        RemoveFromParentBody();
                     }
-                    else
+                }
+                else
+                {
+                    if (FixedJoint != null)
                     {
-                        if (FixedJoint != null)
-                        {
-                            FixedJoint.connectedBody = null;
-                            Destroy(FixedJoint);
-                            m_Rigidbody.useGravity = m_OriginalGravitySetting;
-                            FixedJoint = null;
-                        }
+                        FixedJoint.connectedBody = null;
+                        m_Rigidbody.useGravity = m_OriginalGravitySetting;
+                        Destroy(FixedJoint);
+                        FixedJoint = null;
+                        ResetInterpolation();
+                        RemoveFromParentBody();
                     }
                 }
             }
-            base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
     }
 }
