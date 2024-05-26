@@ -3157,7 +3157,9 @@ namespace Unity.Netcode
         {
             m_ChildNetworkBehaviours = null;
             NetworkTransforms?.Clear();
+#if COM_UNITY_MODULES_PHYSICS
             NetworkRigidbodies?.Clear();
+#endif
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
