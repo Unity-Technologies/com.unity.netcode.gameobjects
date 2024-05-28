@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Unity.Netcode
 {
@@ -63,15 +64,38 @@ namespace Unity.Netcode
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public void SendUnnamedMessage(IReadOnlyList<ulong> clientIds, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
-            if (!m_NetworkManager.IsServer)
-            {
-                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
-            }
-
             if (clientIds == null)
             {
-                throw new ArgumentNullException(nameof(clientIds), "You must pass in a valid clientId List");
+                throw new ArgumentNullException(nameof(clientIds), "You must pass in a valid clientId List!");
             }
+
+            if (!m_NetworkManager.DistributedAuthorityMode && !m_NetworkManager.IsServer)
+            {
+                if (clientIds.Count > 1 || (clientIds.Count == 1 && clientIds[0] != NetworkManager.ServerClientId))
+                {
+                    Debug.LogError("Clients cannot send unnamed messages to other clients!");
+                    return;
+                }
+                else if (clientIds.Count == 1)
+                {
+                    SendUnnamedMessage(clientIds[0], messageBuffer, networkDelivery);
+                }
+            }
+            else if (m_NetworkManager.DistributedAuthorityMode)
+            {
+                if (clientIds.Count > 1)
+                {
+                    Debug.LogError("Sending an unnamed message to multiple clients is not yet supported in distributed authority.");
+                    return;
+                }
+            }
+
+            if (clientIds.Count == 0)
+            {
+                Debug.LogError($"{nameof(clientIds)} is empty! No clients to send to.");
+                return;
+            }
+
 
             if (m_NetworkManager.IsHost)
             {
@@ -203,6 +227,14 @@ namespace Unity.Netcode
             var hash32 = XXHash.Hash32(name);
             var hash64 = XXHash.Hash64(name);
 
+            if (m_NetworkManager.LogLevel <= LogLevel.Developer)
+            {
+                if (m_MessageHandlerNameLookup32.ContainsKey(hash32) || m_MessageHandlerNameLookup64.ContainsKey(hash64))
+                {
+                    Debug.LogWarning($"Registering {name} named message over existing registration! Your previous registration's callback is being overwritten!");
+                }
+            }
+
             m_NamedMessageHandlers32[hash32] = callback;
             m_NamedMessageHandlers64[hash64] = callback;
 
@@ -303,14 +335,37 @@ namespace Unity.Netcode
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public void SendNamedMessage(string messageName, IReadOnlyList<ulong> clientIds, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
-            if (!m_NetworkManager.IsServer)
-            {
-                throw new InvalidOperationException("Can not send unnamed messages to multiple users as a client");
-            }
-
             if (clientIds == null)
             {
-                throw new ArgumentNullException(nameof(clientIds), "You must pass in a valid clientId List");
+                throw new ArgumentNullException(nameof(clientIds), "Client list is null! You must pass in a valid clientId list to send a named message.");
+            }
+
+            if (!m_NetworkManager.DistributedAuthorityMode && !m_NetworkManager.IsServer)
+            {
+                if (clientIds.Count > 1 || (clientIds.Count == 1 && clientIds[0] != NetworkManager.ServerClientId))
+                {
+                    Debug.LogError("Clients cannot send named messages to other clients!");
+                    return;
+                }
+                else if (clientIds.Count == 1)
+                {
+                    SendNamedMessage(messageName, clientIds[0], messageStream, networkDelivery);
+                    return;
+                }
+            }
+            else if (m_NetworkManager.DistributedAuthorityMode)
+            {
+                if (clientIds.Count > 1)
+                {
+                    Debug.LogError("Sending a named message to multiple clients is not yet supported in distributed authority.");
+                    return;
+                }
+            }
+
+            if (clientIds.Count == 0)
+            {
+                Debug.LogError($"{nameof(clientIds)} is empty! No clients to send the named message {messageName} to!");
+                return;
             }
 
             ulong hash = 0;
