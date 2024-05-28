@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Networking.Transport;
@@ -320,8 +323,21 @@ namespace Unity.Netcode.Transports.UTP
             {
                 WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
             }
+            Debug.Log($"BSQ: Sending {writer.Length} ({copyLength}): {DataStreaWriterToString(writer)}");
 
             return copyLength;
+        }
+
+        internal unsafe static string DataStreaWriterToString(DataStreamWriter writer)
+        {
+            byte* bytes = (byte*)writer.AsNativeArray().GetUnsafeReadOnlyPtr();
+            var hex = new StringBuilder(writer.Length * 3);
+            for (int i = 0; i < writer.Length; ++i)
+            {
+                hex.AppendFormat("{0:x2} ", bytes[i]);
+            }
+
+            return hex.ToString();
         }
 
         /// <summary>Consume a number of bytes from the head of the queue.</summary>
