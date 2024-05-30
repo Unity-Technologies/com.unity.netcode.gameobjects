@@ -80,7 +80,7 @@ namespace Unity.Netcode
                     SendUnnamedMessage(clientIds[0], messageBuffer, networkDelivery);
                 }
             }
-            else if (m_NetworkManager.DistributedAuthorityMode)
+            else if (m_NetworkManager.DistributedAuthorityMode && !m_NetworkManager.DAHost)
             {
                 if (clientIds.Count > 1)
                 {
@@ -352,7 +352,7 @@ namespace Unity.Netcode
                     return;
                 }
             }
-            else if (m_NetworkManager.DistributedAuthorityMode)
+            else if (m_NetworkManager.DistributedAuthorityMode && !m_NetworkManager.DAHost)
             {
                 if (clientIds.Count > 1)
                 {
