@@ -8,6 +8,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+## [2.0.0-exp.3] - 2024-05-30
+
 ### Added
 
 - Added `NetworkRigidbodyBase.AttachToFixedJoint` and `NetworkRigidbodyBase.DetachFromFixedJoint` to replace parenting for rigid bodies that have `NetworkRigidbodyBase.UseRigidBodyForMotion` enabled. (#2933)
