@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class TransformInterpolationObject : NetworkTransform
+    internal class TransformInterpolationObject : NetworkTransform
     {
         public static bool TestComplete = false;
         // Set the minimum threshold which we will use as our margin of error
@@ -140,7 +140,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class TransformInterpolationTests : NetcodeIntegrationTest
+    internal class TransformInterpolationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost, MotionModels.UseTransform)]
     [TestFixture(HostOrServer.DAHost, MotionModels.UseRigidbody)]
     [TestFixture(HostOrServer.Host, MotionModels.UseTransform)]
-    public class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
+    internal class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
     {
         public enum MotionModels
         {
@@ -447,7 +447,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// NetworkTransformOwnershipTests helper behaviour
         /// </summary>
-        public class VerifyObjectIsSpawnedOnClient : NetworkBehaviour
+        internal class VerifyObjectIsSpawnedOnClient : NetworkBehaviour
         {
             public static Dictionary<ulong, VerifyObjectIsSpawnedOnClient> NetworkManagerRelativeSpawnedObjects = new Dictionary<ulong, VerifyObjectIsSpawnedOnClient>();
 
@@ -512,7 +512,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This will have to be used to verify the ownership authority
         /// </summary>
         [DisallowMultipleComponent]
-        public class TestClientNetworkTransform : NetworkTransform
+        internal class TestClientNetworkTransform : NetworkTransform
         {
             //public override void OnNetworkSpawn()
             //{

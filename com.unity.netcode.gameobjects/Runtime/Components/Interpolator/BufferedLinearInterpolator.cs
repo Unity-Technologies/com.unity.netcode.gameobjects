@@ -195,7 +195,9 @@ namespace Unity.Netcode
                 double range = m_EndTimeConsumed - m_StartTimeConsumed;
                 if (range > k_SmallValue)
                 {
-                    t = (float)((renderTime - m_StartTimeConsumed) / range);
+                    var rangeFactor = 1.0f / (float)range;
+
+                    t = ((float)renderTime - (float)m_StartTimeConsumed) * rangeFactor;
 
                     if (t < 0.0f)
                     {

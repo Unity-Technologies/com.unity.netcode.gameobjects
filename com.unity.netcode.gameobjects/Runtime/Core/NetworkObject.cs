@@ -15,6 +15,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -56,7 +57,33 @@ namespace Unity.Netcode
             }
         }
 
-        public NetworkTransform NetworkTransform { get; private set; }
+        /// <summary>
+        /// All <see cref="NetworkTransform"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
+        /// </summary>
+        /// <remarks>
+        /// When parented, all child <see cref="NetworkTransform"/> component instances under a <see cref="NetworkObject"/> component instance that do not have
+        /// another <see cref="NetworkObject"/> component instance will be associated with the initial component instance. This list does not contain any parented
+        /// children <see cref="NetworkObject"/> instances with one or more <see cref="NetworkTransform"/> component instance(s).
+        /// </remarks>
+        public List<NetworkTransform> NetworkTransforms { get; private set; }
+
+#if COM_UNITY_MODULES_PHYSICS
+        /// <summary>
+        /// All <see cref="NetworkRigidbodyBase"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
+        /// NOTE: This is only available if a physics package is included. If not, then this will not be available!
+        /// </summary>
+        /// <remarks>
+        /// When parented, all child <see cref="NetworkRigidbodyBase"/> component instances under a <see cref="NetworkObject"/> component instance that do not have
+        /// another <see cref="NetworkObject"/> component instance will be associated with the initial component instance. This list does not contain any parented
+        /// child <see cref="NetworkObject"/> instances with one or more <see cref="NetworkTransform"/> component instance(s).
+        /// </remarks>
+        public List<NetworkRigidbodyBase> NetworkRigidbodies { get; private set; }
+#endif
+        /// <summary>
+        /// The current parent <see cref="NetworkObject"/> component instance to this <see cref="NetworkObject"/> component instance. When there is no parent then
+        /// this will be <see cref="null"/>.
+        /// </summary>
+        public NetworkObject CurrentParent { get; private set; }
 
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
@@ -1900,7 +1927,6 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-
             if (parent != null && (IsSpawned ^ parent.IsSpawned))
             {
                 if (NetworkManager != null && !NetworkManager.ShutdownInProgress)
@@ -1913,10 +1939,12 @@ namespace Unity.Netcode
 
             if (parent == null)
             {
+                CurrentParent = null;
                 transform.SetParent(null, worldPositionStays);
             }
             else
             {
+                CurrentParent = parent;
                 transform.SetParent(parent.transform, worldPositionStays);
             }
 
@@ -2328,8 +2356,22 @@ namespace Unity.Netcode
                         var type = networkBehaviours[i].GetType();
                         if (type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
                         {
-                            NetworkTransform = networkBehaviours[i] as NetworkTransform;
+                            if (NetworkTransforms == null)
+                            {
+                                NetworkTransforms = new List<NetworkTransform>();
+                            }
+                            NetworkTransforms.Add(networkBehaviours[i] as NetworkTransform);
                         }
+#if COM_UNITY_MODULES_PHYSICS
+                        else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
+                        {
+                            if (NetworkRigidbodies == null)
+                            {
+                                NetworkRigidbodies = new List<NetworkRigidbodyBase>();
+                            }
+                            NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
+                        }
+#endif
                     }
                 }
 
@@ -3114,6 +3156,10 @@ namespace Unity.Netcode
         private void Awake()
         {
             m_ChildNetworkBehaviours = null;
+            NetworkTransforms?.Clear();
+#if COM_UNITY_MODULES_PHYSICS
+            NetworkRigidbodies?.Clear();
+#endif
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }

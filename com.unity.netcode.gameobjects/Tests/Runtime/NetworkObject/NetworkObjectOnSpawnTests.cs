@@ -9,7 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
-    public class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
+    internal class NetworkObjectOnSpawnTests : NetcodeIntegrationTest
     {
         private GameObject m_TestNetworkObjectPrefab;
         private GameObject m_TestNetworkObjectInstance;
@@ -43,7 +43,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (m_ObserverTestType == ObserverTestTypes.WithObservers)
                 {
-                    // When validating this portion of the test and spawning with observers is true, there 
+                    // When validating this portion of the test and spawning with observers is true, there
                     // should be spawned objects on the clients.
                     if (!s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
                     {
@@ -52,7 +52,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
                 else
                 {
-                    // When validating this portion of the test and spawning with observers is false, there 
+                    // When validating this portion of the test and spawning with observers is false, there
                     // should be no spawned objects on the clients.
                     if (s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
                     {

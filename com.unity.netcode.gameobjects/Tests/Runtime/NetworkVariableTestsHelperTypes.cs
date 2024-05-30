@@ -5,24 +5,24 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetVarPermTestComp : NetworkBehaviour
+    internal class NetVarPermTestComp : NetworkBehaviour
     {
         public NetworkVariable<Vector3> OwnerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Owner);
         public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
         public NetworkVariable<Vector3> OwnerReadWrite_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
     }
 
-    public class NetworkVariableMiddleclass<TMiddleclassName> : NetworkVariable<TMiddleclassName>
+    internal class NetworkVariableMiddleclass<TMiddleclassName> : NetworkVariable<TMiddleclassName>
     {
 
     }
 
-    public class NetworkVariableSubclass<TSubclassName> : NetworkVariableMiddleclass<TSubclassName>
+    internal class NetworkVariableSubclass<TSubclassName> : NetworkVariableMiddleclass<TSubclassName>
     {
 
     }
 
-    public class NetworkBehaviourWithNetVarArray : NetworkBehaviour
+    internal class NetworkBehaviourWithNetVarArray : NetworkBehaviour
     {
         public NetworkVariable<int> Int0 = new NetworkVariable<int>();
         public NetworkVariable<int> Int1 = new NetworkVariable<int>();
@@ -123,7 +123,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
+    internal struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
         where T : unmanaged
     {
         public T Value;
@@ -178,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
         C = ulong.MaxValue
     }
 
-    public struct HashableNetworkVariableTestStruct : INetworkSerializeByMemcpy, IEquatable<HashableNetworkVariableTestStruct>
+    internal struct HashableNetworkVariableTestStruct : INetworkSerializeByMemcpy, IEquatable<HashableNetworkVariableTestStruct>
     {
         public byte A;
         public short B;
@@ -220,7 +220,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct HashMapKeyStruct : INetworkSerializeByMemcpy, IEquatable<HashMapKeyStruct>
+    internal struct HashMapKeyStruct : INetworkSerializeByMemcpy, IEquatable<HashMapKeyStruct>
     {
         public byte A;
         public short B;
@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct HashMapValStruct : INetworkSerializeByMemcpy, IEquatable<HashMapValStruct>
+    internal struct HashMapValStruct : INetworkSerializeByMemcpy, IEquatable<HashMapValStruct>
     {
         public byte A;
         public short B;
@@ -304,7 +304,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
+    internal struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
     {
         public byte A;
         public short B;
@@ -342,7 +342,7 @@ namespace Unity.Netcode.RuntimeTests
     }
 
 
-    public class HashableNetworkVariableTestClass : INetworkSerializable, IEquatable<HashableNetworkVariableTestClass>
+    internal class HashableNetworkVariableTestClass : INetworkSerializable, IEquatable<HashableNetworkVariableTestClass>
     {
         public HashableNetworkVariableTestStruct Data;
 
@@ -367,7 +367,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HashMapKeyClass : INetworkSerializable, IEquatable<HashMapKeyClass>
+    internal class HashMapKeyClass : INetworkSerializable, IEquatable<HashMapKeyClass>
     {
         public HashMapKeyStruct Data;
 
@@ -392,7 +392,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class HashMapValClass : INetworkSerializable, IEquatable<HashMapValClass>
+    internal class HashMapValClass : INetworkSerializable, IEquatable<HashMapValClass>
     {
         public HashMapValStruct Data;
 
@@ -417,7 +417,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class NetworkVariableTestClass : INetworkSerializable, IEquatable<NetworkVariableTestClass>
+    internal class NetworkVariableTestClass : INetworkSerializable, IEquatable<NetworkVariableTestClass>
     {
         public NetworkVariableTestStruct Data;
 
@@ -446,7 +446,7 @@ namespace Unity.Netcode.RuntimeTests
 
     // The ILPP code for NetworkVariables to determine how to serialize them relies on them existing as fields of a NetworkBehaviour to find them.
     // Some of the tests below create NetworkVariables on the stack, so this class is here just to make sure the relevant types are all accounted for.
-    public class NetVarILPPClassForTests : NetworkBehaviour
+    internal class NetVarILPPClassForTests : NetworkBehaviour
     {
         public NetworkVariable<byte> ByteVar;
         public NetworkVariable<NativeArray<byte>> ByteArrayVar;
@@ -887,34 +887,34 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
     }
 
-    public class TemplateNetworkBehaviourType<T> : NetworkBehaviour
+    internal class TemplateNetworkBehaviourType<T> : NetworkBehaviour
     {
         public NetworkVariable<T> TheVar;
     }
 
-    public class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
+    internal class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
     {
         public NetworkVariable<T> TheVar2;
     }
 #if !NGO_MINIMALPROJECT
-    public class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>
+    internal class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>
     {
 
     }
 
     // Please do not reference TestClass_ReferencedOnlyByTemplateNetworkBehavourType anywhere other than here!
-    public class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
+    internal class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
     {
 
     }
 
-    public class StructHavingNetworkBehaviour : TemplateNetworkBehaviourType<TestStruct>
+    internal class StructHavingNetworkBehaviour : TemplateNetworkBehaviourType<TestStruct>
     {
 
     }
 #endif
 
-    public struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
+    internal struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
     {
         public int Value;
 

@@ -1556,6 +1556,14 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
+#if COM_UNITY_MODULES_PHYSICS
+            // TODO: Make this an authority flag
+            // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
+            if (m_NetworkRigidbodyInternal != null)
+            {
+                m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
+            }
+#endif
 
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
@@ -1601,6 +1609,17 @@ namespace Unity.Netcode.Components
                 {
                     m_DeltaSynch = true;
                 }
+
+#if COM_UNITY_MODULES_PHYSICS
+                // We handle updating attached bodies when the "parent" body has a state update in order to keep their delta state updates tick synchronized.
+                if (m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.NetworkRigidbodyConnections.Count > 0)
+                {
+                    foreach (var childRigidbody in m_NetworkRigidbodyInternal.NetworkRigidbodyConnections)
+                    {
+                        childRigidbody.NetworkTransform.OnNetworkTick(true);
+                    }
+                }
+#endif
             }
         }
 
@@ -1690,12 +1709,23 @@ namespace Unity.Netcode.Components
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
             // authority changed a property during runtime that requires a full synchronizing.
+#if COM_UNITY_MODULES_PHYSICS
+            if (InLocalSpace != networkState.InLocalSpace && !m_UseRigidbodyForMotion)
+#else
             if (InLocalSpace != networkState.InLocalSpace)
+#endif
             {
                 networkState.InLocalSpace = InLocalSpace;
                 isDirty = true;
                 networkState.IsTeleportingNextFrame = true;
             }
+#if COM_UNITY_MODULES_PHYSICS
+            else if (InLocalSpace && m_UseRigidbodyForMotion)
+            {
+                // TODO: Provide more options than just FixedJoint
+                Debug.LogError($"[Rigidbody] WHen using a Rigidbody for motion, you cannot use {nameof(InLocalSpace)}! If parenting, use the integrated FixedJoint or use a Joint on Authority side.");
+            }
+#endif
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
@@ -1968,7 +1998,7 @@ namespace Unity.Netcode.Components
                 }
                 if (isRotationDirty)
                 {
-                    networkState.Rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+                    networkState.Rotation = rotation;
                     networkState.HasRotAngleX = true;
                     networkState.HasRotAngleY = true;
                     networkState.HasRotAngleZ = true;
@@ -2067,7 +2097,7 @@ namespace Unity.Netcode.Components
         /// Authority subscribes to network tick events and will invoke
         /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
         /// </summary>
-        private void OnNetworkTick()
+        private void OnNetworkTick(bool isCalledFromParent = false)
         {
             // If not active, then ignore the update
             if (!gameObject.activeInHierarchy)
@@ -2081,7 +2111,17 @@ namespace Unity.Netcode.Components
                 if (m_CachedNetworkManager.DistributedAuthorityMode && !IsOwner)
                 {
                     Debug.LogError($"Non-owner Client-{m_CachedNetworkManager.LocalClientId} is being updated by network tick still!!!!");
+                    return;
                 }
+
+#if COM_UNITY_MODULES_PHYSICS
+                // Let the parent handle the updating of this to keep the two synchronized
+                if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+                {
+                    return;
+                }
+#endif
+
                 // Update any changes to the transform
                 var transformSource = transform;
                 OnUpdateAuthoritativeState(ref transformSource);
@@ -2092,10 +2132,9 @@ namespace Unity.Netcode.Components
                 m_TargetPosition = GetSpaceRelativePosition();
 #endif
             }
-            else // If we are no longer authority, unsubscribe to the tick event
-            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            else // If we are no longer authority, unsubscribe to the tick event          
             {
-                NetworkManager.NetworkTickSystem.Tick -= OnNetworkTick;
+                DeregisterForTickUpdate(this);
             }
         }
         #endregion
@@ -2125,6 +2164,14 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ApplyAuthoritativeState()
         {
+#if COM_UNITY_MODULES_PHYSICS
+            // TODO: Make this an authority flag
+            // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
+            if (m_NetworkRigidbodyInternal != null)
+            {
+                m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
+            }
+#endif
             var networkState = m_LocalAuthoritativeNetworkState;
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
@@ -3249,7 +3296,7 @@ namespace Unity.Netcode.Components
             {
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
-                var offset = 0f;
+                var offset = (float)serverTime.TickOffset;
 #if COM_UNITY_MODULES_PHYSICS
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
@@ -3258,16 +3305,13 @@ namespace Unity.Netcode.Components
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
-#if COM_UNITY_MODULES_PHYSICS
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_UseRigidbodyForMotion ? 2 : 1;
-#else
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) ? 2 : 1;
-#endif
+                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode ? 2 : 1;
                 // TODO: We need an RTT that updates regularly and not only when the client sends packets
                 //if (m_CachedNetworkManager.DistributedAuthorityMode)
                 //{
-                //    ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                //    offset = m_NetworkTransformTickRegistration.Offset;
+                //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
+                //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
+                //offset = m_NetworkTransformTickRegistration.Offset;
                 //}
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
@@ -3320,6 +3364,7 @@ namespace Unity.Netcode.Components
 
 
 #if COM_UNITY_MODULES_PHYSICS
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.

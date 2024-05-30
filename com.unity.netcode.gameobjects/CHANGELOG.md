@@ -10,22 +10,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkRigidbodyBase.AttachToFixedJoint` and `NetworkRigidbodyBase.DetachFromFixedJoint` to replace parenting for rigid bodies that have `NetworkRigidbodyBase.UseRigidBodyForMotion` enabled. (#2933)
 - Added `NetworkBehaviour.OnNetworkPreSpawn` and `NetworkBehaviour.OnNetworkPostSpawn` methods that provide the ability to handle pre and post spawning actions during the `NetworkObject` spawn sequence. (#2912)
 - Added a client-side only `NetworkBehaviour.OnNetworkSessionSynchronized` convenience method that is invoked on all `NetworkBehaviour`s after a newly joined client has finished synchronizing with the network session in progress. (#2912)
 - Added `NetworkBehaviour.OnInSceneObjectsSpawned` convenience method that is invoked when all in-scene `NetworkObject`s have been spawned after a scene has been loaded or upon a host or server starting. (#2912)
 
 ### Fixed
 
+- Fixed issue where non-authoritative rigid bodies with `NetworkRigidbodyBase.UseRigidBodyForMotion` enabled would constantly log errors about the renderTime being before `StartTimeConsumed`. (#2933)
 - Fixed issue where in-scene placed NetworkObjects could be destroyed if a client disconnects early and/or before approval. (#2924)
 - Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2912)
 - Fixed issue where an in-scene placed `NetworkObject` with `NetworkTransform` that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2898)
 
 ### Changed
 
+- Change all the access modifiers of test class from Public to Internal (#2930)
+- Changed messages are now sorted by enum values as opposed to ordinally sorting the messages by their type name. (#2929)
 - Changed `NetworkClient.SessionModeTypes` to `NetworkClient.NetworkTopologyTypes`. (#2875)
 - Changed `NetworkClient.SessionModeType` to `NetworkClient.NetworkTopologyType`. (#2875)
 - Changed `NetworkConfig.SessionMode` to `NeworkConfig.NetworkTopology`. (#2875)
-
 
 ## [2.0.0-exp.2] - 2024-04-02
 
