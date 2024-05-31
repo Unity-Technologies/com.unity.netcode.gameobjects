@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -26,6 +31,11 @@ namespace Unity.Netcode.Transports.UTP
         private NativeArray<int> m_HeadTailIndices;
         private int m_MaximumCapacity;
         private int m_MinimumCapacity;
+
+        private static readonly SharedStatic<ulong> m_HighFragmentId = SharedStatic<ulong>.GetOrCreate<BatchedSendQueue, FragmentIdKey>();
+
+        // Define a Key type to identify IntField
+        private class FragmentIdKey {};
 
         /// <summary>Overhead that is added to each message in the queue.</summary>
         public const int PerMessageOverhead = sizeof(int);
@@ -211,7 +221,16 @@ namespace Unity.Netcode.Transports.UTP
                 return 0;
             }
 
-            softMaxBytes = softMaxBytes == 0 ? writer.Capacity : Math.Min(softMaxBytes, writer.Capacity);
+            softMaxBytes = (softMaxBytes == 0 ? writer.Capacity : Math.Min(softMaxBytes, writer.Capacity));
+
+            if (softMaxBytes < sizeof(ulong))
+            {
+                return 0;
+            }
+
+            softMaxBytes -= sizeof(ulong);
+            writer.WriteULong(m_HighFragmentId.Data);
+            ++m_HighFragmentId.Data;
 
             unsafe
             {
@@ -233,7 +252,10 @@ namespace Unity.Netcode.Transports.UTP
                     writer.WriteInt(messageLength);
                     WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
 
-                    return bytesToWrite;
+                    //Debug.Log($"BSQ: Sending fragment {m_HighFragmentId.Data - 1}: {writer.Length} ({bytesToWrite}): {DataStreaWriterToString(writer)}");
+
+
+                    return bytesToWrite + sizeof(ulong);
                 }
                 else
                 {
@@ -258,8 +280,9 @@ namespace Unity.Netcode.Transports.UTP
                             break;
                         }
                     }
+                    //Debug.Log($"BSQ: Sending fragment {m_HighFragmentId.Data - 1}: {writer.Length} ({bytesWritten}): {DataStreaWriterToString(writer)}");
 
-                    return bytesWritten;
+                    return bytesWritten + sizeof(ulong);
                 }
             }
         }
@@ -287,15 +310,37 @@ namespace Unity.Netcode.Transports.UTP
                 return 0;
             }
 
-            var maxLength = maxBytes == 0 ? writer.Capacity : Math.Min(maxBytes, writer.Capacity);
+            var maxLength = (maxBytes == 0 ? writer.Capacity : Math.Min(maxBytes, writer.Capacity));
+            if (maxLength < sizeof(ulong))
+            {
+                return 0;
+            }
+
+            maxLength -= sizeof(ulong);
+            writer.WriteULong(m_HighFragmentId.Data);
+            ++m_HighFragmentId.Data;
+
             var copyLength = Math.Min(maxLength, Length);
 
             unsafe
             {
                 WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
             }
+            Debug.Log($"BSQ: Sending fragment {m_HighFragmentId.Data - 1}: {writer.Length} ({copyLength}): {DataStreaWriterToString(writer)}");
 
-            return copyLength;
+            return copyLength + sizeof(ulong);
+        }
+
+        internal unsafe static string DataStreaWriterToString(DataStreamWriter writer)
+        {
+            byte* bytes = (byte*)writer.AsNativeArray().GetUnsafeReadOnlyPtr();
+            var hex = new StringBuilder(writer.Length * 3);
+            for (int i = 0; i < writer.Length; ++i)
+            {
+                hex.AppendFormat("{0:x2} ", bytes[i]);
+            }
+
+            return hex.ToString();
         }
 
         /// <summary>Consume a number of bytes from the head of the queue.</summary>
@@ -306,6 +351,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="size">Number of bytes to consume from the queue.</param>
         public void Consume(int size)
         {
+            // Fragment ID is not included in the buffer, so we don't consume it.
+            size -= sizeof(ulong);
+            if (size <= 0)
+            {
+                return;
+            }
+
             // Adjust the head/tail indices such that we consume the given size.
             if (size >= Length)
             {

@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -57,6 +58,8 @@ namespace Unity.Netcode
                 BatchHeader = new NetworkBatchHeader { Magic = NetworkBatchHeader.MagicValue };
             }
         }
+
+        public Dictionary<ulong, ulong> HighBatchIds = new Dictionary<ulong, ulong>();
 
         internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager);
 
@@ -263,15 +266,17 @@ namespace Unity.Netcode
 
                     batchReader.ReadValue(out NetworkBatchHeader batchHeader);
 
+                    Debug.Log($"{m_LocalClientId}: Received batch: ID: {batchHeader.BatchId}");
+
                     if (batchHeader.Magic != NetworkBatchHeader.MagicValue)
                     {
-                        NetworkLog.LogError($"Received a packet with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
                     if (batchHeader.BatchSize != data.Count)
                     {
-                        NetworkLog.LogError($"Received a packet with an invalid Batch Size Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Expected Size: {batchHeader.BatchSize}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Batch Size Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Expected Size: {batchHeader.BatchSize}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
@@ -279,7 +284,7 @@ namespace Unity.Netcode
 
                     if (hash != batchHeader.BatchHash)
                     {
-                        NetworkLog.LogError($"Received a packet with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        NetworkLog.LogError($"{m_LocalClientId} Received a packet ID: {batchHeader.BatchId} with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
                     }
 
@@ -299,7 +304,7 @@ namespace Unity.Netcode
                         }
                         catch (OverflowException)
                         {
-                            NetworkLog.LogError("Received a batch that didn't have enough data for all of its batches, ending early!");
+                            NetworkLog.LogError($"{m_LocalClientId} Received a batch ID: {batchHeader.BatchId} that didn't have enough data for all of its batches, ending early!");
                             throw;
                         }
 
@@ -307,7 +312,7 @@ namespace Unity.Netcode
 
                         if (!batchReader.TryBeginRead((int)messageHeader.MessageSize))
                         {
-                            NetworkLog.LogError("Received a message that claimed a size larger than the packet, ending early!");
+                            NetworkLog.LogError($"{m_LocalClientId} Received a message ID: {batchHeader.BatchId} that claimed a size larger than the packet, ending early!");
                             return;
                         }
 
@@ -487,6 +492,7 @@ namespace Unity.Netcode
             }
 
             m_SendQueues[clientId] = new NativeList<SendQueueItem>(16, Allocator.Persistent);
+            HighBatchIds[clientId] = 0;
         }
 
         internal void ClientDisconnected(ulong clientId)
@@ -874,12 +880,19 @@ namespace Unity.Netcode
 
                     queueItem.BatchHeader.BatchSize = alignedLength;
 
+                    queueItem.BatchHeader.BatchId = HighBatchIds[clientId]++;
+
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
                     queueItem.Writer.Seek(alignedLength);
 
 
                     try
                     {
+                        if (NetworkManager.Singleton.IsServer)
+                        {
+                            Debug.Log($"Sending batch to {clientId}: Id: {queueItem.BatchHeader.BatchId}, Delivery: {queueItem.NetworkDelivery}, Size: {queueItem.Writer.Length}, Expected Size: {alignedLength}, Full send array: {ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length)}");
+                        }
+
                         m_Sender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
 
                         for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)

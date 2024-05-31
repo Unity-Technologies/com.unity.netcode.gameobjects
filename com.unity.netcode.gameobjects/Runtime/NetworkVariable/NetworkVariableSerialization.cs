@@ -1880,7 +1880,7 @@ namespace Unity.Netcode
                 return true;
             }
 
-            if (a.Count() != b.Count())
+            if (a.Count != b.Count)
             {
                 return false;
             }
@@ -1993,7 +1993,7 @@ namespace Unity.Netcode
                 return true;
             }
 
-            if (a.Count() != b.Count())
+            if (a.Count != b.Count)
             {
                 return false;
             }

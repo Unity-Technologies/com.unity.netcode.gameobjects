@@ -155,7 +155,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var payloadData = new byte[payloadSize];
+            var payloadData = new byte[payloadSize-sizeof(ulong)];
             for (int i = 0; i < payloadData.Length; i++)
             {
                 payloadData[i] = (byte)i;
@@ -166,11 +166,11 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents, MaxNetworkEventWaitTime * 4);
 
-            Assert.AreEqual(payloadSize, m_ServerEvents[1].Data.Count);
+            Assert.AreEqual(payloadSize-sizeof(ulong), m_ServerEvents[1].Data.Count);
 
             var receivedArray = m_ServerEvents[1].Data.Array;
             var receivedArrayOffset = m_ServerEvents[1].Data.Offset;
-            for (int i = 0; i < payloadSize; i++)
+            for (int i = 0; i < payloadSize-sizeof(ulong); i++)
             {
                 Assert.AreEqual(payloadData[i], receivedArray[receivedArrayOffset + i]);
             }

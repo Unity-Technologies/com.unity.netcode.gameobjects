@@ -571,8 +571,8 @@ namespace Unity.Netcode
         public static unsafe void WriteNativeHashSetDelta<T>(FastBufferWriter writer, ref NativeHashSet<T> value, ref NativeHashSet<T> previousValue) where T : unmanaged, IEquatable<T>
         {
             // See WriteHashSet; this is the same algorithm, adjusted for the NativeHashSet API
-            var added = stackalloc T[value.Count()];
-            var removed = stackalloc T[previousValue.Count()];
+            var added = stackalloc T[value.Count];
+            var removed = stackalloc T[previousValue.Count];
             var addedCount = 0;
             var removedCount = 0;
             foreach (var item in value)
@@ -593,7 +593,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (addedCount + removedCount >= value.Count())
+            if (addedCount + removedCount >= value.Count)
             {
                 writer.WriteByteSafe(1);
                 writer.WriteValueSafe(value);
@@ -643,9 +643,9 @@ namespace Unity.Netcode
             where TVal : unmanaged
         {
             // See WriteDictionary; this is the same algorithm, adjusted for the NativeHashMap API
-            var added = stackalloc KeyValue<TKey, TVal>[value.Count()];
-            var changed = stackalloc KeyValue<TKey, TVal>[value.Count()];
-            var removed = stackalloc KeyValue<TKey, TVal>[previousValue.Count()];
+            var added = stackalloc KVPair<TKey, TVal>[value.Count];
+            var changed = stackalloc KVPair<TKey, TVal>[value.Count];
+            var removed = stackalloc KVPair<TKey, TVal>[previousValue.Count];
             var addedCount = 0;
             var changedCount = 0;
             var removedCount = 0;
@@ -673,7 +673,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (addedCount + removedCount + changedCount >= value.Count())
+            if (addedCount + removedCount + changedCount >= value.Count)
             {
                 writer.WriteByteSafe(1);
                 writer.WriteValueSafe(value);

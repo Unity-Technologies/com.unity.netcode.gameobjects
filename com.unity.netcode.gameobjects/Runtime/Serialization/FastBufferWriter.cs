@@ -1193,7 +1193,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void WriteValueSafe<T>(NativeHashSet<T> value) where T : unmanaged, IEquatable<T>
         {
-            WriteUnmanagedSafe(value.Count());
+            WriteUnmanagedSafe(value.Count);
             foreach (var item in value)
             {
                 var iReffable = item;
@@ -1206,7 +1206,7 @@ namespace Unity.Netcode
             where TKey : unmanaged, IEquatable<TKey>
             where TVal : unmanaged
         {
-            WriteUnmanagedSafe(value.Count());
+            WriteUnmanagedSafe(value.Count);
             foreach (var item in value)
             {
                 (var key, var val) = (item.Key, item.Value);
