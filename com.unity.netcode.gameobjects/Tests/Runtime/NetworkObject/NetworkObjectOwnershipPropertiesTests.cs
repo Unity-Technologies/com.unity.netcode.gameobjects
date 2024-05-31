@@ -8,6 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
     internal class NetworkObjectOwnershipPropertiesTests : NetcodeIntegrationTest

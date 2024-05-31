@@ -14,6 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     /// - Client destroy spawned => throw exception.
     /// </summary>
 
+
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
     internal class NetworkObjectDestroyTests : NetcodeIntegrationTest
