@@ -126,8 +126,8 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    [TestFixture(SessionModeTypes.ClientServer)]
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     internal class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
@@ -143,7 +143,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
 
-        public NetworkShowHideTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public NetworkShowHideTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnServerAndClientsCreated()
         {

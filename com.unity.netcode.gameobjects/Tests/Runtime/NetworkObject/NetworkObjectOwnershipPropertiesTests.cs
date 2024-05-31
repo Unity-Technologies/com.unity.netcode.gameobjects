@@ -8,8 +8,9 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     internal class NetworkObjectOwnershipPropertiesTests : NetcodeIntegrationTest
     {
         private class DummyNetworkBehaviour : NetworkBehaviour
@@ -30,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_InitialOwnerOwnedBySever;
         private bool m_TargetOwnerOwnedBySever;
 
-        public NetworkObjectOwnershipPropertiesTests(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public NetworkObjectOwnershipPropertiesTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnTearDown()
         {

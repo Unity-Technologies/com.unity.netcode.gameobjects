@@ -9,13 +9,13 @@ using UnityEngine.TestTools;
 namespace TestProject.RuntimeTests
 {
 
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     public class ServerDisconnectsClientTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
-        public ServerDisconnectsClientTest(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public ServerDisconnectsClientTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnCreatePlayerPrefab()
         {

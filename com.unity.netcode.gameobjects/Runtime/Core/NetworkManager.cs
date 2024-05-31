@@ -44,7 +44,7 @@ namespace Unity.Netcode
         {
             get
             {
-                return NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority;
+                return NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
             }
         }
 
@@ -250,20 +250,24 @@ namespace Unity.Netcode
                         NetworkTimeSystem.UpdateTime();
                     }
                     break;
-                case NetworkUpdateStage.PostLateUpdate:
+                case NetworkUpdateStage.PreLateUpdate:
                     {
-                        // Handle deferred despawning
-                        if (DistributedAuthorityMode)
-                        {
-                            SpawnManager.DeferredDespawnUpdate(ServerTime);
-                        }
-
+                        // Non-physics based non-authority NetworkTransforms update their states after all other components
                         foreach (var networkTransformEntry in NetworkTransformUpdate)
                         {
                             if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
                             {
                                 networkTransformEntry.Value.OnUpdate();
                             }
+                        }
+                    }
+                    break;
+                case NetworkUpdateStage.PostLateUpdate:
+                    {
+                        // Handle deferred despawning
+                        if (DistributedAuthorityMode)
+                        {
+                            SpawnManager.DeferredDespawnUpdate(ServerTime);
                         }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
@@ -1047,6 +1051,7 @@ namespace Unity.Netcode
             this.RegisterNetworkUpdate(NetworkUpdateStage.FixedUpdate);
 #endif
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreLateUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
 
             // ComponentFactory needs to set its defaults next

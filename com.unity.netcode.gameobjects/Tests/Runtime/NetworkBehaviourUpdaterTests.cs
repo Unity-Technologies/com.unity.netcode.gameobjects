@@ -135,7 +135,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Server and Distributed Authority modes require at least 1 client while the host does not.
     /// </summary>
-    /// [Session Mode][Number of Clients][First NetVar Type][Second NetVar Type]
+    /// [Host or Server mode][Number of Clients][First NetVar Type][Second NetVar Type]
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.One)]
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.One, NetVarContainer.NetVarsToCheck.Two)]
     [TestFixture(HostOrServer.DAHost, 1, NetVarContainer.NetVarsToCheck.Two, NetVarContainer.NetVarsToCheck.Two)]
@@ -202,7 +202,7 @@ namespace Unity.Netcode.RuntimeTests
             // GameObject of this prefab
             var netVarContainer = m_PrefabToSpawn.AddComponent<NetVarContainer>();
             netVarContainer.NumberOfNetVarsToCheck = m_NetVarCombinationTypes.FirstType;
-            if (m_SessionModeType == SessionModeTypes.DistributedAuthority)
+            if (m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority)
             {
                 netVarContainer.SetOwnerWrite();
             }
@@ -210,7 +210,7 @@ namespace Unity.Netcode.RuntimeTests
             netVarContainer.ValueToSetNetVarTo = NetVarValueToSet;
             netVarContainer = m_PrefabToSpawn.AddComponent<NetVarContainer>();
 
-            if (m_SessionModeType == SessionModeTypes.DistributedAuthority)
+            if (m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority)
             {
                 netVarContainer.SetOwnerWrite();
             }
@@ -243,7 +243,7 @@ namespace Unity.Netcode.RuntimeTests
             // the appropriate number of NetworkObjects with the NetVarContainer behaviour
             var numberOfObjectsToSpawn = numToSpawn * NumberOfClients;
 
-            var authority = m_SessionModeType == SessionModeTypes.DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            var authority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
 
             // spawn the objects
             for (int i = 0; i < numToSpawn; i++)

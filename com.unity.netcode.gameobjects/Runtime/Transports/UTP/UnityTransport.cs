@@ -426,10 +426,11 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int> TransportDisposed;
         internal NetworkDriver NetworkDriver => m_Driver;
 
+        protected NetworkDriver m_Driver;
+
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
         private State m_State = State.Disconnected;
-        private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
@@ -554,10 +555,15 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var serverConnection = m_Driver.Connect(serverEndpoint);
+            var serverConnection = Connect(serverEndpoint);
             m_ServerClientId = ParseClientId(serverConnection);
 
             return true;
+        }
+
+        protected virtual NetworkConnection Connect(NetworkEndpoint serverEndpoint)
+        {
+            return m_Driver.Connect(serverEndpoint);
         }
 
         private bool ServerBindAndListen(NetworkEndpoint endPoint)

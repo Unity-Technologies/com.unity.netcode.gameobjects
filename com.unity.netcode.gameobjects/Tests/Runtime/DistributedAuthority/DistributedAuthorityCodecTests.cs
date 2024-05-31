@@ -23,8 +23,8 @@ namespace Unity.Netcode.RuntimeTests
         // Use the CMB Service for all tests
         protected override bool UseCMBService() => true;
 
-        // Set the session mode to distributed authority for all tests
-        protected override SessionModeTypes OnGetSessionmode() => SessionModeTypes.DistributedAuthority;
+        // Set the network topology to distributed authority for all tests
+        protected override NetworkTopologyTypes OnGetNetworkTopologyType() => NetworkTopologyTypes.DistributedAuthority;
 
         private CodecTestHooks m_ClientCodecHook;
         private NetworkManager Client => m_ClientNetworkManagers[0];

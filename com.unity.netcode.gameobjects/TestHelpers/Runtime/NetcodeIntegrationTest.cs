@@ -139,21 +139,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected bool m_UseHost = true;
         protected bool m_DistributedAuthority;
-        protected SessionModeTypes m_SessionModeType = SessionModeTypes.ClientServer;
+        protected NetworkTopologyTypes m_NetworkTopologyType = NetworkTopologyTypes.ClientServer;
 
         protected virtual bool UseCMBService()
         {
             return false;
         }
 
-        protected virtual SessionModeTypes OnGetSessionmode()
+        protected virtual NetworkTopologyTypes OnGetNetworkTopologyType()
         {
-            return m_SessionModeType;
+            return m_NetworkTopologyType;
         }
 
         protected void SetDistributedAuthorityProperties(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.SessionMode = m_SessionModeType;
+            networkManager.NetworkConfig.NetworkTopology = m_NetworkTopologyType;
             networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_DistributedAuthority;
             networkManager.NetworkConfig.UseCMBService = UseCMBService() && m_DistributedAuthority;
         }
@@ -1567,7 +1567,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
             var prefabObject = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
             // DANGO-TODO: Ownership flags could require us to change this
-            // For testing purposes, we default to true for the distribute ownership property when in distirbuted authority session mode.
+            // For testing purposes, we default to true for the distribute ownership property when in a distirbuted authority network topology.
             prefabObject.GetComponent<NetworkObject>().Ownership |= NetworkObject.OwnershipStatus.Distributable;
             return prefabObject;
         }
@@ -1605,7 +1605,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
 
-            if (owner.NetworkConfig.SessionMode == SessionModeTypes.DistributedAuthority)
+            if (owner.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
             {
                 networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
                 if (isPlayerObject)
@@ -1687,15 +1687,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public NetcodeIntegrationTest()
         {
-            m_SessionModeType = OnGetSessionmode();
-            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+            m_NetworkTopologyType = OnGetNetworkTopologyType();
+            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
             NetworkMessageManager.EnableMessageOrderConsoleLog = false;
         }
 
-        public NetcodeIntegrationTest(SessionModeTypes sessionMode)
+        public NetcodeIntegrationTest(NetworkTopologyTypes networkTopologyType)
         {
-            m_SessionModeType = sessionMode;
-            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+            m_NetworkTopologyType = networkTopologyType;
+            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
         }
 
         /// <summary>
@@ -1717,8 +1717,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
-            m_SessionModeType = hostOrServer == HostOrServer.DAHost ? SessionModeTypes.DistributedAuthority : SessionModeTypes.ClientServer;
-            m_DistributedAuthority = OnGetSessionmode() == SessionModeTypes.DistributedAuthority;
+            m_NetworkTopologyType = hostOrServer == HostOrServer.DAHost ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
+            m_DistributedAuthority = OnGetNetworkTopologyType() == NetworkTopologyTypes.DistributedAuthority;
         }
 
         /// <summary>

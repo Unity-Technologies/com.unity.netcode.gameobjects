@@ -14,7 +14,7 @@ namespace Unity.Netcode
     /// M = 1.0f (which M * M would still yield 1.0f)
     /// w*w = M*M - (x*x + y*y + z*z) or Mathf.Sqrt(1.0f - (x*x + y*y + z*z))
     /// w = Math.Sqrt(1.0f - (x*x + y*y + z*z))
-    /// Using the largest the number avoids potential loss of precision in the smallest three values.
+    /// Using the largest number avoids potential loss of precision in the smallest three values.
     /// </remarks>
     public static class QuaternionCompressor
     {

@@ -425,7 +425,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Returns the currently loaded scenes that are synchronized with the session owner or server depending upon the selected
-        /// NetworkManager session mode.
+        /// network topology.
         /// </summary>
         /// <remarks>
         /// The <see cref="SceneManager"/> scenes loaded returns all scenes loaded where this returns only the scenes that have been

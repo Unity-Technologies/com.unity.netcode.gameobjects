@@ -49,8 +49,8 @@ namespace TestProject.RuntimeTests
     }
 
 #if NGO_DAMODE
-    [TestFixture(SessionModeTypes.DistributedAuthority)]
-    [TestFixture(SessionModeTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
 #endif 
     public class RpcUserSerializableTypesTest : NetcodeIntegrationTest
     {
@@ -84,7 +84,7 @@ namespace TestProject.RuntimeTests
         protected override int NumberOfClients => 1;
 
 #if NGO_DAMODE
-        public RpcUserSerializableTypesTest(SessionModeTypes sessionModeType) : base(sessionModeType) { }
+        public RpcUserSerializableTypesTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 #endif
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
