@@ -908,13 +908,14 @@ namespace Unity.Netcode
 
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
+            ConnectedClientIds.Add(clientId);
             // Host should not send this message to itself
-            if (NetworkManager.LocalClientId != NetworkManager.ServerClientId)
+            if (clientId != NetworkManager.ServerClientId)
             {
                 var message = new ClientConnectedMessage { ClientId = clientId };
                 NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             }
-            ConnectedClientIds.Add(clientId);
+            
             return networkClient;
         }
 
