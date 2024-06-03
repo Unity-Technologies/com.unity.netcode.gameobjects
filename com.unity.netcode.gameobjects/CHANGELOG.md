@@ -8,6 +8,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed issue where SessionOwner message was being treated as a new entry for the new message indexing when it should have been ordinally sorted with the legacy message indices. (#2942)
+
 ## [2.0.0-exp.4] - 2024-05-31
 
 ### Added
