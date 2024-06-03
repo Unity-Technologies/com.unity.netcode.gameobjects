@@ -491,24 +491,32 @@ namespace Unity.Netcode
             // Process the incoming message queue so that we get everything from the server disconnecting us or, if we are the server, so we got everything from that client.
             MessageManager.ProcessIncomingMessageQueue();
 
-            InvokeOnClientDisconnectCallback(clientId);
-
-            if (LocalClient.IsHost)
-            {
-                InvokeOnPeerDisconnectedCallback(clientId);
-            }
-
             if (LocalClient.IsServer)
             {
+                // We need to process the disconnection before notifying
                 OnClientDisconnectFromServer(clientId);
+
+                // Now notify the client has disconnected
+                InvokeOnClientDisconnectCallback(clientId);
+
+                if (LocalClient.IsHost)
+                {
+                    InvokeOnPeerDisconnectedCallback(clientId);
+                }
             }
-            else // As long as we are not in the middle of a shutdown
-            if (!NetworkManager.ShutdownInProgress)
+            else
             {
-                // We must pass true here and not process any sends messages as we are no longer connected.
-                // Otherwise, attempting to process messages here can cause an exception within UnityTransport
-                // as the client ID is no longer valid.
-                NetworkManager.Shutdown(true);
+                // Notify local client of disconnection
+                InvokeOnClientDisconnectCallback(clientId);
+
+                // As long as we are not in the middle of a shutdown
+                if (!NetworkManager.ShutdownInProgress)
+                {
+                    // We must pass true here and not process any sends messages as we are no longer connected.
+                    // Otherwise, attempting to process messages here can cause an exception within UnityTransport
+                    // as the client ID is no longer valid.
+                    NetworkManager.Shutdown(true);
+                }
             }
 
             if (NetworkManager.IsServer)
@@ -900,8 +908,12 @@ namespace Unity.Netcode
 
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
-            var message = new ClientConnectedMessage { ClientId = clientId };
-            NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
+            // Host should not send this message to itself
+            if (NetworkManager.LocalClientId != NetworkManager.ServerClientId)
+            {
+                var message = new ClientConnectedMessage { ClientId = clientId };
+                NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
+            }
             ConnectedClientIds.Add(clientId);
             return networkClient;
         }
