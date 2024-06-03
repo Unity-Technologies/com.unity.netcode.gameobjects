@@ -104,9 +104,11 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-
-                    peerClientIds[idx] = peerId;
-                    ++idx;
+                    if (peerClientIds.Length > idx)
+                    {
+                        peerClientIds[idx] = peerId;
+                        ++idx;
+                    }
                 }
 
                 try
@@ -915,7 +917,7 @@ namespace Unity.Netcode
                 var message = new ClientConnectedMessage { ClientId = clientId };
                 NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
             }
-            
+
             return networkClient;
         }
 
