@@ -15,6 +15,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session.
+- Fixed issue with the host trying to send itself a message that it has connected when first starting up.
 - Fixed issue where in-scene placed NetworkObjects could be destroyed if a client disconnects early and/or before approval. (#2923)
 - Fixed issue where `NetworkDeltaPosition` would "jitter" periodically if both unreliable delta state updates and half-floats were used together. (#2922)
 - Fixed issue where `NetworkRigidbody2D` would not properly change body type based on the instance's authority when spawned. (#2916)
