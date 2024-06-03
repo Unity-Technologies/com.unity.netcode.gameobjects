@@ -44,9 +44,9 @@ namespace Unity.Netcode
             SceneEvent = 17,
             ServerLog = 18,
             ServerRpc = 19,
-            TimeSync = 20,
-            Unnamed = 21,
-            SessionOwner = 22
+            SessionOwner = 20,
+            TimeSync = 21,
+            Unnamed = 22,
         }
 
 
