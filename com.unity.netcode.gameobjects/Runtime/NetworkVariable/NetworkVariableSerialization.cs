@@ -29,6 +29,40 @@ namespace Unity.Netcode
     }
 
     /// <summary>
+    /// Packing serializer for bytes
+    /// </summary>
+    internal class ByteSerializer : INetworkVariableSerializer<byte>
+    {
+        public void Write(FastBufferWriter writer, ref byte value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref byte value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void WriteDelta(FastBufferWriter writer, ref byte value, ref byte previousValue)
+        {
+            Write(writer, ref value);
+        }
+        public void ReadDelta(FastBufferReader reader, ref byte value)
+        {
+            Read(reader, ref value);
+        }
+
+        void INetworkVariableSerializer<short>.ReadWithAllocator(FastBufferReader reader, out byte value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Duplicate(in byte value, ref byte duplicatedValue)
+        {
+            duplicatedValue = value;
+        }
+    }
+
+    /// <summary>
     /// Packing serializer for shorts
     /// </summary>
     internal class ShortSerializer : INetworkVariableSerializer<short>
@@ -1255,6 +1289,8 @@ namespace Unity.Netcode
 #endif
         internal static void InitializeIntegerSerialization()
         {
+            NetworkVariableSerialization<byte>.Serializer = new ByteSerializer();
+            NetworkVariableSerialization<byte>.AreEqual = NetworkVariableSerialization<byte>.ValueEquals;
             NetworkVariableSerialization<short>.Serializer = new ShortSerializer();
             NetworkVariableSerialization<short>.AreEqual = NetworkVariableSerialization<short>.ValueEquals;
             NetworkVariableSerialization<ushort>.Serializer = new UshortSerializer();
