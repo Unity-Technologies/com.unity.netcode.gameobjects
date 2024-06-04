@@ -5,7 +5,9 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// A helper struct for serializing <see cref="NetworkBehaviour"/>s over the network. Can be used in RPCs and <see cref="NetworkVariable{T}"/>.
-    /// Note: network ids get recycled by the NetworkManager after a while. So a reference pointing to
+    /// Network IDs get recycled by the NetworkManager after a while, so using a NetworkBehaviourReference for too long may result in a
+    /// different NetworkBehaviour being returned for the assigned NetworkBehaviourId. NetworkBehaviourReferences are best for short-term
+    /// use when receieved via RPC or custom message, rather than for long-term references to NetworkBehaviours.
     /// </summary>
     public struct NetworkBehaviourReference : INetworkSerializable, IEquatable<NetworkBehaviourReference>
     {
@@ -43,7 +45,7 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet(out NetworkBehaviour networkBehaviour, NetworkManager networkManager = null)
         {
-            networkBehaviour = GetInternal(this, null);
+            networkBehaviour = GetInternal(this, networkManager);
             return networkBehaviour != null;
         }
 
@@ -56,7 +58,7 @@ namespace Unity.Netcode
         /// <returns>True if the <see cref="NetworkBehaviour"/> was found; False if the <see cref="NetworkBehaviour"/> was not found. This can happen if the corresponding <see cref="NetworkObject"/> has not been spawned yet. you can try getting the reference at a later point in time.</returns>
         public bool TryGet<T>(out T networkBehaviour, NetworkManager networkManager = null) where T : NetworkBehaviour
         {
-            networkBehaviour = GetInternal(this, null) as T;
+            networkBehaviour = GetInternal(this, networkManager) as T;
             return networkBehaviour != null;
         }
 

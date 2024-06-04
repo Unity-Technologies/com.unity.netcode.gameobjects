@@ -531,19 +531,26 @@ namespace Unity.Netcode
                 networkObject.DestroyWithScene = sceneObject.DestroyWithScene;
                 networkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
 
+
+                var nonNetworkObjectParent = false;
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
                 // more scenes that contain nested in-scene placed NetworkObject children yet the server's
                 // synchronization information does not indicate the NetworkObject in question has a parent.
                 // Under this scenario, we want to remove the parent before spawning and setting the transform values.
-                if (sceneObject.IsSceneObject && !sceneObject.HasParent && networkObject.transform.parent != null)
+                if (sceneObject.IsSceneObject && networkObject.transform.parent != null)
                 {
+                    var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
                     // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
                     // include parenting, then we need to force the removal of that parent
-                    if (networkObject.transform.parent.GetComponent<NetworkObject>() != null)
+                    if (!sceneObject.HasParent && parentNetworkObject)
                     {
                         // remove the parent
                         networkObject.ApplyNetworkParenting(true, true);
+                    }
+                    else if (sceneObject.HasParent && !parentNetworkObject)
+                    {
+                        nonNetworkObjectParent = true;
                     }
                 }
 
@@ -554,7 +561,7 @@ namespace Unity.Netcode
                 {
                     // If world position stays is true or we have auto object parent synchronization disabled
                     // then we want to apply the position and rotation values world space relative
-                    if (worldPositionStays || !networkObject.AutoObjectParentSync)
+                    if ((worldPositionStays && !nonNetworkObjectParent) || !networkObject.AutoObjectParentSync)
                     {
                         networkObject.transform.position = position;
                         networkObject.transform.rotation = rotation;
@@ -604,7 +611,12 @@ namespace Unity.Netcode
             return networkObject;
         }
 
-        // Ran on both server and client
+        /// <summary>
+        /// Invoked when spawning locally
+        /// </summary>
+        /// <remarks>
+        /// Pre and Post spawn methods *CAN* be invoked prior to invoking <see cref="SpawnNetworkObjectLocallyCommon"/>
+        /// </remarks>
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
@@ -625,11 +637,21 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+            // Invoke NetworkBehaviour.OnPreSpawn methods
+            networkObject.InvokeBehaviourNetworkPreSpawn();
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+
+            // Invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
-        // Ran on both server and client
+        /// <summary>
+        /// Invoked from AddSceneObject
+        /// </summary>
+        /// <remarks>
+        /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
+        /// </remarks>
         internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
             if (networkObject == null)
@@ -642,7 +664,11 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is already spawned");
             }
 
+            // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
+
+            // It is ok to invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
@@ -859,7 +885,7 @@ namespace Unity.Netcode
                     {
                         // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
                         // is unloaded. Otherwise, despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value);
+                        var shouldDestroy = !(networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value));
 
                         // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
                         if (shouldDestroy)
@@ -948,10 +974,15 @@ namespace Unity.Netcode
                 }
             }
 
-
             foreach (var networkObject in networkObjectsToSpawn)
             {
                 SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, networkObject.OwnerClientId, true);
+            }
+
+            // Notify all in-scene placed NetworkObjects have been spawned
+            foreach (var networkObject in networkObjectsToSpawn)
+            {
+                networkObject.InternalInSceneNetworkObjectsSpawned();
             }
         }
 
