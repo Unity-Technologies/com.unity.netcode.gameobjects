@@ -8,9 +8,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Added
+
+
 ### Fixed
 
 - Fixed issue where SessionOwner message was being treated as a new entry for the new message indexing when it should have been ordinally sorted with the legacy message indices. (#2942)
+
+### Changed
+- Changed `FastBufferReader` and `FastBufferWriter` so that they always ensure the length of items serialized is always serialized as an `uint` and added a check before casting for safe reading and writing.(#2946)
+
 
 ## [2.0.0-exp.4] - 2024-05-31
 
