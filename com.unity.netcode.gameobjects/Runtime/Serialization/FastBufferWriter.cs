@@ -959,7 +959,7 @@ namespace Unity.Netcode
             {
                 throw new InvalidCastException("Cannot write negative length");
             }
-            WriteLengthSafe((uint) length);
+            WriteLengthSafe((uint)length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
