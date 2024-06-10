@@ -13,12 +13,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue when `NetworkTransform` half float precision is enabled and ownership changes the current base position was not being synchronized.
-- Fixed issue where `OnClientConnected` not being invoked on the session owner when connecting to a new distributed authority session.
+- Fixed issue when `NetworkTransform` half float precision is enabled and ownership changes the current base position was not being synchronized. (#2948)
+- Fixed issue where `OnClientConnected` not being invoked on the session owner when connecting to a new distributed authority session. (#2948)
 
 ### Changed
 
-- Changed the client's owned objects returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes.
+- Changed the client's owned objects is now returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes. (#2948)
 
 
 ## [2.0.0-exp.5] - 2024-06-03
