@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+
+### Fixed
+
+- Fixed issue when `NetworkTransform` half float precision is enabled and ownership changes the current base position was not being synchronized.
+- Fixed issue where `OnClientConnected` not being invoked on the session owner when connecting to a new distributed authority session.
+
+### Changed
+
+- Changed the client's owned objects returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes.
+
+
 ## [2.0.0-exp.5] - 2024-06-03
 
 ### Added
