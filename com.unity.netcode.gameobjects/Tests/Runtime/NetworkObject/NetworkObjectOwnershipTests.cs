@@ -358,7 +358,7 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                if (clientNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                if (clientNetworkManager.LocalClient.OwnedObjects.Length < k_NumberOfSpawnedObjects)
                 {
                     return false;
                 }
@@ -372,7 +372,7 @@ namespace Unity.Netcode.RuntimeTests
             // Only check when we are the host
             if (m_ServerNetworkManager.IsHost)
             {
-                if (m_ServerNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                if (m_ServerNetworkManager.LocalClient.OwnedObjects.Length < k_NumberOfSpawnedObjects)
                 {
                     return false;
                 }
@@ -380,7 +380,7 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var connectedClient in m_ServerNetworkManager.ConnectedClients)
             {
-                if (connectedClient.Value.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                if (connectedClient.Value.OwnedObjects.Length < k_NumberOfSpawnedObjects)
                 {
                     return false;
                 }

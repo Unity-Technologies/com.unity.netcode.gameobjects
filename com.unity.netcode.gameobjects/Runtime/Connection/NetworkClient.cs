@@ -61,9 +61,9 @@ namespace Unity.Netcode
         public NetworkObject PlayerObject;
 
         /// <summary>
-        /// The list of NetworkObject's owned by this client instance
+        /// The NetworkObject's owned by this client instance
         /// </summary>
-        public List<NetworkObject> OwnedObjects => IsConnected ? SpawnManager.GetClientOwnedObjects(ClientId) : new List<NetworkObject>();
+        public NetworkObject[] OwnedObjects => IsConnected ? SpawnManager.GetClientOwnedObjects(ClientId) : new NetworkObject[] { };
 
         internal NetworkSpawnManager SpawnManager { get; private set; }
 
