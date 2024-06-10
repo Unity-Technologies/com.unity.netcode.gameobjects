@@ -3021,7 +3021,7 @@ namespace Unity.Netcode.Components
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                     m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = isOwnershipChange;
-                    SetState(teleportDisabled:false);
+                    SetState(teleportDisabled: false);
                 }
                 else
                 {
@@ -3032,7 +3032,7 @@ namespace Unity.Netcode.Components
 
                 RegisterForTickUpdate(this);
 
-                
+
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
                     m_HalfFloatTargetTickOwnership = m_CachedNetworkManager.ServerTime.Tick;
