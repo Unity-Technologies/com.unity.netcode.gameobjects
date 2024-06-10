@@ -568,7 +568,8 @@ namespace Unity.Netcode
             {
                 s_ReveiveMessages.Add(messageType, new T());
             }
-            var message = s_ReveiveMessages[messageType];
+            // Assure message is cast to type (T)
+            var message = (T)s_ReveiveMessages[messageType];
             var messageVersion = 0;
 
             // Special cases because these are the messages that carry the version info - thus the version info isn't
