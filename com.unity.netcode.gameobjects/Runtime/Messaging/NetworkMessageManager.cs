@@ -34,6 +34,9 @@ namespace Unity.Netcode
     internal class NetworkMessageManager : IDisposable
     {
         public bool StopProcessing = false;
+        private static Type s_ConnectionApprovedType = typeof(ConnectionApprovedMessage);
+        private static Type s_ConnectionRequestType = typeof(ConnectionRequestMessage);
+        private static Type s_DisconnectReasonType = typeof(DisconnectReasonMessage);
 
         private struct ReceiveQueueItem
         {
@@ -119,6 +122,8 @@ namespace Unity.Netcode
             public MessageHandler Handler;
             public VersionGetter GetVersion;
         }
+
+        private static Dictionary<Type, INetworkMessage> s_ReveiveMessages = new Dictionary<Type, INetworkMessage>();
 
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
@@ -524,6 +529,7 @@ namespace Unity.Netcode
             return new T().Version;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int GetMessageVersion(Type type, ulong clientId, bool forReceive = false)
         {
             if (!m_PerClientMessageVersions.TryGetValue(clientId, out var versionMap))
@@ -551,16 +557,26 @@ namespace Unity.Netcode
             return messageVersion;
         }
 
+
+
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
-            var message = new T();
+            var messageType = typeof(T);
+            // Since received messages are processed synchronously, we can allocate a single INetworkMessage instance of type (T) to be used for processing the incoming message
+            // as opposed to allocating one each time we receive a message.
+            if (!s_ReveiveMessages.ContainsKey(messageType))
+            {
+                s_ReveiveMessages.Add(messageType, new T());
+            }
+            var message = s_ReveiveMessages[messageType];
             var messageVersion = 0;
+
             // Special cases because these are the messages that carry the version info - thus the version info isn't
             // populated yet when we get these. The first part of these messages always has to be the version data
             // and can't change.
-            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage) && context.SenderId != manager.m_LocalClientId)
+            if (messageType != s_ConnectionRequestType && messageType != s_ConnectionApprovedType && messageType != s_DisconnectReasonType && context.SenderId != manager.m_LocalClientId)
             {
-                messageVersion = manager.GetMessageVersion(typeof(T), context.SenderId, true);
+                messageVersion = manager.GetMessageVersion(messageType, context.SenderId, true);
                 if (messageVersion < 0)
                 {
                     return;
@@ -612,7 +628,7 @@ namespace Unity.Netcode
                 var messageVersion = 0;
                 // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
                 // The first part of this message always has to be the version data and can't change.
-                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                if (typeof(TMessageType) != s_ConnectionRequestType)
                 {
                     messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
                     if (messageVersion < 0)
@@ -666,7 +682,7 @@ namespace Unity.Netcode
 
                 // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
                 // The first part of this message always has to be the version data and can't change.
-                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                if (typeof(TMessageType) != s_ConnectionRequestType)
                 {
                     var messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
                     if (messageVersion < 0)
@@ -746,7 +762,7 @@ namespace Unity.Netcode
             // Special case because this is the message that carries the version info - thus the version info isn't
             // populated yet when we get this. The first part of this message always has to be the version data
             // and can't change.
-            if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+            if (typeof(TMessageType) != s_ConnectionRequestType)
             {
                 messageVersion = GetMessageVersion(typeof(TMessageType), clientId);
                 if (messageVersion < 0)
