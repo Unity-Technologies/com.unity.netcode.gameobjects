@@ -3020,13 +3020,19 @@ namespace Unity.Netcode.Components
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = isOwnershipChange;
+                    SetState(teleportDisabled:false);
+                }
+                else
+                {
+                    m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
                 }
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
 
                 RegisterForTickUpdate(this);
 
-                m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
+                
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
                     m_HalfFloatTargetTickOwnership = m_CachedNetworkManager.ServerTime.Tick;
