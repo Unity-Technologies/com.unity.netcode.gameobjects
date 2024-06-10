@@ -251,6 +251,10 @@ namespace Unity.Netcode
 
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
                         networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+
+                        // When scene management is enabled and since the session owner is synchronizing the service (i.e. acting like  host),
+                        // we need to locallyh invoke the OnClientConnected callback at this point in time.
+                        networkManager.ConnectionManager.InvokeOnClientConnectedCallback(OwnerClientId);
                     }
                 }
             }
