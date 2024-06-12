@@ -81,6 +81,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
         }
 
+        protected override NetworkTopologyTypes OnCurrentTopology()
+        {
+            return NetworkManager != null ? NetworkManager.NetworkConfig.NetworkTopology : NetworkTopologyTypes.ClientServer;
+        }
+
         public override void Initialize(NetworkManager networkManager = null)
         {
             NetworkManager = networkManager;
