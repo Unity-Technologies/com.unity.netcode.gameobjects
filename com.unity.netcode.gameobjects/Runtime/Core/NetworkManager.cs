@@ -127,6 +127,18 @@ namespace Unity.Netcode
 
         public ulong CurrentSessionOwner { get; internal set; }
 
+        /// <summary>
+        /// Delegate declaration for <see cref="OnSessionOwnerPromoted"/>
+        /// </summary>
+        /// <param name="sessionOwnerPromoted">the new session owner client identifier</param>
+        public delegate void OnSessionOwnerPromotedDelegateHandler(ulong sessionOwnerPromoted);
+
+        /// <summary>
+        /// Network Topology: Distributed Authority
+        /// When a new session owner is promoted, this event is triggered on all connected clients
+        /// </summary>
+        public event OnSessionOwnerPromotedDelegateHandler OnSessionOwnerPromoted;
+
         internal void SetSessionOwner(ulong sessionOwner)
         {
             var previousSessionOwner = CurrentSessionOwner;
@@ -147,10 +159,12 @@ namespace Unity.Netcode
                     }
                 }
             }
+
+            OnSessionOwnerPromoted?.Invoke(sessionOwner);
         }
 
         // TODO: Make this internal after testing
-        public void PromoteSessionOwner(ulong clientId)
+        internal void PromoteSessionOwner(ulong clientId)
         {
             if (!DistributedAuthorityMode)
             {
