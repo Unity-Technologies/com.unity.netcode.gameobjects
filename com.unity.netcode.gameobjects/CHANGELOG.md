@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added event `NetworkManager.OnSessionOwnerPromoted` that is invoked when a new session owner promotion occurs. (#2948)
 
 ### Fixed
 
@@ -19,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Changed the client's owned objects is now returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes. (#2948)
+- Changed `NetworkTransfrom.TryCommitTransformToServer` to be internal as it will be removed by the final 2.0.0 release. (#2948)
 
 
 ## [2.0.0-exp.5] - 2024-06-03
