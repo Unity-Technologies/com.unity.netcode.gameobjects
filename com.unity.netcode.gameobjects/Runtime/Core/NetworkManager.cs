@@ -229,7 +229,16 @@ namespace Unity.Netcode
 
         private void UpdateTopology()
         {
-            IsDistributedAuthority = DistributedAuthorityMode = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() == NetworkTopologyTypes.DistributedAuthority : NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
+            var transportTopology = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
+            if (transportTopology != NetworkConfig.NetworkTopology)
+            {
+                NetworkLog.LogErrorServer($"[Topology Mismatch] Transport detected an issue with the topology ({transportTopology} | {NetworkConfig.NetworkTopology}) usage or setting! Disconnecting from session.");
+                Shutdown();
+            }
+            else
+            {
+                IsDistributedAuthority = DistributedAuthorityMode = transportTopology == NetworkTopologyTypes.DistributedAuthority;
+            }
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
