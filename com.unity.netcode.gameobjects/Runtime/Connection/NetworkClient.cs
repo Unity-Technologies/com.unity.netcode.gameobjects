@@ -3,12 +3,6 @@ using UnityEngine;
 namespace Unity.Netcode
 {
 
-    public enum NetworkTopologyTypes
-    {
-        ClientServer,
-        DistributedAuthority
-    }
-
     /// <summary>
     /// A NetworkClient
     /// </summary>

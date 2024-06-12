@@ -36,17 +36,13 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+        internal static bool IsDistributedAuthority;
+
         /// <summary>
         /// Distributed Authority Mode
         /// Returns true if the current session is running in distributed authority mode.
         /// </summary>
-        public bool DistributedAuthorityMode
-        {
-            get
-            {
-                return NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
-            }
-        }
+        public bool DistributedAuthorityMode { get; private set; }
 
         /// <summary>
         /// Distributed Authority Mode
@@ -217,12 +213,18 @@ namespace Unity.Netcode
 #endif
         }
 
+        private void UpdateTopology()
+        {
+            IsDistributedAuthority = DistributedAuthorityMode = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() == NetworkTopologyTypes.DistributedAuthority : NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
+        }
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
+                        UpdateTopology();
                         ConnectionManager.ProcessPendingApprovals();
                         ConnectionManager.PollAndHandleNetworkEvents();
 
@@ -1011,6 +1013,8 @@ namespace Unity.Netcode
             NetworkTransformFixedUpdate.Clear();
 #endif
             NetworkTransformUpdate.Clear();
+
+            UpdateTopology();
 
             //DANGOEXP TODO: Remove this before finalizing the experimental release
             NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;

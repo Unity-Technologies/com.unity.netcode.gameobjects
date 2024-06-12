@@ -1564,6 +1564,8 @@ namespace Unity.Netcode
     {
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
+        internal static bool IsDistributedAuthority => NetworkManager.IsDistributedAuthority;
+
         /// <summary>
         /// The collection item type tells the CMB server how to read the bytes of each item in the collection
         /// </summary>
