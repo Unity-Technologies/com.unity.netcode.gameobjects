@@ -310,20 +310,31 @@ namespace Unity.Netcode.Editor
                         GUI.enabled = false;
                     }
 
-                    if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
+                    if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
                     {
-                        m_NetworkManager.StartHost();
+                        if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
+                        {
+                            m_NetworkManager.StartHost();
+                        }
+
+                        if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
+                        {
+                            m_NetworkManager.StartServer();
+                        }
+
+                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
+                        {
+                            m_NetworkManager.StartClient();
+                        }
+                    }
+                    else
+                    {
+                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
+                        {
+                            m_NetworkManager.StartClient();
+                        }
                     }
 
-                    if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
-                    {
-                        m_NetworkManager.StartServer();
-                    }
-
-                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
-                    {
-                        m_NetworkManager.StartClient();
-                    }
 
                     if (!EditorApplication.isPlaying)
                     {
