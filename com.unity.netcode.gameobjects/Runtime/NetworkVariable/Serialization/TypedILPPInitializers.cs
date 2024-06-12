@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
-using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Unity.Netcode
 {
