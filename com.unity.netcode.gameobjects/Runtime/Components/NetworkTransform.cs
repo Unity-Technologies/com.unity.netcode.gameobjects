@@ -1487,7 +1487,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         /// <param name="transformToCommit">the transform to be committed</param>
         /// <param name="dirtyTime">time it was marked dirty</param>
-        protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
+        internal void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             if (!IsSpawned)
             {
@@ -1568,8 +1568,6 @@ namespace Unity.Netcode.Components
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
-                m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
-
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
                 {
@@ -3011,27 +3009,22 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
+            m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
 
             if (CanCommitToTransform)
             {
-
                 // Make sure authority doesn't get added to updates (no need to do this on the authority side)
                 m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
-                    m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = isOwnershipChange;
                     SetState(teleportDisabled: false);
                 }
-                else
-                {
-                    m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
-                }
+
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
 
                 RegisterForTickUpdate(this);
-
 
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
@@ -3044,16 +3037,13 @@ namespace Unity.Netcode.Components
                 m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
-
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-                m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
                 m_TargetScale = transform.localScale;
                 m_CurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
-
             }
             OnInitialize(ref m_LocalAuthoritativeNetworkState);
         }
@@ -3457,9 +3447,10 @@ namespace Unity.Netcode.Components
         private NetworkTransformMessage m_OutboundMessage = new NetworkTransformMessage();
 
 
-        internal void SerializeMessage(FastBufferWriter writer, int targetVersion)
+        internal int SerializeMessage(FastBufferWriter writer, int targetVersion)
         {
             var networkObject = NetworkObject;
+            var position = writer.Position;
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, (int)NetworkBehaviourId);
             writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
@@ -3476,6 +3467,7 @@ namespace Unity.Netcode.Components
                     BytePacker.WriteValuePacked(writer, targetId);
                 }
             }
+            return writer.Position - position;
         }
 
         /// <summary>
@@ -3532,6 +3524,7 @@ namespace Unity.Netcode.Components
                 // Clients (owner authoritative) send messages to the server-host
                 NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
+            m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OutboundMessage.BytesWritten;
         }
         #endregion
 
