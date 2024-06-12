@@ -57,7 +57,7 @@
         {
             "name": "com.unity.services.multiplayer",
             "expression": "0.2.0",
-            "define": "MULTIPLAYER_SDK_INSTALLED"
+            "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
         }
     ],
     "noEngineReferences": false

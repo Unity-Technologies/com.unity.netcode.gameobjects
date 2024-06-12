@@ -15,7 +15,13 @@
         "Unity.Burst",
         "Unity.Mathematics"
     ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
     "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -61,6 +67,12 @@
             "name": "com.unity.modules.physics2d",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS2D"
+        },
+        {
+            "name": "com.unity.services.multiplayer",
+            "expression": "0.2.0",
+            "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

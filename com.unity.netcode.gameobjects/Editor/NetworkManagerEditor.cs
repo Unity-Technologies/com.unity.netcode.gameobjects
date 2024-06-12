@@ -30,7 +30,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ProtocolVersionProperty;
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
-#if MULTIPLAYER_SDK_INSTALLED
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
         private SerializedProperty m_NetworkTopologyProperty;
 #endif
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
@@ -102,7 +102,7 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-#if MULTIPLAYER_SDK_INSTALLED
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -142,7 +142,7 @@ namespace Unity.Netcode.Editor
             m_ProtocolVersionProperty = m_NetworkConfigProperty.FindPropertyRelative("ProtocolVersion");
             m_NetworkTransportProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTransport");
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
-#if MULTIPLAYER_SDK_INSTALLED
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -186,7 +186,7 @@ namespace Unity.Netcode.Editor
 
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
-#if MULTIPLAYER_SDK_INSTALLED
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
 #endif
                 EditorGUILayout.PropertyField(m_ProtocolVersionProperty);

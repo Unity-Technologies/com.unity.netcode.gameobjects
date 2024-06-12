@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-#if MULTIPLAYER_SDK_INSTALLED
+#if BYPASS_DEFAULT_ENUM_DRAWER && MULTIPLAYER_SERVICES_SDK_INSTALLED
 using System.Linq;
 #endif
 using UnityEditor;
@@ -148,7 +148,7 @@ namespace Unity.Netcode.Editor
 
     // Keeping this here just in case, but it appears that in Unity 6 the visual bugs with
     // enum flags is resolved
-#if BYPASS_DEFAULT_ENUM_DRAWER && MULTIPLAYER_SDK_INSTALLED
+#if BYPASS_DEFAULT_ENUM_DRAWER && MULTIPLAYER_SERVICES_SDK_INSTALLED
     [CustomPropertyDrawer(typeof(NetworkObject.OwnershipStatus))]
     public class NetworkObjectOwnership : PropertyDrawer
     {
