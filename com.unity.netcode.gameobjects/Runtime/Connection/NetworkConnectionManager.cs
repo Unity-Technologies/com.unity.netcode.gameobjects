@@ -1229,7 +1229,7 @@ namespace Unity.Netcode
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
                 MessageManager?.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
 
-// Used for testing/validation purposes only
+                // Used for testing/validation purposes only
 #if ENABLE_DAHOST_AUTOPROMOTE_SESSION_OWNER
                 if (NetworkManager.DistributedAuthorityMode && !NetworkManager.ShutdownInProgress && NetworkManager.IsListening)
                 {

@@ -90,8 +90,6 @@ namespace Unity.Netcode.Components
             m_Rigidbody2D = rigidbody2D;
             m_Rigidbody = rigidbody;
             NetworkTransform = networkTransform;
-            m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
-            m_TickRate = NetworkManager.NetworkConfig.TickRate;
 
             if (m_IsRigidbody2D && m_Rigidbody2D == null)
             {
@@ -629,6 +627,8 @@ namespace Unity.Netcode.Components
         /// <inheritdoc />
         public override void OnNetworkSpawn()
         {
+            m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
+            m_TickRate = NetworkManager.NetworkConfig.TickRate;
             UpdateOwnershipAuthority();
         }
 
