@@ -920,6 +920,22 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region PROPERTIES AND GENERAL METHODS
+
+
+        public enum AuthorityModes
+        {
+            Server,
+            Owner,
+        }
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+        [Tooltip("Selects who has authority (sends state updates) over the transform. When the network topology is set to distributed authority, this always defaults to owner authority. If server (the default), then only server-side adjustments to the " +
+            "transform will be synchronized with clients. If owner (or client), then only the owner-side adjustments to the transform will be synchronized with both the server and other clients.")]
+#else
+        [Tooltip("Selects who has authority (sends state updates) over the transform. If server (the default), then only server-side adjustments to the transform will be synchronized with clients. If owner (or client), " +
+            "then only the owner-side adjustments to the transform will be synchronized with both the server and other clients.")]
+#endif
+        public AuthorityModes AuthorityMode;
+
         /// <summary>
         /// The default position change threshold value.
         /// Any changes above this threshold will be replicated.
@@ -3396,28 +3412,32 @@ namespace Unity.Netcode.Components
 #endif
 
         /// <summary>
-        /// Override this method and return false to switch to owner authoritative mode
+        /// Determines whether the <see cref="NetworkTransform"/> is <see cref="AuthorityModes.Server"/> or <see cref="AuthorityModes.Owner"/> based on the <see cref="AuthorityMode"/> property.
+        /// You can override this method to control this logic. 
         /// </summary>
-        /// <returns>(<see cref="true"/> or <see cref="false"/>) where when false it runs as owner-client authoritative</returns>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         protected virtual bool OnIsServerAuthoritative()
         {
-            if (m_CachedNetworkManager)
-            {
-                return !m_CachedNetworkManager.DistributedAuthorityMode;
-            }
-            return true;
+            return AuthorityMode == AuthorityModes.Server;
         }
 
         /// <summary>
         /// Method to determine if this <see cref="NetworkTransform"/> instance is owner or server authoritative.
         /// </summary>
         /// <remarks>
-        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> <see cref="NetworkConfig.NetworkTopology"/>, this will always be viewed as a <see cref="AuthorityModes.Owner"/> authoritative motion model.
         /// </remarks>
         /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public bool IsServerAuthoritative()
         {
-            return OnIsServerAuthoritative();
+            if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
+            {
+                return false;
+            }
+            else
+            {
+                return OnIsServerAuthoritative();
+            }
         }
 
         #endregion
