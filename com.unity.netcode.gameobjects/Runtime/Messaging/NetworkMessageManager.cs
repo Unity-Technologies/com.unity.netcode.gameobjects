@@ -123,8 +123,6 @@ namespace Unity.Netcode
             public VersionGetter GetVersion;
         }
 
-        private static Dictionary<Type, INetworkMessage> s_ReceiveMessages = new Dictionary<Type, INetworkMessage>();
-
         public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
@@ -562,14 +560,7 @@ namespace Unity.Netcode
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
             var messageType = typeof(T);
-            // Since received messages are processed synchronously, we can allocate a single INetworkMessage instance of type (T) to be used for processing the incoming message
-            // as opposed to allocating one each time we receive a message.
-            if (!s_ReceiveMessages.ContainsKey(messageType))
-            {
-                s_ReceiveMessages.Add(messageType, new T());
-            }
-            // Assure message is cast to type (T)
-            var message = (T)s_ReceiveMessages[messageType];
+            var message = new T();
             var messageVersion = 0;
 
             // Special cases because these are the messages that carry the version info - thus the version info isn't
