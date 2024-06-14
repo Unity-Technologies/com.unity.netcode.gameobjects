@@ -1710,6 +1710,7 @@ namespace Unity.Netcode.Components
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
             var positionThreshold =  Vector3.one * PositionThreshold;
+            var rotationThreshold = Vector3.one * RotAngleThreshold;
 #endif
             var rotAngles = rotation.eulerAngles;
             var scale = transformToUse.localScale;
