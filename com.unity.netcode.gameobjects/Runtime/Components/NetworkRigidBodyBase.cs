@@ -45,6 +45,8 @@ namespace Unity.Netcode.Components
         private Rigidbody m_Rigidbody;
         private Rigidbody2D m_Rigidbody2D;
         internal NetworkTransform NetworkTransform;
+        private float m_TickFrequency;
+
         private enum InterpolationTypes
         {
             None,
@@ -87,6 +89,7 @@ namespace Unity.Netcode.Components
             m_Rigidbody2D = rigidbody2D;
             m_Rigidbody = rigidbody;
             NetworkTransform = networkTransform;
+            m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
 
             if (m_IsRigidbody2D && m_Rigidbody2D == null)
             {
@@ -118,6 +121,20 @@ namespace Unity.Netcode.Components
             {
                 SetIsKinematic(true);
             }
+        }
+
+        internal Vector3 GetAdjustedPositionThreshold()
+        {
+            var threshold = NetworkTransform.PositionThreshold;
+            var perTickVelocity = m_Rigidbody.linearVelocity * m_TickFrequency * threshold;
+            var minThreshold = NetworkTransform.PositionThreshold * m_TickFrequency;
+
+            // Adjust threshold downwards as velocity lowers and increments are well below threshold values
+            perTickVelocity.x = Mathf.Clamp(Mathf.Abs(perTickVelocity.x), minThreshold, threshold);
+            perTickVelocity.y = Mathf.Clamp(Mathf.Abs(perTickVelocity.y), minThreshold, threshold);
+            perTickVelocity.z = Mathf.Clamp(Mathf.Abs(perTickVelocity.z), minThreshold, threshold);
+
+            return perTickVelocity;            
         }
 
         /// <summary>

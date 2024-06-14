@@ -1697,9 +1697,17 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+
+            var positionThreshold = Vector3.one * PositionThreshold;
+
+            if (m_UseRigidbodyForMotion)
+            {
+                positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
+            }
 #else
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            var positionThreshold =  Vector3.one * PositionThreshold;
 #endif
             var rotAngles = rotation.eulerAngles;
             var scale = transformToUse.localScale;
@@ -1826,21 +1834,21 @@ namespace Unity.Netcode.Components
             // Begin delta checks against last sent state update
             if (!UseHalfFloatPrecision)
             {
-                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync))
                 {
                     networkState.PositionX = position.x;
                     networkState.HasPositionX = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync))
                 {
                     networkState.PositionY = position.y;
                     networkState.HasPositionY = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync))
                 {
                     networkState.PositionZ = position.z;
                     networkState.HasPositionZ = true;
@@ -1861,7 +1869,7 @@ namespace Unity.Netcode.Components
                 {
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Math.Abs(position[i] - m_HalfPositionState.PreviousPosition[i]) >= PositionThreshold)
+                        if (Math.Abs(position[i] - m_HalfPositionState.PreviousPosition[i]) >= positionThreshold[i])
                         {
                             isPositionDirty = i == 0 ? SyncPositionX : i == 1 ? SyncPositionY : SyncPositionZ;
                             if (!isPositionDirty)
@@ -3018,6 +3026,7 @@ namespace Unity.Netcode.Components
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = isOwnershipChange;
                     SetState(teleportDisabled: false);
                 }
 
@@ -3292,7 +3301,7 @@ namespace Unity.Netcode.Components
             {
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
-                var offset = (float)serverTime.TickOffset;
+                //var offset = (float)serverTime.TickOffset;
 #if COM_UNITY_MODULES_PHYSICS
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
@@ -3310,7 +3319,7 @@ namespace Unity.Netcode.Components
                 //offset = m_NetworkTransformTickRegistration.Offset;
                 //}
 
-                var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo, offset).Time;
+                var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
 
                 // Now only update the interpolators for the portions of the transform being synchronized
                 if (SynchronizePosition)
