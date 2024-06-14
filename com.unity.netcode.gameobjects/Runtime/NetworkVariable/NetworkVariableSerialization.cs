@@ -35,11 +35,11 @@ namespace Unity.Netcode
     {
         public void Write(FastBufferWriter writer, ref byte value)
         {
-            BytePacker.WriteValueBitPacked(writer, value);
+            writer.WriteValue(value);
         }
         public void Read(FastBufferReader reader, ref byte value)
         {
-            ByteUnpacker.ReadValueBitPacked(reader, out value);
+            reader.ReadValue(out value);
         }
 
         public void WriteDelta(FastBufferWriter writer, ref byte value, ref byte previousValue)
@@ -51,7 +51,7 @@ namespace Unity.Netcode
             Read(reader, ref value);
         }
 
-        void INetworkVariableSerializer<short>.ReadWithAllocator(FastBufferReader reader, out byte value, Allocator allocator)
+        void INetworkVariableSerializer<byte>.ReadWithAllocator(FastBufferReader reader, out byte value, Allocator allocator)
         {
             throw new NotImplementedException();
         }
