@@ -46,6 +46,7 @@ namespace Unity.Netcode.Components
         private Rigidbody2D m_Rigidbody2D;
         internal NetworkTransform NetworkTransform;
         private float m_TickFrequency;
+        private float m_TickRate;
 
         private enum InterpolationTypes
         {
@@ -90,6 +91,7 @@ namespace Unity.Netcode.Components
             m_Rigidbody = rigidbody;
             NetworkTransform = networkTransform;
             m_TickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
+            m_TickRate = NetworkManager.NetworkConfig.TickRate;
 
             if (m_IsRigidbody2D && m_Rigidbody2D == null)
             {
@@ -125,16 +127,125 @@ namespace Unity.Netcode.Components
 
         internal Vector3 GetAdjustedPositionThreshold()
         {
-            var threshold = NetworkTransform.PositionThreshold;
-            var perTickVelocity = m_Rigidbody.linearVelocity * m_TickFrequency * threshold;
-            var minThreshold = NetworkTransform.PositionThreshold * m_TickFrequency;
+            // Since the threshold is a measurement of unity world space units per tick, we will allow for the maximum threshold
+            // to be no greater than the threshold measured in unity world space units per second
+            var thresholdMax = NetworkTransform.PositionThreshold * m_TickRate;
+            // Get the velocity in unity world space units per tick
+            var perTickVelocity = GetLinearVelocity() * m_TickFrequency;
+            // Since a rigid body can have "micro-motion" when allowed to come to rest (based on friction etc), we will allow for
+            // no less than 1/10th the threshold value.
+            var minThreshold = NetworkTransform.PositionThreshold * 0.1f;
 
-            // Adjust threshold downwards as velocity lowers and increments are well below threshold values
-            perTickVelocity.x = Mathf.Clamp(Mathf.Abs(perTickVelocity.x), minThreshold, threshold);
-            perTickVelocity.y = Mathf.Clamp(Mathf.Abs(perTickVelocity.y), minThreshold, threshold);
-            perTickVelocity.z = Mathf.Clamp(Mathf.Abs(perTickVelocity.z), minThreshold, threshold);
+            // Finally, we adjust the threshold based on the body's current velocity
+            perTickVelocity.x = Mathf.Clamp(Mathf.Abs(perTickVelocity.x), minThreshold, thresholdMax);
+            perTickVelocity.y = Mathf.Clamp(Mathf.Abs(perTickVelocity.y), minThreshold, thresholdMax);
+            // 2D Rigidbody only moves on x & y axis
+            if (!m_IsRigidbody2D)
+            {
+                perTickVelocity.z = Mathf.Clamp(Mathf.Abs(perTickVelocity.z), minThreshold, thresholdMax);
+            }
 
-            return perTickVelocity;            
+            return perTickVelocity;
+        }
+
+        internal Vector3 GetAdjustedRotationThreshold()
+        {
+            // Since the rotation threshold is a measurement pf degrees per tick, we get the maximum threshold
+            // by calculating the threshold in degrees per second.
+            var thresholdMax = NetworkTransform.RotAngleThreshold * m_TickRate;
+            // Angular velocity is expressed in radians per second where as the rotation being checked is in degrees.
+            // Convert the angular velocity to degrees per second and then convert that to degrees per tick.
+            var rotationPerTick = (GetAngularVelocity() * Mathf.Rad2Deg) * m_TickFrequency;
+            var minThreshold = NetworkTransform.RotAngleThreshold * m_TickFrequency;
+
+            // 2D Rigidbody only rotates around Z axis
+            if (!m_IsRigidbody2D)
+            {
+                rotationPerTick.x = Mathf.Clamp(Mathf.Abs(rotationPerTick.x), minThreshold, thresholdMax);
+                rotationPerTick.y = Mathf.Clamp(Mathf.Abs(rotationPerTick.y), minThreshold, thresholdMax);
+            }
+            rotationPerTick.z = Mathf.Clamp(Mathf.Abs(rotationPerTick.z), minThreshold, thresholdMax);
+
+            return rotationPerTick;
+        }
+
+        /// <summary>
+        /// Sets the linear velocity of the Rigidbody.
+        /// </summary>
+        /// <remarks>
+        /// For <see cref="Rigidbody2D"/>, only the x and y components of the <see cref="Vector3"/> are applied.
+        /// </remarks>        
+        public void SetLinearVelocity(Vector3 linearVelocity)
+        {
+            if (m_IsRigidbody2D)
+            {
+                m_Rigidbody2D.velocity = linearVelocity;
+            }
+            else
+            {
+                m_Rigidbody.linearVelocity = linearVelocity;
+            }
+        }
+
+        /// <summary>
+        /// Gets the linear velocity of the Rigidbody.
+        /// </summary>
+        /// <remarks>
+        /// For <see cref="Rigidbody2D"/>, the <see cref="Vector3"/> velocity returned is only applied to the x and y components.
+        /// </remarks>
+        /// <returns><see cref="Vector3"/> as the linear velocity</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetLinearVelocity()
+        {
+            if (m_IsRigidbody2D)
+            {
+                return m_Rigidbody2D.velocity;
+            }
+            else
+            {
+                return m_Rigidbody.linearVelocity;
+            }
+        }
+
+        /// <summary>
+        /// Sets the angular velocity for the Rigidbody.
+        /// </summary>
+        /// <remarks>
+        /// For <see cref="Rigidbody2D"/>, the z component of <param name="angularVelocity"/> is only used to set the angular velocity.
+        /// A quick way to pass in a 2D angular velocity component is: <see cref="Vector3.forward"/> * angularVelocity (where angularVelocity is a float)
+        /// </remarks>
+        /// <param name="angularVelocity">the angular velocity to apply to the body</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetAngularVelocity(Vector3 angularVelocity)
+        {
+            if (m_IsRigidbody2D)
+            {
+                m_Rigidbody2D.angularVelocity = angularVelocity.z;
+            }
+            else
+            {
+                m_Rigidbody.angularVelocity = angularVelocity;
+            }
+        }
+
+        /// <summary>
+        /// Gets the angular velocity for the Rigidbody.
+        /// </summary>
+        /// <remarks>
+        /// For <see cref="Rigidbody2D"/>, the z component of the <see cref="Vector3"/> returned is the angular velocity of the object.
+        /// </remarks>
+        /// <returns>angular velocity as a <see cref="Vector3"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetAngularVelocity()
+        {
+            if (m_IsRigidbody2D)
+            {
+                return Vector3.forward * m_Rigidbody2D.velocity;
+            }
+            else
+            {
+                return m_Rigidbody.angularVelocity;
+            }
         }
 
         /// <summary>
