@@ -3009,7 +3009,13 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_CachedNetworkObject = NetworkObject;
+            if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
+            {
+                AuthorityMode = AuthorityModes.Owner;
+            }
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
+
+
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
 
@@ -3512,7 +3518,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            bool isServerAuthoritative = OnIsServerAuthoritative();
+            bool isServerAuthoritative = IsServerAuthoritative();
             if (isServerAuthoritative && !IsServer)
             {
                 Debug.LogError($"Server authoritative {nameof(NetworkTransform)} can only be updated by the server!");
