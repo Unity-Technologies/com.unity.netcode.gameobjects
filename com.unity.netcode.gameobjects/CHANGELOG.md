@@ -11,11 +11,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added event `NetworkManager.OnSessionOwnerPromoted` that is invoked when a new session owner promotion occurs. (#2948)
+- Added `NetworkRigidBodyBase.GetLinearVelocity` and `NetworkRigidBodyBase.SetLinearVelocity` convenience/helper methods. (#2948)
+- Added `NetworkRigidBodyBase.GetAngularVelocity` and `NetworkRigidBodyBase.SetAngularVelocity` convenience/helper methods. (#2948)
 
 ### Fixed
 
 - Fixed issue when `NetworkTransform` half float precision is enabled and ownership changes the current base position was not being synchronized. (#2948)
 - Fixed issue where `OnClientConnected` not being invoked on the session owner when connecting to a new distributed authority session. (#2948)
+- Fixed issue where Rigidbody micro-motion (i.e. relatively small velocities) would result in non-authority instances slightly stuttering as the body would come to a rest (i.e. no motion). Now, the threshold value can increase at higher velocities and can decrease slightly below the provided threshold to account for this. (#2948)
 
 ### Changed
 
