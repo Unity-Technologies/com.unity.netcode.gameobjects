@@ -17,6 +17,8 @@ namespace Unity.Netcode
         internal NetworkTransform.NetworkTransformState State;
         private FastBufferReader m_CurrentReader;
 
+        internal int BytesWritten;
+
         private unsafe void CopyPayload(ref FastBufferWriter writer)
         {
             writer.WriteBytesSafe(m_CurrentReader.GetUnsafePtrAtCurrentPosition(), m_CurrentReader.Length - m_CurrentReader.Position);
@@ -30,7 +32,7 @@ namespace Unity.Netcode
             }
             else
             {
-                NetworkTransform.SerializeMessage(writer, targetVersion);
+                BytesWritten = NetworkTransform.SerializeMessage(writer, targetVersion);
             }
         }
 
@@ -75,6 +77,7 @@ namespace Unity.Netcode
                 ownerAuthoritativeServerSide = !isServerAuthoritative && networkManager.IsServer;
 
                 reader.ReadNetworkSerializableInPlace(ref NetworkTransform.InboundState);
+                NetworkTransform.InboundState.LastSerializedSize = reader.Position - currentPosition;
             }
             else
             {

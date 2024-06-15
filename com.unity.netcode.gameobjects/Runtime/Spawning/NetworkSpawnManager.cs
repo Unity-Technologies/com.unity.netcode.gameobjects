@@ -275,17 +275,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns a list of all NetworkObjects that belong to a client.
+        /// Returns an array of all NetworkObjects that belong to a client.
         /// </summary>
-        /// <param name="clientId">the client's id  <see cref="NetworkManager.LocalClientId"/></param>
-        /// <returns>returns the list of <see cref="NetworkObject"/>s owned by the client</returns>
-        public List<NetworkObject> GetClientOwnedObjects(ulong clientId)
+        /// <param name="clientId">the client's id <see cref="NetworkManager.LocalClientId"/></param>
+        /// <returns>returns an array of the <see cref="NetworkObject"/>s owned by the client</returns>
+        public NetworkObject[] GetClientOwnedObjects(ulong clientId)
         {
             if (!OwnershipToObjectsTable.ContainsKey(clientId))
             {
                 OwnershipToObjectsTable.Add(clientId, new Dictionary<ulong, NetworkObject>());
             }
-            return OwnershipToObjectsTable[clientId].Values.ToList();
+            return OwnershipToObjectsTable[clientId].Values.ToArray();
         }
 
         /// <summary>

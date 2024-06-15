@@ -430,7 +430,7 @@ namespace Unity.Netcode
         /// Determines whether a NetworkObject can be distributed to other clients during
         /// a <see cref="NetworkTopologyTypes.DistributedAuthority"/> session.
         /// </summary>
-#if !MULTIPLAYER_SDK_INSTALLED
+#if !MULTIPLAYER_SERVICES_SDK_INSTALLED
         [HideInInspector]
 #endif
         [SerializeField]

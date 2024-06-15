@@ -36,17 +36,13 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+        internal static bool IsDistributedAuthority;
+
         /// <summary>
         /// Distributed Authority Mode
         /// Returns true if the current session is running in distributed authority mode.
         /// </summary>
-        public bool DistributedAuthorityMode
-        {
-            get
-            {
-                return NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority;
-            }
-        }
+        public bool DistributedAuthorityMode { get; private set; }
 
         /// <summary>
         /// Distributed Authority Mode
@@ -131,6 +127,18 @@ namespace Unity.Netcode
 
         public ulong CurrentSessionOwner { get; internal set; }
 
+        /// <summary>
+        /// Delegate declaration for <see cref="OnSessionOwnerPromoted"/>
+        /// </summary>
+        /// <param name="sessionOwnerPromoted">the new session owner client identifier</param>
+        public delegate void OnSessionOwnerPromotedDelegateHandler(ulong sessionOwnerPromoted);
+
+        /// <summary>
+        /// Network Topology: Distributed Authority
+        /// When a new session owner is promoted, this event is triggered on all connected clients
+        /// </summary>
+        public event OnSessionOwnerPromotedDelegateHandler OnSessionOwnerPromoted;
+
         internal void SetSessionOwner(ulong sessionOwner)
         {
             var previousSessionOwner = CurrentSessionOwner;
@@ -151,10 +159,12 @@ namespace Unity.Netcode
                     }
                 }
             }
+
+            OnSessionOwnerPromoted?.Invoke(sessionOwner);
         }
 
         // TODO: Make this internal after testing
-        public void PromoteSessionOwner(ulong clientId)
+        internal void PromoteSessionOwner(ulong clientId)
         {
             if (!DistributedAuthorityMode)
             {
@@ -217,12 +227,27 @@ namespace Unity.Netcode
 #endif
         }
 
+        private void UpdateTopology()
+        {
+            var transportTopology = IsListening ? NetworkConfig.NetworkTransport.CurrentTopology() : NetworkConfig.NetworkTopology;
+            if (transportTopology != NetworkConfig.NetworkTopology)
+            {
+                NetworkLog.LogErrorServer($"[Topology Mismatch] Transport detected an issue with the topology ({transportTopology} | {NetworkConfig.NetworkTopology}) usage or setting! Disconnecting from session.");
+                Shutdown();
+            }
+            else
+            {
+                IsDistributedAuthority = DistributedAuthorityMode = transportTopology == NetworkTopologyTypes.DistributedAuthority;
+            }
+        }
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
+                        UpdateTopology();
                         ConnectionManager.ProcessPendingApprovals();
                         ConnectionManager.PollAndHandleNetworkEvents();
 
@@ -1011,6 +1036,8 @@ namespace Unity.Netcode
             NetworkTransformFixedUpdate.Clear();
 #endif
             NetworkTransformUpdate.Clear();
+
+            UpdateTopology();
 
             //DANGOEXP TODO: Remove this before finalizing the experimental release
             NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;

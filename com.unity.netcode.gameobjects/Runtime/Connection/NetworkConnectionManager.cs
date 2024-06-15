@@ -1229,6 +1229,8 @@ namespace Unity.Netcode
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
                 MessageManager?.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
 
+                // Used for testing/validation purposes only
+#if ENABLE_DAHOST_AUTOPROMOTE_SESSION_OWNER
                 if (NetworkManager.DistributedAuthorityMode && !NetworkManager.ShutdownInProgress && NetworkManager.IsListening)
                 {
                     var newSessionOwner = NetworkManager.LocalClientId;
@@ -1259,6 +1261,7 @@ namespace Unity.Netcode
                     MessageManager?.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
                     NetworkManager.SetSessionOwner(newSessionOwner);
                 }
+#endif
             }
 
             // If the client ID transport map exists

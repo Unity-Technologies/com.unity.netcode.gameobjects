@@ -1477,6 +1477,11 @@ namespace Unity.Netcode.Transports.UTP
         }
 #endif
 
+        protected override NetworkTopologyTypes OnCurrentTopology()
+        {
+            return NetworkManager != null ? NetworkManager.NetworkConfig.NetworkTopology : NetworkTopologyTypes.ClientServer;
+        }
+
         private string m_ServerPrivateKey;
         private string m_ServerCertificate;
 

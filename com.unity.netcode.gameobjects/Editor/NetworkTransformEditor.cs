@@ -30,6 +30,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_UseQuaternionCompression;
         private SerializedProperty m_UseHalfFloatPrecision;
         private SerializedProperty m_SlerpPosition;
+        private SerializedProperty m_AuthorityMode;
 
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
@@ -38,7 +39,7 @@ namespace Unity.Netcode.Editor
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
         /// <inheritdoc/>
-        public void OnEnable()
+        public virtual void OnEnable()
         {
             m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
@@ -59,12 +60,13 @@ namespace Unity.Netcode.Editor
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
             m_SlerpPosition = serializedObject.FindProperty(nameof(NetworkTransform.SlerpPosition));
+            m_AuthorityMode = serializedObject.FindProperty(nameof(NetworkTransform.AuthorityMode));
         }
 
         /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
-            EditorGUILayout.LabelField("Syncing", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
             {
                 GUILayout.BeginHorizontal();
 
@@ -126,6 +128,11 @@ namespace Unity.Netcode.Editor
                 GUILayout.EndHorizontal();
             }
 
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Authority", EditorStyles.boldLabel);
+            {
+                EditorGUILayout.PropertyField(m_AuthorityMode);
+            }
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Thresholds", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_PositionThresholdProperty);
