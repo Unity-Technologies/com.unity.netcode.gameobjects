@@ -51,6 +51,7 @@ namespace Unity.Netcode
 #pragma warning restore IDE0001
     [Serializable]
     [GenerateSerializationForGenericParameter(0)]
+    [GenerateSerializationForType(typeof(byte))]
     public class AnticipatedNetworkVariable<T> : NetworkVariableBase
     {
         [SerializeField]
