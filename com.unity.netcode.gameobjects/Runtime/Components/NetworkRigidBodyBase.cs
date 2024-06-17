@@ -336,7 +336,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        // Used for Rigidbody only (see info on normalized below)
         private Vector4 m_QuaternionCheck = Vector4.zero;
+
         /// <summary>
         /// Rotatates the Rigidbody towards a specified rotation
         /// </summary>
