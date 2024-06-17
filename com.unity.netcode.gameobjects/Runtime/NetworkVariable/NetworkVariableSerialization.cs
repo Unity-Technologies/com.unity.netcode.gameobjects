@@ -717,7 +717,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(value);
                 return;
             }
-            writer.WriteByte(0);
+            writer.WriteValueSafe(0);
             BytePacker.WriteValuePacked(writer, value.Length);
             writer.WriteValueSafe(changes);
             unsafe
@@ -766,7 +766,7 @@ namespace Unity.Netcode
                 {
                     if (changes.IsSet(i))
                     {
-                        reader.ReadByte(out ptr[i]);
+                        reader.ReadByteSafe(out ptr[i]);
                     }
                 }
             }
