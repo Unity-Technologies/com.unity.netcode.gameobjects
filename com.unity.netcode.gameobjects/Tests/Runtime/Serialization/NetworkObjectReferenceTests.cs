@@ -30,6 +30,7 @@ namespace Unity.Netcode.RuntimeTests
             [ServerRpc]
             public void SendReferenceServerRpc(NetworkObjectReference value)
             {
+                ReceivedRPC = true;
                 RpcReceivedGameObject = value;
                 RpcReceivedNetworkObject = value;
             }
