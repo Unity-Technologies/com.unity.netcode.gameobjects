@@ -66,6 +66,7 @@ namespace Unity.Netcode.Editor
         /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
+            var networkTransform = target as NetworkTransform;
             EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
             {
                 GUILayout.BeginHorizontal();
@@ -144,7 +145,10 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
-            EditorGUILayout.PropertyField(m_InterpolateProperty);
+            if (!networkTransform.HideInterpolateValue)
+            {
+                EditorGUILayout.PropertyField(m_InterpolateProperty);
+            }            
             EditorGUILayout.PropertyField(m_SlerpPosition);
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
