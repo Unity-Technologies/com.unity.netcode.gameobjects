@@ -148,7 +148,7 @@ namespace Unity.Netcode.Editor
             if (!networkTransform.HideInterpolateValue)
             {
                 EditorGUILayout.PropertyField(m_InterpolateProperty);
-            }            
+            }
             EditorGUILayout.PropertyField(m_SlerpPosition);
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)

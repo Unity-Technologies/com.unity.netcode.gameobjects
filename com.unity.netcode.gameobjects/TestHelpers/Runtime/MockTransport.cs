@@ -34,8 +34,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             var copy = new byte[payload.Array.Length];
             Array.Copy(payload.Array, copy, payload.Array.Length);
-            s_MessageQueue[clientId].Enqueue(new MessageData { FromClientId = TransportId, Payload = new ArraySegment<byte>(copy, payload.Offset, payload.Count), Event = NetworkEvent.Data, AvailableTime =
-                NetworkManager.RealTimeProvider.UnscaledTime + SimulatedLatencySeconds + Random.Range(-LatencyJitter, LatencyJitter) });
+            s_MessageQueue[clientId].Enqueue(new MessageData
+            {
+                FromClientId = TransportId,
+                Payload = new ArraySegment<byte>(copy, payload.Offset, payload.Count),
+                Event = NetworkEvent.Data,
+                AvailableTime =
+                NetworkManager.RealTimeProvider.UnscaledTime + SimulatedLatencySeconds + Random.Range(-LatencyJitter, LatencyJitter)
+            });
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
