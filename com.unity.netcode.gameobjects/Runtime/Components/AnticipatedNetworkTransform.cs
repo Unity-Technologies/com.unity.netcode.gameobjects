@@ -61,7 +61,6 @@ namespace Unity.Netcode.Components
         private TransformState m_AnticipatedTransform = new TransformState();
         private TransformState m_PreviousAnticipatedTransform = new TransformState();
         private ulong m_LastAnticipaionCounter;
-        private double m_LastAnticipationTime;
         private ulong m_LastAuthorityUpdateCounter;
 
         private TransformState m_SmoothFrom;
@@ -156,7 +155,6 @@ namespace Unity.Netcode.Components
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -183,7 +181,6 @@ namespace Unity.Netcode.Components
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -210,7 +207,6 @@ namespace Unity.Netcode.Components
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
 
             m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -238,9 +234,6 @@ namespace Unity.Netcode.Components
             }
 
             m_PreviousAnticipatedTransform = m_AnticipatedTransform;
-
-            m_LastAnticipaionCounter = NetworkManager.AnticipationSystem.AnticipationCounter;
-            m_LastAnticipationTime = NetworkManager.LocalTime.Time;
 
             m_SmoothDuration = 0;
             m_CurrentSmoothTime = 0;
@@ -325,7 +318,7 @@ namespace Unity.Netcode.Components
 
             public void Update()
             {
-                // No need to do this, it's handled by NetworkBehaviour.Update
+                // No need to do this, it's handled by NetworkTransform.OnUpdate
             }
 
             public void ResetAnticipation()
