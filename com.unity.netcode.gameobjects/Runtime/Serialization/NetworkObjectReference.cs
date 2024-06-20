@@ -10,6 +10,7 @@ namespace Unity.Netcode
     public struct NetworkObjectReference : INetworkSerializable, IEquatable<NetworkObjectReference>
     {
         private ulong m_NetworkObjectId;
+        private static ulong s_NullId = ulong.MaxValue;
 
         /// <summary>
         /// The <see cref="NetworkObject.NetworkObjectId"/> of the referenced <see cref="NetworkObject"/>.
@@ -30,7 +31,8 @@ namespace Unity.Netcode
         {
             if (networkObject == null)
             {
-                throw new ArgumentNullException(nameof(networkObject));
+                m_NetworkObjectId = s_NullId;
+                return;
             }
 
             if (networkObject.IsSpawned == false)
@@ -51,10 +53,16 @@ namespace Unity.Netcode
         {
             if (gameObject == null)
             {
-                throw new ArgumentNullException(nameof(gameObject));
+                m_NetworkObjectId = s_NullId;
+                return;
             }
 
-            var networkObject = gameObject.GetComponent<NetworkObject>() ?? throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            if (!networkObject)
+            {
+                throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
+            }
+
             if (networkObject.IsSpawned == false)
             {
                 throw new ArgumentException($"{nameof(NetworkObjectReference)} can only be created from spawned {nameof(NetworkObject)}s.");
@@ -80,10 +88,14 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkObjectRef">The reference.</param>
         /// <param name="networkManager">The networkmanager. Uses <see cref="NetworkManager.Singleton"/> to resolve if null.</param>
-        /// <returns>The resolves <see cref="NetworkObject"/>. Returns null if the networkobject was not found</returns>
+        /// <returns>The resolved <see cref="NetworkObject"/>. Returns null if the networkobject was not found</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject Resolve(NetworkObjectReference networkObjectRef, NetworkManager networkManager = null)
         {
+            if (networkObjectRef.m_NetworkObjectId == s_NullId)
+            {
+                return null;
+            }
             networkManager = networkManager ?? NetworkManager.Singleton;
             networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectRef.m_NetworkObjectId, out NetworkObject networkObject);
 

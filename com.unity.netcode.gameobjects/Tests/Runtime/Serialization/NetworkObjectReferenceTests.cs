@@ -19,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
     {
         private class TestNetworkBehaviour : NetworkBehaviour
         {
+            public static bool ReceivedRPC;
+
             public NetworkVariable<NetworkObjectReference> TestVariable = new NetworkVariable<NetworkObjectReference>();
 
             public NetworkObject RpcReceivedNetworkObject;
@@ -148,6 +150,60 @@ namespace Unity.Netcode.RuntimeTests
             Assert.NotNull(networkObject);
             networkObjectReference.TryGet(out NetworkObject result);
             Assert.AreEqual(networkObject, result);
+        }
+
+        public enum NetworkObjectConstructorTypes
+        {
+            None,
+            NullNetworkObject,
+            NullGameObject
+        }
+
+        [UnityTest]
+        public IEnumerator TestSerializeNull([Values] NetworkObjectConstructorTypes networkObjectConstructorTypes)
+        {
+            TestNetworkBehaviour.ReceivedRPC = false;
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            var testNetworkBehaviour = networkObjectContext.Object.gameObject.AddComponent<TestNetworkBehaviour>();
+            networkObjectContext.Object.Spawn();
+
+            switch (networkObjectConstructorTypes)
+            {
+                case NetworkObjectConstructorTypes.None:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference());
+                        break;
+                    }
+                case NetworkObjectConstructorTypes.NullNetworkObject:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference((NetworkObject)null));
+                        break;
+                    }
+                case NetworkObjectConstructorTypes.NullGameObject:
+                    {
+                        testNetworkBehaviour.SendReferenceServerRpc(new NetworkObjectReference((GameObject)null));
+                        break;
+                    }
+            }
+
+
+            // wait for rpc completion
+            float t = 0;
+            while (!TestNetworkBehaviour.ReceivedRPC)
+            {
+
+                t += Time.deltaTime;
+                if (t > 5f)
+                {
+                    new AssertionException("RPC with NetworkBehaviour reference hasn't been received");
+                }
+
+                yield return null;
+            }
+
+            // validate
+            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedNetworkObject);
+            Assert.AreEqual(null, testNetworkBehaviour.RpcReceivedGameObject);
         }
 
         [UnityTest]
@@ -302,24 +358,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Throws<ArgumentException>(() =>
             {
                 NetworkObjectReference outReference = gameObjectContext.Object;
-            });
-        }
-
-        [Test]
-        public void FailSerializeNullNetworkObject()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                NetworkObjectReference outReference = (NetworkObject)null;
-            });
-        }
-
-        [Test]
-        public void FailSerializeNullGameObject()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                NetworkObjectReference outReference = (GameObject)null;
             });
         }
 
