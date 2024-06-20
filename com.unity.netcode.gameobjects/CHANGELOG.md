@@ -29,6 +29,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkAnimator` no longer requires the `Animator` component to exist on the same `GameObject`. (#2957)
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2957)
 - Changed the client's owned objects is now returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes. (#2948)
 - Changed `NetworkTransfrom.TryCommitTransformToServer` to be internal as it will be removed by the final 2.0.0 release. (#2948)
 - Changed `NetworkTransformEditor.OnEnable` to a virtual method to be able to customize a `NetworkTransform` derived class by creating a derived editor control from `NetworkTransformEditor`. (#2948)
