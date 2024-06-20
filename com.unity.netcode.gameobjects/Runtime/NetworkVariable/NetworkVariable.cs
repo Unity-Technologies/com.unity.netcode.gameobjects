@@ -21,7 +21,6 @@ namespace Unity.Netcode
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
-        internal override NetworkVariableType Type => NetworkVariableType.Value;
 
         /// <summary>
         /// Constructor for <see cref="NetworkVariable{T}"/>

@@ -1050,7 +1050,8 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestUnsupportedManagedTypesWithUserSerializationDoNotThrowExceptions()
+        // Exceptions should be thrown in DA mode with UserNetworkVariableSerialization
+        public void TestUnsupportedManagedTypesWithUserSerializationDoNotThrowExceptionsInClientServerMode()
         {
             var variable = new NetworkVariable<string>();
             UserNetworkVariableSerialization<string>.ReadValue = (FastBufferReader reader, out string value) =>
@@ -1075,6 +1076,10 @@ namespace Unity.Netcode.RuntimeTests
                 using var reader = new FastBufferReader(writer, Allocator.None);
                 variable.ReadField(reader);
                 Assert.AreEqual("012345", variable.Value);
+            }
+            catch(Exception)
+            {
+                Assert.True(NetworkVariableSerialization<UserNetworkVariableSerialization<string>>.IsDistributedAuthority);
             }
             finally
             {

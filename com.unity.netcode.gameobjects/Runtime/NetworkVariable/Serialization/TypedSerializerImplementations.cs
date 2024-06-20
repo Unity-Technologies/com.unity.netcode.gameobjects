@@ -10,6 +10,23 @@ namespace Unity.Netcode
     /// </summary>
     internal class ShortSerializer : INetworkVariableSerializer<short>
     {
+        public NetworkVariableType Type => NetworkVariableType.Short;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref short value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref short value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref short value, ref short previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref short value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref short value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -46,6 +63,22 @@ namespace Unity.Netcode
     /// </summary>
     internal class UshortSerializer : INetworkVariableSerializer<ushort>
     {
+        public NetworkVariableType Type => NetworkVariableType.UShort;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref ushort value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref ushort value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref ushort value, ref ushort previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref ushort value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref ushort value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -82,6 +115,22 @@ namespace Unity.Netcode
     /// </summary>
     internal class IntSerializer : INetworkVariableSerializer<int>
     {
+        public NetworkVariableType Type => NetworkVariableType.Int;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref int value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref int value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref int value, ref int previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref int value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref int value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -118,6 +167,22 @@ namespace Unity.Netcode
     /// </summary>
     internal class UintSerializer : INetworkVariableSerializer<uint>
     {
+        public NetworkVariableType Type => NetworkVariableType.UInt;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref uint value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref uint value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref uint value, ref uint previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref uint value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref uint value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -154,6 +219,22 @@ namespace Unity.Netcode
     /// </summary>
     internal class LongSerializer : INetworkVariableSerializer<long>
     {
+        public NetworkVariableType Type => NetworkVariableType.Long;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref long value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref long value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref long value, ref long previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref long value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref long value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -190,6 +271,23 @@ namespace Unity.Netcode
     /// </summary>
     internal class UlongSerializer : INetworkVariableSerializer<ulong>
     {
+        public NetworkVariableType Type => NetworkVariableType.ULong;
+        public bool IsDistributedAuthorityOptimized => true;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref ulong value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref ulong value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref ulong value, ref ulong previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref ulong value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref ulong value)
         {
             BytePacker.WriteValueBitPacked(writer, value);
@@ -231,6 +329,23 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class UnmanagedTypeSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
     {
+        public NetworkVariableType Type => NetworkVariableType.Unmanaged;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(reader, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref T value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref T value)
         {
             writer.WriteUnmanagedSafe(value);
@@ -264,6 +379,22 @@ namespace Unity.Netcode
 
     internal class ListSerializer<T> : INetworkVariableSerializer<List<T>>
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref List<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref List<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref List<T> value, ref List<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref List<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref List<T> value)
         {
             var isNull = value == null;
@@ -350,6 +481,22 @@ namespace Unity.Netcode
 
     internal class HashSetSerializer<T> : INetworkVariableSerializer<HashSet<T>> where T : IEquatable<T>
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref HashSet<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref HashSet<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref HashSet<T> value, ref HashSet<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref HashSet<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref HashSet<T> value)
         {
             var isNull = value == null;
@@ -428,6 +575,22 @@ namespace Unity.Netcode
     internal class DictionarySerializer<TKey, TVal> : INetworkVariableSerializer<Dictionary<TKey, TVal>>
         where TKey : IEquatable<TKey>
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref Dictionary<TKey, TVal> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref Dictionary<TKey, TVal> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref Dictionary<TKey, TVal> value, ref Dictionary<TKey, TVal> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref Dictionary<TKey, TVal> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref Dictionary<TKey, TVal> value)
         {
             var isNull = value == null;
@@ -505,6 +668,22 @@ namespace Unity.Netcode
 
     internal class UnmanagedArraySerializer<T> : INetworkVariableSerializer<NativeArray<T>> where T : unmanaged
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref NativeArray<T> value)
         {
             writer.WriteUnmanagedSafe(value);
@@ -550,6 +729,22 @@ namespace Unity.Netcode
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
     internal class UnmanagedListSerializer<T> : INetworkVariableSerializer<NativeList<T>> where T : unmanaged
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeList<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref NativeList<T> value)
         {
             writer.WriteUnmanagedSafe(value);
@@ -593,6 +788,23 @@ namespace Unity.Netcode
 
     internal class NativeHashSetSerializer<T> : INetworkVariableSerializer<NativeHashSet<T>> where T : unmanaged, IEquatable<T>
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashSet<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeHashSet<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeHashSet<T> value, ref NativeHashSet<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeHashSet<T> value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref NativeHashSet<T> value)
         {
             writer.WriteValueSafe(value);
@@ -638,6 +850,23 @@ namespace Unity.Netcode
         where TKey : unmanaged, IEquatable<TKey>
         where TVal : unmanaged
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeHashMap<TKey, TVal> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value, ref NativeHashMap<TKey, TVal> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeHashMap<TKey, TVal> value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value)
         {
             writer.WriteValueSafe(value);
@@ -685,7 +914,22 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class FixedStringSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged, INativeList<byte>, IUTF8Bytes
     {
-        // The item type can only be bytes for fixedStrings, so the DA runtime doesn't need details on it
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref T value) => Read(reader, ref value);
 
         public void Write(FastBufferWriter writer, ref T value)
         {
@@ -802,6 +1046,22 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class FixedStringArraySerializer<T> : INetworkVariableSerializer<NativeArray<T>> where T : unmanaged, INativeList<byte>, IUTF8Bytes
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref NativeArray<T> value)
         {
             writer.WriteValueSafe(value);
@@ -852,6 +1112,23 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class FixedStringListSerializer<T> : INetworkVariableSerializer<NativeList<T>> where T : unmanaged, INativeList<byte>, IUTF8Bytes
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeList<T> value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref NativeList<T> value)
         {
             writer.WriteValueSafe(value);
@@ -899,6 +1176,23 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class UnmanagedNetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged, INetworkSerializable
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref T value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref T value)
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
@@ -951,6 +1245,22 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class UnmanagedNetworkSerializableArraySerializer<T> : INetworkVariableSerializer<NativeArray<T>> where T : unmanaged, INetworkSerializable
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref NativeArray<T> value)
         {
             writer.WriteNetworkSerializable(value);
@@ -1001,6 +1311,23 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class UnmanagedNetworkSerializableListSerializer<T> : INetworkVariableSerializer<NativeList<T>> where T : unmanaged, INetworkSerializable
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref NativeList<T> value) => Read(reader, ref value);
+
         public void Write(FastBufferWriter writer, ref NativeList<T> value)
         {
             writer.WriteNetworkSerializable(value);
@@ -1048,6 +1375,22 @@ namespace Unity.Netcode
     ///     <typeparam name="T"></typeparam>
     internal class ManagedNetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : class, INetworkSerializable, new()
     {
+        public NetworkVariableType Type => NetworkVariableType.Value;
+        public bool IsDistributedAuthorityOptimized => false;
+
+        public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
+        {
+            SerializationTools.WriteType(writer, Type);
+            Write(writer, ref value);
+        }
+
+        public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
+        {
+            SerializationTools.ReadType(reader, this);
+            Read(writer, ref value);
+        }
+        public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
+        public void ReadDeltaDistributedAuthority(FastBufferReader reader, ref T value) => Read(reader, ref value);
         public void Write(FastBufferWriter writer, ref T value)
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
