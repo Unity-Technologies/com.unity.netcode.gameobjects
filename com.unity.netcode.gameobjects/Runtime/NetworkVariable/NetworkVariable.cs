@@ -21,6 +21,29 @@ namespace Unity.Netcode
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
+
+        public delegate bool CheckExceedsDirtinessThresholdDelegate(in T previousValue, in T newValue);
+
+        public CheckExceedsDirtinessThresholdDelegate CheckExceedsDirtinessThreshold;
+
+        public override bool ExceedsDirtinessThreshold()
+        {
+            if (CheckExceedsDirtinessThreshold != null && m_HasPreviousValue)
+            {
+                return CheckExceedsDirtinessThreshold(m_PreviousValue, m_InternalValue);
+            }
+
+            return true;
+        }
+
+        public override void OnInitialize()
+        {
+            base.OnInitialize();
+
+            m_HasPreviousValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+        }
+
         internal override NetworkVariableType Type => NetworkVariableType.Value;
 
         /// <summary>

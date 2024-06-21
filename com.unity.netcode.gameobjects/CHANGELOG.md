@@ -6,10 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [2.0.0-pre.1] - 2024-06-17
+## [2.0.0-pre.2] - 2024-06-17
 
 ### Added
 
+- Added `AnticipatedNetworkVariable<T>`, which adds support for client anticipation of `NetworkVariable` values, allowing for more responsive gameplay. (#2957)
+- Added `AnticipatedNetworkTransform`, which adds support for client anticipation of NetworkTransforms. (#2957)
+- Added `NetworkVariableBase.ExceedsDirtinessThreshold` to allow network variables to throttle updates by only sending updates when the difference between the current and previous values exceeds a threshold. (This is exposed in `NetworkVariable<T>` with the callback `NetworkVariable<T>.CheckExceedsDirtinessThreshold`). (#2957)
+- Added `NetworkVariableUpdateTraits`, which add additional throttling support: `MinSecondsBetweenUpdates` will prevent the `NetworkVariable` from sending updates more often than the specified time period (even if it exceeds the dirtiness threshold), while `MaxSecondsBetweenUpdates` will force a dirty `NetworkVariable` to send an update after the specified time period even if it has not yet exceeded the dirtiness threshold. (#2957)
+- Added virtual method `NetworkVariableBase.OnInitialize` which can be used by `NetworkVariable` subclasses to add initialization code. (#2957)
+- Added `NetworkTime.TickWithPartial`, which represents the current tick as a double that includes the fractional/partial tick value. (#2957)
+- Added `NetworkTickSystem.AnticipationTick`, which can be helpful with implementation of client anticipation. This value represents the tick the current local client was at at the beginning of the most recent network round trip, which enables it to correlate server update ticks with the client tick that may have triggered them. (#2957)
 - Added event `NetworkManager.OnSessionOwnerPromoted` that is invoked when a new session owner promotion occurs. (#2948)
 - Added `NetworkRigidBodyBase.GetLinearVelocity` and `NetworkRigidBodyBase.SetLinearVelocity` convenience/helper methods. (#2948)
 - Added `NetworkRigidBodyBase.GetAngularVelocity` and `NetworkRigidBodyBase.SetAngularVelocity` convenience/helper methods. (#2948)
@@ -22,6 +29,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkAnimator` no longer requires the `Animator` component to exist on the same `GameObject`. (#2957)
+- Changed `NetworkObjectReference` and `NetworkBehaviourReference` to allow null references when constructing and serializing. (#2957)
 - Changed the client's owned objects is now returned (`NetworkClient` and `NetworkSpawnManager`) as an array as opposed to a list for performance purposes. (#2948)
 - Changed `NetworkTransfrom.TryCommitTransformToServer` to be internal as it will be removed by the final 2.0.0 release. (#2948)
 - Changed `NetworkTransformEditor.OnEnable` to a virtual method to be able to customize a `NetworkTransform` derived class by creating a derived editor control from `NetworkTransformEditor`. (#2948)

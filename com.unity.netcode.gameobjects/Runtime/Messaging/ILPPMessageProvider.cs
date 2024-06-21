@@ -47,6 +47,8 @@ namespace Unity.Netcode
             SessionOwner = 20,
             TimeSync = 21,
             Unnamed = 22,
+            AnticipationCounterSyncPingMessage = 23,
+            AnticipationCounterSyncPongMessage = 24,
         }
 
 
@@ -103,7 +105,9 @@ namespace Unity.Netcode
                 { typeof(ServerRpcMessage), NetworkMessageTypes.ServerRpc },
                 { typeof(TimeSyncMessage), NetworkMessageTypes.TimeSync },
                 { typeof(UnnamedMessage), NetworkMessageTypes.Unnamed },
-                { typeof(SessionOwnerMessage), NetworkMessageTypes.SessionOwner }
+                { typeof(SessionOwnerMessage), NetworkMessageTypes.SessionOwner },
+                { typeof(AnticipationCounterSyncPingMessage), NetworkMessageTypes.AnticipationCounterSyncPingMessage},
+                { typeof(AnticipationCounterSyncPongMessage), NetworkMessageTypes.AnticipationCounterSyncPongMessage},
             };
 
             // Assure the type to lookup table count and NetworkMessageType enum count matches (i.e. to catch human error when adding new messages)

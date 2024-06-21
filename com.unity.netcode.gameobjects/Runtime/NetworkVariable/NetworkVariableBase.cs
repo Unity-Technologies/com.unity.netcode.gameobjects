@@ -3,11 +3,26 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    public struct NetworkVariableUpdateTraits
+    {
+        [Tooltip("The minimum amount of time that must pass between sending updates. If this amount of time has not passed since the last update, dirtiness will be ignored.")]
+        public float MinSecondsBetweenUpdates;
+
+        [Tooltip("The maximum amount of time that a variable can be dirty without sending an update. If this amount of time has passed since the last update, an update will be sent even if the dirtiness threshold has not been met.")]
+        public float MaxSecondsBetweenUpdates;
+    }
+
     /// <summary>
     /// Interface for network value containers
     /// </summary>
     public abstract class NetworkVariableBase : IDisposable
     {
+        [SerializeField]
+        internal NetworkVariableUpdateTraits UpdateTraits = default;
+
+        [NonSerialized]
+        internal double LastUpdateSent;
+
         /// <summary>
         /// The delivery type (QoS) to send data with
         /// </summary>
@@ -52,7 +67,42 @@ namespace Unity.Netcode
                 m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
                 // When in distributed authority mode, there is no such thing as server write permissions
                 InternalWritePerm = m_InternalNetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
+
+                if (m_NetworkBehaviour.NetworkManager.NetworkTimeSystem != null)
+                {
+                    UpdateLastSentTime();
+                }
             }
+
+            OnInitialize();
+        }
+
+        /// <summary>
+        /// Called on initialization
+        /// </summary>
+        public virtual void OnInitialize()
+        {
+
+        }
+
+        /// <summary>
+        /// Sets the update traits for this network variable to determine how frequently it will send updates.
+        /// </summary>
+        /// <param name="traits"></param>
+        public void SetUpdateTraits(NetworkVariableUpdateTraits traits)
+        {
+            UpdateTraits = traits;
+        }
+
+        /// <summary>
+        /// Check whether or not this variable has changed significantly enough to send an update.
+        /// If not, no update will be sent even if the variable is dirty, unless the time since last update exceeds
+        /// the <see cref="UpdateTraits"/>' <see cref="NetworkVariableUpdateTraits.MaxSecondsBetweenUpdates"/>.
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ExceedsDirtinessThreshold()
+        {
+            return true;
         }
 
         /// <summary>
@@ -125,6 +175,25 @@ namespace Unity.Netcode
             }
         }
 
+        internal bool CanSend()
+        {
+            var timeSinceLastUpdate = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime - LastUpdateSent;
+            return
+                (
+                    UpdateTraits.MaxSecondsBetweenUpdates > 0 &&
+                    timeSinceLastUpdate >= UpdateTraits.MaxSecondsBetweenUpdates
+                ) ||
+                (
+                    timeSinceLastUpdate >= UpdateTraits.MinSecondsBetweenUpdates &&
+                    ExceedsDirtinessThreshold()
+                );
+        }
+
+        internal void UpdateLastSentTime()
+        {
+            LastUpdateSent = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
+        }
+
         internal static bool IgnoreInitializeWarning;
 
         protected void MarkNetworkBehaviourDirty()
@@ -147,6 +216,17 @@ namespace Unity.Netcode
                 }
                 return;
             }
+
+            if (!m_NetworkBehaviour.NetworkManager.IsListening)
+            {
+                if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to after the NetworkManager has already shutdown! " +
+                     "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
+                }
+                return;
+            }
+
             m_NetworkBehaviour.NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 

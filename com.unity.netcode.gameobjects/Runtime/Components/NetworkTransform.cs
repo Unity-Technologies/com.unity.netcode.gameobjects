@@ -17,6 +17,11 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Transform")]
     public class NetworkTransform : NetworkBehaviour
     {
+
+#if UNITY_EDITOR
+        internal virtual bool HideInterpolateValue => false;
+#endif
+
         #region NETWORK TRANSFORM STATE
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
@@ -2184,10 +2189,15 @@ namespace Unity.Netcode.Components
 
         internal bool LogMotion;
 
+        protected virtual void OnTransformUpdated()
+        {
+
+        }
+
         /// <summary>
         /// Applies the authoritative state to the transform
         /// </summary>
-        private void ApplyAuthoritativeState()
+        protected internal void ApplyAuthoritativeState()
         {
 #if COM_UNITY_MODULES_PHYSICS
             // TODO: Make this an authority flag
@@ -2391,6 +2401,7 @@ namespace Unity.Netcode.Components
                 }
                 transform.localScale = m_CurrentScale;
             }
+            OnTransformUpdated();
         }
 
         /// <summary>
@@ -2602,6 +2613,8 @@ namespace Unity.Netcode.Components
             {
                 AddLogEntry(ref newState, NetworkObject.OwnerClientId);
             }
+
+            OnTransformUpdated();
         }
 
         /// <summary>
@@ -2769,6 +2782,11 @@ namespace Unity.Netcode.Components
 
         }
 
+        protected virtual void OnBeforeUpdateTransformState()
+        {
+
+        }
+
         internal bool LogStateUpdate;
         /// <summary>
         /// Only non-authoritative instances should invoke this method
@@ -2809,6 +2827,10 @@ namespace Unity.Netcode.Components
                 }
                 Debug.Log(builder);
             }
+
+            // Notification prior to applying a state update
+            OnBeforeUpdateTransformState();
+
             // Apply the new state
             ApplyUpdatedState(newState);
 
