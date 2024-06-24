@@ -1250,9 +1250,8 @@ namespace Unity.Netcode
                 {
                     SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-                    // Notify the server that all in-scnee placed NetworkObjects are spawned at this time.
                     // Notify the server that everything should be synchronized/spawned at this time.
-                    SpawnManager.NotifyNetworkObjects(true, true);
+                    SpawnManager.NotifyNetworkObjectsSynchronized();
                     OnServerStarted?.Invoke();
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
@@ -1400,9 +1399,8 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-            // Notify the host that all in-scnee placed NetworkObjects are spawned at this time.
             // Notify the host that everything should be synchronized/spawned at this time.
-            SpawnManager.NotifyNetworkObjects(true, true);
+            SpawnManager.NotifyNetworkObjectsSynchronized();
 
             OnServerStarted?.Invoke();
             OnClientStarted?.Invoke();
