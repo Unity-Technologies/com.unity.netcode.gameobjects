@@ -2436,10 +2436,7 @@ namespace Unity.Netcode
                                 NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}][Scene Management Enabled] Synchronization complete!");
                             }
                             // For convenience, notify all NetworkBehaviours that synchronization is complete.
-                            foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
-                            {
-                                networkObject.InternalNetworkSessionSynchronized();
-                            }
+                            NetworkManager.SpawnManager.NotifyNetworkObjects(false, true);
 
                             if (NetworkManager.DistributedAuthorityMode && HasSceneAuthority() && IsRestoringSession)
                             {
