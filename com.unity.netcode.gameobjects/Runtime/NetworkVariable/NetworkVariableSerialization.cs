@@ -717,7 +717,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(value);
                 return;
             }
-            writer.WriteValueSafe(0);
+            writer.WriteByteSafe(0);
             BytePacker.WriteValuePacked(writer, value.Length);
             writer.WriteValueSafe(changes);
             unsafe
