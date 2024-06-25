@@ -1808,7 +1808,7 @@ namespace Unity.Netcode
             };
             DeferredDespawnObjects.Add(deferredDespawnObject);
         }
-        
+
         /// <summary>
         /// Processes any deferred despawn entries
         /// </summary>
@@ -1819,14 +1819,14 @@ namespace Unity.Netcode
             {
                 return;
             }
-            var currentTick = serverTime.Tick;            
+            var currentTick = serverTime.Tick;
             var deferredCallbackCount = DeferredDespawnObjects.Count();
             for (int i = 0; i < deferredCallbackCount - 1; i++)
             {
                 if (!DeferredDespawnObjects[i].HasDeferredDespawnCheck)
                 {
                     continue;
-                }                
+                }
                 var deferredObjectEntry = DeferredDespawnObjects[i];
                 var networkObject = SpawnedObjects[deferredObjectEntry.NetworkObjectId];
                 // Double check to make sure user did not remove the callback
@@ -1859,7 +1859,7 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
-                
+
                 // If the NetworkObject no longer exists, then remove the entry
                 if (!SpawnedObjects.ContainsKey(DeferredDespawnObjects[i].NetworkObjectId))
                 {
