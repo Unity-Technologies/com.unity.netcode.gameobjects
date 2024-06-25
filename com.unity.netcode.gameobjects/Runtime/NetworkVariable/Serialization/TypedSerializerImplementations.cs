@@ -680,7 +680,7 @@ namespace Unity.Netcode
 #endif
 
     /// <summary>
-    ///     Serializer for FixedStrings
+    /// Serializer for FixedStrings
     /// </summary>
     /// <typeparam name="T"></typeparam>
     internal class FixedStringSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged, INativeList<byte>, IUTF8Bytes
