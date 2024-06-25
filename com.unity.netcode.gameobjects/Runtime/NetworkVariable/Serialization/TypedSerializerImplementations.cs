@@ -731,7 +731,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            writer.WriteByte(0); // Flag that we're sending a delta
+            writer.WriteByteSafe(0); // Flag that we're sending a delta
             BytePacker.WriteValuePacked(writer, value.Length);
             writer.WriteValueSafe(changes);
             var ptr = value.GetUnsafePtr();
@@ -779,7 +779,7 @@ namespace Unity.Netcode
                 {
                     if (changes.IsSet(i))
                     {
-                        reader.ReadByte(out ptr[i]);
+                        reader.ReadByteSafe(out ptr[i]);
                     }
                 }
             }
