@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where internal delta serialization could not have a byte serializer defined when serializing deltas for other types. Added `[GenerateSerializationForType(typeof(byte))]` to both the `NetworkVariable` and `AnticipatedNetworkVariable` classes to assure a byte serializer is defined. (#2953)
 - Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session. (#2941)
 - Fixed issue with the host trying to send itself a message that it has connected when first starting up. (#2941)
 - Fixed issue where in-scene placed NetworkObjects could be destroyed if a client disconnects early and/or before approval. (#2923)
