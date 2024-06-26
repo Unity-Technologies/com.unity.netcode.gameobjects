@@ -87,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests
             Client.LogLevel = LogLevel.Developer;
 
             // Validate we are in distributed authority mode with client side spawning and using CMB Service
-            Assert.True(Client.DistributedAuthorityMode, "Distributed authority is not set!");
+            Assert.True(Client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
             Assert.True(Client.AutoSpawnPlayerPrefabClientSide, "Client side spawning is not set!");
             Assert.True(Client.CMBServiceConnection, "CMBServiceConnection is not set!");
 
@@ -101,6 +101,9 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnStartedServerAndClients()
         {
+            // Validate the NetworkManager are in distributed authority mode
+            Assert.True(Client.DistributedAuthorityMode, "Distributed authority is not set!");
+
             // Register hooks after starting clients and server (in this case just the one client)
             // We do this at this point in time because the MessageManager exists (happens within the same call stack when starting NetworkManagers)
             m_ClientCodecHook = new CodecTestHooks();
