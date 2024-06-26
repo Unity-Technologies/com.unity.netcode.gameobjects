@@ -950,7 +950,16 @@ namespace Unity.Netcode
                 // during OnNetworkSpawn has been sent and needs to be cleared
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    NetworkVariableFields[i].ResetDirty();
+                    var networkVariable = NetworkVariableFields[i];
+                    if (networkVariable.IsDirty())
+                    {
+                        if (networkVariable.CanSend())
+                        {
+                            networkVariable.UpdateLastSentTime();
+                            networkVariable.ResetDirty();
+                            networkVariable.SetDirty(false);
+                        }
+                    }
                 }
             }
             else
@@ -958,7 +967,16 @@ namespace Unity.Netcode
                 // mark any variables we wrote as no longer dirty
                 for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
                 {
-                    NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                    var networkVariable = NetworkVariableFields[NetworkVariableIndexesToReset[i]];
+                    if (networkVariable.IsDirty())
+                    {
+                        if (networkVariable.CanSend())
+                        {
+                            networkVariable.UpdateLastSentTime();
+                            networkVariable.ResetDirty();
+                            networkVariable.SetDirty(false);
+                        }
+                    }
                 }
             }
 
@@ -1001,7 +1019,10 @@ namespace Unity.Netcode
                     networkVariable = NetworkVariableFields[k];
                     if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                     {
-                        shouldSend = true;
+                        if (networkVariable.CanSend())
+                        {
+                            shouldSend = true;
+                        }
                         break;
                     }
                 }
@@ -1057,9 +1078,16 @@ namespace Unity.Netcode
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
-                if (NetworkVariableFields[i].IsDirty())
+                var networkVariable = NetworkVariableFields[i];
+                if (networkVariable.IsDirty())
                 {
-                    return true;
+                    if (networkVariable.CanSend())
+                    {
+                        return true;
+                    }
+                    // If it's dirty but can't be sent yet, we have to keep monitoring it until one of the
+                    // conditions blocking its send changes.
+                    NetworkManager.BehaviourUpdater.AddForUpdate(NetworkObject);
                 }
             }
 
@@ -1264,6 +1292,11 @@ namespace Unity.Netcode
         /// </typeparam>
         /// <param name="targetClientId">the relative client identifier being synchronized</param>
         protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+
+        }
+
+        public virtual void OnReanticipate(double lastRoundTripTime)
         {
 
         }

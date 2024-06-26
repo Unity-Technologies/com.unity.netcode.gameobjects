@@ -903,7 +903,7 @@ namespace Unity.Netcode.RuntimeTests
     }
 
     // Please do not reference TestClass_ReferencedOnlyByTemplateNetworkBehavourType anywhere other than here!
-    internal class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
+    internal class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehaviourType>
     {
 
     }

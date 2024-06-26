@@ -409,6 +409,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
+                        m_Diagnostics.AddError($"{type}: Managed type in NetworkVariable must implement IEquatable<{type}>");
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 

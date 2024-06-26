@@ -11,6 +11,7 @@ namespace Unity.Netcode
         private NetworkManager m_NetworkManager;
         private NetworkConnectionManager m_ConnectionManager;
         private HashSet<NetworkObject> m_DirtyNetworkObjects = new HashSet<NetworkObject>();
+        private HashSet<NetworkObject> m_PendingDirtyNetworkObjects = new HashSet<NetworkObject>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
@@ -18,7 +19,7 @@ namespace Unity.Netcode
 
         internal void AddForUpdate(NetworkObject networkObject)
         {
-            m_DirtyNetworkObjects.Add(networkObject);
+            m_PendingDirtyNetworkObjects.Add(networkObject);
         }
 
         internal void NetworkBehaviourUpdate()
@@ -28,6 +29,9 @@ namespace Unity.Netcode
 #endif
             try
             {
+                m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
+                m_PendingDirtyNetworkObjects.Clear();
+
                 // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
                 // trying to process them, even if they were previously marked as dirty.
                 m_DirtyNetworkObjects.RemoveWhere((sobj) => sobj == null);
