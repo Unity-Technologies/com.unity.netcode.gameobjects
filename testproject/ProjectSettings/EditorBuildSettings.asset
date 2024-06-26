@@ -152,6 +152,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/SessionSynchronize.unity
     guid: 468b795904b98234593ebc31bf0d578a
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/NetworkObjectSpawnerTest.unity
+    guid: 28ec9a0d98d9db64a9c57a79f38d6e0a
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}

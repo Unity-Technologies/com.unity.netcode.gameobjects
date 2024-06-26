@@ -1863,5 +1863,16 @@ namespace Unity.Netcode
                 DeferredDespawnObjects.Remove(deferredObjectEntry);
             }
         }
+
+        internal void NotifyNetworkObjectsSynchronized()
+        {
+            // Users could spawn NetworkObjects during these notifications.
+            // Create a separate list from the hashset to avoid list modification errors.
+            var spawnedObjects = SpawnedObjectsList.ToList();
+            foreach (var networkObject in spawnedObjects)
+            {
+                networkObject.InternalNetworkSessionSynchronized();
+            }
+        }
     }
 }

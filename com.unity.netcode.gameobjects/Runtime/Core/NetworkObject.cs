@@ -1547,6 +1547,11 @@ namespace Unity.Netcode
 
             if (NetworkManager.DistributedAuthorityMode)
             {
+                if (NetworkManager.LocalClient == null || !NetworkManager.IsConnectedClient || !NetworkManager.ConnectionManager.LocalClient.IsApproved)
+                {
+                    Debug.LogError($"Cannot spawn {name} until the client is fully connected to the session!");
+                    return;
+                }
                 if (NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
                     NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
@@ -2436,10 +2441,10 @@ namespace Unity.Netcode
             if (NetworkManager.DistributedAuthorityMode)
             {
                 var readerPosition = reader.Position;
-                reader.ReadValueSafe(out ushort behaviorCount);
-                if (behaviorCount != ChildNetworkBehaviours.Count)
+                reader.ReadValueSafe(out ushort behaviourCount);
+                if (behaviourCount != ChildNetworkBehaviours.Count)
                 {
-                    Debug.LogError($"Network Behavior Count Mismatch! [{readerPosition}][{reader.Position}]");
+                    Debug.LogError($"[{name}] Network Behavior Count Mismatch! [In: {behaviourCount} vs Local: {ChildNetworkBehaviours.Count}][StartReaderPos: {readerPosition}] CurrentReaderPos: {reader.Position}]");
                     return false;
                 }
             }
