@@ -1080,7 +1080,7 @@ namespace Unity.Netcode.RuntimeTests
                 variable.ReadField(reader);
                 Assert.AreEqual("012345", variable.Value);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Assert.True(NetworkVariableSerialization<UserNetworkVariableSerialization<string>>.IsDistributedAuthority);
             }
