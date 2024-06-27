@@ -336,6 +336,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        // Used for Rigidbody only (see info on normalized below)
+        private Vector4 m_QuaternionCheck = Vector4.zero;
+
         /// <summary>
         /// Rotatates the Rigidbody towards a specified rotation
         /// </summary>
@@ -353,6 +356,17 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                // Evidently we need to check to make sure the quaternion is a perfect
+                // magnitude of 1.0f when applying the rotation to a rigid body.
+                m_QuaternionCheck.x = rotation.x;
+                m_QuaternionCheck.y = rotation.y;
+                m_QuaternionCheck.z = rotation.z;
+                m_QuaternionCheck.w = rotation.w;
+                // If the magnitude is greater than 1.0f (even by a very small fractional value), then normalize the quaternion
+                if (m_QuaternionCheck.magnitude != 1.0f)
+                {
+                    rotation.Normalize();
+                }
                 m_Rigidbody.MoveRotation(rotation);
             }
         }

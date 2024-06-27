@@ -386,9 +386,12 @@ namespace Unity.Netcode.RuntimeTests
 
     // Used just to create a NetworkVariable in the templated NetworkBehaviour type that isn't referenced anywhere else
     // Please do not reference this class anywhere else!
-    internal class TestClass_ReferencedOnlyByTemplateNetworkBehavourType : TestClass
+    internal class TestClass_ReferencedOnlyByTemplateNetworkBehaviourType : TestClass, IEquatable<TestClass_ReferencedOnlyByTemplateNetworkBehaviourType>
     {
-
+        public bool Equals(TestClass_ReferencedOnlyByTemplateNetworkBehaviourType other)
+        {
+            return Equals((TestClass)other);
+        }
     }
 
     internal class NetworkVariableTest : NetworkBehaviour
@@ -921,7 +924,7 @@ namespace Unity.Netcode.RuntimeTests
                        m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour2>().TheVar.Value.SomeInt == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour2>().TheVar.Value.SomeInt;
             }
 
-            m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour2>().TheVar.Value = new TestClass_ReferencedOnlyByTemplateNetworkBehavourType { SomeInt = k_TestUInt, SomeBool = false };
+            m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour2>().TheVar.Value = new TestClass_ReferencedOnlyByTemplateNetworkBehaviourType { SomeInt = k_TestUInt, SomeBool = false };
             m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour2>().TheVar.SetDirty(true);
 
             // Wait for the client-side to notify it is finished initializing and spawning.
