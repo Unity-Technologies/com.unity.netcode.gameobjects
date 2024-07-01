@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
+using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -1991,6 +1992,8 @@ namespace Unity.Netcode
             // Update the clients
             NetworkManager.SpawnManager.UpdateObservedNetworkObjects(clientId);
 
+            SceneEventData.LogBuilder?.Clear();
+
             var sceneEventData = BeginSceneEvent();
             sceneEventData.ClientSynchronizationMode = ClientSynchronizationMode;
             sceneEventData.InitializeForSynch();
@@ -2064,6 +2067,15 @@ namespace Unity.Netcode
                 EventData = sceneEventData
             };
 
+            if (SceneEventDataSyncTool.Instance)
+            {
+                var sceneEventDataSynch = new SceneEventDataSynchronize();
+                sceneEventDataSynch.DuplicateSceneEventData(sceneEventData);
+                m_CacheAndCompare.Add(clientId, sceneEventDataSynch);
+            }
+
+            
+
             var size = 0;
             if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
             {
@@ -2087,6 +2099,38 @@ namespace Unity.Netcode
 
             EndSceneEvent(sceneEventData.SceneEventId);
         }
+
+        private Dictionary<ulong, SceneEventDataSynchronize> m_CacheAndCompare = new Dictionary<ulong, SceneEventDataSynchronize>();
+
+        public void CompareSynchronizationData(SceneEventDataSynchronize sceneEventDataSynchronize, RpcParams rpcParams = default)
+        {
+            if (!NetworkManager.LocalClient.IsSessionOwner)
+            {
+                Debug.LogError($"Client-{NetworkManager.LocalClientId} received CompareSynchronizationData and is not the session owner!");
+                return;
+            }
+
+            if (!m_CacheAndCompare.ContainsKey(rpcParams.Receive.SenderClientId))
+            {
+                Debug.LogError($"Client-{NetworkManager.LocalClientId} received CompareSynchronizationData but does not have any cached synchronize SceneEventData!");
+                return;
+            }
+
+            var original = m_CacheAndCompare[rpcParams.Receive.SenderClientId];
+            var sendData = original.GetSendData();
+            if (!sceneEventDataSynchronize.CompareSendDataWithReceivedData(ref sendData))
+            {
+                Debug.LogError($"Comparing Synchronization Data Failure for Client-{NetworkManager.LocalClientId}!");
+            }
+            else
+            {
+                Debug.Log($"Comparing Synchronization Data for Client-{NetworkManager.LocalClientId} Success!");
+            }
+            m_CacheAndCompare[rpcParams.Receive.SenderClientId].Dispose();
+            m_CacheAndCompare.Remove(rpcParams.Receive.SenderClientId);
+        }
+
+
 
         /// <summary>
         /// This is called when the client receives the <see cref="SceneEventType.Synchronize"/> event
@@ -2630,7 +2674,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool SkipSceneHandling;
 
-        private bool m_OriginalPostSynchronizationSceneUnloading;
+        private bool m_OriginalPostSynchronizationSceneUnloading;        
 
         /// <summary>
         /// Both Client and Server: Incoming scene event entry point
@@ -2642,6 +2686,9 @@ namespace Unity.Netcode
             if (NetworkManager != null)
             {
                 var sceneEventData = BeginSceneEvent();
+
+                var readerAsArray = reader.ToArray();
+
                 sceneEventData.Deserialize(reader);
                 if (SkipSceneHandling)
                 {
@@ -2717,8 +2764,21 @@ namespace Unity.Netcode
                             // to reconnect to a network session without having to unload all of the scenes and reload all of the scenes.
                             SceneManagerHandler.PopulateLoadedScenes(ref ScenesLoaded, NetworkManager);
                         }
+
+                        if (SceneEventDataSyncTool.Instance)
+                        {
+                            var sceneEventDataSynch = new SceneEventDataSynchronize();
+                            sceneEventDataSynch.DuplicateReader(ref readerAsArray);
+                            var rpcTarget = new RpcTarget(NetworkManager);
+                            SceneEventDataSyncTool.Instance.SubmitSceneEventData(sceneEventDataSynch, rpcTarget.Single(NetworkManager.CurrentSessionOwner, RpcTargetUse.Temp));
+                        }
                     }
                     HandleClientSceneEvent(sceneEventData.SceneEventId);
+                    if (SceneEventDataSyncTool.Instance && sceneEventData.SceneEventType == SceneEventType.SynchronizeComplete && sceneEventData.SenderClientId == NetworkManager.LocalClientId)
+                    {
+                        SceneEventDataSyncTool.Instance.SubmitSceneEventLog(SceneEventData.LogBuilder.ToString());
+                        SceneEventData.LogBuilder?.Clear();
+                    }
                 }
                 else
                 {

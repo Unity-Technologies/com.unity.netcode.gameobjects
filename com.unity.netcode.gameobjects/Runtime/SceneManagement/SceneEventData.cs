@@ -434,14 +434,18 @@ namespace Unity.Netcode
             return 0;
         }
 
-        internal bool EnableSerializationLogs = false;
+        internal bool EnableSerializationLogs = true;
+
+        public static StringBuilder LogBuilder;
+        internal bool HasExternalLogBuilder;
 
         private void LogArray(byte[] data, int start = 0, int stop = 0, StringBuilder builder = null)
         {
             var usingExternalBuilder = builder != null;
-            if (!usingExternalBuilder)
+            HasExternalLogBuilder = LogBuilder != null;
+            if (!usingExternalBuilder || HasExternalLogBuilder)
             {
-                builder = new StringBuilder();
+                builder = LogBuilder ?? new StringBuilder();
             }
 
             if (stop == 0)
@@ -456,7 +460,7 @@ namespace Unity.Netcode
             }
             builder.Append("\n");
 
-            if (!usingExternalBuilder)
+            if (!usingExternalBuilder && !HasExternalLogBuilder)
             {
                 UnityEngine.Debug.Log(builder.ToString());
             }
@@ -469,7 +473,7 @@ namespace Unity.Netcode
         /// Serializes data based on the SceneEvent type (<see cref="SceneEventType"/>)
         /// </summary>
         /// <param name="writer"><see cref="FastBufferWriter"/> to write the scene event data</param>
-        internal void Serialize(FastBufferWriter writer)
+        internal void Serialize(FastBufferWriter writer, bool useInternalBuffer = false)
         {
             // Write the scene event type
             writer.WriteValueSafe(SceneEventType);
@@ -515,7 +519,7 @@ namespace Unity.Netcode
                     {
                         writer.WriteValueSafe(ActiveSceneHash);
 
-                        WriteSceneSynchronizationData(writer);
+                        WriteSceneSynchronizationData(writer, useInternalBuffer);
 
                         if (EnableSerializationLogs)
                         {
@@ -564,12 +568,12 @@ namespace Unity.Netcode
         /// Called at the end of a <see cref="SceneEventType.Load"/> event once the scene is loaded and scene placed NetworkObjects
         /// have been locally spawned
         /// </summary>
-        internal void WriteSceneSynchronizationData(FastBufferWriter writer)
+        internal void WriteSceneSynchronizationData(FastBufferWriter writer, bool useInternalBuffer = false)
         {
             var builder = (StringBuilder)null;
             if (EnableSerializationLogs)
             {
-                builder = new StringBuilder();
+                builder = LogBuilder ?? new StringBuilder();
                 builder.AppendLine($"[Write][Synchronize-Start][WPos: {writer.Position}] Begin:");
             }
             // Write the scenes we want to load, in the order we want to load them
@@ -578,7 +582,7 @@ namespace Unity.Netcode
             // Store our current position in the stream to come back and say how much data we have written
             var positionStart = writer.Position;
 
-            if (m_NetworkManager.DistributedAuthorityMode && ForwardSynchronization && m_NetworkManager.DAHost)
+            if ((m_NetworkManager.DistributedAuthorityMode && ForwardSynchronization && m_NetworkManager.DAHost) || useInternalBuffer)
             {
                 writer.WriteValueSafe(m_InternalBufferSize);
                 CopyInternalBuffer(ref writer);
@@ -622,7 +626,7 @@ namespace Unity.Netcode
                     LogArray(writer.ToArray(), noStart, noStop, builder);
                 }
             }
-            if (EnableSerializationLogs)
+            if (EnableSerializationLogs && !HasExternalLogBuilder)
             {
                 UnityEngine.Debug.Log(builder.ToString());
             }
@@ -1089,7 +1093,7 @@ namespace Unity.Netcode
             var builder = (StringBuilder)null;
             if (EnableSerializationLogs)
             {
-                builder = new StringBuilder();
+                builder = LogBuilder ?? new StringBuilder();
             }
 
             try
@@ -1129,7 +1133,7 @@ namespace Unity.Netcode
                         }
                     }
                 }
-                if (EnableSerializationLogs)
+                if (EnableSerializationLogs && !HasExternalLogBuilder)
                 {
                     UnityEngine.Debug.Log(builder.ToString());
                 }
