@@ -1643,7 +1643,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            ownerClientId = networkManager.DistributedAuthorityMode ? networkManager.LocalClientId : NetworkManager.ServerClientId;
+            ownerClientId = networkManager.DistributedAuthorityMode ? networkManager.LocalClientId : ownerClientId;
             // We only need to check for authority when running in client-server mode
             if (!networkManager.IsServer && !networkManager.DistributedAuthorityMode)
             {
