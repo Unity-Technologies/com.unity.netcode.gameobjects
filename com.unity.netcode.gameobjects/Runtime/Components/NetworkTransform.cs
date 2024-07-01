@@ -3535,7 +3535,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void UpdateTransformState()
         {
-            if (m_CachedNetworkManager.ShutdownInProgress || (m_CachedNetworkManager.DistributedAuthorityMode && m_CachedNetworkObject.Observers.Count - 1 == 0))
+            if (m_CachedNetworkManager.ShutdownInProgress || (m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.CMBServiceConnection && m_CachedNetworkObject.Observers.Count - 1 == 0))
             {
                 return;
             }
