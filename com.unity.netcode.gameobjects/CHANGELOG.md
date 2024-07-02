@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkSpawnManager.InstantiateAndSpawn` and `NetworkObject.InstantiateAndSpawn` were not honoring the ownerClientId parameter when using a client-server network topology. (#2968)
 - Fixed issue where internal delta serialization could not have a byte serializer defined when serializing deltas for other types. Added `[GenerateSerializationForType(typeof(byte))]` to both the `NetworkVariable` and `AnticipatedNetworkVariable` classes to assure a byte serializer is defined.(#2962)
 - Fixed issue when scene management was disabled and the session owner would still try to synchronize a late joining client. (#2962)
 - Fixed issue when using a distributed authority network topology where it would allow a session owner to spawn a `NetworkObject` prior to being approved. Now, an error message is logged and the `NetworkObject` will not be spawned prior to the client being approved.  (#2962)

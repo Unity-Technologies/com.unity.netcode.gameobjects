@@ -138,6 +138,62 @@ namespace TestProject.RuntimeTests
             }
         }
 
+
+        public enum InstantiateAndSpawnTypes
+        {
+            NetworkSpawnManager,
+            NetworkObject,
+        }
+
+        public enum InstantiateAndSpawnContexts
+        {
+            Host,
+            Client,
+        }
+
+        [UnityTest]
+        public IEnumerator InstantiateAndSpawn([Values] InstantiateAndSpawnTypes instantiateAndSpawnTypes, [Values] InstantiateAndSpawnContexts instantiateAndSpawnContexts)
+        {
+            m_CanStartServerAndClients = true;
+            Object.DontDestroyOnLoad(m_ObjectToSpawn);
+            yield return StartServerAndClients();
+            var instanceNetworkObject = (NetworkObject)null;
+            // Setup the test relative to parameters driven context
+            var ownerId = instantiateAndSpawnContexts == InstantiateAndSpawnContexts.Host ? m_ServerNetworkManager.LocalClientId : m_ClientNetworkManagers[0].LocalClientId;
+            var spawnManager = m_ServerNetworkManager.SpawnManager;
+            if (m_DistributedAuthority && instantiateAndSpawnContexts == InstantiateAndSpawnContexts.Client)
+            {
+                spawnManager = m_ClientNetworkManagers[0].SpawnManager;
+            }
+
+            // Spawn the NetworkObject
+            if (instantiateAndSpawnTypes == InstantiateAndSpawnTypes.NetworkSpawnManager)
+            {
+                Debug.Log($"Spawning {m_ObjectToSpawn.name}");
+                instanceNetworkObject = spawnManager.InstantiateAndSpawn(m_ObjectToSpawn.GetComponent<NetworkObject>(), ownerId);
+            }
+            else
+            {
+                instanceNetworkObject = NetworkObject.InstantiateAndSpawn(m_ObjectToSpawn, spawnManager.NetworkManager, ownerId);
+            }
+            Assert.IsNotNull(instanceNetworkObject, $"Failed to instantiate {m_ObjectToSpawn.name}!");
+            Assert.IsTrue(instanceNetworkObject.IsSpawned, $"Failed to spawn {m_ObjectToSpawn.name}!");
+            Assert.IsTrue(instanceNetworkObject.OwnerClientId == ownerId, $"Invalid owner ({instanceNetworkObject.OwnerClientId} vs {ownerId})!");
+            yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(m_ClientNetworkManagers[0].LocalClientId) && s_GlobalNetworkObjects.ContainsKey(m_ServerNetworkManager.LocalClientId));
+            AssertOnTimeout($"Timed out waiting for all instances to spawn!");
+            yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].ContainsKey(instanceNetworkObject.NetworkObjectId) && s_GlobalNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(instanceNetworkObject.NetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all instances to spawn!");
+
+            if (instantiateAndSpawnContexts == InstantiateAndSpawnContexts.Host)
+            {
+                Assert.IsTrue(s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].ContainsKey(instanceNetworkObject.NetworkObjectId), $"Client-{m_ClientNetworkManagers[0].LocalClientId} failed to spawn {instanceNetworkObject.name}!");
+            }
+            else
+            {
+                Assert.IsTrue(s_GlobalNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(instanceNetworkObject.NetworkObjectId), $"Client-{m_ServerNetworkManager.LocalClientId} failed to spawn {instanceNetworkObject.name}!");
+            }
+        }
+
         private void SceneLoaded(Scene scene, LoadSceneMode arg1)
         {
             if (scene.name == k_SceneToLoad)
