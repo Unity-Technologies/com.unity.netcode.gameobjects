@@ -677,6 +677,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             foreach (var sceneToUnload in m_ScenesToUnload)
             {
                 SceneManager.UnloadSceneAsync(sceneToUnload.Key);
+                if (sceneManager.ScenesLoaded.ContainsKey(sceneToUnload.Key.handle))
+                {
+                    sceneManager.ScenesLoaded.Remove(sceneToUnload.Key.handle);
+                }
             }
         }
 

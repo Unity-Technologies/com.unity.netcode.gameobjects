@@ -227,6 +227,10 @@ namespace Unity.Netcode
             foreach (var sceneToUnload in m_ScenesToUnload)
             {
                 SceneManager.UnloadSceneAsync(sceneToUnload);
+                if (sceneManager.ScenesLoaded.ContainsKey(sceneToUnload.handle))
+                {
+                    sceneManager.ScenesLoaded.Remove(sceneToUnload.handle);
+                }
             }
         }
 
