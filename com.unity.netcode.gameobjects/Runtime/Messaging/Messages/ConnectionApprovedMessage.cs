@@ -237,6 +237,9 @@ namespace Unity.Netcode
 
                     if (!IsRestoredSession)
                     {
+                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
