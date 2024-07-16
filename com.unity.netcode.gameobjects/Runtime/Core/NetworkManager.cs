@@ -1175,13 +1175,12 @@ namespace Unity.Netcode
             // Invoke initialized callback
             try
             {
-                OnInitialized.Invoke();
+                OnInitialized?.Invoke();
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                NetworkLog.LogError(e.ToString());
                 Shutdown();
-                return;
+                throw;
             }
         }
 
