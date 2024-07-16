@@ -224,10 +224,7 @@ namespace Unity.Netcode
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
 
                 // For convenience, notify all NetworkBehaviours that synchronization is complete.
-                foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
-                {
-                    networkObject.InternalNetworkSessionSynchronized();
-                }
+                networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
             }
             else
             {
@@ -240,15 +237,11 @@ namespace Unity.Netcode
 
                     if (!IsRestoredSession)
                     {
+                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
-
-                        // With scene management enabled and since the session owner doesn't send a Synchronize scene event synchronize itself,
-                        // we need to notify the session owner that all in-scnee placed NetworkObjects are spawned at this time.
-                        foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
-                        {
-                            networkObject.InternalInSceneNetworkObjectsSpawned();
-                        }
 
                         // Spawn the local player of the session owner
                         if (networkManager.AutoSpawnPlayerPrefabClientSide)
@@ -261,10 +254,7 @@ namespace Unity.Netcode
 
                         // With scene management enabled and since the session owner doesn't send a Synchronize scene event synchronize itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.
-                        foreach (var networkObject in networkManager.SpawnManager.SpawnedObjectsList)
-                        {
-                            networkObject.InternalNetworkSessionSynchronized();
-                        }
+                        networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
 
                         // When scene management is enabled and since the session owner is synchronizing the service (i.e. acting like  host),
                         // we need to locallyh invoke the OnClientConnected callback at this point in time.

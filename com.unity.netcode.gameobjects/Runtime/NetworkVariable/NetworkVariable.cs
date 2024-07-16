@@ -9,6 +9,7 @@ namespace Unity.Netcode
     /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
     [Serializable]
     [GenerateSerializationForGenericParameter(0)]
+    [GenerateSerializationForType(typeof(byte))]
     public class NetworkVariable<T> : NetworkVariableBase
     {
         /// <summary>

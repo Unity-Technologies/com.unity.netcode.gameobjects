@@ -643,7 +643,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            ownerClientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
+            ownerClientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : ownerClientId;
             // We only need to check for authority when running in client-server mode
             if (!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode)
             {
@@ -1861,6 +1861,17 @@ namespace Unity.Netcode
                 // Local instance despawns the instance
                 OnDespawnObject(networkObject, true);
                 DeferredDespawnObjects.Remove(deferredObjectEntry);
+            }
+        }
+
+        internal void NotifyNetworkObjectsSynchronized()
+        {
+            // Users could spawn NetworkObjects during these notifications.
+            // Create a separate list from the hashset to avoid list modification errors.
+            var spawnedObjects = SpawnedObjectsList.ToList();
+            foreach (var networkObject in spawnedObjects)
+            {
+                networkObject.InternalNetworkSessionSynchronized();
             }
         }
     }
