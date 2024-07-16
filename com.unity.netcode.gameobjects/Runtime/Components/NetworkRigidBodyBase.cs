@@ -246,7 +246,7 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return Vector3.forward * m_Rigidbody2D.velocity;
+                return Vector3.forward * m_Rigidbody2D.angularVelocity;
             }
             else
             {
@@ -723,7 +723,11 @@ namespace Unity.Netcode.Components
 
             if (zeroVelocity)
             {
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+                m_Rigidbody2D.linearVelocity = Vector2.zero;
+#else
                 m_Rigidbody2D.velocity = Vector2.zero;
+#endif
                 m_Rigidbody2D.angularVelocity = 0.0f;
             }
 
