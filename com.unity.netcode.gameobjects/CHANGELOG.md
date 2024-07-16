@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkManager.ScenesLoaded` was not being updated if `PostSynchronizationSceneUnloading` was set and any loaded scenes not used during synchronization were unloaded. (#2971)
+- Fixed issue where `Rigidbody2d` under Unity 6000.0.11f1 has breaking changes where `velocity` is now `linearVelocity` and `isKinematic` is replaced by `bodyType`. (#2971)
 - Fixed issue where `NetworkSpawnManager.InstantiateAndSpawn` and `NetworkObject.InstantiateAndSpawn` were not honoring the ownerClientId parameter when using a client-server network topology. (#2968)
 - Fixed issue where internal delta serialization could not have a byte serializer defined when serializing deltas for other types. Added `[GenerateSerializationForType(typeof(byte))]` to both the `NetworkVariable` and `AnticipatedNetworkVariable` classes to assure a byte serializer is defined.(#2962)
 - Fixed issue when scene management was disabled and the session owner would still try to synchronize a late joining client. (#2962)

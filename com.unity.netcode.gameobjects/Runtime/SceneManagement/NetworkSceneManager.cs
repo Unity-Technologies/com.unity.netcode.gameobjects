@@ -2406,16 +2406,6 @@ namespace Unity.Netcode
                                 NetworkManager.ConnectionManager.CreateAndSpawnPlayer(NetworkManager.LocalClientId);
                             }
 
-                            // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
-                            NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
-
-                            // Notify the client that they have finished synchronizing
-                            OnSceneEvent?.Invoke(new SceneEvent()
-                            {
-                                SceneEventType = sceneEventData.SceneEventType,
-                                ClientId = NetworkManager.LocalClientId, // Client sent this to the server
-                            });
-
                             // Process any SceneEventType.ObjectSceneChanged messages that
                             // were deferred while synchronizing and migrate the associated
                             // NetworkObjects to their newly assigned scenes.
@@ -2428,6 +2418,16 @@ namespace Unity.Netcode
                             {
                                 SceneManagerHandler.UnloadUnassignedScenes(NetworkManager);
                             }
+
+                            // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
+                            NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(NetworkManager.LocalClientId);
+
+                            // Notify the client that they have finished synchronizing
+                            OnSceneEvent?.Invoke(new SceneEvent()
+                            {
+                                SceneEventType = sceneEventData.SceneEventType,
+                                ClientId = NetworkManager.LocalClientId, // Client sent this to the server
+                            });
 
                             OnSynchronizeComplete?.Invoke(NetworkManager.LocalClientId);
 
