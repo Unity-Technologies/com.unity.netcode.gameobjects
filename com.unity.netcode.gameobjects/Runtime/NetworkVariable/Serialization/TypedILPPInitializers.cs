@@ -38,14 +38,6 @@ namespace Unity.Netcode
             NetworkVariableSerialization<long>.AreEqual = NetworkVariableEquality<long>.ValueEquals;
             NetworkVariableSerialization<ulong>.Serializer = new UlongSerializer();
             NetworkVariableSerialization<ulong>.AreEqual = NetworkVariableEquality<ulong>.ValueEquals;
-
-            // DANGO-EXP TODO: Determine if this is distributed authority only and impacts of this in client-server
-            NetworkVariableSerialization<short>.Type = CollectionItemType.Short;
-            NetworkVariableSerialization<ushort>.Type = CollectionItemType.UShort;
-            NetworkVariableSerialization<int>.Type = CollectionItemType.Int;
-            NetworkVariableSerialization<uint>.Type = CollectionItemType.UInt;
-            NetworkVariableSerialization<long>.Type = CollectionItemType.Long;
-            NetworkVariableSerialization<ulong>.Type = CollectionItemType.ULong;
         }
 
         /// <summary>
@@ -55,8 +47,6 @@ namespace Unity.Netcode
         public static void InitializeSerializer_UnmanagedByMemcpy<T>() where T : unmanaged
         {
             NetworkVariableSerialization<T>.Serializer = new UnmanagedTypeSerializer<T>();
-            // DANGO-EXP TODO: Determine if this is distributed authority only and impacts of this in client-server
-            NetworkVariableSerialization<T>.Type = CollectionItemType.Unmanaged;
         }
 
         /// <summary>

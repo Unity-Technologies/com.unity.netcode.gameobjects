@@ -1130,11 +1130,6 @@ namespace Unity.Netcode
                 // Note: In distributed authority mode, all clients can read
                 if (NetworkVariableFields[j].CanClientRead(targetClientId))
                 {
-                    if (networkManager.DistributedAuthorityMode)
-                    {
-                        writer.WriteValueSafe(NetworkVariableFields[j].Type);
-                    }
-
                     if (networkManager.DistributedAuthorityMode || networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var writePos = writer.Position;
@@ -1224,8 +1219,6 @@ namespace Unity.Netcode
 
                 if (networkManager.DistributedAuthorityMode)
                 {
-                    // Explicit setting of the NetworkVariableType is only needed for CMB Runtime
-                    reader.ReadValueSafe(out NetworkVariableType _);
                     reader.ReadValueSafe(out ushort size);
                     var start_marker = reader.Position;
                     NetworkVariableFields[j].ReadField(reader);
