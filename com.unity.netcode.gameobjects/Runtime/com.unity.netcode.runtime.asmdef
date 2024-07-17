@@ -72,6 +72,11 @@
             "name": "com.unity.services.multiplayer",
             "expression": "0.2.0",
             "define": "MULTIPLAYER_SERVICES_SDK_INSTALLED"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.0.11f1",
+            "define": "COM_UNITY_MODULES_PHYSICS2D_LINEAR"
         }
     ],
     "noEngineReferences": false

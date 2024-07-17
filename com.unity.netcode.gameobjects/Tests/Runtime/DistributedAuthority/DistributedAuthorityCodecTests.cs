@@ -222,6 +222,32 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        public IEnumerator NetworkListDelta_WithValueUpdate()
+        {
+            var networkObj = CreateNetworkObjectPrefab("TestObject");
+            networkObj.AddComponent<TestNetworkComponent>();
+            var instance = SpawnObject(networkObj, Client);
+            yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
+            var component = instance.GetComponent<TestNetworkComponent>();
+
+            component.MyNetworkList.Add(5);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.Add(6);
+            component.MyNetworkList.Add(7);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.Insert(1, 8);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.Insert(8, 11);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.Remove(6);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.RemoveAt(2);
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            component.MyNetworkList.Clear();
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+        }
+
+        [UnityTest]
         public IEnumerator NotAuthorityRpc()
         {
             Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>().TestNotAuthorityRpc(new byte[] { 1, 2, 3, 4 });

@@ -177,7 +177,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+                m_Rigidbody2D.linearVelocity = linearVelocity;
+#else
                 m_Rigidbody2D.velocity = linearVelocity;
+#endif
             }
             else
             {
@@ -197,7 +201,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+                return m_Rigidbody2D.linearVelocity;
+#else
                 return m_Rigidbody2D.velocity;
+#endif
             }
             else
             {
@@ -238,7 +246,7 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return Vector3.forward * m_Rigidbody2D.velocity;
+                return Vector3.forward * m_Rigidbody2D.angularVelocity;
             }
             else
             {
@@ -481,7 +489,7 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return m_Rigidbody2D.isKinematic;
+                return m_Rigidbody2D.bodyType == RigidbodyType2D.Kinematic;
             }
             else
             {
@@ -510,7 +518,7 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.isKinematic = isKinematic;
+                m_Rigidbody2D.bodyType = isKinematic ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
             }
             else
             {
@@ -715,7 +723,11 @@ namespace Unity.Netcode.Components
 
             if (zeroVelocity)
             {
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+                m_Rigidbody2D.linearVelocity = Vector2.zero;
+#else
                 m_Rigidbody2D.velocity = Vector2.zero;
+#endif
                 m_Rigidbody2D.angularVelocity = 0.0f;
             }
 
