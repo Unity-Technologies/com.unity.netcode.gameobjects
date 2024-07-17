@@ -45,6 +45,8 @@ namespace Unity.Netcode
             NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
         }
 
+        internal override NetworkVariableType Type => NetworkVariableType.Value;
+
         /// <summary>
         /// Constructor for <see cref="NetworkVariable{T}"/>
         /// </summary>

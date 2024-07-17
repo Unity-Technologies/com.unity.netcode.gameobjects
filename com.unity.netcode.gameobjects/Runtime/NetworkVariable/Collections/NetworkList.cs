@@ -24,6 +24,7 @@ namespace Unity.Netcode
         /// The callback to be invoked when the list gets changed
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
+        internal override NetworkVariableType Type => NetworkVariableType.NetworkList;
 
         /// <summary>
         /// Constructor method for <see cref="NetworkList"/>
@@ -132,7 +133,6 @@ namespace Unity.Netcode
         {
             if (m_NetworkManager.DistributedAuthorityMode)
             {
-                SerializationTools.WriteType(writer, NetworkVariableType.NetworkList);
                 writer.WriteValueSafe(NetworkVariableSerialization<T>.Serializer.Type);
                 if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unmanaged)
                 {

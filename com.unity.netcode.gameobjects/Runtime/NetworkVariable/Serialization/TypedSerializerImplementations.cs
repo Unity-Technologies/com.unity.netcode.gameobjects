@@ -15,7 +15,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref short value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -68,7 +67,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref ushort value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -120,7 +118,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref int value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -172,7 +169,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref uint value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -224,7 +220,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref long value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -276,7 +271,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref ulong value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -334,7 +328,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -384,7 +377,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref List<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -486,7 +478,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref HashSet<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -580,7 +571,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref Dictionary<TKey, TVal> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -673,7 +663,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -734,7 +723,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -793,7 +781,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashSet<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -855,7 +842,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -919,7 +905,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1051,7 +1036,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1117,7 +1101,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1181,7 +1164,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1250,7 +1232,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1316,7 +1297,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
@@ -1380,7 +1360,6 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 

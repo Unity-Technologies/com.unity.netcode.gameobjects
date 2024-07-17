@@ -34,6 +34,9 @@ namespace Unity.Netcode
         private protected NetworkBehaviour m_NetworkBehaviour;
 
         private NetworkManager m_InternalNetworkManager;
+
+        internal virtual NetworkVariableType Type => NetworkVariableType.Unknown;
+
         private protected NetworkManager m_NetworkManager
         {
             get
@@ -308,7 +311,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="reader">The stream to read the state from</param>
         public abstract void ReadField(FastBufferReader reader);
-
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
