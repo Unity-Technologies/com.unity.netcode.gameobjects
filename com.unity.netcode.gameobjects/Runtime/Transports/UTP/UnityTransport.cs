@@ -1220,11 +1220,11 @@ namespace Unity.Netcode.Transports.UTP
         /// Initializes the transport
         /// </summary>
         /// <param name="m_NetworkManager">The NetworkManager that initialized and owns the transport</param>
-        public override void Initialize(NetworkManager m_NetworkManager = null)
+        public override void Initialize(NetworkManager networkManager = null)
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
 
-            m_NetworkManager = m_NetworkManager;
+            m_NetworkManager = networkManager;
 
             if (m_NetworkManager && m_NetworkManager.PortOverride.Overidden)
             {
@@ -1572,7 +1572,7 @@ namespace Unity.Netcode.Transports.UTP
                     if (m_RelayServerData.IsSecure == 0)
                     {
                         // log an error because we have mismatched configuration
-                        Debug.LogError("Mismatched security configuration, between Relay and local m_NetworkManager settings");
+                        Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
                     }
 
                     // No need to to anything else if using Relay because UTP will handle the
@@ -1631,7 +1631,7 @@ namespace Unity.Netcode.Transports.UTP
             else
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
-                Debug.LogWarning($"WebSockets were used even though they're not selected in m_NetworkManager. You should check {nameof(UseWebSockets)}', on the Unity Transport component, to silence this warning.");
+                Debug.LogWarning($"WebSockets were used even though they're not selected in NetworkManager. You should check {nameof(UseWebSockets)}', on the Unity Transport component, to silence this warning.");
                 driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
 #else
                 driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
