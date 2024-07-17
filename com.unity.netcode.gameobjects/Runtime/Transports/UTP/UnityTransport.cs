@@ -450,7 +450,10 @@ namespace Unity.Netcode.Transports.UTP
 
         private RelayServerData m_RelayServerData;
 
-        internal NetworkManager NetworkManager;
+        /// <summary>
+        /// NetworkManager associated to this transport instance
+        /// </summary>
+        protected NetworkManager NetworkManager;
 
         private IRealTimeProvider m_RealTimeProvider;
 
