@@ -1130,12 +1130,12 @@ namespace Unity.Netcode
                 // Note: In distributed authority mode, all clients can read
                 if (NetworkVariableFields[j].CanClientRead(targetClientId))
                 {
-                    if (networkManager.DistributedAuthorityMode)
-                    {
-                        writer.WriteValueSafe(NetworkVariableFields[j].Type);
-                    }
                     if (networkManager.DistributedAuthorityMode || networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
+                        if (networkManager.DistributedAuthorityMode)
+                        {
+                            writer.WriteValueSafe(NetworkVariableFields[j].Type);
+                        }
                         var writePos = writer.Position;
                         // Note: This value can't be packed because we don't know how large it will be in advance
                         // we reserve space for it, then write the data, then come back and fill in the space
