@@ -158,7 +158,6 @@ namespace Unity.Netcode
             m_List.Clear();
             if (m_NetworkManager.DistributedAuthorityMode)
             {
-                reader.ReadValueSafe(out NetworkVariableType _);
                 SerializationTools.ReadType(reader, NetworkVariableSerialization<T>.Serializer);
                 // Collection item type is used by the DA server, drop value here.
                 if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unmanaged)

@@ -1198,8 +1198,14 @@ namespace Unity.Netcode
             {
                 var varSize = (ushort)0;
                 var readStartPos = 0;
-                if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety || networkManager.DistributedAuthorityMode)
                 {
+                    if (networkManager.DistributedAuthorityMode)
+                    {
+                        // Explicit setting of the NetworkVariableType is only needed for CMB Runtime
+                        reader.ReadValueSafe(out NetworkVariableType _);
+                    }
+
                     reader.ReadValueSafe(out varSize);
                     if (varSize == 0)
                     {
@@ -1220,24 +1226,8 @@ namespace Unity.Netcode
                     }
                     continue;
                 }
-                else
-                if (networkManager.DistributedAuthorityMode)
-                {
-                    // Explicit setting of the NetworkVariableType is only needed for CMB Runtime
-                    reader.ReadValueSafe(out NetworkVariableType _);
 
-                    reader.ReadValueSafe(out ushort size);
-                    var start_marker = reader.Position;
-                    NetworkVariableFields[j].ReadField(reader);
-                    if (reader.Position - start_marker != size)
-                    {
-                        Debug.LogError("Mismatched network variable size");
-                    }
-                }
-                else
-                {
-                    NetworkVariableFields[j].ReadField(reader);
-                }
+                NetworkVariableFields[j].ReadField(reader);
 
                 if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
