@@ -1219,7 +1219,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        /// <param name="m_NetworkManager">The NetworkManager that initialized and owns the transport</param>
+        /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
         public override void Initialize(NetworkManager networkManager = null)
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
