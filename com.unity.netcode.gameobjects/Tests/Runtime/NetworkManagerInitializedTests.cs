@@ -2,7 +2,6 @@ using System;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
