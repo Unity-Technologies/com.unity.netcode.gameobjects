@@ -9,6 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [2.0.0-pre.3] - 2024-07-18
 
 ### Added
+- Added: `UnityTransport.GetNetworkDriver` and `UnityTransport.GetLocalEndpoint` methods to expose the driver and local endpoint being used. (#2978)
 
 ### Fixed
 
