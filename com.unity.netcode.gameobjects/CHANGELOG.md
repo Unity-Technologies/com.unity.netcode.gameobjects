@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## Unreleased
+## [2.0.0-pre.2] - 2024-07-18
 
 ### Added
 
@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where attempting to spawn during `NetworkBehaviour.OnInSceneObjectsSpawned` and `NetworkBehaviour.OnNetworkSessionSynchronized` notifications would throw a collection modified exception.  (#2962)
 
 ### Changed
+
 
 ## [2.0.0-pre.2] - 2024-06-17
 
