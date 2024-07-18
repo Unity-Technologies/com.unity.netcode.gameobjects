@@ -15,7 +15,7 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// The base class to override to write network code. Inherits MonoBehaviour
+    /// The base class to override to write network code. Inherits MonoBehaviour.
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
@@ -410,8 +410,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the NetworkManager that owns this NetworkBehaviour instance
-        ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
+        /// Gets the NetworkManager that owns this NetworkBehaviour instance.
+        /// See `NetworkObject` note for how there is a chicken/egg problem when not initialized.
         /// </summary>
         public NetworkManager NetworkManager
         {
@@ -439,38 +439,40 @@ namespace Unity.Netcode
         /// <see cref="Unity.Netcode.RpcTarget.Not(NativeArray{ulong})"/>,
         /// <see cref="Unity.Netcode.RpcTarget.Not(NativeList{ulong})"/>,
         /// <see cref="Unity.Netcode.RpcTarget.Not(ulong[])"/>, and
-        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>
+        /// <see cref="Unity.Netcode.RpcTarget.Not{T}(T)"/>.
         /// </summary>
 #pragma warning restore IDE0001
         public RpcTarget RpcTarget => NetworkManager.RpcTarget;
 
         /// <summary>
-        /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
-        /// is the local player object.  If no NetworkObject is assigned it will always return false.
+        /// If a NetworkObject is assigned, returns whether the NetworkObject
+        /// is the local player object. If no NetworkObject is assigned, returns false.
         /// </summary>
         public bool IsLocalPlayer { get; private set; }
 
         /// <summary>
-        /// Gets if the object is owned by the local player or if the object is the local player object
+        /// Gets whether the object is owned by the local player or if the object is the local player object.
         /// </summary>
         public bool IsOwner { get; internal set; }
 
         /// <summary>
-        /// Gets if we are executing as server
+        /// Gets whether executing as a server.
         /// </summary>
         public bool IsServer { get; private set; }
 
         /// <summary>
-        /// Determines if the local client has authority over the associated NetworkObject
-        /// Client-Server: This will return true if IsServer or IsHost
-        /// Distributed Authority: This will return true if IsOwner
+        /// Determines if the local client has authority over the associated NetworkObject.
+        /// <list type="bullet">
+        /// <item>In client-server contexts: returns true if `IsServer` or `IsHost`.</item>
+        /// <item>In distributed authority contexts: returns true if `IsOwner`.</item>
+        /// </list>
         /// </summary>
         public bool HasAuthority { get; internal set; }
 
         internal NetworkClient LocalClient { get; private set; }
 
         /// <summary>
-        /// Gets if the client is the distributed authority mode session owner
+        /// Gets whether the client is the distributed authority mode session owner.
         /// </summary>
         public bool IsSessionOwner
         {
@@ -486,29 +488,29 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets if the server (local or remote) is a host - i.e., also a client
+        /// Gets whether the server (local or remote) is a host.
         /// </summary>
         public bool ServerIsHost { get; private set; }
 
         /// <summary>
-        /// Gets if we are executing as client
+        /// Gets whether executing as a client.
         /// </summary>
         public bool IsClient { get; private set; }
 
 
         /// <summary>
-        /// Gets if we are executing as Host, I.E Server and Client
+        /// Gets whether executing as a host (both server and client).
         /// </summary>
         public bool IsHost { get; private set; }
 
         /// <summary>
-        /// Gets Whether or not the object has a owner
+        /// Gets whether the object has an owner.
         /// </summary>
         public bool IsOwnedByServer { get; internal set; }
 
         /// <summary>
-        /// Used to determine if it is safe to access NetworkObject and NetworkManager from within a NetworkBehaviour component
-        /// Primarily useful when checking NetworkObject/NetworkManager properties within FixedUpate
+        /// Determines whether it's safe to access a NetworkObject and NetworkManager from within a NetworkBehaviour component.
+        /// Primarily useful when checking NetworkObject or NetworkManager properties within FixedUpate.
         /// </summary>
         public bool IsSpawned { get; internal set; }
 
@@ -528,7 +530,7 @@ namespace Unity.Netcode
         ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
         ///   how NetworkObject works but it was close to the release and too risky to change
         /// <summary>
-        /// Gets the NetworkObject that owns this NetworkBehaviour instance
+        /// Gets the NetworkObject that owns this NetworkBehaviour instance.
         /// </summary>
         public NetworkObject NetworkObject
         {
@@ -567,19 +569,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets whether or not this NetworkBehaviour instance has a NetworkObject owner.
+        /// Gets whether this NetworkBehaviour instance has a NetworkObject owner.
         /// </summary>
         public bool HasNetworkObject => NetworkObject != null;
 
         private NetworkObject m_NetworkObject = null;
 
         /// <summary>
-        /// Gets the NetworkId of the NetworkObject that owns this NetworkBehaviour
+        /// Gets the NetworkId of the NetworkObject that owns this NetworkBehaviour instance.
         /// </summary>
         public ulong NetworkObjectId { get; internal set; }
 
         /// <summary>
-        /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject
+        /// Gets NetworkId for this NetworkBehaviour from the owner NetworkObject.
         /// </summary>
         public ushort NetworkBehaviourId { get; internal set; }
 
@@ -589,7 +591,7 @@ namespace Unity.Netcode
         internal ushort NetworkBehaviourIdCache = 0;
 
         /// <summary>
-        /// Returns a the NetworkBehaviour with a given BehaviourId for the current NetworkObject
+        /// Returns the NetworkBehaviour with a given BehaviourId for the current NetworkObject.
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
         /// <returns>Returns NetworkBehaviour with given behaviourId</returns>
@@ -599,7 +601,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the ClientId that owns the NetworkObject
+        /// Gets the ClientId that owns this NetworkObject.
         /// </summary>
         public ulong OwnerClientId { get; internal set; }
 
@@ -651,28 +653,29 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Distributed Authority Mode Only
+        /// Only for use in distributed authority mode.
         /// Invoked only on the authority instance when a <see cref="NetworkObject"/> is deferring its despawn on non-authoritative instances.
         /// </summary>
         /// <remarks>
         /// See also: <see cref="NetworkObject.DeferDespawn(int, bool)"/>
         /// </remarks>
-        /// <param name="despawnTick">the future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
+        /// <param name="despawnTick">The future network tick that the <see cref="NetworkObject"/> will be despawned on non-authoritative instances</param>
         public virtual void OnDeferringDespawn(int despawnTick) { }
 
+        /// <summary>
         /// Gets called after the <see cref="NetworkObject"/> is spawned. No NetworkBehaviours associated with the NetworkObject will have had <see cref="OnNetworkSpawn"/> invoked yet.
-        /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (IsServer/IsClient)
+        /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (`IsServer` or `IsClient`).
         /// </summary>
-        /// <remarks>
         /// <param name="networkManager">a ref to the <see cref="NetworkManager"/> since this is not yet set on the <see cref="NetworkBehaviour"/></param>
+        /// <remarks>
         /// The <see cref="NetworkBehaviour"/> will not have anything assigned to it at this point in time.
-        /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn related properties will not be set.
-        /// This can be used to handle things like initializing/instantiating a NetworkVariable or the like.
+        /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn-related properties will not be set.
+        /// This can be used to handle things like initializing a NetworkVariable.
         /// </remarks>
         protected virtual void OnNetworkPreSpawn(ref NetworkManager networkManager) { }
 
         /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered and the network is setup.
+        /// Gets called when the <see cref="NetworkObject"/> gets spawned, message handlers are ready to be registered, and the network is set up.
         /// </summary>
         public virtual void OnNetworkSpawn() { }
 
@@ -686,28 +689,28 @@ namespace Unity.Netcode
         protected virtual void OnNetworkPostSpawn() { }
 
         /// <summary>
-        /// [Client-Side Only]
-        /// When a new client joins it is synchronized with all spawned NetworkObjects and scenes loaded for the session joined. At the end of the synchronization process, when all
+        /// This method is only available client-side.
+        /// When a new client joins it's synchronized with all spawned NetworkObjects and scenes loaded for the session joined. At the end of the synchronization process, when all
         /// <see cref="NetworkObject"/>s and scenes (if scene management is enabled) have finished synchronizing, all NetworkBehaviour components associated with spawned <see cref="NetworkObject"/>s
         /// will have this method invoked.
         /// </summary>
         /// <remarks>
-        /// This can be used to handle post synchronization actions where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
+        /// This can be used to handle post-synchronization actions where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
         /// This is only invoked on clients during a client-server network topology session.
         /// </remarks>
         protected virtual void OnNetworkSessionSynchronized() { }
 
         /// <summary>
-        /// [Client & Server Side]
-        /// When a scene is loaded an in-scene placed NetworkObjects are all spawned, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
+        /// When a scene is loaded and in-scene placed NetworkObjects are finished spawning, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
+        /// This method runs both client and server side.
         /// </summary>
         /// <remarks>
-        /// This can be used to handle post scene loaded actions for in-scene placed NetworkObjcts where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
+        /// This method can be used to handle post-scene loaded actions for in-scene placed NetworkObjcts where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
         /// </remarks>
         protected virtual void OnInSceneObjectsSpawned() { }
 
         /// <summary>
-        /// Gets called when the <see cref="NetworkObject"/> gets despawned. Is called both on the server and clients.
+        /// Gets called when the <see cref="NetworkObject"/> gets despawned. This method runs both client and server side.
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
@@ -803,7 +806,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when the local client gains ownership of this object
+        /// Gets called when the local client gains ownership of this object.
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -814,8 +817,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Invoked on all clients, override this method to be notified of any
-        /// ownership changes (even if the instance was niether the previous or
+        /// Invoked on all clients. Override this method to be notified of any
+        /// ownership changes (even if the instance was neither the previous or
         /// newly assigned current owner).
         /// </summary>
         /// <param name="previous">the previous owner</param>
@@ -831,7 +834,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when we loose ownership of this object
+        /// Gets called when ownership of this object is lost.
         /// </summary>
         public virtual void OnLostOwnership() { }
 
@@ -842,7 +845,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
+        /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed.
         /// </summary>
         /// <param name="parentNetworkObject">the new <see cref="NetworkObject"/> parent</param>
         public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
@@ -1257,7 +1260,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the local instance of a object with a given NetworkId
+        /// Gets the local instance of a NetworkObject with a given NetworkId.
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
@@ -1268,14 +1271,14 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Override this method if your derived NetworkBehaviour requires custom synchronization data.
-        /// Note: Use of this method is only for the initial client synchronization of NetworkBehaviours
+        /// Use of this method is only for the initial client synchronization of NetworkBehaviours
         /// and will increase the payload size for client synchronization and dynamically spawned
         /// <see cref="NetworkObject"/>s.
         /// </summary>
         /// <remarks>
-        /// When serializing (writing) this will be invoked during the client synchronization period and
+        /// When serializing (writing), this method is invoked during the client synchronization period and
         /// when spawning new NetworkObjects.
-        /// When deserializing (reading), this will be invoked prior to the NetworkBehaviour's associated
+        /// When deserializing (reading), this method is invoked prior to the NetworkBehaviour's associated
         /// NetworkObject being spawned.
         /// </remarks>
         /// <param name="serializer">The serializer to use to read and write the data.</param>
@@ -1298,10 +1301,10 @@ namespace Unity.Netcode
         /// The relative client identifier targeted for the serialization of this <see cref="NetworkBehaviour"/> instance.
         /// </summary>
         /// <remarks>
-        /// This value will be set prior to <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/> being invoked.
+        /// This value is set prior to <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/> being invoked.
         /// For writing (server-side), this is useful to know which client will receive the serialized data.
         /// For reading (client-side), this will be the <see cref="NetworkManager.LocalClientId"/>.
-        /// When synchronization of this instance is complete, this value will be reset to 0
+        /// When synchronization of this instance is complete, this value is reset to 0.
         /// </remarks>
         protected ulong m_TargetIdBeingSynchronized { get; private set; }
 
@@ -1424,9 +1427,8 @@ namespace Unity.Netcode
 
 
         /// <summary>
-        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to.
-        /// NOTE:  If you override this, you will want to always invoke this base class version of this
-        /// <see cref="OnDestroy"/> method!!
+        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to is destroyed.
+        /// If you override this, you must always invoke the base class version of this <see cref="OnDestroy"/> method.
         /// </summary>
         public virtual void OnDestroy()
         {

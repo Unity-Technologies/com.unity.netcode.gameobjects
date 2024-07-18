@@ -5,10 +5,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// Will automatically register for the NetworkVariable OnValueChanged
-    /// delegate handler.  It then will expose that single delegate invocation
+    /// delegate handler. It then will expose that single delegate invocation
     /// to anything that registers for this NetworkVariableHelper's instance's OnValueChanged event.
     /// This allows us to register any NetworkVariable type as well as there are basically two "types of types":
-    /// IEquatable<T>
+    /// IEquatable&lt;T&gt;
     /// ValueType
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
@@ -20,7 +20,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public event OnMyValueChangedDelegateHandler OnValueChanged;
 
         /// <summary>
-        /// IEquatable<T> Equals Check
+        /// IEquatable&lt;T&gt; Equals Check
         /// </summary>
         private void CheckVariableChanged(IEquatable<T> previous, IEquatable<T> next)
         {

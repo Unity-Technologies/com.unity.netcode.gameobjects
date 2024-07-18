@@ -37,7 +37,7 @@ namespace Unity.Netcode
         internal uint PrefabGlobalObjectIdHash;
 
         /// <summary>
-        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene 
+        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene
         /// placd NetworkObjects that are not prefab instances, dynamically spawned prefab instances,
         /// or for network prefab assets.
         /// </summary>
@@ -207,8 +207,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will 
-        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to 
+        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will
+        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to
         /// InScenePlacedSourceGlobalObjectIdHash and mark this as being in-scene placed.
         /// </summary>
         /// <remarks>
@@ -540,8 +540,8 @@ namespace Unity.Netcode
         /// permission failure status codes will be returned via <see cref="OnOwnershipPermissionsFailure"/>.
         /// <see cref="Locked"/>: The <see cref="NetworkObject"/> is locked and ownership cannot be acquired.
         /// <see cref="RequestRequired"/>: The <see cref="NetworkObject"/> requires an ownership request via <see cref="RequestOwnership"/>.
-        /// <see cref="RequestInProgress"/>: The <see cref="NetworkObject"/> already is processing an ownership request and ownership cannot be acquired at this time.
-        /// <see cref="NotTransferrable": The <see cref="NetworkObject"/> does not have the <see cref="OwnershipStatus.Transferable"/> flag set and ownership cannot be acquired.
+        /// <see cref="RequestInProgress"/>: The <see cref="NetworkObject"/> is already processing an ownership request and ownership cannot be acquired at this time.
+        /// <see cref="NotTransferrable"/>: The <see cref="NetworkObject"/> does not have the <see cref="OwnershipStatus.Transferable"/> flag set and ownership cannot be acquired.
         /// </summary>
         public enum OwnershipPermissionsFailureStatus
         {
