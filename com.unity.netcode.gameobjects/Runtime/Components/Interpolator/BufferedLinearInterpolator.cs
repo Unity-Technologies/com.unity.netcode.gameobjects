@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Solves for incoming values that are jittered
+    /// Solves for incoming values that are jittered.
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
     /// <typeparam name="T">The type of interpolated value</typeparam>

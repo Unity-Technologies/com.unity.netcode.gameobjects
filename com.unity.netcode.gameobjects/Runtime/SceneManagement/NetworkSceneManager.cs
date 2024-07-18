@@ -774,6 +774,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This setting changes how clients handle scene loading when initially synchronizing with the server.<br />
         /// The server or host should set this value as clients will automatically be synchronized with the server (or host) side.
+        /// </summary>
         /// <remarks>
         /// <b>LoadSceneMode.Single:</b> All currently loaded scenes on the client will be unloaded and the
         /// server's currently active scene will be loaded in single mode on the client unless it was already
