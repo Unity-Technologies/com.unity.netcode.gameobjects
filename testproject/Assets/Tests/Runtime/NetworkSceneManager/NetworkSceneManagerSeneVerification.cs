@@ -360,10 +360,26 @@ namespace TestProject.RuntimeTests
 
             m_IsTestingVerifyScene = false;
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
-
+            var currentSceneName = m_CurrentScene;
             // Now wait for scenes to unload
             yield return WaitForConditionOrTimeOut(ConditionPassed);
             AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!\n{PrintFailedCondition()}");
+
+            // Verify that all NetworkSceneManager instances reflect the change in scenes synchronized
+            var scenesSynchronized = m_ServerNetworkManager.SceneManager.ScenesLoaded;
+            foreach (var scene in scenesSynchronized)
+            {
+                Assert.False(scene.Value.name.Equals(currentSceneName), $"Host still thinks scene {currentSceneName} is loaded and synchronized!");
+            }
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                scenesSynchronized = client.SceneManager.ScenesLoaded;
+                foreach (var scene in scenesSynchronized)
+                {
+                    Assert.False(scene.Value.name.Equals(currentSceneName), $"Client-{client.LocalClientId} still thinks scene {currentSceneName} is loaded and synchronized!");
+                }
+            }
         }
     }
 }
