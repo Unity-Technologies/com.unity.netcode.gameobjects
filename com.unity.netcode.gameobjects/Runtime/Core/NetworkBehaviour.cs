@@ -1232,9 +1232,10 @@ namespace Unity.Netcode
                         readStartPos = reader.Position;
                     }
                 }
-                else if (ensureLengthSafety)
+                else // Client-Server Only: If the client cannot read this field, then skip it
                 {
-                    // Client-Server Only: If the client cannot read this field, then skip it
+                    // If skipping and length safety, then fill in a 0 size for this one spot
+                    if (ensureLengthSafety)
                     {
                         reader.ReadValueSafe(out ushort size);
                         if (size != 0)
