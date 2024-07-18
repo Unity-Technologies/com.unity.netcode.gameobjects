@@ -1112,26 +1112,38 @@ namespace Unity.Netcode
         /// </remarks>
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
+            // Create any values that require accessing the NetworkManager locally (it is expensive to access it in NetworkBehaviour)
             var networkManager = NetworkManager;
-            if (networkManager.DistributedAuthorityMode)
+            var distributedAuthority = networkManager.DistributedAuthorityMode;
+            var ensureLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
+
+            // Always write the NetworkVariable count even if zero for distributed authority (used by comb server)
+            if (distributedAuthority)
             {
                 writer.WriteValueSafe((ushort)NetworkVariableFields.Count);
             }
 
+            // Exit early if there are no NetworkVariables
             if (NetworkVariableFields.Count == 0)
             {
                 return;
             }
 
-            // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
-            // Worth either merging or more cleanly separating these codepaths.
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                // Note: In distributed authority mode, all clients can read
+                // Client-Server: Try to write values only for clients that have read permissions.
+                // Distributed Authority: All clients have read permissions, always try to write the value.
                 if (NetworkVariableFields[j].CanClientRead(targetClientId))
                 {
-                    if (networkManager.DistributedAuthorityMode || networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    // Write additional NetworkVariable information when length safety is enabled or when in distributed authority mode 
+                    if (ensureLengthSafety || distributedAuthority)
                     {
+                        // Write the type being serialized for distributed authority (only for comb-server)
+                        if (distributedAuthority)
+                        {
+                            writer.WriteValueSafe(NetworkVariableFields[j].Type);
+                        }
+
                         var writePos = writer.Position;
                         // Note: This value can't be packed because we don't know how large it will be in advance
                         // we reserve space for it, then write the data, then come back and fill in the space
@@ -1143,18 +1155,19 @@ namespace Unity.Netcode
                         NetworkVariableFields[j].WriteField(writer);
                         var size = writer.Position - startPos;
                         writer.Seek(writePos);
+                        // Write the NetworkVariable value
                         writer.WriteValueSafe((ushort)size);
                         writer.Seek(startPos + size);
                     }
-                    else
+                    else // Client-Server Only: Should only ever be invoked when using a client-server NetworkTopology
                     {
+                        // Write the NetworkVariable value
                         NetworkVariableFields[j].WriteField(writer);
                     }
                 }
-                else
+                else if (ensureLengthSafety)
                 {
-                    // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
-                    if (networkManager.DistributedAuthorityMode || networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    // Client-Server Only: If the client cannot read this field, then skip it but write a 0 for this NetworkVariable's position
                     {
                         writer.WriteValueSafe((ushort)0);
                     }
@@ -1172,73 +1185,78 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
+            // Stack cache any values that requires accessing the NetworkManager (it is expensive to access it in NetworkBehaviour)
             var networkManager = NetworkManager;
-            if (networkManager.DistributedAuthorityMode)
+            var distributedAuthority = networkManager.DistributedAuthorityMode;
+            var ensureLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
+
+            // Always read the NetworkVariable count when in distributed authority (sanity check if comb-server matches what client has locally)
+            if (distributedAuthority)
             {
                 reader.ReadValueSafe(out ushort variableCount);
                 if (variableCount != NetworkVariableFields.Count)
                 {
-                    Debug.LogError("NetworkVariable count mismatch.");
+                    Debug.LogError($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}] NetworkVariable count mismatch! (Read: {variableCount} vs. Expected: {NetworkVariableFields.Count})");
                     return;
                 }
             }
 
+            // Exit early if nothing else to read
             if (NetworkVariableFields.Count == 0)
             {
                 return;
             }
 
-            // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
-            // Worth either merging or more cleanly separating these codepaths.
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 var varSize = (ushort)0;
                 var readStartPos = 0;
-                if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                // Client-Server: Clients that only have read permissions will try to read the value
+                // Distributed Authority: All clients have read permissions, always try to read the value
+                if (NetworkVariableFields[j].CanClientRead(clientId))
                 {
-                    reader.ReadValueSafe(out varSize);
-                    if (varSize == 0)
+                    if (ensureLengthSafety || distributedAuthority)
                     {
-                        continue;
+                        // Read the type being serialized and discard it (for now) when in a distributed authority network topology (only used by comb-server)
+                        if (distributedAuthority)
+                        {
+                            reader.ReadValueSafe(out NetworkVariableType _);
+                        }
+
+                        reader.ReadValueSafe(out varSize);
+                        if (varSize == 0)
+                        {
+                            Debug.LogError($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}][{NetworkVariableFields[j].Name}] Expected non-zero size readable NetworkVariable! (Skipping)");
+                            continue;
+                        }
+                        readStartPos = reader.Position;
                     }
-                    readStartPos = reader.Position;
                 }
-                else // If the client cannot read this field, then skip it
-                if (!NetworkVariableFields[j].CanClientRead(clientId))
+                else // Client-Server Only: If the client cannot read this field, then skip it
                 {
-                    if (networkManager.DistributedAuthorityMode)
+                    // If skipping and length safety, then fill in a 0 size for this one spot
+                    if (ensureLengthSafety)
                     {
                         reader.ReadValueSafe(out ushort size);
                         if (size != 0)
                         {
-                            Debug.LogError("Expected zero size");
+                            Debug.LogError($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}][{NetworkVariableFields[j].Name}] Expected zero size for non-readable NetworkVariable when EnsureNetworkVariableLengthSafety is enabled! (Skipping)");
                         }
                     }
                     continue;
                 }
 
-                if (networkManager.DistributedAuthorityMode)
-                {
-                    reader.ReadValueSafe(out ushort size);
-                    var start_marker = reader.Position;
-                    NetworkVariableFields[j].ReadField(reader);
-                    if (reader.Position - start_marker != size)
-                    {
-                        Debug.LogError("Mismatched network variable size");
-                    }
-                }
-                else
-                {
-                    NetworkVariableFields[j].ReadField(reader);
-                }
+                // Read the NetworkVarible value
+                NetworkVariableFields[j].ReadField(reader);
 
-                if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                // When EnsureNetworkVariableLengthSafety or DistributedAuthorityMode always do a bounds check
+                if (ensureLengthSafety || distributedAuthority)
                 {
                     if (reader.Position > (readStartPos + varSize))
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogWarning($"Var data read too far. {reader.Position - (readStartPos + varSize)} bytes.");
+                            NetworkLog.LogWarning($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}][{NetworkVariableFields[j].Name}] NetworkVariable data read too big. {reader.Position - (readStartPos + varSize)} bytes.");
                         }
 
                         reader.Seek(readStartPos + varSize);
@@ -1247,7 +1265,7 @@ namespace Unity.Netcode
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogWarning($"Var data read too little. {(readStartPos + varSize) - reader.Position} bytes.");
+                            NetworkLog.LogWarning($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}][{NetworkVariableFields[j].Name}] NetworkVariable data read too small. {(readStartPos + varSize) - reader.Position} bytes.");
                         }
 
                         reader.Seek(readStartPos + varSize);

@@ -38,6 +38,7 @@ namespace Unity.Netcode.RuntimeTests
         internal class TestNetworkComponent : NetworkBehaviour
         {
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
+            public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
 
             [Rpc(SendTo.NotAuthority)]
             public void TestNotAuthorityRpc(byte[] _)
@@ -219,6 +220,21 @@ namespace Unity.Netcode.RuntimeTests
             };
 
             yield return SendMessage(ref message);
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkVariableDelta_WithValueUpdate()
+        {
+            var networkObj = CreateNetworkObjectPrefab("TestObject");
+            networkObj.AddComponent<TestNetworkComponent>();
+            var instance = SpawnObject(networkObj, Client);
+            yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
+            var component = instance.GetComponent<TestNetworkComponent>();
+
+            var newValue = 5;
+            component.MyNetworkVar.Value = newValue;
+            yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
+            Assert.AreEqual(newValue, component.MyNetworkVar.Value);
         }
 
         [UnityTest]

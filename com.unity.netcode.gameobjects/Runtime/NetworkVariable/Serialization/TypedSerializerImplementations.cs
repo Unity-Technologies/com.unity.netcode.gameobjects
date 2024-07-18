@@ -15,13 +15,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref short value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref short value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref short value, ref short previousValue) => Write(writer, ref value);
@@ -68,13 +66,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref ushort value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref ushort value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref ushort value, ref ushort previousValue) => Write(writer, ref value);
@@ -120,13 +116,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref int value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref int value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref int value, ref int previousValue) => Write(writer, ref value);
@@ -172,13 +166,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref uint value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref uint value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref uint value, ref uint previousValue) => Write(writer, ref value);
@@ -224,13 +216,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref long value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref long value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref long value, ref long previousValue) => Write(writer, ref value);
@@ -276,13 +266,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref ulong value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref ulong value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref ulong value, ref ulong previousValue) => Write(writer, ref value);
@@ -334,13 +322,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
@@ -384,13 +370,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref List<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref List<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref List<T> value, ref List<T> previousValue) => Write(writer, ref value);
@@ -486,13 +470,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref HashSet<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref HashSet<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref HashSet<T> value, ref HashSet<T> previousValue) => Write(writer, ref value);
@@ -580,13 +562,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref Dictionary<TKey, TVal> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref Dictionary<TKey, TVal> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref Dictionary<TKey, TVal> value, ref Dictionary<TKey, TVal> previousValue) => Write(writer, ref value);
@@ -673,13 +653,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
@@ -734,13 +712,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
@@ -793,13 +769,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashSet<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeHashSet<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeHashSet<T> value, ref NativeHashSet<T> previousValue) => Write(writer, ref value);
@@ -855,13 +829,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeHashMap<TKey, TVal> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeHashMap<TKey, TVal> value, ref NativeHashMap<TKey, TVal> previousValue) => Write(writer, ref value);
@@ -919,13 +891,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
@@ -1051,13 +1021,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
@@ -1117,13 +1085,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
@@ -1181,13 +1147,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);
@@ -1250,13 +1214,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeArray<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeArray<T> value, ref NativeArray<T> previousValue) => Write(writer, ref value);
@@ -1316,13 +1278,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref NativeList<T> value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref NativeList<T> value, ref NativeList<T> previousValue) => Write(writer, ref value);
@@ -1380,13 +1340,11 @@ namespace Unity.Netcode
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
         {
-            SerializationTools.WriteType(writer, Type);
             Write(writer, ref value);
         }
 
         public void ReadDistributedAuthority(FastBufferReader reader, ref T value)
         {
-            SerializationTools.ReadType(reader, this);
             Read(reader, ref value);
         }
         public void WriteDeltaDistributedAuthority(FastBufferWriter writer, ref T value, ref T previousValue) => Write(writer, ref value);

@@ -15,27 +15,26 @@ namespace Unity.Netcode
     internal enum NetworkVariableType : byte
     {
         /// <summary>
-        ///     For any type that is not known at runtime
-        /// </summary>
-        Unknown = 0,
-        /// <summary>
         ///     Value
         ///     Used for all of the basic NetworkVariables that contain a single value
         /// </summary>
-        Value = 1,
-
+        Value = 0,
+        /// <summary>
+        ///     For any type that is not known at runtime
+        /// </summary>
+        Unknown = 1,
         /// <summary>
         ///     NetworkList
         /// </summary>
         NetworkList = 2,
 
         // The following types are valid types inside of NetworkVariable collections
-        Short = 3,
-        UShort = 4,
-        Int = 5,
-        UInt = 6,
-        Long = 7,
-        ULong = 8,
-        Unmanaged = 9,
+        Short = 11,
+        UShort = 12,
+        Int = 13,
+        UInt = 14,
+        Long = 15,
+        ULong = 16,
+        Unmanaged = 17,
     }
 }
