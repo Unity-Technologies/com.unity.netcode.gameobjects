@@ -428,6 +428,31 @@ namespace Unity.Netcode.Transports.UTP
 
         protected NetworkDriver m_Driver;
 
+        /// <summary>
+        /// Gets a reference to the <see cref="Networking.Transport.NetworkDriver"/>.
+        /// </summary>
+        /// <returns>ref <see cref="Networking.Transport.NetworkDriver"/></returns>
+        public ref NetworkDriver GetNetworkDriver()
+        {
+            return ref m_Driver;
+        }
+
+        /// <summary>
+        /// Gets the local sytem's <see cref="NetworkEndpoint"/> that is assigned for the current network session.
+        /// </summary>
+        /// <remarks>
+        /// If the driver is not created it will return an invalid <see cref="NetworkEndpoint"/>.
+        /// </remarks>
+        /// <returns><see cref="NetworkEndpoint"/></returns>
+        public NetworkEndpoint GetLocalEndpoint()
+        {
+            if (m_Driver.IsCreated)
+            {
+                return m_Driver.GetLocalEndpoint();
+            }
+            return new NetworkEndpoint();
+        }
+
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
         private State m_State = State.Disconnected;
