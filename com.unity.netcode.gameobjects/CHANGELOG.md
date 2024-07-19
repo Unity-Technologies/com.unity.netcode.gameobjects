@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the realtime network stats monitor was not able to display RPC traffic in release builds due to those stats being only available in development builds or the editor. (#2979)
 - Fixed issue where `NetworkManager.ScenesLoaded` was not being updated if `PostSynchronizationSceneUnloading` was set and any loaded scenes not used during synchronization were unloaded. (#2971)
 - Fixed issue where `Rigidbody2d` under Unity 6000.0.11f1 has breaking changes where `velocity` is now `linearVelocity` and `isKinematic` is replaced by `bodyType`. (#2971)
 - Fixed issue where `NetworkSpawnManager.InstantiateAndSpawn` and `NetworkObject.InstantiateAndSpawn` were not honoring the ownerClientId parameter when using a client-server network topology. (#2968)
