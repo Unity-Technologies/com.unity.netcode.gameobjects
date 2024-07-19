@@ -36,6 +36,32 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static List<Type> s_SerializedType = new List<Type>();
+        // This is used to control the serialized type not optimized messaging for integration test purposes
+        internal static bool DisableNotOptimizedSerializedType;
+        /// <summary>
+        /// Until all serialized types are optimized for the distributed authority network topology,
+        /// this will handle the notification to the user that the type being serialized is not yet
+        /// optimized but will only log the message once to prevent log spamming.
+        /// </summary>
+        internal static void LogSerializedTypeNotOptimized<T>()
+        {
+            if (DisableNotOptimizedSerializedType)
+            {
+                return;
+            }
+            var type = typeof(T);
+            if (!s_SerializedType.Contains(type))
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{type.Name}] Serialized type has not been optimized for use with Distributed Authority!");
+                }
+            }
+        }
+#endif
+
         internal static bool IsDistributedAuthority;
 
         /// <summary>
@@ -1062,6 +1088,13 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (!DisableNotOptimizedSerializedType)
+            {
+                s_SerializedType.Clear();
+            }
+#endif
+
 #if COM_UNITY_MODULES_PHYSICS
             NetworkTransformFixedUpdate.Clear();
 #endif
