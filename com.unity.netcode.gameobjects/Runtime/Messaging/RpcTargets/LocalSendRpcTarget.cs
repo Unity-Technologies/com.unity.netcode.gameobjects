@@ -46,7 +46,7 @@ namespace Unity.Netcode
                 message.Handle(ref context);
                 length = tempBuffer.Length;
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             if (NetworkBehaviour.__rpc_name_table[behaviour.GetType()].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
             {
                 behaviour.NetworkManager.NetworkMetrics.TrackRpcSent(
