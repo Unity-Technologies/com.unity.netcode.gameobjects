@@ -159,9 +159,21 @@ namespace Unity.Netcode
         public bool AutoSpawnPlayerPrefabClientSide = true;
 
 #if MULTIPLAYER_TOOLS
+        /// <summary>
+        /// Controls whether network messaging metrics will be gathered. (defaults to true)
+        /// There is a slight performance cost to having this enabled, and can increase in processing time based on network message traffic.
+        /// </summary>
+        /// <remarks>
+        /// The Realtime Network Stats Monitoring tool requires this to be enabled.
+        /// </remarks>
+        [Tooltip("Enable (default) if you want to gather messaging metrics. Realtime Network Stats Monitor requires this to be enabled. Disabling this can improve performance in release builds.")]
         public bool NetworkMessageMetrics = true;
 #endif
-
+        /// <summary>
+        /// When enabled (default, this enables network profiling information. This does come with a per message processing cost.
+        /// Network profiling information is automatically disabled in release builds.
+        /// </summary>
+        [Tooltip("Enable (default) if you want to profile network messages with development builds and defaults to being disabled in release builds. When disabled, network messaging profiling will be disabled in development builds.")]
         public bool NetworkProfilingMetrics = true;
 
         /// <summary>

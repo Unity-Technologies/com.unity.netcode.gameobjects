@@ -29,12 +29,39 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
 #endif
 
 #pragma warning restore IDE1006 // restore naming rule violation check
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static List<Type> s_SerializedType = new List<Type>();
+        // This is used to control the serialized type not optimized messaging for integration test purposes
+        internal static bool DisableNotOptimizedSerializedType;
+        /// <summary>
+        /// Until all serialized types are optimized for the distributed authority network topology,
+        /// this will handle the notification to the user that the type being serialized is not yet
+        /// optimized but will only log the message once to prevent log spamming.
+        /// </summary>
+        internal static void LogSerializedTypeNotOptimized<T>()
+        {
+            if (DisableNotOptimizedSerializedType)
+            {
+                return;
+            }
+            var type = typeof(T);
+            if (!s_SerializedType.Contains(type))
+            {
+                s_SerializedType.Add(type);
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{type.Name}] Serialized type has not been optimized for use with Distributed Authority!");
+                }
+            }
+        }
+#endif
 
         internal static bool IsDistributedAuthority;
 
@@ -1062,6 +1089,13 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (!DisableNotOptimizedSerializedType)
+            {
+                s_SerializedType.Clear();
+            }
+#endif
+
 #if COM_UNITY_MODULES_PHYSICS
             NetworkTransformFixedUpdate.Clear();
 #endif

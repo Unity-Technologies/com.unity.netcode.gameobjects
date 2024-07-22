@@ -27,7 +27,7 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, string>> __rpc_name_table = new Dictionary<Type, Dictionary<uint, string>>();
 #endif
@@ -124,7 +124,7 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
@@ -252,7 +252,7 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 if (clientRpcParams.Send.TargetClientIds != null)
@@ -880,7 +880,7 @@ namespace Unity.Netcode
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             __rpc_func_table[GetType()][hash] = handler;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             __rpc_name_table[GetType()][hash] = rpcMethodName;
 #endif
         }
@@ -906,7 +906,7 @@ namespace Unity.Netcode
             if (!__rpc_func_table.ContainsKey(GetType()))
             {
                 __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
                 __rpc_name_table[GetType()] = new Dictionary<uint, string>();
 #endif
                 __initializeRpcs();

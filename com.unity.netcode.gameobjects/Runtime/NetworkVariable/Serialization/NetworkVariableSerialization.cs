@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -56,10 +55,12 @@ namespace Unity.Netcode
         {
             if (IsDistributedAuthority)
             {
-                if (!Serializer.IsDistributedAuthorityOptimized)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                if (!NetworkManager.DisableNotOptimizedSerializedType && !Serializer.IsDistributedAuthorityOptimized)
                 {
-                    Debug.Log("This variable is not optimized for use with Distributed Authority");
+                    NetworkManager.LogSerializedTypeNotOptimized<T>();
                 }
+#endif
                 Serializer.WriteDistributedAuthority(writer, ref value);
             }
             else
@@ -121,10 +122,12 @@ namespace Unity.Netcode
         {
             if (IsDistributedAuthority)
             {
-                if (!Serializer.IsDistributedAuthorityOptimized)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                if (!NetworkManager.DisableNotOptimizedSerializedType && !Serializer.IsDistributedAuthorityOptimized)
                 {
-                    Debug.Log("This variable is not optimized for use with Distributed Authority");
+                    NetworkManager.LogSerializedTypeNotOptimized<T>();
                 }
+#endif
                 Serializer.WriteDeltaDistributedAuthority(writer, ref value, ref previousValue);
             }
             else
