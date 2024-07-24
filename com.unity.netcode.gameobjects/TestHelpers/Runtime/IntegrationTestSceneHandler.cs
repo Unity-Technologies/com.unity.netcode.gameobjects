@@ -800,8 +800,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             var sceneManager = networkManager.SceneManager;
 
-            // Don't let client's set this value
-            if (!networkManager.IsServer)
+            // In client-server, we don't let client's set this value.
+            // In dsitributed authority, since session owner can be promoted clients can set this value
+            if (!networkManager.DistributedAuthorityMode && !networkManager.IsServer)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
@@ -809,7 +810,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 return;
             }
-            else if (networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            else if (!networkManager.DistributedAuthorityMode && networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
