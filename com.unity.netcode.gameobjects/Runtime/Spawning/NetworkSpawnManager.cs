@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 
@@ -1821,7 +1822,7 @@ namespace Unity.Netcode
             }
             var currentTick = serverTime.Tick;
             var deferredCallbackCount = DeferredDespawnObjects.Count();
-            for (int i = 0; i < deferredCallbackCount - 1; i++)
+            for (int i = 0; i < deferredCallbackCount; i++)
             {
                 var deferredObjectEntry = DeferredDespawnObjects[i];
                 if (!deferredObjectEntry.HasDeferredDespawnCheck)
@@ -1852,9 +1853,15 @@ namespace Unity.Netcode
                 }
             }
 
-            var despawnObjects = DeferredDespawnObjects.Where((c) => c.TickToDespawn < currentTick);
-            foreach (var deferredObjectEntry in despawnObjects)
+            // Parse backwards so we can remove objects as we parse through them
+            for (int i = DeferredDespawnObjects.Count - 1; i > 0; i--)
             {
+                var deferredObjectEntry = DeferredDespawnObjects[i];
+                if (deferredObjectEntry.TickToDespawn >= currentTick)
+                {
+                    continue;
+                }
+
                 if (!SpawnedObjects.ContainsKey(deferredObjectEntry.NetworkObjectId))
                 {
                     DeferredDespawnObjects.Remove(deferredObjectEntry);
