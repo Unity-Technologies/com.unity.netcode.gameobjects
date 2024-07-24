@@ -1853,10 +1853,8 @@ namespace Unity.Netcode
             }
 
             var despawnObjects = DeferredDespawnObjects.Where((c) => c.TickToDespawn < currentTick);
-            var despawnObjectsCount = despawnObjects.Count();
-            for (int i = 0; i < despawnObjectsCount; i++)
+            foreach (var deferredObjectEntry in despawnObjects)
             {
-                var deferredObjectEntry = despawnObjects.ElementAt(i);
                 if (!SpawnedObjects.ContainsKey(deferredObjectEntry.NetworkObjectId))
                 {
                     DeferredDespawnObjects.Remove(deferredObjectEntry);
