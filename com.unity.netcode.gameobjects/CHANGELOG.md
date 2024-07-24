@@ -25,6 +25,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed logic where clients can now set the `NetworkSceneManager` client synchronization mode when using a distributed authority network topology. (#2985)
+
 
 ## [2.0.0-pre.2] - 2024-06-17
 
