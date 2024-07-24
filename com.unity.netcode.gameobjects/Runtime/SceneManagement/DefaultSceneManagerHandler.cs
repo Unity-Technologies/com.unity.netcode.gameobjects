@@ -334,7 +334,7 @@ namespace Unity.Netcode
         {
             var sceneManager = networkManager.SceneManager;
             // In client-server, we don't let client's set this value.
-            // In dsitributed authority, since session owner can be promoted clients can set this value
+            // In distributed authority, since session owner can be promoted clients can set this value
             if (!networkManager.DistributedAuthorityMode && !networkManager.IsServer)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
