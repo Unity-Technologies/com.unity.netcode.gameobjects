@@ -1853,7 +1853,7 @@ namespace Unity.Netcode
             }
 
             // Parse backwards so we can remove objects as we parse through them
-            for (int i = DeferredDespawnObjects.Count - 1; i > 0; i--)
+            for (int i = DeferredDespawnObjects.Count - 1; i >= 0; i--)
             {
                 var deferredObjectEntry = DeferredDespawnObjects[i];
                 if (deferredObjectEntry.TickToDespawn >= currentTick)
