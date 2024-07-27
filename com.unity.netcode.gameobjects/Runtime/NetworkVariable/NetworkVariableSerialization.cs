@@ -722,7 +722,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(changes);
             unsafe
             {
-                byte* ptr = value.GetUnsafePtr();                
+                byte* ptr = value.GetUnsafePtr();
                 for (int i = 0; i < value.Length; ++i)
                 {
                     if (changes.IsSet(i))
