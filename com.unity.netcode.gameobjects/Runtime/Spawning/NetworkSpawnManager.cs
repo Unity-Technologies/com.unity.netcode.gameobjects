@@ -1820,11 +1820,14 @@ namespace Unity.Netcode
                 return;
             }
             var currentTick = serverTime.Tick;
-            var deferredCallbackObjects = DeferredDespawnObjects.Where((c) => c.HasDeferredDespawnCheck);
-            var deferredCallbackCount = deferredCallbackObjects.Count();
-            for (int i = 0; i < deferredCallbackCount - 1; i++)
+            var deferredCallbackCount = DeferredDespawnObjects.Count();
+            for (int i = 0; i < deferredCallbackCount; i++)
             {
-                var deferredObjectEntry = deferredCallbackObjects.ElementAt(i);
+                var deferredObjectEntry = DeferredDespawnObjects[i];
+                if (!deferredObjectEntry.HasDeferredDespawnCheck)
+                {
+                    continue;
+                }
                 var networkObject = SpawnedObjects[deferredObjectEntry.NetworkObjectId];
                 // Double check to make sure user did not remove the callback
                 if (networkObject.OnDeferredDespawnComplete != null)
@@ -1849,9 +1852,15 @@ namespace Unity.Netcode
                 }
             }
 
-            var despawnObjects = DeferredDespawnObjects.Where((c) => c.TickToDespawn < currentTick).ToList();
-            foreach (var deferredObjectEntry in despawnObjects)
+            // Parse backwards so we can remove objects as we parse through them
+            for (int i = DeferredDespawnObjects.Count - 1; i >= 0; i--)
             {
+                var deferredObjectEntry = DeferredDespawnObjects[i];
+                if (deferredObjectEntry.TickToDespawn >= currentTick)
+                {
+                    continue;
+                }
+
                 if (!SpawnedObjects.ContainsKey(deferredObjectEntry.NetworkObjectId))
                 {
                     DeferredDespawnObjects.Remove(deferredObjectEntry);

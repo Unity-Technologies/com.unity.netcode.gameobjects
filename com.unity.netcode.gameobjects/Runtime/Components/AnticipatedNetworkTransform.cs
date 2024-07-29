@@ -360,6 +360,10 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            if (NetworkManager.DistributedAuthorityMode)
+            {
+                Debug.LogWarning($"This component is not currently supported in distributed authority.");
+            }
             base.OnNetworkSpawn();
             m_OutstandingAuthorityChange = true;
             ApplyAuthoritativeState();

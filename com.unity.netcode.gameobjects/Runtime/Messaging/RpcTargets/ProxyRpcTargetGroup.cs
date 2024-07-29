@@ -18,12 +18,12 @@ namespace Unity.Netcode
         internal override void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams)
         {
             var proxyMessage = new ProxyMessage { Delivery = delivery, TargetClientIds = TargetClientIds.AsArray(), WrappedMessage = message };
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             var size =
 #endif
                 behaviour.NetworkManager.MessageManager.SendMessage(ref proxyMessage, delivery, NetworkManager.ServerClientId);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             if (NetworkBehaviour.__rpc_name_table[behaviour.GetType()].TryGetValue(message.Metadata.NetworkRpcMethodId, out var rpcMethodName))
             {
                 foreach (var clientId in TargetClientIds)
