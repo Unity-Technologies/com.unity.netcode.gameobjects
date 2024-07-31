@@ -806,7 +806,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when the local client gains ownership of this object.
+        /// In client-server contexts, this method is invoked on both the server and the local client of the owner when <see cref="Netcode.NetworkObject"/> ownership is assigned.
+        /// <para>In distributed authority contexts, this method is only invoked on the local client that has been assigned ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -834,7 +835,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when ownership of this object is lost.
+        /// In client-server contexts, this method is invoked on the local client when it loses ownership of the associated <see cref="Netcode.NetworkObject"/>
+        /// and on the server when any client loses ownership.
+        /// <para>In distributed authority contexts, this method is only invoked on the local client that has lost ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
         /// </summary>
         public virtual void OnLostOwnership() { }
 
@@ -1138,7 +1141,7 @@ namespace Unity.Netcode
                 // Distributed Authority: All clients have read permissions, always try to write the value.
                 if (NetworkVariableFields[j].CanClientRead(targetClientId))
                 {
-                    // Write additional NetworkVariable information when length safety is enabled or when in distributed authority mode 
+                    // Write additional NetworkVariable information when length safety is enabled or when in distributed authority mode
                     if (ensureLengthSafety || distributedAuthority)
                     {
                         // Write the type being serialized for distributed authority (only for comb-server)
