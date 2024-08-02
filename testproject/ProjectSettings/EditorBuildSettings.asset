@@ -152,6 +152,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/SessionSynchronize.unity
     guid: 468b795904b98234593ebc31bf0d578a
+  - enabled: 1
+    path: Assets/Tests/Manual/NetworkAnimatorTests/AnimationBidirectionalTriggers/NetworkAnimatorDualTriggerCheer.unity
+    guid: a2408927b1ca1c74bb359402d44b4c73
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
