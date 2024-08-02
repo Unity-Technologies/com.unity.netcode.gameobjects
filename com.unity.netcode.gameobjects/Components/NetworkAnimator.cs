@@ -832,7 +832,8 @@ namespace Unity.Netcode.Components
                     stateChangeDetected = true;
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
-                else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer])
+                else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer] && (!m_DestinationStateToTransitioninfo.ContainsKey(layer) ||
+                    (m_DestinationStateToTransitioninfo.ContainsKey(layer) && m_DestinationStateToTransitioninfo[layer].ContainsKey(nt.fullPathHash))))
                 {
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
@@ -841,6 +842,10 @@ namespace Unity.Netcode.Components
                     animState.CrossFade = false;
                     animState.Transition = true;
                     animState.NormalizedTime = tt.normalizedTime;
+                    if (m_DestinationStateToTransitioninfo.ContainsKey(layer) && m_DestinationStateToTransitioninfo[layer].ContainsKey(nt.fullPathHash))
+                    {
+                        animState.DestinationStateHash = nt.fullPathHash;
+                    }
                     stateChangeDetected = true;
                     //Debug.Log($"[Transition] TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
