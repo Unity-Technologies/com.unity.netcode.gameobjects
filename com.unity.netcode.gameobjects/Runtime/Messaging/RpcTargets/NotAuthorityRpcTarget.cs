@@ -29,6 +29,11 @@ namespace Unity.Netcode
                         {
                             continue;
                         }
+
+                        if (clientId == NetworkManager.ServerClientId && m_NetworkManager.CMBServiceConnection)
+                        {
+                            continue;
+                        }
                         m_GroupSendTarget.Add(clientId);
                     }
                 }
@@ -37,6 +42,11 @@ namespace Unity.Netcode
                     foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
                     {
                         if (clientId == behaviour.OwnerClientId || !networkObject.Observers.Contains(clientId))
+                        {
+                            continue;
+                        }
+
+                        if (clientId == NetworkManager.ServerClientId && m_NetworkManager.CMBServiceConnection)
                         {
                             continue;
                         }
