@@ -30,6 +30,7 @@ namespace Unity.Netcode
                             continue;
                         }
 
+                        // The CMB-Service holds ID 0 and should not be added to the targets
                         if (clientId == NetworkManager.ServerClientId && m_NetworkManager.CMBServiceConnection)
                         {
                             continue;
@@ -46,6 +47,7 @@ namespace Unity.Netcode
                             continue;
                         }
 
+                        // The CMB-Service holds ID 0 and should not be added to the targets
                         if (clientId == NetworkManager.ServerClientId && m_NetworkManager.CMBServiceConnection)
                         {
                             continue;
