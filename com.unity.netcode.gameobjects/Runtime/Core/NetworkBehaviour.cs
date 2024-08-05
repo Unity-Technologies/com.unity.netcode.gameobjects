@@ -758,7 +758,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when the local client gains ownership of this object
+        /// Invoked on both the server and the local client of the owner when <see cref="Netcode.NetworkObject"/> ownership is assigned.
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -786,7 +786,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets called when we loose ownership of this object
+        /// Invoked on the local client when it loses ownership of the associated <see cref="Netcode.NetworkObject"/>.
+        /// This method is also invoked on the server when any client loses ownership.
         /// </summary>
         public virtual void OnLostOwnership() { }
 
