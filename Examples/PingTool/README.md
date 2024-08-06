@@ -17,6 +17,8 @@ The ping tool includes a runtime "Ping Rate" slider that provides you with the a
 
 ## Ping Tool RNSM Integration
 Depending upon the network topology selected in the **NetworkManager** depends upon how information is displayed.
+The RTT values represnt the UnitTransport's Round Trip Time calculated values.
+The Ping values represent the time it takes to send a message from client-a to client-b which includes the time it takes to be serialized, added to the outbound queue, sent via UTP, received by UTP, deserialized and processed on the client-b side. The delta time is based off of the delta network server time on client-a and client-b.
 
 ### Client-Server Network Topology
 When using a client-server network topology, upon first starting a host with no other connected clients you should see no stats other than the frame frate:
