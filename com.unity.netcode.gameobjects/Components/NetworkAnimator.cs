@@ -832,6 +832,10 @@ namespace Unity.Netcode.Components
                     stateChangeDetected = true;
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
+                // If we are not transitioned into the "any state" and the animator transition isn't a full path hash (layer to layer) and our pre-built destination state to transition does not contain the
+                // current layer (i.e. transitioning into a state from another layer) =or= we do contain the layer and the layer contains state to transition to is contained within our pre-built destination
+                // state then we can handle this transition as a non-cross fade state transition between layers.
+                // Otherwise, if we don't enter into this then this is a "trigger transition to some state that is now being transitioned back to the Idle state via trigger" or "Dual Triggers" IDLE<-->State.
                 else if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer] && (!m_DestinationStateToTransitioninfo.ContainsKey(layer) ||
                     (m_DestinationStateToTransitioninfo.ContainsKey(layer) && m_DestinationStateToTransitioninfo[layer].ContainsKey(nt.fullPathHash))))
                 {
