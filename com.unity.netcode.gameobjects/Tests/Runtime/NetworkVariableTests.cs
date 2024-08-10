@@ -254,7 +254,8 @@ namespace Unity.Netcode.RuntimeTests
             var oldValue = testCompClient.ServerWritable_Position.Value;
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
-            Assert.That(() => testCompClient.ServerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            LogAssert.Expect(LogType.Error, testCompClient.ServerWritable_Position.GetWritePermissionError());
+            testCompClient.ServerWritable_Position.Value = newValue;
             yield return WaitForPositionsAreEqual(testCompServer.ServerWritable_Position, oldValue);
 
             yield return WaitForServerWritableAreEqualOnAll();
@@ -283,7 +284,8 @@ namespace Unity.Netcode.RuntimeTests
             var oldValue = testCompServer.OwnerWritable_Position.Value;
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
-            Assert.That(() => testCompServer.OwnerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            LogAssert.Expect(LogType.Error, testCompServer.OwnerWritable_Position.GetWritePermissionError());
+            testCompServer.OwnerWritable_Position.Value = newValue;
             yield return WaitForPositionsAreEqual(testCompServer.OwnerWritable_Position, oldValue);
 
             yield return WaitForOwnerWritableAreEqualOnAll();
@@ -589,8 +591,8 @@ namespace Unity.Netcode.RuntimeTests
         {
             InitializeServerAndClients(useHost);
 
-            // client must not be allowed to write to a server auth variable
-            Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
+            LogAssert.Expect(LogType.Error, m_Player1OnClient1.TheScalar.GetWritePermissionError());
+            m_Player1OnClient1.TheScalar.Value = k_TestVal1;
         }
 
         /// <summary>
