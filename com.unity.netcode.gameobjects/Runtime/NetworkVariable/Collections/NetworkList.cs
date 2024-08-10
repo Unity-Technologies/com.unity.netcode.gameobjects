@@ -419,7 +419,7 @@ namespace Unity.Netcode
             if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
-                return;
+                return false;
             }
 
             int index = m_List.IndexOf(item);
