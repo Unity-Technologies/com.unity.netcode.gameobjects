@@ -115,45 +115,36 @@ namespace Unity.Netcode
                 // Compare the Value being applied to the current value
                 if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value))
                 {
-                    Set(value);
+                    m_InternalValue = value;
+                    SetDirty(true);
+                    m_IsDisposed = false;
+                    OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
                 }
             }
         }
 
         /// <summary>
-        /// Sets the <see cref="Value"/>, marks the <see cref="NetworkVariable{T}"/> dirty, and invokes the <see cref="OnValueChanged"/> callback
-        /// if there are subscribers to that event.
+        /// Invoke this method to check if a collection's items are dirty.
+        /// The default behavior is to exit early if the <see cref="NetworkVariable{T}"/> is already dirty.
         /// </summary>
-        /// <param name="value">the new value of type `T` to be set/></param>
-        private protected void Set(T value)
-        {
-            m_InternalValue = value;
-            SetDirty(true);
-            m_IsDisposed = false;
-            OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
-            // We must duplicate at this point in order to properly handle collections
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
-        }
-
-        /// <summary>
-        /// Invoke this method to check if a collection's items are different.
-        /// </summary>
+        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
         /// <remarks>
-        /// Performance Caution: <br />
-        /// Use this method after performing modifications to a collection and not after every modification to the collection. <br />
-        /// Upon detecting a delta between the previous and current collection it will duplicate the current as the previous.
+        /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changees to the collection items.<br />
+        /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set <param name="forceCheck"/> to true. <br />
         /// </remarks>
-        public bool CheckDirtyState()
+        public bool CheckDirtyState(bool forceCheck = false)
         {
-            var wasDirty = false;
+            var isDirty = base.IsDirty();
 
             // Compare the previous with the current if not dirty or forcing a check.
-            if (!NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
+            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
             {
-                Set(m_InternalValue);
-                wasDirty = true;
+                SetDirty(true);
+                OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+                m_IsDisposed = false;
+                isDirty = true;
             }
-            return wasDirty;
+            return isDirty;
         }
 
         internal ref T RefValue()
