@@ -98,8 +98,8 @@ namespace Unity.Netcode
         /// <remarks>
         /// When assigning collections to <see cref="Value"/>, unless it is a completely new collection this will not
         /// detect any deltas with most managed collection classes since assignment of one collection value to another
-        /// is actually just a reference to the collection itself.
-        /// To detect deltas in a collection, you should invoke <see cref="CheckDirtyState"/> after modifying the collection.
+        /// is actually just a reference to the collection itself. <br />
+        /// To detect deltas in a collection, you should invoke <see cref="CheckDirtyState"/> after making modifications to the collection.
         /// </remarks>
         public virtual T Value
         {
@@ -115,10 +115,11 @@ namespace Unity.Netcode
                 // Compare the Value being applied to the current value
                 if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value))
                 {
+                    T previousValue = m_InternalValue;
                     m_InternalValue = value;
                     SetDirty(true);
                     m_IsDisposed = false;
-                    OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+                    OnValueChanged?.Invoke(previousValue, m_InternalValue);
                 }
             }
         }
