@@ -39,8 +39,7 @@ namespace Unity.Netcode
 
         internal string GetWritePermissionError()
         {
-            var networkManager = m_NetworkManager == null ? NetworkManager.Singleton : m_NetworkManager;
-            return $"|Client-{networkManager.LocalClientId}|{m_NetworkBehaviour.name}|{Name}| Write permissions ({WritePerm}) for this client instance is not allowed!";
+            return $"|Client-{m_NetworkManager.LocalClientId}|{m_NetworkBehaviour.name}|{Name}| Write permissions ({WritePerm}) for this client instance is not allowed!";
         }
 
         internal void LogWritePermissionError()
