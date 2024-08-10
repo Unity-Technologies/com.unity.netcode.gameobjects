@@ -100,20 +100,45 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                // Compare bitwise
-                if (NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value))
+                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
                 {
+                    LogWritePermissionError();
                     return;
                 }
 
-                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
+                // Compare the Value being applied to the current value
+                if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value) ||
+                    // For collections, this will compare the items of the current vs previous to check for changes
+                    !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
                 {
-                    throw new InvalidOperationException($"[Client-{m_NetworkManager.LocalClientId}][{m_NetworkBehaviour.name}][{Name}] Write permissions ({WritePerm}) for this client instance is not allowed!");
+                    Set(value);
+                    m_IsDisposed = false;
                 }
-
-                Set(value);
-                m_IsDisposed = false;
             }
+        }
+
+        /// <summary>
+        /// Invoke this method to check if a managed collection's items are different. If so, mark the NetworkVariable dirty.
+        /// </summary>
+        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
+        /// <remarks>
+        /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changees to the collection items.
+        /// The default behavior is to exit early if the <see cref="NetworkVariable{T}"/> is already dirty.
+        /// You can set <param name="forceCheck"/> to true to force it to alawys check, even if dirty, in the event you want <see cref="OnValueChanged"/> to be triggered when already dirty.
+        /// </remarks>
+        public bool CheckDirtyState(bool forceCheck = false)
+        {
+            var isDirty = base.IsDirty();
+
+            // Compare the previous with the current if not dirty or forcing a check.
+            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
+            {
+                SetDirty(true);
+                OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+                m_IsDisposed = false;
+                isDirty = true;
+            }
+            return isDirty;
         }
 
         internal ref T RefValue()
@@ -202,9 +227,8 @@ namespace Unity.Netcode
         private protected void Set(T value)
         {
             SetDirty(true);
-            T previousValue = m_InternalValue;
             m_InternalValue = value;
-            OnValueChanged?.Invoke(previousValue, m_InternalValue);
+            OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
         }
 
         /// <summary>
@@ -223,20 +247,21 @@ namespace Unity.Netcode
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
+            // In order to get managed collections to properly have a previous and current value, we have to
+            // duplicate the collection at this point before making any modifications to the current.
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);            
+            NetworkVariableSerialization<T>.ReadDelta(reader, ref m_InternalValue);
+
             // todo:
             // keepDirtyDelta marks a variable received as dirty and causes the server to send the value to clients
             // In a prefect world, whether a variable was A) modified locally or B) received and needs retransmit
             // would be stored in different fields
-
-            T previousValue = m_InternalValue;
-            NetworkVariableSerialization<T>.ReadDelta(reader, ref m_InternalValue);
-
             if (keepDirtyDelta)
             {
                 SetDirty(true);
             }
 
-            OnValueChanged?.Invoke(previousValue, m_InternalValue);
+            OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
         }
 
         /// <inheritdoc />

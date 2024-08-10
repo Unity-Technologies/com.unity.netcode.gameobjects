@@ -37,6 +37,17 @@ namespace Unity.Netcode
 
         internal virtual NetworkVariableType Type => NetworkVariableType.Unknown;
 
+        internal string GetWritePermissionError()
+        {
+            var networkManager = m_NetworkManager == null ? NetworkManager.Singleton : m_NetworkManager;
+            return $"|Client-{networkManager.LocalClientId}|{m_NetworkBehaviour.name}|{Name}| Write permissions ({WritePerm}) for this client instance is not allowed!";
+        }
+
+        internal void LogWritePermissionError()
+        {
+            Debug.LogError(GetWritePermissionError());
+        }
+
         private protected NetworkManager m_NetworkManager
         {
             get
