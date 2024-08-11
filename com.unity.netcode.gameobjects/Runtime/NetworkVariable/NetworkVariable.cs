@@ -238,6 +238,7 @@ namespace Unity.Netcode
         {
             // In order to get managed collections to properly have a previous and current value, we have to
             // duplicate the collection at this point before making any modifications to the current.
+            m_HasPreviousValue = true;
             NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
             NetworkVariableSerialization<T>.ReadDelta(reader, ref m_InternalValue);
 
