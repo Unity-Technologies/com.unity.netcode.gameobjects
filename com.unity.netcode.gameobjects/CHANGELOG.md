@@ -8,9 +8,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 [Unreleased]
 ### Added
 
+- Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3005)
+
 ### Fixed
 
+- Fixed issue using collections within `NetworkVariable` where the collection would not detect changes to items or nested items. (#3005)
+- Fixed issue where `List`, `Dictionary`, and `HashSet` collections would not uniquely duplicate nested collections. (#3005)
+
 ### Changed
+
+- Changed permissions exception thrown in `NetworkList` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3005)
+- Changed permissions exception thrown in `NetworkVariable.Value` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3005)
+
 
 ## [1.10.0] - 2024-07-22
 
