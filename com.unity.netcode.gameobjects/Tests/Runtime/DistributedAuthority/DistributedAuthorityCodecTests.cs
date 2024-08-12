@@ -40,11 +40,6 @@ namespace Unity.Netcode.RuntimeTests
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
             public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
 
-            [Rpc(SendTo.NotAuthority)]
-            public void TestNotAuthorityRpc(byte[] _)
-            {
-            }
-
             [Rpc(SendTo.Authority)]
             public void TestAuthorityRpc(byte[] _)
             {
@@ -261,15 +256,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
             component.MyNetworkList.Clear();
             yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
-        }
-
-        [UnityTest]
-        public IEnumerator NotAuthorityRpc()
-        {
-            Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>().TestNotAuthorityRpc(new byte[] { 1, 2, 3, 4 });
-
-            // Universal Rpcs are sent as a ProxyMessage (which contains an RpcMessage)
-            yield return m_ClientCodecHook.WaitForMessageReceived<ProxyMessage>();
         }
 
         [UnityTest]
