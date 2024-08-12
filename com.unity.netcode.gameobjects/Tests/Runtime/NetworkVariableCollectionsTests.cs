@@ -10,6 +10,15 @@ using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// Validates using managed collections with NetworkVariable.
+    /// Managed Collections Tested:
+    /// - List
+    /// - Dictionary
+    /// - HashSet
+    /// This also does some testing on nested collections, but does
+    /// not test every possible combination.
+    /// </summary>
     [TestFixture(HostOrServer.Host, CollectionTypes.List)]
     [TestFixture(HostOrServer.Server, CollectionTypes.List)]
     public class NetworkVariableCollectionsTests : NetcodeIntegrationTest
@@ -35,6 +44,9 @@ namespace Unity.Netcode.RuntimeTests
             ListTestHelperListInt.ResetState();
             ListTestHelperSerializableObject.ResetState();
             ListTestHelperListSerializableObject.ResetState();
+            DictionaryTestHelper.ResetState();
+            NestedDictionaryTestHelper.ResetState();
+            HashSetBaseTypeTestHelper.ResetState();
             return base.OnSetup();
         }
 
@@ -44,6 +56,9 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<ListTestHelperListInt>();
             m_PlayerPrefab.AddComponent<ListTestHelperSerializableObject>();
             m_PlayerPrefab.AddComponent<ListTestHelperListSerializableObject>();
+            m_PlayerPrefab.AddComponent<DictionaryTestHelper>();
+            m_PlayerPrefab.AddComponent<NestedDictionaryTestHelper>();
+            m_PlayerPrefab.AddComponent<HashSetBaseTypeTestHelper>();
             base.OnCreatePlayerPrefab();
         }
 
@@ -516,7 +531,1145 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compListObjectServer.OwnerClientId}'s {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name} component match!");
             }
         }
+
+        private int m_CurrentKey;
+        private int GetNextKey()
+        {
+            m_CurrentKey++;
+            return m_CurrentKey;
+        }
+
+        [UnityTest]
+        public IEnumerator TestDictionaryCollections()
+        {
+            var compDictionary = (DictionaryTestHelper)null;
+            var compDictionaryServer = (DictionaryTestHelper)null;
+            var className = $"{nameof(DictionaryTestHelper)}";
+
+            var clientList = m_ClientNetworkManagers.ToList();
+            if (m_ServerNetworkManager.IsHost)
+            {
+                clientList.Insert(0, m_ServerNetworkManager);
+            }
+
+            m_CurrentKey = 1000;
+
+            foreach (var client in clientList)
+            {
+                ///////////////////////////////////////////////////////////////////////////
+                // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
+                compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
+                compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+
+                //////////////////////////////////
+                // Owner Add SerializableObject Entry
+                compDictionary.Add((GetNextKey(), SerializableObject.GetRandomObject()), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Add SerializableObject Entry
+                compDictionaryServer.Add((GetNextKey(), SerializableObject.GetRandomObject()), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server add failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+                //////////////////////////////////
+                // Owner Remove SerializableObject Entry
+                var index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                var valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionary.Remove(valueInt, ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Remove SerializableObject Entry
+                index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionaryServer.Remove(valueInt, ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server remove failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Change SerializableObject Entry
+                index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionary.ListCollectionOwner.Value[valueInt] = SerializableObject.GetRandomObject();
+                compDictionary.ListCollectionOwner.CheckDirtyState();
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Change SerializableObject
+                index = Random.Range(0, compDictionaryServer.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionaryServer.ListCollectionServer.Value[valueInt] = SerializableObject.GetRandomObject();
+                compDictionaryServer.ListCollectionServer.CheckDirtyState();
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server change failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Full Set Dictionary
+                compDictionary.FullSet(DictionaryTestHelper.GetDictionaryValues(), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} full set failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Full Set Dictionary
+                compDictionaryServer.FullSet(DictionaryTestHelper.GetDictionaryValues(), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server full set failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Clear
+                compDictionary.Clear(ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Clear
+                compDictionaryServer.Clear(ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server clear failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator TestDictionaryNestedCollections()
+        {
+            var compDictionary = (NestedDictionaryTestHelper)null;
+            var compDictionaryServer = (NestedDictionaryTestHelper)null;
+            var className = $"{nameof(NestedDictionaryTestHelper)}";
+
+            var clientList = m_ClientNetworkManagers.ToList();
+            if (m_ServerNetworkManager.IsHost)
+            {
+                clientList.Insert(0, m_ServerNetworkManager);
+            }
+
+            m_CurrentKey = 1000;
+
+            foreach (var client in clientList)
+            {
+                ///////////////////////////////////////////////////////////////////////////
+                // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
+                compDictionary = client.LocalClient.PlayerObject.GetComponent<NestedDictionaryTestHelper>();
+                compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<NestedDictionaryTestHelper>();
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+
+                //////////////////////////////////
+                // Owner Add Dictionary
+                compDictionary.Add((GetNextKey(), NestedDictionaryTestHelper.GetDictionaryValues()), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Add Dictionary
+                compDictionaryServer.Add((GetNextKey(), NestedDictionaryTestHelper.GetDictionaryValues()), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server add failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+                //////////////////////////////////
+                // Owner Remove Dictionary
+                var index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                var valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionary.Remove(valueInt, ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Remove Dictionary
+                index = Random.Range(0, compDictionaryServer.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionaryServer.Remove(valueInt, ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server remove failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Change Dictionary
+                index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionary.ListCollectionOwner.Value[valueInt] = NestedDictionaryTestHelper.GetDictionaryValues();
+                compDictionary.ListCollectionOwner.CheckDirtyState();
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Change Dictionary
+                index = Random.Range(0, compDictionaryServer.ListCollectionOwner.Value.Keys.Count - 1);
+                valueInt = compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[index];
+                compDictionaryServer.ListCollectionServer.Value[index] = NestedDictionaryTestHelper.GetDictionaryValues();
+                compDictionaryServer.ListCollectionServer.CheckDirtyState();
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server change failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Full Set Nested Dictionaries
+                compDictionary.FullSet(NestedDictionaryTestHelper.GetNestedDictionaryValues(), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} full set failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Full Set Nested Dictionaries
+                compDictionaryServer.FullSet(NestedDictionaryTestHelper.GetNestedDictionaryValues(), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server full set failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Clear
+                compDictionary.Clear(ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Clear
+                compDictionaryServer.Clear(ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server clear failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator TestHashSetBuiltInTypeCollections()
+        {
+            var compHashSet = (HashSetBaseTypeTestHelper)null;
+            var compHashSetServer = (HashSetBaseTypeTestHelper)null;
+            var className = $"{nameof(HashSetBaseTypeTestHelper)}";
+
+            var clientList = m_ClientNetworkManagers.ToList();
+            if (m_ServerNetworkManager.IsHost)
+            {
+                clientList.Insert(0, m_ServerNetworkManager);
+            }
+
+            m_CurrentKey = 1000;
+
+            foreach (var client in clientList)
+            {
+                ///////////////////////////////////////////////////////////////////////////
+                // HashSet<int> Single dimension list
+                compHashSet = client.LocalClient.PlayerObject.GetComponent<HashSetBaseTypeTestHelper>();
+                compHashSetServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<HashSetBaseTypeTestHelper>();
+                yield return WaitForConditionOrTimeOut(() => compHashSet.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compHashSet.OwnerClientId}'s {className} {compHashSet.name} component match! {compHashSet.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compHashSetServer.OwnerClientId}'s {className} {compHashSetServer.name} component match! {compHashSetServer.GetLog()}");
+
+                //////////////////////////////////
+                // Owner Add Item
+                compHashSet.Add(Random.Range(ushort.MinValue,ushort.MaxValue), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compHashSet.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compHashSet.name}! {compHashSet.GetLog()}");
+                //////////////////////////////////
+                // Server Add Item
+                compHashSetServer.Add(Random.Range(ushort.MinValue, ushort.MaxValue), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server add failed to synchronize on {className} {compHashSetServer.name}! {compHashSetServer.GetLog()}");
+                //////////////////////////////////
+                // Owner Remove Item
+                var index = Random.Range(0, compHashSet.ListCollectionOwner.Value.Count - 1);
+                compHashSet.Remove(compHashSet.ListCollectionOwner.Value.ElementAt(index), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compHashSet.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {className} {compHashSet.name}! {compHashSet.GetLog()}");
+                //////////////////////////////////
+                // Server Remove Item
+                index = Random.Range(0, compHashSetServer.ListCollectionOwner.Value.Count - 1);
+                compHashSetServer.Remove(compHashSetServer.ListCollectionOwner.Value.ElementAt(index), ListTestHelperBase.Targets.Server);                
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server remove failed to synchronize on {className} {compHashSetServer.name}! {compHashSetServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compHashSet.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compHashSet.OwnerClientId}'s {className} {compHashSet.name} component match! {compHashSet.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compHashSetServer.OwnerClientId}'s {className} {compHashSetServer.name} component match! {compHashSetServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Full Set HashSet Values
+                compHashSet.FullSet(HashSetBaseTypeTestHelper.GetHashSetValues(), ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compHashSet.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} full set failed to synchronize on {className} {compHashSet.name}! {compHashSet.GetLog()}");
+                //////////////////////////////////
+                // Server Full Set HashSet Values
+                compHashSetServer.FullSet(HashSetBaseTypeTestHelper.GetHashSetValues(), ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server full set failed to synchronize on {className} {compHashSetServer.name}! {compHashSetServer.GetLog()}");
+
+                ////////////////////////////////////
+                // Owner Clear
+                compHashSet.Clear(ListTestHelperBase.Targets.Owner);
+                yield return WaitForConditionOrTimeOut(() => compHashSet.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {className} {compHashSet.name}! {compHashSet.GetLog()}");
+                //////////////////////////////////
+                // Server Clear
+                compHashSetServer.Clear(ListTestHelperBase.Targets.Server);
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                AssertOnTimeout($"Server clear failed to synchronize on {className} {compHashSetServer.name}! {compHashSetServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compHashSet.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compHashSet.OwnerClientId}'s {className} {compHashSet.name} component match! {compHashSet.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compHashSetServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compHashSetServer.OwnerClientId}'s {className} {compHashSetServer.name} component match! {compHashSetServer.GetLog()}");
+            }
+
+        }
     }
+
+    #region HASHSET COMPONENT HELPERS
+    public class HashSetBaseTypeTestHelper : ListTestHelperBase, IHashSetTestHelperBase<int>
+    {
+        public static Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>>();
+
+        public static void ResetState()
+        {
+            Instances.Clear();
+        }
+
+        public NetworkVariable<HashSet<int>> ListCollectionServer = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        public NetworkVariable<HashSet<int>> ListCollectionOwner = new NetworkVariable<HashSet<int>>(new HashSet<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        // This tracks what has changed per instance which is used to compare to all other instances
+        public Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, HashSet<int>>>();
+
+        public bool ValidateInstances()
+        {
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    return false;
+                }
+                var otherOwnerCollection = Instances[clientId][NetworkObjectId].ListCollectionOwner;
+                var otherServerCollection = Instances[clientId][NetworkObjectId].ListCollectionServer;
+                if (!ListCollectionOwner.Value.SequenceEqual(otherOwnerCollection.Value))
+                {
+                    return false;
+                }
+                if (!ListCollectionServer.Value.SequenceEqual(otherServerCollection.Value))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ChangesMatch(Dictionary<DeltaTypes, HashSet<int>> local, Dictionary<DeltaTypes, HashSet<int>> other)
+        {
+            var deltaTypes = Enum.GetValues(typeof(DeltaTypes)).OfType<DeltaTypes>().ToList();
+            foreach (var deltaType in deltaTypes)
+            {
+                LogMessage($"Comparing {deltaType}:");
+                if (local[deltaType].Count != other[deltaType].Count)
+                {
+                    LogMessage($"{deltaType}s did not match!");
+                    return false;
+                }
+                foreach(var value in local[deltaType])
+                {
+                    if (!other[deltaType].Contains(value))
+                    {
+                        LogMessage($"Value ({value}) in local was not found on remote!");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public override bool CompareTrackedChanges(Targets target)
+        {
+            LogStart();
+            var localChanges = NetworkVariableChanges[target];
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    return false;
+                }
+                var entry = Instances[clientId][NetworkObjectId];
+                var otherChanges = entry.NetworkVariableChanges[target];
+                LogMessage($"Comparing against client-{clientId} {entry.name}:");
+                if (!ChangesMatch(localChanges, otherChanges))
+                {
+                    LogMessage($"Client-{clientId} {entry.name} did not match!");
+                    return false;
+                }
+                LogMessage($"Client-{clientId} {entry.name} matched!");
+            }
+            return true;
+        }
+
+        public static HashSet<int> GetHashSetValues(int count = 5)
+        {
+            var hashSet = new HashSet<int>();
+            for (int i = 0; i < count; i++)
+            {
+                hashSet.Add(Random.Range(ushort.MinValue, ushort.MaxValue));
+            }
+            return hashSet;
+        }
+
+        public NetworkVariable<HashSet<int>> GetNetVar(Targets target)
+        {
+            return target == Targets.Server ? ListCollectionServer : ListCollectionOwner;
+        }
+
+        public HashSet<int> OnSetServerValues()
+        {
+            return GetHashSetValues();
+        }
+
+        public HashSet<int> OnSetOwnerValues()
+        {
+            return GetHashSetValues();
+        }
+
+        public void Add(int value, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Add(value);
+            netVar.CheckDirtyState();
+        }
+
+        public void AddRange(HashSet<int> values, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            foreach(var value in values)
+            {
+                netVar.Value.Add(value);
+            }            
+            netVar.CheckDirtyState();
+        }
+
+        public void Remove(int value, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Remove(value);
+            netVar.CheckDirtyState();
+        }
+
+        public void FullSet(HashSet<int> values, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value = values;
+            netVar.CheckDirtyState();
+        }
+
+        public void Clear(Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Clear();
+            netVar.CheckDirtyState();
+        }
+
+        public void TrackChanges(Targets target, HashSet<int> previous, HashSet<int> current)
+        {
+            var contextTable = NetworkVariableChanges[target];
+
+            var whatWasAdded = current.Except(previous).ToHashSet();
+            var whatWasRemoved = previous.Where((c) => !current.Contains(c)).ToHashSet();
+            var whatWasNeitherAddedOrRemoved = current.Where((c) => previous.Contains(c) && !whatWasAdded.Contains(c)).ToHashSet();
+            var whatChanged = whatWasNeitherAddedOrRemoved.Where((c) => previous.Contains(c) && !previous.Where((d) => d.Equals(c)).FirstOrDefault().Equals(c)).ToHashSet();
+            var whatRemainedTheSame = whatWasNeitherAddedOrRemoved.Where((c) => !whatChanged.Contains(c)).ToHashSet();
+
+            contextTable[DeltaTypes.Added] = whatWasAdded;
+            contextTable[DeltaTypes.Removed] = whatWasRemoved;
+            contextTable[DeltaTypes.Changed] = whatChanged;
+            contextTable[DeltaTypes.UnChanged] = whatRemainedTheSame;
+        }
+
+        public void OnServerListValuesChanged(HashSet<int> previous, HashSet<int> current)
+        {
+            TrackChanges(Targets.Server, previous, current);
+        }
+
+        public void OnOwnerListValuesChanged(HashSet<int> previous, HashSet<int> current)
+        {
+            TrackChanges(Targets.Owner, previous, current);
+        }
+
+        /// <summary>
+        /// Keeps track of each client instsnce releative player instance with this component
+        /// </summary>
+        private void TrackRelativeInstances()
+        {
+            if (!Instances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                Instances.Add(NetworkManager.LocalClientId, new Dictionary<ulong, HashSetBaseTypeTestHelper>());
+            }
+
+            if (!Instances[NetworkManager.LocalClientId].ContainsKey(NetworkObjectId))
+            {
+                Instances[NetworkManager.LocalClientId].Add(NetworkObjectId, this);
+            }
+            ResetTrackedChanges();
+        }
+
+        public void ResetTrackedChanges()
+        {
+            NetworkVariableChanges.Clear();
+            NetworkVariableChanges.Add(Targets.Owner, new Dictionary<DeltaTypes, HashSet<int>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Added, new HashSet<int>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Changed, new HashSet<int>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Removed, new HashSet<int>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.UnChanged, new HashSet<int>());
+            NetworkVariableChanges.Add(Targets.Server, new Dictionary<DeltaTypes, HashSet<int>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Added, new HashSet<int>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Changed, new HashSet<int>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Removed, new HashSet<int>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.UnChanged, new HashSet<int>());
+        }
+
+        protected override void OnNetworkPostSpawn()
+        {
+            TrackRelativeInstances();
+
+            ListCollectionServer.OnValueChanged += OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged += OnOwnerListValuesChanged;
+
+            if (IsServer)
+            {
+                ListCollectionServer.Value = OnSetServerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+
+            if (IsOwner)
+            {
+                ListCollectionOwner.Value = OnSetOwnerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+            base.OnNetworkPostSpawn();
+        }
+        public override void OnNetworkDespawn()
+        {
+            ListCollectionServer.OnValueChanged -= OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged -= OnOwnerListValuesChanged;
+            base.OnNetworkDespawn();
+        }
+    }
+    #endregion
+
+    #region DICTIONARY COMPONENT HELPERS
+    public class NestedDictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, Dictionary<int, SerializableObject>>
+    {
+        public static Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>>();
+
+        public static void ResetState()
+        {
+            Instances.Clear();
+        }
+
+        public NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>> ListCollectionServer = new NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>>(new Dictionary<int, Dictionary<int, SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        public NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>> ListCollectionOwner = new NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>>(new Dictionary<int, Dictionary<int, SerializableObject>>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        // This tracks what has changed per instance which is used to compare to all other instances
+        public Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>>();
+
+        private bool CompareDictionaries(ulong clientId, Dictionary<int, SerializableObject> first, Dictionary<int, SerializableObject> second)
+        {
+            foreach (var entry in first)
+            {
+                if (!second.ContainsKey(entry.Key))
+                {
+                    LogMessage($"Client-{clientId} has no key entry for ({entry.Key})!");
+                    return false;
+                }
+                var seconValue = second[entry.Key];
+                if (!entry.Value.Equals(seconValue))
+                {
+                    LogMessage($"Client-{clientId} value ({seconValue} does not equal ({entry.Value})!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool CompareNestedDictionaries(ulong clientId, Dictionary<int, Dictionary<int, SerializableObject>> first, Dictionary<int, Dictionary<int, SerializableObject>> second)
+        {
+            foreach (var entry in first)
+            {
+                if (!second.ContainsKey(entry.Key))
+                {
+                    LogMessage($"Client-{clientId} has no key entry for ({entry.Key})!");
+                    return false;
+                }
+                var secondValue = second[entry.Key];
+                if (!CompareDictionaries(clientId, entry.Value, secondValue))
+                {
+                    LogMessage($"Client-{clientId} value root Key ({entry.Key}) dictionary does not equal the local dictionary!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool ValidateInstances()
+        {
+            LogStart();
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    LogMessage($"Client-{clientId} has no entry!");
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    LogMessage($"Client-{clientId} has no instance entry of NetworkObject ({NetworkObjectId})!");
+                    return false;
+                }
+                var otherOwnerCollection = Instances[clientId][NetworkObjectId].ListCollectionOwner;
+                var otherServerCollection = Instances[clientId][NetworkObjectId].ListCollectionServer;
+
+                if (!CompareNestedDictionaries(clientId, ListCollectionOwner.Value, otherOwnerCollection.Value))
+                {
+                    LogMessage($"Client-{clientId} did not synchronize properly with the owner collection!");
+                    return false;
+                }
+
+                if (!CompareNestedDictionaries(clientId, ListCollectionServer.Value, otherServerCollection.Value))
+                {
+                    LogMessage($"Client-{clientId} did not synchronize properly with the server collection!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ChangesMatch(ulong clientId, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>> local, Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>> other)
+        {
+            var deltaTypes = Enum.GetValues(typeof(DeltaTypes)).OfType<DeltaTypes>().ToList();
+            foreach (var deltaType in deltaTypes)
+            {
+                LogMessage($"Comparing {deltaType}:");
+                if (local[deltaType].Count != other[deltaType].Count)
+                {
+                    LogMessage($"{deltaType}s count did not match!");
+                    return false;
+                }
+                if (!CompareNestedDictionaries(clientId, local[deltaType], other[deltaType]))
+                {
+                    LogMessage($"{deltaType}s values did not match!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public override bool CompareTrackedChanges(Targets target)
+        {
+            LogStart();
+            var localChanges = NetworkVariableChanges[target];
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    return false;
+                }
+                var entry = Instances[clientId][NetworkObjectId];
+                var otherChanges = entry.NetworkVariableChanges[target];
+                LogMessage($"Comparing against client-{clientId} {entry.name}:");
+                if (!ChangesMatch(clientId, localChanges, otherChanges))
+                {
+                    LogMessage($"Client-{clientId} {entry.name} failed to synchronize properly!");
+                    return false;
+                }
+                LogMessage($"Client-{clientId} {entry.name} matched!");
+            }
+            return true;
+        }
+
+        public static Dictionary<int, SerializableObject> GetDictionaryValues(int count = 5)
+        {
+            var dictionary = new Dictionary<int, SerializableObject>();
+            for (int i = 0; i < count; i++)
+            {
+                dictionary.Add(i, SerializableObject.GetRandomObject());
+            }
+            return dictionary;
+        }
+
+        public static Dictionary<int, Dictionary<int, SerializableObject>> GetNestedDictionaryValues(int count = 5)
+        {
+            var dictionary = new Dictionary<int, Dictionary<int, SerializableObject>>();
+            for (int i = 0; i < count; i++)
+            {
+                dictionary.Add(i, GetDictionaryValues());
+            }
+            return dictionary;
+        }
+
+        public NetworkVariable<Dictionary<int, Dictionary<int, SerializableObject>>> GetNetVar(Targets target)
+        {
+            return target == Targets.Server ? ListCollectionServer : ListCollectionOwner;
+        }
+
+        public Dictionary<int, Dictionary<int, SerializableObject>> OnSetServerValues()
+        {
+            
+            return GetNestedDictionaryValues();
+        }
+
+        public Dictionary<int, Dictionary<int, SerializableObject>> OnSetOwnerValues()
+        {
+            return GetNestedDictionaryValues();
+        }
+
+
+        public bool UpdateValue((int, Dictionary<int, SerializableObject>) value, Targets target, bool checkDirty = true)
+        {
+            var netVar = GetNetVar(target);
+            if (netVar.Value.ContainsKey(value.Item1))
+            {
+                netVar.Value[value.Item1] = value.Item2;
+                if (checkDirty)
+                {
+                    netVar.CheckDirtyState();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public void Add((int, Dictionary<int, SerializableObject>) value, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Add(value.Item1, value.Item2);
+            netVar.CheckDirtyState();
+        }
+
+        public void Remove(int key, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Remove(key);
+            netVar.CheckDirtyState();
+        }
+
+        public void FullSet(Dictionary<int, Dictionary<int, SerializableObject>> values, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value = values;
+            netVar.CheckDirtyState();
+        }
+
+        public void Clear(Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Clear();
+            netVar.CheckDirtyState();
+        }
+
+        public void TrackChanges(Targets target, Dictionary<int, Dictionary<int, SerializableObject>> previous, Dictionary<int, Dictionary<int, SerializableObject>> current)
+        {
+            var contextTable = NetworkVariableChanges[target];
+
+            var whatWasAdded = current.Except(previous).ToDictionary(item => item.Key, item => item.Value);
+            var whatWasRemoved = previous.Where((c) => !current.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatWasNeitherAddedOrRemoved = current.Where((c) => previous.Contains(c) && !whatWasAdded.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatChanged = whatWasNeitherAddedOrRemoved.Where((c) => previous.Contains(c) && !previous.Where((d) => d.Equals(c)).FirstOrDefault().Equals(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatRemainedTheSame = whatWasNeitherAddedOrRemoved.Where((c) => !whatChanged.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+
+            contextTable[DeltaTypes.Added] = whatWasAdded;
+            contextTable[DeltaTypes.Removed] = whatWasRemoved;
+            contextTable[DeltaTypes.Changed] = whatChanged;
+            contextTable[DeltaTypes.UnChanged] = whatRemainedTheSame;
+        }
+
+        public void OnServerListValuesChanged(Dictionary<int, Dictionary<int, SerializableObject>> previous, Dictionary<int, Dictionary<int, SerializableObject>> current)
+        {
+            TrackChanges(Targets.Server, previous, current);
+        }
+
+        public void OnOwnerListValuesChanged(Dictionary<int, Dictionary<int, SerializableObject>> previous, Dictionary<int, Dictionary<int, SerializableObject>> current)
+        {
+            TrackChanges(Targets.Owner, previous, current);
+        }
+
+        /// <summary>
+        /// Keeps track of each client instsnce releative player instance with this component
+        /// </summary>
+        private void TrackRelativeInstances()
+        {
+            if (!Instances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                Instances.Add(NetworkManager.LocalClientId, new Dictionary<ulong, NestedDictionaryTestHelper>());
+            }
+
+            if (!Instances[NetworkManager.LocalClientId].ContainsKey(NetworkObjectId))
+            {
+                Instances[NetworkManager.LocalClientId].Add(NetworkObjectId, this);
+            }
+            ResetTrackedChanges();
+        }
+
+        public void ResetTrackedChanges()
+        {
+            NetworkVariableChanges.Clear();
+            NetworkVariableChanges.Add(Targets.Owner, new Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Added, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Changed, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Removed, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.UnChanged, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges.Add(Targets.Server, new Dictionary<DeltaTypes, Dictionary<int, Dictionary<int, SerializableObject>>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Added, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Changed, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Removed, new Dictionary<int, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.UnChanged, new Dictionary<int, Dictionary<int, SerializableObject>>());
+        }
+
+        protected override void OnNetworkPostSpawn()
+        {
+            TrackRelativeInstances();
+
+            ListCollectionServer.OnValueChanged += OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged += OnOwnerListValuesChanged;
+
+            if (IsServer)
+            {
+                ListCollectionServer.Value = OnSetServerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+
+            if (IsOwner)
+            {
+                ListCollectionOwner.Value = OnSetOwnerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+            base.OnNetworkPostSpawn();
+        }
+        public override void OnNetworkDespawn()
+        {
+            ListCollectionServer.OnValueChanged -= OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged -= OnOwnerListValuesChanged;
+            base.OnNetworkDespawn();
+        }
+    }
+
+    public class DictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, SerializableObject>
+    {
+        public static Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>>();
+
+        public static void ResetState()
+        {
+            Instances.Clear();
+        }
+
+        public NetworkVariable<Dictionary<int, SerializableObject>> ListCollectionServer = new NetworkVariable<Dictionary<int, SerializableObject>>(new Dictionary<int, SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        public NetworkVariable<Dictionary<int, SerializableObject>> ListCollectionOwner = new NetworkVariable<Dictionary<int, SerializableObject>>(new Dictionary<int, SerializableObject>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        // This tracks what has changed per instance which is used to compare to all other instances
+        public Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>> NetworkVariableChanges = new Dictionary<Targets, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>>();
+
+        private bool CompareDictionaries(ulong clientId, Dictionary<int, SerializableObject> first, Dictionary<int, SerializableObject> second)
+        {
+            foreach (var entry in first)
+            {
+                if (!second.ContainsKey(entry.Key))
+                {
+                    LogMessage($"Client-{clientId} has no key entry for ({entry.Key})!");
+                    return false;
+                }
+                var seconValue = second[entry.Key];
+                if (!entry.Value.Equals(seconValue))
+                {
+                    LogMessage($"Client-{clientId} value ({seconValue} does not equal ({entry.Value})!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool ValidateInstances()
+        {
+            LogStart();
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    LogMessage($"Client-{clientId} has no entry!");
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    LogMessage($"Client-{clientId} has no instance entry of NetworkObject ({NetworkObjectId})!");
+                    return false;
+                }
+                var otherOwnerCollection = Instances[clientId][NetworkObjectId].ListCollectionOwner;
+                var otherServerCollection = Instances[clientId][NetworkObjectId].ListCollectionServer;
+                if (!CompareDictionaries(clientId, ListCollectionOwner.Value, otherOwnerCollection.Value))
+                {
+                    LogMessage($"Client-{clientId} did not synchronize properly with the owner collection!");
+                    return false;
+                }
+
+                if (!CompareDictionaries(clientId, ListCollectionServer.Value, otherServerCollection.Value))
+                {
+                    LogMessage($"Client-{clientId} did not synchronize properly with the server collection!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ChangesMatch(ulong clientId, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>> local, Dictionary<DeltaTypes, Dictionary<int, SerializableObject>> other)
+        {
+            var deltaTypes = Enum.GetValues(typeof(DeltaTypes)).OfType<DeltaTypes>().ToList();
+            foreach (var deltaType in deltaTypes)
+            {
+                LogMessage($"Comparing {deltaType}:");
+                if (local[deltaType].Count != other[deltaType].Count)
+                {
+                    LogMessage($"{deltaType}s count did not match!");
+                    return false;
+                }
+                if (!CompareDictionaries(clientId, local[deltaType], other[deltaType]))
+                {
+                    LogMessage($"{deltaType}s values did not match!");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public override bool CompareTrackedChanges(Targets target)
+        {
+            LogStart();
+            var localChanges = NetworkVariableChanges[target];
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+                if (!Instances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                if (!Instances[clientId].ContainsKey(NetworkObjectId))
+                {
+                    return false;
+                }
+                var entry = Instances[clientId][NetworkObjectId];
+                var otherChanges = entry.NetworkVariableChanges[target];
+                LogMessage($"Comparing against client-{clientId} {entry.name}:");
+                if (!ChangesMatch(clientId, localChanges, otherChanges))
+                {
+                    LogMessage($"Client-{clientId} {entry.name} failed to synchronize properly!");
+                    return false;
+                }
+                LogMessage($"Client-{clientId} {entry.name} matched!");
+            }
+            return true;
+        }
+
+        public static Dictionary<int, SerializableObject> GetDictionaryValues(int count = 5)
+        {
+            var dictionary = new Dictionary<int, SerializableObject>();
+            for (int i = 0; i < count; i++)
+            {
+                dictionary.Add(i, SerializableObject.GetRandomObject());
+            }
+            return dictionary;
+        }
+
+        public NetworkVariable<Dictionary<int, SerializableObject>> GetNetVar(Targets target)
+        {
+            return target == Targets.Server ? ListCollectionServer : ListCollectionOwner;
+        }
+
+        public Dictionary<int, SerializableObject> OnSetServerValues()
+        {
+            return GetDictionaryValues();
+        }
+
+        public Dictionary<int, SerializableObject> OnSetOwnerValues()
+        {
+            return GetDictionaryValues();
+        }
+
+
+        public bool UpdateValue((int, SerializableObject) value, Targets target, bool checkDirty = true)
+        {
+            var netVar = GetNetVar(target);
+            if (netVar.Value.ContainsKey(value.Item1))
+            {
+                netVar.Value[value.Item1] = value.Item2;
+                if (checkDirty)
+                {
+                    netVar.CheckDirtyState();
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public void Add((int, SerializableObject) value, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Add(value.Item1, value.Item2);
+            netVar.CheckDirtyState();
+        }
+
+        public void Remove(int key, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Remove(key);
+            netVar.CheckDirtyState();
+        }
+
+        public void FullSet(Dictionary<int, SerializableObject> values, Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value = values;
+            netVar.CheckDirtyState();
+        }
+
+        public void Clear(Targets target)
+        {
+            var netVar = GetNetVar(target);
+            netVar.Value.Clear();
+            netVar.CheckDirtyState();
+        }
+
+        public void TrackChanges(Targets target, Dictionary<int, SerializableObject> previous, Dictionary<int, SerializableObject> current)
+        {
+            var contextTable = NetworkVariableChanges[target];
+
+            var whatWasAdded = current.Except(previous).ToDictionary(item => item.Key, item => item.Value);
+            var whatWasRemoved = previous.Where((c) => !current.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatWasNeitherAddedOrRemoved = current.Where((c) => previous.Contains(c) && !whatWasAdded.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatChanged = whatWasNeitherAddedOrRemoved.Where((c) => previous.Contains(c) && !previous.Where((d) => d.Equals(c)).FirstOrDefault().Equals(c)).ToDictionary(item => item.Key, item => item.Value);
+            var whatRemainedTheSame = whatWasNeitherAddedOrRemoved.Where((c) => !whatChanged.Contains(c)).ToDictionary(item => item.Key, item => item.Value);
+
+            contextTable[DeltaTypes.Added] = whatWasAdded;
+            contextTable[DeltaTypes.Removed] = whatWasRemoved;
+            contextTable[DeltaTypes.Changed] = whatChanged;
+            contextTable[DeltaTypes.UnChanged] = whatRemainedTheSame;
+        }
+
+        public void OnServerListValuesChanged(Dictionary<int, SerializableObject> previous, Dictionary<int, SerializableObject> current)
+        {
+            TrackChanges(Targets.Server, previous, current);
+        }
+
+        public void OnOwnerListValuesChanged(Dictionary<int, SerializableObject> previous, Dictionary<int, SerializableObject> current)
+        {
+            TrackChanges(Targets.Owner, previous, current);
+        }
+
+        /// <summary>
+        /// Keeps track of each client instsnce releative player instance with this component
+        /// </summary>
+        private void TrackRelativeInstances()
+        {
+            if (!Instances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                Instances.Add(NetworkManager.LocalClientId, new Dictionary<ulong, DictionaryTestHelper>());
+            }
+
+            if (!Instances[NetworkManager.LocalClientId].ContainsKey(NetworkObjectId))
+            {
+                Instances[NetworkManager.LocalClientId].Add(NetworkObjectId, this);
+            }
+            ResetTrackedChanges();
+        }
+
+        public void ResetTrackedChanges()
+        {
+            NetworkVariableChanges.Clear();
+            NetworkVariableChanges.Add(Targets.Owner, new Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Added, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Changed, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.Removed, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Owner].Add(DeltaTypes.UnChanged, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges.Add(Targets.Server, new Dictionary<DeltaTypes, Dictionary<int, SerializableObject>>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Added, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Changed, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.Removed, new Dictionary<int, SerializableObject>());
+            NetworkVariableChanges[Targets.Server].Add(DeltaTypes.UnChanged, new Dictionary<int, SerializableObject>());
+        }
+
+        protected override void OnNetworkPostSpawn()
+        {
+            TrackRelativeInstances();
+
+            ListCollectionServer.OnValueChanged += OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged += OnOwnerListValuesChanged;
+
+            if (IsServer)
+            {
+                ListCollectionServer.Value = OnSetServerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+
+            if (IsOwner)
+            {
+                ListCollectionOwner.Value = OnSetOwnerValues();
+                ListCollectionOwner.CheckDirtyState();
+            }
+            base.OnNetworkPostSpawn();
+        }
+        public override void OnNetworkDespawn()
+        {
+            ListCollectionServer.OnValueChanged -= OnServerListValuesChanged;
+            ListCollectionOwner.OnValueChanged -= OnOwnerListValuesChanged;
+            base.OnNetworkDespawn();
+        }
+    }
+    #endregion
 
     #region INETWORKSERIALIZABLE LIST TEST COMPONENT HELPERS
     public class SerializableObject : INetworkSerializable, IEquatable<SerializableObject>
@@ -1780,6 +2933,60 @@ namespace Unity.Netcode.RuntimeTests
         public void OnServerListValuesChanged(List<T> previous, List<T> current);
 
         public void OnOwnerListValuesChanged(List<T> previous, List<T> current);
+
+        public void ResetTrackedChanges();
+    }
+
+    public interface IDictionaryTestHelperBase<TKey, TValue>
+    {
+        public bool ValidateInstances();
+
+        public NetworkVariable<Dictionary<TKey, TValue>> GetNetVar(ListTestHelperBase.Targets target);
+
+        public Dictionary<TKey, TValue> OnSetServerValues();
+
+        public Dictionary<TKey, TValue> OnSetOwnerValues();
+
+        public bool UpdateValue((TKey, TValue) value, ListTestHelperBase.Targets target, bool checkDirty = true);
+
+        public void Add((TKey, TValue) value, ListTestHelperBase.Targets target);
+
+        public void Remove(TKey key, ListTestHelperBase.Targets target);
+
+        public void FullSet(Dictionary<TKey, TValue> values, ListTestHelperBase.Targets target);
+
+        public void Clear(ListTestHelperBase.Targets target);
+
+        public void TrackChanges(ListTestHelperBase.Targets target, Dictionary<TKey, TValue> previous, Dictionary<TKey, TValue> current);
+
+        public void OnServerListValuesChanged(Dictionary<TKey, TValue> previous, Dictionary<TKey, TValue> current);
+
+        public void OnOwnerListValuesChanged(Dictionary<TKey, TValue> previous, Dictionary<TKey, TValue> current);
+
+        public void ResetTrackedChanges();
+    }
+
+    public interface IHashSetTestHelperBase<T>
+    {
+        public bool ValidateInstances();
+
+        public NetworkVariable<HashSet<T>> GetNetVar(ListTestHelperBase.Targets target);
+
+        public HashSet<T> OnSetServerValues();
+
+        public HashSet<T> OnSetOwnerValues();
+
+        public void Add(T value, ListTestHelperBase.Targets target);
+
+        public void Remove(T value, ListTestHelperBase.Targets target);
+
+        public void Clear(ListTestHelperBase.Targets target);
+
+        public void TrackChanges(ListTestHelperBase.Targets target, HashSet<T> previous, HashSet<T> current);
+
+        public void OnServerListValuesChanged(HashSet<T> previous, HashSet<T> current);
+
+        public void OnOwnerListValuesChanged(HashSet<T> previous, HashSet<T> current);
 
         public void ResetTrackedChanges();
     }
