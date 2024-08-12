@@ -778,7 +778,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 //////////////////////////////////
                 // Owner Add Item
-                compHashSet.Add(Random.Range(ushort.MinValue,ushort.MaxValue), ListTestHelperBase.Targets.Owner);
+                compHashSet.Add(Random.Range(ushort.MinValue, ushort.MaxValue), ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compHashSet.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compHashSet.name}! {compHashSet.GetLog()}");
                 //////////////////////////////////
@@ -795,7 +795,7 @@ namespace Unity.Netcode.RuntimeTests
                 //////////////////////////////////
                 // Server Remove Item
                 index = Random.Range(0, compHashSetServer.ListCollectionOwner.Value.Count - 1);
-                compHashSetServer.Remove(compHashSetServer.ListCollectionOwner.Value.ElementAt(index), ListTestHelperBase.Targets.Server);                
+                compHashSetServer.Remove(compHashSetServer.ListCollectionOwner.Value.ElementAt(index), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compHashSetServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server remove failed to synchronize on {className} {compHashSetServer.name}! {compHashSetServer.GetLog()}");
 
@@ -893,7 +893,7 @@ namespace Unity.Netcode.RuntimeTests
                     LogMessage($"{deltaType}s did not match!");
                     return false;
                 }
-                foreach(var value in local[deltaType])
+                foreach (var value in local[deltaType])
                 {
                     if (!other[deltaType].Contains(value))
                     {
@@ -971,10 +971,10 @@ namespace Unity.Netcode.RuntimeTests
         public void AddRange(HashSet<int> values, Targets target)
         {
             var netVar = GetNetVar(target);
-            foreach(var value in values)
+            foreach (var value in values)
             {
                 netVar.Value.Add(value);
-            }            
+            }
             netVar.CheckDirtyState();
         }
 
@@ -1255,7 +1255,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public Dictionary<int, Dictionary<int, SerializableObject>> OnSetServerValues()
         {
-            
+
             return GetNestedDictionaryValues();
         }
 
