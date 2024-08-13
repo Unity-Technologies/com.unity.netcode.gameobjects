@@ -1080,6 +1080,18 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
+        /// <summary>
+        /// Determines if the owner will apply transform values sent by the parenting message.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the resultant parenting transform changes sent by the authority will be applied on all instances. <br />
+        /// When disabled, the resultant parenting transform changes sent by the authority will not be applied on the owner's instance. <br />
+        /// When disabled, all non-owner instances will still be synchronized by the authority's transform values when parented.
+        /// When using a <see cref="NetworkTopologyTypes.ClientServer"/> network topology and an owner authoritative motion model, disabling this can help smooth parenting transitions.
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology this will have no impact on the owner's instance since only the authority/owner can parent.
+        /// </remarks>
+        public bool SyncOwnerTransformWhenParented = true;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
