@@ -941,6 +941,19 @@ namespace Unity.Netcode.Components
 #endif
         public AuthorityModes AuthorityMode;
 
+
+        /// <summary>
+        /// When enabled, any parented <see cref="NetworkObject"/>s (children) of this <see cref="NetworkObject"/> will be forced to synchronize their transform when this <see cref="NetworkObject"/> instance sends a state update.<br />
+        /// This can help to reduce out of sync updates that can lead to slight jitter between a parent and its child/children.
+        /// </summary>
+        /// <remarks>
+        /// - If this is set on a child and the parent does not have this set then the child will not be tick synchronized with its parent. <br />
+        /// - If the parent instance does not send any state updates, the children will still send state updates when exceeding axis delta threshold. <br />
+        /// - This does not need to be set on children to be applied.
+        /// </remarks>
+        [Tooltip("When enabled, any parented children of this instance will send a state update when this instance sends a state update. If this instance doesn't send a state update, the children will still send state updates when reaching their axis specified threshold delta. Children do not have to have this setting enabled.")]
+        public bool TickSyncChildren = false;
+
         /// <summary>
         /// The default position change threshold value.
         /// Any changes above this threshold will be replicated.
@@ -1587,7 +1600,7 @@ namespace Unity.Netcode.Components
 #endif
 
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
-            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
+            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: settingState))
             {
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
@@ -1638,6 +1651,35 @@ namespace Unity.Netcode.Components
                         childRigidbody.NetworkTransform.OnNetworkTick(true);
                     }
                 }
+
+                if (TickSyncChildren)
+                {
+                    // Synchronize any children with the parent's motion
+                    foreach (var child in m_Children)
+                    {
+                        foreach (var childNetworkTransform in child.NetworkTransforms)
+                        {
+                            if (childNetworkTransform.CanCommitToTransform)
+                            {
+                                childNetworkTransform.OnNetworkTick(true);
+                            }
+                        }
+                    }
+                }
+#else
+                if (TickSyncChildren)
+                {
+                    foreach(var child in m_Children)
+                    {
+                        foreach(var childNetworkTransform in child.NetworkTransforms)
+                        {
+                            if (childNetworkTransform.CanCommitToTransform)
+                            {
+                                childNetworkTransform.OnNetworkTick(true);
+                            }
+                        }
+                    }
+                }
 #endif
             }
         }
@@ -1683,7 +1725,7 @@ namespace Unity.Netcode.Components
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CheckForStateChange(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
+        private bool CheckForStateChange(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
             // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
@@ -1858,21 +1900,21 @@ namespace Unity.Netcode.Components
             // Begin delta checks against last sent state update
             if (!UseHalfFloatPrecision)
             {
-                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionX = position.x;
                     networkState.HasPositionX = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionY = position.y;
                     networkState.HasPositionY = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionZ = position.z;
                     networkState.HasPositionZ = true;
@@ -1882,7 +1924,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizePosition)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync;
+                isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
                 if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick)
                 {
                     isPositionDirty = true;
@@ -1988,21 +2030,21 @@ namespace Unity.Netcode.Components
 
             if (!UseQuaternionSynchronization)
             {
-                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleX = rotAngles.x;
                     networkState.HasRotAngleX = true;
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleY = rotAngles.y;
                     networkState.HasRotAngleY = true;
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleZ = rotAngles.z;
                     networkState.HasRotAngleZ = true;
@@ -2012,7 +2054,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizeRotation)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isRotationDirty = networkState.IsTeleportingNextFrame || isAxisSync;
+                isRotationDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
                 // For quaternion synchronization, if one angle is dirty we send a full update
                 if (!isRotationDirty)
                 {
@@ -2051,21 +2093,21 @@ namespace Unity.Netcode.Components
             {
                 if (!UseHalfFloatPrecision)
                 {
-                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleX = scale.x;
                         networkState.HasScaleX = true;
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleY = scale.y;
                         networkState.HasScaleY = true;
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleZ = scale.z;
                         networkState.HasScaleZ = true;
@@ -2077,7 +2119,7 @@ namespace Unity.Netcode.Components
                     var previousScale = networkState.Scale;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync)
+                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState)
                         {
                             isScaleDirty = true;
                             networkState.Scale[i] = scale[i];
@@ -2154,7 +2196,7 @@ namespace Unity.Netcode.Components
 
                 // Update any changes to the transform
                 var transformSource = transform;
-                OnUpdateAuthoritativeState(ref transformSource);
+                OnUpdateAuthoritativeState(ref transformSource, isCalledFromParent);
 #if COM_UNITY_MODULES_PHYSICS
                 m_CurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
 #else
@@ -2834,6 +2876,20 @@ namespace Unity.Netcode.Components
             // Apply the new state
             ApplyUpdatedState(newState);
 
+            if (TickSyncChildren)
+            {
+                foreach (var child in m_Children)
+                {
+                    foreach (var childNetworkTransform in child.NetworkTransforms)
+                    {
+                        if (childNetworkTransform.CanCommitToTransform)
+                        {
+                            childNetworkTransform.OnNetworkTick(true);
+                        }
+                    }
+                }
+            }
+
             // Provide notifications when the state has been updated
             // We use the m_LocalAuthoritativeNetworkState because newState has been applied and adjustments could have
             // been made (i.e. half float precision position values will have been updated)
@@ -2902,7 +2958,7 @@ namespace Unity.Netcode.Components
         /// Called by authority to check for deltas and update non-authoritative instances
         /// if any are found.
         /// </summary>
-        internal void OnUpdateAuthoritativeState(ref Transform transformSource)
+        internal void OnUpdateAuthoritativeState(ref Transform transformSource, bool settingState = false)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
@@ -2922,7 +2978,7 @@ namespace Unity.Netcode.Components
 
             AxisChangedDeltaPositionCheck();
 
-            TryCommitTransform(ref transformSource);
+            TryCommitTransform(ref transformSource, settingState: settingState);
         }
         #endregion
 
@@ -2942,6 +2998,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            m_Children.Clear();
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
@@ -2954,7 +3011,7 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
-
+            m_Children.Clear();
 #if COM_UNITY_MODULES_PHYSICS
             var forUpdate = !m_UseRigidbodyForMotion;
 #else
@@ -3136,6 +3193,22 @@ namespace Unity.Netcode.Components
             base.OnOwnershipChanged(previous, current);
         }
 
+        private List<NetworkObject> m_Children = new List<NetworkObject>();
+
+        private NetworkObject m_CurrentParent = null;
+
+        internal void ChildRegistration(NetworkObject child, bool isAdding)
+        {
+            if (isAdding)
+            {
+                m_Children.Add(child);
+            }
+            else
+            {
+                m_Children.Remove(child);
+            }
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// When a parent changes, non-authoritative instances should:
@@ -3146,6 +3219,19 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
+
+            if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
+            {
+                m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
+                m_CurrentParent = parentNetworkObject;
+            }
+            if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
+            {
+                parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
+                m_CurrentParent = parentNetworkObject;
+            }
+
+
             // Only if we are not authority
             if (!CanCommitToTransform)
             {
@@ -3174,6 +3260,8 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
                 }
             }
+
+
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
         #endregion
@@ -3359,12 +3447,10 @@ namespace Unity.Netcode.Components
                 // is to make their cachedRenderTime run 2 ticks behind.
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode ? 2 : 1;
                 // TODO: We need an RTT that updates regularly and not only when the client sends packets
-                //if (m_CachedNetworkManager.DistributedAuthorityMode)
-                //{
-                //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
-                //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                //offset = m_NetworkTransformTickRegistration.Offset;
-                //}
+                if (m_CachedNetworkManager.DistributedAuthorityMode)
+                {
+                    ticksAgo = 3;
+                }
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
 
