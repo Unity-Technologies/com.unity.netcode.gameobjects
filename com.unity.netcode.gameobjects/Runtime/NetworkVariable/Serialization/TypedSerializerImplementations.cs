@@ -935,7 +935,7 @@ namespace Unity.Netcode
             {
                 var val = value[i];
                 var prevVal = previousValue[i];
-                if (!NetworkVariableSerialization<byte>.AreEqual(ref val, ref prevVal))
+                if (val != prevVal)
                 {
                     ++numChanges;
                     changes.Set(i);
@@ -960,19 +960,11 @@ namespace Unity.Netcode
             BytePacker.WriteValuePacked(writer, value.Length);
             writer.WriteValueSafe(changes);
             var ptr = value.GetUnsafePtr();
-            var prevPtr = previousValue.GetUnsafePtr();
             for (var i = 0; i < value.Length; ++i)
             {
                 if (changes.IsSet(i))
                 {
-                    if (i < previousValue.Length)
-                    {
-                        NetworkVariableSerialization<byte>.WriteDelta(writer, ref ptr[i], ref prevPtr[i]);
-                    }
-                    else
-                    {
-                        NetworkVariableSerialization<byte>.Write(writer, ref ptr[i]);
-                    }
+                    writer.WriteByteSafe(ptr[i]);
                 }
             }
         }
