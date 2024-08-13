@@ -10,12 +10,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3004)
+
 ### Fixed
 
+- Fixed issue using collections within `NetworkVariable` where the collection would not detect changes to items or nested items. (#3004)
+- Fixed issue where `List`, `Dictionary`, and `HashSet` collections would not uniquely duplicate nested collections. (#3004)
 - Fixed issue where `NotAuthorityTarget` would include the service observer in the list of targets to send the RPC to as opposed to excluding the service observer as it should. (#3000)
 - Fixed issue where `ProxyRpcTargetGroup` could attempt to send a message if there were no targets to send to. (#3000)
 
 ### Changed
+
+- Changed permissions exception thrown in `NetworkList` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
+- Changed permissions exception thrown in `NetworkVariable.Value` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
 
 
 ## [2.0.0-pre.3] - 2024-07-23

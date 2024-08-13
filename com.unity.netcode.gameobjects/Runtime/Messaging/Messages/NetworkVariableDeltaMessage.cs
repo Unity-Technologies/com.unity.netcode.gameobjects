@@ -25,8 +25,6 @@ namespace Unity.Netcode
 
         private const string k_Name = "NetworkVariableDeltaMessage";
 
-        // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
-        // Worth either merging or more cleanly separating these codepaths.
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) + FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
@@ -126,10 +124,6 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        // DANGO-TODO:
-                        // Complex types with custom type serialization (either registered custom types or INetworkSerializable implementations) will be problematic
-                        // Non-complex types always provide a full state update per delta
-                        // DANGO-TODO: Add NetworkListEvent<T>.EventType awareness to the cloud-state server
                         if (networkManager.DistributedAuthorityMode)
                         {
                             var size_marker = writer.Position;
@@ -167,8 +161,6 @@ namespace Unity.Netcode
             return true;
         }
 
-        // DANGO-TODO: Made some modifications here that overlap/won't play nice with EnsureNetworkVariableLenghtSafety.
-        // Worth either merging or more cleanly separating these codepaths.
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
