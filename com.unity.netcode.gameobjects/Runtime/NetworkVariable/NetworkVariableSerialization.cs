@@ -349,7 +349,10 @@ namespace Unity.Netcode
             duplicatedValue.Clear();
             foreach (var item in value)
             {
-                duplicatedValue.Add(item);
+                // This handles the nested list scenario List<List<T>>
+                T subValue = default;
+                NetworkVariableSerialization<T>.Duplicate(item, ref subValue);
+                duplicatedValue.Add(subValue);
             }
         }
     }
@@ -421,6 +424,9 @@ namespace Unity.Netcode
             duplicatedValue.Clear();
             foreach (var item in value)
             {
+                // Handles nested HashSets
+                T subValue = default;
+                NetworkVariableSerialization<T>.Duplicate(item, ref subValue);
                 duplicatedValue.Add(item);
             }
         }
@@ -497,7 +503,12 @@ namespace Unity.Netcode
             duplicatedValue.Clear();
             foreach (var item in value)
             {
-                duplicatedValue.Add(item.Key, item.Value);
+                // Handles nested dictionaries
+                TKey subKey = default;
+                TVal subValue = default;
+                NetworkVariableSerialization<TKey>.Duplicate(item.Key, ref subKey);
+                NetworkVariableSerialization<TVal>.Duplicate(item.Value, ref subValue);
+                duplicatedValue.Add(subKey, subValue);
             }
         }
     }

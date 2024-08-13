@@ -8,9 +8,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 [Unreleased]
 ### Added
 
+- Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3005)
+
 ### Fixed
 
+- Fixed issue using collections within `NetworkVariable` where the collection would not detect changes to items or nested items. (#3005)
+- Fixed issue where `List`, `Dictionary`, and `HashSet` collections would not uniquely duplicate nested collections. (#3005)
+- Fixed Issue where a state with dual triggers, inbound and outbound, could cause a false layer to layer state transition message to be sent to non-authority `NetworkAnimator` instances and cause a warning message to be logged. (#2999)
+- Fixed issue where `FixedStringSerializer<T>` was using `NetworkVariableSerialization<byte>.AreEqual` to determine if two bytes were equal causes an exception to be thrown due to no byte serializer having been defined. (#2992)
+
 ### Changed
+
+- Changed permissions exception thrown in `NetworkList` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3005)
+- Changed permissions exception thrown in `NetworkVariable.Value` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3005)
+
 
 ## [1.10.0] - 2024-07-22
 

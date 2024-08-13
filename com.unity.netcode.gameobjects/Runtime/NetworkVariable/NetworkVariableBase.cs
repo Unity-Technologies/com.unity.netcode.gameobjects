@@ -32,10 +32,33 @@ namespace Unity.Netcode
         /// Maintains a link to the associated NetworkBehaviour
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
+        private NetworkManager m_InternalNetworkManager;
 
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;
+        }
+
+        internal string GetWritePermissionError()
+        {
+            return $"|Client-{m_NetworkManager.LocalClientId}|{m_NetworkBehaviour.name}|{Name}| Write permissions ({WritePerm}) for this client instance is not allowed!";
+        }
+
+        internal void LogWritePermissionError()
+        {
+            Debug.LogError(GetWritePermissionError());
+        }
+
+        private protected NetworkManager m_NetworkManager
+        {
+            get
+            {
+                if (m_InternalNetworkManager == null && m_NetworkBehaviour && m_NetworkBehaviour.NetworkObject?.NetworkManager)
+                {
+                    m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
+                }
+                return m_InternalNetworkManager;
+            }
         }
 
         /// <summary>
@@ -44,9 +67,12 @@ namespace Unity.Netcode
         /// <param name="networkBehaviour">The NetworkBehaviour the NetworkVariable belongs to</param>
         public void Initialize(NetworkBehaviour networkBehaviour)
         {
+            m_InternalNetworkManager = null;
             m_NetworkBehaviour = networkBehaviour;
-            if (m_NetworkBehaviour.NetworkManager)
+            if (m_NetworkBehaviour && m_NetworkBehaviour.NetworkObject?.NetworkManager)
             {
+                m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject?.NetworkManager;
+
                 if (m_NetworkBehaviour.NetworkManager.NetworkTimeSystem != null)
                 {
                     UpdateLastSentTime();
