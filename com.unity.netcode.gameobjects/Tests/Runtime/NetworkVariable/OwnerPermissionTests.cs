@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -50,7 +49,6 @@ namespace Unity.Netcode.RuntimeTests
         public override void OnNetworkSpawn()
         {
             Objects[CurrentlySpawning, NetworkManager.LocalClientId] = GetComponent<OwnerPermissionObject>();
-            //Debug.Log($"Object index ({CurrentlySpawning}) spawned on client {NetworkManager.LocalClientId}");
         }
 
         private void Awake()
@@ -84,6 +82,8 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
     }
+
+
 
     internal class OwnerPermissionHideTests : NetcodeIntegrationTest
     {
@@ -130,70 +130,44 @@ namespace Unity.Netcode.RuntimeTests
                 for (var clientWriting = 0; clientWriting < 3; clientWriting++)
                 {
                     // ==== Server-writable NetworkVariable ====
-                    var gotException = false;
                     VerboseDebug($"Writing to server-write variable on object {objectIndex} on client {clientWriting}");
 
-                    try
+                    nextValueToWrite++;
+                    if (clientWriting != serverIndex)
                     {
-                        nextValueToWrite++;
-                        OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableServer.Value = nextValueToWrite;
+                        LogAssert.Expect(LogType.Error, OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableServer.GetWritePermissionError());
                     }
-                    catch (Exception)
-                    {
-                        gotException = true;
-                    }
-
-                    // Verify server-owned netvar can only be written by server
-                    Debug.Assert(gotException == (clientWriting != serverIndex));
+                    OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableServer.Value = nextValueToWrite;
 
                     // ==== Owner-writable NetworkVariable ====
-                    gotException = false;
                     VerboseDebug($"Writing to owner-write variable on object {objectIndex} on client {clientWriting}");
 
-                    try
+                    nextValueToWrite++;
+                    if (clientWriting != objectIndex)
                     {
-                        nextValueToWrite++;
-                        OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableOwner.Value = nextValueToWrite;
+                        LogAssert.Expect(LogType.Error, OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableOwner.GetWritePermissionError());
                     }
-                    catch (Exception)
-                    {
-                        gotException = true;
-                    }
-
-                    // Verify client-owned netvar can only be written by owner
-                    Debug.Assert(gotException == (clientWriting != objectIndex));
+                    OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkVariableOwner.Value = nextValueToWrite;
 
                     // ==== Server-writable NetworkList ====
-                    gotException = false;
+                    VerboseDebug($"Writing to [Add] server-write NetworkList on object {objectIndex} on client {clientWriting}");
 
-                    try
+                    nextValueToWrite++;
+                    if (clientWriting != serverIndex)
                     {
-                        nextValueToWrite++;
-                        OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListServer.Add(nextValueToWrite);
+                        LogAssert.Expect(LogType.Error, OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListServer.GetWritePermissionError());
                     }
-                    catch (Exception)
-                    {
-                        gotException = true;
-                    }
-
-                    // Verify server-owned networkList can only be written by server
-                    Debug.Assert(gotException == (clientWriting != serverIndex));
+                    OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListServer.Add(nextValueToWrite);
 
                     // ==== Owner-writable NetworkList ====
-                    gotException = false;
+                    VerboseDebug($"Writing to [Add] owner-write NetworkList on object {objectIndex} on client {clientWriting}");
 
-                    try
+                    nextValueToWrite++;
+                    if (clientWriting != objectIndex)
                     {
-                        nextValueToWrite++;
-                        OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListOwner.Add(nextValueToWrite);
+                        LogAssert.Expect(LogType.Error, OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListOwner.GetWritePermissionError());
                     }
-                    catch (Exception)
-                    {
-                        gotException = true;
-                    }
-
-                    // Verify client-owned networkList can only be written by owner
-                    Debug.Assert(gotException == (clientWriting != objectIndex));
+                    OwnerPermissionObject.Objects[objectIndex, clientWriting].MyNetworkListOwner.Add(nextValueToWrite);
 
                     yield return WaitForTicks(m_ServerNetworkManager, 5);
                     yield return WaitForTicks(m_ClientNetworkManagers[0], 5);
