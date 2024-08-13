@@ -393,7 +393,8 @@ namespace Unity.Netcode
             // check write permissions
             if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
-                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                LogWritePermissionError();
+                return;
             }
 
             m_List.Add(item);
@@ -414,7 +415,8 @@ namespace Unity.Netcode
             // check write permissions
             if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
-                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                LogWritePermissionError();
+                return;
             }
 
             m_List.Clear();
@@ -440,7 +442,8 @@ namespace Unity.Netcode
             // check write permissions
             if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
-                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                LogWritePermissionError();
+                return false;
             }
 
             int index = m_List.IndexOf(item);
@@ -475,7 +478,8 @@ namespace Unity.Netcode
             // check write permissions
             if (!CanClientWrite(m_NetworkManager.LocalClientId))
             {
-                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                LogWritePermissionError();
+                return;
             }
 
             if (index < m_List.Length)
@@ -520,6 +524,8 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
+
+
         /// <inheritdoc />
         public T this[int index]
         {
@@ -529,7 +535,8 @@ namespace Unity.Netcode
                 // check write permissions
                 if (!CanClientWrite(m_NetworkManager.LocalClientId))
                 {
-                    throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                    LogWritePermissionError();
+                    return;
                 }
 
                 var previousValue = m_List[index];
