@@ -12,7 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue by adding null checks in `NetworkVariableBase.CanClientRead` and `NetworkVariableBase.CanClientWrite` methods to ensure safe access to `NetworkBehaviour`.
+- Fixed issue by adding null checks in `NetworkVariableBase.CanClientRead` and `NetworkVariableBase.CanClientWrite` methods to ensure safe access to `NetworkBehaviour`. (#3011)
 - Fixed issue using collections within `NetworkVariable` where the collection would not detect changes to items or nested items. (#3005)
 - Fixed issue where `List`, `Dictionary`, and `HashSet` collections would not uniquely duplicate nested collections. (#3005)
 - Fixed Issue where a state with dual triggers, inbound and outbound, could cause a false layer to layer state transition message to be sent to non-authority `NetworkAnimator` instances and cause a warning message to be logged. (#2999)
