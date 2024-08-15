@@ -1488,7 +1488,7 @@ namespace Unity.Netcode.Components
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
                 CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
-                SynchronizeState.NetworkSerialize(serializer);                
+                SynchronizeState.NetworkSerialize(serializer);
             }
             else
             {
@@ -1506,6 +1506,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// We now apply synchronization after everything has spawned
+        /// </summary>
         private void ApplySynchronization()
         {
             // Teleport/Fully Initialize based on the state
@@ -1793,10 +1796,10 @@ namespace Unity.Netcode.Components
             if (InLocalSpace != networkState.InLocalSpace)
 #endif
             {
+                // We no longer need to teleport for a change in transform space
                 networkState.InLocalSpace = InLocalSpace;
                 isDirty = true;
                 forceState = true;
-                //networkState.IsTeleportingNextFrame = true;
             }
 #if COM_UNITY_MODULES_PHYSICS
             else if (InLocalSpace && m_UseRigidbodyForMotion)
@@ -1837,6 +1840,8 @@ namespace Unity.Netcode.Components
                 }
 
                 networkState.IsParented = hasParentNetworkObject;
+
+                // TODO: Check if tests pass... all of this could just be deleted
 
                 // When synchronizing with a parent, world position stays impacts position whether
                 // the NetworkTransform is using world or local space synchronization.
@@ -2406,17 +2411,10 @@ namespace Unity.Netcode.Components
                 {
                     if (m_PositionInterpolator.InLocalSpace)
                     {
-                        if (m_PositionInterpolator.InLocalSpace != InLocalSpace && m_PreviousParent != null)
-                        {
-                            transform.position = m_PreviousParent.transform.TransformPoint(m_CurrentPosition);
-                        }
-                        else
-                        {
-                            transform.localPosition = m_CurrentPosition;
-                        }
+                        transform.localPosition = m_CurrentPosition;
                     }
                     else
-                    {                        
+                    {
                         transform.position = m_CurrentPosition;
                     }
                 }
@@ -2734,6 +2732,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            AdjustForChangeInTransformSpace();
+
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
@@ -2742,30 +2742,6 @@ namespace Unity.Netcode.Components
                 if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
                     var position = m_LocalAuthoritativeNetworkState.GetPosition();
-                    // While we still have world space values to 
-                    if (InLocalSpace != m_PositionInterpolator.InLocalSpace)
-                    {
-                        if (!m_PositionInterpolator.EndOfBuffer)
-                        {
-                            if (m_CurrentParent && InLocalSpace && !m_PositionInterpolator.InLocalSpace)
-                            {
-                                position = m_CurrentParent.transform.TransformPoint(position);
-                            }
-                            else if (m_PreviousParent && !InLocalSpace && m_PositionInterpolator.InLocalSpace)
-                            {
-                                position = m_PreviousParent.transform.InverseTransformPoint(position);
-                            }
-                        }
-                        else
-                        {
-                            m_CurrentPosition = GetSpaceRelativePosition();
-                            m_PositionInterpolator.Clear();
-                            var time = IsServer ? NetworkManager.ServerTime.Time : NetworkManager.ServerTime.TimeTicksAgo(1).Time;
-                            m_PositionInterpolator.ResetTo(m_CurrentPosition, time);
-                            m_PositionInterpolator.InLocalSpace = InLocalSpace;
-                        }
-                    }
-
                     var newTargetPosition = m_TargetPosition;
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
@@ -3026,6 +3002,8 @@ namespace Unity.Netcode.Components
 
         #region SPAWN, DESPAWN, AND INITIALIZATION
 
+        // TODO: This might need to be invoked by internal method to avoid having users override and not
+        // invoke the base.
         protected override void OnNetworkSessionSynchronized()
         {
             if (SynchronizeState.IsSynchronizing)
@@ -3226,6 +3204,21 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region PARENTING AND OWNERSHIP
+
+        private void AdjustForChangeInTransformSpace()
+        {
+            // TODO: NetworkObject to NetworkObject parent transfer
+            if (m_PositionInterpolator.InLocalSpace != InLocalSpace)
+            {
+                var parent = InLocalSpace ? m_CurrentParent : m_PreviousParent;
+                if (parent != null)
+                {
+                    m_PositionInterpolator.ConvertTransformSpace(parent.transform, InLocalSpace);
+                    m_RotationInterpolator.ConvertTransformSpace(parent.transform, InLocalSpace);
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public override void OnLostOwnership()
         {
@@ -3275,7 +3268,9 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
+
             m_PreviousParent = m_CurrentParent;
+
             if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
             {
                 m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
@@ -3286,8 +3281,8 @@ namespace Unity.Netcode.Components
                 parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
                 m_CurrentParent = parentNetworkObject;
             }
-
-#if INCLUDETHIS
+            // TODO: This below code might need to just be deleted now
+#if DONTINCLUDE
             // Only if we are not authority
             if (!CanCommitToTransform)
             {
@@ -3320,7 +3315,7 @@ namespace Unity.Netcode.Components
 
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
-#endregion
+        #endregion
 
         #region API STATE UPDATE METHODS
         /// <summary>
@@ -3490,14 +3485,7 @@ namespace Unity.Netcode.Components
             // Non-Authority
             if (Interpolate)
             {
-                if (InLocalSpace != m_PositionInterpolator.InLocalSpace && m_PositionInterpolator.EndOfBuffer)
-                {
-                    m_CurrentPosition = GetSpaceRelativePosition();
-                    m_PositionInterpolator.Clear();
-                    var time = IsServer ? NetworkManager.ServerTime.Time : NetworkManager.ServerTime.TimeTicksAgo(1).Time;
-                    m_PositionInterpolator.ResetTo(m_CurrentPosition, time);
-                    m_PositionInterpolator.InLocalSpace = InLocalSpace;
-                }
+                AdjustForChangeInTransformSpace();
 
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
@@ -3510,7 +3498,11 @@ namespace Unity.Netcode.Components
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode ? 2 : 1;
+
+                // TODO: This could most likely just always be 2
+                //var ticksAgo = ((!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode) && !m_CachedNetworkManager.DAHost ? 2 : 1;
+
+                var ticksAgo = 2;
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
 

@@ -12,7 +12,7 @@ namespace Unity.Netcode
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         internal float MaxInterpolationBound = 3.0f;
-        private struct BufferedItem
+        protected internal struct BufferedItem
         {
             public T Item;
             public double TimeSent;
@@ -31,14 +31,16 @@ namespace Unity.Netcode
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
-        private T m_InterpStartValue;
-        private T m_CurrentInterpValue;
-        private T m_InterpEndValue;
+        protected internal T m_InterpStartValue;
+        protected internal T m_CurrentInterpValue;
+        protected internal T m_InterpEndValue;
 
         private double m_EndTimeConsumed;
         private double m_StartTimeConsumed;
 
-        private readonly List<BufferedItem> m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
+        protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
+
+
 
         // Buffer consumption scenarios
         // Perfect case consumption
@@ -76,6 +78,18 @@ namespace Unity.Netcode
         internal bool EndOfBuffer => m_Buffer.Count == 0;
 
         internal bool InLocalSpace;
+
+
+        protected internal virtual void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
+        {
+
+        }
+
+        internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
+        {
+            OnConvertTransformSpace(transform, inLocalSpace);
+            InLocalSpace = inLocalSpace;
+        }
 
         /// <summary>
         /// Resets interpolator to initial state
@@ -355,6 +369,35 @@ namespace Unity.Netcode
                 return Quaternion.Lerp(start, end, time);
             }
         }
+
+        private Quaternion ConvertToNewTransformSpace(Transform transform, Quaternion rotation, bool inLocalSpace)
+        {
+            if (inLocalSpace)
+            {
+                return Quaternion.Inverse(transform.rotation) * rotation;
+
+            }
+            else
+            {
+                return transform.rotation * rotation;
+            }
+        }
+
+        protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
+        {
+            for (int i = 0; i < m_Buffer.Count; i++)
+            {
+                var entry = m_Buffer[i];
+                entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
+                m_Buffer[i] = entry;
+            }
+
+            m_InterpStartValue = ConvertToNewTransformSpace(transform, m_InterpStartValue, inLocalSpace);
+            m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
+            m_InterpEndValue = ConvertToNewTransformSpace(transform, m_InterpEndValue, inLocalSpace);
+
+            base.OnConvertTransformSpace(transform, inLocalSpace);
+        }
     }
 
     /// <summary>
@@ -391,6 +434,35 @@ namespace Unity.Netcode
             {
                 return Vector3.Lerp(start, end, time);
             }
+        }
+
+        private Vector3 ConvertToNewTransformSpace(Transform transform, Vector3 position, bool inLocalSpace)
+        {
+            if (inLocalSpace)
+            {
+                return transform.InverseTransformPoint(position);
+
+            }
+            else
+            {
+                return transform.TransformPoint(position);
+            }
+        }
+
+        protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
+        {
+            for (int i = 0; i < m_Buffer.Count; i++)
+            {
+                var entry = m_Buffer[i];
+                entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
+                m_Buffer[i] = entry;
+            }
+
+            m_InterpStartValue = ConvertToNewTransformSpace(transform, m_InterpStartValue, inLocalSpace);
+            m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
+            m_InterpEndValue = ConvertToNewTransformSpace(transform, m_InterpEndValue, inLocalSpace);
+
+            base.OnConvertTransformSpace(transform, inLocalSpace);
         }
     }
 }
