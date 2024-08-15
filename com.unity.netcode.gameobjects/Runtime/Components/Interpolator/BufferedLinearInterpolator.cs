@@ -73,6 +73,10 @@ namespace Unity.Netcode
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
+        internal bool EndOfBuffer => m_Buffer.Count == 0;
+
+        internal bool InLocalSpace;
+
         /// <summary>
         /// Resets interpolator to initial state
         /// </summary>
