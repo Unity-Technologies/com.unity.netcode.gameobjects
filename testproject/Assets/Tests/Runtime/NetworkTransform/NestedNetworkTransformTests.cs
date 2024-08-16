@@ -134,7 +134,7 @@ namespace TestProject.RuntimeTests
             networkTransform.UseQuaternionSynchronization = true;
             networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half || m_Precision == Precision.Compressed;
             networkTransform.UseQuaternionCompression = m_Precision == Precision.Compressed;
-            networkTransform.IsServerAuthority = m_Authority == AuthoritativeModel.Server;
+            networkTransform.AuthorityMode = m_Authority == AuthoritativeModel.Server ? Unity.Netcode.Components.NetworkTransform.AuthorityModes.Server : Unity.Netcode.Components.NetworkTransform.AuthorityModes.Owner;
         }
 
 

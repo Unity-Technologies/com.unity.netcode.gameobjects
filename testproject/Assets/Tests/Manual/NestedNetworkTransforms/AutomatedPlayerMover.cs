@@ -45,7 +45,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public override void OnUpdate()
+        private void Update()
         {
             if (!IsSpawned)
             {

@@ -410,6 +410,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
             TimeTravelAdvanceTick();
+            TimeTravelToNextTick();
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextPosition = GetRandomVector3(2f, 30f);
