@@ -2265,8 +2265,6 @@ namespace Unity.Netcode.Components
             // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
-
-
             var adjustedPosition = m_CurrentPosition;
             var adjustedRotation = m_CurrentRotation;
 
@@ -2409,7 +2407,7 @@ namespace Unity.Netcode.Components
                 else
 #endif
                 {
-                    if (m_PositionInterpolator.InLocalSpace)
+                    if (InLocalSpace)
                     {
                         transform.localPosition = m_CurrentPosition;
                     }
@@ -2896,7 +2894,9 @@ namespace Unity.Netcode.Components
             // Apply the new state
             ApplyUpdatedState(newState);
 
-            if (TickSyncChildren)
+            // TODO: We migh be able to remove all of this
+            // Tick synchronize any parented child NetworkObject(s) NetworkTransform(s)
+            if (TickSyncChildren && m_IsRootGameObject)
             {
                 foreach (var child in m_Children)
                 {
@@ -3008,9 +3008,23 @@ namespace Unity.Netcode.Components
         // invoke the base.
         protected override void OnNetworkSessionSynchronized()
         {
-            if (SynchronizeState.IsSynchronizing)
+            // For all child NetworkTransforms nested under the same NetworkObject,
+            // we apply the initial synchronization based on their parented/ordered
+            // heirarchy.
+            if (SynchronizeState.IsSynchronizing && m_IsRootGameObject)
             {
-                ApplySynchronization();
+                foreach (var child in NetworkObject.NetworkTransforms)
+                {
+                    child.ApplySynchronization();
+                    // If this NetworkTransform is on the root GameObject, then there is no need to re-initialize values
+                    if (child.gameObject == NetworkObject.gameObject)
+                    {
+                        continue;
+                    }
+                    // For all nested (under the root/same NetworkObject) child NetworkTransforms, we need to run through
+                    // initialization once more to assure any values applied or stored are relative to the Root's transform.
+                    child.InternalInitialization();
+                }
             }
 
             base.OnNetworkSessionSynchronized();
@@ -3050,7 +3064,11 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
+            // Remove the root NetworkTransform from any updates
+            if (m_IsRootGameObject)
+            {
+                NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
+            }
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -3123,6 +3141,10 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_CachedNetworkObject = NetworkObject;
+            // Sets whether this NetworkTransform is the root NetworkTransform
+            // GameObject + NetworkObject + NetworkTransform (Root)
+            // - GameObject + NetworkTransform (nested child)
+            m_IsRootGameObject = gameObject == NetworkObject.gameObject;
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 AuthorityMode = AuthorityModes.Owner;
@@ -3160,8 +3182,12 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
+                // Make sure the root NetworkObject authority isn't added to or is removed (if ownership changed) from getting non-authority updates.
+                if (m_IsRootGameObject)
+                {
+                    // We only need to remove with the root NetworkTransform since the root handles invoking nested NetworkTransform's updates.
+                    m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
+                }
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -3181,8 +3207,13 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Non-authority needs to be added to updates for interpolation and applying state purposes
-                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
+                // Make sure the root NetworkObject non-authority is added to updates.
+                if (m_IsRootGameObject)
+                {
+                    // We only need to add the root NetworkTransform since the it will handle invoking nested NetworkTransform's updates.
+                    m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
+                }
+
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();
@@ -3210,7 +3241,7 @@ namespace Unity.Netcode.Components
         private void AdjustForChangeInTransformSpace()
         {
             // TODO: NetworkObject to NetworkObject parent transfer
-            if (m_PositionInterpolator.InLocalSpace != InLocalSpace)
+            if (m_IsRootGameObject && m_PositionInterpolator.InLocalSpace != InLocalSpace)
             {
                 var parent = InLocalSpace ? m_CurrentParent : m_PreviousParent;
                 if (parent != null)
@@ -3245,6 +3276,7 @@ namespace Unity.Netcode.Components
 
         private List<NetworkObject> m_Children = new List<NetworkObject>();
 
+        private bool m_IsRootGameObject;
         private NetworkObject m_CurrentParent = null;
         private NetworkObject m_PreviousParent = null;
 
@@ -3260,6 +3292,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        // TODO: We might consider moving this into an internal method invoked just prior to OnNetworkObjectParentChanged
+        // to avoid any issues if the user invokes the base too late and/or overrides and never invokes the base
+
         /// <inheritdoc/>
         /// <remarks>
         /// When a parent changes, non-authoritative instances should:
@@ -3270,18 +3305,24 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-
-            m_PreviousParent = m_CurrentParent;
-
-            if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
+            // The root NetworkTransform handles tracking any NetworkObject parenting since nested NetworkTransforms (of the same NetworkObject)
+            // will never (or rather should never) change their world space once spawned.
+            // TODO: We might consider preventing nested nested NetworkTransforms (of the same NetworkObject) from changing their transform space
+            // once the root NetworkObject is spawned.
+            if (m_IsRootGameObject)
             {
-                m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
-                m_CurrentParent = parentNetworkObject;
-            }
-            if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
-            {
-                parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
-                m_CurrentParent = parentNetworkObject;
+                m_PreviousParent = m_CurrentParent;
+
+                if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
+                {
+                    m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
+                    m_CurrentParent = parentNetworkObject;
+                }
+                if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
+                {
+                    parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
+                    m_CurrentParent = parentNetworkObject;
+                }
             }
             // TODO: This below code might need to just be deleted now
 #if DONTINCLUDE
@@ -3552,8 +3593,20 @@ namespace Unity.Netcode.Components
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
-        }
 
+            // Update any nested NetworkTransforms that belong to the same NetworkObject.
+            if (m_IsRootGameObject)
+            {
+                foreach (var childTransform in NetworkObject.NetworkTransforms)
+                {
+                    if (childTransform == this)
+                    {
+                        continue;
+                    }
+                    childTransform.OnUpdate();
+                }
+            }
+        }
 
 #if COM_UNITY_MODULES_PHYSICS
 
