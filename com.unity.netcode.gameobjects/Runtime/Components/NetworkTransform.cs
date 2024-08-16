@@ -2567,17 +2567,19 @@ namespace Unity.Netcode.Components
             if (newState.HasScaleChange)
             {
                 bool shouldUseLossy = false;
-                if (newState.IsParented)
-                {
-                    if (transform.parent == null)
-                    {
-                        shouldUseLossy = NetworkObject.WorldPositionStays();
-                    }
-                    else
-                    {
-                        shouldUseLossy = !NetworkObject.WorldPositionStays();
-                    }
-                }
+
+                // TODO: We can remove all of this as well, along with sending lossy scale
+                //if (newState.IsParented)
+                //{
+                //    //if (transform.parent == null)
+                //    //{
+                //    //    shouldUseLossy = NetworkObject.WorldPositionStays();
+                //    //}
+                //    //else
+                //    //{
+                //    //    shouldUseLossy = !NetworkObject.WorldPositionStays();
+                //    //}
+                //}
 
                 if (UseHalfFloatPrecision)
                 {
