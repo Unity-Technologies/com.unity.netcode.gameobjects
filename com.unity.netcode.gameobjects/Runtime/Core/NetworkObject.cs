@@ -67,6 +67,7 @@ namespace Unity.Netcode
         /// </remarks>
         public List<NetworkTransform> NetworkTransforms { get; private set; }
 
+
 #if COM_UNITY_MODULES_PHYSICS
         /// <summary>
         /// All <see cref="NetworkRigidbodyBase"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
@@ -2371,7 +2372,7 @@ namespace Unity.Netcode
                     {
                         m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
                         var type = networkBehaviours[i].GetType();
-                        if (type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                        if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
                         {
                             if (NetworkTransforms == null)
                             {
