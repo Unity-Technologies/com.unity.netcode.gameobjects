@@ -2407,9 +2407,22 @@ namespace Unity.Netcode.Components
                 else
 #endif
                 {
-                    if (InLocalSpace)
+                    if (m_PositionInterpolator.InLocalSpace)
                     {
-                        transform.localPosition = m_CurrentPosition;
+                        // This handles the edge case of transitioning from local to world space where applying a local
+                        // space value to a non-parented transform will be applied in world space. Since parenting is not
+                        // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
+                        // state update which can cause the body to seemingly "teleport" when it is just applying a local
+                        // space value relative to world space 0,0,0.
+                        if (m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        {
+                            m_CurrentPosition = m_PreviousParent.transform.TransformPoint(m_CurrentPosition);
+                            transform.position = m_CurrentPosition;
+                        }
+                        else
+                        {
+                            transform.localPosition = m_CurrentPosition;
+                        }
                     }
                     else
                     {
@@ -2435,9 +2448,22 @@ namespace Unity.Netcode.Components
                 else
 #endif
                 {
-                    if (InLocalSpace)
+                    if (m_RotationInterpolator.InLocalSpace)
                     {
-                        transform.localRotation = m_CurrentRotation;
+                        // This handles the edge case of transitioning from local to world space where applying a local
+                        // space value to a non-parented transform will be applied in world space. Since parenting is not
+                        // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
+                        // state update which can cause the body to rotate world space relative and cause a slight rotation
+                        // of the body in-between this transition period.
+                        if (m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        {
+                            m_CurrentRotation = m_PreviousParent.transform.rotation * m_CurrentRotation;
+                            transform.rotation = m_CurrentRotation;
+                        }
+                        else
+                        {
+                            transform.localRotation = m_CurrentRotation;
+                        }
                     }
                     else
                     {
