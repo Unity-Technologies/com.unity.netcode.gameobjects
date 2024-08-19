@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
@@ -1188,6 +1189,11 @@ namespace Unity.Netcode.Components
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
+        public bool SwitchTransformSpaceWhenParented = false;
+
+        protected bool PositionInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_PositionInterpolator != null && m_PositionInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+        protected bool RotationInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_RotationInterpolator != null && m_RotationInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+
         /// <summary>
         /// When enabled (default) interpolation is applied.
         /// When disabled interpolation is disabled.
@@ -1799,7 +1805,8 @@ namespace Unity.Netcode.Components
                 // We no longer need to teleport for a change in transform space
                 networkState.InLocalSpace = InLocalSpace;
                 isDirty = true;
-                forceState = true;
+                networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
+                forceState = SwitchTransformSpaceWhenParented;
             }
 #if COM_UNITY_MODULES_PHYSICS
             else if (InLocalSpace && m_UseRigidbodyForMotion)
@@ -2407,14 +2414,14 @@ namespace Unity.Netcode.Components
                 else
 #endif
                 {
-                    if (m_PositionInterpolator.InLocalSpace)
+                    if (PositionInLocalSpace)
                     {
                         // This handles the edge case of transitioning from local to world space where applying a local
                         // space value to a non-parented transform will be applied in world space. Since parenting is not
                         // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
                         // state update which can cause the body to seemingly "teleport" when it is just applying a local
                         // space value relative to world space 0,0,0.
-                        if (m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
                         {
                             m_CurrentPosition = m_PreviousParent.transform.TransformPoint(m_CurrentPosition);
                             transform.position = m_CurrentPosition;
@@ -2448,14 +2455,14 @@ namespace Unity.Netcode.Components
                 else
 #endif
                 {
-                    if (m_RotationInterpolator.InLocalSpace)
+                    if (RotationInLocalSpace)
                     {
                         // This handles the edge case of transitioning from local to world space where applying a local
                         // space value to a non-parented transform will be applied in world space. Since parenting is not
                         // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
                         // state update which can cause the body to rotate world space relative and cause a slight rotation
                         // of the body in-between this transition period.
-                        if (m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
                         {
                             m_CurrentRotation = m_PreviousParent.transform.rotation * m_CurrentRotation;
                             transform.rotation = m_CurrentRotation;
@@ -3170,7 +3177,7 @@ namespace Unity.Netcode.Components
             // Sets whether this NetworkTransform is the root NetworkTransform
             // GameObject + NetworkObject + NetworkTransform (Root)
             // - GameObject + NetworkTransform (nested child)
-            m_IsRootGameObject = gameObject == NetworkObject.gameObject;
+            m_IsRootGameObject = NetworkObject.NetworkTransforms.First() == this;
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 AuthorityMode = AuthorityModes.Owner;
@@ -3267,7 +3274,7 @@ namespace Unity.Netcode.Components
         private void AdjustForChangeInTransformSpace()
         {
             // TODO: NetworkObject to NetworkObject parent transfer
-            if (m_IsRootGameObject && m_PositionInterpolator.InLocalSpace != InLocalSpace)
+            if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && m_PositionInterpolator.InLocalSpace != InLocalSpace)
             {
                 var parent = InLocalSpace ? m_CurrentParent : m_PreviousParent;
                 if (parent != null)
@@ -3351,9 +3358,9 @@ namespace Unity.Netcode.Components
                 }
             }
             // TODO: This below code might need to just be deleted now
-#if DONTINCLUDE
+                
             // Only if we are not authority
-            if (!CanCommitToTransform)
+            if (!SwitchTransformSpaceWhenParented && !CanCommitToTransform)
             {
 #if COM_UNITY_MODULES_PHYSICS
                 var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
@@ -3380,7 +3387,6 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
                 }
             }
-#endif
 
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
