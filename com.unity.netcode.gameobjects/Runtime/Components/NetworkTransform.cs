@@ -2960,7 +2960,7 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
+            NetworkManager?.NetworkTransformRegistration(NetworkObject, forUpdate, false);
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -3069,7 +3069,7 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 // Make sure authority doesn't get added to updates (no need to do this on the authority side)
-                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -3090,7 +3090,7 @@ namespace Unity.Netcode.Components
             else
             {
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
-                m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();
