@@ -32,8 +32,6 @@ namespace TestProject.ManualTests
             return CanCommitToTransform;
         }
 
-        private Vector3 m_LastPredictedPosition;
-
         public void PlayerIsMoving(float movementDirection)
         {
             if (IsSpawned && CanCommitToTransform)
@@ -53,9 +51,9 @@ namespace TestProject.ManualTests
             return transform;
         }
 
-        public override void OnNetworkSpawn()
+        protected override void OnNetworkPostSpawn()
         {
-            if ((OnIsServerAuthoritative() && IsServer) || (!OnIsServerAuthoritative() && IsOwner))
+            if (CanCommitToTransform)
             {
                 m_RootParentTransform = GetRootParentTransform(transform);
                 if (RandomizeScale)
@@ -63,7 +61,7 @@ namespace TestProject.ManualTests
                     transform.localScale = transform.localScale * Random.Range(0.5f, 1.5f);
                 }
             }
-            base.OnNetworkSpawn();
+            base.OnNetworkPostSpawn();
         }
     }
 }

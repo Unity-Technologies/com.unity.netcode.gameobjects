@@ -19,9 +19,6 @@ namespace TestProject.ManualTests
 {
     public class IntegrationNetworkTransform : NetworkTransform
     {
-
-        public bool IsServerAuthority = true;
-
         public bool DebugTransform;
 
         public Vector3 LastUpdatedPosition;
@@ -52,11 +49,6 @@ namespace TestProject.ManualTests
                 m_AddLogEntry = InternalAddLogEntry;
             }
 #endif
-        }
-
-        protected override bool OnIsServerAuthoritative()
-        {
-            return IsServerAuthority;
         }
 
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
