@@ -19,7 +19,6 @@ namespace TestProject.ManualTests
 {
     public class IntegrationNetworkTransform : NetworkTransform
     {
-
         public bool DebugTransform;
 
         public Vector3 LastUpdatedPosition;

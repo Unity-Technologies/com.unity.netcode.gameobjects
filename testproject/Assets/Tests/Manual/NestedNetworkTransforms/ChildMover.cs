@@ -56,7 +56,7 @@ namespace TestProject.ManualTests
 
         protected override void OnNetworkPostSpawn()
         {
-            if ((OnIsServerAuthoritative() && IsServer) || (!OnIsServerAuthoritative() && IsOwner))
+            if (CanCommitToTransform)
             {
                 m_RootParentTransform = GetRootParentTransform(transform);
                 if (RandomizeScale)

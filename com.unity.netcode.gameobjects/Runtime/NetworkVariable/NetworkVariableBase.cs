@@ -264,6 +264,11 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to read</returns>
         public bool CanClientRead(ulong clientId)
         {
+            if (!m_NetworkBehaviour)
+            {
+                return false;
+            }
+
             // When in distributed authority mode, everyone can read (but only the owner can write)
             if (m_NetworkManager != null && m_NetworkManager.DistributedAuthorityMode)
             {
@@ -286,6 +291,11 @@ namespace Unity.Netcode
         /// <returns>Whether or not the client has permission to write</returns>
         public bool CanClientWrite(ulong clientId)
         {
+            if (!m_NetworkBehaviour)
+            {
+                return false;
+            }
+
             switch (WritePerm)
             {
                 default:

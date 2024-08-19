@@ -3097,11 +3097,7 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            // Remove the root NetworkTransform from any updates
-            if (m_IsRootGameObject)
-            {
-                NetworkManager?.NetworkTransformRegistration(this, forUpdate, false);
-            }
+            NetworkManager?.NetworkTransformRegistration(NetworkObject, forUpdate, false);
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -3215,12 +3211,8 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // Make sure the root NetworkObject authority isn't added to or is removed (if ownership changed) from getting non-authority updates.
-                if (m_IsRootGameObject)
-                {
-                    // We only need to remove with the root NetworkTransform since the root handles invoking nested NetworkTransform's updates.
-                    m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, false);
-                }
+                // Make sure authority doesn't get added to updates (no need to do this on the authority side)
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, false);
                 if (UseHalfFloatPrecision)
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
@@ -3240,13 +3232,8 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Make sure the root NetworkObject non-authority is added to updates.
-                if (m_IsRootGameObject)
-                {
-                    // We only need to add the root NetworkTransform since the it will handle invoking nested NetworkTransform's updates.
-                    m_CachedNetworkManager.NetworkTransformRegistration(this, forUpdate, true);
-                }
-
+                // Non-authority needs to be added to updates for interpolation and applying state purposes
+                m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();

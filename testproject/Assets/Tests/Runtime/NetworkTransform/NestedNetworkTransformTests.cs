@@ -2,24 +2,25 @@ using System.Collections;
 using System.Text;
 using NUnit.Framework;
 using TestProject.ManualTests;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Owner)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Server)]
-    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Owner)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner)]
     public class NestedNetworkTransformTests : IntegrationTestWithApproximation
     {
         private const string k_TestScene = "NestedNetworkTransformTestScene";
@@ -39,7 +40,7 @@ namespace TestProject.RuntimeTests
         private Object m_PlayerPrefabResource;
         private Interpolation m_Interpolation;
         private Precision m_Precision;
-        private AuthoritativeModel m_Authority;
+        private NetworkTransform.AuthorityModes m_Authority;
 
         public enum Interpolation
         {
@@ -61,7 +62,7 @@ namespace TestProject.RuntimeTests
         }
 
 
-        public NestedNetworkTransformTests(Interpolation interpolation, Precision precision, AuthoritativeModel authoritativeModel)
+        public NestedNetworkTransformTests(Interpolation interpolation, Precision precision, NetworkTransform.AuthorityModes authoritativeModel)
         {
             m_Interpolation = interpolation;
             m_Precision = precision;
@@ -134,7 +135,7 @@ namespace TestProject.RuntimeTests
             networkTransform.UseQuaternionSynchronization = true;
             networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half || m_Precision == Precision.Compressed;
             networkTransform.UseQuaternionCompression = m_Precision == Precision.Compressed;
-            networkTransform.AuthorityMode = m_Authority == AuthoritativeModel.Server ? Unity.Netcode.Components.NetworkTransform.AuthorityModes.Server : Unity.Netcode.Components.NetworkTransform.AuthorityModes.Owner;
+            networkTransform.AuthorityMode = m_Authority;
         }
 
 
@@ -189,7 +190,7 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors.Clear();
             foreach (var connectedClient in m_ServerNetworkManager.ConnectedClientsIds)
             {
-                var authorityId = m_Authority == AuthoritativeModel.Server ? m_ServerNetworkManager.LocalClientId : connectedClient;
+                var authorityId = m_Authority == NetworkTransform.AuthorityModes.Server ? m_ServerNetworkManager.LocalClientId : connectedClient;
                 var playerToValidate = m_PlayerNetworkObjects[authorityId][connectedClient];
                 var playerNetworkTransforms = playerToValidate.GetComponentsInChildren<IntegrationNetworkTransform>();
                 foreach (var playerRelative in m_PlayerNetworkObjects)
