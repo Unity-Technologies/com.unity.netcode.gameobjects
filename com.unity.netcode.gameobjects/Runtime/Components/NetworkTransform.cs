@@ -2960,7 +2960,10 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            NetworkManager?.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+            if (m_CachedNetworkObject != null)
+            {
+                NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+            }
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
