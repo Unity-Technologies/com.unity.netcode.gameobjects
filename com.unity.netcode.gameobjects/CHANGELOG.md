@@ -25,7 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed `NetworkAnimator` to automatically switch to owner authoritative mode when using a distributed authority network topology.
+- Changed `NetworkAnimator` to automatically switch to owner authoritative mode when using a distributed authority network topology. (#3021)
 - Changed permissions exception thrown in `NetworkList` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
 - Changed permissions exception thrown in `NetworkVariable.Value` to exiting early with a logged error that is now a unified permissions message within `NetworkVariableBase`. (#3004)
 
