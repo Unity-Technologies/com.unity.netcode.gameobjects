@@ -8,7 +8,6 @@ using UnityEditor;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
-using Unity.Netcode.Components;
 
 namespace Unity.Netcode
 {
@@ -215,25 +214,25 @@ namespace Unity.Netcode
             }
         }
 
-        internal Dictionary<ulong, NetworkTransform> NetworkTransformUpdate = new Dictionary<ulong, NetworkTransform>();
+        internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
 #if COM_UNITY_MODULES_PHYSICS
-        internal Dictionary<ulong, NetworkTransform> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkTransform>();
+        internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
 #endif
 
-        internal void NetworkTransformRegistration(NetworkTransform networkTransform, bool forUpdate = true, bool register = true)
+        internal void NetworkTransformRegistration(NetworkObject networkObject, bool onUpdate = true, bool register = true)
         {
-            if (forUpdate)
+            if (onUpdate)
             {
                 if (register)
                 {
-                    if (!NetworkTransformUpdate.ContainsKey(networkTransform.NetworkObjectId))
+                    if (!NetworkTransformUpdate.ContainsKey(networkObject.NetworkObjectId))
                     {
-                        NetworkTransformUpdate.Add(networkTransform.NetworkObjectId, networkTransform);
+                        NetworkTransformUpdate.Add(networkObject.NetworkObjectId, networkObject);
                     }
                 }
                 else
                 {
-                    NetworkTransformUpdate.Remove(networkTransform.NetworkObjectId);
+                    NetworkTransformUpdate.Remove(networkObject.NetworkObjectId);
                 }
             }
 #if COM_UNITY_MODULES_PHYSICS
@@ -241,14 +240,14 @@ namespace Unity.Netcode
             {
                 if (register)
                 {
-                    if (!NetworkTransformFixedUpdate.ContainsKey(networkTransform.NetworkObjectId))
+                    if (!NetworkTransformFixedUpdate.ContainsKey(networkObject.NetworkObjectId))
                     {
-                        NetworkTransformFixedUpdate.Add(networkTransform.NetworkObjectId, networkTransform);
+                        NetworkTransformFixedUpdate.Add(networkObject.NetworkObjectId, networkObject);
                     }
                 }
                 else
                 {
-                    NetworkTransformFixedUpdate.Remove(networkTransform.NetworkObjectId);
+                    NetworkTransformFixedUpdate.Remove(networkObject.NetworkObjectId);
                 }
             }
 #endif
@@ -289,11 +288,21 @@ namespace Unity.Netcode
 #if COM_UNITY_MODULES_PHYSICS
                 case NetworkUpdateStage.FixedUpdate:
                     {
-                        foreach (var networkTransformEntry in NetworkTransformFixedUpdate)
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
                         {
-                            if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
                             {
-                                networkTransformEntry.Value.OnFixedUpdate();
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.OnFixedUpdate();
+                                }
                             }
                         }
                     }
@@ -308,11 +317,21 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreLateUpdate:
                     {
                         // Non-physics based non-authority NetworkTransforms update their states after all other components
-                        foreach (var networkTransformEntry in NetworkTransformUpdate)
+                        foreach (var networkObjectEntry in NetworkTransformUpdate)
                         {
-                            if (networkTransformEntry.Value.gameObject.activeInHierarchy && networkTransformEntry.Value.IsSpawned)
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
                             {
-                                networkTransformEntry.Value.OnUpdate();
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.OnUpdate();
+                                }
                             }
                         }
                     }

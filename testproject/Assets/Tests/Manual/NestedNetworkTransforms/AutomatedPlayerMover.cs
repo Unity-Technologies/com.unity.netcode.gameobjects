@@ -36,16 +36,16 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        public override void OnNetworkSpawn()
+        protected override void OnNetworkPostSpawn()
         {
-            base.OnNetworkSpawn();
             if (CanCommitToTransform)
             {
                 UpdateDestination();
             }
+            base.OnNetworkPostSpawn();
         }
 
-        public override void OnUpdate()
+        private void Update()
         {
             if (!IsSpawned)
             {

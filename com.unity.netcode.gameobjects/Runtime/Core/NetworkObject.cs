@@ -2359,7 +2359,7 @@ namespace Unity.Netcode
                     {
                         m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
                         var type = networkBehaviours[i].GetType();
-                        if (type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                        if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
                         {
                             if (NetworkTransforms == null)
                             {
