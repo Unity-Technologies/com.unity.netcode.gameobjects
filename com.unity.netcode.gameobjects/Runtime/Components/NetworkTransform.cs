@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
@@ -1802,8 +1801,7 @@ namespace Unity.Netcode.Components
             if (InLocalSpace != networkState.InLocalSpace)
 #endif
             {
-                // We no longer need to teleport for a change in transform space
-                networkState.InLocalSpace = InLocalSpace;
+                networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
                 isDirty = true;
                 networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
                 forceState = SwitchTransformSpaceWhenParented;
@@ -3097,7 +3095,11 @@ namespace Unity.Netcode.Components
 #else
             var forUpdate = true;
 #endif
-            NetworkManager?.NetworkTransformRegistration(NetworkObject, forUpdate, false);
+            if (m_CachedNetworkObject != null)
+            {
+                NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
+            }
+
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -3173,7 +3175,13 @@ namespace Unity.Netcode.Components
             // Sets whether this NetworkTransform is the root NetworkTransform
             // GameObject + NetworkObject + NetworkTransform (Root)
             // - GameObject + NetworkTransform (nested child)
-            m_IsRootGameObject = NetworkObject.NetworkTransforms.First() == this;
+            m_IsRootGameObject = NetworkObject.gameObject == gameObject;
+
+            if (SwitchTransformSpaceWhenParented)
+            {
+                InLocalSpace = transform.parent != null;
+            }
+
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 AuthorityMode = AuthorityModes.Owner;
@@ -3327,54 +3335,58 @@ namespace Unity.Netcode.Components
         {
             // The root NetworkTransform handles tracking any NetworkObject parenting since nested NetworkTransforms (of the same NetworkObject)
             // will never (or rather should never) change their world space once spawned.
-            // TODO: We might consider preventing nested nested NetworkTransforms (of the same NetworkObject) from changing their transform space
-            // once the root NetworkObject is spawned.
-            if (m_IsRootGameObject)
+            if (SwitchTransformSpaceWhenParented)
             {
-                m_PreviousParent = m_CurrentParent;
+                if (m_IsRootGameObject)
+                {
+                    m_PreviousParent = m_CurrentParent;
+                    m_CurrentParent = parentNetworkObject;
 
-                if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
-                {
-                    m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
-                    m_CurrentParent = parentNetworkObject;
-                }
-                if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
-                {
-                    parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
-                    m_CurrentParent = parentNetworkObject;
+                    if (CanCommitToTransform)
+                    {
+                        InLocalSpace = m_CurrentParent != null;
+                    }
+
+                    if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
+                    {
+                        m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
+                    }
+                    if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
+                    {
+                        parentNetworkObject.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
+                    }
                 }
             }
-            // TODO: This below code might need to just be deleted now
-                
-            // Only if we are not authority
-            if (!SwitchTransformSpaceWhenParented && !CanCommitToTransform)
+            else
             {
+                if (!CanCommitToTransform)
+                {
 #if COM_UNITY_MODULES_PHYSICS
-                var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
-                var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+                    var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                    var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
 #else
-                var position = GetSpaceRelativePosition();
-                var rotation = GetSpaceRelativeRotation();
+                    var position = GetSpaceRelativePosition();
+                    var rotation = GetSpaceRelativeRotation();
 #endif
-                m_TargetPosition = m_CurrentPosition = position;
-                m_CurrentRotation = rotation;
-                m_TargetRotation = m_CurrentRotation.eulerAngles;
-                m_TargetScale = m_CurrentScale = GetScale();
+                    m_TargetPosition = m_CurrentPosition = position;
+                    m_CurrentRotation = rotation;
+                    m_TargetRotation = m_CurrentRotation.eulerAngles;
+                    m_TargetScale = m_CurrentScale = GetScale();
 
-                if (Interpolate)
-                {
-                    m_ScaleInterpolator.Clear();
-                    m_PositionInterpolator.Clear();
-                    m_RotationInterpolator.Clear();
+                    if (Interpolate)
+                    {
+                        m_ScaleInterpolator.Clear();
+                        m_PositionInterpolator.Clear();
+                        m_RotationInterpolator.Clear();
 
-                    // Always use NetworkManager here as this can be invoked prior to spawning
-                    var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
-                    UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
-                    m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
-                    m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+                        // Always use NetworkManager here as this can be invoked prior to spawning
+                        var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                        UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
+                        m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
+                        m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+                    }
                 }
             }
-
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
         #endregion
