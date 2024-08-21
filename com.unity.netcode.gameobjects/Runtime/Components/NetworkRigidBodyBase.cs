@@ -942,7 +942,7 @@ namespace Unity.Netcode.Components
             if (networkRigidbodyBase && networkRigidbodyBase.NetworkTransform)
             {
                 NetworkTransformConnections.Remove(networkRigidbodyBase.NetworkTransform);
-            }            
+            }
         }
     }
 }
