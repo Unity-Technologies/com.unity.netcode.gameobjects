@@ -498,9 +498,13 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
+        /// <remarks>
+        /// When using a distributed authority network topology, this will default to
+        /// owner authoritative.
+        /// </remarks>
         protected virtual bool OnIsServerAuthoritative()
         {
-            return true;
+            return NetworkManager ? !NetworkManager.DistributedAuthorityMode : true;
         }
 
         // Animators only support up to 32 parameters
