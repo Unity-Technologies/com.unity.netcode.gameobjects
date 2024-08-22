@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -15,6 +16,7 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
     private SerializedProperty m_RotationSpeed;
     private SerializedProperty m_RotateDirection;
     private SerializedProperty m_ZAxisMove;
+    private SerializedProperty m_PathMotion;
 
 
     public override void OnEnable()
@@ -22,6 +24,7 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
         m_RotationSpeed = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotationSpeed));
         m_RotateDirection = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotateDirection));
         m_ZAxisMove = serializedObject.FindProperty(nameof(RotatingBodyLogic.ZAxisMove));
+        m_PathMotion = serializedObject.FindProperty(nameof(RotatingBodyLogic.PathMovement));
         base.OnEnable();
     }
 
@@ -32,6 +35,7 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
             EditorGUILayout.PropertyField(m_RotationSpeed);
             EditorGUILayout.PropertyField(m_RotateDirection);
             EditorGUILayout.PropertyField(m_ZAxisMove);
+            EditorGUILayout.PropertyField(m_PathMotion);
         }
         EditorGUILayout.Space();
         base.OnInspectorGUI();
@@ -53,6 +57,9 @@ public class RotatingBodyLogic : NetworkTransform
     [Range(0.0f, 2.0f)]
     public float RotationSpeed = 1.0f;
     public RotationDirections RotateDirection;
+
+    public List<GameObject> PathMovement;
+
     public bool ZAxisMove = false;
 
 
@@ -62,6 +69,9 @@ public class RotatingBodyLogic : NetworkTransform
     private float ZAxisDirection;
     private Vector3 OriginalForward;
 
+    private int m_CurrentPathObject = -1;
+    private GameObject m_CurrentNavPoint;
+
     protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
     {
         m_TagHandle = TagHandle.GetExistingTag("Player");
@@ -70,8 +80,21 @@ public class RotatingBodyLogic : NetworkTransform
         ZAxisDirection = Mathf.Sign(ZAxisMax) < 0 ? 1.0f : -1.0f;
         OriginalForward = transform.forward;
         m_NextSwitchDirection = Time.realtimeSinceStartup + 2.0f;
+        SetNextPoint();
         base.OnNetworkPreSpawn(ref networkManager);
     }
+
+    private void SetNextPoint()
+    {
+        if (PathMovement == null || PathMovement.Count == 0)
+        {
+            return;
+        }
+        m_CurrentPathObject++;
+        m_CurrentPathObject %= PathMovement.Count;
+        m_CurrentNavPoint = PathMovement[m_CurrentPathObject];
+    }
+
 
     /// <summary>
     /// When triggered, the player is parented under the rotating body.
@@ -126,6 +149,17 @@ public class RotatingBodyLogic : NetworkTransform
             return;
         }
 
+        if (m_CurrentNavPoint != null)
+        {
+            if (Vector3.Distance(m_CurrentNavPoint.transform.position, transform.position) <= 0.05f)
+            {
+                SetNextPoint();
+            }
+
+            var direction = (m_CurrentNavPoint.transform.position - transform.position).normalized;
+            transform.position = Vector3.Lerp(transform.position, transform.position + direction * 10, Time.deltaTime);
+        }
+        else
         if (ZAxisMove)
         {
             if (Mathf.Abs(transform.position.z) > ZAxisMax && m_NextSwitchDirection < Time.realtimeSinceStartup)

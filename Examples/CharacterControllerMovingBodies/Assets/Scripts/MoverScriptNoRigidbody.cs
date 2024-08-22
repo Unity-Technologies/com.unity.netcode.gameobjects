@@ -137,7 +137,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         m_CharacterController = GetComponent<CharacterController>();
         // By default, we always disable the CharacterController and only enable it on the
         // owner/authority side.
-        m_CharacterController.gameObject.SetActive(false);
+        m_CharacterController.enabled = false;
         base.OnNetworkPreSpawn(ref networkManager);
     }
 
@@ -148,7 +148,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
     /// </summary>
     protected override void OnNetworkPostSpawn()
     {
-        m_CharacterController.enabled = CanCommitToTransform;
+        m_CharacterController.enabled = CanCommitToTransform; 
         if (CanCommitToTransform)
         {
             Random.InitState((int)System.DateTime.Now.Ticks);
