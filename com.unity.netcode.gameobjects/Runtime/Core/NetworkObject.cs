@@ -2378,7 +2378,9 @@ namespace Unity.Netcode
                             {
                                 NetworkTransforms = new List<NetworkTransform>();
                             }
-                            NetworkTransforms.Add(networkBehaviours[i] as NetworkTransform);
+                            var networkTransform = networkBehaviours[i] as NetworkTransform;
+                            networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
+                            NetworkTransforms.Add(networkTransform);
                         }
 #if COM_UNITY_MODULES_PHYSICS
                         else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))

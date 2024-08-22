@@ -1665,7 +1665,8 @@ namespace Unity.Netcode.Components
                         childRigidbody.NetworkTransform.OnNetworkTick(true);
                     }
                 }
-
+#endif
+                // When enabled, any children will get tick synchronized with state updates
                 if (TickSyncChildren)
                 {
                     // Synchronize any children with the parent's motion
@@ -1680,21 +1681,6 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-#else
-                if (TickSyncChildren)
-                {
-                    foreach(var child in m_Children)
-                    {
-                        foreach(var childNetworkTransform in child.NetworkTransforms)
-                        {
-                            if (childNetworkTransform.CanCommitToTransform)
-                            {
-                                childNetworkTransform.OnNetworkTick(true);
-                            }
-                        }
-                    }
-                }
-#endif
             }
         }
 
@@ -2181,7 +2167,6 @@ namespace Unity.Netcode.Components
             return isDirty;
         }
 
-
         /// <summary>
         /// Authority subscribes to network tick events and will invoke
         /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
@@ -2203,6 +2188,12 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
+                // If we are nested and have already sent a state update this tick, then exit early (otherwise check for any changes in state)
+                if (IsNested && m_LocalAuthoritativeNetworkState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick)
+                {
+                    return;
+                }
+
 #if COM_UNITY_MODULES_PHYSICS
                 // Let the parent handle the updating of this to keep the two synchronized
                 if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
@@ -2221,7 +2212,7 @@ namespace Unity.Netcode.Components
                 m_TargetPosition = GetSpaceRelativePosition();
 #endif
             }
-            else // If we are no longer authority, unsubscribe to the tick event          
+            else // If we are no longer authority, unsubscribe to the tick event
             {
                 DeregisterForTickUpdate(this);
             }
@@ -2419,9 +2410,9 @@ namespace Unity.Netcode.Components
                         // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
                         // state update which can cause the body to seemingly "teleport" when it is just applying a local
                         // space value relative to world space 0,0,0.
-                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousNetworkObjectParent != null && transform.parent == null)
                         {
-                            m_CurrentPosition = m_PreviousParent.transform.TransformPoint(m_CurrentPosition);
+                            m_CurrentPosition = m_PreviousNetworkObjectParent.transform.TransformPoint(m_CurrentPosition);
                             transform.position = m_CurrentPosition;
                         }
                         else
@@ -2460,9 +2451,9 @@ namespace Unity.Netcode.Components
                         // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
                         // state update which can cause the body to rotate world space relative and cause a slight rotation
                         // of the body in-between this transition period.
-                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousParent != null && transform.parent == null)
+                        if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && Interpolate && m_PreviousNetworkObjectParent != null && transform.parent == null)
                         {
-                            m_CurrentRotation = m_PreviousParent.transform.rotation * m_CurrentRotation;
+                            m_CurrentRotation = m_PreviousNetworkObjectParent.transform.rotation * m_CurrentRotation;
                             transform.rotation = m_CurrentRotation;
                         }
                         else
@@ -3271,7 +3262,7 @@ namespace Unity.Netcode.Components
             // TODO: NetworkObject to NetworkObject parent transfer
             if (SwitchTransformSpaceWhenParented && m_IsRootGameObject && m_PositionInterpolator.InLocalSpace != InLocalSpace)
             {
-                var parent = InLocalSpace ? m_CurrentParent : m_PreviousParent;
+                var parent = InLocalSpace ? m_CurrentNetworkObjectParent : m_PreviousNetworkObjectParent;
                 if (parent != null)
                 {
                     m_PositionInterpolator.ConvertTransformSpace(parent.transform, InLocalSpace);
@@ -3302,11 +3293,12 @@ namespace Unity.Netcode.Components
             base.OnOwnershipChanged(previous, current);
         }
 
+        internal bool IsNested;
         private List<NetworkObject> m_Children = new List<NetworkObject>();
 
         private bool m_IsRootGameObject;
-        private NetworkObject m_CurrentParent = null;
-        private NetworkObject m_PreviousParent = null;
+        private NetworkObject m_CurrentNetworkObjectParent = null;
+        private NetworkObject m_PreviousNetworkObjectParent = null;
 
         internal void ChildRegistration(NetworkObject child, bool isAdding)
         {
@@ -3322,7 +3314,7 @@ namespace Unity.Netcode.Components
 
         // TODO: We might consider moving this into an internal method invoked just prior to OnNetworkObjectParentChanged
         // to avoid any issues if the user invokes the base too late and/or overrides and never invokes the base
-
+        // TODO: Update XML API documentation 
         /// <inheritdoc/>
         /// <remarks>
         /// When a parent changes, non-authoritative instances should:
@@ -3335,21 +3327,26 @@ namespace Unity.Netcode.Components
         {
             // The root NetworkTransform handles tracking any NetworkObject parenting since nested NetworkTransforms (of the same NetworkObject)
             // will never (or rather should never) change their world space once spawned.
+#if COM_UNITY_MODULES_PHYSICS
+            // Handling automatic transform space switching can only be applied to NetworkTransforms that don't use the Rigidbody for motion
+            if (!m_UseRigidbodyForMotion && SwitchTransformSpaceWhenParented)
+#else
             if (SwitchTransformSpaceWhenParented)
+#endif
             {
                 if (m_IsRootGameObject)
                 {
-                    m_PreviousParent = m_CurrentParent;
-                    m_CurrentParent = parentNetworkObject;
+                    m_PreviousNetworkObjectParent = m_CurrentNetworkObjectParent;
+                    m_CurrentNetworkObjectParent = parentNetworkObject;
 
                     if (CanCommitToTransform)
                     {
-                        InLocalSpace = m_CurrentParent != null;
+                        InLocalSpace = m_CurrentNetworkObjectParent != null;
                     }
 
-                    if (m_CurrentParent && m_CurrentParent.NetworkTransforms != null && m_CurrentParent.NetworkTransforms.Count > 0)
+                    if (m_CurrentNetworkObjectParent && m_CurrentNetworkObjectParent.NetworkTransforms != null && m_CurrentNetworkObjectParent.NetworkTransforms.Count > 0)
                     {
-                        m_CurrentParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
+                        m_CurrentNetworkObjectParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
                     }
                     if (parentNetworkObject && parentNetworkObject.NetworkTransforms != null && parentNetworkObject.NetworkTransforms.Count > 0)
                     {
