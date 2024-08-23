@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 [Unreleased]
+
+### Added
+
+### Fixed
+
+- Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode.
+
+### Changed
+
+
+## [1.11.0] - 2024-08-20
+
 ### Added
 
 - Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3005)
