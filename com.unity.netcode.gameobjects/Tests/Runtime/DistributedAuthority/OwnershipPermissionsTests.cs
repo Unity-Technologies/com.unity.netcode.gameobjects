@@ -5,7 +5,9 @@ using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -17,9 +19,36 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
+        private Scene m_OriginalActiveScene;
+        private Scene m_TempActiveScene;
+
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
+            UseCMBServiceForDATests = true;
+            m_EnableVerboseDebug = true;
         }
+
+        //protected override void OnOneTimeSetup()
+        //{
+        //    SceneManager.sceneLoaded += SceneManager_SceneLoaded;
+        //    SceneManager.LoadScene("EmptyScene1", LoadSceneMode.Additive);
+        //    base.OnOneTimeSetup();
+        //}
+
+        //private void SceneManager_SceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        //{
+        //    SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
+        //    m_TempActiveScene = scene;
+        //    m_OriginalActiveScene = SceneManager.GetActiveScene();
+        //    SceneManager.SetActiveScene(m_TempActiveScene);
+        //}
+
+        //protected override void OnOneTimeTearDown()
+        //{
+        //    SceneManager.SetActiveScene(m_OriginalActiveScene);
+        //    SceneManager.UnloadSceneAsync(m_TempActiveScene);
+        //    base.OnOneTimeTearDown();
+        //}
 
         protected override IEnumerator OnSetup()
         {
@@ -32,6 +61,15 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_PermissionsObject = CreateNetworkObjectPrefab("PermObject");
             m_PermissionsObject.AddComponent<OwnershipPermissionsTestHelper>();
+            Object.DontDestroyOnLoad(m_PermissionsObject);
+            m_PermissionsObject.gameObject.SetActive(false);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false;
+                client.NetworkConfig.EnableSceneManagement = false;
+                client.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
+                client.NetworkConfig.UseCMBService = UseCMBServiceForDATests;
+            }
 
             base.OnServerAndClientsCreated();
         }
@@ -120,6 +158,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateOwnershipPermissionsTest()
         {
+            m_PermissionsObject.gameObject.SetActive(true);
+            yield return null;
             var firstInstance = SpawnObject(m_PermissionsObject, m_ClientNetworkManagers[0]).GetComponent<NetworkObject>();
             OwnershipPermissionsTestHelper.CurrentOwnedInstance = firstInstance;
             var firstInstanceHelper = firstInstance.GetComponent<OwnershipPermissionsTestHelper>();
@@ -243,7 +283,7 @@ namespace Unity.Netcode.RuntimeTests
             // Get the 3rd client to send a request at the "relatively" same time
             var thirdInstance = m_ClientNetworkManagers[2].SpawnManager.SpawnedObjects[networkObjectId];
             var thirdInstanceHelper = thirdInstance.GetComponent<OwnershipPermissionsTestHelper>();
-
+            yield return null;
             // At the same time send a request by the third client.
             requestStatus = thirdInstance.RequestOwnership();
 
@@ -256,7 +296,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
 
             // Just do a sanity check to assure ownership has changed on all clients.
-            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstInstance.NetworkManager.LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstInstance.NetworkManager.LocalClientId)); // <---- Failes here
+
             AssertOnTimeout($"[Ownership Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
 
             // Now, the third client should get a RequestInProgress returned as their request response

@@ -141,9 +141,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_DistributedAuthority;
         protected NetworkTopologyTypes m_NetworkTopologyType = NetworkTopologyTypes.ClientServer;
 
+        public static bool UseCMBServiceForDATests;
         protected virtual bool UseCMBService()
         {
-            return false;
+            return UseCMBServiceForDATests ? m_DistributedAuthority : false;
         }
 
         protected virtual NetworkTopologyTypes OnGetNetworkTopologyType()
@@ -546,19 +547,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_InternalErrorLog.Clear();
             // Continue to populate the PlayerObjects list until all player object (local and clone) are found
             ClientNetworkManagerPostStart(joinedClient);
-
-            var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
-            if (playerObjectRelative == null)
+            var playerObjectRelative = (NetworkObject)null;
+            if (!UseCMBService())
             {
-                m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
-                return false;
-            }
-            else
-            {
-                // Go ahead and create an entry for this new client
-                if (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
+                playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+                if (playerObjectRelative == null)
                 {
-                    m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
+                    m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
+                    return false;
+                }
+                else
+                {
+                    // Go ahead and create an entry for this new client
+                    if (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
+                    {
+                        m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
+                    }
                 }
             }
 
@@ -818,14 +822,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void ClientNetworkManagerPostStartInit()
         {
+
             // Creates a dictionary for all player instances client and server relative
             // This provides a simpler way to get a specific player instance relative to a client instance
             foreach (var networkManager in m_ClientNetworkManagers)
             {
+                if (networkManager.DistributedAuthorityMode && !networkManager.AutoSpawnPlayerPrefabClientSide)
+                {
+                    continue;
+                }
                 ClientNetworkManagerPostStart(networkManager);
             }
 
-            if (m_UseHost)
+            if (m_UseHost && !UseCMBService())
             {
 #if UNITY_2023_1_OR_NEWER
                 var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
@@ -901,7 +910,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
-                    if (m_UseHost || m_ServerNetworkManager.IsHost)
+                    if (!UseCMBService() &&(m_UseHost || m_ServerNetworkManager.IsHost))
                     {
 #if UNITY_2023_1_OR_NEWER
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
@@ -926,13 +935,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         //AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn all player objects!");
                         foreach (var networkManager in m_ClientNetworkManagers)
                         {
-                            if (networkManager.DistributedAuthorityMode)
+                            if (networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide)
                             {
                                 yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
                                 AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                             }
                         }
-                        if (m_ServerNetworkManager != null)
+                        if (m_ServerNetworkManager != null && !UseCMBService())
                         {
                             yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
@@ -1468,8 +1477,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_InternalErrorLog.AppendLine($"[Client-{i + 1}] Client is not connected!");
                 }
             }
-            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
-            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
+            var expectedCount = m_ServerNetworkManager.IsHost && !UseCMBService() ? clientsToCheck.Length + 1 : clientsToCheck.Length;
+            var currentCount = !UseCMBService() ? m_ServerNetworkManager.ConnectedClients.Count : m_ClientNetworkManagers[0].ConnectedClients.Count;
 
             if (currentCount != expectedCount)
             {
