@@ -20,6 +20,9 @@ namespace Unity.Netcode.RuntimeTests
 
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
+            // For now, setting this to true will make a HostOrServer.DAHost initialized integration test
+            // run in CMB service mode where it is expecting to connect to a local comb-server.
+            // When enabled, this will not create an NGO host/server instance (i.e. m_ServerNetworkManager will not be used)
             UseCMBServiceForDATests = true;
             m_EnableVerboseDebug = true;
         }
