@@ -19,36 +19,11 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
-        private Scene m_OriginalActiveScene;
-        private Scene m_TempActiveScene;
-
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
             UseCMBServiceForDATests = true;
             m_EnableVerboseDebug = true;
         }
-
-        //protected override void OnOneTimeSetup()
-        //{
-        //    SceneManager.sceneLoaded += SceneManager_SceneLoaded;
-        //    SceneManager.LoadScene("EmptyScene1", LoadSceneMode.Additive);
-        //    base.OnOneTimeSetup();
-        //}
-
-        //private void SceneManager_SceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
-        //{
-        //    SceneManager.sceneLoaded -= SceneManager_SceneLoaded;
-        //    m_TempActiveScene = scene;
-        //    m_OriginalActiveScene = SceneManager.GetActiveScene();
-        //    SceneManager.SetActiveScene(m_TempActiveScene);
-        //}
-
-        //protected override void OnOneTimeTearDown()
-        //{
-        //    SceneManager.SetActiveScene(m_OriginalActiveScene);
-        //    SceneManager.UnloadSceneAsync(m_TempActiveScene);
-        //    base.OnOneTimeTearDown();
-        //}
 
         protected override IEnumerator OnSetup()
         {
@@ -57,6 +32,9 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
+        /// <summary>
+        /// This is where the client NetworkManagers are configured
+        /// </summary>
         protected override void OnServerAndClientsCreated()
         {
             m_PermissionsObject = CreateNetworkObjectPrefab("PermObject");
@@ -65,12 +43,11 @@ namespace Unity.Netcode.RuntimeTests
             m_PermissionsObject.gameObject.SetActive(false);
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false;
-                client.NetworkConfig.EnableSceneManagement = false;
+                client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false; // Enable this to spawn players
+                client.NetworkConfig.EnableSceneManagement = false; // Enable this to enable scene management for the clients
                 client.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
                 client.NetworkConfig.UseCMBService = UseCMBServiceForDATests;
             }
-
             base.OnServerAndClientsCreated();
         }
 
