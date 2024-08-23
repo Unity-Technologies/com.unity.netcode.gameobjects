@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the `NetworkManagerHelper` was continuing to check for heirarchy changes when in play mode.
+
 ### Changed
 
 ## [2.0.0-pre.4] - 2024-08-21
