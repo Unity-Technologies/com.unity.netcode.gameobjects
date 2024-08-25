@@ -74,7 +74,11 @@ namespace Unity.Netcode.RuntimeTests
 
             serverNetworkObject.NetworkHide(m_ClientNetworkManagers[0].LocalClientId);
 
+#if UNITY_2023_1_OR_NEWER
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == 1);
+#else
             yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 1);
+#endif
             AssertOnTimeout($"Timed out waiting for {m_SpawnedObject.name} to be hidden from client!");
             var networkObjectId = serverNetworkObject.NetworkObjectId;
             serverNetworkObject.NetworkShow(m_ClientNetworkManagers[0].LocalClientId);

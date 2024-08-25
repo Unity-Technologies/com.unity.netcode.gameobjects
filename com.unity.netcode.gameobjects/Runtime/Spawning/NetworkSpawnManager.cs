@@ -1162,7 +1162,7 @@ namespace Unity.Netcode
                         {
                             SendSpawnCallForObject(clientId, networkObject);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             if (NetworkManager.LogLevel <= LogLevel.Developer)
                             {
