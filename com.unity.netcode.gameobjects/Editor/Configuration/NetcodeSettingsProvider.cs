@@ -81,6 +81,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         internal static NetcodeSettingsLabel NetworkObjectsSectionLabel;
         internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle;
+        internal static NetcodeSettingsToggle CheckForNetworkObjectToggle;
         internal static NetcodeSettingsLabel MultiplayerToolsLabel;
         internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle;
 
@@ -103,6 +104,11 @@ namespace Unity.Netcode.Editor.Configuration
                 AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObject Component", "When enabled, NetworkObject components are automatically added to GameObjects when NetworkBehaviour components are added first.", 20);
             }
 
+            if (CheckForNetworkObjectToggle == null)
+            {
+                CheckForNetworkObjectToggle = new NetcodeSettingsToggle("Check for NetworkObject Component", "When disabled, the automatic check on NetworkBehaviours for an associated NetworkObject component will not be performed.", 20);
+            }
+
             if (MultiplayerToolsLabel == null)
             {
                 MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
@@ -120,7 +126,9 @@ namespace Unity.Netcode.Editor.Configuration
             CheckForInitialize();
 
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetAutoAddNetworkObjectSetting();
+            var checkForNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetCheckForNetworkObjectSetting();
             var multiplayerToolsTipStatus = NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
+
             var settings = NetcodeForGameObjectsProjectSettings.instance;
             var generateDefaultPrefabs = settings.GenerateDefaultNetworkPrefabs;
             var networkPrefabsPath = settings.TempNetworkPrefabsPath;
@@ -135,7 +143,9 @@ namespace Unity.Netcode.Editor.Configuration
                 GUILayout.BeginVertical("Box");
                 NetworkObjectsSectionLabel.DrawLabel();
                 autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting);
+                checkForNetworkObjectSetting = CheckForNetworkObjectToggle.DrawToggle(checkForNetworkObjectSetting);
                 GUILayout.EndVertical();
+
 
                 GUILayout.BeginVertical("Box");
                 MultiplayerToolsLabel.DrawLabel();
@@ -184,6 +194,7 @@ namespace Unity.Netcode.Editor.Configuration
             if (EditorGUI.EndChangeCheck())
             {
                 NetcodeForGameObjectsEditorSettings.SetAutoAddNetworkObjectSetting(autoAddNetworkObjectSetting);
+                NetcodeForGameObjectsEditorSettings.SetCheckForNetworkObjectSetting(checkForNetworkObjectSetting);
                 NetcodeForGameObjectsEditorSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
                 settings.GenerateDefaultNetworkPrefabs = generateDefaultPrefabs;
                 settings.TempNetworkPrefabsPath = networkPrefabsPath;
