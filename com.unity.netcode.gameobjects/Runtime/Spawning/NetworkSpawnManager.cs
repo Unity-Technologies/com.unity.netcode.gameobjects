@@ -1152,7 +1152,24 @@ namespace Unity.Netcode
                 ulong clientId = client.Key;
                 foreach (var networkObject in client.Value)
                 {
-                    SendSpawnCallForObject(clientId, networkObject);
+                    // Ignore if null or not spawned (v1.x.x the server should only show what is spawned)
+                    if (networkObject != null && networkObject.IsSpawned)
+                    {
+                        // Prevent exceptions from interrupting this iteration
+                        // so the ObjectsToShowToClient list will be fully processed
+                        // and cleard.
+                        try
+                        {
+                            SendSpawnCallForObject(clientId, networkObject);
+                        }
+                        catch(Exception ex)
+                        {
+                            if (NetworkManager.LogLevel <= LogLevel.Developer)
+                            {
+                                Debug.LogException(ex);
+                            }
+                        }
+                    }
                 }
             }
             ObjectsToShowToClient.Clear();
