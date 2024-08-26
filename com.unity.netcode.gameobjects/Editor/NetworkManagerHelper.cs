@@ -61,6 +61,12 @@ namespace Unity.Netcode.Editor
                     {
                         s_LastKnownNetworkManagerParents.Clear();
                         ScenesInBuildActiveSceneCheck();
+                        EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
+                        break;
+                    }
+                case PlayModeStateChange.EnteredEditMode:
+                    {
+                        EditorApplication.hierarchyChanged += EditorApplication_hierarchyChanged;
                         break;
                     }
             }
@@ -110,6 +116,12 @@ namespace Unity.Netcode.Editor
         /// </summary>
         private static void EditorApplication_hierarchyChanged()
         {
+            if (Application.isPlaying)
+            {
+                EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
+                return;
+            }
+
             var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
             foreach (var networkManager in allNetworkManagers)
             {
