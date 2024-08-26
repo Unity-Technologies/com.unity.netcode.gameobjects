@@ -20,6 +20,8 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_TestNetworkPrefab;
         private bool m_SceneManagementEnabled;
 
+        private GameObject m_SpawnedObject;
+
         public NetworkVisibilityTests(SceneManagementState sceneManagementState)
         {
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
@@ -40,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            SpawnObject(m_TestNetworkPrefab, m_ServerNetworkManager);
+            m_SpawnedObject = SpawnObject(m_TestNetworkPrefab, m_ServerNetworkManager);
 
             yield return base.OnServerAndClientsConnected();
         }
@@ -54,7 +56,43 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
 #endif
 
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
+            AssertOnTimeout("Timed out waiting for the visible object count to equal 2!");
+        }
+
+
+        [UnityTest]
+        public IEnumerator HideShowAndDeleteTest()
+        {
+#if UNITY_2023_1_OR_NEWER
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == 2);
+#else
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
+#endif
+            AssertOnTimeout("Timed out waiting for the visible object count to equal 2!");
+
+            var serverNetworkObject = m_SpawnedObject.GetComponent<NetworkObject>();
+
+            serverNetworkObject.NetworkHide(m_ClientNetworkManagers[0].LocalClientId);
+
+#if UNITY_2023_1_OR_NEWER
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == 1);
+#else
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 1);
+#endif
+            AssertOnTimeout($"Timed out waiting for {m_SpawnedObject.name} to be hidden from client!");
+            var networkObjectId = serverNetworkObject.NetworkObjectId;
+            serverNetworkObject.NetworkShow(m_ClientNetworkManagers[0].LocalClientId);
+            serverNetworkObject.Despawn(true);
+
+            // Expect no exceptions
+            yield return s_DefaultWaitForTick;
+
+            // Now force a scenario where it normally would have caused an exception
+            m_ServerNetworkManager.SpawnManager.ObjectsToShowToClient.Add(m_ClientNetworkManagers[0].LocalClientId, new System.Collections.Generic.List<NetworkObject>());
+            m_ServerNetworkManager.SpawnManager.ObjectsToShowToClient[m_ClientNetworkManagers[0].LocalClientId].Add(null);
+
+            // Expect no exceptions
+            yield return s_DefaultWaitForTick;
         }
     }
 }
