@@ -1581,20 +1581,46 @@ namespace Unity.Netcode
             {
                 foreach (var entry in ClientsToShowObject)
                 {
-                    SendSpawnCallForObserverUpdate(entry.Value.ToArray(), entry.Key);
+                    if (entry.Key != null && entry.Key.IsSpawned)
+                    {
+                        try
+                        {
+                            SendSpawnCallForObserverUpdate(entry.Value.ToArray(), entry.Key);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (NetworkManager.LogLevel <= LogLevel.Developer)
+                            {
+                                Debug.LogException(ex);
+                            }
+                        }
+                    }
                 }
                 ClientsToShowObject.Clear();
                 ObjectsToShowToClient.Clear();
                 return;
             }
 
-            // Handle NetworkObjects to show
+            // Server or Host handling of NetworkObjects to show
             foreach (var client in ObjectsToShowToClient)
             {
                 ulong clientId = client.Key;
                 foreach (var networkObject in client.Value)
                 {
-                    SendSpawnCallForObject(clientId, networkObject);
+                    if (networkObject != null && networkObject.IsSpawned)
+                    {
+                        try
+                        {
+                            SendSpawnCallForObject(clientId, networkObject);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (NetworkManager.LogLevel <= LogLevel.Developer)
+                            {
+                                Debug.LogException(ex);
+                            }
+                        }
+                    }
                 }
             }
             ObjectsToShowToClient.Clear();
