@@ -106,7 +106,7 @@ namespace Unity.Netcode.Editor.Configuration
 
             if (CheckForNetworkObjectToggle == null)
             {
-                CheckForNetworkObjectToggle = new NetcodeSettingsToggle("Check for NetworkObject Component", "When disabled, the automatic check on NetworkBehaviours for an associated NetworkObject component will not be performed.", 20);
+                CheckForNetworkObjectToggle = new NetcodeSettingsToggle("Check for NetworkObject Component", "When disabled, the automatic check on NetworkBehaviours for an associated NetworkObject component will not be performed and Auto-Add NetworkObject Component will be disabled.", 20);
             }
 
             if (MultiplayerToolsLabel == null)
@@ -142,10 +142,14 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 GUILayout.BeginVertical("Box");
                 NetworkObjectsSectionLabel.DrawLabel();
-                autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting);
-                checkForNetworkObjectSetting = CheckForNetworkObjectToggle.DrawToggle(checkForNetworkObjectSetting);
-                GUILayout.EndVertical();
 
+                autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting, checkForNetworkObjectSetting);
+                checkForNetworkObjectSetting = CheckForNetworkObjectToggle.DrawToggle(checkForNetworkObjectSetting);
+                if (autoAddNetworkObjectSetting && !checkForNetworkObjectSetting)
+                {
+                    autoAddNetworkObjectSetting = false;
+                }
+                GUILayout.EndVertical();
 
                 GUILayout.BeginVertical("Box");
                 MultiplayerToolsLabel.DrawLabel();
@@ -224,10 +228,13 @@ namespace Unity.Netcode.Editor.Configuration
     {
         private GUIContent m_ToggleContent;
 
-        public bool DrawToggle(bool currentSetting)
+        public bool DrawToggle(bool currentSetting, bool enabled = true)
         {
             EditorGUIUtility.labelWidth = m_LabelSize;
-            return EditorGUILayout.Toggle(m_ToggleContent, currentSetting, m_LayoutWidth);
+            GUI.enabled = enabled;
+            var returnValue = EditorGUILayout.Toggle(m_ToggleContent, currentSetting, m_LayoutWidth);
+            GUI.enabled = true;
+            return returnValue;
         }
 
         public NetcodeSettingsToggle(string labelText, string toolTip, float layoutOffset)
