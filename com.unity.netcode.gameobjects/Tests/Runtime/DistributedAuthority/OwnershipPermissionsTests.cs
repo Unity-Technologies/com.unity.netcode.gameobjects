@@ -10,6 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     internal class OwnershipPermissionsTests : IntegrationTestWithApproximation
     {
         private GameObject m_PermissionsObject;
@@ -18,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
-        public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
+        public OwnershipPermissionsTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
             // For now, setting this to true will make a HostOrServer.DAHost initialized integration test
             // run in CMB service mode where it is expecting to connect to a local comb-server.
