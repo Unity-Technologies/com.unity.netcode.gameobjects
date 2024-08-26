@@ -772,7 +772,11 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytes(NativeList<byte> value, int size = -1, int offset = 0)
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            byte* ptr = value.GetUnsafePtr();
+#else
             byte* ptr = (byte*)value.GetUnsafePtr();
+#endif
             WriteBytes(ptr, size == -1 ? value.Length : size, offset);
         }
 
@@ -816,7 +820,11 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteBytesSafe(NativeList<byte> value, int size = -1, int offset = 0)
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            byte* ptr = value.GetUnsafePtr();
+#else
             byte* ptr = (byte*)value.GetUnsafePtr();
+#endif
             WriteBytesSafe(ptr, size == -1 ? value.Length : size, offset);
         }
 
@@ -985,7 +993,12 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanaged<T>(NativeList<T> value) where T : unmanaged
         {
             WriteUnmanaged(value.Length);
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            var ptr = value.GetUnsafePtr();
+#else
             var ptr = (T*)value.GetUnsafePtr();
+#endif
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytes(bytes, sizeof(T) * value.Length);
@@ -995,7 +1008,11 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanagedSafe<T>(NativeList<T> value) where T : unmanaged
         {
             WriteUnmanagedSafe(value.Length);
+#if UTP_TRANSPORT_2_0_ABOVE
+            var ptr = value.GetUnsafePtr();
+#else
             var ptr = (T*)value.GetUnsafePtr();
+#endif
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytesSafe(bytes, sizeof(T) * value.Length);
@@ -1193,7 +1210,11 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void WriteValueSafe<T>(NativeHashSet<T> value) where T : unmanaged, IEquatable<T>
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            WriteUnmanagedSafe(value.Count);
+#else
             WriteUnmanagedSafe(value.Count());
+#endif
             foreach (var item in value)
             {
                 var iReffable = item;
@@ -1206,7 +1227,11 @@ namespace Unity.Netcode
             where TKey : unmanaged, IEquatable<TKey>
             where TVal : unmanaged
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            WriteUnmanagedSafe(value.Count);
+#else
             WriteUnmanagedSafe(value.Count());
+#endif
             foreach (var item in value)
             {
                 (var key, var val) = (item.Key, item.Value);
