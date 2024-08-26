@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3027)
+
 ### Changed
 
 ## [1.11.0] - 2024-08-20
