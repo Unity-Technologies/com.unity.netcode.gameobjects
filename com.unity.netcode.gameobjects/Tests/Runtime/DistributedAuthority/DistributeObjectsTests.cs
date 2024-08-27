@@ -6,7 +6,6 @@ using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
-using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Random = UnityEngine.Random;
@@ -17,6 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Validates that distributable NetworkObjects are distributed upon
     /// a client connecting or disconnecting.
     /// </summary>
+    [TestFixture(HostOrServer.DAHost)]
     internal class DistributeObjectsTests : IntegrationTestWithApproximation
     {
         private GameObject m_DistributeObject;
@@ -26,8 +26,11 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_LateJoinClientCount = 4;
         protected override int NumberOfClients => 0;
 
-        public DistributeObjectsTests() : base(HostOrServer.DAHost)
+        private NetworkManager m_SessionOwner;
+
+        public DistributeObjectsTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
+
         }
 
         protected override IEnumerator OnSetup()
@@ -38,9 +41,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            var serverTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
-            // I hate having to add time to our tests, but in case a VM is running slow the disconnect timeout needs to be reasonably high
-            serverTransport.DisconnectTimeoutMS = 1000;
+
             m_DistributeObject = CreateNetworkObjectPrefab("DisObject");
             m_DistributeObject.AddComponent<DistributeObjectsTestHelper>();
             m_DistributeObject.AddComponent<DistributeTestTransform>();
@@ -54,8 +55,12 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = m_EnableVerboseDebug;
-            m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = m_EnableVerboseDebug;
+            if (!UseCMBService())
+            {
+                m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = m_EnableVerboseDebug;
+                m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = m_EnableVerboseDebug;
+            }
+
             return base.OnServerAndClientsConnected();
         }
 
@@ -67,9 +72,9 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var name = m_ObjectToValidate.name;
-            if (!UseCMBService() && !m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+            if (!UseCMBService() && !m_SessionOwner.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
             {
-                m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} has not spawned {name}!");
+                m_ErrorLog.Append($"Client-{m_SessionOwner.LocalClientId} has not spawned {name}!");
                 return false;
             }
 
@@ -89,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateDistributedObjectsSpawned(bool lateJoining)
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
+            var hostId = m_SessionOwner.LocalClientId;
             if (!DistributeObjectsTestHelper.DistributedObjects.ContainsKey(hostId))
             {
                 m_ErrorLog.AppendLine($"[Client-{hostId}] Does not have an entry in the root of the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
@@ -104,13 +109,14 @@ namespace Unity.Netcode.RuntimeTests
 
             var daHostObjects = daHostObjectTracking[hostId];
             var expected = 0;
+            var offset = UseCMBService() ? 0 : 1;
             if (lateJoining)
             {
-                expected = k_ObjectCount / (m_ClientNetworkManagers.Count() + 1);
+                expected = k_ObjectCount / (m_ClientNetworkManagers.Count() + offset);
             }
             else
             {
-                expected = k_ObjectCount / (m_ClientNetworkManagers.Where((c) => c.IsConnectedClient).Count() + 1);
+                expected = k_ObjectCount / (m_ClientNetworkManagers.Where((c) => c.IsConnectedClient).Count() + offset);
             }
 
             // It should theoretically be the expected or...
@@ -140,8 +146,9 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateOwnershipTablesMatch()
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
-            var expectedEntries = m_ClientNetworkManagers.Where((c) => c.IsListening && c.IsConnectedClient).Count() + 1;
+            var hostId = m_SessionOwner.LocalClientId;
+            var offset = UseCMBService() ? 0 : 1;
+            var expectedEntries = m_ClientNetworkManagers.Where((c) => c.IsListening && c.IsConnectedClient).Count() + offset;
             // Make sure all clients have an table created
             if (DistributeObjectsTestHelper.DistributedObjects.Count < expectedEntries)
             {
@@ -160,16 +167,22 @@ namespace Unity.Netcode.RuntimeTests
                 m_ErrorLog.AppendLine($"[Client-{hostId}] Does not have a local an entry in the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
                 return false;
             }
-            var clients = m_ServerNetworkManager.ConnectedClientsIds.ToList();
+            var clients = m_SessionOwner.ConnectedClientsIds.ToList();
             clients.Remove(0);
 
-            // Cycle through each client's entry on the DAHost to run a comparison
+            // Cycle through each client's entry on the session owner side to run a comparison
             foreach (var hostClientEntry in daHostEntries)
             {
                 foreach (var ownerEntry in hostClientEntry.Value)
                 {
                     foreach (var client in clients)
                     {
+                        if (!DistributeObjectsTestHelper.DistributedObjects.ContainsKey(client))
+                        {
+                            m_ErrorLog.AppendLine($"[Client-{client}] Does not have a local an entry in the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
+                            return false;
+                        }
+
                         var clientOwnerTable = DistributeObjectsTestHelper.DistributedObjects[client];
                         if (!clientOwnerTable.ContainsKey(hostClientEntry.Key))
                         {
@@ -206,9 +219,9 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateTransformsMatch()
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
+            var hostId = m_SessionOwner.LocalClientId;
             var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[hostId];
-            var clients = m_ServerNetworkManager.ConnectedClientsIds.ToList();
+            var clients = m_SessionOwner.ConnectedClientsIds.ToList();
             foreach (var clientOwner in daHostEntries.Keys)
             {
                 // Cycle through the owner's objects
@@ -237,23 +250,27 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
+            if (UseCMBService() && m_SessionOwner == null)
+            {
+                networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
+            }
+            else
+            {
+                networkManager.NetworkConfig.Prefabs = m_SessionOwner.NetworkConfig.Prefabs;
+            }            
+            //networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false;
+            //networkManager.NetworkConfig.EnableSceneManagement = false;
+
+
             base.OnNewClientCreated(networkManager);
         }
 
         private bool SpawnCountsMatch()
         {
             var passed = true;
-            var spawnCount = 0;
             m_ErrorLog.Clear();
-            if (!UseCMBService())
-            {
-                spawnCount = m_ServerNetworkManager.SpawnManager.SpawnedObjects.Count;
-            }
-            else
-            {
-                spawnCount = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.Count;
-            }
+            var spawnCount = m_SessionOwner.SpawnManager.SpawnedObjects.Count;
+
             foreach (var client in m_ClientNetworkManagers)
             {
                 var clientCount = client.SpawnManager.SpawnedObjects.Count;
@@ -276,13 +293,21 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DistributeNetworkObjects()
         {
+            var clientIndexOffset = 0;
+            if (UseCMBService())
+            {
+                clientIndexOffset++;
+                yield return CreateAndStartNewClient();
+            }
+
+            m_SessionOwner = GetSessionOwner();
             for (int i = 0; i < k_ObjectCount; i++)
             {
-                SpawnObject(m_DistributeObject, m_ServerNetworkManager);
+                SpawnObject(m_DistributeObject, m_SessionOwner);
             }
 
             // Validate NetworkObjects get redistributed properly when a client joins
-            for (int j = 0; j < k_LateJoinClientCount; j++)
+            for (int j = clientIndexOffset; j < k_LateJoinClientCount + clientIndexOffset; j++)
             {
                 yield return CreateAndStartNewClient();
 
@@ -303,18 +328,22 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Spawn Count Mismatch] {m_ErrorLog}");
             }
 
+            var clientStartIndex = m_ClientNetworkManagers.Length;
+
             // Validate NetworkObjects get redistributed properly when a client disconnects
-            for (int j = k_LateJoinClientCount - 1; j >= 0; j--)
+            for (int j = k_LateJoinClientCount - 1 + clientIndexOffset; j >= 0; j--)
             {
                 var client = m_ClientNetworkManagers[j];
+                if (UseCMBService() && client.LocalClient.IsSessionOwner)
+                {
+                    continue;
+                }
 
                 // Remove the client from the other clients' ownership tracking table
                 DistributeObjectsTestHelper.RemoveClient(client.LocalClientId);
 
                 // Disconnect the client
                 yield return StopOneClient(client, true);
-
-                //yield return new WaitForSeconds(0.1f);
 
                 // Validate all tables match
                 yield return WaitForConditionOrTimeOut(ValidateOwnershipTablesMatch);
@@ -338,7 +367,8 @@ namespace Unity.Netcode.RuntimeTests
         private void DisplayOwnership()
         {
             m_ErrorLog.Clear();
-            var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[0];
+            var startingIndex = (ulong)(UseCMBService() ? 1 : 0);
+            var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[startingIndex];
 
             foreach (var entry in daHostEntries)
             {

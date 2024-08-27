@@ -9,14 +9,16 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     internal class DeferredDespawningTests : IntegrationTestWithApproximation
     {
         private const int k_DaisyChainedCount = 5;
         protected override int NumberOfClients => 2;
         private List<GameObject> m_DaisyChainedDespawnObjects = new List<GameObject>();
         private List<ulong> m_HasReachedEnd = new List<ulong>();
+        private NetworkManager m_SessionOwner;
 
-        public DeferredDespawningTests() : base(HostOrServer.DAHost)
+        public DeferredDespawningTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
         }
 
@@ -45,8 +47,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DeferredDespawning()
         {
+            m_SessionOwner = GetSessionOwner();
+
             DeferredDespawnDaisyChained.EnableVerbose = m_EnableVerboseDebug;
-            var rootInstance = SpawnObject(m_DaisyChainedDespawnObjects[0], m_ServerNetworkManager);
+            var rootInstance = SpawnObject(m_DaisyChainedDespawnObjects[0], m_SessionOwner);
             DeferredDespawnDaisyChained.ReachedLastChainInstance = ReachedLastChainObject;
             var timeoutHelper = new TimeoutHelper(300);
             yield return WaitForConditionOrTimeOut(HaveAllClientsReachedEndOfChain, timeoutHelper);
@@ -55,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool HaveAllClientsReachedEndOfChain()
         {
-            if (!m_HasReachedEnd.Contains(m_ServerNetworkManager.LocalClientId))
+            if (!m_HasReachedEnd.Contains(m_SessionOwner.LocalClientId))
             {
                 return false;
             }
