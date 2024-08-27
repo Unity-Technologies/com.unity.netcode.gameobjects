@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+
 [Unreleased]
+
+### Added
+
+### Fixed
+
+- Fixed issue where collections v2.2.x was not supported when using UTP v2.2.x within Unity v2022.3. (#3033)
+- Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3029)
+- Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3027)
+
+### Changed
+
+
+## [1.11.0] - 2024-08-20
+
 ### Added
 
 - Added `NetworkVariable.CheckDirtyState` that is to be used in tandem with collections in order to detect whether the collection or an item within the collection has changed. (#3005)
