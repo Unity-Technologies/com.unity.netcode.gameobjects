@@ -544,10 +544,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Client-Side:
-        /// Upon transport connecting, the client will send a connection request
+        /// Generates the connection request message
         /// </summary>
-        private void SendConnectionRequest()
+        internal ConnectionRequestMessage GenerateConnectionRequestMessage()
         {
             var message = new ConnectionRequestMessage
             {
@@ -567,14 +566,29 @@ namespace Unity.Netcode
                 if (MessageManager.MessageTypes[index] != null)
                 {
                     var type = MessageManager.MessageTypes[index];
-                    message.MessageVersions[index] = new MessageVersionData
+                    var messageVersionData = new MessageVersionData
                     {
                         Hash = XXHash.Hash32(type.FullName),
-                        Version = MessageManager.GetLocalVersion(type)
+                        Version = MessageManager.GetLocalVersion(type),
+                        SendMessageType = NetworkManager.DistributedAuthorityMode,
                     };
+                    if (messageVersionData.SendMessageType)
+                    {
+                        messageVersionData.NetworkMessageType = (uint)ILPPMessageProvider.TypeToNetworkMessageType[type];
+                    }
+                    message.MessageVersions[index] = messageVersionData;
                 }
             }
+            return message;
+        }
 
+        /// <summary>
+        /// Client-Side:
+        /// Upon transport connecting, the client will send a connection request
+        /// </summary>
+        private void SendConnectionRequest()
+        {
+            var message = GenerateConnectionRequestMessage();
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
             message.MessageVersions.Dispose();
         }
@@ -807,11 +821,17 @@ namespace Unity.Netcode
                         if (MessageManager.MessageTypes[index] != null)
                         {
                             var type = MessageManager.MessageTypes[index];
-                            message.MessageVersions[index] = new MessageVersionData
+                            var messageVersionData = new MessageVersionData
                             {
                                 Hash = XXHash.Hash32(type.FullName),
-                                Version = MessageManager.GetLocalVersion(type)
+                                Version = MessageManager.GetLocalVersion(type),
+                                SendMessageType = NetworkManager.DistributedAuthorityMode,
                             };
+                            if (messageVersionData.SendMessageType)
+                            {
+                                messageVersionData.NetworkMessageType = (uint)ILPPMessageProvider.TypeToNetworkMessageType[type];
+                            }
+                            message.MessageVersions[index] = messageVersionData;
                         }
                     }
                     if (!MockSkippingApproval)

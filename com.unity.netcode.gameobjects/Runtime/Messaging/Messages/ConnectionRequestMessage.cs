@@ -30,6 +30,7 @@ namespace Unity.Netcode
             {
                 messageVersion.Serialize(writer);
             }
+
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
@@ -65,9 +66,13 @@ namespace Unity.Netcode
             // must go AFTER the message version header.
             // ============================================================
             ByteUnpacker.ReadValueBitPacked(reader, out int length);
+
             for (var i = 0; i < length; ++i)
             {
-                var messageVersion = new MessageVersionData();
+                var messageVersion = new MessageVersionData()
+                {
+                    SendMessageType = networkManager.DistributedAuthorityMode,
+                };
                 messageVersion.Deserialize(reader);
                 networkManager.ConnectionManager.MessageManager.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
 
@@ -79,6 +84,7 @@ namespace Unity.Netcode
                     receivedMessageVersion = messageVersion.Version;
                 }
             }
+
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================

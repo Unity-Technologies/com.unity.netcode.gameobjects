@@ -68,8 +68,8 @@ namespace Unity.Netcode
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
         // These array will grow as we need more message handlers. 4 is just a starting size.
-        private MessageHandler[] m_MessageHandlers = new MessageHandler[4];
-        private Type[] m_ReverseTypeMap = new Type[4];
+        private MessageHandler[] m_MessageHandlers = new MessageHandler[Enum.GetValues(typeof(ILPPMessageProvider.NetworkMessageTypes)).Length];
+        private Type[] m_ReverseTypeMap = new Type[Enum.GetValues(typeof(ILPPMessageProvider.NetworkMessageTypes)).Length];
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
