@@ -42,8 +42,10 @@ namespace Unity.Netcode.Components
         private bool m_IsRigidbody2D => RigidbodyType == RigidbodyTypes.Rigidbody2D;
         // Used to cache the authority state of this Rigidbody during the last frame
         private bool m_IsAuthority;
-        private Rigidbody m_Rigidbody;
-        private Rigidbody2D m_Rigidbody2D;
+
+        protected internal Rigidbody m_InternalRigidbody { get; private set; }
+        protected internal Rigidbody2D m_InternalRigidbody2D { get; private set; }
+
         internal NetworkTransform NetworkTransform;
         private float m_TickFrequency;
         private float m_TickRate;
@@ -87,18 +89,18 @@ namespace Unity.Netcode.Components
                 return;
             }
             RigidbodyType = rigidbodyType;
-            m_Rigidbody2D = rigidbody2D;
-            m_Rigidbody = rigidbody;
+            m_InternalRigidbody2D = rigidbody2D;
+            m_InternalRigidbody = rigidbody;
             NetworkTransform = networkTransform;
 
-            if (m_IsRigidbody2D && m_Rigidbody2D == null)
+            if (m_IsRigidbody2D && m_InternalRigidbody2D == null)
             {
-                m_Rigidbody2D = GetComponent<Rigidbody2D>();
+                m_InternalRigidbody2D = GetComponent<Rigidbody2D>();
 
             }
-            else if (m_Rigidbody == null)
+            else if (m_InternalRigidbody == null)
             {
-                m_Rigidbody = GetComponent<Rigidbody>();
+                m_InternalRigidbody = GetComponent<Rigidbody>();
             }
 
             SetOriginalInterpolation();
@@ -178,14 +180,14 @@ namespace Unity.Netcode.Components
             if (m_IsRigidbody2D)
             {
 #if COM_UNITY_MODULES_PHYSICS2D_LINEAR
-                m_Rigidbody2D.linearVelocity = linearVelocity;
+                m_InternalRigidbody2D.linearVelocity = linearVelocity;
 #else
-                m_Rigidbody2D.velocity = linearVelocity;
+                m_InternalRigidbody2D.velocity = linearVelocity;
 #endif
             }
             else
             {
-                m_Rigidbody.linearVelocity = linearVelocity;
+                m_InternalRigidbody.linearVelocity = linearVelocity;
             }
         }
 
@@ -202,14 +204,14 @@ namespace Unity.Netcode.Components
             if (m_IsRigidbody2D)
             {
 #if COM_UNITY_MODULES_PHYSICS2D_LINEAR
-                return m_Rigidbody2D.linearVelocity;
+                return m_InternalRigidbody2D.linearVelocity;
 #else
-                return m_Rigidbody2D.velocity;
+                return m_InternalRigidbody2D.velocity;
 #endif
             }
             else
             {
-                return m_Rigidbody.linearVelocity;
+                return m_InternalRigidbody.linearVelocity;
             }
         }
 
@@ -226,11 +228,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.angularVelocity = angularVelocity.z;
+                m_InternalRigidbody2D.angularVelocity = angularVelocity.z;
             }
             else
             {
-                m_Rigidbody.angularVelocity = angularVelocity;
+                m_InternalRigidbody.angularVelocity = angularVelocity;
             }
         }
 
@@ -246,11 +248,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return Vector3.forward * m_Rigidbody2D.angularVelocity;
+                return Vector3.forward * m_InternalRigidbody2D.angularVelocity;
             }
             else
             {
-                return m_Rigidbody.angularVelocity;
+                return m_InternalRigidbody.angularVelocity;
             }
         }
 
@@ -263,11 +265,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return m_Rigidbody2D.position;
+                return m_InternalRigidbody2D.position;
             }
             else
             {
-                return m_Rigidbody.position;
+                return m_InternalRigidbody.position;
             }
         }
 
@@ -282,13 +284,13 @@ namespace Unity.Netcode.Components
             {
                 var quaternion = Quaternion.identity;
                 var angles = quaternion.eulerAngles;
-                angles.z = m_Rigidbody2D.rotation;
+                angles.z = m_InternalRigidbody2D.rotation;
                 quaternion.eulerAngles = angles;
                 return quaternion;
             }
             else
             {
-                return m_Rigidbody.rotation;
+                return m_InternalRigidbody.rotation;
             }
         }
 
@@ -301,11 +303,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.MovePosition(position);
+                m_InternalRigidbody2D.MovePosition(position);
             }
             else
             {
-                m_Rigidbody.MovePosition(position);
+                m_InternalRigidbody.MovePosition(position);
             }
         }
 
@@ -318,11 +320,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.position = position;
+                m_InternalRigidbody2D.position = position;
             }
             else
             {
-                m_Rigidbody.position = position;
+                m_InternalRigidbody.position = position;
             }
         }
 
@@ -334,13 +336,13 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.position = transform.position;
-                m_Rigidbody2D.rotation = transform.eulerAngles.z;
+                m_InternalRigidbody2D.position = transform.position;
+                m_InternalRigidbody2D.rotation = transform.eulerAngles.z;
             }
             else
             {
-                m_Rigidbody.position = transform.position;
-                m_Rigidbody.rotation = transform.rotation;
+                m_InternalRigidbody.position = transform.position;
+                m_InternalRigidbody.rotation = transform.rotation;
             }
         }
 
@@ -358,9 +360,9 @@ namespace Unity.Netcode.Components
             {
                 var quaternion = Quaternion.identity;
                 var angles = quaternion.eulerAngles;
-                angles.z = m_Rigidbody2D.rotation;
+                angles.z = m_InternalRigidbody2D.rotation;
                 quaternion.eulerAngles = angles;
-                m_Rigidbody2D.MoveRotation(quaternion);
+                m_InternalRigidbody2D.MoveRotation(quaternion);
             }
             else
             {
@@ -375,7 +377,7 @@ namespace Unity.Netcode.Components
                 {
                     rotation.Normalize();
                 }
-                m_Rigidbody.MoveRotation(rotation);
+                m_InternalRigidbody.MoveRotation(rotation);
             }
         }
 
@@ -388,11 +390,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.rotation = rotation.eulerAngles.z;
+                m_InternalRigidbody2D.rotation = rotation.eulerAngles.z;
             }
             else
             {
-                m_Rigidbody.rotation = rotation;
+                m_InternalRigidbody.rotation = rotation;
             }
         }
 
@@ -404,7 +406,7 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                switch (m_Rigidbody2D.interpolation)
+                switch (m_InternalRigidbody2D.interpolation)
                 {
                     case RigidbodyInterpolation2D.None:
                         {
@@ -425,7 +427,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                switch (m_Rigidbody.interpolation)
+                switch (m_InternalRigidbody.interpolation)
                 {
                     case RigidbodyInterpolation.None:
                         {
@@ -454,16 +456,16 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                if (m_Rigidbody2D.IsSleeping())
+                if (m_InternalRigidbody2D.IsSleeping())
                 {
-                    m_Rigidbody2D.WakeUp();
+                    m_InternalRigidbody2D.WakeUp();
                 }
             }
             else
             {
-                if (m_Rigidbody.IsSleeping())
+                if (m_InternalRigidbody.IsSleeping())
                 {
-                    m_Rigidbody.WakeUp();
+                    m_InternalRigidbody.WakeUp();
                 }
             }
         }
@@ -476,11 +478,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.Sleep();
+                m_InternalRigidbody2D.Sleep();
             }
             else
             {
-                m_Rigidbody.Sleep();
+                m_InternalRigidbody.Sleep();
             }
         }
 
@@ -489,11 +491,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                return m_Rigidbody2D.bodyType == RigidbodyType2D.Kinematic;
+                return m_InternalRigidbody2D.bodyType == RigidbodyType2D.Kinematic;
             }
             else
             {
-                return m_Rigidbody.isKinematic;
+                return m_InternalRigidbody.isKinematic;
             }
         }
 
@@ -518,11 +520,11 @@ namespace Unity.Netcode.Components
         {
             if (m_IsRigidbody2D)
             {
-                m_Rigidbody2D.bodyType = isKinematic ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
+                m_InternalRigidbody2D.bodyType = isKinematic ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
             }
             else
             {
-                m_Rigidbody.isKinematic = isKinematic;
+                m_InternalRigidbody.isKinematic = isKinematic;
             }
 
             // If we are not spawned, then exit early
@@ -539,7 +541,7 @@ namespace Unity.Netcode.Components
                     if (IsKinematic())
                     {
                         // If not already set to interpolate then set the Rigidbody to interpolate 
-                        if (m_Rigidbody.interpolation == RigidbodyInterpolation.Extrapolate)
+                        if (m_InternalRigidbody.interpolation == RigidbodyInterpolation.Extrapolate)
                         {
                             // Sleep until the next fixed update when switching from extrapolation to interpolation
                             SleepRigidbody();
@@ -568,11 +570,11 @@ namespace Unity.Netcode.Components
                     {
                         if (m_IsRigidbody2D)
                         {
-                            m_Rigidbody2D.interpolation = RigidbodyInterpolation2D.None;
+                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.None;
                         }
                         else
                         {
-                            m_Rigidbody.interpolation = RigidbodyInterpolation.None;
+                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.None;
                         }
                         break;
                     }
@@ -580,11 +582,11 @@ namespace Unity.Netcode.Components
                     {
                         if (m_IsRigidbody2D)
                         {
-                            m_Rigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
+                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
                         }
                         else
                         {
-                            m_Rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                         }
                         break;
                     }
@@ -592,11 +594,11 @@ namespace Unity.Netcode.Components
                     {
                         if (m_IsRigidbody2D)
                         {
-                            m_Rigidbody2D.interpolation = RigidbodyInterpolation2D.Extrapolate;
+                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Extrapolate;
                         }
                         else
                         {
-                            m_Rigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
+                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
                         }
                         break;
                     }
@@ -711,28 +713,28 @@ namespace Unity.Netcode.Components
         private void ApplyFixedJoint2D(NetworkRigidbodyBase bodyToConnect, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
         {
             transform.position = position;
-            m_Rigidbody2D.position = position;
-            m_OriginalGravitySetting = bodyToConnect.m_Rigidbody.useGravity;
+            m_InternalRigidbody2D.position = position;
+            m_OriginalGravitySetting = bodyToConnect.m_InternalRigidbody.useGravity;
             m_FixedJoint2DUsingGravity = useGravity;
 
             if (!useGravity)
             {
-                m_OriginalGravityScale = m_Rigidbody2D.gravityScale;
-                m_Rigidbody2D.gravityScale = 0.0f;
+                m_OriginalGravityScale = m_InternalRigidbody2D.gravityScale;
+                m_InternalRigidbody2D.gravityScale = 0.0f;
             }
 
             if (zeroVelocity)
             {
 #if COM_UNITY_MODULES_PHYSICS2D_LINEAR
-                m_Rigidbody2D.linearVelocity = Vector2.zero;
+                m_InternalRigidbody2D.linearVelocity = Vector2.zero;
 #else
-                m_Rigidbody2D.velocity = Vector2.zero;
+                m_InternalRigidbody2D.velocity = Vector2.zero;
 #endif
-                m_Rigidbody2D.angularVelocity = 0.0f;
+                m_InternalRigidbody2D.angularVelocity = 0.0f;
             }
 
             FixedJoint2D = gameObject.AddComponent<FixedJoint2D>();
-            FixedJoint2D.connectedBody = bodyToConnect.m_Rigidbody2D;
+            FixedJoint2D.connectedBody = bodyToConnect.m_InternalRigidbody2D;
             OnFixedJoint2DCreated();
         }
 
@@ -740,16 +742,16 @@ namespace Unity.Netcode.Components
         private void ApplyFixedJoint(NetworkRigidbodyBase bodyToConnectTo, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
         {
             transform.position = position;
-            m_Rigidbody.position = position;
+            m_InternalRigidbody.position = position;
             if (zeroVelocity)
             {
-                m_Rigidbody.linearVelocity = Vector3.zero;
-                m_Rigidbody.angularVelocity = Vector3.zero;
+                m_InternalRigidbody.linearVelocity = Vector3.zero;
+                m_InternalRigidbody.angularVelocity = Vector3.zero;
             }
-            m_OriginalGravitySetting = m_Rigidbody.useGravity;
-            m_Rigidbody.useGravity = useGravity;
+            m_OriginalGravitySetting = m_InternalRigidbody.useGravity;
+            m_InternalRigidbody.useGravity = useGravity;
             FixedJoint = gameObject.AddComponent<FixedJoint>();
-            FixedJoint.connectedBody = bodyToConnectTo.m_Rigidbody;
+            FixedJoint.connectedBody = bodyToConnectTo.m_InternalRigidbody;
             FixedJoint.connectedMassScale = connectedMassScale;
             FixedJoint.massScale = massScale;
             OnFixedJointCreated();
@@ -861,7 +863,7 @@ namespace Unity.Netcode.Components
                     if (FixedJoint != null)
                     {
                         FixedJoint.connectedBody = null;
-                        m_Rigidbody.useGravity = m_OriginalGravitySetting;
+                        m_InternalRigidbody.useGravity = m_OriginalGravitySetting;
                         Destroy(FixedJoint);
                         FixedJoint = null;
                         ResetInterpolation();
