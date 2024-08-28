@@ -853,6 +853,8 @@ namespace Unity.Netcode
         /// <param name="parentNetworkObject">the new <see cref="NetworkObject"/> parent</param>
         public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
+        internal virtual void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
+
         private bool m_VarInit = false;
 
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();

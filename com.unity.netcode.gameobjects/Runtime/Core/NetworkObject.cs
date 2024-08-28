@@ -1800,6 +1800,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
+                // Invoke internal notification
+                ChildNetworkBehaviours[i].InternalOnNetworkObjectParentChanged(parentNetworkObject);
+                // Invoke public notification
                 ChildNetworkBehaviours[i].OnNetworkObjectParentChanged(parentNetworkObject);
             }
         }
