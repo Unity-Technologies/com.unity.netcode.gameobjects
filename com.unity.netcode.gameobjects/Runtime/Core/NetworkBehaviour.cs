@@ -700,6 +700,8 @@ namespace Unity.Netcode
         /// </remarks>
         protected virtual void OnNetworkSessionSynchronized() { }
 
+        protected internal virtual void InternalOnNetworkSessionSynchronized() { }
+
         /// <summary>
         /// When a scene is loaded and in-scene placed NetworkObjects are finished spawning, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
         /// This method runs both client and server side.
@@ -771,6 +773,7 @@ namespace Unity.Netcode
         {
             try
             {
+                InternalOnNetworkSessionSynchronized();
                 OnNetworkSessionSynchronized();
             }
             catch (Exception e)
