@@ -3297,15 +3297,15 @@ namespace Unity.Netcode.Components
         {
             if (SwitchTransformSpaceWhenParented && m_IsFirstNetworkTransform && (m_PositionInterpolator.InLocalSpace != InLocalSpace ||
                 m_RotationInterpolator.InLocalSpace != InLocalSpace ||
-                (InLocalSpace && m_CurrentNetworkObjectParent != null && m_PreviousNetworkObjectParent != null && m_PreviousCurrentParent != m_CurrentNetworkObjectParent && m_PreviousPreviousParent != m_PreviousNetworkObjectParent)))
+                (InLocalSpace && m_CurrentNetworkObjectParent && m_PreviousNetworkObjectParent && m_PreviousCurrentParent != m_CurrentNetworkObjectParent && m_PreviousPreviousParent != m_PreviousNetworkObjectParent)))
             {
-                var parent = m_CurrentNetworkObjectParent != null ? m_CurrentNetworkObjectParent : m_PreviousNetworkObjectParent;
-                if (parent != null)
+                var parent = m_CurrentNetworkObjectParent ? m_CurrentNetworkObjectParent : m_PreviousNetworkObjectParent;
+                if (parent)
                 {
                     // In the event it is a NetworkObject to NetworkObject parenting transfer, we will need to migrate our interpolators
                     // and our current position and rotation to world space relative to the previous parent before converting them to local
                     // space relative to the new parent
-                    if (InLocalSpace && m_CurrentNetworkObjectParent != null && m_PreviousNetworkObjectParent != null)
+                    if (InLocalSpace && m_CurrentNetworkObjectParent && m_PreviousNetworkObjectParent)
                     {
                         m_PreviousCurrentParent = m_CurrentNetworkObjectParent;
                         m_PreviousPreviousParent = m_PreviousNetworkObjectParent;
