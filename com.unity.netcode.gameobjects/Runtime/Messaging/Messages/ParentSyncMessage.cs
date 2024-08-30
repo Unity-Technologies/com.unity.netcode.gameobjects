@@ -138,7 +138,7 @@ namespace Unity.Netcode
             }
 
             // If in distributed authority mode and we are running a DAHost and this is the DAHost, then forward the parent changed message to any remaining clients
-            if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection && networkManager.DAHost)
+            if ((networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection && networkManager.DAHost) || (networkObject.AllowOwnerToParent && context.SenderId == networkObject.OwnerClientId && networkManager.IsServer))
             {
                 var size = 0;
                 var message = this;

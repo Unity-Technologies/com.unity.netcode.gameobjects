@@ -79,7 +79,6 @@ namespace Unity.Netcode
 
         internal bool InLocalSpace;
 
-
         protected internal virtual void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
 

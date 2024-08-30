@@ -1,4 +1,4 @@
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -14,6 +14,12 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public abstract class NetworkRigidbodyBase : NetworkBehaviour
     {
+#if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
+        internal bool NetworkRigidbodyBaseExpanded;
+#endif
+
         /// <summary>
         /// When enabled, the associated <see cref="NetworkTransform"/> will use the Rigidbody/Rigidbody2D to apply and synchronize changes in position, rotation, and
         /// allows for the use of Rigidbody interpolation/extrapolation.

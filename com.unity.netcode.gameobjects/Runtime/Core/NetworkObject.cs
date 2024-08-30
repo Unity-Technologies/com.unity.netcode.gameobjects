@@ -1093,6 +1093,12 @@ namespace Unity.Netcode
         /// </remarks>
         public bool SyncOwnerTransformWhenParented = true;
 
+        /// <summary>
+        /// Client-Server specific, when enabled an owner of a NetworkObject can parent locally as opposed to requiring the owner to notify the server it would like to be parented.
+        /// This behavior is always true when using a distributed authority network topology and does not require it to be set.
+        /// </summary>
+        public bool AllowOwnerToParent;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
@@ -1934,7 +1940,7 @@ namespace Unity.Netcode
 
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
-            var isAuthority = HasAuthority;
+            var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
@@ -2000,7 +2006,7 @@ namespace Unity.Netcode
             var isAuthority = false;
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
-            isAuthority = HasAuthority || AuthorityAppliedParenting;
+            isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
             // If we do not have authority and we are spawned
@@ -2092,7 +2098,7 @@ namespace Unity.Netcode
             }
 
             // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority)
+            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner))
             {
                 if (!NetworkManager.DAHost)
                 {
