@@ -150,7 +150,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(startRotation, testComponent.AuthoritativeState.Rotation);
         }
 
-        [Ignore("This test needs to be revisited by Kitty")]
         [Test]
         public void WhenAnticipating_ServerDoesNotChange()
         {
@@ -258,7 +257,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(a.z, b.z, 0.001, $"Vectors were not equal. Expected: {a}, but was {b}");
         }
 
-        [Ignore("This test needs to be revisited by Kitty")]
         [Test]
         public void WhenServerChangesSmoothValue_ValuesAreLerped()
         {
@@ -305,11 +303,11 @@ namespace Unity.Netcode.RuntimeTests
 
             AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testComponent.transform.position);
             AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.transform.localScale);
-            AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.transform.rotation);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.transform.rotation);
 
             AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testComponent.AnticipatedState.Position);
             AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.AnticipatedState.Scale);
-            AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
 
             AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthoritativeState.Position);
             AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthoritativeState.Scale);
@@ -317,11 +315,11 @@ namespace Unity.Netcode.RuntimeTests
 
             AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.transform.position);
             AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.transform.localScale);
-            AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.transform.rotation);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.transform.rotation);
 
             AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.AnticipatedState.Position);
             AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.AnticipatedState.Scale);
-            AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
+            AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
 
             AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
             AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
@@ -334,11 +332,11 @@ namespace Unity.Netcode.RuntimeTests
 
                 AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testComponent.transform.position);
                 AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.transform.localScale);
-                AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.transform.rotation);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.transform.rotation);
 
                 AssertVectorsAreEquivalent(Vector3.Lerp(anticipePosition, serverSetPosition, percentChanged), testComponent.AnticipatedState.Position);
                 AssertVectorsAreEquivalent(Vector3.Lerp(anticipeScale, serverSetScale, percentChanged), testComponent.AnticipatedState.Scale);
-                AssertQuaternionsAreEquivalent(Quaternion.Slerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(anticipeRotation, serverSetRotation, percentChanged), testComponent.AnticipatedState.Rotation);
 
                 AssertVectorsAreEquivalent(serverSetPosition, testComponent.AuthoritativeState.Position);
                 AssertVectorsAreEquivalent(serverSetScale, testComponent.AuthoritativeState.Scale);
@@ -346,19 +344,17 @@ namespace Unity.Netcode.RuntimeTests
 
                 AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.transform.position);
                 AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.transform.localScale);
-                AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.transform.rotation);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.transform.rotation);
 
                 AssertVectorsAreEquivalent(Vector3.Lerp(startPosition, serverSetPosition, percentChanged), otherClientComponent.AnticipatedState.Position);
                 AssertVectorsAreEquivalent(Vector3.Lerp(startScale, serverSetScale, percentChanged), otherClientComponent.AnticipatedState.Scale);
-                AssertQuaternionsAreEquivalent(Quaternion.Slerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
+                AssertQuaternionsAreEquivalent(Quaternion.Lerp(startRotation, serverSetRotation, percentChanged), otherClientComponent.AnticipatedState.Rotation);
 
                 AssertVectorsAreEquivalent(serverSetPosition, otherClientComponent.AuthoritativeState.Position);
                 AssertVectorsAreEquivalent(serverSetScale, otherClientComponent.AuthoritativeState.Scale);
                 AssertQuaternionsAreEquivalent(serverSetRotation, otherClientComponent.AuthoritativeState.Rotation);
             }
-            TimeTravelToNextTick();
-            TimeTravelToNextTick();
-            //TimeTravel(1f / 60f, 1);
+            TimeTravel(1f / 60f, 1);
 
             AssertVectorsAreEquivalent(serverSetPosition, testComponent.transform.position);
             AssertVectorsAreEquivalent(serverSetScale, testComponent.transform.localScale);
