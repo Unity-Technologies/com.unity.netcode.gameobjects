@@ -1,15 +1,15 @@
 using System;
 using UnityEditor;
-
+using UnityEngine;
 
 namespace Unity.Netcode.Editor
 {
     /// <summary>
-    /// The base Netcode Editor helper class to display derived <see cref="NetworkBehaviour"/> based components <br />
+    /// The base Netcode Editor helper class to display derived <see cref="MonoBehaviour"/> based components <br />
     /// where each child generation's properties will be displayed within a FoldoutHeaderGroup.
     /// </summary>
     [CanEditMultipleObjects]
-    public partial class NetcodeEditorBase<TT> : UnityEditor.Editor where TT : class
+    public partial class NetcodeEditorBase<TT> : UnityEditor.Editor where TT : MonoBehaviour
     {
         /// <inheritdoc/>
         public virtual void OnEnable()
