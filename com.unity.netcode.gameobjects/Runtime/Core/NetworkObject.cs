@@ -2098,7 +2098,7 @@ namespace Unity.Netcode
             }
 
             // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner))
+            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
             {
                 if (!NetworkManager.DAHost)
                 {
