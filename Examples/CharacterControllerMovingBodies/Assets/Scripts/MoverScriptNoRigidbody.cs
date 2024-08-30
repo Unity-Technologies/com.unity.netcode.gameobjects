@@ -9,6 +9,7 @@ using UnityEditor;
 /// The custom editor for the <see cref="MoverScriptNoRigidbody"/> component.
 /// </summary>
 [CustomEditor(typeof(MoverScriptNoRigidbody), true)]
+[CanEditMultipleObjects]
 public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 {
     private SerializedProperty m_Radius;
@@ -17,6 +18,7 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
     private SerializedProperty m_MovementSpeed;
     private SerializedProperty m_AirSpeedFactor;
     private SerializedProperty m_Gravity;
+    private SerializedProperty m_ContinualChildMotion;
 
 
     public override void OnEnable()
@@ -27,40 +29,28 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
         m_MovementSpeed = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.MovementSpeed));
         m_AirSpeedFactor = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.AirSpeedFactor));
         m_Gravity = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.Gravity));
+        m_ContinualChildMotion = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.ContinualChildMotion));
 
         base.OnEnable();
+    }
+
+    private void DisplayerMoverScriptNoRigidbodyProperties()
+    {
+        EditorGUILayout.PropertyField(m_Radius);
+        EditorGUILayout.PropertyField(m_Increment);
+        EditorGUILayout.PropertyField(m_RotateSpeed);
+        EditorGUILayout.PropertyField(m_MovementSpeed);
+        EditorGUILayout.PropertyField(m_AirSpeedFactor);
+        EditorGUILayout.PropertyField(m_Gravity);
+        EditorGUILayout.PropertyField(m_ContinualChildMotion);
     }
 
     public override void OnInspectorGUI()
     {
         var moverScriptNoRigidbody = target as MoverScriptNoRigidbody;
-        moverScriptNoRigidbody.ExpandMoverScriptNoRigidbody = EditorGUILayout.BeginFoldoutHeaderGroup(moverScriptNoRigidbody.ExpandMoverScriptNoRigidbody, $"{nameof(MoverScriptNoRigidbody)} Properties");
-        if (moverScriptNoRigidbody.ExpandMoverScriptNoRigidbody)
-        {
-            EditorGUILayout.EndFoldoutHeaderGroup();
-            EditorGUILayout.PropertyField(m_Radius);
-            EditorGUILayout.PropertyField(m_Increment);
-            EditorGUILayout.PropertyField(m_RotateSpeed);
-            EditorGUILayout.PropertyField(m_MovementSpeed);
-            EditorGUILayout.PropertyField(m_AirSpeedFactor);
-            EditorGUILayout.PropertyField(m_Gravity);
-        }
-        else
-        {
-            EditorGUILayout.EndFoldoutHeaderGroup();
-        }
-        EditorGUILayout.Space();
-
-        moverScriptNoRigidbody.ExpandNetworkTransform = EditorGUILayout.BeginFoldoutHeaderGroup(moverScriptNoRigidbody.ExpandNetworkTransform, $"{nameof(NetworkTransform)} Properties");
-        if (moverScriptNoRigidbody.ExpandNetworkTransform)
-        {
-            base.OnInspectorGUI();
-        }
-        else
-        {
-            serializedObject.ApplyModifiedProperties();
-        }
-        EditorGUILayout.EndFoldoutHeaderGroup();
+        void SetExpanded(bool expanded) { moverScriptNoRigidbody.MoverScriptNoRigidbodyExpanded = expanded; };
+        DrawFoldOutGroup<MoverScriptNoRigidbody>(moverScriptNoRigidbody.GetType(), DisplayerMoverScriptNoRigidbodyProperties, moverScriptNoRigidbody.MoverScriptNoRigidbodyExpanded, SetExpanded);
+        base.OnInspectorGUI();
     }
 }
 #endif
@@ -71,12 +61,12 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 public class MoverScriptNoRigidbody : NetworkTransform
 {
 #if UNITY_EDITOR
-    // Inspector view expand/collapse settings for each instance
-    public bool ExpandMoverScriptNoRigidbody;
-    public bool ExpandNetworkTransform;
+    // Inspector view expand/collapse settings for this derived child class
+    [HideInInspector]
+    public bool MoverScriptNoRigidbodyExpanded;
 #endif
 
-    private static bool EnablePlayerParentingText = true;
+    private static bool s_EnablePlayerParentingText = true;
 
     [Tooltip("Radius range a player will spawn within.")]
     [Range(1.0f, 40.0f)]
@@ -104,6 +94,9 @@ public class MoverScriptNoRigidbody : NetworkTransform
     [Range(-20.0f, 20.0f)]
     public float Gravity = -9.8f;
 
+    [Tooltip("When enabled, the child spheres will continually move. When disabled, the child spheres will only move when the player moves.")]
+    public bool ContinualChildMotion = true;
+
 
     private TextMesh m_ParentedText;
     private PlayerColor m_PlayerColor;
@@ -112,14 +105,14 @@ public class MoverScriptNoRigidbody : NetworkTransform
     private Vector3 m_CameraOriginalPosition;
     private Quaternion m_CameraOriginalRotation;
     private CharacterController m_CharacterController;
+    private PlayerBallMotion m_PlayerBallMotion;
 
     protected override void Awake()
     {
-        // TODO: Expose this property in NetworkTransform
-        SwitchTransformSpaceWhenParented = true;
         m_ParentedText = GetComponentInChildren<TextMesh>();
         m_ParentedText?.gameObject.SetActive(false);
         m_PlayerColor = GetComponent<PlayerColor>();
+        m_PlayerBallMotion = GetComponentInChildren<PlayerBallMotion>();
         base.Awake();
     }
 
@@ -148,9 +141,10 @@ public class MoverScriptNoRigidbody : NetworkTransform
     /// </summary>
     protected override void OnNetworkPostSpawn()
     {
-        m_CharacterController.enabled = CanCommitToTransform; 
+        m_CharacterController.enabled = CanCommitToTransform;
         if (CanCommitToTransform)
         {
+            m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
             Random.InitState((int)System.DateTime.Now.Ticks);
             transform.position += new Vector3(Random.Range(-SpawnRadius, SpawnRadius), 1.25f, Random.Range(0, SpawnRadius));
             SetState(transform.position, null, null, false);
@@ -190,6 +184,10 @@ public class MoverScriptNoRigidbody : NetworkTransform
     /// </summary>
     public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
     {
+        if (parentNetworkObject != null)
+        {
+            Debug.Log($"Parented under {parentNetworkObject.name}");
+        }
         UpdateParentedText();
         base.OnNetworkObjectParentChanged(parentNetworkObject);
     }
@@ -202,7 +200,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
     /// <param name="parent"></param>
     public void SetParent(NetworkObject parent)
     {
-        if ((!NetworkManager.DistributedAuthorityMode && IsServer) || (NetworkManager.DistributedAuthorityMode && HasAuthority))
+        if ((!NetworkManager.DistributedAuthorityMode && (IsServer || (NetworkObject.AllowOwnerToParent && IsOwner))) || (NetworkManager.DistributedAuthorityMode && HasAuthority))
         {
             if (parent != null)
             {
@@ -271,16 +269,18 @@ public class MoverScriptNoRigidbody : NetworkTransform
         var rotation = transform.forward;
         m_WorldMotion = Vector3.Lerp(m_WorldMotion, m_CharacterController.isGrounded ? Vector3.zero : Vector3.up * Gravity, Time.deltaTime * 2f);
         var motion = m_WorldMotion * Time.deltaTime + m_PushMotion;
-
+        var moveMotion = 0.0f;
 
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             motion += transform.forward * MovementSpeed * Time.deltaTime * (m_CharacterController.isGrounded ? 1.0f : AirSpeedFactor);
+            moveMotion = 1.0f;
             m_CharacterController.Move(motion);
         }
         if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
             motion += (transform.forward * -MovementSpeed) * Time.deltaTime * (m_CharacterController.isGrounded ? 1.0f : AirSpeedFactor);
+            moveMotion = -1.0f;
             m_CharacterController.Move(motion);
         }
 
@@ -307,10 +307,18 @@ public class MoverScriptNoRigidbody : NetworkTransform
         // Enabled/Disable player name, transform space, and parent TextMesh
         if (Input.GetKeyDown(KeyCode.P))
         {
-            EnablePlayerParentingText = !EnablePlayerParentingText;
+            s_EnablePlayerParentingText = !s_EnablePlayerParentingText;
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            ContinualChildMotion = !ContinualChildMotion;
+            m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
         }
 
         m_PushMotion = Vector3.Lerp(m_PushMotion, Vector3.zero, 0.35f);
+
+        m_PlayerBallMotion.HasMotion(moveMotion);
     }
 
     /// <summary>
@@ -320,11 +328,11 @@ public class MoverScriptNoRigidbody : NetworkTransform
     {
         if (m_ParentedText != null)
         {
-            if (m_ParentedText.gameObject.activeInHierarchy != EnablePlayerParentingText)
+            if (m_ParentedText.gameObject.activeInHierarchy != s_EnablePlayerParentingText)
             {
-                m_ParentedText.gameObject.SetActive(EnablePlayerParentingText);
+                m_ParentedText.gameObject.SetActive(s_EnablePlayerParentingText);
             }
-            if (EnablePlayerParentingText)
+            if (s_EnablePlayerParentingText)
             {
                 var position = Camera.main.transform.position;
                 position.y = m_ParentedText.transform.position.y;

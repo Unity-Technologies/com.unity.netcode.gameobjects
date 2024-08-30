@@ -8,11 +8,59 @@ using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using SessionState = Unity.Services.Multiplayer.SessionState;
 
-public class NetworkManagerHelper : MonoBehaviour
+#if UNITY_EDITOR
+using Unity.Netcode.Editor;
+using UnityEditor;
+
+/// <summary>
+/// The custom editor for the <see cref="ExtendedNetworkManager"/> component.
+/// </summary>
+[CustomEditor(typeof(ExtendedNetworkManager), true)]
+[CanEditMultipleObjects]
+public class ExtendedNetworkManagerEditor : NetworkManagerEditor
 {
-    public static NetworkManagerHelper Instance;
+    private SerializedProperty m_ConnectionType;
+    private SerializedProperty m_TargetFrameRate;
+    private SerializedProperty m_EnableVSync;
+
+    public override void OnEnable()
+    {
+        m_ConnectionType = serializedObject.FindProperty(nameof(ExtendedNetworkManager.ConnectionType));
+        m_TargetFrameRate = serializedObject.FindProperty(nameof(ExtendedNetworkManager.TargetFrameRate));
+        m_EnableVSync = serializedObject.FindProperty(nameof(ExtendedNetworkManager.EnableVSync));
+        base.OnEnable();
+    }
+
+    private void DisplayExtendedNetworkManagerProperties()
+    {
+        EditorGUILayout.PropertyField(m_ConnectionType);
+        EditorGUILayout.PropertyField(m_TargetFrameRate);
+        EditorGUILayout.PropertyField(m_EnableVSync);
+    }
+
+    public override void OnInspectorGUI()
+    {
+        var extendedNetworkManager = target as ExtendedNetworkManager;
+        void SetExpanded(bool expanded) { extendedNetworkManager.ExtendedNetworkManagerExpanded = expanded; };
+        DrawFoldOutGroup<ExtendedNetworkManager>(extendedNetworkManager.GetType(), DisplayExtendedNetworkManagerProperties, extendedNetworkManager.ExtendedNetworkManagerExpanded, SetExpanded);
+        base.OnInspectorGUI();
+    }
+}
+#endif
+
+
+
+public class ExtendedNetworkManager : NetworkManager
+{
+#if UNITY_EDITOR
+    // Inspector view expand/collapse settings for this derived child class
+    [HideInInspector]
+    public bool ExtendedNetworkManagerExpanded;
+#endif
+
+    public static ExtendedNetworkManager Instance;
 
     public enum ConnectionTypes
     {
@@ -27,17 +75,17 @@ public class NetworkManagerHelper : MonoBehaviour
 
     [HideInInspector]
     [SerializeField]
-    private int OriginalVSyncCount;
+    private int m_OriginalVSyncCount;
 
 #if UNITY_EDITOR
-    private void OnValidate()
-    {
-        OriginalVSyncCount = QualitySettings.vSyncCount;
-    }
 
+    protected override void OnValidateComponent()
+    {
+        m_OriginalVSyncCount = QualitySettings.vSyncCount;
+        base.OnValidateComponent();
+    }
 #endif
 
-    private NetworkManager m_NetworkManager;
     private ISession m_CurrentSession;
 
     private string m_SessionName;
@@ -56,21 +104,20 @@ public class NetworkManagerHelper : MonoBehaviour
     public static string GetRandomString(int length)
     {
         var r = new System.Random();
-        return new string(Enumerable.Range(0, length).Select(_ => (Char)r.Next('a', 'z')).ToArray());
+        return new string(Enumerable.Range(0, length).Select(_ => (char)r.Next('a', 'z')).ToArray());
     }
 
     public void SetFrameRate(int targetFrameRate, bool enableVsync)
     {
         Application.targetFrameRate = targetFrameRate;
-        QualitySettings.vSyncCount = enableVsync ? OriginalVSyncCount : 0;
+        QualitySettings.vSyncCount = enableVsync ? m_OriginalVSyncCount : 0;
     }
 
     private void Awake()
     {
         Screen.SetResolution((int)(Screen.currentResolution.width * 0.40f), (int)(Screen.currentResolution.height * 0.40f), FullScreenMode.Windowed);
         SetFrameRate(TargetFrameRate, EnableVSync);
-        m_NetworkManager = GetComponent<NetworkManager>();
-        m_NetworkManager.SetSingleton();
+        SetSingleton();
     }
 
     private async void Start()
@@ -110,9 +157,9 @@ public class NetworkManagerHelper : MonoBehaviour
 
         if (GUILayout.Button("Create or Connect To Session"))
         {
-            m_NetworkManager.NetworkConfig.UseCMBService = true;
-            m_NetworkManager.OnClientStopped += OnClientStopped;
-            m_NetworkManager.OnClientStarted += OnClientStarted;
+            NetworkConfig.UseCMBService = true;
+            OnClientStopped += ClientStopped;
+            OnClientStarted += ClientStarted;
             m_SessionTask = ConnectThroughLiveService();
             m_ConnectionState = ConnectionStates.Connecting;
             LogMessage($"Connecting to session {m_SessionName}...");
@@ -121,7 +168,7 @@ public class NetworkManagerHelper : MonoBehaviour
 
     private void OnDrawLocalServiceGUI()
     {
-        var unityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
+        var unityTransport = NetworkConfig.NetworkTransport as UnityTransport;
         GUILayout.Label("IP Address:", GUILayout.Width(100));
         unityTransport.ConnectionData.Address = GUILayout.TextField(unityTransport.ConnectionData.Address, GUILayout.Width(100));
 
@@ -132,11 +179,11 @@ public class NetworkManagerHelper : MonoBehaviour
         // CMB distributed authority services just "connects" with no host, client, or server option (all are clients)
         if (GUILayout.Button("Start Client"))
         {
-            m_NetworkManager.NetworkConfig.UseCMBService = true;
-            m_NetworkManager.OnClientStopped += OnClientStopped;
-            m_NetworkManager.OnClientStarted += OnClientStarted;
+            NetworkConfig.UseCMBService = true;
+            OnClientStopped += ClientStopped;
+            OnClientStarted += ClientStarted;
             m_SessionName = "(Local Session)";
-            m_NetworkManager.StartClient();
+            StartClient();
             m_ConnectionState = ConnectionStates.Connecting;
         }
     }
@@ -145,16 +192,16 @@ public class NetworkManagerHelper : MonoBehaviour
     {
         if (GUILayout.Button("Start Host"))
         {
-            m_NetworkManager.OnClientStopped += OnClientStopped;
-            m_NetworkManager.OnClientStarted += OnClientStarted;
-            m_NetworkManager.StartHost();
+            OnClientStopped += ClientStopped;
+            OnClientStarted += ClientStarted;
+            StartHost();
         }
 
         if (GUILayout.Button("Start Client"))
         {
-            m_NetworkManager.OnClientStopped += OnClientStopped;
-            m_NetworkManager.OnClientStarted += OnClientStarted;
-            m_NetworkManager.StartClient();
+            OnClientStopped += ClientStopped;
+            OnClientStarted += ClientStarted;
+            StartClient();
         }
     }
 
@@ -166,7 +213,7 @@ public class NetworkManagerHelper : MonoBehaviour
         GUILayout.Label("Session Name", GUILayout.Width(100));
 
         var connectionType = ConnectionType;
-        if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer && connectionType != ConnectionTypes.Host)
+        if (NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer && connectionType != ConnectionTypes.Host)
         {
             connectionType = ConnectionTypes.Host;
         }
@@ -195,9 +242,9 @@ public class NetworkManagerHelper : MonoBehaviour
         GUILayout.BeginArea(new Rect(10, Display.main.renderingHeight - 40, Display.main.renderingWidth - 10, 30));
         var scenesPreloaded = new System.Text.StringBuilder();
         scenesPreloaded.Append("Scenes Preloaded: ");
-        for (int i = 0; i < SceneManager.sceneCount; i++)
+        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
         {
-            var scene = SceneManager.GetSceneAt(i);
+            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
             scenesPreloaded.Append($"[{scene.name}]");
         }
         GUILayout.Label(scenesPreloaded.ToString());
@@ -206,7 +253,7 @@ public class NetworkManagerHelper : MonoBehaviour
 
     private void OnUpdateGUIConnected()
     {
-        if (m_NetworkManager.CMBServiceConnection)
+        if (CMBServiceConnection)
         {
             GUILayout.BeginArea(new Rect(10, 10, 800, 800));
             GUILayout.Label($"Session: {m_SessionName}");
@@ -215,7 +262,15 @@ public class NetworkManagerHelper : MonoBehaviour
         else
         {
             GUILayout.BeginArea(new Rect(10, 10, 800, 800));
-            GUILayout.Label($"Client-Server Session");
+            if (DistributedAuthorityMode)
+            {
+                GUILayout.Label($"DAHosted Session");
+            }
+            else
+            {
+                GUILayout.Label($"Client-Server Session");
+            }
+            
             GUILayout.EndArea();
         }
 
@@ -230,7 +285,7 @@ public class NetworkManagerHelper : MonoBehaviour
             }
             else
             {
-                m_NetworkManager.Shutdown();
+                Shutdown();
             }
         }
 
@@ -270,16 +325,16 @@ public class NetworkManagerHelper : MonoBehaviour
         GUILayout.EndArea();
     }
 
-    private void OnClientStarted()
+    private void ClientStarted()
     {
-        m_NetworkManager.OnClientStarted -= OnClientStarted;
+        OnClientStarted -= ClientStarted;
         m_ConnectionState = ConnectionStates.Connected;
         LogMessage($"Connected to session {m_SessionName}.");
     }
 
-    private void OnClientStopped(bool isHost)
+    private void ClientStopped(bool isHost)
     {
-        m_NetworkManager.OnClientStopped -= OnClientStopped;
+        OnClientStopped -= ClientStopped;
         m_ConnectionState = ConnectionStates.None;
         m_SessionTask = null;
         m_CurrentSession = null;
@@ -350,7 +405,7 @@ public class NetworkManagerHelper : MonoBehaviour
         Debug.Log(msg);
     }
 
-    public NetworkManagerHelper()
+    public ExtendedNetworkManager()
     {
         Instance = this;
     }

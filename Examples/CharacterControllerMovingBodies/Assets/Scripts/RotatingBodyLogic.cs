@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
-
 #if UNITY_EDITOR
 using Unity.Netcode.Editor;
 using UnityEditor;
@@ -15,6 +14,7 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
 {
     private SerializedProperty m_RotationSpeed;
     private SerializedProperty m_RotateDirection;
+    private SerializedProperty m_OnExitTransferParentOnStay;
     private SerializedProperty m_ZAxisMove;
     private SerializedProperty m_PathMotion;
 
@@ -23,21 +23,26 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
     {
         m_RotationSpeed = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotationSpeed));
         m_RotateDirection = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotateDirection));
+        m_OnExitTransferParentOnStay = serializedObject.FindProperty(nameof(RotatingBodyLogic.OnExitTransferParentOnStay));
         m_ZAxisMove = serializedObject.FindProperty(nameof(RotatingBodyLogic.ZAxisMove));
         m_PathMotion = serializedObject.FindProperty(nameof(RotatingBodyLogic.PathMovement));
         base.OnEnable();
     }
 
+    private void DisplayRotatingBodyLogicProperties()
+    {
+        EditorGUILayout.PropertyField(m_RotationSpeed);
+        EditorGUILayout.PropertyField(m_RotateDirection);
+        EditorGUILayout.PropertyField(m_OnExitTransferParentOnStay);
+        EditorGUILayout.PropertyField(m_ZAxisMove);
+        EditorGUILayout.PropertyField(m_PathMotion);
+    }
+
     public override void OnInspectorGUI()
     {
-        EditorGUILayout.LabelField($"{nameof(RotatingBodyLogic)} Properties", EditorStyles.boldLabel);
-        {
-            EditorGUILayout.PropertyField(m_RotationSpeed);
-            EditorGUILayout.PropertyField(m_RotateDirection);
-            EditorGUILayout.PropertyField(m_ZAxisMove);
-            EditorGUILayout.PropertyField(m_PathMotion);
-        }
-        EditorGUILayout.Space();
+        var rotatingBodyLogic = target as RotatingBodyLogic;
+        void SetExpanded(bool expanded) { rotatingBodyLogic.RotatingBodyLogicExpanded = expanded; };
+        DrawFoldOutGroup<RotatingBodyLogic>(rotatingBodyLogic.GetType(), DisplayRotatingBodyLogicProperties, rotatingBodyLogic.RotatingBodyLogicExpanded, SetExpanded);
         base.OnInspectorGUI();
     }
 }
@@ -48,6 +53,12 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
 /// </summary>
 public class RotatingBodyLogic : NetworkTransform
 {
+#if UNITY_EDITOR
+    // Inspector view expand/collapse settings for this derived child class
+    [HideInInspector]
+    public bool RotatingBodyLogicExpanded;
+#endif
+
     public enum RotationDirections
     {
         Clockwise,
@@ -57,17 +68,18 @@ public class RotatingBodyLogic : NetworkTransform
     [Range(0.0f, 2.0f)]
     public float RotationSpeed = 1.0f;
     public RotationDirections RotateDirection;
-
+    public RotatingBodyLogic OnExitTransferParentOnStay;
     public List<GameObject> PathMovement;
 
     public bool ZAxisMove = false;
 
 
+
     private TagHandle m_TagHandle;
     private float m_RotationDirection;
-    private float ZAxisMax;
-    private float ZAxisDirection;
-    private Vector3 OriginalForward;
+    private float m_ZAxisMax;
+    private float m_ZAxisDirection;
+    private Vector3 m_OriginalForward;
 
     private int m_CurrentPathObject = -1;
     private GameObject m_CurrentNavPoint;
@@ -76,9 +88,9 @@ public class RotatingBodyLogic : NetworkTransform
     {
         m_TagHandle = TagHandle.GetExistingTag("Player");
         m_RotationDirection = RotateDirection == RotationDirections.Clockwise ? 1.0f : -1.0f;
-        ZAxisMax = transform.position.z;
-        ZAxisDirection = Mathf.Sign(ZAxisMax) < 0 ? 1.0f : -1.0f;
-        OriginalForward = transform.forward;
+        m_ZAxisMax = transform.position.z;
+        m_ZAxisDirection = Mathf.Sign(m_ZAxisMax) < 0 ? 1.0f : -1.0f;
+        m_OriginalForward = transform.forward;
         m_NextSwitchDirection = Time.realtimeSinceStartup + 2.0f;
         SetNextPoint();
         base.OnNetworkPreSpawn(ref networkManager);
@@ -116,6 +128,34 @@ public class RotatingBodyLogic : NetworkTransform
         }
     }
 
+    private List<MoverScriptNoRigidbody> m_TriggerStayBodies = new List<MoverScriptNoRigidbody>();
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (!IsSpawned || !other.CompareTag(m_TagHandle))
+        {
+            return;
+        }
+        var nonRigidPlayerMover = other.GetComponent<MoverScriptNoRigidbody>();
+        if (nonRigidPlayerMover != null)
+        {
+            if (!m_TriggerStayBodies.Contains(nonRigidPlayerMover))
+            {
+                m_TriggerStayBodies.Add(nonRigidPlayerMover);
+            }
+        }
+    }
+
+    internal bool HandleParentingForTriggerStayBodies(MoverScriptNoRigidbody moverScriptNoRigidbody)
+    {
+        if (m_TriggerStayBodies.Contains(moverScriptNoRigidbody))
+        {
+            moverScriptNoRigidbody.SetParent(NetworkObject);
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// When triggered, the player is deparented from the rotating body.
     /// </summary>
@@ -133,6 +173,12 @@ public class RotatingBodyLogic : NetworkTransform
         var nonRigidPlayerMover = other.GetComponent<MoverScriptNoRigidbody>();
         if (nonRigidPlayerMover != null)
         {
+            m_TriggerStayBodies.Remove(nonRigidPlayerMover);
+            if (OnExitTransferParentOnStay && OnExitTransferParentOnStay.HandleParentingForTriggerStayBodies(nonRigidPlayerMover))
+            {
+                return;
+            }
+            // Otherwise, set parent back to root
             nonRigidPlayerMover.SetParent(null);
         }
     }
@@ -162,14 +208,14 @@ public class RotatingBodyLogic : NetworkTransform
         else
         if (ZAxisMove)
         {
-            if (Mathf.Abs(transform.position.z) > ZAxisMax && m_NextSwitchDirection < Time.realtimeSinceStartup)
+            if (Mathf.Abs(transform.position.z) > m_ZAxisMax && m_NextSwitchDirection < Time.realtimeSinceStartup)
             {
-                ZAxisDirection *= -1;
+                m_ZAxisDirection *= -1;
                 m_RotationDirection *= -1;
                 m_NextSwitchDirection = Time.realtimeSinceStartup + 2.0f;
             }
 
-            transform.position = Vector3.Lerp(transform.position, transform.position + (OriginalForward * ZAxisDirection * 10), Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, transform.position + (m_OriginalForward * m_ZAxisDirection * 10), Time.deltaTime);
         }
 
         if (RotationSpeed > 0.0f)
