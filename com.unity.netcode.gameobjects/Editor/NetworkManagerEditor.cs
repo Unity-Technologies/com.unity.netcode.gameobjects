@@ -13,7 +13,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
-    public class NetworkManagerEditor : UnityEditor.Editor
+    public class NetworkManagerEditor : NetcodeEditorBase<MonoBehaviour>
     {
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
@@ -168,8 +168,7 @@ namespace Unity.Netcode.Editor
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DisplayNetworkManagerProperties()
         {
             Initialize();
             CheckNullProperties();
@@ -366,6 +365,16 @@ namespace Unity.Netcode.Editor
                     m_NetworkManager.Shutdown();
                 }
             }
+        }
+
+
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            var networkManager = target as NetworkManager;
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
+            DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
+            base.OnInspectorGUI();
         }
 
         private static void DrawInstallMultiplayerToolsTip()
