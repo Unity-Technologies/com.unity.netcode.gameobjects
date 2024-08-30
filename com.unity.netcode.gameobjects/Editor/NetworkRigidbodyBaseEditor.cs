@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using Unity.Netcode.Components;
 using UnityEditor;
 
@@ -38,3 +39,4 @@ namespace Unity.Netcode.Editor
         }
     }
 }
+#endif
