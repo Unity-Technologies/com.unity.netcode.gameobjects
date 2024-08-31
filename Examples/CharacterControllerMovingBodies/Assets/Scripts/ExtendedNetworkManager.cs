@@ -35,7 +35,12 @@ public class ExtendedNetworkManagerEditor : NetworkManagerEditor
 
     private void DisplayExtendedNetworkManagerProperties()
     {
+        var extendedNetworkManager = target as ExtendedNetworkManager;
         EditorGUILayout.PropertyField(m_ConnectionType);
+        if (extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+        {
+            extendedNetworkManager.ConnectionType = ExtendedNetworkManager.ConnectionTypes.Host;
+        }
         EditorGUILayout.PropertyField(m_TargetFrameRate);
         EditorGUILayout.PropertyField(m_EnableVSync);
     }
@@ -65,7 +70,6 @@ public class ExtendedNetworkManager : NetworkManager
     public enum ConnectionTypes
     {
         LiveService,
-        LocalService,
         Host,
     }
     public ConnectionTypes ConnectionType;
@@ -122,6 +126,9 @@ public class ExtendedNetworkManager : NetworkManager
 
     private async void Start()
     {
+        OnClientConnectedCallback += OnClientConnected;
+        OnClientDisconnectCallback += OnClientDisconnect;
+        OnConnectionEvent += OnClientConnectionEvent;
         if (UnityServices.Instance != null && UnityServices.Instance.State != ServicesInitializationState.Initialized)
         {
             await UnityServices.InitializeAsync();
@@ -137,6 +144,13 @@ public class ExtendedNetworkManager : NetworkManager
             AuthenticationService.Instance.SwitchProfile(m_ProfileName);
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
         }
+    }
+
+    private void OnDestroy()
+    {
+        OnClientConnectedCallback -= OnClientConnected;
+        OnClientDisconnectCallback -= OnClientDisconnect;
+        OnConnectionEvent -= OnClientConnectionEvent;
     }
 
     private void SignedIn()
@@ -166,28 +180,6 @@ public class ExtendedNetworkManager : NetworkManager
         }
     }
 
-    private void OnDrawLocalServiceGUI()
-    {
-        var unityTransport = NetworkConfig.NetworkTransport as UnityTransport;
-        GUILayout.Label("IP Address:", GUILayout.Width(100));
-        unityTransport.ConnectionData.Address = GUILayout.TextField(unityTransport.ConnectionData.Address, GUILayout.Width(100));
-
-        GUILayout.Label("Port:", GUILayout.Width(100));
-        var portString = GUILayout.TextField(unityTransport.ConnectionData.Port.ToString(), GUILayout.Width(100));
-        ushort.TryParse(portString, out unityTransport.ConnectionData.Port);
-
-        // CMB distributed authority services just "connects" with no host, client, or server option (all are clients)
-        if (GUILayout.Button("Start Client"))
-        {
-            NetworkConfig.UseCMBService = true;
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            m_SessionName = "(Local Session)";
-            StartClient();
-            m_ConnectionState = ConnectionStates.Connecting;
-        }
-    }
-
     private void OnDrawDAHostGUI()
     {
         if (GUILayout.Button("Start Host"))
@@ -204,7 +196,6 @@ public class ExtendedNetworkManager : NetworkManager
             StartClient();
         }
     }
-
 
     private void OnUpdateGUIDisconnected()
     {
@@ -223,11 +214,6 @@ public class ExtendedNetworkManager : NetworkManager
             case ConnectionTypes.LiveService:
                 {
                     OnDrawLiveServiceGUI();
-                    break;
-                }
-            case ConnectionTypes.LocalService:
-                {
-                    OnDrawLocalServiceGUI();
                     break;
                 }
             case ConnectionTypes.Host:
@@ -270,7 +256,7 @@ public class ExtendedNetworkManager : NetworkManager
             {
                 GUILayout.Label($"Client-Server Session");
             }
-            
+
             GUILayout.EndArea();
         }
 
@@ -375,6 +361,21 @@ public class ExtendedNetworkManager : NetworkManager
                 m_MessageLogs.RemoveAt(i);
             }
         }
+    }
+
+    private void OnClientConnectionEvent(NetworkManager networkManager, ConnectionEventData eventData)
+    {
+        LogMessage($"[{Time.realtimeSinceStartup}] Connection event {eventData.EventType} for Client-{eventData.ClientId}.");
+    }
+
+    private void OnClientConnected(ulong clientId)
+    {
+        LogMessage($"[{Time.realtimeSinceStartup}] Connected event invoked for Client-{clientId}.");
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        LogMessage($"[{Time.realtimeSinceStartup}] Disconnected event invoked for Client-{clientId}.");
     }
 
     private List<MessageLog> m_MessageLogs = new List<MessageLog>();

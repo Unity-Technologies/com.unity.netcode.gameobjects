@@ -16,7 +16,6 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
     private SerializedProperty m_RotationSpeed;
     private SerializedProperty m_RotateDirection;
     private SerializedProperty m_OnExitTransferParentOnStay;
-    private SerializedProperty m_ZAxisMove;
     private SerializedProperty m_PathMotion;
 
 
@@ -25,7 +24,6 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
         m_RotationSpeed = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotationSpeed));
         m_RotateDirection = serializedObject.FindProperty(nameof(RotatingBodyLogic.RotateDirection));
         m_OnExitTransferParentOnStay = serializedObject.FindProperty(nameof(RotatingBodyLogic.OnExitTransferParentOnStay));
-        m_ZAxisMove = serializedObject.FindProperty(nameof(RotatingBodyLogic.ZAxisMove));
         m_PathMotion = serializedObject.FindProperty(nameof(RotatingBodyLogic.PathMovement));
         base.OnEnable();
     }
@@ -35,7 +33,6 @@ public class RotatingBodyLogicEditor : NetworkTransformEditor
         EditorGUILayout.PropertyField(m_RotationSpeed);
         EditorGUILayout.PropertyField(m_RotateDirection);
         EditorGUILayout.PropertyField(m_OnExitTransferParentOnStay);
-        EditorGUILayout.PropertyField(m_ZAxisMove);
         EditorGUILayout.PropertyField(m_PathMotion);
     }
 
@@ -72,15 +69,8 @@ public class RotatingBodyLogic : NetworkTransform
     public RotatingBodyLogic OnExitTransferParentOnStay;
     public List<GameObject> PathMovement;
 
-    public bool ZAxisMove = false;
-
-
-
     private TagHandle m_TagHandle;
     private float m_RotationDirection;
-    private float m_ZAxisMax;
-    private float m_ZAxisDirection;
-    private Vector3 m_OriginalForward;
 
     private int m_CurrentPathObject = -1;
     private GameObject m_CurrentNavPoint;
@@ -89,10 +79,6 @@ public class RotatingBodyLogic : NetworkTransform
     {
         m_TagHandle = TagHandle.GetExistingTag("Player");
         m_RotationDirection = RotateDirection == RotationDirections.Clockwise ? 1.0f : -1.0f;
-        m_ZAxisMax = transform.position.z;
-        m_ZAxisDirection = Mathf.Sign(m_ZAxisMax) < 0 ? 1.0f : -1.0f;
-        m_OriginalForward = transform.forward;
-        m_NextSwitchDirection = Time.realtimeSinceStartup + 2.0f;
         SetNextPoint();
         base.OnNetworkPreSpawn(ref networkManager);
     }
@@ -129,6 +115,7 @@ public class RotatingBodyLogic : NetworkTransform
         }
     }
 
+    // This is used to handle NetworkObject to NetworkObject parenting detection
     private List<MoverScriptNoRigidbody> m_TriggerStayBodies = new List<MoverScriptNoRigidbody>();
 
     private void OnTriggerStay(Collider other)
@@ -184,7 +171,6 @@ public class RotatingBodyLogic : NetworkTransform
         }
     }
 
-    private float m_NextSwitchDirection;
     /// <summary>
     /// We rotate the body during late update to avoid fighting between the host/owner (depending upon network topology)
     /// motion and the body's motion/rotation.
@@ -205,18 +191,6 @@ public class RotatingBodyLogic : NetworkTransform
 
             var direction = (m_CurrentNavPoint.transform.position - transform.position).normalized;
             transform.position = Vector3.Lerp(transform.position, transform.position + direction * 10, Time.deltaTime);
-        }
-        else
-        if (ZAxisMove)
-        {
-            if (Mathf.Abs(transform.position.z) > m_ZAxisMax && m_NextSwitchDirection < Time.realtimeSinceStartup)
-            {
-                m_ZAxisDirection *= -1;
-                m_RotationDirection *= -1;
-                m_NextSwitchDirection = Time.realtimeSinceStartup + 2.0f;
-            }
-
-            transform.position = Vector3.Lerp(transform.position, transform.position + (m_OriginalForward * m_ZAxisDirection * 10), Time.deltaTime);
         }
 
         if (RotationSpeed > 0.0f)

@@ -426,7 +426,6 @@ GameObject:
   - component: {fileID: 455857870}
   - component: {fileID: 455857875}
   - component: {fileID: 455857871}
-  - component: {fileID: 455857874}
   m_Layer: 0
   m_Name: ExtendedNetworkManager
   m_TagString: Untagged
@@ -478,18 +477,6 @@ MonoBehaviour:
     PacketDelayMS: 0
     PacketJitterMS: 0
     PacketDropRate: 0
---- !u!114 &455857874
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 455857869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09865cca13a4bec439963971d7296b02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &455857875
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -502,7 +489,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4d8d44c602b97b47ba488a40c66267c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkManagerExpanded: 1
+  NetworkManagerExpanded: 0
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 455857871}
@@ -532,8 +519,8 @@ MonoBehaviour:
     OldPrefabList: []
   RunInBackground: 1
   LogLevel: 1
-  ExtendedNetworkManagerExpanded: 0
-  ConnectionType: 0
+  ExtendedNetworkManagerExpanded: 1
+  ConnectionType: 2
   TargetFrameRate: 100
   EnableVSync: 0
   m_OriginalVSyncCount: 1
@@ -927,6 +914,37 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+--- !u!1 &946793187
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 946793188}
+  m_Layer: 0
+  m_Name: PointE
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &946793188
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 946793187}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 60.5, y: -0.34, z: 70}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -1019,6 +1037,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 17.5, y: 0, z: 0}
+--- !u!1 &1049334975
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1049334976}
+  m_Layer: 0
+  m_Name: PointF
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1049334976
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1049334975}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 60.5, y: -0.34, z: -68.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1055951929
 GameObject:
   m_ObjectHideFlags: 0
@@ -1283,12 +1332,28 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: ZAxisMove
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: RotationSpeed
       value: 0.3
       objectReference: {fileID: 0}
+    - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: PathMovement.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: RotatingBodyLogicExpanded
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: 'PathMovement.Array.data[0]'
+      value: 
+      objectReference: {fileID: 946793187}
+    - target: {fileID: 850162744905636139, guid: 0123d7125346c274da00b38e950a266b, type: 3}
+      propertyPath: 'PathMovement.Array.data[1]'
+      value: 
+      objectReference: {fileID: 1049334975}
     - target: {fileID: 3307166493715739449, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1259759422
@@ -1357,11 +1422,13 @@ SceneRoots:
   - {fileID: 1184702128}
   - {fileID: 748186899}
   - {fileID: 857399335}
-  - {fileID: 45185844}
   - {fileID: 66674670}
+  - {fileID: 45185844}
   - {fileID: 1968567121}
   - {fileID: 1591298748}
   - {fileID: 537610709}
   - {fileID: 1281267715}
   - {fileID: 1727671590}
   - {fileID: 1055951930}
+  - {fileID: 946793188}
+  - {fileID: 1049334976}
