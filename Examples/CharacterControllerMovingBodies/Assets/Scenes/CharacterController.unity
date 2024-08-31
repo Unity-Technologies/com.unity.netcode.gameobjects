@@ -520,7 +520,7 @@ MonoBehaviour:
   RunInBackground: 1
   LogLevel: 1
   ExtendedNetworkManagerExpanded: 1
-  ConnectionType: 2
+  ConnectionType: 1
   TargetFrameRate: 100
   EnableVSync: 0
   m_OriginalVSyncCount: 1

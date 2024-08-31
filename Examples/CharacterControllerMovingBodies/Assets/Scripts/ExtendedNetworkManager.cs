@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
@@ -35,12 +34,7 @@ public class ExtendedNetworkManagerEditor : NetworkManagerEditor
 
     private void DisplayExtendedNetworkManagerProperties()
     {
-        var extendedNetworkManager = target as ExtendedNetworkManager;
         EditorGUILayout.PropertyField(m_ConnectionType);
-        if (extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
-        {
-            extendedNetworkManager.ConnectionType = ExtendedNetworkManager.ConnectionTypes.Host;
-        }
         EditorGUILayout.PropertyField(m_TargetFrameRate);
         EditorGUILayout.PropertyField(m_EnableVSync);
     }
@@ -48,8 +42,28 @@ public class ExtendedNetworkManagerEditor : NetworkManagerEditor
     public override void OnInspectorGUI()
     {
         var extendedNetworkManager = target as ExtendedNetworkManager;
+        // Handle switching the appropriate connection type based on the network topology
+        // Host connectio type can be set for client-server and distributed authority
+        // Live Service can only be used with distributed authority
+        // Client-server can only be used with a host connection type
+        var connectionTypes = Enum.GetValues(typeof(ExtendedNetworkManager.ConnectionTypes));
+        var connectionType = ExtendedNetworkManager.ConnectionTypes.LiveService;
+        if (m_ConnectionType.enumValueIndex > 0 && m_ConnectionType.enumValueIndex < connectionTypes.Length)
+        {
+            connectionType = (ExtendedNetworkManager.ConnectionTypes)connectionTypes.GetValue(m_ConnectionType.enumValueIndex);
+        }
         void SetExpanded(bool expanded) { extendedNetworkManager.ExtendedNetworkManagerExpanded = expanded; };
         DrawFoldOutGroup<ExtendedNetworkManager>(extendedNetworkManager.GetType(), DisplayExtendedNetworkManagerProperties, extendedNetworkManager.ExtendedNetworkManagerExpanded, SetExpanded);
+
+        var updatedConnectedType = (ExtendedNetworkManager.ConnectionTypes)connectionTypes.GetValue(m_ConnectionType.enumValueIndex);
+        if (connectionType == updatedConnectedType && updatedConnectedType == ExtendedNetworkManager.ConnectionTypes.LiveService && extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+        {
+            extendedNetworkManager.ConnectionType = ExtendedNetworkManager.ConnectionTypes.Host;
+        }
+        else if (connectionType == ExtendedNetworkManager.ConnectionTypes.Host && updatedConnectedType == ExtendedNetworkManager.ConnectionTypes.LiveService && extendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+        {
+            extendedNetworkManager.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
+        }
         base.OnInspectorGUI();
     }
 }
