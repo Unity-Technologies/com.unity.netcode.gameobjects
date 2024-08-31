@@ -303,7 +303,6 @@ namespace Unity.Netcode.Editor
             }
             EditorGUI.EndChangeCheck();
             serializedObject.ApplyModifiedProperties();
-            base.OnInspectorGUI();
         }
 
         /// <summary>
