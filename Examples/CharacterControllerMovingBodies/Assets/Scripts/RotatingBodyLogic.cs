@@ -10,6 +10,7 @@ using UnityEditor;
 /// The custom editor for the <see cref="RotatingBodyLogic"/> component.
 /// </summary>
 [CustomEditor(typeof(RotatingBodyLogic), true)]
+[CanEditMultipleObjects]
 public class RotatingBodyLogicEditor : NetworkTransformEditor
 {
     private SerializedProperty m_RotationSpeed;

@@ -307,7 +307,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5415449980466536476, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: m_Name
-      value: StationaryBody
+      value: StationaryBody-B
       objectReference: {fileID: 0}
     - target: {fileID: 8134939553748259768, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: m_Size.z
@@ -396,7 +396,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5415449980466536476, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: m_Name
-      value: StationaryBody (1)
+      value: StationaryBody-A
       objectReference: {fileID: 0}
     - target: {fileID: 8134939553748259768, guid: 0123d7125346c274da00b38e950a266b, type: 3}
       propertyPath: m_Size.z
