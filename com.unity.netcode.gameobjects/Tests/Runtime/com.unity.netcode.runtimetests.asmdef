@@ -9,6 +9,7 @@
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
         "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.MetricCollection",
         "Unity.Networking.Transport",
         "ClientNetworkTransform",
         "Unity.Netcode.TestHelpers.Runtime",
