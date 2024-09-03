@@ -1351,7 +1351,7 @@ namespace Unity.Netcode
             NetworkManager = networkManager;
             MessageManager = networkManager.MessageManager;
 
-            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.MetricsManager.NetworkMetrics;
+            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.NetworkMetrics;
 
             NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
             NetworkManager.NetworkConfig.NetworkTransport.Initialize(networkManager);

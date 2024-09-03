@@ -4,16 +4,16 @@ using System.Diagnostics.CodeAnalysis;
 using Unity.Multiplayer.Tools.Common;
 using Unity.Multiplayer.Tools.DataCollection;
 using Unity.Multiplayer.Tools.Events;
-using Unity.Multiplayer.Tools.MetricEvents;
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Netcode;
 using UnityEngine;
+
 
 namespace Unity.Multiplayer.Tools.Adapters.Ngo1
 {
     internal class Ngo1Adapter
 
-        : INetworkAdapter
+        : INetworkAdapter, IMetricObserver
 
         // Events
         // --------------------------------------------------------------------
@@ -39,7 +39,7 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
         [MaybeNull]
         private Dictionary<ulong, NetworkObject> SpawnedObjects => SpawnManager?.SpawnedObjects;
 
-        public Ngo1Adapter([NotNull] NetworkManager networkManager)
+        public Ngo1Adapter([NotNull] NetworkManager networkManager, [NotNull] IMetricDispatcher dispatcher)
         {
             DebugUtil.TraceMethodName();
 
@@ -60,7 +60,8 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
                 OnServerOrClientStarted();
             }
 
-            MetricEventPublisher.OnMetricsReceived += OnMetricsReceived;
+            dispatcher.RegisterObserver(this);
+
         }
 
         private readonly List<ClientId> m_ClientIds = new();
@@ -170,10 +171,11 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
 
         public event Action<IMetricCollection> MetricCollectionEvent;
 
-        private void OnMetricsReceived(MetricCollection metricCollection)
+
+        public void Observe(MetricCollection collection)
         {
-            UpdateNetworkTrafficCaches(metricCollection);
-            MetricCollectionEvent?.Invoke(metricCollection as IMetricCollection);
+            UpdateNetworkTrafficCaches(collection);
+            MetricCollectionEvent?.Invoke(collection as IMetricCollection);
         }
 
         // Simple Queries

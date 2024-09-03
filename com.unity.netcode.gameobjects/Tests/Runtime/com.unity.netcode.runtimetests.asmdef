@@ -8,14 +8,15 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.Dispatcher",
         "Unity.Multiplayer.Tools.MetricCollection",
         "Unity.Networking.Transport",
         "ClientNetworkTransform",
         "Unity.Netcode.TestHelpers.Runtime",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+      "Unity.Multiplayer.Tools.Adapters.Ngo1"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

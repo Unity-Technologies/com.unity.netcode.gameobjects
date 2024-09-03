@@ -18,8 +18,24 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
         private static async Task InitializeAdapterAsync()
         {
             var networkManager = await GetNetworkManagerAsync();
-            var ngo1Adapter = new Ngo1Adapter(networkManager);
+            if(networkManager.NetworkMetrics is NetworkMetrics)
+            {
+                Debug.LogWarning("Ngo1AdapterInitializer: NetworkMetrics already initialized. Skipping initialization.");
+                return;
+            }
+
+            var metrics = new NetworkMetrics();
+            networkManager.NetworkMetrics = metrics;
+
+            // metrics will notify the adapter directly
+            var ngo1Adapter = new Ngo1Adapter(networkManager, metrics.Dispatcher);
             NetworkAdapters.AddAdapter(ngo1Adapter);
+
+            NetworkSolutionInterface.SetInterface(new NetworkSolutionInterfaceParameters
+            {
+                NetworkObjectProvider = new NetworkObjectProvider(networkManager),
+            });
+
         }
 
         private static async Task<NetworkManager> GetNetworkManagerAsync()

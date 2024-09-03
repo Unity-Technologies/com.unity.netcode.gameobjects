@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 #endif // UNITY_EDITOR
 #if MULTIPLAYER_TOOLS
 [assembly: InternalsVisibleTo("Unity.Multiplayer.Tools.Adapters.Ngo1WithUtp2")]
+[assembly: InternalsVisibleTo("Unity.Multiplayer.Tools.Adapters.Ngo1")]
 #endif // MULTIPLAYER_TOOLS
 #if COM_UNITY_NETCODE_ADAPTER_UTP
 [assembly: InternalsVisibleTo("Unity.Netcode.Adapter.UTP")]

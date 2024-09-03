@@ -2,16 +2,15 @@
   "name": "Unity.Multiplayer.Tools.Adapters.Ngo1",
   "rootNamespace": "Unity.Multiplayer.Tools.Adapters.Ngo1",
   "references": [
-    "Unity.Multiplayer.Tools.Adapters",
+    "Unity.Collections",
     "Unity.Multiplayer.Tools.Common",
-    "Unity.Multiplayer.Tools.MetricEvents",
     "Unity.Multiplayer.Tools.MetricTypes",
-    "Unity.Multiplayer.Tools.NetStats",
+    "Unity.Multiplayer.Tools.Dispatcher",
     "Unity.Netcode.Runtime",
     "Unity.Multiplayer.Tools.Interfaces",
-    "Unity.Multiplayer.Tools.Interfaces.MetricTypes",
-    "Unity.Multiplayer.Tools.Interfaces.MetricCollection",
-    "Unity.Multiplayer.Tools.MetricCollection"
+    "Unity.Multiplayer.Tools.Interfaces.MetricTypes", 
+    "Unity.Multiplayer.Tools.MetricCollection",
+    "Unity.Multiplayer.Tools.ReaderWriters"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
@@ -20,13 +19,13 @@
   "precompiledReferences": [],
   "autoReferenced": false,
   "defineConstraints": [
-    "UNITY_NETCODE_GAMEOBJECTS_1_0"
+    "UNITY_MULTIPLAYER_TOOLS"
   ],
   "versionDefines": [
     {
-      "name": "com.unity.netcode.gameobjects",
-      "expression": "[1.0.0,2.0.0)",
-      "define": "UNITY_NETCODE_GAMEOBJECTS_1_0"
+      "name": "com.unity.multiplayer.tools",
+      "expression": "2.0.0",
+      "define": "UNITY_MULTIPLAYER_TOOLS"
     }
   ],
   "noEngineReferences": false
