@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3034)
+
 ### Fixed
 
 - Fixed issue where collections v2.2.x was not supported when using UTP v2.2.x within Unity v2022.3. (#3033)
