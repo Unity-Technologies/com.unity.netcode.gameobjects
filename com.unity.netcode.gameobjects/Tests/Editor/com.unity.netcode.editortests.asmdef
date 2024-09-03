@@ -9,10 +9,11 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.Dispatcher",
         "Unity.Multiplayer.Tools.MetricCollection",
         "Unity.Networking.Transport",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Multiplayer.Tools.Adapters.Ngo1"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

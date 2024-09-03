@@ -1,0 +1,35 @@
+{
+    "name": "Unity.Multiplayer.Tools.Adapters.Ngo1WithUtp2",
+    "rootNamespace": "Unity.Multiplayer.Tools.Adapters.NgoWithUtp2",
+    "references": [
+        "Unity.Multiplayer.Tools.Adapters",
+        "Unity.Networking.Transport",
+        "Unity.Netcode.Runtime",
+        "Unity.Multiplayer.Tools.Adapters.Utp2",
+        "Unity.Multiplayer.Tools.Interfaces"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_2022_2_OR_NEWER",
+        "UTP_TRANSPORT_2_0_ABOVE",
+        "UNITY_NETCODE_GAMEOBJECTS_1_1_ABOVE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.transport",
+            "expression": "2.0.0-exp",
+            "define": "UTP_TRANSPORT_2_0_ABOVE"
+        },
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "1.1.0",
+            "define": "UNITY_NETCODE_GAMEOBJECTS_1_1_ABOVE"
+        }
+    ],
+    "noEngineReferences": false
+}

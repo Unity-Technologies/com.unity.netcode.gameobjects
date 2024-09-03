@@ -377,7 +377,9 @@ namespace Unity.Netcode
                         MessageManager.ProcessSendQueues();
 
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
-                        MetricsManager.UpdateMetrics();
+                        NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
+                        NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectionManager.ConnectedClients.Count : 1);
+                        NetworkMetrics.DispatchFrame();
 
                         // TODO: Determine a better way to handle this
                         NetworkObject.VerifyParentingStatus();
@@ -868,8 +870,7 @@ namespace Unity.Netcode
         /// </summary>
         internal IRealTimeProvider RealTimeProvider { get; private set; }
 
-        internal INetworkMetrics NetworkMetrics => MetricsManager.NetworkMetrics;
-        internal NetworkMetricsManager MetricsManager = new NetworkMetricsManager();
+        internal INetworkMetrics NetworkMetrics { get; set; } = new NullNetworkMetrics();
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
         internal NetworkMessageManager MessageManager = null;
 
@@ -1253,7 +1254,9 @@ namespace Unity.Netcode
 
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
-            MetricsManager.Initialize(this);
+
+
+           // TODO:TIPHAINE MetricsManager.Initialize(this);
 
             {
                 MessageManager = new NetworkMessageManager(new DefaultMessageSender(this), this);

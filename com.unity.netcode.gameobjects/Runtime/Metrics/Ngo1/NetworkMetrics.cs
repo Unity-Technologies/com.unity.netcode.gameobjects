@@ -1,13 +1,12 @@
-#if MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Profiling;
 
 namespace Unity.Netcode
 {
+
     internal class NetworkMetrics : INetworkMetrics
     {
         private const ulong k_MaxMetricsPerFrame = 1000L;
@@ -63,7 +62,6 @@ namespace Unity.Netcode
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id)
         {
             ShouldResetOnDispatch = true,
@@ -85,7 +83,6 @@ namespace Unity.Netcode
             ShouldResetOnDispatch = true,
         };
         private readonly Gauge m_PacketLossGauge = new Gauge(NetworkMetricTypes.PacketLoss.Id);
-#endif
 
         private ulong m_NumberOfMetricsThisFrame;
 
@@ -111,8 +108,6 @@ namespace Unity.Netcode
                 .WithGauges(m_PacketLossGauge)
 #endif
                 .Build();
-
-            Dispatcher.RegisterObserver(NetcodeObserver.Observer);
         }
 
         internal IMetricDispatcher Dispatcher { get; }
@@ -528,9 +523,4 @@ namespace Unity.Netcode
         }
     }
 
-    internal class NetcodeObserver
-    {
-        public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
-    }
 }
-#endif

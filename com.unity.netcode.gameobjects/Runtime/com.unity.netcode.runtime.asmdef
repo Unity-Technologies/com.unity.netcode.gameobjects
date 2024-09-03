@@ -7,7 +7,7 @@
         "Unity.Multiplayer.NetStatsReporting",
         "Unity.Multiplayer.NetworkSolutionInterface",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.Dispatcher",
         "Unity.Multiplayer.Tools.NetStatsReporting",
         "Unity.Multiplayer.Tools.NetworkSolutionInterface",
         "Unity.Multiplayer.Tools.MetricCollection",

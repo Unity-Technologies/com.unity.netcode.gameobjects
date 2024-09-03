@@ -1,4 +1,3 @@
-#if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools;
 using UnityEngine;
 
@@ -24,4 +23,3 @@ namespace Unity.Netcode
         }
     }
 }
-#endif
