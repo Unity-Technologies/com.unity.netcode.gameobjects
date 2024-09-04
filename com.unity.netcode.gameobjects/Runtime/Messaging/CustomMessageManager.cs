@@ -263,6 +263,8 @@ namespace Unity.Netcode
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public void SendNamedMessage(string messageName, ulong clientId, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
+            ValidateNamedMessage(messageStream, networkDelivery);
+
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
             {
@@ -303,6 +305,27 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Validate the size of the message. If it's a non-fragmented delivery type the message must fit within the
+        /// max allowed size with headers also subtracted. Only validates in editor and development builds.
+        /// </summary>
+        /// <param name="messageStream">The named message payload</param>
+        /// <param name="networkDelivery">Delivery method</param>
+        /// <exception cref="OverflowException">Exception thrown in case validation fails</exception>
+        private unsafe void ValidateNamedMessage(FastBufferWriter messageStream, NetworkDelivery networkDelivery)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            var maxNonFragmentedSize = m_NetworkManager.MessageManager.NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>() - sizeof(ulong)/*MessageName hash*/ - sizeof(NetworkBatchHeader);
+            if (networkDelivery != NetworkDelivery.ReliableFragmentedSequenced
+                && messageStream.Length > maxNonFragmentedSize)
+            {
+                throw new OverflowException($"Given named message size ({messageStream.Length} bytes) is greater than " +
+                    $"the maximum allowed for the selected delivery method ({maxNonFragmentedSize} bytes). Try using " +
+                    $"ReliableFragmentedSequenced delivery method instead.");
+            }
+#endif
+        }
+
+        /// <summary>
         /// Sends the named message
         /// </summary>
         /// <param name="messageName">The message name to send</param>
@@ -320,6 +343,8 @@ namespace Unity.Netcode
             {
                 throw new ArgumentNullException(nameof(clientIds), "You must pass in a valid clientId List");
             }
+
+            ValidateNamedMessage(messageStream, networkDelivery);
 
             ulong hash = 0;
             switch (m_NetworkManager.NetworkConfig.RpcHashSize)
