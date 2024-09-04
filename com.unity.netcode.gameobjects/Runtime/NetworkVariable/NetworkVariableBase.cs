@@ -187,7 +187,9 @@ namespace Unity.Netcode
 
         internal bool CanSend()
         {
-            var timeSinceLastUpdate = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime - LastUpdateSent;
+            // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
+            var time = m_InternalNetworkManager.CMBServiceConnection || !m_InternalNetworkManager.IsServer ? m_NetworkBehaviour.NetworkManager.ServerTime.Time : m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
+            var timeSinceLastUpdate = time - LastUpdateSent;
             return
                 (
                     UpdateTraits.MaxSecondsBetweenUpdates > 0 &&
@@ -201,7 +203,8 @@ namespace Unity.Netcode
 
         internal void UpdateLastSentTime()
         {
-            LastUpdateSent = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
+            // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
+            LastUpdateSent = m_InternalNetworkManager.CMBServiceConnection || !m_InternalNetworkManager.IsServer ? m_NetworkBehaviour.NetworkManager.ServerTime.Time : m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
         }
 
         internal static bool IgnoreInitializeWarning;
