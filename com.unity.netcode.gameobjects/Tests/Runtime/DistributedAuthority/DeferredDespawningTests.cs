@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -35,6 +36,7 @@ namespace Unity.Netcode.RuntimeTests
                     daisyChainPrevious.PrefabToSpawnWhenDespawned = daisyChainBehaviour.gameObject;
                 }
                 m_DaisyChainedDespawnObjects.Add(daisyChainNode);
+                daisyChainNode.SetActive(false);
 
                 daisyChainPrevious = daisyChainBehaviour;
             }
@@ -42,19 +44,20 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-
-
         [UnityTest]
         public IEnumerator DeferredDespawning()
         {
+            DeferredDespawnDaisyChained.TestFailed.Clear();
             m_SessionOwner = GetSessionOwner();
-
-            DeferredDespawnDaisyChained.EnableVerbose = m_EnableVerboseDebug;
+            foreach (var daisyChaingedObject in m_DaisyChainedDespawnObjects)
+            {
+                daisyChaingedObject.SetActive(true);
+            }
             var rootInstance = SpawnObject(m_DaisyChainedDespawnObjects[0], m_SessionOwner);
             DeferredDespawnDaisyChained.ReachedLastChainInstance = ReachedLastChainObject;
-            var timeoutHelper = new TimeoutHelper(300);
+            var timeoutHelper = new TimeoutHelper(30);
             yield return WaitForConditionOrTimeOut(HaveAllClientsReachedEndOfChain, timeoutHelper);
-            AssertOnTimeout($"Timed out waiting for all children to reach the end of their chained deferred despawns!", timeoutHelper);
+            AssertOnTimeout($"Timed out waiting for all children to reach the end of their chained deferred despawns! {DeferredDespawnDaisyChained.TestFailed.ToString()}", timeoutHelper);
         }
 
         private bool HaveAllClientsReachedEndOfChain()
@@ -115,9 +118,11 @@ namespace Unity.Netcode.RuntimeTests
 
         private DeferredDespawnDaisyChained m_NextNodeSpawned = null;
 
+        public static StringBuilder TestFailed = new StringBuilder();
+
         private void FailTest(string msg)
         {
-            Assert.Fail($"[{nameof(DeferredDespawnDaisyChained)}][Client-{NetworkManager.LocalClientId}] {msg}");
+            TestFailed.AppendLine($"[{nameof(DeferredDespawnDaisyChained)}][Client-{NetworkManager.LocalClientId}] {msg}");
         }
 
         public override void OnNetworkSpawn()
@@ -138,6 +143,7 @@ namespace Unity.Netcode.RuntimeTests
             if (!HasAuthority)
             {
                 m_ValidateDirtyNetworkVarUpdate.OnValueChanged += OnValidateDirtyChanged;
+                m_ValidateDirtyNetworkVarUpdate.Value.TryGet(out m_NextNodeSpawned, NetworkManager);
             }
 
             if (HasAuthority && IsRoot)
@@ -150,6 +156,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private void OnValidateDirtyChanged(NetworkBehaviourReference previous, NetworkBehaviourReference current)
         {
+            Log($"[OnValidateDirtyChanged] Getting NetworkBehaviour component....");
             if (!HasAuthority)
             {
                 if (!current.TryGet(out m_NextNodeSpawned, NetworkManager))
@@ -161,6 +168,11 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     FailTest($"[{nameof(NetworkManager)}][{nameof(NetworkBehaviourReference.TryGet)}] The {nameof(NetworkManager)} of {nameof(m_NextNodeSpawned)} does not match the local relative {nameof(NetworkManager)} instance!");
                 }
+
+                if (m_NextNodeSpawned != null)
+                {
+                    Log($"[OnValidateDirtyChanged] m_NextNodeSpawned set -- {m_NextNodeSpawned.name}!");
+                }
             }
         }
 
@@ -168,8 +180,19 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (!HasAuthority && !NetworkManager.ShutdownInProgress)
             {
+                Log($"[OnNetworkDespawn] despawning... ");
                 if (PrefabToSpawnWhenDespawned != null)
                 {
+                    if (m_NextNodeSpawned == null)
+                    {
+                        Log($"[OnNetworkDespawn] No m_NextNodeSpawned set!!!");
+                        if (!m_ValidateDirtyNetworkVarUpdate.Value.TryGet(out m_NextNodeSpawned, NetworkManager))
+                        {
+                            FailTest($"[{nameof(OnValidateDirtyChanged)}][{nameof(NetworkBehaviourReference)}] Failed to get the {nameof(DeferredDespawnDaisyChained)} behaviour from the {nameof(NetworkBehaviourReference)}!");
+                            return;
+                        }
+                    }
+                    Log($"[OnNetworkDespawn] Pinging {m_NextNodeSpawned.name}...");
                     m_NextNodeSpawned.PingInstance();
                 }
                 else
@@ -182,11 +205,13 @@ namespace Unity.Netcode.RuntimeTests
 
         private void InvokeDespawn()
         {
+            Log($"Despawn with defer started! DeferDespawnTick = {DeferDespawnTick}");
             if (!HasAuthority)
             {
                 FailTest($"[{nameof(InvokeDespawn)}] Client is not the authority but this was invoked (integration test logic issue)!");
             }
             NetworkObject.DeferDespawn(DeferDespawnTick);
+            Log($"Should despawn on tick {DeferDespawnTick + NetworkManager.ServerTime.Tick}...");
         }
 
         public override void OnDeferringDespawn(int despawnTick)
@@ -200,13 +225,13 @@ namespace Unity.Netcode.RuntimeTests
             {
                 FailTest($"[{nameof(OnDeferringDespawn)}] The passed in {despawnTick} parameter ({despawnTick}) does not equal the expected value of ({DeferDespawnTick + NetworkManager.ServerTime.Tick})!");
             }
-
+            Log($"[OnDeferringDespawn] Deferring despawn...");
             if (PrefabToSpawnWhenDespawned != null)
             {
                 var deferNetworkObject = PrefabToSpawnWhenDespawned.GetComponent<NetworkObject>().InstantiateAndSpawn(NetworkManager);
                 var deferComponent = deferNetworkObject.GetComponent<DeferredDespawnDaisyChained>();
                 // Slowly increment the despawn tick count as we process the chain of deferred despawns
-                deferComponent.DeferDespawnTick = DeferDespawnTick + 1;
+                deferComponent.DeferDespawnTick = k_StartingDeferTick + 1;
                 // This should get updated on all non-authority instances before they despawn
                 m_ValidateDirtyNetworkVarUpdate.Value = new NetworkBehaviourReference(deferComponent);
             }
@@ -218,13 +243,17 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private bool m_DeferredDespawn;
+        private bool m_InstantiatedObject;
+        private float m_TickDelay;
+
+        private DeferredDespawnDaisyChained m_DeferredComponent;
+        private NetworkObject m_DeferredObject;
         private void Update()
         {
             if (!IsSpawned || !HasAuthority || m_DeferredDespawn)
             {
                 return;
             }
-
             // Wait until all clients have this instance
             foreach (var clientId in NetworkManager.ConnectedClientsIds)
             {
@@ -252,8 +281,6 @@ namespace Unity.Netcode.RuntimeTests
                     return;
                 }
             }
-
-            // If we made it here, then defer despawn this instance
             InvokeDespawn();
             m_DeferredDespawn = true;
         }
@@ -264,7 +291,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return;
             }
-            Debug.Log($"[{name}][Client-{NetworkManager.LocalClientId}][{NetworkObjectId}] {message}");
+            Debug.Log($"[{name}][Client-{NetworkManager.LocalClientId}][{NetworkObjectId}][{NetworkManager.ServerTime.Tick}][DD: {NetworkManager.ServerTime.Tick + DeferDespawnTick}] {message}");
         }
     }
 }

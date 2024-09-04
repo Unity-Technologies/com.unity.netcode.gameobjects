@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -13,14 +14,13 @@ namespace Unity.Netcode.RuntimeTests
     /// so we can validate these issues. While this test does
     /// partially validate it we still need to manually validate
     /// with a service connection.
-    /// </summary>
-    [TestFixture(HostOrServer.Host)]
+    /// </summary>  
     [TestFixture(HostOrServer.DAHost)]
     public class RpcProxyMessageTesting : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 2;
+        protected override int NumberOfClients => 4;
 
-        private List<RpcProxyText> m_ProxyTestInstances = new List<RpcProxyText>();
+        private List<RpcProxyTest> m_ProxyTestInstances = new List<RpcProxyTest>();
 
         private StringBuilder m_ValidationLogger = new StringBuilder();
 
@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-            m_PlayerPrefab.AddComponent<RpcProxyText>();
+            m_PlayerPrefab.AddComponent<RpcProxyTest>();
             base.OnCreatePlayerPrefab();
         }
 
@@ -44,28 +44,38 @@ namespace Unity.Netcode.RuntimeTests
             m_ValidationLogger.Clear();
             foreach (var proxy in m_ProxyTestInstances)
             {
-                if (proxy.ReceivedRpc.Count < NumberOfClients)
+                foreach(var client in m_ClientNetworkManagers)
                 {
-                    m_ValidationLogger.AppendLine($"Not all clients received RPC from Client-{proxy.OwnerClientId}!");
-                }
-                foreach (var clientId in proxy.ReceivedRpc)
-                {
-                    if (clientId == proxy.OwnerClientId)
+                    if (client.LocalClientId == proxy.OwnerClientId)
                     {
-                        m_ValidationLogger.AppendLine($"Client-{proxy.OwnerClientId} sent itself an Rpc!");
+                        continue;
+                    }    
+                    var playerClone = m_PlayerNetworkObjects[client.LocalClientId][proxy.OwnerClientId];
+                    var proxyClone = playerClone.GetComponent<RpcProxyTest>();
+                    if (proxyClone.ReceivedRpc.Count != 1)
+                    {
+                        m_ValidationLogger.AppendLine($"[Client-{client.LocalClientId}] Did not receive an RPC from Client-{proxy.OwnerClientId}!");
                     }
+                }
+                if (proxy.ReceivedRpc.Contains(proxy.OwnerClientId))
+                {
+                    m_ValidationLogger.AppendLine($"Client-{proxy.OwnerClientId} sent itself an Rpc!");
                 }
             }
             return m_ValidationLogger.Length == 0;
         }
 
-
+        [UnityTest]
         public IEnumerator ProxyDoesNotInvokeOnSender()
         {
-            m_ProxyTestInstances.Add(m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<RpcProxyText>());
+            if (!UseCMBService())
+            {
+                m_ProxyTestInstances.Add(m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
+            }
+            
             foreach (var client in m_ClientNetworkManagers)
             {
-                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyText>());
+                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
             }
 
             foreach (var clientProxyTest in m_ProxyTestInstances)
@@ -77,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout(m_ValidationLogger.ToString());
         }
 
-        public class RpcProxyText : NetworkBehaviour
+        public class RpcProxyTest : NetworkBehaviour
         {
             public List<ulong> ReceivedRpc = new List<ulong>();
 

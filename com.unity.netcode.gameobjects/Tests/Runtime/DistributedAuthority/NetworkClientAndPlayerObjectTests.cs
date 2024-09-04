@@ -22,7 +22,6 @@ namespace Unity.Netcode.RuntimeTests
         private List<GameObject> m_PlayerPrefabs = new List<GameObject>();
         private Dictionary<ulong, uint> m_ChangedPlayerPrefabs = new Dictionary<ulong, uint>();
 
-
         public NetworkClientAndPlayerObjectTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
         }
@@ -45,7 +44,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
+            var sessionOwner = GetSessionOwner();
+            networkManager.NetworkConfig.Prefabs = sessionOwner.NetworkConfig.Prefabs;
             if (m_DistributedAuthority)
             {
                 networkManager.OnFetchLocalPlayerPrefabToSpawn = FetchPlayerPrefabToSpawn;
@@ -101,7 +101,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorLogLevel2.Clear();
 
             // Number of connected clients plus the DAHost
-            var expectedCount = m_ClientNetworkManagers.Length + (m_UseHost ? 1 : 0);
+            var expectedCount = UseCMBService() ? m_ClientNetworkManagers.Length : m_ClientNetworkManagers.Length + (m_UseHost ? 1 : 0);
 
             if (networkManager.ConnectedClients.Count != expectedCount)
             {
@@ -265,7 +265,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ChangedPlayerPrefabs.Clear();
             var playerInstance = (GameObject)null;
             var playerPrefabToSpawn = (NetworkObject)null;
-            if (m_UseHost)
+            if (m_UseHost && !UseCMBService())
             {
                 playerPrefabToSpawn = GetRandomPlayerPrefab();
                 playerInstance = SpawnPlayerObject(playerPrefabToSpawn.gameObject, m_ServerNetworkManager);
