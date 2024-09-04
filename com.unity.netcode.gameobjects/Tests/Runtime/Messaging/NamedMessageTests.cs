@@ -243,9 +243,8 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public unsafe void ErrorMessageIsPrintedWhenAttemptingToSendNamedMessageWithTooBigBuffer()
         {
-            // First try a valid send with the maximum allowed size (this is atm 1264, but 1269 is actually safe depending on message header packing)
+            // First try a valid send with the maximum allowed size (this is atm 1264)
             var msgSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>() - sizeof(ulong)/*MessageName hash*/ - sizeof(NetworkBatchHeader);
-            // Buffer size must be able to contain message but otherwise doesn't matter (internally will be limited to max size)
             var bufferSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize;
             var messageName = Guid.NewGuid().ToString();
             var messageContent = new byte[msgSize];
@@ -254,12 +253,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 writer.TryBeginWrite(msgSize);
                 writer.WriteBytes(messageContent, msgSize, 0);
-                // Try both code paths for named messages
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { FirstClient.LocalClientId }, writer);
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, writer);
             }
 
-            msgSize = 1270;
+            msgSize++;
             messageContent = new byte[msgSize];
             writer = new FastBufferWriter(bufferSize, Allocator.Temp, bufferSize*2);
             using (writer)
@@ -271,15 +269,14 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, new List<ulong> { FirstClient.LocalClientId }, writer);
                     }).Message;
-                // Just verify we're getting our custom message and not a generic exception
-                Assert.IsTrue(message.Contains($"Given named message size ({msgSize} bytes) is greater than the maximum"), $"Unexpected exception: {message}");
+                Assert.IsTrue(message.Contains($"Given message size ({msgSize} bytes) is greater than the maximum"), $"Unexpected exception: {message}");
 
                 message = Assert.Throws<OverflowException>(
                     () =>
                     {
                         m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(messageName, FirstClient.LocalClientId, writer);
                     }).Message;
-                Assert.IsTrue(message.Contains($"Given named message size ({msgSize} bytes) is greater than the maximum"), $"Unexpected exception: {message}");
+                Assert.IsTrue(message.Contains($"Given message size ({msgSize} bytes) is greater than the maximum"), $"Unexpected exception: {message}");
             }
         }
     }
