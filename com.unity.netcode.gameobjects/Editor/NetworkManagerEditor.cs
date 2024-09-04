@@ -13,7 +13,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
-    public class NetworkManagerEditor : NetcodeEditorBase<MonoBehaviour>
+    public class NetworkManagerEditor : NetcodeEditorBase<NetworkManager>
     {
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
@@ -170,13 +170,6 @@ namespace Unity.Netcode.Editor
 
         private void DisplayNetworkManagerProperties()
         {
-            Initialize();
-            CheckNullProperties();
-
-#if !MULTIPLAYER_TOOLS
-            DrawInstallMultiplayerToolsTip();
-#endif
-
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
@@ -297,48 +290,50 @@ namespace Unity.Netcode.Editor
                 }
 
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
 
+        private void DisplayCallToActionButtons()
+        {
+            if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
+            {
+                string buttonDisabledReasonSuffix = "";
 
-                // Start buttons below
+                if (!EditorApplication.isPlaying)
                 {
-                    string buttonDisabledReasonSuffix = "";
+                    buttonDisabledReasonSuffix = ". This can only be done in play mode";
+                    GUI.enabled = false;
+                }
 
-                    if (!EditorApplication.isPlaying)
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                {
+                    if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
                     {
-                        buttonDisabledReasonSuffix = ". This can only be done in play mode";
-                        GUI.enabled = false;
+                        m_NetworkManager.StartHost();
                     }
 
-                    if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                    if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
                     {
-                        if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartHost();
-                        }
-
-                        if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartServer();
-                        }
-
-                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartClient();
-                        }
-                    }
-                    else
-                    {
-                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartClient();
-                        }
+                        m_NetworkManager.StartServer();
                     }
 
-
-                    if (!EditorApplication.isPlaying)
+                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
                     {
-                        GUI.enabled = true;
+                        m_NetworkManager.StartClient();
                     }
+                }
+                else
+                {
+                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
+                    {
+                        m_NetworkManager.StartClient();
+                    }
+                }
+
+
+                if (!EditorApplication.isPlaying)
+                {
+                    GUI.enabled = true;
                 }
             }
             else
@@ -367,13 +362,18 @@ namespace Unity.Netcode.Editor
             }
         }
 
-
         /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             var networkManager = target as NetworkManager;
+            Initialize();
+            CheckNullProperties();
+#if !MULTIPLAYER_TOOLS
+            DrawInstallMultiplayerToolsTip();
+#endif
             void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
             DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
+            DisplayCallToActionButtons();
             base.OnInspectorGUI();
         }
 
