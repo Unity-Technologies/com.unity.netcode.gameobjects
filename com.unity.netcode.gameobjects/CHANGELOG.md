@@ -10,13 +10,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3034)
+
 ### Fixed
 
 - Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3046)
 - Fixed issue where collections v2.2.x was not supported when using UTP v2.2.x within Unity v2022.3. (#3033)
+- Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3029)
 - Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3027)
 
 ### Changed
+
 
 ## [1.11.0] - 2024-08-20
 
