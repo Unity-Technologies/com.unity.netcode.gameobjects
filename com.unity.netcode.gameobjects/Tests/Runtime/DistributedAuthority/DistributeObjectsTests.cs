@@ -257,7 +257,7 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 networkManager.NetworkConfig.Prefabs = m_SessionOwner.NetworkConfig.Prefabs;
-            }            
+            }
             //networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = false;
             //networkManager.NetworkConfig.EnableSceneManagement = false;
 

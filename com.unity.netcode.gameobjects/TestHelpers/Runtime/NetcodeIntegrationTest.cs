@@ -144,7 +144,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_ClientNetworkManagers.Length > 0)
             {
                 var sessionOwnerId = m_ClientNetworkManagers[0].CurrentSessionOwner;
-                return m_ClientNetworkManagers.Where((c)=>c.LocalClientId == sessionOwnerId).FirstOrDefault();
+                return m_ClientNetworkManagers.Where((c) => c.LocalClientId == sessionOwnerId).FirstOrDefault();
             }
             return null;
         }
@@ -936,7 +936,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
-                    if (!UseCMBService() &&(m_UseHost || m_ServerNetworkManager.IsHost))
+                    if (!UseCMBService() && (m_UseHost || m_ServerNetworkManager.IsHost))
                     {
 #if UNITY_2023_1_OR_NEWER
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
@@ -1507,10 +1507,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     actualConnected++;
                 }
             }
-           
+
             var expectedCount = m_ServerNetworkManager.IsHost && !UseCMBService() && !m_ServerNetworkManager.IsConnectedClient ? clientsToCheck.Length + 1 : clientsToCheck.Length;
-           
-            
+
+
             if (expectedCount != actualConnected)
             {
                 var currentCount = GetSessionOwner().ConnectedClients.Count;

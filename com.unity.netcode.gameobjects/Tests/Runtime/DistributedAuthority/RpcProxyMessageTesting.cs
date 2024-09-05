@@ -44,12 +44,12 @@ namespace Unity.Netcode.RuntimeTests
             m_ValidationLogger.Clear();
             foreach (var proxy in m_ProxyTestInstances)
             {
-                foreach(var client in m_ClientNetworkManagers)
+                foreach (var client in m_ClientNetworkManagers)
                 {
                     if (client.LocalClientId == proxy.OwnerClientId)
                     {
                         continue;
-                    }    
+                    }
                     var playerClone = m_PlayerNetworkObjects[client.LocalClientId][proxy.OwnerClientId];
                     var proxyClone = playerClone.GetComponent<RpcProxyTest>();
                     if (proxyClone.ReceivedRpc.Count != 1)
@@ -72,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_ProxyTestInstances.Add(m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
             }
-            
+
             foreach (var client in m_ClientNetworkManagers)
             {
                 m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
