@@ -20,6 +20,10 @@ namespace Unity.Netcode.Components
 
 #if UNITY_EDITOR
         internal virtual bool HideInterpolateValue => false;
+
+        [HideInInspector]
+        [SerializeField]
+        internal bool NetworkTransformExpanded;
 #endif
 
         #region NETWORK TRANSFORM STATE
@@ -941,6 +945,19 @@ namespace Unity.Netcode.Components
 #endif
         public AuthorityModes AuthorityMode;
 
+
+        /// <summary>
+        /// When enabled, any parented <see cref="NetworkObject"/>s (children) of this <see cref="NetworkObject"/> will be forced to synchronize their transform when this <see cref="NetworkObject"/> instance sends a state update.<br />
+        /// This can help to reduce out of sync updates that can lead to slight jitter between a parent and its child/children.
+        /// </summary>
+        /// <remarks>
+        /// - If this is set on a child and the parent does not have this set then the child will not be tick synchronized with its parent. <br />
+        /// - If the parent instance does not send any state updates, the children will still send state updates when exceeding axis delta threshold. <br />
+        /// - This does not need to be set on children to be applied.
+        /// </remarks>
+        [Tooltip("When enabled, any parented children of this instance will send a state update when this instance sends a state update. If this instance doesn't send a state update, the children will still send state updates when reaching their axis specified threshold delta. Children do not have to have this setting enabled.")]
+        public bool TickSyncChildren = false;
+
         /// <summary>
         /// The default position change threshold value.
         /// Any changes above this threshold will be replicated.
@@ -1176,6 +1193,22 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
 
         /// <summary>
+        /// When enabled, the NetworkTransform will automatically handle transitioning into the respective transform space when its <see cref="NetworkObject"/> parent changes.<br />
+        /// When parented: Automatically transitions into local space and coverts any existing pending interpolated states to local space on non-authority instances.<br />
+        /// When deparented: Automatically transitions into world space and converts any existing pending interpolated states to world space on non-authority instances.<br />
+        /// Set on the root <see cref="NetworkTransform"/> instance (nested <see cref="NetworkTransform"/> components should be pre-set in-editor to local space. <br />
+        /// </summary>
+        /// <remarks>
+        /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
+        /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
+        /// Does not auto-synchronize clients if changed on the authority instance during runtime (i.e. apply this setting in-editor).
+        /// </remarks>
+        public bool SwitchTransformSpaceWhenParented = false;
+
+        protected bool PositionInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_PositionInterpolator != null && m_PositionInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+        protected bool RotationInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_RotationInterpolator != null && m_RotationInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+
+        /// <summary>
         /// When enabled (default) interpolation is applied.
         /// When disabled interpolation is disabled.
         /// </summary>
@@ -1248,7 +1281,7 @@ namespace Unity.Netcode.Components
                 else
                 {
                     // Otherwise, just get the current position
-                    return m_CurrentPosition;
+                    return m_InternalCurrentPosition;
                 }
             }
         }
@@ -1281,7 +1314,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                return m_CurrentRotation;
+                return m_InternalCurrentRotation;
             }
         }
 
@@ -1312,7 +1345,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                return m_CurrentScale;
+                return m_InternalCurrentScale;
             }
         }
 
@@ -1344,15 +1377,14 @@ namespace Unity.Netcode.Components
 
         // Non-Authoritative's current position, scale, and rotation that is used to assure the non-authoritative side cannot make adjustments to
         // the portions of the transform being synchronized.
-        private Vector3 m_CurrentPosition;
+        private Vector3 m_InternalCurrentPosition;
         private Vector3 m_TargetPosition;
-        private Vector3 m_CurrentScale;
+        private Vector3 m_InternalCurrentScale;
         private Vector3 m_TargetScale;
-        private Quaternion m_CurrentRotation;
+        private Quaternion m_InternalCurrentRotation;
         private Vector3 m_TargetRotation;
 
-        // DANGO-EXP TODO: ADD Rigidbody2D
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         private bool m_UseRigidbodyForMotion;
         private NetworkRigidbodyBase m_NetworkRigidbodyInternal;
 
@@ -1436,6 +1468,7 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region ONSYNCHRONIZE
+
         /// <summary>
         /// This is invoked when a new client joins (server and client sides)
         /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
@@ -1450,7 +1483,7 @@ namespace Unity.Netcode.Components
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
-            var synchronizationState = new NetworkTransformState()
+            SynchronizeState = new NetworkTransformState()
             {
                 HalfEulerRotation = new HalfVector3(),
                 HalfVectorRotation = new HalfVector4(),
@@ -1469,33 +1502,38 @@ namespace Unity.Netcode.Components
                     writer.WriteValueSafe(k_NetworkTransformStateMagic);
                 }
 
-                synchronizationState.IsTeleportingNextFrame = true;
+                SynchronizeState.IsTeleportingNextFrame = true;
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
-                CheckForStateChange(ref synchronizationState, ref transformToCommit, true, targetClientId);
-                synchronizationState.NetworkSerialize(serializer);
-                SynchronizeState = synchronizationState;
+                CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
+                SynchronizeState.NetworkSerialize(serializer);
             }
             else
             {
-                synchronizationState.NetworkSerialize(serializer);
-                // Set the transform's synchronization modes
-                InLocalSpace = synchronizationState.InLocalSpace;
-                Interpolate = synchronizationState.UseInterpolation;
-                UseQuaternionSynchronization = synchronizationState.QuaternionSync;
-                UseHalfFloatPrecision = synchronizationState.UseHalfFloatPrecision;
-                UseQuaternionCompression = synchronizationState.QuaternionCompression;
-                SlerpPosition = synchronizationState.UsePositionSlerp;
-                UpdatePositionSlerp();
-
-                // Teleport/Fully Initialize based on the state
-                ApplyTeleportingState(synchronizationState);
-                SynchronizeState = synchronizationState;
-                m_LocalAuthoritativeNetworkState = synchronizationState;
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-                m_LocalAuthoritativeNetworkState.IsSynchronizing = false;
+                SynchronizeState.NetworkSerialize(serializer);
             }
+        }
+
+        /// <summary>
+        /// We now apply synchronization after everything has spawned
+        /// </summary>
+        private void ApplySynchronization()
+        {
+            // Set the transform's synchronization modes
+            InLocalSpace = SynchronizeState.InLocalSpace;
+            Interpolate = SynchronizeState.UseInterpolation;
+            UseQuaternionSynchronization = SynchronizeState.QuaternionSync;
+            UseHalfFloatPrecision = SynchronizeState.UseHalfFloatPrecision;
+            UseQuaternionCompression = SynchronizeState.QuaternionCompression;
+            SlerpPosition = SynchronizeState.UsePositionSlerp;
+            UpdatePositionSlerp();
+            // Teleport/Fully Initialize based on the state
+            ApplyTeleportingState(SynchronizeState);
+            m_LocalAuthoritativeNetworkState = SynchronizeState;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+            m_LocalAuthoritativeNetworkState.IsSynchronizing = false;
+            SynchronizeState.IsSynchronizing = false;
         }
         #endregion
 
@@ -1577,7 +1615,7 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             // TODO: Make this an authority flag
             // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
             if (m_NetworkRigidbodyInternal != null)
@@ -1587,7 +1625,7 @@ namespace Unity.Netcode.Components
 #endif
 
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
-            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
+            if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: settingState))
             {
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
@@ -1629,7 +1667,7 @@ namespace Unity.Netcode.Components
                     m_DeltaSynch = true;
                 }
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 // We handle updating attached bodies when the "parent" body has a state update in order to keep their delta state updates tick synchronized.
                 if (m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.NetworkRigidbodyConnections.Count > 0)
                 {
@@ -1639,6 +1677,36 @@ namespace Unity.Netcode.Components
                     }
                 }
 #endif
+                // When enabled, any children will get tick synchronized with state updates
+                if (TickSyncChildren)
+                {
+                    // Synchronize any nested NetworkTransforms with the parent's
+                    foreach (var childNetworkTransform in NetworkObject.NetworkTransforms)
+                    {
+                        // Don't update the same instance
+                        if (childNetworkTransform == this)
+                        {
+                            continue;
+                        }
+                        if (childNetworkTransform.CanCommitToTransform)
+                        {
+                            childNetworkTransform.OnNetworkTick(true);
+                        }
+                    }
+
+                    // Synchronize any parented children with the parent's motion
+                    foreach (var child in m_ParentedChildren)
+                    {
+                        // Synchronize any nested NetworkTransforms of the child with the parent's
+                        foreach (var childNetworkTransform in child.NetworkTransforms)
+                        {
+                            if (childNetworkTransform.CanCommitToTransform)
+                            {
+                                childNetworkTransform.OnNetworkTick(true);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1683,7 +1751,7 @@ namespace Unity.Netcode.Components
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CheckForStateChange(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
+        private bool CheckForStateChange(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0, bool forceState = false)
         {
             // As long as we are not doing our first synchronization and we are sending unreliable deltas, each
             // NetworkTransform will stagger its full transfom synchronization over a 1 second period based on the
@@ -1715,7 +1783,7 @@ namespace Unity.Netcode.Components
             var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
             var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
 
@@ -1739,17 +1807,18 @@ namespace Unity.Netcode.Components
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
             // authority changed a property during runtime that requires a full synchronizing.
-#if COM_UNITY_MODULES_PHYSICS
-            if (InLocalSpace != networkState.InLocalSpace && !m_UseRigidbodyForMotion)
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            if ((InLocalSpace != networkState.InLocalSpace || isSynchronization) && !m_UseRigidbodyForMotion)
 #else
             if (InLocalSpace != networkState.InLocalSpace)
 #endif
             {
-                networkState.InLocalSpace = InLocalSpace;
+                networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
                 isDirty = true;
-                networkState.IsTeleportingNextFrame = true;
+                networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
+                forceState = SwitchTransformSpaceWhenParented;
             }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             else if (InLocalSpace && m_UseRigidbodyForMotion)
             {
                 // TODO: Provide more options than just FixedJoint
@@ -1788,28 +1857,6 @@ namespace Unity.Netcode.Components
                 }
 
                 networkState.IsParented = hasParentNetworkObject;
-
-                // When synchronizing with a parent, world position stays impacts position whether
-                // the NetworkTransform is using world or local space synchronization.
-                // WorldPositionStays: (always use world space)
-                // !WorldPositionStays: (always use local space)
-                // Exception: If it is an in-scene placed NetworkObject and it is parented under a GameObject
-                // then always use local space unless AutoObjectParentSync is disabled and the NetworkTransform
-                // is synchronizing in world space.
-                if (isSynchronization && networkState.IsParented)
-                {
-                    var parentedUnderGameObject = NetworkObject.transform.parent != null && !parentNetworkObject && NetworkObject.IsSceneObject.Value;
-                    if (NetworkObject.WorldPositionStays() && (!parentedUnderGameObject || (parentedUnderGameObject && !NetworkObject.AutoObjectParentSync && !InLocalSpace)))
-                    {
-                        position = transformToUse.position;
-                        networkState.InLocalSpace = false;
-                    }
-                    else
-                    {
-                        position = transformToUse.localPosition;
-                        networkState.InLocalSpace = true;
-                    }
-                }
             }
 
             if (Interpolate != networkState.UseInterpolation)
@@ -1858,21 +1905,21 @@ namespace Unity.Netcode.Components
             // Begin delta checks against last sent state update
             if (!UseHalfFloatPrecision)
             {
-                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= positionThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionX = position.x;
                     networkState.HasPositionX = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionY && (Mathf.Abs(networkState.PositionY - position.y) >= positionThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionY = position.y;
                     networkState.HasPositionY = true;
                     isPositionDirty = true;
                 }
 
-                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncPositionZ && (Mathf.Abs(networkState.PositionZ - position.z) >= positionThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.PositionZ = position.z;
                     networkState.HasPositionZ = true;
@@ -1882,7 +1929,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizePosition)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync;
+                isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
                 if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick)
                 {
                     isPositionDirty = true;
@@ -1988,21 +2035,21 @@ namespace Unity.Netcode.Components
 
             if (!UseQuaternionSynchronization)
             {
-                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= rotationThreshold.x || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleX = rotAngles.x;
                     networkState.HasRotAngleX = true;
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= rotationThreshold.y || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleY = rotAngles.y;
                     networkState.HasRotAngleY = true;
                     isRotationDirty = true;
                 }
 
-                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync))
+                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= rotationThreshold.z || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                 {
                     networkState.RotAngleZ = rotAngles.z;
                     networkState.HasRotAngleZ = true;
@@ -2012,7 +2059,7 @@ namespace Unity.Netcode.Components
             else if (SynchronizeRotation)
             {
                 // If we are teleporting then we can skip the delta threshold check
-                isRotationDirty = networkState.IsTeleportingNextFrame || isAxisSync;
+                isRotationDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
                 // For quaternion synchronization, if one angle is dirty we send a full update
                 if (!isRotationDirty)
                 {
@@ -2051,21 +2098,21 @@ namespace Unity.Netcode.Components
             {
                 if (!UseHalfFloatPrecision)
                 {
-                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleX = scale.x;
                         networkState.HasScaleX = true;
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleY = scale.y;
                         networkState.HasScaleY = true;
                         isScaleDirty = true;
                     }
 
-                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync))
+                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState))
                     {
                         networkState.ScaleZ = scale.z;
                         networkState.HasScaleZ = true;
@@ -2077,7 +2124,7 @@ namespace Unity.Netcode.Components
                     var previousScale = networkState.Scale;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync)
+                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame || isAxisSync || forceState)
                         {
                             isScaleDirty = true;
                             networkState.Scale[i] = scale[i];
@@ -2122,7 +2169,6 @@ namespace Unity.Netcode.Components
             return isDirty;
         }
 
-
         /// <summary>
         /// Authority subscribes to network tick events and will invoke
         /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
@@ -2144,7 +2190,13 @@ namespace Unity.Netcode.Components
                     return;
                 }
 
-#if COM_UNITY_MODULES_PHYSICS
+                // If we are nested and have already sent a state update this tick, then exit early (otherwise check for any changes in state)
+                if (IsNested && m_LocalAuthoritativeNetworkState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick)
+                {
+                    return;
+                }
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 // Let the parent handle the updating of this to keep the two synchronized
                 if (!isCalledFromParent && m_UseRigidbodyForMotion && m_NetworkRigidbodyInternal.ParentBody != null && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
                 {
@@ -2154,15 +2206,15 @@ namespace Unity.Netcode.Components
 
                 // Update any changes to the transform
                 var transformSource = transform;
-                OnUpdateAuthoritativeState(ref transformSource);
-#if COM_UNITY_MODULES_PHYSICS
-                m_CurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                OnUpdateAuthoritativeState(ref transformSource, isCalledFromParent);
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                m_InternalCurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
 #else
-                m_CurrentPosition = GetSpaceRelativePosition();
+                m_InternalCurrentPosition = GetSpaceRelativePosition();
                 m_TargetPosition = GetSpaceRelativePosition();
 #endif
             }
-            else // If we are no longer authority, unsubscribe to the tick event          
+            else // If we are no longer authority, unsubscribe to the tick event
             {
                 DeregisterForTickUpdate(this);
             }
@@ -2199,7 +2251,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected internal void ApplyAuthoritativeState()
         {
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             // TODO: Make this an authority flag
             // For now, just synchronize with the NetworkRigidbodyBase UseRigidBodyForMotion
             if (m_NetworkRigidbodyInternal != null)
@@ -2208,14 +2260,14 @@ namespace Unity.Netcode.Components
             }
 #endif
             var networkState = m_LocalAuthoritativeNetworkState;
-            // The m_CurrentPosition, m_CurrentRotation, and m_CurrentScale values are continually updated
+            // The m_InternalCurrentPosition, m_InternalCurrentRotation, and m_InternalCurrentScale values are continually updated
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
-            var adjustedPosition = m_CurrentPosition;
-            var adjustedRotation = m_CurrentRotation;
+            var adjustedPosition = m_InternalCurrentPosition;
+            var adjustedRotation = m_InternalCurrentRotation;
 
             var adjustedRotAngles = adjustedRotation.eulerAngles;
-            var adjustedScale = m_CurrentScale;
+            var adjustedScale = m_InternalCurrentScale;
 
             // Non-Authority Preservers the authority's transform state update modes
             InLocalSpace = networkState.InLocalSpace;
@@ -2234,6 +2286,7 @@ namespace Unity.Netcode.Components
             // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
+
             if (Interpolate)
             {
                 if (SynchronizePosition)
@@ -2337,28 +2390,42 @@ namespace Unity.Netcode.Components
                 // Update our current position if it changed or we are interpolating
                 if (networkState.HasPositionChange || Interpolate)
                 {
-                    m_CurrentPosition = adjustedPosition;
+                    m_InternalCurrentPosition = adjustedPosition;
                 }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_NetworkRigidbodyInternal.MovePosition(m_CurrentPosition);
+                    m_NetworkRigidbodyInternal.MovePosition(m_InternalCurrentPosition);
                     if (LogMotion)
                     {
-                        Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}][Interpolate: {networkState.UseInterpolation}][TransPos: {transform.position}][RBPos: {m_NetworkRigidbodyInternal.GetPosition()}][CurrentPos: {m_CurrentPosition}");
+                        Debug.Log($"[Client-{m_CachedNetworkManager.LocalClientId}][Interpolate: {networkState.UseInterpolation}][TransPos: {transform.position}][RBPos: {m_NetworkRigidbodyInternal.GetPosition()}][CurrentPos: {m_InternalCurrentPosition}");
                     }
 
                 }
                 else
 #endif
                 {
-                    if (InLocalSpace)
+                    if (PositionInLocalSpace)
                     {
-                        transform.localPosition = m_CurrentPosition;
+                        // This handles the edge case of transitioning from local to world space where applying a local
+                        // space value to a non-parented transform will be applied in world space. Since parenting is not
+                        // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
+                        // state update which can cause the body to seemingly "teleport" when it is just applying a local
+                        // space value relative to world space 0,0,0.
+                        if (SwitchTransformSpaceWhenParented && m_IsFirstNetworkTransform && Interpolate && m_PreviousNetworkObjectParent != null
+                            && transform.parent == null)
+                        {
+                            m_InternalCurrentPosition = m_PreviousNetworkObjectParent.transform.TransformPoint(m_InternalCurrentPosition);
+                            transform.position = m_InternalCurrentPosition;
+                        }
+                        else
+                        {
+                            transform.localPosition = m_InternalCurrentPosition;
+                        }
                     }
                     else
                     {
-                        transform.position = m_CurrentPosition;
+                        transform.position = m_InternalCurrentPosition;
                     }
                 }
             }
@@ -2369,24 +2436,37 @@ namespace Unity.Netcode.Components
                 // Update our current rotation if it changed or we are interpolating
                 if (networkState.HasRotAngleChange || Interpolate)
                 {
-                    m_CurrentRotation = adjustedRotation;
+                    m_InternalCurrentRotation = adjustedRotation;
                 }
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
                 {
-                    m_NetworkRigidbodyInternal.MoveRotation(m_CurrentRotation);
+                    m_NetworkRigidbodyInternal.MoveRotation(m_InternalCurrentRotation);
                 }
                 else
 #endif
                 {
-                    if (InLocalSpace)
+                    if (RotationInLocalSpace)
                     {
-                        transform.localRotation = m_CurrentRotation;
+                        // This handles the edge case of transitioning from local to world space where applying a local
+                        // space value to a non-parented transform will be applied in world space. Since parenting is not
+                        // tick synchronized, there can be one or two ticks between a state update with the InLocalSpace
+                        // state update which can cause the body to rotate world space relative and cause a slight rotation
+                        // of the body in-between this transition period.
+                        if (SwitchTransformSpaceWhenParented && m_IsFirstNetworkTransform && Interpolate && m_PreviousNetworkObjectParent != null && transform.parent == null)
+                        {
+                            m_InternalCurrentRotation = m_PreviousNetworkObjectParent.transform.rotation * m_InternalCurrentRotation;
+                            transform.rotation = m_InternalCurrentRotation;
+                        }
+                        else
+                        {
+                            transform.localRotation = m_InternalCurrentRotation;
+                        }
                     }
                     else
                     {
-                        transform.rotation = m_CurrentRotation;
+                        transform.rotation = m_InternalCurrentRotation;
                     }
                 }
             }
@@ -2397,9 +2477,9 @@ namespace Unity.Netcode.Components
                 // Update our current scale if it changed or we are interpolating
                 if (networkState.HasScaleChange || Interpolate)
                 {
-                    m_CurrentScale = adjustedScale;
+                    m_InternalCurrentScale = adjustedScale;
                 }
-                transform.localScale = m_CurrentScale;
+                transform.localScale = m_InternalCurrentScale;
             }
             OnTransformUpdated();
         }
@@ -2481,7 +2561,7 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                m_CurrentPosition = currentPosition;
+                m_InternalCurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
 
                 // Apply the position
@@ -2494,7 +2574,7 @@ namespace Unity.Netcode.Components
                     transform.position = currentPosition;
                 }
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
                 {
                     m_NetworkRigidbodyInternal.SetPosition(transform.position);
@@ -2510,17 +2590,6 @@ namespace Unity.Netcode.Components
             if (newState.HasScaleChange)
             {
                 bool shouldUseLossy = false;
-                if (newState.IsParented)
-                {
-                    if (transform.parent == null)
-                    {
-                        shouldUseLossy = NetworkObject.WorldPositionStays();
-                    }
-                    else
-                    {
-                        shouldUseLossy = !NetworkObject.WorldPositionStays();
-                    }
-                }
 
                 if (UseHalfFloatPrecision)
                 {
@@ -2545,7 +2614,7 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                m_CurrentScale = currentScale;
+                m_InternalCurrentScale = currentScale;
                 m_TargetScale = currentScale;
 
                 // Apply the adjusted scale
@@ -2583,7 +2652,7 @@ namespace Unity.Netcode.Components
                     currentRotation.eulerAngles = currentEulerAngles;
                 }
 
-                m_CurrentRotation = currentRotation;
+                m_InternalCurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
 
                 if (InLocalSpace)
@@ -2595,7 +2664,7 @@ namespace Unity.Netcode.Components
                     transform.rotation = currentRotation;
                 }
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
                 {
                     m_NetworkRigidbodyInternal.SetRotation(transform.rotation);
@@ -2675,6 +2744,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            AdjustForChangeInTransformSpace();
+
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
@@ -2682,20 +2753,21 @@ namespace Unity.Netcode.Components
             {
                 if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
+                    var position = m_LocalAuthoritativeNetworkState.GetPosition();
                     var newTargetPosition = m_TargetPosition;
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
-                        newTargetPosition.x = m_LocalAuthoritativeNetworkState.PositionX;
+                        newTargetPosition.x = position.x;
                     }
 
                     if (m_LocalAuthoritativeNetworkState.HasPositionY)
                     {
-                        newTargetPosition.y = m_LocalAuthoritativeNetworkState.PositionY;
+                        newTargetPosition.y = position.y;
                     }
 
                     if (m_LocalAuthoritativeNetworkState.HasPositionZ)
                     {
-                        newTargetPosition.z = m_LocalAuthoritativeNetworkState.PositionZ;
+                        newTargetPosition.z = position.z;
                     }
                     m_TargetPosition = newTargetPosition;
                 }
@@ -2834,6 +2906,37 @@ namespace Unity.Netcode.Components
             // Apply the new state
             ApplyUpdatedState(newState);
 
+            // Tick synchronize any parented child NetworkObject(s) NetworkTransform(s)
+            if (TickSyncChildren && m_IsFirstNetworkTransform)
+            {
+                // Synchronize any nested NetworkTransforms with the parent's
+                foreach (var childNetworkTransform in NetworkObject.NetworkTransforms)
+                {
+                    // Don't update the same instance
+                    if (childNetworkTransform == this)
+                    {
+                        continue;
+                    }
+                    if (childNetworkTransform.CanCommitToTransform)
+                    {
+                        childNetworkTransform.OnNetworkTick(true);
+                    }
+                }
+
+                // Synchronize any parented children with the parent's motion
+                foreach (var child in m_ParentedChildren)
+                {
+                    // Synchronize any nested NetworkTransforms of the child with the parent's
+                    foreach (var childNetworkTransform in child.NetworkTransforms)
+                    {
+                        if (childNetworkTransform.CanCommitToTransform)
+                        {
+                            childNetworkTransform.OnNetworkTick(true);
+                        }
+                    }
+                }
+            }
+
             // Provide notifications when the state has been updated
             // We use the m_LocalAuthoritativeNetworkState because newState has been applied and adjustments could have
             // been made (i.e. half float precision position values will have been updated)
@@ -2902,7 +3005,7 @@ namespace Unity.Netcode.Components
         /// Called by authority to check for deltas and update non-authoritative instances
         /// if any are found.
         /// </summary>
-        internal void OnUpdateAuthoritativeState(ref Transform transformSource)
+        internal void OnUpdateAuthoritativeState(ref Transform transformSource, bool settingState = false)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!m_LocalAuthoritativeNetworkState.ExplicitSet && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
@@ -2922,11 +3025,55 @@ namespace Unity.Netcode.Components
 
             AxisChangedDeltaPositionCheck();
 
-            TryCommitTransform(ref transformSource);
+            TryCommitTransform(ref transformSource, settingState: settingState);
         }
         #endregion
 
         #region SPAWN, DESPAWN, AND INITIALIZATION
+
+        private void NonAuthorityFinalizeSynchronization()
+        {
+            // For all child NetworkTransforms nested under the same NetworkObject,
+            // we apply the initial synchronization based on their parented/ordered
+            // heirarchy.
+            if (SynchronizeState.IsSynchronizing && m_IsFirstNetworkTransform)
+            {
+                foreach (var child in NetworkObject.NetworkTransforms)
+                {
+                    child.ApplySynchronization();
+
+                    // For all nested (under the root/same NetworkObject) child NetworkTransforms, we need to run through
+                    // initialization once more to assure any values applied or stored are relative to the Root's transform.
+                    child.InternalInitialization();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle applying the synchronization state once everything has spawned.
+        /// The first NetowrkTransform handles invoking this on any other nested NetworkTransform.
+        /// </summary>
+        protected internal override void InternalOnNetworkSessionSynchronized()
+        {
+            NonAuthorityFinalizeSynchronization();
+
+            base.InternalOnNetworkSessionSynchronized();
+        }
+
+        /// <summary>
+        /// For dynamically spawned NetworkObjects, when the non-authority instance's client is already connected and
+        /// the SynchronizeState is still pending synchronization then we want to finalize the synchornization at this time.
+        /// </summary>
+        protected internal override void InternalOnNetworkPostSpawn()
+        {
+            if (!CanCommitToTransform && NetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
+            {
+                NonAuthorityFinalizeSynchronization();
+            }
+
+            base.InternalOnNetworkPostSpawn();
+        }
+
         /// <summary>
         /// Create interpolators when first instantiated to avoid memory allocations if the
         /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
@@ -2942,6 +3089,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            m_ParentedChildren.Clear();
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
@@ -2954,8 +3102,8 @@ namespace Unity.Netcode.Components
 
         private void CleanUpOnDestroyOrDespawn()
         {
-
-#if COM_UNITY_MODULES_PHYSICS
+            m_ParentedChildren.Clear();
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var forUpdate = !m_UseRigidbodyForMotion;
 #else
             var forUpdate = true;
@@ -2964,6 +3112,7 @@ namespace Unity.Netcode.Components
             {
                 NetworkManager?.NetworkTransformRegistration(m_CachedNetworkObject, forUpdate, false);
             }
+
             DeregisterForTickUpdate(this);
             CanCommitToTransform = false;
         }
@@ -3008,13 +3157,15 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
 #else
             var position = GetSpaceRelativePosition();
             var rotation = GetSpaceRelativeRotation();
 #endif
+            m_PositionInterpolator.InLocalSpace = InLocalSpace;
+            m_RotationInterpolator.InLocalSpace = InLocalSpace;
 
             UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
@@ -3034,12 +3185,26 @@ namespace Unity.Netcode.Components
                 return;
             }
             m_CachedNetworkObject = NetworkObject;
+
+            // Determine if this is the first NetworkTransform in the associated NetworkObject's list
+            m_IsFirstNetworkTransform = NetworkObject.NetworkTransforms[0] == this;
+
+
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 AuthorityMode = AuthorityModes.Owner;
             }
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
 
+            if (SwitchTransformSpaceWhenParented)
+            {
+                if (CanCommitToTransform)
+                {
+                    InLocalSpace = transform.parent != null;
+                }
+                // Always apply this if SwitchTransformSpaceWhenParented is set.
+                TickSyncChildren = true;
+            }
 
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
@@ -3050,7 +3215,7 @@ namespace Unity.Netcode.Components
                 m_NetworkTransformTickRegistration = s_NetworkTickRegistration[m_CachedNetworkManager];
             }
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             // Depending upon order of operations, we invoke this in order to assure that proper settings are applied.
             if (m_NetworkRigidbodyInternal)
             {
@@ -3080,7 +3245,7 @@ namespace Unity.Netcode.Components
                     SetState(teleportDisabled: false);
                 }
 
-                m_CurrentPosition = currentPosition;
+                m_InternalCurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
 
                 RegisterForTickUpdate(this);
@@ -3097,11 +3262,11 @@ namespace Unity.Netcode.Components
                 // Remove this instance from the tick update
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-                m_CurrentPosition = currentPosition;
+                m_InternalCurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
-                m_CurrentScale = transform.localScale;
+                m_InternalCurrentScale = transform.localScale;
                 m_TargetScale = transform.localScale;
-                m_CurrentRotation = currentRotation;
+                m_InternalCurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
             }
             OnInitialize(ref m_LocalAuthoritativeNetworkState);
@@ -3117,6 +3282,51 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region PARENTING AND OWNERSHIP
+        // This might seem aweful, but when transitioning between two parents in local space we need to
+        // catch the moment the transition happens and only apply the special case parenting from one parent
+        // to another parent once. Keeping track of the "previous previous" allows us to detect the
+        // back and fourth scenario:
+        // - No parent (world space)
+        // - Parent under NetworkObjectA (world to local)
+        // - Parent under NetworkObjectB (local to local) (catch with "previous previous")
+        // - Parent under NetworkObjectA (local to local) (catch with "previous previous")
+        // - Parent under NetworkObjectB (local to local) (catch with "previous previous")
+        private NetworkObject m_PreviousCurrentParent;
+        private NetworkObject m_PreviousPreviousParent;
+        private void AdjustForChangeInTransformSpace()
+        {
+            if (SwitchTransformSpaceWhenParented && m_IsFirstNetworkTransform && (m_PositionInterpolator.InLocalSpace != InLocalSpace ||
+                m_RotationInterpolator.InLocalSpace != InLocalSpace ||
+                (InLocalSpace && m_CurrentNetworkObjectParent && m_PreviousNetworkObjectParent && m_PreviousCurrentParent != m_CurrentNetworkObjectParent && m_PreviousPreviousParent != m_PreviousNetworkObjectParent)))
+            {
+                var parent = m_CurrentNetworkObjectParent ? m_CurrentNetworkObjectParent : m_PreviousNetworkObjectParent;
+                if (parent)
+                {
+                    // In the event it is a NetworkObject to NetworkObject parenting transfer, we will need to migrate our interpolators
+                    // and our current position and rotation to world space relative to the previous parent before converting them to local
+                    // space relative to the new parent
+                    if (InLocalSpace && m_CurrentNetworkObjectParent && m_PreviousNetworkObjectParent)
+                    {
+                        m_PreviousCurrentParent = m_CurrentNetworkObjectParent;
+                        m_PreviousPreviousParent = m_PreviousNetworkObjectParent;
+                        // Convert our current postion and rotation to world space based on the previous parent's transform
+                        m_InternalCurrentPosition = m_PreviousNetworkObjectParent.transform.TransformPoint(m_InternalCurrentPosition);
+                        m_InternalCurrentRotation = m_PreviousNetworkObjectParent.transform.rotation * m_InternalCurrentRotation;
+                        // Convert our current postion and rotation to local space based on the current parent's transform
+                        m_InternalCurrentPosition = m_CurrentNetworkObjectParent.transform.InverseTransformPoint(m_InternalCurrentPosition);
+                        m_InternalCurrentRotation = Quaternion.Inverse(m_CurrentNetworkObjectParent.transform.rotation) * m_InternalCurrentRotation;
+                        // Convert both interpolators to world space based on the previous parent's transform
+                        m_PositionInterpolator.ConvertTransformSpace(m_PreviousNetworkObjectParent.transform, false);
+                        m_RotationInterpolator.ConvertTransformSpace(m_PreviousNetworkObjectParent.transform, false);
+                        // Next, fall into normal transform space conversion of both interpolators to local space based on the current parent's transform
+                    }
+
+                    m_PositionInterpolator.ConvertTransformSpace(parent.transform, InLocalSpace);
+                    m_RotationInterpolator.ConvertTransformSpace(parent.transform, InLocalSpace);
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public override void OnLostOwnership()
         {
@@ -3139,45 +3349,115 @@ namespace Unity.Netcode.Components
             base.OnOwnershipChanged(previous, current);
         }
 
+        internal bool IsNested;
+        private List<NetworkObject> m_ParentedChildren = new List<NetworkObject>();
+
+        private bool m_IsFirstNetworkTransform;
+        private NetworkObject m_CurrentNetworkObjectParent = null;
+        private NetworkObject m_PreviousNetworkObjectParent = null;
+
+        internal void ChildRegistration(NetworkObject child, bool isAdding)
+        {
+            if (isAdding)
+            {
+                m_ParentedChildren.Add(child);
+            }
+            else
+            {
+                m_ParentedChildren.Remove(child);
+            }
+        }
+
         /// <inheritdoc/>
         /// <remarks>
-        /// When a parent changes, non-authoritative instances should:
-        /// - Apply the resultant position, rotation, and scale from the parenting action.
-        /// - Clear interpolators (even if not enabled on this frame)
-        /// - Reset the interpolators to the position, rotation, and scale resultant values.
-        /// This prevents interpolation visual anomalies and issues during initial synchronization
+        /// When not using a NetworkRigidbody and using an owner authoritative motion model, you can <br />
+        /// improve parenting transitions into and out of world and local space by:<br />
+        /// - Disabling <see cref="NetworkObject.SyncOwnerTransformWhenParented"/><br />
+        /// - Enabling <see cref="NetworkObject.AllowOwnerToParent"/><br />
+        /// - Enabling <see cref="SwitchTransformSpaceWhenParented"/><br />
+        /// -- Note: This handles changing from world space to local space for you.<br />
+        /// When these settings are applied, transitioning from: <br />
+        /// - World space to local space (root-null parent/null to <see cref="NetworkObject"/> parent)
+        /// - Local space back to world space (<see cref="NetworkObject"/> parent to root-null parent)
+        /// - Local space to local space (<see cref="NetworkObject"/> parent to <see cref="NetworkObject"/> parent)
+        /// Will all smoothly transition while interpolation is enabled.
+        /// (Does not work if using a <see cref="Rigidbody"/> or <see cref="Rigidbody2D"/> for motion)
+        /// 
+        /// When a parent changes, non-authoritative instances should:<br />
+        /// - Apply the resultant position, rotation, and scale from the parenting action.<br />
+        /// - Clear interpolators (even if not enabled on this frame)<br />
+        /// - Reset the interpolators to the position, rotation, and scale resultant values.<br />
+        /// This prevents interpolation visual anomalies and issues during initial synchronization<br />
         /// </remarks>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            // Only if we are not authority
-            if (!CanCommitToTransform)
-            {
-#if COM_UNITY_MODULES_PHYSICS
-                var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
-                var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
+        }
+
+
+        internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // The root NetworkTransform handles tracking any NetworkObject parenting since nested NetworkTransforms (of the same NetworkObject)
+            // will never (or rather should never) change their world space once spawned.
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            // Handling automatic transform space switching can only be applied to NetworkTransforms that don't use the Rigidbody for motion
+            if (!m_UseRigidbodyForMotion && SwitchTransformSpaceWhenParented)
 #else
-                var position = GetSpaceRelativePosition();
-                var rotation = GetSpaceRelativeRotation();
+            if (SwitchTransformSpaceWhenParented)
 #endif
-                m_TargetPosition = m_CurrentPosition = position;
-                m_CurrentRotation = rotation;
-                m_TargetRotation = m_CurrentRotation.eulerAngles;
-                m_TargetScale = m_CurrentScale = GetScale();
-
-                if (Interpolate)
+            {
+                m_PreviousNetworkObjectParent = m_CurrentNetworkObjectParent;
+                m_CurrentNetworkObjectParent = parentNetworkObject;
+                if (m_IsFirstNetworkTransform)
                 {
-                    m_ScaleInterpolator.Clear();
-                    m_PositionInterpolator.Clear();
-                    m_RotationInterpolator.Clear();
-
-                    // Always use NetworkManager here as this can be invoked prior to spawning
-                    var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
-                    UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
-                    m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
-                    m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+                    if (CanCommitToTransform)
+                    {
+                        InLocalSpace = m_CurrentNetworkObjectParent != null;
+                    }
+                    if (m_PreviousNetworkObjectParent && m_PreviousNetworkObjectParent.NetworkTransforms != null && m_PreviousNetworkObjectParent.NetworkTransforms.Count > 0)
+                    {
+                        // Always deregister with the first NetworkTransform in the list
+                        m_PreviousNetworkObjectParent.NetworkTransforms[0].ChildRegistration(NetworkObject, false);
+                    }
+                    if (m_CurrentNetworkObjectParent && m_CurrentNetworkObjectParent.NetworkTransforms != null && m_CurrentNetworkObjectParent.NetworkTransforms.Count > 0)
+                    {
+                        // Always register with the first NetworkTransform in the list
+                        m_CurrentNetworkObjectParent.NetworkTransforms[0].ChildRegistration(NetworkObject, true);
+                    }
                 }
             }
-            base.OnNetworkObjectParentChanged(parentNetworkObject);
+            else
+            {
+                // Keep the same legacy behaviour for compatibility purposes
+                if (!CanCommitToTransform)
+                {
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                    var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                    var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+#else
+                    var position = GetSpaceRelativePosition();
+                    var rotation = GetSpaceRelativeRotation();
+#endif
+                    m_TargetPosition = m_InternalCurrentPosition = position;
+                    m_InternalCurrentRotation = rotation;
+                    m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
+                    m_TargetScale = m_InternalCurrentScale = GetScale();
+
+                    if (Interpolate)
+                    {
+                        m_ScaleInterpolator.Clear();
+                        m_PositionInterpolator.Clear();
+                        m_RotationInterpolator.Clear();
+
+                        // Always use NetworkManager here as this can be invoked prior to spawning
+                        var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                        UpdatePositionInterpolator(m_InternalCurrentPosition, tempTime, true);
+                        m_ScaleInterpolator.ResetTo(m_InternalCurrentScale, tempTime);
+                        m_RotationInterpolator.ResetTo(m_InternalCurrentRotation, tempTime);
+                    }
+                }
+            }
+            base.InternalOnNetworkObjectParentChanged(parentNetworkObject);
         }
         #endregion
 
@@ -3212,7 +3492,7 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError(errorMessage);
                 return;
             }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
             var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
 #else
@@ -3249,7 +3529,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void SetStateInternal(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             if (m_UseRigidbodyForMotion)
             {
                 m_NetworkRigidbodyInternal.SetPosition(pos);
@@ -3349,10 +3629,12 @@ namespace Unity.Netcode.Components
             // Non-Authority
             if (Interpolate)
             {
+                AdjustForChangeInTransformSpace();
+
                 var serverTime = m_CachedNetworkManager.ServerTime;
                 var cachedServerTime = serverTime.Time;
                 //var offset = (float)serverTime.TickOffset;
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
                 var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
@@ -3360,14 +3642,10 @@ namespace Unity.Netcode.Components
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
-                var ticksAgo = (!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode ? 2 : 1;
-                // TODO: We need an RTT that updates regularly and not only when the client sends packets
-                //if (m_CachedNetworkManager.DistributedAuthorityMode)
-                //{
-                //ticksAgo = m_CachedNetworkManager.CMBServiceConnection ? 2 : 3;
-                //ticksAgo = Mathf.Max(ticksAgo, (int)m_NetworkTransformTickRegistration.TicksAgo);
-                //offset = m_NetworkTransformTickRegistration.Offset;
-                //}
+
+                // TODO: This could most likely just always be 2
+                //var ticksAgo = ((!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode) && !m_CachedNetworkManager.DAHost ? 2 : 1;
+                var ticksAgo = 2;
 
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
 
@@ -3401,7 +3679,7 @@ namespace Unity.Netcode.Components
         public virtual void OnUpdate()
         {
             // If not spawned or this instance has authority, exit early
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             if (!IsSpawned || CanCommitToTransform || m_UseRigidbodyForMotion)
 #else
             if (!IsSpawned || CanCommitToTransform)
@@ -3417,8 +3695,7 @@ namespace Unity.Netcode.Components
             ApplyAuthoritativeState();
         }
 
-
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
