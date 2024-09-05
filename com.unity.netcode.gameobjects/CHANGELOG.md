@@ -10,8 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3034)
 - Added message size validation to named and unnamed message sending functions for better error messages. (#3043)
+- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3034)
 
 ### Fixed
 
