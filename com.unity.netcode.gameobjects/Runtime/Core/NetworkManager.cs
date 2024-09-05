@@ -17,6 +17,12 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+#if UNITY_EDITOR
+        // Inspector view expand/collapse settings for this derived child class
+        [HideInInspector]
+        public bool NetworkManagerExpanded;
+#endif
+
         // TODO: Deprecate...
         // The following internal values are not used, but because ILPP makes them public in the assembly, they cannot
         // be removed thanks to our semver validation.
@@ -890,6 +896,11 @@ namespace Unity.Netcode
             OnNetworkManagerReset?.Invoke(this);
         }
 
+        protected virtual void OnValidateComponent()
+        {
+
+        }
+
         internal void OnValidate()
         {
             if (NetworkConfig == null)
@@ -949,6 +960,15 @@ namespace Unity.Netcode
                         }
                     }
                 }
+            }
+
+            try
+            {
+                OnValidateComponent();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
         }
 

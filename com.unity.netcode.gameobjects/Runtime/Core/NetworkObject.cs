@@ -67,6 +67,7 @@ namespace Unity.Netcode
         /// </remarks>
         public List<NetworkTransform> NetworkTransforms { get; private set; }
 
+
 #if COM_UNITY_MODULES_PHYSICS
         /// <summary>
         /// All <see cref="NetworkRigidbodyBase"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
@@ -1080,6 +1081,24 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
+        /// <summary>
+        /// Determines if the owner will apply transform values sent by the parenting message.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the resultant parenting transform changes sent by the authority will be applied on all instances. <br />
+        /// When disabled, the resultant parenting transform changes sent by the authority will not be applied on the owner's instance. <br />
+        /// When disabled, all non-owner instances will still be synchronized by the authority's transform values when parented.
+        /// When using a <see cref="NetworkTopologyTypes.ClientServer"/> network topology and an owner authoritative motion model, disabling this can help smooth parenting transitions.
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology this will have no impact on the owner's instance since only the authority/owner can parent.
+        /// </remarks>
+        public bool SyncOwnerTransformWhenParented = true;
+
+        /// <summary>
+        /// Client-Server specific, when enabled an owner of a NetworkObject can parent locally as opposed to requiring the owner to notify the server it would like to be parented.
+        /// This behavior is always true when using a distributed authority network topology and does not require it to be set.
+        /// </summary>
+        public bool AllowOwnerToParent;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
@@ -1787,6 +1806,9 @@ namespace Unity.Netcode
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
+                // Invoke internal notification
+                ChildNetworkBehaviours[i].InternalOnNetworkObjectParentChanged(parentNetworkObject);
+                // Invoke public notification
                 ChildNetworkBehaviours[i].OnNetworkObjectParentChanged(parentNetworkObject);
             }
         }
@@ -1918,7 +1940,7 @@ namespace Unity.Netcode
 
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
-            var isAuthority = HasAuthority;
+            var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
@@ -1984,7 +2006,7 @@ namespace Unity.Netcode
             var isAuthority = false;
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
-            isAuthority = HasAuthority || AuthorityAppliedParenting;
+            isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
             // If we do not have authority and we are spawned
@@ -2076,7 +2098,7 @@ namespace Unity.Netcode
             }
 
             // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority)
+            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
             {
                 if (!NetworkManager.DAHost)
                 {
@@ -2365,7 +2387,9 @@ namespace Unity.Netcode
                             {
                                 NetworkTransforms = new List<NetworkTransform>();
                             }
-                            NetworkTransforms.Add(networkBehaviours[i] as NetworkTransform);
+                            var networkTransform = networkBehaviours[i] as NetworkTransform;
+                            networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
+                            NetworkTransforms.Add(networkTransform);
                         }
 #if COM_UNITY_MODULES_PHYSICS
                         else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))

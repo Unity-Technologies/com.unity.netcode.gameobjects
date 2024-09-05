@@ -8,8 +8,11 @@ namespace Unity.Netcode.Editor
     /// The <see cref="CustomEditor"/> for <see cref="NetworkTransform"/>
     /// </summary>
     [CustomEditor(typeof(NetworkTransform), true)]
-    public class NetworkTransformEditor : UnityEditor.Editor
+    [CanEditMultipleObjects]
+    public class NetworkTransformEditor : NetcodeEditorBase<NetworkBehaviour>
     {
+        private SerializedProperty m_SwitchTransformSpaceWhenParented;
+        private SerializedProperty m_TickSyncChildren;
         private SerializedProperty m_UseUnreliableDeltas;
         private SerializedProperty m_SyncPositionXProperty;
         private SerializedProperty m_SyncPositionYProperty;
@@ -39,8 +42,10 @@ namespace Unity.Netcode.Editor
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
         /// <inheritdoc/>
-        public virtual void OnEnable()
+        public override void OnEnable()
         {
+            m_SwitchTransformSpaceWhenParented = serializedObject.FindProperty(nameof(NetworkTransform.SwitchTransformSpaceWhenParented));
+            m_TickSyncChildren = serializedObject.FindProperty(nameof(NetworkTransform.TickSyncChildren));
             m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
             m_SyncPositionYProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionY));
@@ -61,10 +66,10 @@ namespace Unity.Netcode.Editor
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
             m_SlerpPosition = serializedObject.FindProperty(nameof(NetworkTransform.SlerpPosition));
             m_AuthorityMode = serializedObject.FindProperty(nameof(NetworkTransform.AuthorityMode));
+            base.OnEnable();
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DisplayNetworkTransformProperties()
         {
             var networkTransform = target as NetworkTransform;
             EditorGUILayout.LabelField("Axis to Synchronize", EditorStyles.boldLabel);
@@ -141,9 +146,15 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_TickSyncChildren);
             EditorGUILayout.PropertyField(m_UseUnreliableDeltas);
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_SwitchTransformSpaceWhenParented);
+            if (m_SwitchTransformSpaceWhenParented.boolValue)
+            {
+                m_TickSyncChildren.boolValue = true;
+            }
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             if (!networkTransform.HideInterpolateValue)
             {
@@ -163,8 +174,7 @@ namespace Unity.Netcode.Editor
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
-            var go = ((NetworkTransform)target).gameObject;
-            if (go.TryGetComponent<Rigidbody>(out _) && go.TryGetComponent<NetworkRigidbody>(out _) == false)
+            if (networkTransform.TryGetComponent<Rigidbody>(out _) && networkTransform.TryGetComponent<NetworkRigidbody>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
@@ -172,14 +182,23 @@ namespace Unity.Netcode.Editor
 #endif // COM_UNITY_MODULES_PHYSICS
 
 #if COM_UNITY_MODULES_PHYSICS2D
-            if (go.TryGetComponent<Rigidbody2D>(out _) && go.TryGetComponent<NetworkRigidbody2D>(out _) == false)
+            if (networkTransform.TryGetComponent<Rigidbody2D>(out _) && networkTransform.TryGetComponent<NetworkRigidbody2D>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
 #endif // COM_UNITY_MODULES_PHYSICS2D
+        }
 
-            serializedObject.ApplyModifiedProperties();
+
+
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            var networkTransform = target as NetworkTransform;
+            void SetExpanded(bool expanded) { networkTransform.NetworkTransformExpanded = expanded; };
+            DrawFoldOutGroup<NetworkTransform>(networkTransform.GetType(), DisplayNetworkTransformProperties, networkTransform.NetworkTransformExpanded, SetExpanded);
+            base.OnInspectorGUI();
         }
     }
 }

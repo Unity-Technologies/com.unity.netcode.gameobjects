@@ -10,13 +10,27 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3031)
+- Added `NetworkTransform.SwitchTransformSpaceWhenParented` property that, when enabled, will handle the world to local, local to world, and local to local transform space transitions when interpolation is enabled. (#3013)
+- Added `NetworkTransform.TickSyncChildren` that, when enabled, will tick synchronize nested and/or child `NetworkTransform` components to eliminate any potential visual jittering that could occur if the `NetworkTransform` instances get into a state where their state updates are landing on different network ticks. (#3013)
+- Added `NetworkObject.AllowOwnerToParent` property to provide the ability to allow clients to parent owned objects when running in a client-server network topology. (#3013)
+- Added `NetworkObject.SyncOwnerTransformWhenParented` property to provide a way to disable applying the server's transform information in the parenting message on the client owner instance which can be useful for owner authoritative motion models. (#3013)
+- Added `NetcodeEditorBase` editor helper class to provide easier modification and extension of the SDK's components. (#3013)
+
 ### Fixed
 
 - Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3042)
 - Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3030)
 - Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3026)
+- Fixed issue with newly/late joined clients and `NetworkTransform` synchronization of parented `NetworkObject` instances. (#3013)
+- Fixed issue with smooth transitions between transform spaces when interpolation is enabled (requires `NetworkTransform.SwitchTransformSpaceWhenParented` to be enabled). (#3013)
 
 ### Changed
+
+- Changed `NetworkTransformEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+- Changed `NetworkRigidbodyBaseEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+- Changed `NetworkManagerEditor` so it now derives from `NetcodeEditorBase`. (#3013)
+
 
 ## [2.0.0-pre.4] - 2024-08-21
 

@@ -200,9 +200,8 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="testWithHost">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
-        public NetworkTransformBase(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision)
+        public NetworkTransformBase(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision) : base(testWithHost)
         {
-            m_UseHost = testWithHost == HostOrServer.Host;
             m_Authority = authority;
             m_Precision = precision;
             m_RotationCompression = rotationCompression;
@@ -376,6 +375,18 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        protected bool AllFirstLevelChildObjectInstancesHaveChild()
+        {
+            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
+            {
+                if (instance.transform.parent == null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         protected bool AllChildObjectInstancesHaveChild()
         {
             foreach (var instance in ChildObjectComponent.ClientInstances.Values)
@@ -390,6 +401,33 @@ namespace Unity.Netcode.RuntimeTests
                 foreach (var instance in ChildObjectComponent.ClientSubChildInstances.Values)
                 {
                     if (instance.transform.parent == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        protected bool AllFirstLevelChildObjectInstancesHaveNoParent()
+        {
+            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
+            {
+                if (instance.transform.parent != null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        protected bool AllSubChildObjectInstancesHaveNoParent()
+        {
+            if (ChildObjectComponent.HasSubChild)
+            {
+                foreach (var instance in ChildObjectComponent.ClientSubChildInstances.Values)
+                {
+                    if (instance.transform.parent != null)
                     {
                         return false;
                     }

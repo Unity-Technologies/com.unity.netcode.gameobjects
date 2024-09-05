@@ -19,6 +19,12 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class NetworkBehaviour : MonoBehaviour
     {
+#if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
+        internal bool ShowTopMostFoldoutHeaderGroup = true;
+#endif
+
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -688,6 +694,8 @@ namespace Unity.Netcode
         /// </remarks>
         protected virtual void OnNetworkPostSpawn() { }
 
+        protected internal virtual void InternalOnNetworkPostSpawn() { }
+
         /// <summary>
         /// This method is only available client-side.
         /// When a new client joins it's synchronized with all spawned NetworkObjects and scenes loaded for the session joined. At the end of the synchronization process, when all
@@ -699,6 +707,8 @@ namespace Unity.Netcode
         /// This is only invoked on clients during a client-server network topology session.
         /// </remarks>
         protected virtual void OnNetworkSessionSynchronized() { }
+
+        protected internal virtual void InternalOnNetworkSessionSynchronized() { }
 
         /// <summary>
         /// When a scene is loaded and in-scene placed NetworkObjects are finished spawning, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
@@ -759,6 +769,7 @@ namespace Unity.Netcode
         {
             try
             {
+                InternalOnNetworkPostSpawn();
                 OnNetworkPostSpawn();
             }
             catch (Exception e)
@@ -771,6 +782,7 @@ namespace Unity.Netcode
         {
             try
             {
+                InternalOnNetworkSessionSynchronized();
                 OnNetworkSessionSynchronized();
             }
             catch (Exception e)
@@ -852,6 +864,8 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="parentNetworkObject">the new <see cref="NetworkObject"/> parent</param>
         public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
+
+        internal virtual void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
         private bool m_VarInit = false;
 
