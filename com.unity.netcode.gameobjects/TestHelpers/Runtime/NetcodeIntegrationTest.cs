@@ -850,6 +850,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected virtual bool LogAllMessages => false;
 
+        protected virtual bool ShouldCheckForSpawnedPlayers()
+        {
+            return true;
+        }
+
+
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
@@ -938,7 +944,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                         }
                     }
-                    ClientNetworkManagerPostStartInit();
+
+                    if (ShouldCheckForSpawnedPlayers())
+                    {
+                        ClientNetworkManagerPostStartInit();
+                    }
+
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
                     yield return OnServerAndClientsConnected();
@@ -1030,7 +1041,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         }
                     }
 
-                    ClientNetworkManagerPostStartInit();
+                    if (ShouldCheckForSpawnedPlayers())
+                    {
+                        ClientNetworkManagerPostStartInit();
+                    }
 
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
