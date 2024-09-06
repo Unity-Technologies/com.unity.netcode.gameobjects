@@ -202,7 +202,7 @@ namespace Unity.Netcode.RuntimeTests
             var msgSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>() - sizeof(NetworkBatchHeader);
             var bufferSize = m_ServerNetworkManager.MessageManager.NonFragmentedMessageMaxSize;
             var messageContent = new byte[msgSize];
-            var writer = new FastBufferWriter(bufferSize, Allocator.Temp, bufferSize*2);
+            var writer = new FastBufferWriter(bufferSize, Allocator.Temp, bufferSize * 2);
             using (writer)
             {
                 writer.TryBeginWrite(msgSize);
@@ -213,7 +213,7 @@ namespace Unity.Netcode.RuntimeTests
 
             msgSize++;
             messageContent = new byte[msgSize];
-            writer = new FastBufferWriter(bufferSize, Allocator.Temp, bufferSize*2);
+            writer = new FastBufferWriter(bufferSize, Allocator.Temp, bufferSize * 2);
             using (writer)
             {
                 writer.TryBeginWrite(msgSize);
