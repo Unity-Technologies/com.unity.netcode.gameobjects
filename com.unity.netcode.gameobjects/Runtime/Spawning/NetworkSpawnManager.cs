@@ -1909,5 +1909,55 @@ namespace Unity.Netcode
                 networkObject.InternalNetworkSessionSynchronized();
             }
         }
+
+        /// <summary>
+        /// Distributed Authority Only
+        /// Should be invoked on non-session owner clients when a newly joined client is finished
+        /// synchronizing in order to "show" (spawn) anything that might be currently hidden from
+        /// the session owner.
+        /// </summary>
+        internal void ShowHiddenObjectsToNewlyJoinedClient(ulong newClientId)
+        {
+            if (!NetworkManager.DistributedAuthorityMode)
+            {
+                if (NetworkManager == null || !NetworkManager.ShutdownInProgress && NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} invoked while !");
+                }
+                return;
+            }
+
+            if (!NetworkManager.DistributedAuthorityMode)
+            {
+                Debug.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked when using a distributed authority network topology!");
+                return;
+            }
+
+            if (NetworkManager.LocalClient.IsSessionOwner)
+            {
+                Debug.LogError($"[Internal Error] {nameof(ShowHiddenObjectsToNewlyJoinedClient)} should only be invoked on a non-session owner client!");
+                return;
+            }
+            var localClientId = NetworkManager.LocalClient.ClientId;
+            var sessionOwnerId = NetworkManager.CurrentSessionOwner;
+            foreach (var networkObject in SpawnedObjectsList)
+            {
+                if (networkObject.SpawnWithObservers && networkObject.OwnerClientId == localClientId && !networkObject.Observers.Contains(sessionOwnerId))
+                {
+                    if (networkObject.Observers.Contains(newClientId))
+                    {
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            // Track if there is some other location where the client is being added to the observers list when the object is hidden from the session owner
+                            Debug.LogWarning($"[{networkObject.name}] Has new client as an observer but it is hidden from the session owner!");
+                        }
+                        // For now, remove the client (impossible for the new client to have an instance since the session owner doesn't) to make sure newly added
+                        // code to handle this edge case works.
+                        networkObject.Observers.Remove(newClientId);
+                    }
+                    networkObject.NetworkShow(newClientId);
+                }
+            }
+        }
     }
 }

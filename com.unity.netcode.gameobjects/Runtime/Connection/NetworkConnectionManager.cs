@@ -985,10 +985,18 @@ namespace Unity.Netcode
                 ConnectedClientIds.Add(clientId);
             }
 
+            var distributedAuthority = NetworkManager.DistributedAuthorityMode;
+            var sessionOwnerId = NetworkManager.CurrentSessionOwner;
+            var isSessionOwner = NetworkManager.LocalClient.IsSessionOwner;
             foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
             {
                 if (networkObject.SpawnWithObservers)
                 {
+                    // Don't add the clien to the observers if hidden from the session owner
+                    if (networkObject.IsOwner && distributedAuthority && !isSessionOwner && !networkObject.Observers.Contains(sessionOwnerId))
+                    {
+                        continue;
+                    }
                     networkObject.Observers.Add(clientId);
                 }
             }
