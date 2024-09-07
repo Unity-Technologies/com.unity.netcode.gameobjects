@@ -55,6 +55,12 @@ namespace Unity.Netcode
                 // Don't redistribute for the local instance
                 if (ClientId != networkManager.LocalClientId)
                 {
+                    // Show any NetworkObjects that are:
+                    // - Hidden from the session owner
+                    // - Owned by this client
+                    // - Has NetworkObject.SpawnWithObservers set to true (the default)
+                    networkManager.SpawnManager.ShowHiddenObjectsToNewlyJoinedClient(ClientId);
+
                     // We defer redistribution to the end of the NetworkUpdateStage.PostLateUpdate
                     networkManager.RedistributeToClient = true;
                     networkManager.ClientToRedistribute = ClientId;
