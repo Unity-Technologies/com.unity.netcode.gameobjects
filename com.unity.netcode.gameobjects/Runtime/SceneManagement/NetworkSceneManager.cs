@@ -2550,17 +2550,6 @@ namespace Unity.Netcode
                         // At this point the client is considered fully "connected"
                         if ((NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClient.IsSessionOwner) || !NetworkManager.DistributedAuthorityMode)
                         {
-                            if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
-                            {
-                                // DANGO-EXP TODO: Remove this once service is sending the synchronization message to all clients
-                                if (NetworkManager.ConnectedClients.ContainsKey(clientId) && NetworkManager.ConnectionManager.ConnectedClientIds.Contains(clientId) && NetworkManager.ConnectedClientsList.Contains(NetworkManager.ConnectedClients[clientId]))
-                                {
-                                    EndSceneEvent(sceneEventId);
-                                    return;
-                                }
-                                NetworkManager.ConnectionManager.AddClient(clientId);
-                            }
-
                             // Notify the local server that a client has finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
                             {
@@ -2575,6 +2564,20 @@ namespace Unity.Netcode
                         }
                         else
                         {
+                            // Notify the local server that a client has finished synchronizing
+                            OnSceneEvent?.Invoke(new SceneEvent()
+                            {
+                                SceneEventType = sceneEventData.SceneEventType,
+                                SceneName = string.Empty,
+                                ClientId = clientId
+                            });
+
+                            // Show any NetworkObjects that are:
+                            // - Hidden from the session owner
+                            // - Owned by this client
+                            // - Has NetworkObject.SpawnWithObservers set to true (the default)
+                            NetworkManager.SpawnManager.ShowHiddenObjectsToNewlyJoinedClient(clientId);
+
                             // DANGO-EXP TODO: Remove this once service distributes objects
                             // Non-session owners receive this notification from newly connected clients and upon receiving
                             // the event they will redistribute their NetworkObjects
@@ -2589,9 +2592,6 @@ namespace Unity.Netcode
                         // At this time the client is fully synchronized with all loaded scenes and
                         // NetworkObjects and should be considered "fully connected". Send the
                         // notification that the client is connected.
-                        // TODO 2023: We should have a better name for this or have multiple states the
-                        // client progresses through (the name and associated legacy behavior/expected state
-                        // of the client was persisted since MLAPI)
                         NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
 
                         if (NetworkManager.IsHost)
@@ -2664,9 +2664,14 @@ namespace Unity.Netcode
                                 EventData = sceneEventData,
                             };
                             // Forward synchronization to client then exit early because DAHost is not the current session owner
-                            NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.CurrentSessionOwner);
-                            EndSceneEvent(sceneEventData.SceneEventId);
-                            return;
+                            foreach (var client in NetworkManager.ConnectedClientsIds)
+                            {
+                                if (client == NetworkManager.LocalClientId)
+                                {
+                                    continue;
+                                }
+                                NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, client);
+                            }
                         }
                     }
                     else
