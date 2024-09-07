@@ -9,7 +9,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkTransform), true)]
     [CanEditMultipleObjects]
-    public class NetworkTransformEditor : NetcodeEditorBase<NetworkBehaviour>
+    public class NetworkTransformEditor : NetcodeEditorBase<NetworkTransform>
     {
         private SerializedProperty m_SwitchTransformSpaceWhenParented;
         private SerializedProperty m_TickSyncChildren;
