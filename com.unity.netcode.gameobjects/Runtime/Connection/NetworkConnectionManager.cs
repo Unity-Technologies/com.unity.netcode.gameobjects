@@ -992,7 +992,7 @@ namespace Unity.Netcode
             {
                 if (networkObject.SpawnWithObservers)
                 {
-                    // Don't add the clien to the observers if hidden from the session owner
+                    // Don't add the client to the observers if hidden from the session owner
                     if (networkObject.IsOwner && distributedAuthority && !isSessionOwner && !networkObject.Observers.Contains(sessionOwnerId))
                     {
                         continue;
