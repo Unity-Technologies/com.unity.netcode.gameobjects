@@ -34,21 +34,13 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(WrappedMessage.Metadata.NetworkObjectId, out var networkObject))
             {
-                // With distributed authority mode, we can send Rpcs before we have been notified the NetworkObject is despawned.
-                // DANGO-TODO: Should the CMB Service cull out any Rpcs targeting recently despawned NetworkObjects?
-                // DANGO-TODO: This would require the service to keep track of despawned NetworkObjects since we re-use NetworkObject identifiers.
-                if (networkManager.DistributedAuthorityMode)
+                // If the NetworkObject no longer exists then just log a warning when developer mode logging is enabled and exit.
+                // This can happen if NetworkObject is despawned and a client sends an RPC before receiving the despawn message.
+                if (networkManager.LogLevel == LogLevel.Developer)
                 {
-                    if (networkManager.LogLevel == LogLevel.Developer)
-                    {
-                        NetworkLog.LogWarning($"[{WrappedMessage.Metadata.NetworkObjectId}, {WrappedMessage.Metadata.NetworkBehaviourId}, {WrappedMessage.Metadata.NetworkRpcMethodId}]An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
-                    }
-                    return;
+                    NetworkLog.LogWarning($"[{WrappedMessage.Metadata.NetworkObjectId}, {WrappedMessage.Metadata.NetworkBehaviourId}, {WrappedMessage.Metadata.NetworkRpcMethodId}] An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
                 }
-                else
-                {
-                    throw new InvalidOperationException($"[{WrappedMessage.Metadata.NetworkObjectId}, {WrappedMessage.Metadata.NetworkBehaviourId}, {WrappedMessage.Metadata.NetworkRpcMethodId}]An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
-                }
+                return;
             }
 
             var observers = networkObject.Observers;
