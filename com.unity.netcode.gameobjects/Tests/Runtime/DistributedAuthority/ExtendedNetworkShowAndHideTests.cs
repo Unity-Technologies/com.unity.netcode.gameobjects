@@ -6,23 +6,38 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.DAHost, true)]
+    [TestFixture(HostOrServer.DAHost, false)]
     public class ExtendedNetworkShowAndHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;
-
+        private bool m_EnableSceneManagement;
         private GameObject m_ObjectToSpawn;
         private NetworkObject m_SpawnedObject;
         private NetworkManager m_ClientToHideFrom;
         private NetworkManager m_LateJoinClient;
         private NetworkManager m_SpawnOwner;
 
-        public ExtendedNetworkShowAndHideTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+        public ExtendedNetworkShowAndHideTests(HostOrServer hostOrServer, bool enableSceneManagement) : base(hostOrServer)
+        {
+            m_EnableSceneManagement = enableSceneManagement;
+        }
 
         protected override void OnServerAndClientsCreated()
         {
+            if (!UseCMBService())
+            {
+                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
+            }
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
+            }
+
             m_ObjectToSpawn = CreateNetworkObjectPrefab("TestObject");
             m_ObjectToSpawn.SetActive(false);
+
             base.OnServerAndClientsCreated();
         }
 
@@ -81,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             m_LateJoinClient = networkManager;
-
+            networkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
             networkManager.NetworkConfig.Prefabs = m_SpawnOwner.NetworkConfig.Prefabs;
             base.OnNewClientCreated(networkManager);
         }
