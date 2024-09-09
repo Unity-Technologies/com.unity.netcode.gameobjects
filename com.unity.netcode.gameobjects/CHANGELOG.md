@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where an exception could occur when receiving a universal RPC for a `NetworkObject` that has been despawned.
+- Fixed issue where an exception could occur when receiving a universal RPC for a `NetworkObject` that has been despawned. (#3055)
 - Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3046)
 - Fixed issue where collections v2.2.x was not supported when using UTP v2.2.x within Unity v2022.3. (#3033)
 - Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3029)
