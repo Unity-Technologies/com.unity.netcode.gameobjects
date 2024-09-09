@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where a NetworkObject hidden from a client that is then promoted to be session owner was not being synchronized with newly joining clients.(#3051)
+- Fixed issue where clients could have a wrong time delta on `NetworkVariableBase` which could prevent from sending delta state updates. (#3045)
 - Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3042)
 - Fixed issue where the `NetworkSpawnManager.HandleNetworkObjectShow` could throw an exception if one of the `NetworkObject` components to show was destroyed during the same frame. (#3030)
 - Fixed issue where the `NetworkManagerHelper` was continuing to check for hierarchy changes when in play mode. (#3026)
