@@ -326,20 +326,30 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             s_IsStarted = false;
 
-            // Shutdown the server which forces clients to disconnect
-            foreach (var networkManager in NetworkManagerInstances)
+            try
             {
-                networkManager.Shutdown();
-                s_Hooks.Remove(networkManager);
-            }
-
-            // Destroy the network manager instances
-            foreach (var networkManager in NetworkManagerInstances)
-            {
-                if (networkManager.gameObject != null)
+                // Shutdown the server which forces clients to disconnect
+                foreach (var networkManager in NetworkManagerInstances)
                 {
-                    Object.DestroyImmediate(networkManager.gameObject);
+                    if (networkManager != null && networkManager.IsListening)
+                    {
+                        networkManager?.Shutdown();
+                        s_Hooks.Remove(networkManager);
+                    }
                 }
+
+                // Destroy the network manager instances
+                foreach (var networkManager in NetworkManagerInstances)
+                {
+                    if (networkManager != null && networkManager.gameObject)
+                    {
+                        Object.DestroyImmediate(networkManager.gameObject);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
 
             NetworkManagerInstances.Clear();
