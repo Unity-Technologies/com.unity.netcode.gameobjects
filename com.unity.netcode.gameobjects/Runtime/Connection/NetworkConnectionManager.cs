@@ -1299,7 +1299,15 @@ namespace Unity.Netcode
         {
             if (!LocalClient.IsServer)
             {
-                throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
+                if (NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                {
+                    throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
+                }
+                else
+                {
+                    Debug.LogWarning($"Currently, clients cannot disconnect other clients from a distributed authority session. Please use `{nameof(Shutdown)}()` instead.");
+                    return;
+                }
             }
 
             if (clientId == NetworkManager.ServerClientId)

@@ -938,6 +938,7 @@ namespace Unity.Netcode
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
         /// </summary>
+        [Tooltip("If enabled (default disabled), instances of this NetworkObject will ignore any parent(s) it might have and replicate on clients as the root being its parent.")]
         public bool AlwaysReplicateAsRoot;
 
         /// <summary>
@@ -955,6 +956,8 @@ namespace Unity.Netcode
         /// bandwidth cost. This can also be useful for UI elements that have
         /// a predetermined fixed position.
         /// </remarks>
+        [Tooltip("If enabled (default enabled), newly joining clients will be synchronized with the transform of the associated GameObject this component is attached to. Typical use case" +
+            " scenario would be for managment objects or in-scene placed objects that don't move and already have their transform settings applied within the scene information.")]
         public bool SynchronizeTransform = true;
 
         /// <summary>
@@ -1012,6 +1015,7 @@ namespace Unity.Netcode
         /// To synchronize clients of a <see cref="NetworkObject"/>'s scene being changed via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/>,
         /// make sure <see cref="SceneMigrationSynchronization"/> is enabled (it is by default).
         /// </remarks>
+        [Tooltip("When enabled (default disabled), spawned instances of this NetworkObject will automatically migrate to any newly assigned active scene.")]
         public bool ActiveSceneSynchronization;
 
         /// <summary>
@@ -1030,6 +1034,7 @@ namespace Unity.Netcode
         /// is <see cref="true"/> and <see cref="ActiveSceneSynchronization"/> is <see cref="false"/> and the scene is not the currently
         /// active scene, then the <see cref="NetworkObject"/> will be destroyed.
         /// </remarks>
+        [Tooltip("When enabled (default enabled), dynamically spawned instances of this NetworkObject's migration to a different scene will automatically be synchonize amongst clients.")]
         public bool SceneMigrationSynchronization = true;
 
         /// <summary>
@@ -1045,7 +1050,7 @@ namespace Unity.Netcode
         /// <summary>
         /// When set to false, the NetworkObject will be spawned with no observers initially (other than the server)
         /// </summary>
-        [Tooltip("When false, the NetworkObject will spawn with no observers initially. (default is true)")]
+        [Tooltip("When disabled (default enabled), the NetworkObject will spawn with no observers. You control object visibility using NetworkShow. This applies to newly joining clients as well.")]
         public bool SpawnWithObservers = true;
 
         /// <summary>
@@ -1074,11 +1079,13 @@ namespace Unity.Netcode
         /// Whether or not to destroy this object if it's owner is destroyed.
         /// If true, the objects ownership will be given to the server.
         /// </summary>
+        [Tooltip("When enabled (default disabled), instances of this NetworkObject will not be destroyed if the owning client disconnects.")]
         public bool DontDestroyWithOwner;
 
         /// <summary>
         /// Whether or not to enable automatic NetworkObject parent synchronization.
         /// </summary>
+        [Tooltip("When disabled (default enabled), NetworkObject parenting will not be automatically synchronized. This is typically used when you want to implement your own custom parenting solution.")]
         public bool AutoObjectParentSync = true;
 
         /// <summary>
@@ -1091,12 +1098,14 @@ namespace Unity.Netcode
         /// When using a <see cref="NetworkTopologyTypes.ClientServer"/> network topology and an owner authoritative motion model, disabling this can help smooth parenting transitions.
         /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology this will have no impact on the owner's instance since only the authority/owner can parent.
         /// </remarks>
+        [Tooltip("When disabled (default enabled), the owner will not apply a server or host's transform properties when parenting changes. Primarily useful for client-server network topology configurations.")]
         public bool SyncOwnerTransformWhenParented = true;
 
         /// <summary>
         /// Client-Server specific, when enabled an owner of a NetworkObject can parent locally as opposed to requiring the owner to notify the server it would like to be parented.
         /// This behavior is always true when using a distributed authority network topology and does not require it to be set.
         /// </summary>
+        [Tooltip("When enabled (default disabled), owner's can parent a NetworkObject locally without having to send an RPC to the server or host. Only pertinent when using client-server network topology configurations.")]
         public bool AllowOwnerToParent;
 
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();

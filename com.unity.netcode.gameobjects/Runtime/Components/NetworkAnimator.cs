@@ -584,7 +584,7 @@ namespace Unity.Netcode.Components
             base.OnDestroy();
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
