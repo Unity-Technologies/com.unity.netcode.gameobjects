@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added tooltips for all of the `NetworkObject` component's properties. (#3052)
 - Added message size validation to named and unnamed message sending functions for better error messages. (#3049)
 - Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3031)
 - Added `NetworkTransform.SwitchTransformSpaceWhenParented` property that, when enabled, will handle the world to local, local to world, and local to local transform space transitions when interpolation is enabled. (#3013)
@@ -20,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where an exception could occur when receiving a universal RPC for a `NetworkObject` that has been despawned. (#3052)
 - Fixed issue where a NetworkObject hidden from a client that is then promoted to be session owner was not being synchronized with newly joining clients.(#3051)
 - Fixed issue where clients could have a wrong time delta on `NetworkVariableBase` which could prevent from sending delta state updates. (#3045)
 - Fixed issue where setting a prefab hash value during connection approval but not having a player prefab assigned could cause an exception when spawning a player. (#3042)
@@ -30,6 +32,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkTransformEditor` now uses `NetworkTransform` as the base type class to assure it doesn't display a foldout group when using the base `NetworkTransform` component class. (#3052)
+- Changed `NetworkAnimator.Awake` is now a protected virtual method. (#3052)
+- Changed  when invoking `NetworkManager.ConnectionManager.DisconnectClient` during a distributed authority session a more appropriate message is logged. (#3052)
 - Changed `NetworkTransformEditor` so it now derives from `NetcodeEditorBase`. (#3013)
 - Changed `NetworkRigidbodyBaseEditor` so it now derives from `NetcodeEditorBase`. (#3013)
 - Changed `NetworkManagerEditor` so it now derives from `NetcodeEditorBase`. (#3013)
