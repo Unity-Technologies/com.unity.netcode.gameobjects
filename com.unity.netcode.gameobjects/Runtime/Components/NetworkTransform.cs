@@ -3604,8 +3604,12 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Teleport the transform to the given values without interpolating
+        /// Teleport an already spawned object to the given values without interpolating.
         /// </summary>
+        /// <remarks>
+        /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
+        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
+        /// </remarks>
         /// <param name="newPosition"></param> new position to move to.
         /// <param name="newRotation"></param> new rotation to rotate to.
         /// <param name="newScale">new scale to scale to.</param>
