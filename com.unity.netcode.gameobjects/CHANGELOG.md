@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkAnimator` would send updates to non-observer clients. (#3057)
 - Fixed issue where an exception could occur when receiving a universal RPC for a `NetworkObject` that has been despawned. (#3052)
 - Fixed issue where a NetworkObject hidden from a client that is then promoted to be session owner was not being synchronized with newly joining clients.(#3051)
 - Fixed issue where clients could have a wrong time delta on `NetworkVariableBase` which could prevent from sending delta state updates. (#3045)
