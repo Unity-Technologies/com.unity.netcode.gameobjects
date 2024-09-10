@@ -924,8 +924,14 @@ namespace Unity.Netcode.Components
                 {
                     // Just notify all remote clients and not the local server
                     m_ClientSendList.Clear();
-                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                    m_ClientSendList.Remove(NetworkManager.LocalClientId);
+                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    {
+                        if (clientId == NetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
+                        {
+                            continue;
+                        }
+                        m_ClientSendList.Add(clientId);
+                    }
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     SendAnimStateClientRpc(m_AnimationMessage, m_ClientRpcParams);
                 }
@@ -1223,9 +1229,14 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    {
+                        if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
+                        {
+                            continue;
+                        }
+                        m_ClientSendList.Add(clientId);
+                    }
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
                 }
@@ -1271,9 +1282,14 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    {
+                        if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
+                        {
+                            continue;
+                        }
+                        m_ClientSendList.Add(clientId);
+                    }
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animationMessage, m_ClientRpcParams);
                 }
@@ -1322,8 +1338,14 @@ namespace Unity.Netcode.Components
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
             m_ClientSendList.Clear();
-            m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-            m_ClientSendList.Remove(NetworkManager.ServerClientId);
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                if (clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
+                {
+                    continue;
+                }
+                m_ClientSendList.Add(clientId);
+            }
 
             if (IsServerAuthoritative())
             {
