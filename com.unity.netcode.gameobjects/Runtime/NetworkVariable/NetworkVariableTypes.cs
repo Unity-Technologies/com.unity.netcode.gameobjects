@@ -36,5 +36,6 @@ namespace Unity.Netcode
         Long = 15,
         ULong = 16,
         Unmanaged = 17,
+        UnmanagedNetworkSerializable = 18,
     }
 }

@@ -1145,7 +1145,7 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     internal class UnmanagedNetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged, INetworkSerializable
     {
-        public NetworkVariableType Type => NetworkVariableType.Value;
+        public NetworkVariableType Type => NetworkVariableType.UnmanagedNetworkSerializable;
         public bool IsDistributedAuthorityOptimized => false;
 
         public void WriteDistributedAuthority(FastBufferWriter writer, ref T value)
