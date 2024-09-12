@@ -154,7 +154,8 @@ namespace Unity.Netcode
 
         private void WriteItem(FastBufferWriter writer, T value)
         {
-            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
+            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Value
+                || NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
             {
                 // Write the size of the item. This allows the CMB runtime to handle unknown types.
                 var sizePos = writer.Position;
@@ -163,7 +164,7 @@ namespace Unity.Netcode
                 NetworkVariableSerialization<T>.Serializer.Write(writer, ref value);
                 var currentPos = writer.Position;
                 writer.Seek(sizePos);
-                writer.WriteValueSafe((ushort) currentPos - startPos);
+                writer.WriteValueSafe((ushort)currentPos - startPos);
                 writer.Seek(currentPos);
             }
             else
@@ -196,15 +197,13 @@ namespace Unity.Netcode
 
         private void ReadItem(FastBufferReader reader, ref T value)
         {
-            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
+            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Value
+                || NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
             {
                 // Drop data used by CMB to read packets
                 ByteUnpacker.ReadValueBitPacked(reader, out int _);
             }
-            else
-            {
-                ReadItem(reader, ref value);
-            }
+            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
         }
 
         /// <inheritdoc />
