@@ -94,18 +94,18 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            NetworkVariableSerialization<T>.Serializer.Write(writer, ref element.Value);
+                            WriteItem(writer, element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             BytePacker.WriteValueBitPacked(writer, element.Index);
-                            NetworkVariableSerialization<T>.Serializer.Write(writer, ref element.Value);
+                            WriteItem(writer, element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            NetworkVariableSerialization<T>.Serializer.Write(writer, ref element.Value);
+                            WriteItem(writer, element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
@@ -116,7 +116,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             BytePacker.WriteValueBitPacked(writer, element.Index);
-                            NetworkVariableSerialization<T>.Serializer.Write(writer, ref element.Value);
+                            WriteItem(writer, element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Clear:
@@ -148,7 +148,27 @@ namespace Unity.Netcode
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
-                NetworkVariableSerialization<T>.Serializer.Write(writer, ref m_List.ElementAt(i));
+                WriteItem(writer, m_List.ElementAt(i));
+            }
+        }
+
+        private void WriteItem(FastBufferWriter writer, T value)
+        {
+            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
+            {
+                // Write the size of the item. This allows the CMB runtime to handle unknown types.
+                var sizePos = writer.Position;
+                writer.WriteValueSafe((ushort)0);
+                var startPos = writer.Position;
+                NetworkVariableSerialization<T>.Serializer.Write(writer, ref value);
+                var currentPos = writer.Position;
+                writer.Seek(sizePos);
+                writer.WriteValueSafe((ushort) currentPos - startPos);
+                writer.Seek(currentPos);
+            }
+            else
+            {
+                NetworkVariableSerialization<T>.Serializer.Write(writer, ref value);
             }
         }
 
@@ -169,8 +189,21 @@ namespace Unity.Netcode
             for (int i = 0; i < count; i++)
             {
                 var value = new T();
-                NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                ReadItem(reader, ref value);
                 m_List.Add(value);
+            }
+        }
+
+        private void ReadItem(FastBufferReader reader, ref T value)
+        {
+            if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unknown)
+            {
+                // Drop data used by CMB to read packets
+                ByteUnpacker.ReadValueBitPacked(reader, out int _);
+            }
+            else
+            {
+                ReadItem(reader, ref value);
             }
         }
 
@@ -186,7 +219,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Add:
                         {
                             var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            ReadItem(reader, ref value);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -215,7 +248,7 @@ namespace Unity.Netcode
                         {
                             ByteUnpacker.ReadValueBitPacked(reader, out int index);
                             var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            ReadItem(reader, ref value);
 
                             if (index < m_List.Length)
                             {
@@ -252,7 +285,7 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Remove:
                         {
                             var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            ReadItem(reader, ref value);
                             int index = m_List.IndexOf(value);
                             if (index == -1)
                             {
@@ -315,7 +348,7 @@ namespace Unity.Netcode
                         {
                             ByteUnpacker.ReadValueBitPacked(reader, out int index);
                             var value = new T();
-                            NetworkVariableSerialization<T>.Serializer.Read(reader, ref value);
+                            ReadItem(reader, ref value);
                             if (index >= m_List.Length)
                             {
                                 throw new Exception("Shouldn't be here, index is higher than list length");
