@@ -637,7 +637,7 @@ namespace Unity.Netcode.Components
                             if (IsTeleportingNextFrame || IsSynchronizing || UnreliableFrameSync || (UseHalfFloatPrecision && NetworkDeltaPosition.CollapsedDeltaIntoBase))
                             {
                                 // Send the message reliably
-                                ReliableSequenced = true;
+                                ReliableSequenced = false;
                             }
                             else
                             {
@@ -646,7 +646,7 @@ namespace Unity.Netcode.Components
                         }
                         else // If not using UseUnreliableDeltas, then always use reliable fragmented sequenced
                         {
-                            ReliableSequenced = true;
+                            ReliableSequenced = false;
                         }
 
                         BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
@@ -3843,7 +3843,7 @@ namespace Unity.Netcode.Components
             // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
             var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
                 | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
-                ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
+                ? NetworkDelivery.UnreliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             // Server-host-dahost always sends updates to all clients (but itself)
             if (IsServer)

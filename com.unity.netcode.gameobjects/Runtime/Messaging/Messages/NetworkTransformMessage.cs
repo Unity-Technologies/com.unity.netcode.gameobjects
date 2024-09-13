@@ -132,7 +132,7 @@ namespace Unity.Netcode
                         ownerClientId = context.SenderId;
                     }
 
-                    var networkDelivery = State.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
+                    var networkDelivery = State.IsReliableStateUpdate() ? NetworkDelivery.UnreliableSequenced : NetworkDelivery.UnreliableSequenced;
 
                     // Forward the state update if there are any remote clients to foward it to
                     if (networkManager.ConnectionManager.ConnectedClientsList.Count > (networkManager.IsHost ? 2 : 1))
