@@ -1492,14 +1492,6 @@ namespace Unity.Netcode.Components
 
             if (serializer.IsWriter)
             {
-                // DANGO-TODO: This magic value is sent to the server in order to identify the network transform.
-                // The server discards it before forwarding synchronization data to other clients.
-                if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
-                {
-                    var writer = serializer.GetFastBufferWriter();
-                    writer.WriteValueSafe(k_NetworkTransformStateMagic);
-                }
-
                 SynchronizeState.IsTeleportingNextFrame = true;
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
