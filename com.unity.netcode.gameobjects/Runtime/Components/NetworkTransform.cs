@@ -1463,8 +1463,6 @@ namespace Unity.Netcode.Components
         // For test logging purposes
         internal NetworkTransformState SynchronizeState;
 
-        // DANGO-TODO: We will want to remove this when we migrate NetworkTransforms to a dedicated internal message
-        private const ushort k_NetworkTransformStateMagic = 0xf48d;
         #endregion
 
         #region ONSYNCHRONIZE
