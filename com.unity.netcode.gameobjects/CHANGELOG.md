@@ -10,6 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [2.0.0] - 2024-09-12
+
+### Added
+
 - Added tooltips for all of the `NetworkObject` component's properties. (#3052)
 - Added message size validation to named and unnamed message sending functions for better error messages. (#3049)
 - Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3031)
