@@ -48,6 +48,12 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_NetworkProfileMetrics;
         private SerializedProperty m_NetworkMessageMetrics;
 
+#if CMB_SERVICE_DEVELOPMENT
+        private SerializedProperty m_MajorVersion;
+        private SerializedProperty m_MinorVersion;
+        private SerializedProperty m_PatchVersion;
+#endif
+
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
 
@@ -120,8 +126,11 @@ namespace Unity.Netcode.Editor
 #if MULTIPLAYER_TOOLS
             m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
 #endif
-
-
+#if CMB_SERVICE_DEVELOPMENT
+            m_MajorVersion = serializedObject.FindProperty(nameof(NetworkManager.MajorVersion));
+            m_MinorVersion = serializedObject.FindProperty(nameof(NetworkManager.MinorVersion));
+            m_PatchVersion = serializedObject.FindProperty(nameof(NetworkManager.PatchVersion));
+#endif
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
@@ -161,6 +170,11 @@ namespace Unity.Netcode.Editor
 #if MULTIPLAYER_TOOLS
             m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
 #endif
+#if CMB_SERVICE_DEVELOPMENT
+            m_MajorVersion = serializedObject.FindProperty(nameof(NetworkManager.MajorVersion));
+            m_MinorVersion = serializedObject.FindProperty(nameof(NetworkManager.MinorVersion));
+            m_PatchVersion = serializedObject.FindProperty(nameof(NetworkManager.PatchVersion));
+#endif
 
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_PrefabsList = m_NetworkConfigProperty
@@ -173,10 +187,18 @@ namespace Unity.Netcode.Editor
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
+
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
-
                 EditorGUILayout.Space();
+
+#if CMB_SERVICE_DEVELOPMENT
+                EditorGUILayout.LabelField("Version:", EditorStyles.boldLabel);
+                EditorGUILayout.PropertyField(m_MajorVersion);
+                EditorGUILayout.PropertyField(m_MinorVersion);
+                EditorGUILayout.PropertyField(m_PatchVersion);
+                EditorGUILayout.Space();
+#endif
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_NetworkTopologyProperty);

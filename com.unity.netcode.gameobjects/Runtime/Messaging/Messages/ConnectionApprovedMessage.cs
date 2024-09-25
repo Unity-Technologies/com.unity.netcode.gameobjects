@@ -3,14 +3,35 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
+    internal struct ServiceConfig : INetworkSerializable
+    {
+        public bool IsRestoredSession;
+        public ulong CurrentSessionOwner;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref IsRestoredSession);
+            if (serializer.IsWriter)
+            {
+                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), CurrentSessionOwner);
+            }
+            else
+            {
+                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out CurrentSessionOwner);
+            }
+        }
+    }
+
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
+        private const int k_AddCMBServiceConfig = 2;
         private const int k_VersionAddClientIds = 1;
-        public int Version => k_VersionAddClientIds;
+        public int Version => k_AddCMBServiceConfig;
 
         public ulong OwnerClientId;
         public int NetworkTick;
         // The cloud state service should set this if we are restoring a session
+        public ServiceConfig ServiceConfig;
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
         // Not serialized
@@ -45,8 +66,15 @@ namespace Unity.Netcode
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
             if (IsDistributedAuthority)
             {
-                writer.WriteValueSafe(IsRestoredSession);
-                BytePacker.WriteValueBitPacked(writer, CurrentSessionOwner);
+                if (targetVersion >= k_AddCMBServiceConfig)
+                {
+                    writer.WriteNetworkSerializable(ServiceConfig);
+                }
+                else
+                {
+                    writer.WriteValueSafe(IsRestoredSession);
+                    BytePacker.WriteValueBitPacked(writer, CurrentSessionOwner);
+                }
             }
 
             if (targetVersion >= k_VersionAddClientIds)
@@ -127,8 +155,15 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
             if (networkManager.DistributedAuthorityMode)
             {
-                reader.ReadValueSafe(out IsRestoredSession);
-                ByteUnpacker.ReadValueBitPacked(reader, out CurrentSessionOwner);
+                if (receivedMessageVersion >= k_AddCMBServiceConfig)
+                {
+                    reader.ReadNetworkSerializable(out ServiceConfig);
+                }
+                else
+                {
+                    reader.ReadValueSafe(out IsRestoredSession);
+                    ByteUnpacker.ReadValueBitPacked(reader, out CurrentSessionOwner);
+                }
             }
 
             if (receivedMessageVersion >= k_VersionAddClientIds)

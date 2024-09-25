@@ -552,15 +552,19 @@ namespace Unity.Netcode
             var message = new ConnectionRequestMessage
             {
                 CMBServiceConnection = NetworkManager.CMBServiceConnection,
-                TickRate = NetworkManager.NetworkConfig.TickRate,
-                EnableSceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement,
-
                 // Since only a remote client will send a connection request, we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkManager.NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkManager.NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkManager.NetworkConfig.ConnectionData,
                 MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Length, Allocator.Temp)
             };
+
+            if (NetworkManager.CMBServiceConnection)
+            {
+                message.ClientConfig.NGOVersion = NetworkManager.GetNGOVersion();
+                message.ClientConfig.TickRate = NetworkManager.NetworkConfig.TickRate;
+                message.ClientConfig.EnableSceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement;
+            }
 
             for (int index = 0; index < MessageManager.MessageHandlers.Length; index++)
             {
