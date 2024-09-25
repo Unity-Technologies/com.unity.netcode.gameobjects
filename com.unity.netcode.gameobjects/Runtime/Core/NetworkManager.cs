@@ -941,8 +941,6 @@ namespace Unity.Netcode
                     MajorVersion = byte.Parse(versionSplit[0]);
                     MinorVersion = byte.Parse(versionSplit[1]);
                     PatchVersion = byte.Parse(versionSplit[2]);
-
-                    Debug.Log($"Major:({MajorVersion}) Minor({MinorVersion}) Patch({PatchVersion})");
                 }
             }
         }
