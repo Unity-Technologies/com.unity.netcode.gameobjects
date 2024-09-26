@@ -545,9 +545,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private bool AllPlayerObjectClonesSpawned(NetworkManager joinedClient)
         {
             m_InternalErrorLog.Clear();
+            // If we are not checking for spawned players then exit early with a success
+            if (!ShouldCheckForSpawnedPlayers())
+            {
+                return true;
+            }
+
             // Continue to populate the PlayerObjects list until all player object (local and clone) are found
             ClientNetworkManagerPostStart(joinedClient);
-
             var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
             if (playerObjectRelative == null)
             {
