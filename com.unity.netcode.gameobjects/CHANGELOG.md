@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored when spawning the player prefab. (#3077)
 - Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session. (#3075)
 
 ### Changed
