@@ -763,8 +763,8 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Create prefab instance
-                    networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
+                    // Create prefab instance while applying any pre-assigned position and rotation values
+                    networkObject = UnityEngine.Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
                     networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.PrefabGlobalObjectIdHash = globalObjectIdHash;
                 }
