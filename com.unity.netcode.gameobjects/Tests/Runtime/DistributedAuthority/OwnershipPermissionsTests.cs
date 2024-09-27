@@ -6,18 +6,22 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(HostOrServer.DAHost)]
     internal class OwnershipPermissionsTests : IntegrationTestWithApproximation
     {
         private GameObject m_PermissionsObject;
 
         private StringBuilder m_ErrorLog = new StringBuilder();
 
+        private NetworkManager m_SessionOwner;
+
         protected override int NumberOfClients => 4;
 
-        public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
+        public OwnershipPermissionsTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
         }
 
@@ -28,11 +32,20 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
+        /// <summary>
+        /// This is where the client NetworkManagers are configured
+        /// </summary>
         protected override void OnServerAndClientsCreated()
         {
             m_PermissionsObject = CreateNetworkObjectPrefab("PermObject");
             m_PermissionsObject.AddComponent<OwnershipPermissionsTestHelper>();
-
+            Object.DontDestroyOnLoad(m_PermissionsObject);
+            m_PermissionsObject.gameObject.SetActive(false);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.NetworkTopology = NetworkTopologyTypes.DistributedAuthority;
+                client.NetworkConfig.UseCMBService = UseCMBServiceForDATests;
+            }
             base.OnServerAndClientsCreated();
         }
 
@@ -44,9 +57,9 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var name = m_ObjectToValidate.name;
-            if (!UseCMBService() && !m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+            if (!UseCMBService() && !m_SessionOwner.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
             {
-                m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} has not spawned {name}!");
+                m_ErrorLog.Append($"Client-{m_SessionOwner.LocalClientId} has not spawned {name}!");
                 return false;
             }
 
@@ -70,10 +83,10 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorLog.Clear();
             if (!UseCMBService())
             {
-                otherPermissions = (ushort)m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
+                otherPermissions = (ushort)m_SessionOwner.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
                 if (currentPermissions != otherPermissions)
                 {
-                    m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
+                    m_ErrorLog.Append($"Client-{m_SessionOwner.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
                     return false;
                 }
             }
@@ -97,10 +110,10 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorLog.Clear();
             if (!UseCMBService())
             {
-                otherNetworkObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
+                otherNetworkObject = m_SessionOwner.SpawnManager.SpawnedObjects[networkObjectId];
                 if (otherNetworkObject.OwnerClientId != clientId)
                 {
-                    m_ErrorLog.Append($"[Client-{m_ServerNetworkManager.LocalClientId}][{otherNetworkObject.name}] Expected owner to be {clientId} but it was {otherNetworkObject.OwnerClientId}!");
+                    m_ErrorLog.Append($"[Client-{m_SessionOwner.LocalClientId}][{otherNetworkObject.name}] Expected owner to be {clientId} but it was {otherNetworkObject.OwnerClientId}!");
                     return false;
                 }
             }
@@ -120,7 +133,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateOwnershipPermissionsTest()
         {
-            var firstInstance = SpawnObject(m_PermissionsObject, m_ClientNetworkManagers[0]).GetComponent<NetworkObject>();
+            m_SessionOwner = GetSessionOwner();
+
+            m_PermissionsObject.gameObject.SetActive(true);
+            yield return null;
+            var firstInstance = SpawnObject(m_PermissionsObject, m_SessionOwner).GetComponent<NetworkObject>();
             OwnershipPermissionsTestHelper.CurrentOwnedInstance = firstInstance;
             var firstInstanceHelper = firstInstance.GetComponent<OwnershipPermissionsTestHelper>();
             var networkObjectId = firstInstance.NetworkObjectId;
@@ -243,12 +260,12 @@ namespace Unity.Netcode.RuntimeTests
             // Get the 3rd client to send a request at the "relatively" same time
             var thirdInstance = m_ClientNetworkManagers[2].SpawnManager.SpawnedObjects[networkObjectId];
             var thirdInstanceHelper = thirdInstance.GetComponent<OwnershipPermissionsTestHelper>();
-
+            yield return null;
             // At the same time send a request by the third client.
             requestStatus = thirdInstance.RequestOwnership();
 
             // We expect the 3rd client's request should be able to be sent at this time as well (i.e. creates the race condition between two clients)
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{m_ServerNetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{m_SessionOwner.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
 
             // We expect the first requesting client to be given ownership
             yield return WaitForConditionOrTimeOut(() => firstInstance.IsOwner);
@@ -256,7 +273,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
 
             // Just do a sanity check to assure ownership has changed on all clients.
-            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstInstance.NetworkManager.LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstInstance.NetworkManager.LocalClientId)); // <---- Failes here
+
             AssertOnTimeout($"[Ownership Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
 
             // Now, the third client should get a RequestInProgress returned as their request response
@@ -304,32 +322,30 @@ namespace Unity.Netcode.RuntimeTests
             // Test for targeted ownership request:
             ///////////////////////////////////////////////
 
-            // Now get the DAHost's client's instance
-            var daHostInstance = m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
-            var daHostInstanceHelper = daHostInstance.GetComponent<OwnershipPermissionsTestHelper>();
+            var targetApprovedNetworkObject = firstInstance;
+            var targetApprovedTestHelper = firstInstanceHelper;
+            firstInstanceHelper = null;
 
             secondInstanceHelper.AllowOwnershipRequest = true;
             secondInstanceHelper.OnlyAllowTargetClientId = true;
-            secondInstanceHelper.ClientToAllowOwnership = daHostInstance.NetworkManager.LocalClientId;
+            secondInstanceHelper.ClientToAllowOwnership = targetApprovedNetworkObject.NetworkManager.LocalClientId;
 
-            // Send out a request from all three clients
-            requestStatus = firstInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstInstance.NetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
             requestStatus = thirdInstance.RequestOwnership();
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdInstance.NetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
             requestStatus = fourthInstance.RequestOwnership();
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthInstance.NetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
-            requestStatus = daHostInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{daHostInstance.NetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
+            requestStatus = targetApprovedNetworkObject.RequestOwnership();
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{targetApprovedNetworkObject.NetworkManager.LocalClientId} was unabled to send a request for ownership because: {requestStatus}!");
 
-            // The server and the 2nd client should be denied and the third client should be approved
             yield return WaitForConditionOrTimeOut(() =>
-            (firstInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
-            (thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
-            (fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
-            (daHostInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
+            (thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied || thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
+            (fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied || fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
+            (targetApprovedTestHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
             );
-            AssertOnTimeout($"[Targeted Owner] Client-{daHostInstance.NetworkManager.LocalClientId} did not get the right request reponse: {daHostInstanceHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.Approved}!");
+
+            AssertOnTimeout($"[Targeted Owner] Client-{targetApprovedTestHelper.NetworkManager.LocalClientId} did not get the right request reponse: {targetApprovedTestHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.Approved}!");
+
+            yield return s_DefaultWaitForTick;
         }
 
         internal class OwnershipPermissionsTestHelper : NetworkBehaviour

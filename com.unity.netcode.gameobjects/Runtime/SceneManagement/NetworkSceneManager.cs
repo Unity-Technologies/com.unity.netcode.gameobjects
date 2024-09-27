@@ -2011,7 +2011,8 @@ namespace Unity.Netcode
 
                 // NetworkSceneManager does not synchronize scenes that are not loaded by NetworkSceneManager
                 // unless the scene in question is the currently active scene.
-                if (ExcludeSceneFromSychronization != null && !ExcludeSceneFromSychronization(scene))
+                if (ExcludeSceneFromSychronization != null && !ExcludeSceneFromSychronization(scene) &&
+                    (!NetworkManager.CMBServiceConnection || (NetworkManager.CMBServiceConnection && clientId != 0)))
                 {
                     continue;
                 }
@@ -2025,7 +2026,8 @@ namespace Unity.Netcode
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, sceneEventData.LoadSceneMode))
+                    if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, sceneEventData.LoadSceneMode) &&
+                        (!NetworkManager.CMBServiceConnection || (NetworkManager.CMBServiceConnection && clientId != 0)))
                     {
                         continue;
                     }
@@ -2042,7 +2044,8 @@ namespace Unity.Netcode
                         sceneEventData.SceneHandle = scene.handle;
                     }
                 }
-                else if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive))
+                else if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive) &&
+                    (!NetworkManager.CMBServiceConnection || (NetworkManager.CMBServiceConnection && clientId != 0)))
                 {
                     continue;
                 }
