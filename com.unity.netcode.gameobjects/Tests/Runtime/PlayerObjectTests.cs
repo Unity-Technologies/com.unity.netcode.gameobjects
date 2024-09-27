@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     internal class PlayerObjectTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 2;
 
         protected GameObject m_NewPlayerToSpawn;
 
@@ -50,6 +50,74 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].LocalClient.PlayerObject != playerLocalClient && !playerLocalClient.IsPlayerObject
             && m_ClientNetworkManagers[0].LocalClient.PlayerObject.IsPlayerObject);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side player object to change!");
+        }
+    }
+
+    /// <summary>
+    /// Validate that when auto-player spawning but SpawnWithObservers is disabled,
+    /// the player instantiated is only spawned on the authority side.
+    /// </summary>
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    internal class PlayerSpawnNoObserversTest : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 2;
+
+        public PlayerSpawnNoObserversTest(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        protected override bool ShouldCheckForSpawnedPlayers()
+        {
+            return false;
+        }
+
+        protected override void OnCreatePlayerPrefab()
+        {
+            var playerNetworkObject = m_PlayerPrefab.GetComponent<NetworkObject>();
+            playerNetworkObject.SpawnWithObservers = false;
+            base.OnCreatePlayerPrefab();
+        }
+
+        [UnityTest]
+        public IEnumerator SpawnWithNoObservers()
+        {
+            yield return s_DefaultWaitForTick;
+
+            if (!m_DistributedAuthority)
+            {
+                // Make sure clients did not spawn their player object on any of the clients including the owner.
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    foreach (var playerObject in m_ServerNetworkManager.SpawnManager.PlayerObjects)
+                    {
+                        Assert.IsFalse(client.SpawnManager.SpawnedObjects.ContainsKey(playerObject.NetworkObjectId), $"Client-{client.LocalClientId} spawned player object for Client-{playerObject.NetworkObjectId}!");
+                    }
+                }
+            }
+            else
+            {
+                // For distributed authority, we want to make sure the player object is only spawned on the authority side and all non-authority instances did not spawn it.
+                var playerObjectId = m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId;
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    Assert.IsFalse(client.SpawnManager.SpawnedObjects.ContainsKey(playerObjectId), $"Client-{client.LocalClientId} spawned player object for Client-{m_ServerNetworkManager.LocalClientId}!");
+                }
+
+                foreach (var clientPlayer in m_ClientNetworkManagers)
+                {
+                    playerObjectId = clientPlayer.LocalClient.PlayerObject.NetworkObjectId;
+                    Assert.IsFalse(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(playerObjectId), $"Client-{m_ServerNetworkManager.LocalClientId} spawned player object for Client-{clientPlayer.LocalClientId}!");
+                    foreach (var client in m_ClientNetworkManagers)
+                    {
+                        if (clientPlayer == client)
+                        {
+                            continue;
+                        }
+                        Assert.IsFalse(client.SpawnManager.SpawnedObjects.ContainsKey(playerObjectId), $"Client-{client.LocalClientId} spawned player object for Client-{clientPlayer.LocalClientId}!");
+                    }
+                }
+
+            }
         }
     }
 }
