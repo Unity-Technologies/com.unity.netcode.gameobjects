@@ -146,22 +146,24 @@ namespace Unity.Netcode
         {
             var isDirty = base.IsDirty();
 
+            // A client without permissions invoking this method should only check to assure the current value is equal to the last known current value
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
+            {
+                // If modifications are detected, then revert back to the last known current value
+                if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
+                {
+                    NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
+                }
+                return false;
+            }
+
             // Compare the previous with the current if not dirty or forcing a check.
             if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
             {
-                // If a client is modifying without permissions, then revert back to the last known current value
-                if (!CanClientWrite(m_NetworkManager.LocalClientId))
-                {
-                    NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
-                    return false;
-                }
-                else
-                {
-                    SetDirty(true);
-                    OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
-                    m_IsDisposed = false;
-                    isDirty = true;
-                }
+                SetDirty(true);
+                OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+                m_IsDisposed = false;
+                isDirty = true;
             }
             return isDirty;
         }
