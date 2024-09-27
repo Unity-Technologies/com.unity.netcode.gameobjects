@@ -90,6 +90,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 ///////////////////////////////////////////////////////////////////////////
                 // List<int> Single dimension list
+
                 compInt = client.LocalClient.PlayerObject.GetComponent<ListTestHelperInt>();
                 compIntServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<ListTestHelperInt>();
                 yield return WaitForConditionOrTimeOut(() => compInt.ValidateInstances());
@@ -99,16 +100,34 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compIntServer.OwnerClientId}'s {nameof(ListTestHelperInt)} {compIntServer.name} component match!");
                 var randomInt = Random.Range(int.MinValue, int.MaxValue);
 
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    //////////////////////////////////
+                    // No Write Owner Add Int
+                    compIntServer.Add(randomInt, ListTestHelperBase.Targets.Owner);
+                }
+
                 //////////////////////////////////
                 // Owner Add int
                 compInt.Add(randomInt, ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compInt.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {nameof(ListTestHelperInt)} {compInt.name}!");
+
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    //////////////////////////////////
+                    // No Write Server Add Int
+                    compInt.Add(randomInt, ListTestHelperBase.Targets.Server);
+                }
+
                 //////////////////////////////////
                 // Server Add int
                 compIntServer.Add(randomInt, ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server add failed to synchronize on {nameof(ListTestHelperInt)} {compIntServer.name}!");
+
                 //////////////////////////////////
                 // Owner Remove int
                 var index = Random.Range(0, compInt.ListCollectionOwner.Value.Count - 1);
@@ -131,12 +150,39 @@ namespace Unity.Netcode.RuntimeTests
                 ////////////////////////////////////
                 // Owner Change int
                 var valueIntChange = Random.Range(int.MinValue, int.MaxValue);
+
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // No Write Server Change int with IsDirty restore
+                    compIntServer.ListCollectionOwner.Value[index] = valueIntChange;
+                    compIntServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server change failed to restore on {nameof(ListTestHelperInt)} {compInt.name}!");
+
+                    // No Write Server Change int with owner state update override
+                    compIntServer.ListCollectionOwner.Value[index] = valueIntChange;
+                }
                 compInt.ListCollectionOwner.Value[index] = valueIntChange;
                 compInt.ListCollectionOwner.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compInt.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {nameof(ListTestHelperInt)} {compInt.name}!");
+
                 //////////////////////////////////
                 // Server Change int
+
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // No Write Client Change int with IsDirty restore
+                    compInt.ListCollectionServer.Value[index] = valueIntChange;
+                    compInt.ListCollectionServer.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compInt.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} change failed to restore on {nameof(ListTestHelperInt)} {compInt.name}!");
+
+                    // No Write Client Change int with owner state update override
+                    compInt.ListCollectionServer.Value[index] = valueIntChange;
+                }
                 compIntServer.ListCollectionServer.Value[index] = valueIntChange;
                 compIntServer.ListCollectionServer.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
@@ -211,13 +257,36 @@ namespace Unity.Netcode.RuntimeTests
                 //////////////////////////////////
                 // Owner Remove List<int> item
                 index = Random.Range(0, compListInt.ListCollectionOwner.Value.Count - 1);
+
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    compListIntServer.ListCollectionOwner.Value.Remove(compListIntServer.ListCollectionOwner.Value[index]);
+                    compListIntServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server remove failed to restore on {nameof(ListTestHelperListInt)} {compListIntServer.name}! {compListIntServer.GetLog()}");
+                    // No Write Server Remove List<int> item with update restore
+                    compListIntServer.ListCollectionOwner.Value.Remove(compListIntServer.ListCollectionOwner.Value[index]);
+                }
                 compListInt.Remove(compListInt.ListCollectionOwner.Value[index], ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compInt.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {nameof(ListTestHelperListInt)} {compListInt.name}! {compListInt.GetLog()}");
+
                 //////////////////////////////////
                 // Server Remove List<int> item
                 index = Random.Range(0, compListIntServer.ListCollectionServer.Value.Count - 1);
-                compListIntServer.Remove(compListIntServer.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Owner);
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // No Write Client Remove List<int> item with CheckDirtyState restore                
+                    compListInt.Remove(compListInt.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Server);
+                    yield return WaitForConditionOrTimeOut(() => compListInt.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} remove failed to restore on {nameof(ListTestHelperListInt)} {compListIntServer.name}! {compListIntServer.GetLog()}");
+
+                    // No Write Client Remove List<int> item with update restore
+                    compListInt.Remove(compListInt.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Server);
+                }
+                compListIntServer.Remove(compListIntServer.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compListIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server remove failed to synchronize on {nameof(ListTestHelperListInt)} {compListIntServer.name}! {compListIntServer.GetLog()}");
 
@@ -370,12 +439,37 @@ namespace Unity.Netcode.RuntimeTests
 
                 ////////////////////////////////////
                 // Owner Change SerializableObject
+
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // No Write Server Remove Serializable item with IsDirty restore
+                    compObjectServer.ListCollectionOwner.Value[index] = SerializableObject.GetRandomObject();
+                    compObjectServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server change failed to restore on {nameof(ListTestHelperSerializableObject)} {compObjectServer.name}!");
+
+                    // No Write Server Remove Serializable item with owner state update restore
+                    compObjectServer.ListCollectionOwner.Value[index] = SerializableObject.GetRandomObject();
+                }
                 compObject.ListCollectionOwner.Value[index] = SerializableObject.GetRandomObject();
                 compObject.ListCollectionOwner.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {nameof(ListTestHelperSerializableObject)} {compObject.name}!");
                 //////////////////////////////////
                 // Server Change SerializableObject
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // No Write Client Remove Serializable item with IsDirty restore
+                    compObject.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
+                    compObject.ListCollectionServer.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} change failed to restore on {nameof(ListTestHelperSerializableObject)} {compObjectServer.name}!");
+
+                    // No Write Client Remove Serializable item with owner state update restore                
+                    compObject.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
+                }
                 compObjectServer.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
                 compObjectServer.ListCollectionServer.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
@@ -427,7 +521,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compObjectServer.OwnerClientId}'s {nameof(ListTestHelperSerializableObject)} {compObjectServer.name} component match!");
 
                 ///////////////////////////////////////////////////////////////////////////
-                // List<List<int>> Nested List Validation
+                // List<List<INetworkSerializable>> Nested List Validation
                 compListObject = client.LocalClient.PlayerObject.GetComponent<ListTestHelperListSerializableObject>();
                 compListObjectServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<ListTestHelperListSerializableObject>();
                 yield return WaitForConditionOrTimeOut(() => compListObject.ValidateInstances());
@@ -437,24 +531,24 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compListObjectServer.OwnerClientId}'s {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name} component match! {compListObjectServer.GetLog()}");
 
                 //////////////////////////////////
-                // Owner Add List<int> item
+                // Owner Add List<INetworkSerializable> item
                 compListObject.Add(SerializableObject.GetListOfRandomObjects(5), ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}! {compListObject.GetLog()}");
                 //////////////////////////////////
-                // Server Add List<int> item
+                // Server Add List<INetworkSerializable> item
                 compListObjectServer.Add(SerializableObject.GetListOfRandomObjects(5), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server add failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name}! {compListObjectServer.GetLog()}");
 
                 //////////////////////////////////
-                // Owner Remove List<int> item
+                // Owner Remove List<INetworkSerializable> item
                 index = Random.Range(0, compListObject.ListCollectionOwner.Value.Count - 1);
                 compListObject.Remove(compListObject.ListCollectionOwner.Value[index], ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}! {compListObject.GetLog()}");
                 //////////////////////////////////
-                // Server Remove List<int> item
+                // Server Remove List<INetworkSerializable> item
                 index = Random.Range(0, compListObjectServer.ListCollectionServer.Value.Count - 1);
                 compListObjectServer.Remove(compListObjectServer.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
@@ -468,7 +562,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compListObjectServer.OwnerClientId}'s {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name} component match! {compListObjectServer.GetLog()}");
 
                 ////////////////////////////////////
-                // Owner Change List<int> item
+                // Owner Change List<INetworkSerializable> item
                 index = Random.Range(0, compListObject.ListCollectionOwner.Value.Count - 1);
                 compListObject.ListCollectionOwner.Value[index] = SerializableObject.GetListOfRandomObjects(5);
                 compListObject.ListCollectionOwner.CheckDirtyState();
@@ -477,7 +571,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"Client-{client.LocalClientId} change index ({index}) failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}! {compListObject.GetLog()}");
 
                 //////////////////////////////////
-                // Server Change List<int> item
+                // Server Change List<INetworkSerializable> item
                 index = Random.Range(0, compListObjectServer.ListCollectionServer.Value.Count - 1);
                 compListObjectServer.ListCollectionServer.Value[index] = SerializableObject.GetListOfRandomObjects(5);
                 compListObjectServer.ListCollectionServer.CheckDirtyState();
@@ -486,12 +580,12 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"Server change failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name}! {compListObjectServer.GetLog()}");
 
                 ////////////////////////////////////
-                // Owner Add Range of List<int> items
+                // Owner Add Range of List<INetworkSerializable> items
                 compListObject.AddRange(SerializableObject.GetListOfListOfRandomObjects(5, 5), ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add range failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}! {compListObject.GetLog()}");
                 //////////////////////////////////
-                // Server Add Range of List<int> items
+                // Server Add Range of List<INetworkSerializable> items
                 compListObjectServer.AddRange(SerializableObject.GetListOfListOfRandomObjects(5, 5), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server add range failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name}! {compListObjectServer.GetLog()}");
@@ -503,23 +597,46 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Server] Not all instances of client-{compListObjectServer.OwnerClientId}'s {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name} component match!");
 
                 ////////////////////////////////////
-                // Owner Full Set List<List<int>>
+                // Owner Full Set List<List<INetworkSerializable>>
                 compListObject.FullSet(SerializableObject.GetListOfListOfRandomObjects(5, 5), ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} full set failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}!");
                 //////////////////////////////////
-                // Server Full Set List<List<int>>
+                // Server Full Set List<List<INetworkSerializable>>
                 compListObjectServer.FullSet(SerializableObject.GetListOfListOfRandomObjects(5, 5), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server full set failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name}!");
 
                 ////////////////////////////////////
-                // Owner Clear List<List<int>>
+                // Owner Clear List<List<INetworkSerializable>>
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // Server Clear List<List<INetworkSerializable>> with IsDirty restore
+                    compListObjectServer.ListCollectionOwner.Value.Clear();
+                    compListObjectServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server clear owner collection failed to restore back to last known valid state on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}!");
+                    // Server Clear List<List<INetworkSerializable>> with update state restore
+                    compListObjectServer.ListCollectionOwner.Value.Clear();
+                }
                 compListObject.Clear(ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}!");
                 //////////////////////////////////
-                // Server Clear List<List<int>>
+                // Server Clear List<List<INetworkSerializable>>
+
+                if (!client.IsServer)
+                {
+                    // Client Clear List<List<INetworkSerializable>> with IsDirty restore
+                    compListObject.ListCollectionServer.Value.Clear();
+                    compListObject.ListCollectionServer.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compListObject.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client clear owner collection failed to restore back to last known valid state on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}!");
+
+                    // Client Clear List<List<INetworkSerializable>> with update state restore
+                    compListObject.ListCollectionServer.Value.Clear();
+                }
                 compListObjectServer.Clear(ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compListObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server clear failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObjectServer.name}!");
