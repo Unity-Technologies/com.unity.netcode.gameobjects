@@ -625,7 +625,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {nameof(ListTestHelperListSerializableObject)} {compListObject.name}!");
                 //////////////////////////////////
                 // Server Clear List<List<INetworkSerializable>>
-
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
                 if (!client.IsServer)
                 {
                     // Client Clear List<List<INetworkSerializable>> with IsDirty restore
@@ -685,12 +685,46 @@ namespace Unity.Netcode.RuntimeTests
 
                 //////////////////////////////////
                 // Owner Add SerializableObject Entry
-                compDictionary.Add((GetNextKey(), SerializableObject.GetRandomObject()), ListTestHelperBase.Targets.Owner);
+                var newEntry = (GetNextKey(), SerializableObject.GetRandomObject());
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // Server-side add same key and SerializableObject prior to being added to the owner side
+                    compDictionaryServer.ListCollectionOwner.Value.Add(newEntry.Item1, newEntry.Item2);
+                    // Checking if dirty on server side should revert back to origina known current dictionary state
+                    compDictionaryServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server add to owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+                    // Server-side add the same key and SerializableObject to owner write permission (would throw key exists exception too if previous failed)                    
+                    compDictionaryServer.ListCollectionOwner.Value.Add(newEntry.Item1, newEntry.Item2);
+                    // Server-side add a completely new key and SerializableObject to to owner write permission property
+                    compDictionaryServer.ListCollectionOwner.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
+                    // Both should be overridden by the owner-side update
+
+                }
+                // Add key and SerializableObject to owner side
+                compDictionary.Add(newEntry, ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
                 //////////////////////////////////
                 // Server Add SerializableObject Entry
-                compDictionaryServer.Add((GetNextKey(), SerializableObject.GetRandomObject()), ListTestHelperBase.Targets.Server);
+                newEntry = (GetNextKey(), SerializableObject.GetRandomObject());
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // Client-side add same key and SerializableObject to server write permission property
+                    compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
+                    // Checking if dirty on client side should revert back to origina known current dictionary state
+                    compDictionary.ListCollectionServer.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} add to server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                    // Client-side add the same key and SerializableObject to server write permission property (would throw key exists exception too if previous failed)                    
+                    compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
+                    // Client-side add a completely new key and SerializableObject to to server write permission property
+                    compDictionary.ListCollectionServer.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
+                    // Both should be overridden by the server-side update
+                }
+                compDictionaryServer.Add(newEntry, ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server add failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
                 //////////////////////////////////
@@ -718,14 +752,49 @@ namespace Unity.Netcode.RuntimeTests
                 // Owner Change SerializableObject Entry
                 index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
                 valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
-                compDictionary.ListCollectionOwner.Value[valueInt] = SerializableObject.GetRandomObject();
+                var randomObject = SerializableObject.GetRandomObject();
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // Server-side update same key value prior to being updated to the owner side
+                    compDictionaryServer.ListCollectionOwner.Value[index] = randomObject;
+                    // Checking if dirty on server side should revert back to origina known current dictionary state
+                    compDictionaryServer.ListCollectionOwner.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Server update collection entry value to local owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                    // Server-side update same key but with different value prior to being updated to the owner side
+                    compDictionaryServer.ListCollectionOwner.Value[index] = SerializableObject.GetRandomObject();
+                    // Server-side update different key with different value prior to being updated to the owner side
+                    compDictionaryServer.ListCollectionOwner.Value[compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[(index + 1) % compDictionaryServer.ListCollectionOwner.Value.Keys.Count]] = SerializableObject.GetRandomObject();
+                    // Owner-side update should force restore to current known value before updating to the owner's state update of the original index and SerializableObject
+                }
+
+                compDictionary.ListCollectionOwner.Value[valueInt] = randomObject;
                 compDictionary.ListCollectionOwner.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
                 //////////////////////////////////
                 // Server Change SerializableObject
-                index = Random.Range(0, compDictionaryServer.ListCollectionOwner.Value.Keys.Count - 1);
-                valueInt = compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[index];
+                index = Random.Range(0, compDictionaryServer.ListCollectionServer.Value.Keys.Count - 1);
+                valueInt = compDictionaryServer.ListCollectionServer.Value.Keys.ToList()[index];
+                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                if (!client.IsServer)
+                {
+                    // Owner-side update same key value prior to being updated to the server side
+                    compDictionary.ListCollectionServer.Value[index] = randomObject;
+                    // Checking if dirty on owner side should revert back to origina known current dictionary state
+                    compDictionary.ListCollectionServer.IsDirty();
+                    yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Client-{client.LocalClientId} update collection entry value to local server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+
+                    // Owner-side update same key but with different value prior to being updated to the server side
+                    compDictionary.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
+                    // Owner-side update different key with different value prior to being updated to the server side
+                    compDictionary.ListCollectionServer.Value[compDictionary.ListCollectionServer.Value.Keys.ToList()[(index + 1) % compDictionary.ListCollectionServer.Value.Keys.Count]] = SerializableObject.GetRandomObject();
+                    // Server-side update should force restore to current known value before updating to the server's state update of the original index and SerializableObject
+                }
+
                 compDictionaryServer.ListCollectionServer.Value[valueInt] = SerializableObject.GetRandomObject();
                 compDictionaryServer.ListCollectionServer.CheckDirtyState();
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
