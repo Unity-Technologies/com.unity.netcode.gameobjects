@@ -374,6 +374,17 @@ namespace Unity.Netcode
                 }
             }
 
+            // New owners need to assure any NetworkVariables they have write permissions 
+            // to are updated so the previous and original values are aligned with the
+            // current value (primarily for collections).
+            if (OwnerClientId == networkManager.LocalClientId)
+            {
+                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                {
+                    networkObject.ChildNetworkBehaviours[i].UpdateNetworkVariableOnOwnershipChanged();
+                }
+            }
+
             // Always invoke ownership change notifications
             networkObject.InvokeOwnershipChanged(originalOwner, OwnerClientId);
 
