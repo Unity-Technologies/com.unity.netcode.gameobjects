@@ -220,7 +220,7 @@ namespace Unity.Netcode
 
                         var networkVariable = networkBehaviour.NetworkVariableFields[i];
 
-                        if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
+                        if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId) && !networkVariable.CanClientWrite(networkObject.PreviousOwnerId))
                         {
                             // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
                             if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

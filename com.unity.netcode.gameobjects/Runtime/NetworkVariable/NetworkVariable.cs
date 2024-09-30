@@ -307,7 +307,14 @@ namespace Unity.Netcode
             {
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
             }
+
             NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
+            // In order to get managed collections to properly have a previous and current value, we have to
+            // duplicate the collection at this point before making any modifications to the current.
+            // We duplicate the final value after the read (for ReadField ONLY) so the previous value is at par
+            // with the current value (since this is only invoked when initially synchronizing).
+            m_HasPreviousValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
 
             // Once updated, assure the original current value is updated for future comparison purposes
             NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_InternalOriginalValue);
@@ -317,6 +324,21 @@ namespace Unity.Netcode
         public override void WriteField(FastBufferWriter writer)
         {
             NetworkVariableSerialization<T>.Write(writer, ref m_InternalValue);
+        }
+
+        internal override void WriteFieldSynchronization(FastBufferWriter writer)
+        {
+            // If we have a pending update, then synchronize the client with the previously known
+            // value since the updated version will be sent on the next tick or next time it is
+            // set to be updated
+            if (base.IsDirty() && m_HasPreviousValue)
+            {
+                NetworkVariableSerialization<T>.Write(writer, ref m_PreviousValue);
+            }
+            else
+            {
+                base.WriteFieldSynchronization(writer);
+            }
         }
     }
 }

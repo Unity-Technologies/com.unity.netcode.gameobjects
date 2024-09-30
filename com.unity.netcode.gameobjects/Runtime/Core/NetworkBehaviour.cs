@@ -826,6 +826,13 @@ namespace Unity.Netcode
         internal void InternalOnGainedOwnership()
         {
             UpdateNetworkProperties();
+            // New owners need to assure any NetworkVariables they have write permissions 
+            // to are updated so the previous and original values are aligned with the
+            // current value (primarily for collections).
+            if (OwnerClientId == NetworkManager.LocalClientId)
+            {
+                UpdateNetworkVariableOnOwnershipChanged();
+            }
             OnGainedOwnership();
         }
 
@@ -1016,9 +1023,14 @@ namespace Unity.Netcode
         internal readonly List<int> NetworkVariableIndexesToReset = new List<int>();
         internal readonly HashSet<int> NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        internal void NetworkVariableUpdate(ulong targetClientId)
+        /// <summary>
+        /// Determines if a NetworkVariable should have any changes to state sent out
+        /// </summary>
+        /// <param name="targetClientId">target to send the updates to</param>
+        /// <param name="forceSend">specific to change in ownership</param>
+        internal void NetworkVariableUpdate(ulong targetClientId, bool forceSend = false)
         {
-            if (!CouldHaveDirtyNetworkVariables())
+            if (!forceSend && !CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
@@ -1142,6 +1154,17 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkOwnerReadVariablesDirty()
+        {
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
+                {
+                    NetworkVariableFields[j].SetDirty(true);
+                }
+            }
+        }
+
         /// <summary>
         /// Synchronizes by setting only the NetworkVariable field values that the client has permission to read.
         /// Note: This is only invoked when first synchronizing a NetworkBehaviour (i.e. late join or spawned NetworkObject)
@@ -1192,17 +1215,24 @@ namespace Unity.Netcode
                         // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
                         writer.WriteValueSafe((ushort)0);
                         var startPos = writer.Position;
-                        NetworkVariableFields[j].WriteField(writer);
+                        // Write the NetworkVariable field value
+                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
+                        // Otherwise, it will write the previous value if there are pending changes since the pending
+                        // changes will be sent shortly after the client's synchronization.
+                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
                         var size = writer.Position - startPos;
                         writer.Seek(writePos);
-                        // Write the NetworkVariable value
+                        // Write the NetworkVariable field value size
                         writer.WriteValueSafe((ushort)size);
                         writer.Seek(startPos + size);
                     }
                     else // Client-Server Only: Should only ever be invoked when using a client-server NetworkTopology
                     {
-                        // Write the NetworkVariable value
-                        NetworkVariableFields[j].WriteField(writer);
+                        // Write the NetworkVariable field value
+                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
+                        // Otherwise, it will write the previous value if there are pending changes since the pending
+                        // changes will be sent shortly after the client's synchronization.
+                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
                     }
                 }
                 else if (ensureLengthSafety)

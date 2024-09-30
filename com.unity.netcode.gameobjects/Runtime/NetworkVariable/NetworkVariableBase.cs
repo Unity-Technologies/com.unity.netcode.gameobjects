@@ -342,6 +342,21 @@ namespace Unity.Netcode
         public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
         /// <summary>
+        /// There are scenarios, specifically with collections, where a client could be synchronizing and
+        /// some NetworkVariables have pending updates. To avoid duplicating entries, this is invoked only
+        /// when sending the full synchronization information.
+        /// </summary>
+        /// <remarks>
+        /// Derrived classes should send the previous value for synchronization so when the updated value
+        /// is sent (after synchronizing the client) it will apply the updates.
+        /// </remarks>
+        /// <param name="writer"></param>
+        internal virtual void WriteFieldSynchronization(FastBufferWriter writer)
+        {
+            WriteField(writer);
+        }
+
+        /// <summary>
         /// Virtual <see cref="IDisposable"/> implementation
         /// </summary>
         public virtual void Dispose()

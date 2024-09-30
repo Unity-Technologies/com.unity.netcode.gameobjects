@@ -344,13 +344,15 @@ namespace Unity.Netcode
             // We are current owner (client-server) or running in distributed authority mode
             if (originalOwner == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
             {
+                if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
+                {
+                    // Mark any owner read variables as dirty
+                    networkObject.MarkOwnerReadVariablesDirty();
+                    // Immediately queue any pending deltas and order the message before the
+                    // change in ownership message.
+                    networkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+                }
                 networkObject.InvokeBehaviourOnLostOwnership();
-            }
-
-            // We are new owner or (client-server) or running in distributed authority mode
-            if (OwnerClientId == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
-            {
-                networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
             // If in distributed authority mode 
@@ -374,15 +376,10 @@ namespace Unity.Netcode
                 }
             }
 
-            // New owners need to assure any NetworkVariables they have write permissions 
-            // to are updated so the previous and original values are aligned with the
-            // current value (primarily for collections).
-            if (OwnerClientId == networkManager.LocalClientId)
+            // We are new owner or (client-server) or running in distributed authority mode
+            if (OwnerClientId == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
             {
-                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
-                {
-                    networkObject.ChildNetworkBehaviours[i].UpdateNetworkVariableOnOwnershipChanged();
-                }
+                networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
             // Always invoke ownership change notifications
