@@ -123,10 +123,10 @@ namespace Unity.Netcode
                 if (s_ProcessScenes)
                 {
                     var prefabInstances = PrefabUtility.FindAllInstancesOfPrefab(PrefabNetworkObject.gameObject);
-                    
+
                     if (prefabInstances.Length > 0)
                     {
-                        var instancesSceneLoadedSpecific = prefabInstances.Where((c)=> c.scene == scene).ToList();
+                        var instancesSceneLoadedSpecific = prefabInstances.Where((c) => c.scene == scene).ToList();
 
                         if (instancesSceneLoadedSpecific.Count > 0)
                         {
