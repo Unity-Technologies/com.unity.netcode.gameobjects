@@ -210,7 +210,9 @@ namespace Unity.Netcode
         /// <returns>Whether or not the container is dirty</returns>
         public override bool IsDirty()
         {
-            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
+            // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
+            // to the original collection value prior to applying updates (primarily for collections).
+            if (!NetworkUpdaterCheck && m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
             {
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
                 return true;
@@ -277,25 +279,36 @@ namespace Unity.Netcode
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
             }
 
-            // In order to get managed collections to properly have a previous and current value, we have to
-            // duplicate the collection at this point before making any modifications to the current.
-            m_HasPreviousValue = true;
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
             NetworkVariableSerialization<T>.ReadDelta(reader, ref m_InternalValue);
 
-            // Once updated, assure the original current value is updated for future comparison purposes
-            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_InternalOriginalValue);
-
-            // todo:
             // keepDirtyDelta marks a variable received as dirty and causes the server to send the value to clients
             // In a prefect world, whether a variable was A) modified locally or B) received and needs retransmit
             // would be stored in different fields
+            // LEGACY NOTE: This is only to handle NetworkVariableDeltaMessage Version 0 connections. The updated
+            // NetworkVariableDeltaMessage no longer uses this approach.
             if (keepDirtyDelta)
             {
                 SetDirty(true);
             }
 
             OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+        }
+
+        /// <summary>
+        /// This should be always invoked (client & server) to assure the previous values are set
+        /// !! IMPORTANT !!
+        /// When a server forwards delta updates to connected clients, it needs to preserve the previous dirty value(s)
+        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked 
+        /// after it is done forwarding the deltas at the end of the <see cref="NetworkVariableDeltaMessage.Handle(ref NetworkContext)"/> method.
+        /// </summary>
+        internal override void PostDeltaRead()
+        {
+            // In order to get managed collections to properly have a previous and current value, we have to
+            // duplicate the collection at this point before making any modifications to the current.
+            m_HasPreviousValue = true;
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_PreviousValue);
+            // Once updated, assure the original current value is updated for future comparison purposes
+            NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_InternalOriginalValue);
         }
 
         /// <inheritdoc />

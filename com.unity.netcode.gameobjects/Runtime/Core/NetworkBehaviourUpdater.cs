@@ -90,19 +90,24 @@ namespace Unity.Netcode
                         var behaviour = dirtyObj.ChildNetworkBehaviours[k];
                         for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                         {
+                            // Set to true for NetworkVariable to ignore duplication of the
+                            // "internal original value" for collections support.
+                            behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = true;
                             if (behaviour.NetworkVariableFields[i].IsDirty() &&
                                 !behaviour.NetworkVariableIndexesToResetSet.Contains(i))
                             {
                                 behaviour.NetworkVariableIndexesToResetSet.Add(i);
                                 behaviour.NetworkVariableIndexesToReset.Add(i);
                             }
+                            // Reset back to false when done
+                            behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = false;
                         }
                     }
                 }
                 // Now, reset all the no-longer-dirty variables
                 foreach (var dirtyobj in m_DirtyNetworkObjects)
                 {
-                    dirtyobj.PostNetworkVariableWrite();
+                    dirtyobj.PostNetworkVariableWrite(forceSend);
                     // Once done processing, we set the previous owner id to the current owner id
                     dirtyobj.PreviousOwnerId = dirtyobj.OwnerClientId;
                 }

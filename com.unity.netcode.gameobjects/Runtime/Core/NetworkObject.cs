@@ -2783,11 +2783,11 @@ namespace Unity.Netcode
             }
         }
 
-        internal void PostNetworkVariableWrite()
+        internal void PostNetworkVariableWrite(bool forced = false)
         {
             for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
             {
-                ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                ChildNetworkBehaviours[k].PostNetworkVariableWrite(forced);
             }
         }
 

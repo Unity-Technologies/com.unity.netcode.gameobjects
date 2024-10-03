@@ -344,14 +344,6 @@ namespace Unity.Netcode
             // We are current owner (client-server) or running in distributed authority mode
             if (originalOwner == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
             {
-                if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
-                {
-                    // Mark any owner read variables as dirty
-                    networkObject.MarkOwnerReadVariablesDirty();
-                    // Immediately queue any pending deltas and order the message before the
-                    // change in ownership message.
-                    networkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
-                }
                 networkObject.InvokeBehaviourOnLostOwnership();
             }
 
@@ -380,6 +372,16 @@ namespace Unity.Netcode
             if (OwnerClientId == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
             {
                 networkObject.InvokeBehaviourOnGainedOwnership();
+            }
+
+
+            if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
+            {
+                // Mark any owner read variables as dirty
+                networkObject.MarkOwnerReadVariablesDirty();
+                // Immediately queue any pending deltas and order the message before the
+                // change in ownership message.
+                networkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
             }
 
             // Always invoke ownership change notifications

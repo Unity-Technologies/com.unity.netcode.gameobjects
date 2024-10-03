@@ -1081,7 +1081,11 @@ namespace Unity.Netcode
                     NetworkBehaviourIndex = behaviourIndex,
                     NetworkBehaviour = this,
                     TargetClientId = targetClientId,
-                    DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
+                    DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j],
+                    // By sending the network delivery we can forward messages immediately as opposed to processing them
+                    // at the end. While this will send updates to clients that cannot read, the handler will ignore anything
+                    // sent to a client that does not have read permissions.
+                    NetworkDelivery = m_DeliveryTypesForNetworkVariableGroups[j]
                 };
                 // TODO: Serialization is where the IsDirty flag gets changed.
                 // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,

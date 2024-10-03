@@ -531,6 +531,12 @@ namespace Unity.Netcode
             // Always notify locally on the server when ownership is lost
             networkObject.InvokeBehaviourOnLostOwnership();
 
+            // Authority adds entries for all client ownership
+            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+
+            // Always notify locally on the server when a new owner is assigned
+            networkObject.InvokeBehaviourOnGainedOwnership();
+
             if (networkObject.PreviousOwnerId == NetworkManager.LocalClientId)
             {
                 // Mark any owner read variables as dirty
@@ -539,12 +545,6 @@ namespace Unity.Netcode
                 // change in ownership message.
                 NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
             }
-
-            // Authority adds entries for all client ownership
-            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
-
-            // Always notify locally on the server when a new owner is assigned
-            networkObject.InvokeBehaviourOnGainedOwnership();
 
             var size = 0;
             if (NetworkManager.DistributedAuthorityMode)
