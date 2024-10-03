@@ -33,9 +33,17 @@ namespace Unity.Netcode.RuntimeTests
 
         private CollectionTypes m_CollectionType;
 
+        private bool m_EnableDebug;
+
         public NetworkVariableCollectionsTests(HostOrServer hostOrServer, CollectionTypes collectionType) : base(hostOrServer)
         {
             m_CollectionType = collectionType;
+            m_EnableDebug = false;
+        }
+
+        protected override bool OnSetVerboseDebug()
+        {
+            return m_EnableDebug;
         }
 
         protected override IEnumerator OnSetup()
@@ -50,15 +58,21 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
+        private void AddPlayerComponent<T>() where T : ListTestHelperBase
+        {
+            var component = m_PlayerPrefab.AddComponent<T>();
+            component.SetDebugMode(m_EnableDebug);
+        }
+
         protected override void OnCreatePlayerPrefab()
         {
-            m_PlayerPrefab.AddComponent<ListTestHelperInt>();
-            m_PlayerPrefab.AddComponent<ListTestHelperListInt>();
-            m_PlayerPrefab.AddComponent<ListTestHelperSerializableObject>();
-            m_PlayerPrefab.AddComponent<ListTestHelperListSerializableObject>();
-            m_PlayerPrefab.AddComponent<DictionaryTestHelper>();
-            m_PlayerPrefab.AddComponent<NestedDictionaryTestHelper>();
-            m_PlayerPrefab.AddComponent<HashSetBaseTypeTestHelper>();
+            AddPlayerComponent<ListTestHelperInt>();
+            AddPlayerComponent<ListTestHelperListInt>();
+            AddPlayerComponent<ListTestHelperSerializableObject>();
+            AddPlayerComponent<ListTestHelperListSerializableObject>();
+            AddPlayerComponent<DictionaryTestHelper>();
+            AddPlayerComponent<NestedDictionaryTestHelper>();
+            AddPlayerComponent<HashSetBaseTypeTestHelper>();
             base.OnCreatePlayerPrefab();
         }
 
@@ -656,6 +670,111 @@ namespace Unity.Netcode.RuntimeTests
             return m_CurrentKey;
         }
 
+        private int m_Stage;
+
+        private List<NetworkManager> m_Clients;
+
+        private bool m_IsInitialized = false;
+        private StringBuilder m_InitializedStatus = new StringBuilder();
+
+        private IEnumerator ValidateClients(NetworkManager clientBeingTested, bool initialize = false)
+        {
+            UnityEngine.Debug.Log($">>>>>>>>>>>>>>>>>>>>>>>>>[Client-{clientBeingTested.LocalClientId}][{m_Stage}][Validation]<<<<<<<<<<<<<<<<<<<<<<<<< ");
+            m_Stage++;
+            var compDictionary = (DictionaryTestHelper)null;
+            var compDictionaryServer = (DictionaryTestHelper)null;
+            var className = $"{nameof(DictionaryTestHelper)}";
+            var clientsInitialized = new Dictionary<ulong, bool>();
+
+            var validateTimeout = new TimeoutHelper(0.25f);
+
+            foreach (var client in m_Clients)
+            {
+                var ownerInitialized = false;
+                var serverInitialized = false;
+                ///////////////////////////////////////////////////////////////////////////
+                // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
+                compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
+                compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances(), validateTimeout);
+                if (initialize)
+                {
+                    if (validateTimeout.HasTimedOut())
+                    {
+                        m_InitializedStatus.AppendLine($"[Client -{client.LocalClientId}][Owner] Failed validation: {compDictionary.GetLog()}");
+                    }
+                    else
+                    {
+                        m_InitializedStatus.AppendLine($"[Client -{client.LocalClientId}][Owner] Passed validation!");
+                    }
+                    ownerInitialized = !validateTimeout.HasTimedOut();
+                }
+                else
+                {
+                    AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+                }
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances(), validateTimeout);
+                if (initialize)
+                {
+                    if (validateTimeout.HasTimedOut())
+                    {
+                        m_InitializedStatus.AppendLine($"[Client -{client.LocalClientId}][Server] Failed validation: {compDictionaryServer.GetLog()}");
+                    }
+                    else
+                    {
+                        m_InitializedStatus.AppendLine($"[Client -{client.LocalClientId}][Server] Passed validation!");
+                    }
+                    serverInitialized = !validateTimeout.HasTimedOut();
+                }
+                else
+                {
+                    AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+                }
+
+                if (initialize)
+                {
+                    clientsInitialized.Add(client.LocalClientId, ownerInitialized & serverInitialized);
+                }
+            }
+
+            if (initialize)
+            {
+                m_IsInitialized = true;
+                foreach (var entry in clientsInitialized)
+                {
+                    if (!entry.Value)
+                    {
+                        m_IsInitialized = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void ValidateClientsFlat(NetworkManager clientBeingTested)
+        {
+            if (!m_EnableDebug)
+            {
+                return;
+            }
+            UnityEngine.Debug.Log($">>>>>>>>>>>>>>>>>>>>>>>>>[{clientBeingTested.name}][{m_Stage}][Validation]<<<<<<<<<<<<<<<<<<<<<<<<< ");
+            m_Stage++;
+            var compDictionary = (DictionaryTestHelper)null;
+            var compDictionaryServer = (DictionaryTestHelper)null;
+            var className = $"{nameof(DictionaryTestHelper)}";
+            foreach (var client in m_Clients)
+            {
+                ///////////////////////////////////////////////////////////////////////////
+                // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
+                compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
+                compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
+                Assert.True(compDictionary.ValidateInstances(), $"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+                Assert.True(compDictionaryServer.ValidateInstances(), $"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+            }
+        }
+
+
         [UnityTest]
         public IEnumerator TestDictionaryCollections()
         {
@@ -663,15 +782,47 @@ namespace Unity.Netcode.RuntimeTests
             var compDictionaryServer = (DictionaryTestHelper)null;
             var className = $"{nameof(DictionaryTestHelper)}";
 
-            var clientList = m_ClientNetworkManagers.ToList();
+            m_Clients = m_ClientNetworkManagers.ToList();
             if (m_ServerNetworkManager.IsHost)
             {
-                clientList.Insert(0, m_ServerNetworkManager);
+                m_Clients.Insert(0, m_ServerNetworkManager);
             }
 
             m_CurrentKey = 1000;
 
-            foreach (var client in clientList)
+            if (m_EnableDebug)
+            {
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Values <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+                foreach (var client in m_Clients)
+                {
+                    compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
+                    compDictionary.InitValues();
+                    compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
+                    compDictionaryServer.InitValues();
+                }
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Check <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+                var count = 0;
+                while (count < 3)
+                {
+                    m_InitializedStatus.Clear();
+                    foreach (var client in m_Clients)
+                    {
+                        yield return ValidateClients(client, true);
+                    }
+                    if (m_IsInitialized)
+                    {
+                        break;
+                    }
+                    count++;
+                    m_Stage = 0;
+                }
+
+                Assert.IsTrue(m_IsInitialized, $"Not all clients synchronized properly!\n {m_InitializedStatus.ToString()}");
+                VerboseDebug(m_InitializedStatus.ToString());
+            }
+
+            VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+            foreach (var client in m_Clients)
             {
                 ///////////////////////////////////////////////////////////////////////////
                 // Dictionary<int, Dictionary<int,SerializableObject>> nested dictionaries
@@ -679,7 +830,6 @@ namespace Unity.Netcode.RuntimeTests
                 compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
                 yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
                 AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
-
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
                 AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
 
@@ -702,10 +852,13 @@ namespace Unity.Netcode.RuntimeTests
                     // Both should be overridden by the owner-side update
 
                 }
+                VerboseDebug($"[{compDictionary.name}][Owner] Adding Key: {newEntry.Item1}");
                 // Add key and SerializableObject to owner side
                 compDictionary.Add(newEntry, ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} add failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+
+                ValidateClientsFlat(client);
                 //////////////////////////////////
                 // Server Add SerializableObject Entry
                 newEntry = (GetNextKey(), SerializableObject.GetRandomObject());
@@ -724,6 +877,7 @@ namespace Unity.Netcode.RuntimeTests
                     compDictionary.ListCollectionServer.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
                     // Both should be overridden by the server-side update
                 }
+                VerboseDebug($"[{compDictionaryServer.name}][Server] Adding Key: {newEntry.Item1}");
                 compDictionaryServer.Add(newEntry, ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server add failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
@@ -734,10 +888,11 @@ namespace Unity.Netcode.RuntimeTests
                 compDictionary.Remove(valueInt, ListTestHelperBase.Targets.Owner);
                 yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} remove failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+
                 //////////////////////////////////
                 // Server Remove SerializableObject Entry
-                index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
-                valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                index = Random.Range(0, compDictionary.ListCollectionServer.Value.Keys.Count - 1);
+                valueInt = compDictionary.ListCollectionServer.Value.Keys.ToList()[index];
                 compDictionaryServer.Remove(valueInt, ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server remove failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
@@ -748,57 +903,110 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
                 AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
 
+                ValidateClientsFlat(client);
                 ////////////////////////////////////
                 // Owner Change SerializableObject Entry
-                index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
-                valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
                 var randomObject = SerializableObject.GetRandomObject();
-                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
-                if (!client.IsServer)
+                if (compDictionary.ListCollectionOwner.Value.Keys.Count != 0)
                 {
-                    // Server-side update same key value prior to being updated to the owner side
-                    compDictionaryServer.ListCollectionOwner.Value[index] = randomObject;
-                    // Checking if dirty on server side should revert back to origina known current dictionary state
-                    compDictionaryServer.ListCollectionOwner.IsDirty();
-                    yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
-                    AssertOnTimeout($"Server update collection entry value to local owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+                    if (compDictionary.ListCollectionOwner.Value.Keys.Count == 1)
+                    {
+                        index = 0;
+                        valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[0];
+                    }
+                    else
+                    {
+                        index = Random.Range(0, compDictionary.ListCollectionOwner.Value.Keys.Count - 1);
+                        valueInt = compDictionary.ListCollectionOwner.Value.Keys.ToList()[index];
+                    }
 
-                    // Server-side update same key but with different value prior to being updated to the owner side
-                    compDictionaryServer.ListCollectionOwner.Value[index] = SerializableObject.GetRandomObject();
-                    // Server-side update different key with different value prior to being updated to the owner side
-                    compDictionaryServer.ListCollectionOwner.Value[compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[(index + 1) % compDictionaryServer.ListCollectionOwner.Value.Keys.Count]] = SerializableObject.GetRandomObject();
-                    // Owner-side update should force restore to current known value before updating to the owner's state update of the original index and SerializableObject
+                    // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                    if (!client.IsServer)
+                    {
+                        // Server-side update same key value prior to being updated to the owner side
+                        compDictionaryServer.ListCollectionOwner.Value[valueInt] = randomObject;
+                        // Checking if dirty on server side should revert back to origina known current dictionary state
+                        compDictionaryServer.ListCollectionOwner.IsDirty();
+                        yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                        AssertOnTimeout($"Server update collection entry value to local owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                        // Server-side update same key but with different value prior to being updated to the owner side
+                        compDictionaryServer.ListCollectionOwner.Value[valueInt] = SerializableObject.GetRandomObject();
+                        if (compDictionaryServer.ListCollectionOwner.Value.Keys.Count > 1)
+                        {
+                            // Server-side update different key with different value prior to being updated to the owner side
+                            compDictionaryServer.ListCollectionOwner.Value[compDictionaryServer.ListCollectionOwner.Value.Keys.ToList()[(index + 1) % compDictionaryServer.ListCollectionOwner.Value.Keys.Count]] = SerializableObject.GetRandomObject();
+                        }
+                        // Owner-side update should force restore to current known value before updating to the owner's state update of the original index and SerializableObject
+                    }
+
+                    compDictionary.ListCollectionOwner.Value[valueInt] = randomObject;
+                    compDictionary.ListCollectionOwner.CheckDirtyState();
+                    yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                    AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
                 }
 
-                compDictionary.ListCollectionOwner.Value[valueInt] = randomObject;
-                compDictionary.ListCollectionOwner.CheckDirtyState();
-                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
-                AssertOnTimeout($"Client-{client.LocalClientId} change failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
                 //////////////////////////////////
                 // Server Change SerializableObject
-                index = Random.Range(0, compDictionaryServer.ListCollectionServer.Value.Keys.Count - 1);
-                valueInt = compDictionaryServer.ListCollectionServer.Value.Keys.ToList()[index];
-                // Only test restore on non-host clients (otherwise a host is both server and client/owner)
-                if (!client.IsServer)
+                if (compDictionaryServer.ListCollectionServer.Value.Keys.Count != 0)
                 {
-                    // Owner-side update same key value prior to being updated to the server side
-                    compDictionary.ListCollectionServer.Value[index] = randomObject;
-                    // Checking if dirty on owner side should revert back to origina known current dictionary state
-                    compDictionary.ListCollectionServer.IsDirty();
-                    yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
-                    AssertOnTimeout($"Client-{client.LocalClientId} update collection entry value to local server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                    if (compDictionaryServer.ListCollectionServer.Value.Keys.Count == 1)
+                    {
+                        index = 0;
+                        valueInt = compDictionaryServer.ListCollectionServer.Value.Keys.ToList()[0];
+                    }
+                    else
+                    {
+                        index = Random.Range(0, compDictionaryServer.ListCollectionServer.Value.Keys.Count - 1);
+                        valueInt = compDictionaryServer.ListCollectionServer.Value.Keys.ToList()[index];
+                    }
 
-                    // Owner-side update same key but with different value prior to being updated to the server side
-                    compDictionary.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
-                    // Owner-side update different key with different value prior to being updated to the server side
-                    compDictionary.ListCollectionServer.Value[compDictionary.ListCollectionServer.Value.Keys.ToList()[(index + 1) % compDictionary.ListCollectionServer.Value.Keys.Count]] = SerializableObject.GetRandomObject();
-                    // Server-side update should force restore to current known value before updating to the server's state update of the original index and SerializableObject
+                    // Only test restore on non-host clients (otherwise a host is both server and client/owner)
+                    if (!client.IsServer)
+                    {
+                        // Owner-side update same key value prior to being updated to the server side
+                        compDictionary.ListCollectionServer.Value[valueInt] = randomObject;
+                        // Checking if dirty on owner side should revert back to origina known current dictionary state
+                        compDictionary.ListCollectionServer.IsDirty();
+                        yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                        AssertOnTimeout($"Client-{client.LocalClientId} update collection entry value to local server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+
+                        // Owner-side update same key but with different value prior to being updated to the server side
+                        compDictionary.ListCollectionServer.Value[valueInt] = SerializableObject.GetRandomObject();
+
+                        if (compDictionary.ListCollectionServer.Value.Keys.Count > 1)
+                        {
+                            // Owner-side update different key with different value prior to being updated to the server side
+                            compDictionary.ListCollectionServer.Value[compDictionary.ListCollectionServer.Value.Keys.ToList()[(index + 1) % compDictionary.ListCollectionServer.Value.Keys.Count]] = SerializableObject.GetRandomObject();
+                        }
+                        // Server-side update should force restore to current known value before updating to the server's state update of the original index and SerializableObject
+                    }
+
+                    compDictionaryServer.ListCollectionServer.Value[valueInt] = SerializableObject.GetRandomObject();
+                    compDictionaryServer.ListCollectionServer.CheckDirtyState();
+                    yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
+                    AssertOnTimeout($"Server change failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
                 }
+                ValidateClientsFlat(client);
 
-                compDictionaryServer.ListCollectionServer.Value[valueInt] = SerializableObject.GetRandomObject();
-                compDictionaryServer.ListCollectionServer.CheckDirtyState();
+                ////////////////////////////////////
+                // Owner Clear
+                compDictionary.Clear(ListTestHelperBase.Targets.Owner);
+                UnityEngine.Debug.Log($"[{compDictionary.name}] Clearing dictionary..");
+                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
+                AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
+                //////////////////////////////////
+                // Server Clear
+                UnityEngine.Debug.Log($"[{compDictionaryServer.name}] Clearing dictionary..");
+                compDictionaryServer.Clear(ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
-                AssertOnTimeout($"Server change failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+                AssertOnTimeout($"Server clear failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
+                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
+
+                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
+                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
 
                 ////////////////////////////////////
                 // Owner Full Set Dictionary
@@ -810,23 +1018,11 @@ namespace Unity.Netcode.RuntimeTests
                 compDictionaryServer.FullSet(DictionaryTestHelper.GetDictionaryValues(), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server full set failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
-
-                ////////////////////////////////////
-                // Owner Clear
-                compDictionary.Clear(ListTestHelperBase.Targets.Owner);
-                yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
-                AssertOnTimeout($"Client-{client.LocalClientId} clear failed to synchronize on {className} {compDictionary.name}! {compDictionary.GetLog()}");
-                //////////////////////////////////
-                // Server Clear
-                compDictionaryServer.Clear(ListTestHelperBase.Targets.Server);
-                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
-                AssertOnTimeout($"Server clear failed to synchronize on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
-
-                yield return WaitForConditionOrTimeOut(() => compDictionary.ValidateInstances());
-                AssertOnTimeout($"[Owner] Not all instances of client-{compDictionary.OwnerClientId}'s {className} {compDictionary.name} component match! {compDictionary.GetLog()}");
-
-                yield return WaitForConditionOrTimeOut(() => compDictionaryServer.ValidateInstances());
-                AssertOnTimeout($"[Server] Not all instances of client-{compDictionaryServer.OwnerClientId}'s {className} {compDictionaryServer.name} component match! {compDictionaryServer.GetLog()}");
+                if (m_EnableDebug)
+                {
+                    yield return ValidateClients(client);
+                    m_Stage = 0;
+                }
             }
         }
 
@@ -1835,6 +2031,14 @@ namespace Unity.Netcode.RuntimeTests
             ListCollectionServer.OnValueChanged += OnServerListValuesChanged;
             ListCollectionOwner.OnValueChanged += OnOwnerListValuesChanged;
 
+            if (!IsDebugMode)
+            {
+                InitValues();
+            }
+        }
+
+        public void InitValues()
+        {
             if (IsServer)
             {
                 ListCollectionServer.Value = OnSetServerValues();
@@ -1846,8 +2050,8 @@ namespace Unity.Netcode.RuntimeTests
                 ListCollectionOwner.Value = OnSetOwnerValues();
                 ListCollectionOwner.CheckDirtyState();
             }
-            base.OnNetworkPostSpawn();
         }
+
         public override void OnNetworkDespawn()
         {
             ListCollectionServer.OnValueChanged -= OnServerListValuesChanged;
@@ -1891,11 +2095,14 @@ namespace Unity.Netcode.RuntimeTests
             return list;
         }
 
-
-
         public int IntValue;
         public long LongValue;
         public float FloatValue;
+
+        public override string ToString()
+        {
+            return $"{IntValue},{LongValue},{FloatValue}";
+        }
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -2788,7 +2995,6 @@ namespace Unity.Netcode.RuntimeTests
             Instances.Clear();
         }
 
-
         public NetworkVariable<List<int>> ListCollectionServer = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         public NetworkVariable<List<int>> ListCollectionOwner = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         // This tracks what has changed per instance which is used to compare to all other instances
@@ -3051,6 +3257,8 @@ namespace Unity.Netcode.RuntimeTests
     #region BASE TEST COMPONENT HELPERS
     public class ListTestHelperBase : NetworkBehaviour
     {
+        protected static bool IsDebugMode { get; private set; }
+
         public enum Targets
         {
             Server,
@@ -3083,6 +3291,10 @@ namespace Unity.Netcode.RuntimeTests
             m_StringBuilder.AppendLine($"[Client-{NetworkManager.LocalClientId}][{name}] Log Started.");
         }
 
+        public void SetDebugMode(bool isDebug)
+        {
+            IsDebugMode = isDebug;
+        }
 
         public virtual bool CompareTrackedChanges(Targets target)
         {
