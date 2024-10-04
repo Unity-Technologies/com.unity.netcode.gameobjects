@@ -6,6 +6,24 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class ObserversTestClass : NetworkBehaviour
+    {
+        public NetworkVariable<int> NetVariable = new NetworkVariable<int>();
+
+        public bool ClientRPCCalled;
+
+        public void ResetRPCState()
+        {
+            ClientRPCCalled = false;
+        }
+
+        [ClientRpc]
+        public void TestClientRpc()
+        {
+            ClientRPCCalled = true;
+        }
+    }
+
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
@@ -118,6 +136,127 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
             }
+        }
+    }
+
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    internal class PlayerObjectSpawnTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 1;
+
+        protected GameObject m_NewPlayerToSpawn;
+        protected GameObject m_TestObserversObject;
+
+        public PlayerObjectSpawnTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestObserversObject = CreateNetworkObjectPrefab("ObserversTest");
+            m_TestObserversObject.AddComponent<ObserversTestClass>();
+
+            m_NewPlayerToSpawn = CreateNetworkObjectPrefab("NewPlayerInstance");
+            base.OnServerAndClientsCreated();
+        }
+
+        private int GetObserverCount( System.Collections.Generic.HashSet<ulong>.Enumerator observerEnumerator )
+        {
+            int observerCount = 0;
+            while (observerEnumerator.MoveNext())
+            {
+                observerCount++;
+            }
+
+            return observerCount;
+        }
+        private ObserversTestClass GetObserversTestClassObjectForClient(ulong clientId)
+        {
+#if UNITY_2023_1_OR_NEWER
+            var emptyComponents = Object.FindObjectsByType<ObserversTestClass>(FindObjectsSortMode.InstanceID);
+#else
+            var emptyComponents = UnityEngine.Object.FindObjectsOfType<EmptyComponent>();
+#endif
+            foreach (var component in emptyComponents)
+            {
+                if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
+                {
+                    return component;
+                }
+            }
+            return null;
+        }
+
+        // https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/3059 surfaced a regression from 1.11 to 2.0
+        // where Destroying (not Disconnecting) a player object would remove it from all NetworkObjects observer arrays. Upon recreating
+        // the player object they were no longer an observer for exising network objects causing them to miss NetworkVariable and RPC updates.
+        // This test covers that case including testing RPCs and NetworkVariables still function after recreating the player object
+        [UnityTest]
+        public IEnumerator SpawnDestoryRespawnPlayerObjectMaintainsObservers()
+        {
+            yield return WaitForConditionOrTimeOut(() => m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+            AssertOnTimeout("Timed out waiting for client-side player object to spawn!");
+
+            // So on the server we want to spawn the observer object and then check its observers
+            var serverObserverObject = SpawnObject(m_TestObserversObject, m_ServerNetworkManager);
+            var serverObserverComponent = serverObserverObject.GetComponent<ObserversTestClass>();
+            yield return WaitForConditionOrTimeOut(() => GetObserversTestClassObjectForClient(m_ClientNetworkManagers[0].LocalClientId) != null);
+            AssertOnTimeout("Timed out waiting for client-side observer object to spawn!");
+
+            var clientObserverComponent = GetObserversTestClassObjectForClient(m_ClientNetworkManagers[0].LocalClientId);
+            Assert.NotNull(clientObserverComponent);
+            Assert.AreNotEqual(serverObserverComponent, clientObserverComponent, "Client and Server Observer Test components are equal, the test is wrong.");
+
+            // The server object should be the owner
+            Assert.IsTrue(serverObserverObject.GetComponent<ObserversTestClass>().IsOwner);
+            Assert.IsFalse(clientObserverComponent.IsOwner);
+
+            // Test Networkvariables and RPCs function as expected
+            serverObserverComponent.NetVariable.Value = 123;
+            yield return WaitForConditionOrTimeOut(() => clientObserverComponent.NetVariable.Value == 123);
+            AssertOnTimeout("Timed out waiting for network variable to transmit!");
+
+            serverObserverComponent.TestClientRpc();
+            yield return WaitForConditionOrTimeOut(() => clientObserverComponent.ClientRPCCalled);
+            AssertOnTimeout("Timed out waiting for RPC to be called!");
+
+            serverObserverComponent.ResetRPCState();
+            clientObserverComponent.ResetRPCState();
+
+            // Destory the clients player object, this will remove the player object but not disconnect the client, it should leave the connection intact
+            bool foundPlayer = false;
+            ulong destroyedClientId = 0;
+            foreach( var c in m_ServerNetworkManager.ConnectedClients)
+            {
+                if (!c.Value.PlayerObject.GetComponent<NetworkObject>().IsOwner)
+                {
+                    destroyedClientId = c.Key;
+                    Object.Destroy(c.Value.PlayerObject);
+                    foundPlayer = true;
+                    break;
+                }
+            }
+            Assert.True(foundPlayer);
+
+            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients[destroyedClientId].PlayerObject == null);
+            AssertOnTimeout("Timed out waiting for player object to be destroyed!");
+
+
+            // so lets respawn the player here
+            var newPlayer = Object.Instantiate(m_NewPlayerToSpawn);
+            newPlayer.GetComponent<NetworkObject>().SpawnAsPlayerObject(destroyedClientId);
+
+            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients[destroyedClientId].PlayerObject != null);
+            AssertOnTimeout("Timed out waiting for player object to respawn!");
+
+            // Test Networkvariables and RPCs function as expected after recreating the client player object
+            serverObserverComponent.NetVariable.Value = 321;
+            yield return WaitForConditionOrTimeOut(() => clientObserverComponent.NetVariable.Value == 321);
+            AssertOnTimeout("Timed out waiting for network variable to transmit after respawn!");
+
+            serverObserverComponent.TestClientRpc();
+            yield return WaitForConditionOrTimeOut(() => clientObserverComponent.ClientRPCCalled);
+            AssertOnTimeout("Timed out waiting for RPC to be called after respawn!");
         }
     }
 }

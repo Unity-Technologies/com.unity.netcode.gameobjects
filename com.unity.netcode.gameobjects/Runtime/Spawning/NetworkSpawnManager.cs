@@ -1508,20 +1508,6 @@ namespace Unity.Netcode
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            // DANGO-TODO: When we fix the issue with observers not being applied to NetworkObjects,
-            // (client connect/disconnect) we can remove this hacky way of doing this.
-            // Basically, when a player disconnects and/or is destroyed they are removed as an observer from all other client
-            // NetworkOject instances.
-            if (networkObject.IsPlayerObject && !networkObject.IsOwner && networkObject.OwnerClientId != NetworkManager.LocalClientId)
-            {
-                foreach (var netObject in SpawnedObjects)
-                {
-                    if (netObject.Value.Observers.Contains(networkObject.OwnerClientId))
-                    {
-                        netObject.Value.Observers.Remove(networkObject.OwnerClientId);
-                    }
-                }
-            }
             if (networkObject.IsPlayerObject)
             {
                 RemovePlayerObject(networkObject);
