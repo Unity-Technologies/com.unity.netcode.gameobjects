@@ -1613,7 +1613,12 @@ namespace Unity.Netcode
             }
             else if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
             {
-                NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this);
+                // If spawning with observers or if not spawning with observers but the observer count is greater than 1 (i.e. owner/authority creating),
+                // then we want to send a spawn notification.
+                if (SpawnWithObservers || !SpawnWithObservers && Observers.Count > 1)
+                {
+                    NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this);
+                }
             }
             else
             {
@@ -3053,10 +3058,15 @@ namespace Unity.Netcode
                         }
                     }
 
-                    // Add all known players to the observers list if they don't already exist
-                    foreach (var player in networkManager.SpawnManager.PlayerObjects)
+                    // Only add all other players as observers if we are spawning with observers,
+                    // otherwise user controls via NetworkShow.
+                    if (networkObject.SpawnWithObservers)
                     {
-                        networkObject.Observers.Add(player.OwnerClientId);
+                        // Add all known players to the observers list if they don't already exist
+                        foreach (var player in networkManager.SpawnManager.PlayerObjects)
+                        {
+                            networkObject.Observers.Add(player.OwnerClientId);
+                        }
                     }
                 }
             }

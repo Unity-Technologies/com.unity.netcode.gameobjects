@@ -72,11 +72,22 @@ namespace Unity.Netcode
                     return;
                 }
             }
+
             foreach (var player in m_PlayerObjects)
             {
-                player.Observers.Add(playerObject.OwnerClientId);
-                playerObject.Observers.Add(player.OwnerClientId);
+                // If the player's SpawnWithObservers is not set then do not add the new player object's owner as an observer.
+                if (player.SpawnWithObservers)
+                {
+                    player.Observers.Add(playerObject.OwnerClientId);
+                }
+
+                // If the new player object's SpawnWithObservers is not set then do not add this player as an observer to the new player object.
+                if (playerObject.SpawnWithObservers)
+                {
+                    playerObject.Observers.Add(player.OwnerClientId);
+                }
             }
+
             m_PlayerObjects.Add(playerObject);
             if (!m_PlayerObjectsTable.ContainsKey(playerObject.OwnerClientId))
             {
@@ -752,8 +763,8 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Create prefab instance
-                    networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
+                    // Create prefab instance while applying any pre-assigned position and rotation values
+                    networkObject = UnityEngine.Object.Instantiate(networkPrefabReference, position, rotation).GetComponent<NetworkObject>();
                     networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.PrefabGlobalObjectIdHash = globalObjectIdHash;
                 }

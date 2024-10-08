@@ -12,6 +12,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where applying the position and/or rotation to the `NetworkManager.ConnectionApprovalResponse` when connection approval and auto-spawn player prefab were enabled would not apply the position and/or rotation when the player prefab was instantiated. (#3078)
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored when spawning the player prefab. (#3077)
+- Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session. (#3075)
+
 ### Changed
 
 ## [2.0.0] - 2024-09-12
