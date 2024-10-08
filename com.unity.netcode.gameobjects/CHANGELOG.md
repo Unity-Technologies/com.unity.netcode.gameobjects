@@ -9,6 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 [Unreleased]
 
 ### Added
+- Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new `NetworkManager` instance has been instantiated. (#3088)
+- Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing `NetworkManager` instance is being destroyed. (#3088)
 
 ### Fixed
 
