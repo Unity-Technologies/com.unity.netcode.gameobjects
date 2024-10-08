@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new `NetworkManager` instance has been instantiated. (#3088)
+- Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing `NetworkManager` instance is being destroyed. (#3088)
+
 ### Fixed
 
 - Fixed issue where applying the position and/or rotation to the `NetworkManager.ConnectionApprovalResponse` when connection approval and auto-spawn player prefab were enabled would not apply the position and/or rotation when the player prefab was instantiated. (#3078)

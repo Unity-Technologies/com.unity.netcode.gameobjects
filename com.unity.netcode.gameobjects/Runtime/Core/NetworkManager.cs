@@ -17,6 +17,17 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        /// <summary>
+        /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance has been instantiated.
+        /// </summary>
+        public static event Action<NetworkManager> OnInstantiated;
+
+        /// <summary>
+        /// Subscribe to this static event to get notifications when a <see cref="NetworkManager"/> instance is being destroyed.
+        /// </summary>
+        public static event Action<NetworkManager> OnDestroying;
+
+
 #if UNITY_EDITOR
         // Inspector view expand/collapse settings for this derived child class
         [HideInInspector]
@@ -1030,6 +1041,8 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += ModeChanged;
 #endif
+            // Notify we have instantiated a new instance of NetworkManager.
+            OnInstantiated?.Invoke(this);
         }
 
         private void OnEnable()
@@ -1631,6 +1644,9 @@ namespace Unity.Netcode
             ShutdownInternal();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
+            // Notify we are destroying NetworkManager
+            OnDestroying?.Invoke(this);
 
             if (Singleton == this)
             {
