@@ -79,7 +79,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             yield return s_DefaultWaitForTick;
 
-            var playerObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.Where((c)=> c.IsPlayerObject).ToList();
+            var playerObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.Where((c) => c.IsPlayerObject).ToList();
 
             // Make sure clients did not spawn their player object on any of the clients including the owner.
             foreach (var client in m_ClientNetworkManagers)
