@@ -417,14 +417,14 @@ namespace Unity.Netcode
         /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the 
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
-        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3 position = default, Quaternion rotation = default, bool isScenePlaced = false)
+        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
         {
             NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
             if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
             {
                 // Let the handler spawn the NetworkObject
-                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position, rotation);
+                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default);
                 networkObject.NetworkManagerOwner = NetworkManager;
             }
             else
@@ -476,6 +476,8 @@ namespace Unity.Netcode
                 {
                     // Create prefab instance
                     networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
+                    networkObject.transform.position = position ?? networkObject.transform.position;
+                    networkObject.transform.rotation = rotation ?? networkObject.transform.rotation;
                     networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.PrefabGlobalObjectIdHash = globalObjectIdHash;
                 }
