@@ -5,18 +5,22 @@ namespace Unity.Netcode
 {
     internal struct ServiceConfig : INetworkSerializable
     {
+        public uint Version;
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref IsRestoredSession);
             if (serializer.IsWriter)
             {
+                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), Version);
+                serializer.SerializeValue(ref IsRestoredSession);
                 BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), CurrentSessionOwner);
             }
             else
             {
+                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out Version);
+                serializer.SerializeValue(ref IsRestoredSession);
                 ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out CurrentSessionOwner);
             }
         }
