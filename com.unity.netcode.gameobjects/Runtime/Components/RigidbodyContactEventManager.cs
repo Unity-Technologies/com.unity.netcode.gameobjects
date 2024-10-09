@@ -6,11 +6,22 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
+    public struct ContactEventHandlerInfo
+    {
+        public bool ProvideNonRigidBodyContactEvents;
+        public bool HasContactEventPriority;
+    }
+
     public interface IContactEventHandler
     {
         Rigidbody GetRigidbody();
 
         void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
+    }
+
+    public interface IContactEventHandlerWithInfo : IContactEventHandler
+    {
+        ContactEventHandlerInfo GetContactEventHandlerInfo();
     }
 
     [AddComponentMenu("Netcode/Rigidbody Contact Event Manager")]
@@ -34,6 +45,7 @@ namespace Unity.Netcode.Components
 
         private readonly Dictionary<int, Rigidbody> m_RigidbodyMapping = new Dictionary<int, Rigidbody>();
         private readonly Dictionary<int, IContactEventHandler> m_HandlerMapping = new Dictionary<int, IContactEventHandler>();
+        private readonly Dictionary<int, ContactEventHandlerInfo> m_HandlerInfo = new Dictionary<int, ContactEventHandlerInfo>();
 
         private void OnEnable()
         {
@@ -64,6 +76,22 @@ namespace Unity.Netcode.Components
                 {
                     m_HandlerMapping.Add(instanceId, contactEventHandler);
                 }
+
+                if (!m_HandlerInfo.ContainsKey(instanceId))
+                {
+                    var handlerInfo = new ContactEventHandlerInfo()
+                    {
+                        HasContactEventPriority = true,
+                        ProvideNonRigidBodyContactEvents = false,
+                    };
+                    var handlerWithInfo = contactEventHandler as IContactEventHandlerWithInfo;
+
+                    if (handlerWithInfo != null)
+                    {
+                        handlerInfo = handlerWithInfo.GetContactEventHandlerInfo();
+                    }
+                    m_HandlerInfo.Add(instanceId, handlerInfo);
+                }
             }
             else
             {
@@ -88,25 +116,95 @@ namespace Unity.Netcode.Components
 
         private void ProcessCollisions()
         {
+            foreach (var contactEventHandler in m_HandlerMapping)
+            {
+                var handlerWithInfo = contactEventHandler.Value as IContactEventHandlerWithInfo;
+
+                if (handlerWithInfo != null)
+                {
+                    m_HandlerInfo[contactEventHandler.Key] = handlerWithInfo.GetContactEventHandlerInfo();
+                }
+            }
+
+            ContactEventHandlerInfo contactEventHandlerInfo0;
+            ContactEventHandlerInfo contactEventHandlerInfo1;
+
             // Process all collisions
             for (int i = 0; i < m_Count; i++)
             {
                 var thisInstanceID = m_ResultsArray[i].ThisInstanceID;
                 var otherInstanceID = m_ResultsArray[i].OtherInstanceID;
-                var rb0Valid = thisInstanceID != 0 && m_RigidbodyMapping.ContainsKey(thisInstanceID);
-                var rb1Valid = otherInstanceID != 0 && m_RigidbodyMapping.ContainsKey(otherInstanceID);
-                // Only notify registered rigid bodies.
-                if (!rb0Valid || !rb1Valid || !m_HandlerMapping.ContainsKey(thisInstanceID))
+                var contactHandler0 = (IContactEventHandler)null;
+                var contactHandler1 = (IContactEventHandler)null;
+                var preferredContactHandler = (IContactEventHandler)null;
+                var preferredContactHandlerNonRigidbody = false;
+                var preferredRigidbody = (Rigidbody)null;
+                var otherContactHandler = (IContactEventHandler)null;
+                var otherRigidbody = (Rigidbody)null;
+
+                var otherContactHandlerNonRigidbody = false;
+
+                if (m_RigidbodyMapping.ContainsKey(thisInstanceID))
+                {
+                    contactHandler0 = m_HandlerMapping[thisInstanceID];
+                    contactEventHandlerInfo0 = m_HandlerInfo[thisInstanceID];
+                    if (contactEventHandlerInfo0.HasContactEventPriority)
+                    {
+                        preferredContactHandler = contactHandler0;
+                        preferredContactHandlerNonRigidbody = contactEventHandlerInfo0.ProvideNonRigidBodyContactEvents;
+                        preferredRigidbody = m_RigidbodyMapping[thisInstanceID];
+                    }
+                    else
+                    {
+                        otherContactHandler = contactHandler0;
+                        otherContactHandlerNonRigidbody = contactEventHandlerInfo0.ProvideNonRigidBodyContactEvents;
+                        otherRigidbody = m_RigidbodyMapping[thisInstanceID];
+                    }
+                }
+
+                if (m_RigidbodyMapping.ContainsKey(otherInstanceID))
+                {
+                    contactHandler1 = m_HandlerMapping[otherInstanceID];
+                    contactEventHandlerInfo1 = m_HandlerInfo[otherInstanceID];
+                    if (contactEventHandlerInfo1.HasContactEventPriority && preferredContactHandler == null)
+                    {
+                        preferredContactHandler = contactHandler1;
+                        preferredContactHandlerNonRigidbody = contactEventHandlerInfo1.ProvideNonRigidBodyContactEvents;
+                        preferredRigidbody = m_RigidbodyMapping[otherInstanceID];
+                    }
+                    else
+                    {
+                        otherContactHandler = contactHandler1;
+                        otherContactHandlerNonRigidbody = contactEventHandlerInfo1.ProvideNonRigidBodyContactEvents;
+                        otherRigidbody = m_RigidbodyMapping[otherInstanceID];
+                    }
+                }
+
+                if (preferredContactHandler == null)
+                {
+                    if (otherContactHandler != null)
+                    {
+                        preferredContactHandler = otherContactHandler;
+                        preferredContactHandlerNonRigidbody = otherContactHandlerNonRigidbody;
+                        preferredRigidbody = otherRigidbody;
+                        otherContactHandler = null;
+                        otherContactHandlerNonRigidbody = false;
+                        otherRigidbody = null;
+                    }
+                }
+
+                if (preferredContactHandler == null || (preferredContactHandler != null && otherContactHandler == null && !preferredContactHandlerNonRigidbody))
                 {
                     continue;
                 }
+
                 if (m_ResultsArray[i].HasCollisionStay)
                 {
-                    m_HandlerMapping[thisInstanceID].ContactEvent(m_EventId, m_ResultsArray[i].AverageNormal, m_RigidbodyMapping[otherInstanceID], m_ResultsArray[i].ContactPoint, m_ResultsArray[i].HasCollisionStay, m_ResultsArray[i].AverageCollisionStayNormal);
+                    preferredContactHandler.ContactEvent(m_EventId, m_ResultsArray[i].AverageNormal, otherRigidbody, m_ResultsArray[i].ContactPoint, m_ResultsArray[i].HasCollisionStay, m_ResultsArray[i].AverageCollisionStayNormal);
                 }
                 else
                 {
-                    m_HandlerMapping[thisInstanceID].ContactEvent(m_EventId, m_ResultsArray[i].AverageNormal, m_RigidbodyMapping[otherInstanceID], m_ResultsArray[i].ContactPoint);
+                    preferredContactHandler.ContactEvent(m_EventId, m_ResultsArray[i].AverageNormal, otherRigidbody, m_ResultsArray[i].ContactPoint);
                 }
             }
         }
