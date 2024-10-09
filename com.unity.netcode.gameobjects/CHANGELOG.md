@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new `NetworkManager` instance has been instantiated. (#3088)
+- Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing `NetworkManager` instance is being destroyed. (#3088)
+
 ### Fixed
 
 - Fixed issue where a newly synchronizing client would be synchronized with the current `NetworkVariable` values always which could cause issues with collections if there were any pending state updates. Now, when initially synchronizing a client, if a `NetworkVariable` has a pending state update it will serialize the previously known value(s) to the synchronizing client so when the pending updates are sent they aren't duplicate values on the newly connected client side. (#3081)
