@@ -10,9 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
     
-- Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions.
-  - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications.
-  - `ContactEventHandlerInfo.HasContactEventPriority`: When set to true, the `Rigidbody` will be prioritized as the instance that generates the event if the `Rigidbody` colliding does not have priority.
+- Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions. (#3094)
+  - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications. (#3094)
+  - `ContactEventHandlerInfo.HasContactEventPriority`: When set to true, the `Rigidbody` will be prioritized as the instance that generates the event if the `Rigidbody` colliding does not have priority. (#3094)
 - Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new `NetworkManager` instance has been instantiated. (#3088)
 - Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing `NetworkManager` instance is being destroyed. (#3088)
 
