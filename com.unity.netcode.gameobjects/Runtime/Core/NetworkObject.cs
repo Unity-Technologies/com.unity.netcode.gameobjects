@@ -113,11 +113,6 @@ namespace Unity.Netcode
             }
 
             // Handle updating the currently active scene
-            var networkObjects = FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            foreach (var networkObject in networkObjects)
-            {
-                networkObject.OnValidate();
-            }
             NetworkObjectRefreshTool.ProcessActiveScene();
 
             // Refresh all build settings scenes
@@ -130,14 +125,14 @@ namespace Unity.Netcode
                     continue;
                 }
                 // Add the scene to be processed
-                NetworkObjectRefreshTool.ProcessScene(editorScene.path, false);
+                NetworkObjectRefreshTool.ProcessScene(editorScene.path, true);
             }
 
             // Process all added scenes
             NetworkObjectRefreshTool.ProcessScenes();
         }
 
-        private void OnValidate()
+        internal void OnValidate()
         {
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
@@ -229,6 +224,7 @@ namespace Unity.Netcode
                 if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectIdHash != sourceAsset.GlobalObjectIdHash)
                 {
                     InScenePlacedSourceGlobalObjectIdHash = sourceAsset.GlobalObjectIdHash;
+                    EditorUtility.SetDirty(this);
                 }
                 IsSceneObject = true;
             }
