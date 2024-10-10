@@ -179,6 +179,12 @@ namespace Unity.Netcode.Components
                 {
                     m_HandlerInfo[contactEventHandler.Key] = handlerWithInfo.GetContactEventHandlerInfo();
                 }
+                else
+                {
+                    var info = m_HandlerInfo[contactEventHandler.Key];
+                    info.HasContactEventPriority = !m_RigidbodyMapping[contactEventHandler.Key].isKinematic;
+                    m_HandlerInfo[contactEventHandler.Key] = info;
+                }
             }
 
             ContactEventHandlerInfo contactEventHandlerInfo0;
@@ -235,17 +241,14 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                if (preferredContactHandler == null)
+                if (preferredContactHandler == null && otherContactHandler != null)
                 {
-                    if (otherContactHandler != null)
-                    {
-                        preferredContactHandler = otherContactHandler;
-                        preferredContactHandlerNonRigidbody = otherContactHandlerNonRigidbody;
-                        preferredRigidbody = otherRigidbody;
-                        otherContactHandler = null;
-                        otherContactHandlerNonRigidbody = false;
-                        otherRigidbody = null;
-                    }
+                    preferredContactHandler = otherContactHandler;
+                    preferredContactHandlerNonRigidbody = otherContactHandlerNonRigidbody;
+                    preferredRigidbody = otherRigidbody;
+                    otherContactHandler = null;
+                    otherContactHandlerNonRigidbody = false;
+                    otherRigidbody = null;
                 }
 
                 if (preferredContactHandler == null || (preferredContactHandler != null && otherContactHandler == null && !preferredContactHandlerNonRigidbody))
