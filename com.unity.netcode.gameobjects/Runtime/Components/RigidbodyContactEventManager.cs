@@ -6,24 +6,70 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
+    /// <summary>
+    /// Information a <see cref="Rigidbody"/> returns to <see cref="RigidbodyContactEventManager"/> via <see cref="IContactEventHandlerWithInfo.GetContactEventHandlerInfo"/> <br />
+    /// if the <see cref="Rigidbody"/> registers itself with <see cref="IContactEventHandlerWithInfo"/> as opposed to <see cref="IContactEventHandler"/>.
+    /// </summary>
     public struct ContactEventHandlerInfo
     {
+        /// <summary>
+        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will include non-Rigidbody based contact events.<br />
+        /// When the <see cref="RigidbodyContactEventManager"/> invokes the <see cref="IContactEventHandler.ContactEvent"/> it will return null in place <br />
+        /// of the collidingBody parameter if the contact event occurred with a collider that is not registered with the <see cref="RigidbodyContactEventManager"/>.
+        /// </summary>
         public bool ProvideNonRigidBodyContactEvents;
+        /// <summary>
+        /// When set to true, the <see cref="RigidbodyContactEventManager"/> will prioritize invoking <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> <br /></br>
+        /// if it is the 2nd colliding body in the contact pair being processed. With distributed authority, setting this value to true when a <see cref="NetworkObject"/> is owned by the local client <br />
+        /// will assure <see cref="IContactEventHandler.ContactEvent(ulong, Vector3, Rigidbody, Vector3, bool, Vector3)"/> is only invoked on the authoritative side.
+        /// </summary>
         public bool HasContactEventPriority;
     }
 
+    /// <summary>
+    /// Default implementation required to register a <see cref="Rigidbody"/> with a <see cref="RigidbodyContactEventManager"/> instance. 
+    /// </summary>
+    /// <remarks>
+    /// Recommended to implement this method on a <see cref="NetworkBehaviour"/> component
+    /// </remarks>
     public interface IContactEventHandler
     {
+        /// <summary>
+        /// Should return a <see cref="Rigidbody"/>.
+        /// </summary>
         Rigidbody GetRigidbody();
 
+        /// <summary>
+        /// Invoked by the <see cref="RigidbodyContactEventManager"/> instance.
+        /// </summary>
+        /// <param name="eventId">A unique contact event identifier.</param>
+        /// <param name="averagedCollisionNormal">The average normal of the collision between two colliders.</param>
+        /// <param name="collidingBody">If not null, this will be a registered <see cref="Rigidbody"/> that was part of the collision contact event.</param>
+        /// <param name="contactPoint">The world space location of the contact event.</param>
+        /// <param name="hasCollisionStay">Will be set if this is a collision stay contact event (i.e. it is not the first contact event and continually has contact)</param>
+        /// <param name="averagedCollisionStayNormal">The average normal of the collision stay contact over time.</param>
         void ContactEvent(ulong eventId, Vector3 averagedCollisionNormal, Rigidbody collidingBody, Vector3 contactPoint, bool hasCollisionStay = false, Vector3 averagedCollisionStayNormal = default);
     }
 
+    /// <summary>
+    /// This is an extended version of <see cref="IContactEventHandler"/> and can be used to register a <see cref="Rigidbody"/> with a <see cref="RigidbodyContactEventManager"/> instance. <br />
+    /// This provides additional <see cref="ContactEventHandlerInfo"/> information to the <see cref="RigidbodyContactEventManager"/> for each set of contact events it is processing.
+    /// </summary>
     public interface IContactEventHandlerWithInfo : IContactEventHandler
     {
+        /// <summary>
+        /// Invoked by <see cref="RigidbodyContactEventManager"/> for each set of contact events it is processing (prior to processing).
+        /// </summary>
+        /// <returns><see cref="ContactEventHandlerInfo"/></returns>
         ContactEventHandlerInfo GetContactEventHandlerInfo();
     }
 
+    /// <summary>
+    /// Add this component to an in-scene placed GameObject to provide faster collision event processing between <see cref="Rigidbody"/> instances and optionally static colliders.
+    /// <see cref="IContactEventHandler"/> <br />
+    /// <see cref="IContactEventHandlerWithInfo"/> <br />
+    /// <see cref="ContactEventHandlerInfo"/> <br />
+    /// </summary>
     [AddComponentMenu("Netcode/Rigidbody Contact Event Manager")]
     public class RigidbodyContactEventManager : MonoBehaviour
     {
@@ -61,6 +107,15 @@ namespace Unity.Netcode.Components
             Instance = this;
         }
 
+        /// <summary>
+        /// Any <see cref="IContactEventHandler"/> implementation can register a <see cref="Rigidbody"/> to be handled by this <see cref="RigidbodyContactEventManager"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// You should enable <see cref="Collider.providesContacts"/> for each <see cref="Collider"/> associated with the <see cref="Rigidbody"/> being registered.<br/>
+        /// You can enable this during run time or within the editor's inspector view.
+        /// </remarks>
+        /// <param name="contactEventHandler"><see cref="IContactEventHandler"/> or <see cref="IContactEventHandlerWithInfo"/></param>
+        /// <param name="register">true to register and false to remove from being registered</param>
         public void RegisterHandler(IContactEventHandler contactEventHandler, bool register = true)
         {
             var rigidbody = contactEventHandler.GetRigidbody();
