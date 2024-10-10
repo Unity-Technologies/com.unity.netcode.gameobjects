@@ -1463,8 +1463,6 @@ namespace Unity.Netcode.Components
         // For test logging purposes
         internal NetworkTransformState SynchronizeState;
 
-        // DANGO-TODO: We will want to remove this when we migrate NetworkTransforms to a dedicated internal message
-        private const ushort k_NetworkTransformStateMagic = 0xf48d;
         #endregion
 
         #region ONSYNCHRONIZE
@@ -1494,14 +1492,6 @@ namespace Unity.Netcode.Components
 
             if (serializer.IsWriter)
             {
-                // DANGO-TODO: This magic value is sent to the server in order to identify the network transform.
-                // The server discards it before forwarding synchronization data to other clients.
-                if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
-                {
-                    var writer = serializer.GetFastBufferWriter();
-                    writer.WriteValueSafe(k_NetworkTransformStateMagic);
-                }
-
                 SynchronizeState.IsTeleportingNextFrame = true;
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for

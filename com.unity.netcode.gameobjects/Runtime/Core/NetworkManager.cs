@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -885,6 +886,30 @@ namespace Unity.Netcode
 
         internal Override<ushort> PortOverride;
 
+
+        [HideInInspector]
+        [SerializeField]
+        [Range(0, 255)]
+        internal byte MajorVersion;
+        [HideInInspector]
+        [SerializeField]
+        [Range(0, 255)]
+        internal byte MinorVersion;
+        [HideInInspector]
+        [SerializeField]
+        [Range(0, 255)]
+        internal byte PatchVersion;
+
+        internal NGOVersion GetNGOVersion()
+        {
+            return new NGOVersion()
+            {
+                Major = MajorVersion,
+                Minor = MinorVersion,
+                Patch = PatchVersion
+            };
+        }
+
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
 
@@ -911,12 +936,38 @@ namespace Unity.Netcode
 
         }
 
+        private PackageInfo GetPackageInfo(string packageName)
+        {
+            return AssetDatabase.FindAssets("package").Select(AssetDatabase.GUIDToAssetPath).Where(x => AssetDatabase.LoadAssetAtPath<TextAsset>(x) != null).Select(PackageInfo.FindForAssetPath).Where(x => x != null).First(x => x.name == packageName);
+        }
+
+        private void SetPackageVersion()
+        {
+            var packageInfo = GetPackageInfo("com.unity.netcode.gameobjects");
+            if (packageInfo != null)
+            {
+                var versionSplit = packageInfo.version.Split(".");
+                if (versionSplit.Length == 3)
+                {
+                    MajorVersion = byte.Parse(versionSplit[0]);
+                    MinorVersion = byte.Parse(versionSplit[1]);
+                    PatchVersion = byte.Parse(versionSplit[2]);
+                }
+            }
+        }
+
         internal void OnValidate()
         {
             if (NetworkConfig == null)
             {
                 return; // May occur when the component is added
             }
+
+#if !CMB_SERVICE_DEVELOPMENT
+            SetPackageVersion();
+#else
+            Debug.Log($"Major:({MajorVersion}) Minor({MinorVersion}) Patch({PatchVersion})");
+#endif
 
             if (GetComponentInChildren<NetworkObject>() != null)
             {
