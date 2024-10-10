@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a static `NetworkManager.OnInstantiated` event notification to be able to track when a new `NetworkManager` instance has been instantiated. (#3089)
+- Added a static `NetworkManager.OnDestroying` event notification to be able to track when an existing `NetworkManager` instance is being destroyed. (#3089)
 - Added message size validation to named and unnamed message sending functions for better error messages. (#3043)
 - Added "Check for NetworkObject Component" property to the Multiplayer->Netcode for GameObjects project settings. When disabled, this will bypass the in-editor `NetworkObject` check on `NetworkBehaviour` components. (#3034)
 
