@@ -26,7 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed `NetworkVariableDeltaMessage` has had its message version incremented and now a server can forward delta state updates (owner write permission based from a client) to other clients as opposed to keeping a `NetworkVariable` or `NetworkList` dirty and processed at the end of the frame or potentially on the next tick. (#3081)
+- Changed `NetworkVariableDeltaMessage` so the server now forwards delta state updates (owner write permission based from a client) to other clients immediately as opposed to keeping a `NetworkVariable` or `NetworkList` dirty and processing them at the end of the frame or potentially on the next network tick. (#3081)
 
 ## [2.0.0] - 2024-09-12
 
