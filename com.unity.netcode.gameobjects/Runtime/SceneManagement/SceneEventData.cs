@@ -320,9 +320,11 @@ namespace Unity.Netcode
         internal void AddSpawnedNetworkObjects()
         {
             m_NetworkObjectsSync.Clear();
+            // If distributed authority mode and sending to the service, then ignore observers
+            var distributedAuthoritySendingToService = m_NetworkManager.DistributedAuthorityMode && TargetClientId == NetworkManager.ServerClientId;
             foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
-                if (sobj.Observers.Contains(TargetClientId))
+                if (sobj.Observers.Contains(TargetClientId) || distributedAuthoritySendingToService)
                 {
                     m_NetworkObjectsSync.Add(sobj);
                 }
@@ -667,13 +669,13 @@ namespace Unity.Netcode
             writer.WriteValueSafe((ushort)0);
             var distributedAuthority = m_NetworkManager.DistributedAuthorityMode;
             // If distributed authority mode and sending to the service, then ignore observers
-            var distributedAuthoritySendingToServer = distributedAuthority && TargetClientId == NetworkManager.ServerClientId;
+            var distributedAuthoritySendingToService = distributedAuthority && TargetClientId == NetworkManager.ServerClientId;
 
             foreach (var keyValuePairByGlobalObjectIdHash in m_NetworkManager.SceneManager.ScenePlacedObjects)
             {
                 foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
                 {
-                    if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId) || distributedAuthoritySendingToServer)
+                    if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId) || distributedAuthoritySendingToService)
                     {
                         // Serialize the NetworkObject
                         var sceneObject = keyValuePairBySceneHandle.Value.GetMessageSceneObject(TargetClientId, distributedAuthority);
