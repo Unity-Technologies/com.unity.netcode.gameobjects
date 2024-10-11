@@ -9,7 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 [Unreleased]
 
 ### Added
-    
+
+- Added ability to edit the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` within the inspector view. (#3097)
 - Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions. (#3094)
   - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications. (#3094)
   - `ContactEventHandlerInfo.HasContactEventPriority`: When set to true, the `Rigidbody` will be prioritized as the instance that generates the event if the `Rigidbody` colliding does not have priority. (#3094)
@@ -24,6 +25,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue with the client count not being correct on the host or server side when a client disconnects itself from a session. (#3075)
 
 ### Changed
+
+- Changed `NetworkConfig.AutoSpawnPlayerPrefabClientSide` is no longer automatically set when starting `NetworkManager`. (#3097)
 
 ## [2.0.0] - 2024-09-12
 
