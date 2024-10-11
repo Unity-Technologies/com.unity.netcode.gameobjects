@@ -247,10 +247,11 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Prefab Settings", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
-                EditorGUILayout.PropertyField(m_PlayerPrefabProperty, new GUIContent("Default Player Prefab"));
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_AutoSpawnPlayerPrefabClientSide, new GUIContent("Auto Spawn Player Prefab"));
 #endif
+                EditorGUILayout.PropertyField(m_PlayerPrefabProperty, new GUIContent("Default Player Prefab"));
+
 
 
                 if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
