@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with service not getting synchronized with in-scene placed `NetworkObject` instances when a session owner starts a `SceneEventType.Load` event. (#3096)
 - Fixed issue with the in-scene network prefab instance update menu tool where it was not properly updating scenes when invoked on the root prefab instance. (#3092)
 - Fixed issue where applying the position and/or rotation to the `NetworkManager.ConnectionApprovalResponse` when connection approval and auto-spawn player prefab were enabled would not apply the position and/or rotation when the player prefab was instantiated. (#3078)
 - Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored when spawning the player prefab. (#3077)
