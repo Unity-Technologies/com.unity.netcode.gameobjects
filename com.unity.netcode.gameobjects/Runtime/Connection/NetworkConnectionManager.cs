@@ -736,41 +736,20 @@ namespace Unity.Netcode
 
                 var client = AddClient(ownerClientId);
 
-                if (response.CreatePlayerObject)
+                if (response.CreatePlayerObject && (response.PlayerPrefabHash.HasValue || NetworkManager.NetworkConfig.PlayerPrefab != null))
                 {
-                    var prefabNetworkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                    var playerPrefabHash = response.PlayerPrefabHash ?? prefabNetworkObject.GlobalObjectIdHash;
-
-                    // Generate a SceneObject for the player object to spawn
-                    // Note: This is only to create the local NetworkObject, many of the serialized properties of the player prefab will be set when instantiated.
-                    var sceneObject = new NetworkObject.SceneObject
-                    {
-                        OwnerClientId = ownerClientId,
-                        IsPlayerObject = true,
-                        IsSceneObject = false,
-                        HasTransform = prefabNetworkObject.SynchronizeTransform,
-                        Hash = playerPrefabHash,
-                        TargetClientId = ownerClientId,
-                        Transform = new NetworkObject.SceneObject.TransformData
-                        {
-                            Position = response.Position.GetValueOrDefault(),
-                            Rotation = response.Rotation.GetValueOrDefault()
-                        }
-                    };
-
-                    // Create the player NetworkObject locally
-                    var networkObject = NetworkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
-
+                    var playerObject = response.PlayerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(response.PlayerPrefabHash.Value, ownerClientId, response.Position ?? null, response.Rotation ?? null)
+                        : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, response.Position ?? null, response.Rotation ?? null);
                     // Spawn the player NetworkObject locally
                     NetworkManager.SpawnManager.SpawnNetworkObjectLocally(
-                        networkObject,
+                        playerObject,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
                         sceneObject: false,
                         playerObject: true,
                         ownerClientId,
                         destroyWithScene: false);
 
-                    client.AssignPlayerObject(ref networkObject);
+                    client.AssignPlayerObject(ref playerObject);
                 }
 
                 // Server doesn't send itself the connection approved message
