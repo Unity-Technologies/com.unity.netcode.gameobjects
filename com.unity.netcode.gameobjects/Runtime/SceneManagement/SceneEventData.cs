@@ -666,12 +666,14 @@ namespace Unity.Netcode
             // Write our count place holder (must not be packed!)
             writer.WriteValueSafe((ushort)0);
             var distributedAuthority = m_NetworkManager.DistributedAuthorityMode;
+            // If distributed authority mode and sending to the service, then ignore observers
+            var distributedAuthoritySendingToServer = distributedAuthority && TargetClientId == NetworkManager.ServerClientId;
 
             foreach (var keyValuePairByGlobalObjectIdHash in m_NetworkManager.SceneManager.ScenePlacedObjects)
             {
                 foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
                 {
-                    if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId))
+                    if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId) || distributedAuthoritySendingToServer)
                     {
                         // Serialize the NetworkObject
                         var sceneObject = keyValuePairBySceneHandle.Value.GetMessageSceneObject(TargetClientId, distributedAuthority);
