@@ -1205,9 +1205,6 @@ namespace Unity.Netcode
 
             UpdateTopology();
 
-            //DANGOEXP TODO: Remove this before finalizing the experimental release
-            NetworkConfig.AutoSpawnPlayerPrefabClientSide = DistributedAuthorityMode;
-
             // Make sure the ServerShutdownState is reset when initializing
             if (server)
             {
