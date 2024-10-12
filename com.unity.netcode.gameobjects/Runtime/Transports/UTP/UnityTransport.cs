@@ -425,7 +425,7 @@ namespace Unity.Netcode.Transports.UTP
 
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
-        internal NetworkDriver NetworkDriver => m_Driver;
+        public NetworkDriver NetworkDriver => m_Driver;
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 

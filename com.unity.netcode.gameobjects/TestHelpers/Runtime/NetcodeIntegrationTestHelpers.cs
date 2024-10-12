@@ -408,7 +408,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // with the clients.
                 if (!networkManager.SceneManager.ScenesLoaded.ContainsKey(scene.handle))
                 {
-                    networkManager.SceneManager.ScenesLoaded.Add(scene.handle, scene);
+                    networkManager.SceneManager.ScenesLoaded.Add(scene.handle, new NetworkSceneManager.SceneData(null, scene));
                 }
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }

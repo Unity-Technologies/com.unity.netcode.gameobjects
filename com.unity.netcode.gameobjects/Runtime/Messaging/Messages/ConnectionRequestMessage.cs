@@ -92,7 +92,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. The configuration between the server and client does not match");
+                        NetworkLog.LogWarning($"{nameof(NetworkConfig)} mismatch. IncomingHash=[{ConfigHash}] OurHash=[{networkManager.NetworkConfig.GetConfig()}] The configuration between the server and client does not match");
                     }
 
                     networkManager.DisconnectClient(context.SenderId);

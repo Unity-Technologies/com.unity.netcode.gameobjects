@@ -13,7 +13,9 @@
         "Unity.Networking.Transport",
         "Unity.Collections",
         "Unity.Burst",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.ResourceManager",
+        "Unity.Addressables"
     ],
     "allowUnsafeCode": true,
     "versionDefines": [

@@ -414,8 +414,8 @@ namespace Unity.Netcode
             get
             {
                 if (NetworkObject?.NetworkManager != null)
-                {
                     return NetworkObject?.NetworkManager;
+                {
                 }
 
                 return NetworkManager.Singleton;

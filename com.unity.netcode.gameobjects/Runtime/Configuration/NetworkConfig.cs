@@ -238,8 +238,8 @@ namespace Unity.Netcode
                 {
                     var sortedDictionary = Prefabs.NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
                     foreach (var sortedEntry in sortedDictionary)
-
                     {
+                        Debug.Log($"[NetworkConfig] - GetConfig - [{sortedEntry.Key}={sortedEntry.Value.Prefab}]");
                         writer.WriteValueSafe(sortedEntry.Key);
                     }
                 }

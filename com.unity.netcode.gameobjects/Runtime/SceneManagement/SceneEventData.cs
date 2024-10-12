@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -104,12 +105,12 @@ namespace Unity.Netcode
         internal ForceNetworkSerializeByMemcpy<Guid> SceneEventProgressId;
         internal uint SceneEventId;
 
-        internal uint ActiveSceneHash;
-        internal uint SceneHash;
+        internal string ActiveSceneAsset;
+        internal string SceneAsset;
         internal int SceneHandle;
 
         // Used by the client during synchronization
-        internal uint ClientSceneHash;
+        internal string ClientSceneName;
         internal int NetworkSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
@@ -146,7 +147,7 @@ namespace Unity.Netcode
         internal List<ulong> ClientsCompleted;
         internal List<ulong> ClientsTimedOut;
 
-        internal Queue<uint> ScenesToSynchronize;
+        internal Queue<string> ScenesToSynchronize;
         internal Queue<uint> SceneHandlesToSynchronize;
 
         internal LoadSceneMode ClientSynchronizationMode;
@@ -166,7 +167,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="sceneHandle"></param>
-        internal void AddSceneToSynchronize(uint sceneHash, int sceneHandle)
+        internal void AddSceneToSynchronize(string sceneHash, int sceneHandle)
         {
             ScenesToSynchronize.Enqueue(sceneHash);
             SceneHandlesToSynchronize.Enqueue((uint)sceneHandle);
@@ -177,7 +178,7 @@ namespace Unity.Netcode
         /// Gets the next scene hash to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        internal uint GetNextSceneSynchronizationHash()
+        internal string GetNextSceneSynchronizationHash()
         {
             return ScenesToSynchronize.Dequeue();
         }
@@ -228,7 +229,7 @@ namespace Unity.Netcode
 
             if (ScenesToSynchronize == null)
             {
-                ScenesToSynchronize = new Queue<uint>();
+                ScenesToSynchronize = new Queue<string>();
             }
             else
             {
@@ -441,7 +442,7 @@ namespace Unity.Netcode
 
             if (SceneEventType == SceneEventType.ActiveSceneChanged)
             {
-                writer.WriteValueSafe(ActiveSceneHash);
+                writer.WriteValueSafe(ActiveSceneAsset);
                 return;
             }
 
@@ -465,14 +466,21 @@ namespace Unity.Netcode
             }
 
             // Write the scene index and handle
-            writer.WriteValueSafe(SceneHash);
+            var sceneName = SceneAsset ?? "";
+            writer.WriteValueSafe(sceneName);
             writer.WriteValueSafe(SceneHandle);
 
             switch (SceneEventType)
             {
                 case SceneEventType.Synchronize:
                     {
-                        writer.WriteValueSafe(ActiveSceneHash);
+                        if (ActiveSceneAsset == null)
+                        {
+                            Debug.LogError($"Synchronizing - ActiveSceneAsset but it hasn't been initialized yet");
+                            ActiveSceneAsset = "";
+                        }
+
+                        writer.WriteValueSafe(ActiveSceneAsset);
                         WriteSceneSynchronizationData(writer);
                         break;
                     }
@@ -508,7 +516,13 @@ namespace Unity.Netcode
         internal void WriteSceneSynchronizationData(FastBufferWriter writer)
         {
             // Write the scenes we want to load, in the order we want to load them
-            writer.WriteValueSafe(ScenesToSynchronize.ToArray());
+            var valArray = ScenesToSynchronize.ToArray();
+            writer.WriteValueSafe(valArray.Length);
+            foreach (var v in valArray)
+            {
+                writer.WriteValueSafe(v);
+            }
+
             writer.WriteValueSafe(SceneHandlesToSynchronize.ToArray());
 
             // Store our current position in the stream to come back and say how much data we have written
@@ -610,7 +624,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out SceneEventType);
             if (SceneEventType == SceneEventType.ActiveSceneChanged)
             {
-                reader.ReadValueSafe(out ActiveSceneHash);
+                reader.ReadValueSafe(out ActiveSceneAsset);
                 return;
             }
 
@@ -640,14 +654,14 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out ClientSynchronizationMode);
             }
 
-            reader.ReadValueSafe(out SceneHash);
+            reader.ReadValueSafe(out SceneAsset);
             reader.ReadValueSafe(out SceneHandle);
 
             switch (SceneEventType)
             {
                 case SceneEventType.Synchronize:
                     {
-                        reader.ReadValueSafe(out ActiveSceneHash);
+                        reader.ReadValueSafe(out ActiveSceneAsset);
                         CopySceneSynchronizationData(reader);
                         break;
                     }
@@ -691,9 +705,15 @@ namespace Unity.Netcode
         internal void CopySceneSynchronizationData(FastBufferReader reader)
         {
             m_NetworkObjectsSync.Clear();
-            reader.ReadValueSafe(out uint[] scenesToSynchronize);
+            reader.ReadValueSafe(out int sceneCount);
+            ScenesToSynchronize = new Queue<string>();
+            for (int i = 0; i < sceneCount; i++)
+            {
+                reader.ReadValueSafe(out string s);
+                ScenesToSynchronize.Enqueue(s);
+            }
+
             reader.ReadValueSafe(out uint[] sceneHandlesToSynchronize);
-            ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
             SceneHandlesToSynchronize = new Queue<uint>(sceneHandlesToSynchronize);
 
             // is not packed!
@@ -812,6 +832,7 @@ namespace Unity.Netcode
                     }
                 }
             }
+            Debug.LogError($"ReadClientReSynchronizationData END");
         }
 
         /// <summary>
@@ -1007,6 +1028,10 @@ namespace Unity.Netcode
                 // Now deserialize the despawned in-scene placed NetworkObjects list (if any)
                 DeserializeDespawnedInScenePlacedNetworkObjects();
 
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Hit an exception while serializing scene object! " + e);
             }
             finally
             {

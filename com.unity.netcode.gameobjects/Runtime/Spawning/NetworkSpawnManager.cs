@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TrollKing.Core;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -10,6 +11,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSpawnManager
     {
+        private static readonly NetworkLogScope k_Log = new NetworkLogScope(nameof(NetworkSpawnManager));
+
         // Stores the objects that need to be shown at end-of-frame
         internal Dictionary<ulong, List<NetworkObject>> ObjectsToShowToClient = new Dictionary<ulong, List<NetworkObject>>();
 
@@ -414,7 +417,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the 
+        /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
         internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
@@ -446,8 +449,8 @@ namespace Unity.Netcode
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
                             {
-                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the 
-                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically 
+                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
+                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
                                 // but might want to use the same source network prefab as an in-scene placed NetworkObject.
                                 // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
                                 // spawning them so the original prefab placed is preserved and this is not needed)
@@ -681,6 +684,9 @@ namespace Unity.Netcode
                 return;
             }
 
+            k_Log.Debug(() => $"[NetworkSpawnManager] NetworkPrefab SpawnNetworkObjectLocallyCommon networkObject={networkObject.name} hash={networkObject.GlobalObjectIdHash} prefabHash={networkObject.PrefabIdHash}, networkId={networkId}, sceneObject={sceneObject}, playerObject={playerObject}, ownerClientId={ownerClientId}, destroyWithScene={destroyWithScene}");
+
+
             networkObject.IsSpawned = true;
             networkObject.IsSceneObject = sceneObject;
 
@@ -705,6 +711,7 @@ namespace Unity.Netcode
             networkObject.OwnerClientId = ownerClientId;
 
             networkObject.IsPlayerObject = playerObject;
+
 
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
@@ -779,6 +786,8 @@ namespace Unity.Netcode
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
+
+            k_Log.Debug(() => $"[NetworkSpawnManager] NetworkPrefab SpawnNetworkObjectLocallyCommon networkObject={networkObject.name} hash={networkObject.GlobalObjectIdHash} prefabHash={networkObject.PrefabIdHash}, networkId={networkId}, sceneObject={sceneObject}, playerObject={playerObject}, ownerClientId={ownerClientId}, destroyWithScene={destroyWithScene}");
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -910,7 +919,7 @@ namespace Unity.Netcode
                             }
                         }
 
-                        // If spawned, then despawn and potentially destroy. 
+                        // If spawned, then despawn and potentially destroy.
                         if (networkObjects[i].IsSpawned)
                         {
                             OnDespawnObject(networkObjects[i], shouldDestroy);
@@ -1108,7 +1117,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified newly connected client 
+        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified newly connected client
         /// Note: if the clientId is the server then it is observable to all spawned <see cref="NetworkObject"/>'s
         /// </summary>
         /// <remarks>
