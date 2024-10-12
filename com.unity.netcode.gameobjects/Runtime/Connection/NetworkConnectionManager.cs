@@ -573,7 +573,6 @@ namespace Unity.Netcode
 
             if (NetworkManager.CMBServiceConnection)
             {
-                message.ClientConfig.NGOVersion = NetworkManager.GetNGOVersion();
                 message.ClientConfig.TickRate = NetworkManager.NetworkConfig.TickRate;
                 message.ClientConfig.EnableSceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement;
             }
