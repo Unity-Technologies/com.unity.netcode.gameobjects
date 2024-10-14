@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with nested `NetworkTransform` components clearing their initial prefab settings when in owner authoritative mode on the server side while using a client-server network topology which resulted in improper synchronization of the nested `NetworkTransform` components. (#3099)
 - Fixed issue with service not getting synchronized with in-scene placed `NetworkObject` instances when a session owner starts a `SceneEventType.Load` event. (#3096)
 - Fixed issue with the in-scene network prefab instance update menu tool where it was not properly updating scenes when invoked on the root prefab instance. (#3092)
 - Fixed issue where a newly synchronizing client would be synchronized with the current `NetworkVariable` values always which could cause issues with collections if there were any pending state updates. Now, when initially synchronizing a client, if a `NetworkVariable` has a pending state update it will serialize the previously known value(s) to the synchronizing client so when the pending updates are sent they aren't duplicate values on the newly connected client side. (#3081)

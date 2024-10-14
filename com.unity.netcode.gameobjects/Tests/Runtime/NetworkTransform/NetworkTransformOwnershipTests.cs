@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -537,6 +538,280 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return false;
             }
+        }
+    }
+
+    [TestFixture(HostOrServer.DAHost, NetworkTransform.AuthorityModes.Owner)] // Validate the NetworkTransform owner authoritative mode fix using distributed authority
+    [TestFixture(HostOrServer.Host, NetworkTransform.AuthorityModes.Server)] // Validate we have not impacted NetworkTransform server authoritative mode
+    [TestFixture(HostOrServer.Host, NetworkTransform.AuthorityModes.Owner)] // Validate the NetworkTransform owner authoritative mode fix using client-server
+    internal class NestedNetworkTransformTests : IntegrationTestWithApproximation
+    {
+        private const int k_NestedChildren = 5;
+        protected override int NumberOfClients => 2;
+
+        private GameObject m_SpawnObject;
+
+        private NetworkTransform.AuthorityModes m_AuthorityMode;
+
+        private StringBuilder m_ErrorLog = new StringBuilder();
+
+        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
+        private List<GameObject> m_SpawnedObjects = new List<GameObject>();
+
+        public NestedNetworkTransformTests(HostOrServer hostOrServer, NetworkTransform.AuthorityModes authorityMode) : base(hostOrServer)
+        {
+            m_AuthorityMode = authorityMode;
+        }
+
+        /// <summary>
+        /// Creates a player prefab with several nested NetworkTransforms
+        /// </summary>
+        protected override void OnCreatePlayerPrefab()
+        {
+            var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransform>();
+            networkTransform.AuthorityMode = m_AuthorityMode;
+            var parent = m_PlayerPrefab;
+            // Add several nested NetworkTransforms
+            for (int i = 0; i < k_NestedChildren; i++)
+            {
+                var nestedChild = new GameObject();
+                nestedChild.transform.parent = parent.transform;
+                var nestedNetworkTransform = nestedChild.AddComponent<NetworkTransform>();
+                nestedNetworkTransform.AuthorityMode = m_AuthorityMode;
+                nestedNetworkTransform.InLocalSpace = true;
+                parent = nestedChild;
+            }
+            base.OnCreatePlayerPrefab();
+        }
+
+        private void RandomizeObjectTransformPositions(GameObject gameObject)
+        {
+            var networkObject = gameObject.GetComponent<NetworkObject>();
+            Assert.True(networkObject.ChildNetworkBehaviours.Count > 0);
+
+            foreach (var networkTransform in networkObject.NetworkTransforms)
+            {
+                networkTransform.gameObject.transform.position = GetRandomVector3(-15.0f, 15.0f);
+            }
+        }
+
+        /// <summary>
+        /// Randomizes each player's position when validating distributed authority
+        /// </summary>
+        /// <returns></returns>
+        private GameObject FetchLocalPlayerPrefabToSpawn()
+        {
+            RandomizeObjectTransformPositions(m_PlayerPrefab);
+            return m_PlayerPrefab;
+        }
+
+        /// <summary>
+        /// Randomizes the player position when validating client-server
+        /// </summary>
+        /// <param name="connectionApprovalRequest"></param>
+        /// <param name="connectionApprovalResponse"></param>
+        private void ConnectionApprovalHandler(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse)
+        {
+            connectionApprovalResponse.Approved = true;
+            connectionApprovalResponse.CreatePlayerObject = true;
+            RandomizeObjectTransformPositions(m_PlayerPrefab);
+            connectionApprovalResponse.Position = GetRandomVector3(-15.0f, 15.0f);
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            // Create a prefab to spawn with each NetworkManager as the owner
+            m_SpawnObject = CreateNetworkObjectPrefab("SpawnObj");
+            var networkTransform = m_SpawnObject.AddComponent<NetworkTransform>();
+            networkTransform.AuthorityMode = m_AuthorityMode;
+            var parent = m_SpawnObject;
+            // Add several nested NetworkTransforms
+            for (int i = 0; i < k_NestedChildren; i++)
+            {
+                var nestedChild = new GameObject();
+                nestedChild.transform.parent = parent.transform;
+                var nestedNetworkTransform = nestedChild.AddComponent<NetworkTransform>();
+                nestedNetworkTransform.AuthorityMode = m_AuthorityMode;
+                nestedNetworkTransform.InLocalSpace = true;
+                parent = nestedChild;
+            }
+
+            if (m_DistributedAuthority)
+            {
+                if (!UseCMBService())
+                {
+                    m_ServerNetworkManager.OnFetchLocalPlayerPrefabToSpawn = FetchLocalPlayerPrefabToSpawn;
+                }
+
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    client.OnFetchLocalPlayerPrefabToSpawn = FetchLocalPlayerPrefabToSpawn;
+                }
+            }
+            else
+            {
+                m_ServerNetworkManager.NetworkConfig.ConnectionApproval = true;
+                m_ServerNetworkManager.ConnectionApprovalCallback += ConnectionApprovalHandler;
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    client.NetworkConfig.ConnectionApproval = true;
+                }
+            }
+
+            base.OnServerAndClientsCreated();
+        }
+
+        /// <summary>
+        /// Validates the transform positions of two NetworkObject instances
+        /// </summary>
+        /// <param name="current">the local instance (source of truth)</param>
+        /// <param name="testing">the remote instance</param>
+        /// <returns></returns>
+        private bool ValidateTransforms(NetworkObject current, NetworkObject testing)
+        {
+            if (current.ChildNetworkBehaviours.Count == 0 || testing.ChildNetworkBehaviours.Count == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < current.NetworkTransforms.Count - 1; i++)
+            {
+                var transformA = current.NetworkTransforms[i].transform;
+                var transformB = testing.NetworkTransforms[i].transform;
+                if (!Approximately(transformA.position, transformB.position))
+                {
+                    m_ErrorLog.AppendLine($"TransformA Position {transformA.position} != TransformB Position {transformB.position}");
+                    return false;
+                }
+                if (!Approximately(transformA.localPosition, transformB.localPosition))
+                {
+                    m_ErrorLog.AppendLine($"TransformA Local Position {transformA.position} != TransformB Local Position {transformB.position}");
+                    return false;
+                }
+                if (transformA.parent != null)
+                {
+                    if (current.NetworkTransforms[i].InLocalSpace != testing.NetworkTransforms[i].InLocalSpace)
+                    {
+                        m_ErrorLog.AppendLine($"NetworkTransform-{current.OwnerClientId}-{current.NetworkTransforms[i].NetworkBehaviourId} InLocalSpace ({current.NetworkTransforms[i].InLocalSpace}) is different from the remote instance version on Client-{testing.NetworkManager.LocalClientId}!");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validates all player instances spawned with the correct positions including all nested NetworkTransforms
+        /// When running in server authority mode we are validating this fix did not impact that.
+        /// </summary>
+        private bool AllClientInstancesSynchronized()
+        {
+            m_ErrorLog.Clear();
+
+            foreach (var current in m_NetworkManagers)
+            {
+                var currentPlayer = current.LocalClient.PlayerObject;
+                var currentNetworkObjectId = currentPlayer.NetworkObjectId;
+                foreach (var testing in m_NetworkManagers)
+                {
+                    if (currentPlayer == testing.LocalClient.PlayerObject)
+                    {
+                        continue;
+                    }
+
+                    if (!testing.SpawnManager.SpawnedObjects.ContainsKey(currentNetworkObjectId))
+                    {
+                        m_ErrorLog.AppendLine($"Failed to find Client-{currentPlayer.OwnerClientId}'s player instance on Client-{testing.LocalClientId}!");
+                        return false;
+                    }
+
+                    var remoteInstance = testing.SpawnManager.SpawnedObjects[currentNetworkObjectId];
+                    if (!ValidateTransforms(currentPlayer, remoteInstance))
+                    {
+                        m_ErrorLog.AppendLine($"Failed to validate Client-{currentPlayer.OwnerClientId} against its remote instance on Client-{testing.LocalClientId}!");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validates that dynamically spawning works the same.
+        /// When running in server authority mode we are validating this fix did not impact that.
+        /// </summary>
+        /// <returns></returns>
+        private bool AllSpawnedObjectsSynchronized()
+        {
+            m_ErrorLog.Clear();
+
+            foreach (var current in m_SpawnedObjects)
+            {
+                var currentNetworkObject = current.GetComponent<NetworkObject>();
+                var currentNetworkObjectId = currentNetworkObject.NetworkObjectId;
+                foreach (var testing in m_NetworkManagers)
+                {
+                    if (currentNetworkObject.OwnerClientId == testing.LocalClientId)
+                    {
+                        continue;
+                    }
+
+                    if (!testing.SpawnManager.SpawnedObjects.ContainsKey(currentNetworkObjectId))
+                    {
+                        m_ErrorLog.AppendLine($"Failed to find Client-{currentNetworkObject.OwnerClientId}'s player instance on Client-{testing.LocalClientId}!");
+                        return false;
+                    }
+
+                    var remoteInstance = testing.SpawnManager.SpawnedObjects[currentNetworkObjectId];
+                    if (!ValidateTransforms(currentNetworkObject, remoteInstance))
+                    {
+                        m_ErrorLog.AppendLine($"Failed to validate Client-{currentNetworkObject.OwnerClientId} against its remote instance on Client-{testing.LocalClientId}!");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validates that spawning player and dynamically spawned prefab instances with nested NetworkTransforms
+        /// synchronizes properly in both client-server and distributed authority when using owner authoritative mode.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NestedNetworkTransformSpawnPositionTest()
+        {
+            if (!m_DistributedAuthority || (m_DistributedAuthority && !UseCMBService()))
+            {
+                m_NetworkManagers.Add(m_ServerNetworkManager);
+            }
+            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
+
+            yield return WaitForConditionOrTimeOut(AllClientInstancesSynchronized);
+            AssertOnTimeout($"Failed to synchronize all client instances!\n{m_ErrorLog}");
+
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                // Randomize the position 
+                RandomizeObjectTransformPositions(m_SpawnObject);
+
+                // Create an instance owned by the specified networkmanager
+                m_SpawnedObjects.Add(SpawnObject(m_SpawnObject, networkManager));
+            }
+            // Randomize the position once more just to assure we are instantiating remote instances
+            // with a completely different position
+            RandomizeObjectTransformPositions(m_SpawnObject);
+            yield return WaitForConditionOrTimeOut(AllSpawnedObjectsSynchronized);
+            AssertOnTimeout($"Failed to synchronize all spawned NetworkObject instances!\n{m_ErrorLog}");
+            m_SpawnedObjects.Clear();
+            m_NetworkManagers.Clear();
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            // In case there was a failure, go ahead and clear these lists out for any pending TextFixture passes
+            m_SpawnedObjects.Clear();
+            m_NetworkManagers.Clear();
+            return base.OnTearDown();
         }
     }
 }
