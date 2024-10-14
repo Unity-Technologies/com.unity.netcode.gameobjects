@@ -46,8 +46,7 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
             Debug.Assert(networkManager != null, $"The parameter {nameof(networkManager)} can't be null.");
 
             m_NetworkManager = networkManager;
-            m_NetworkManager.OnClientConnectedCallback += OnClientConnected;
-            m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+            m_NetworkManager.OnConnectionEvent += OnConnectionEvent;
             m_NetworkManager.NetworkTickSystem.Tick += OnTick;
 
             m_NetworkManager.OnServerStarted += OnServerOrClientStarted;
@@ -101,9 +100,11 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
             else if (m_NetworkManager.SpawnManager != null)
             {
                 // NetworkManager.ConnectedClientsIds is only available on the server
-                foreach (var clientId in m_NetworkManager.SpawnManager.OwnershipToObjectsTable.Keys)
+                foreach (var (clientId, clientNetworkObjects) in m_NetworkManager.SpawnManager.OwnershipToObjectsTable)
                 {
-                    if (!m_ClientIds.Contains((ClientId)clientId))
+                    // Avoid polluting the client list because of DA.
+                    // Only auto add already existing clients through SpawnManager that have at least one object in the scene.
+                    if (!m_ClientIds.Contains((ClientId)clientId) && clientNetworkObjects.Count > 0)
                     {
                         m_ClientIds.Add((ClientId)clientId);
                         OnClientConnected(clientId);
@@ -156,16 +157,44 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
             ClientDisconnectionEvent?.Invoke(typedClientId);
         }
 
+        private void OnConnectionEvent(NetworkManager networkManager, ConnectionEventData clientConnectionData)
+        {
+            switch (clientConnectionData.EventType)
+            {
+                case ConnectionEvent.ClientConnected:
+                case ConnectionEvent.PeerConnected:
+                    OnClientConnected(clientConnectionData.ClientId);
+
+                    // Adding clients already existing before we joined
+                    foreach (var peerClientId in clientConnectionData.PeerClientIds)
+                    {
+                        OnClientConnected(peerClientId);
+                    }
+                    break;
+                case ConnectionEvent.ClientDisconnected:
+                case ConnectionEvent.PeerDisconnected:
+                    OnClientDisconnected(clientConnectionData.ClientId);
+                    break;
+                default:
+                    Debug.LogWarning("Unknown ConnectionEvent: " + clientConnectionData.EventType);
+                    break;
+            }
+        }
+
         public event Action ServerOrClientStarted;
         public event Action ServerOrClientStopped;
 
         private void OnServerOrClientStarted()
         {
+            // NetworkTickSystem is recreated every time the server or client is (re)started
+            m_NetworkManager.NetworkTickSystem.Tick -= OnTick;
+            m_NetworkManager.NetworkTickSystem.Tick += OnTick;
             ServerOrClientStarted?.Invoke();
         }
 
         private void OnServerOrClientStopped(bool isHost)
         {
+            m_NetworkManager.NetworkTickSystem.Tick -= OnTick;
             ServerOrClientStopped?.Invoke();
         }
 
