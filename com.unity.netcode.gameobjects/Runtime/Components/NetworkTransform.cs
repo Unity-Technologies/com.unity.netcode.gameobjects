@@ -3065,18 +3065,17 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected internal override void InternalOnNetworkPostSpawn()
         {
-            // This is a special case for client-server where a server is spawning a player but has yet to serialize anything.
+            // This is a special case for client-server where a server is spawning an owner authoritative NetworkObject but has yet to serialize anything.
             // When the server detects that:
             // - We are not in a distributed authority session (DAHost check).
             // - This is the first/root NetworkTransform.
-            // - The NetworkObject is a player object (i.e. server-side instantiated).
-            // - The player object is not the local player object (i.e. spawning a player for another client).
             // - We are in owner authoritative mode.
-            // - SynchronizeState is set to false.
+            // - The NetworkObject is not owned by the server.
+            // - The SynchronizeState.IsSynchronizing is set to false.
             // Then we want to:
             // - Force the "IsSynchronizing" flag so the NetworkTransform has its state updated properly and runs through the initialization again.
             // - Make sure the SynchronizingState is updated to the instantiated prefab's default flags/settings.
-            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && m_IsFirstNetworkTransform && NetworkObject.IsPlayerObject && !NetworkObject.IsLocalPlayer && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
+            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && m_IsFirstNetworkTransform && !OnIsServerAuthoritative() && !IsOwner && !SynchronizeState.IsSynchronizing)
             {
                 // Assure the first/root NetworkTransform has the synchronizing flag set so the server runs through the final post initialization steps
                 SynchronizeState.IsSynchronizing = true;
