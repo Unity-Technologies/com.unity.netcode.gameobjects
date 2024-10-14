@@ -111,7 +111,11 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
-            m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
@@ -155,7 +159,11 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
-            m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
@@ -248,7 +256,11 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.LabelField("Prefab Settings", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
-                EditorGUILayout.PropertyField(m_AutoSpawnPlayerPrefabClientSide, new GUIContent("Auto Spawn Player Prefab"));
+                // Only display the auto spawn property when the distributed authority network topology is selected
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+                {
+                    EditorGUILayout.PropertyField(m_AutoSpawnPlayerPrefabClientSide, new GUIContent("Auto Spawn Player Prefab"));
+                }                
 #endif
                 EditorGUILayout.PropertyField(m_PlayerPrefabProperty, new GUIContent("Default Player Prefab"));
 
