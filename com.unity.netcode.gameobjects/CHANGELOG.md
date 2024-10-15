@@ -9,7 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 [Unreleased]
 
 ### Added
-    
+
+- Added ability to edit the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` within the inspector view. (#3097)
 - Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions. (#3094)
   - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications. (#3094)
   - `ContactEventHandlerInfo.HasContactEventPriority`: When set to true, the `Rigidbody` will be prioritized as the instance that generates the event if the `Rigidbody` colliding does not have priority. (#3094)
@@ -31,7 +32,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetworkConfig.AutoSpawnPlayerPrefabClientSide` is no longer automatically set when starting `NetworkManager`. (#3097)
 - Changed `NetworkVariableDeltaMessage` so the server now forwards delta state updates (owner write permission based from a client) to other clients immediately as opposed to keeping a `NetworkVariable` or `NetworkList` dirty and processing them at the end of the frame or potentially on the next network tick. (#3081)
+
 
 ## [2.0.0] - 2024-09-12
 
