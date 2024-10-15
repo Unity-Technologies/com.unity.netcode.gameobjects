@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using Unity.Multiplayer.Tools.Common;
 using Unity.Multiplayer.Tools.DataCollection;
 using Unity.Multiplayer.Tools.Events;
+using Unity.Multiplayer.Tools.MetricEvents;
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Netcode;
 using UnityEngine;
@@ -31,7 +32,7 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
         , IGetRpcCount
     {
         [NotNull]
-        private readonly NetworkManager m_NetworkManager;
+        private NetworkManager m_NetworkManager;
 
         [MaybeNull]
         private NetworkSpawnManager SpawnManager => m_NetworkManager.SpawnManager;
@@ -42,9 +43,13 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
         public Ngo1Adapter([NotNull] NetworkManager networkManager, [NotNull] IMetricDispatcher dispatcher)
         {
             DebugUtil.TraceMethodName();
-
             Debug.Assert(networkManager != null, $"The parameter {nameof(networkManager)} can't be null.");
+            Init(networkManager);
+            dispatcher.RegisterObserver(this);
+        }
 
+        private void Init(NetworkManager networkManager)
+        {
             m_NetworkManager = networkManager;
             m_NetworkManager.OnConnectionEvent += OnConnectionEvent;
             m_NetworkManager.NetworkTickSystem.Tick += OnTick;
@@ -58,10 +63,37 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
             {
                 OnServerOrClientStarted();
             }
-
-            dispatcher.RegisterObserver(this);
-
         }
+
+        internal void ReplaceNetworkManager(NetworkManager networkManager)
+        {
+            Debug.Assert(networkManager != null, $"The parameter {nameof(networkManager)} can't be null.");
+            Deinitialize();
+            Init(networkManager);
+        }
+
+        internal void Deinitialize()
+        {
+            if (m_NetworkManager == null)
+            {
+                return;
+            }
+
+            m_NetworkManager.OnConnectionEvent -= OnConnectionEvent;
+
+            if (m_NetworkManager.NetworkTickSystem != null)
+            {
+                m_NetworkManager.NetworkTickSystem.Tick -= OnTick;
+            }
+
+            m_NetworkManager.OnServerStarted -= OnServerOrClientStarted;
+            m_NetworkManager.OnClientStarted -= OnServerOrClientStarted;
+            m_NetworkManager.OnServerStopped -= OnServerOrClientStopped;
+            m_NetworkManager.OnClientStopped -= OnServerOrClientStopped;
+
+            m_NetworkManager = null;
+        }
+
 
         private readonly List<ClientId> m_ClientIds = new();
         private readonly List<ObjectId> m_ObjectIds = new();

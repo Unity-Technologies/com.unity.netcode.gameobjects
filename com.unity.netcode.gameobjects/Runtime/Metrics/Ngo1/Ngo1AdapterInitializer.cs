@@ -36,6 +36,20 @@ namespace Unity.Multiplayer.Tools.Adapters.Ngo1
                 NetworkObjectProvider = new NetworkObjectProvider(networkManager),
             });
 
+            // We need the OnInstantiated callback because the NetworkManager could get destroyed and recreated when we change scenes
+            // OnInstantiated is called in Awake, and the GetNetworkManagerAsync only returns at least after OnEnable
+            // therefore the initialization is not called twice
+            NetworkManager.OnInstantiated += async _ =>
+            {
+                // We need to wait for the NetworkTickSystem to be ready as well
+                var newNetworkManager = await GetNetworkManagerAsync();
+                ngo1Adapter.ReplaceNetworkManager(newNetworkManager);
+            };
+
+            NetworkManager.OnDestroying += _ =>
+            {
+                ngo1Adapter.Deinitialize();
+            };
         }
 
         private static async Task<NetworkManager> GetNetworkManagerAsync()
