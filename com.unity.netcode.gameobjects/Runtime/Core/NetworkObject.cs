@@ -336,7 +336,7 @@ namespace Unity.Netcode
 
             if (!HasAuthority)
             {
-                NetworkLog.LogError($"Only the authoirty can invoke {nameof(DeferDespawn)} and local Client-{NetworkManager.LocalClientId} is not the authority of {name}!");
+                NetworkLog.LogError($"Only the authority can invoke {nameof(DeferDespawn)} and local Client-{NetworkManager.LocalClientId} is not the authority of {name}!");
                 return;
             }
 
