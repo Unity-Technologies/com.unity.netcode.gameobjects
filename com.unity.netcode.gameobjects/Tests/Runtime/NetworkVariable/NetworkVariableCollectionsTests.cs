@@ -12,6 +12,7 @@ using Random = UnityEngine.Random;
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
+    /// Client-Server only test
     /// Validates using managed collections with NetworkVariable.
     /// Managed Collections Tested:
     /// - List
@@ -19,8 +20,7 @@ namespace Unity.Netcode.RuntimeTests
     /// - HashSet
     /// This also does some testing on nested collections, but does
     /// not test every possible combination.
-    /// </summary>
-    [TestFixture(HostOrServer.DAHost)]
+    /// </summary>    
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class NetworkVariableCollectionsTests : NetcodeIntegrationTest
