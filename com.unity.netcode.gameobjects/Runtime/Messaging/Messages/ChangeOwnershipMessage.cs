@@ -9,7 +9,6 @@ namespace Unity.Netcode
 
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
-        // DANGOEXP TODO: Remove these notes or change their format
         // SERVICE NOTES:
         // When forwarding the message to clients on the CMB Service side,
         // you can set the ClientIdCount to 0 and skip writing the ClientIds.
@@ -258,15 +257,18 @@ namespace Unity.Netcode
                             continue;
                         }
 
-                        // If ownership is changing and this is not an ownership request approval then ignore the OnwerClientId
-                        // If it is just updating flags then ignore sending to the owner
-                        // If it is a request or approving request, then ignore the RequestClientId
-                        if ((OwnershipIsChanging && !RequestApproved && OwnerClientId == clientId) || (OwnershipFlagsUpdate && clientId == OwnerClientId)
-                            || ((RequestOwnership || RequestApproved) && clientId == RequestClientId))
+                        // If ownership is changing and this is not an ownership request approval then ignore the SenderId
+                        if (OwnershipIsChanging && !RequestApproved && context.SenderId == clientId)
                         {
                             continue;
                         }
 
+                        // If it is just updating flags then ignore sending to the owner
+                        // If it is a request or approving request, then ignore the RequestClientId
+                        if ((OwnershipFlagsUpdate && clientId == OwnerClientId) || ((RequestOwnership || RequestApproved) && clientId == RequestClientId))
+                        {
+                            continue;
+                        }
                         networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, clientId);
                     }
                 }
@@ -327,10 +329,12 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
 
-            // DANGO-TODO: This probably shouldn't be allowed to happen.
+            // Sanity check that we are not sending duplicated change ownership messages
             if (networkObject.OwnerClientId == OwnerClientId)
             {
-                UnityEngine.Debug.LogWarning($"Unnecessary ownership changed message for {NetworkObjectId}");
+                UnityEngine.Debug.LogError($"Unnecessary ownership changed message for {NetworkObjectId}.");
+                // Ignore the message
+                return;
             }
 
             var originalOwner = networkObject.OwnerClientId;
@@ -345,12 +349,6 @@ namespace Unity.Netcode
             if (originalOwner == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
             {
                 networkObject.InvokeBehaviourOnLostOwnership();
-            }
-
-            // We are new owner or (client-server) or running in distributed authority mode
-            if (OwnerClientId == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
-            {
-                networkObject.InvokeBehaviourOnGainedOwnership();
             }
 
             // If in distributed authority mode 
@@ -372,6 +370,22 @@ namespace Unity.Netcode
                         networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
                     }
                 }
+            }
+
+            // We are new owner or (client-server) or running in distributed authority mode
+            if (OwnerClientId == networkManager.LocalClientId || networkManager.DistributedAuthorityMode)
+            {
+                networkObject.InvokeBehaviourOnGainedOwnership();
+            }
+
+
+            if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
+            {
+                // Mark any owner read variables as dirty
+                networkObject.MarkOwnerReadVariablesDirty();
+                // Immediately queue any pending deltas and order the message before the
+                // change in ownership message.
+                networkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
             }
 
             // Always invoke ownership change notifications

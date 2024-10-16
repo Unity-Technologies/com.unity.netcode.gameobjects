@@ -670,7 +670,7 @@ namespace Unity.Netcode.RuntimeTests
 
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            WaitForAllClientsToReceive<ChangeOwnershipMessage, NetworkVariableDeltaMessage>();
+            WaitForAllClientsToReceive<ChangeOwnershipMessage>();
 
             foreach (var client in m_ClientNetworkManagers)
             {
@@ -678,9 +678,9 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(manager.DeferMessageCalled);
                 Assert.IsFalse(manager.ProcessTriggersCalled);
 
-                Assert.AreEqual(4, manager.DeferredMessageCountTotal());
-                Assert.AreEqual(4, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnSpawn));
-                Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
+                Assert.AreEqual(3, manager.DeferredMessageCountTotal());
+                Assert.AreEqual(3, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnSpawn));
+                Assert.AreEqual(3, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
                 Assert.AreEqual(0, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab));
                 AddPrefabsToClient(client);
             }
@@ -812,7 +812,7 @@ namespace Unity.Netcode.RuntimeTests
 
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            WaitForAllClientsToReceive<ChangeOwnershipMessage, NetworkVariableDeltaMessage>();
+            WaitForAllClientsToReceive<ChangeOwnershipMessage>();
 
             // Validate messages are deferred and pending
             foreach (var client in m_ClientNetworkManagers)
@@ -821,10 +821,10 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(manager.DeferMessageCalled);
                 Assert.IsFalse(manager.ProcessTriggersCalled);
 
-                Assert.AreEqual(5, manager.DeferredMessageCountTotal());
+                Assert.AreEqual(4, manager.DeferredMessageCountTotal());
 
-                Assert.AreEqual(4, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnSpawn));
-                Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
+                Assert.AreEqual(3, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnSpawn));
+                Assert.AreEqual(3, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
                 Assert.AreEqual(1, manager.DeferredMessageCountForType(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab));
                 Assert.AreEqual(1, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, serverObject.GetComponent<NetworkObject>().GlobalObjectIdHash));
                 AddPrefabsToClient(client);

@@ -826,6 +826,13 @@ namespace Unity.Netcode
         internal void InternalOnGainedOwnership()
         {
             UpdateNetworkProperties();
+            // New owners need to assure any NetworkVariables they have write permissions 
+            // to are updated so the previous and original values are aligned with the
+            // current value (primarily for collections).
+            if (OwnerClientId == NetworkManager.LocalClientId)
+            {
+                UpdateNetworkVariableOnOwnershipChanged();
+            }
             OnGainedOwnership();
         }
 
@@ -1016,9 +1023,14 @@ namespace Unity.Netcode
         internal readonly List<int> NetworkVariableIndexesToReset = new List<int>();
         internal readonly HashSet<int> NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        internal void NetworkVariableUpdate(ulong targetClientId)
+        /// <summary>
+        /// Determines if a NetworkVariable should have any changes to state sent out
+        /// </summary>
+        /// <param name="targetClientId">target to send the updates to</param>
+        /// <param name="forceSend">specific to change in ownership</param>
+        internal void NetworkVariableUpdate(ulong targetClientId, bool forceSend = false)
         {
-            if (!CouldHaveDirtyNetworkVariables())
+            if (!forceSend && !CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
@@ -1069,7 +1081,11 @@ namespace Unity.Netcode
                     NetworkBehaviourIndex = behaviourIndex,
                     NetworkBehaviour = this,
                     TargetClientId = targetClientId,
-                    DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
+                    DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j],
+                    // By sending the network delivery we can forward messages immediately as opposed to processing them
+                    // at the end. While this will send updates to clients that cannot read, the handler will ignore anything
+                    // sent to a client that does not have read permissions.
+                    NetworkDelivery = m_DeliveryTypesForNetworkVariableGroups[j]
                 };
                 // TODO: Serialization is where the IsDirty flag gets changed.
                 // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
@@ -1114,11 +1130,42 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Invoked on a new client to assure the previous and original values
+        /// are synchronized with the current known value.
+        /// </summary>
+        /// <remarks>
+        /// Primarily for collections to assure the previous value(s) is/are the
+        /// same as the current value(s) in order to not re-send already known entries.
+        /// </remarks>
+        internal void UpdateNetworkVariableOnOwnershipChanged()
+        {
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                // Only invoke OnInitialize on NetworkVariables the owner can write to
+                if (NetworkVariableFields[j].CanClientWrite(OwnerClientId))
+                {
+                    NetworkVariableFields[j].OnInitialize();
+                }
+            }
+        }
+
         internal void MarkVariablesDirty(bool dirty)
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 NetworkVariableFields[j].SetDirty(dirty);
+            }
+        }
+
+        internal void MarkOwnerReadVariablesDirty()
+        {
+            for (int j = 0; j < NetworkVariableFields.Count; j++)
+            {
+                if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
+                {
+                    NetworkVariableFields[j].SetDirty(true);
+                }
             }
         }
 
@@ -1172,17 +1219,24 @@ namespace Unity.Netcode
                         // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
                         writer.WriteValueSafe((ushort)0);
                         var startPos = writer.Position;
-                        NetworkVariableFields[j].WriteField(writer);
+                        // Write the NetworkVariable field value
+                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
+                        // Otherwise, it will write the previous value if there are pending changes since the pending
+                        // changes will be sent shortly after the client's synchronization.
+                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
                         var size = writer.Position - startPos;
                         writer.Seek(writePos);
-                        // Write the NetworkVariable value
+                        // Write the NetworkVariable field value size
                         writer.WriteValueSafe((ushort)size);
                         writer.Seek(startPos + size);
                     }
                     else // Client-Server Only: Should only ever be invoked when using a client-server NetworkTopology
                     {
-                        // Write the NetworkVariable value
-                        NetworkVariableFields[j].WriteField(writer);
+                        // Write the NetworkVariable field value
+                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
+                        // Otherwise, it will write the previous value if there are pending changes since the pending
+                        // changes will be sent shortly after the client's synchronization.
+                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
                     }
                 }
                 else if (ensureLengthSafety)

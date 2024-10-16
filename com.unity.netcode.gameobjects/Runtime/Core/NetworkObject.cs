@@ -2445,6 +2445,14 @@ namespace Unity.Netcode
             }
         }
 
+        internal void MarkOwnerReadVariablesDirty()
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].MarkOwnerReadVariablesDirty();
+            }
+        }
+
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
         //  Children may arrive before their parents; when they do they are stored in OrphanedChildren and then
         //  resolved when their parents arrived.  Because we don't send a partial list of spawns (yet), something
@@ -2771,11 +2779,11 @@ namespace Unity.Netcode
             }
         }
 
-        internal void PostNetworkVariableWrite()
+        internal void PostNetworkVariableWrite(bool forced = false)
         {
             for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
             {
-                ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                ChildNetworkBehaviours[k].PostNetworkVariableWrite(forced);
             }
         }
 
