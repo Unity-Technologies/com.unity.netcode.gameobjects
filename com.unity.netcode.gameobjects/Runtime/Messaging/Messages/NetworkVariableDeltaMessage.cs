@@ -25,7 +25,7 @@ namespace Unity.Netcode
     internal struct NetworkVariableDeltaMessage : INetworkMessage
     {
         private const int k_ServerDeltaForwardingAndNetworkDelivery = 1;
-        public int Version => k_ServerDeltaForwadingAndNetworkDelivery;
+        public int Version => k_ServerDeltaForwardingAndNetworkDelivery;
 
 
         public ulong NetworkObjectId;
@@ -111,7 +111,7 @@ namespace Unity.Netcode
 
             // If using k_IncludeNetworkDelivery version, then we want to write the network delivery used and if we
             // are forwarding state updates then serialize any NetworkVariable states specific to this client.
-            if (targetVersion >= k_ServerDeltaForwadingAndNetworkDelivery)
+            if (targetVersion >= k_ServerDeltaForwardingAndNetworkDelivery)
             {
                 writer.WriteValueSafe(NetworkDelivery);
                 // If we are forwarding the message, then proceed to forward state updates specific to the targeted client
@@ -245,7 +245,7 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkBehaviourIndex);
             // If we are using the k_IncludeNetworkDelivery message version, then read the NetworkDelivery used
-            if (receivedMessageVersion >= k_ServerDeltaForwadingAndNetworkDelivery)
+            if (receivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery)
             {
                 reader.ReadValueSafe(out NetworkDelivery);
             }
@@ -263,8 +263,8 @@ namespace Unity.Netcode
                 var distributedAuthorityMode = networkManager.DistributedAuthorityMode;
                 var ensureNetworkVariableLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
-                var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwadingAndNetworkDelivery && networkManager.IsServer;
-                var markNetworkVariableDirty = m_ReceivedMessageVersion >= k_ServerDeltaForwadingAndNetworkDelivery ? false : networkManager.IsServer;
+                var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery && networkManager.IsServer;
+                var markNetworkVariableDirty = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery ? false : networkManager.IsServer;
                 m_UpdatedNetworkVariables = new List<int>();
 
                 if (networkBehaviour == null)
