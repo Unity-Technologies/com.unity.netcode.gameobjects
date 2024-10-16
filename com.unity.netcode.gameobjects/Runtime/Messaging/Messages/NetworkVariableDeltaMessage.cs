@@ -24,7 +24,7 @@ namespace Unity.Netcode
     /// </remarks>
     internal struct NetworkVariableDeltaMessage : INetworkMessage
     {
-        private const int k_ServerDeltaForwadingAndNetworkDelivery = 1;
+        private const int k_ServerDeltaForwardingAndNetworkDelivery = 1;
         public int Version => k_ServerDeltaForwadingAndNetworkDelivery;
 
 
