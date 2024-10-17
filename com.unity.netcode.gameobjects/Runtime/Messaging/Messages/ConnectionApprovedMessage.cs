@@ -164,7 +164,10 @@ namespace Unity.Netcode
             var messageHashesInOrder = new NativeArray<uint>(length, Allocator.Temp);
             for (var i = 0; i < length; ++i)
             {
-                var messageVersion = new MessageVersionData();
+                var messageVersion = new MessageVersionData()
+                {
+                    SendMessageType = networkManager.DistributedAuthorityMode,
+                };
                 messageVersion.Deserialize(reader);
                 networkManager.ConnectionManager.MessageManager.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
                 messageHashesInOrder[i] = messageVersion.Hash;
