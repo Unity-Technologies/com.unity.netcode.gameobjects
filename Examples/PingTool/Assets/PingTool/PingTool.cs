@@ -652,7 +652,7 @@ namespace Unity.Netcode.Examples.PingTool
 
         // User-defined metrics can be defined using the MetricTypeEnum attribute
         [MetricTypeEnum(DisplayName = "PingToolMetrics")]
-        private enum PingToolMetrics
+        internal enum PingToolMetrics
         {
             // Metadata for each user-defined metric can be defined using the MetricMetadata Attribute
             [MetricMetadata(Units = Units.Seconds, MetricKind = MetricKind.Gauge)]
