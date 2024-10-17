@@ -10,6 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [2.1.0] - 2024-10-17
+
+### Added
+
 - Added ability to edit the `NetworkConfig.AutoSpawnPlayerPrefabClientSide` within the inspector view. (#3097)
 - Added `IContactEventHandlerWithInfo` that derives from `IContactEventHandler` that can be updated per frame to provide `ContactEventHandlerInfo` information to the `RigidbodyContactEventManager` when processing collisions. (#3094)
   - `ContactEventHandlerInfo.ProvideNonRigidBodyContactEvents`: When set to true, non-`Rigidbody` collisions with the registered `Rigidbody` will generate contact event notifications. (#3094)
