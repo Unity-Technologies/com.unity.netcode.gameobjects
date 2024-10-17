@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkPrefabProcessor` would not mark the prefab list as dirty and prevent saving the `DefaultNetworkPrefabs` asset when only imports or only deletes were detected.(#3103)
 - Fixed issue with nested `NetworkTransform` components clearing their initial prefab settings when in owner authoritative mode on the server side while using a client-server network topology which resulted in improper synchronization of the nested `NetworkTransform` components. (#3099)
 - Fixed issue with service not getting synchronized with in-scene placed `NetworkObject` instances when a session owner starts a `SceneEventType.Load` event. (#3096)
 - Fixed issue with the in-scene network prefab instance update menu tool where it was not properly updating scenes when invoked on the root prefab instance. (#3092)
