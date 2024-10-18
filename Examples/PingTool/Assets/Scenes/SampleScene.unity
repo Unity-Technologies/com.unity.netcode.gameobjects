@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -145,7 +146,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 28232985}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -154,7 +155,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 40}
+  m_AnchoredPosition: {x: 0, y: 25}
   m_SizeDelta: {x: 180, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &28232987
@@ -222,6 +223,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &28232990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -234,6 +237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6637cd674efb56a48a3d4d545d23a8d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &455857869
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,12 +247,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 455857870}
-  - component: {fileID: 455857873}
-  - component: {fileID: 455857871}
   - component: {fileID: 455857872}
-  - component: {fileID: 455857874}
+  - component: {fileID: 455857871}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: ExtNetworkManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -307,32 +309,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 455857869}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e4d8d44c602b97b47ba488a40c66267c, type: 3}
+  m_Script: {fileID: 11500000, guid: 9639343147b80384d98dd77ff33767d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ConnectionType: 1
-  EnableVSync: 0
-  TargetFrameRate: 100
-  m_OriginalVSyncCount: 0
---- !u!114 &455857873
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 455857869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  NetworkManagerExpanded: 1
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 455857871}
     PlayerPrefab: {fileID: 8921789205124766477, guid: 89b57e576a8d47643b2dbd45b1f8cab1, type: 3}
     Prefabs:
       NetworkPrefabsLists:
-      - {fileID: 11400000, guid: 3d25a2b1f6c12ee47bf7601c2edd7e70, type: 2}
+      - {fileID: 11400000, guid: aa82390bfdde2564f828b8e5be375282, type: 2}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -356,19 +343,11 @@ MonoBehaviour:
     OldPrefabList: []
   RunInBackground: 1
   LogLevel: 1
---- !u!114 &455857874
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 455857869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09865cca13a4bec439963971d7296b02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NetworkManager: {fileID: 455857873}
+  ExtendedNetworkManagerExpanded: 1
+  ConnectionType: 1
+  TargetFrameRate: 100
+  EnableVSync: 0
+  m_OriginalVSyncCount: 1
 --- !u!1 &479361661
 GameObject:
   m_ObjectHideFlags: 0
@@ -417,12 +396,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1280, y: 720}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -576,6 +555,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1251000097366145441, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 134.3
+      objectReference: {fileID: 0}
     - target: {fileID: 2569679938784265262, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -621,14 +604,6 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2592079281344418938, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
-      propertyPath: LogMessage.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2592079281344418938, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
-      propertyPath: LogMessage.m_PersistentCalls.m_Calls.Array.data[0].m_Target
-      value: 
-      objectReference: {fileID: 455857872}
-    - target: {fileID: 2592079281344418938, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
       propertyPath: LogMessage.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
       objectReference: {fileID: 0}
@@ -668,9 +643,13 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6057903054739576449, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
+    - target: {fileID: 7873216060197180850, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
+      propertyPath: m_Text
+      value: <> Toggles PingTool
+      objectReference: {fileID: 0}
+    - target: {fileID: 7873216060197180850, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 9070511216422219346, guid: 3f5e8ae5613c82a4f9f859c11a4f2e09, type: 3}
       propertyPath: GlobalObjectIdHash
