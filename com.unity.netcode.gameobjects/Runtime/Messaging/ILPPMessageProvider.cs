@@ -54,6 +54,7 @@ namespace Unity.Netcode
 
         // Enable this for integration tests that need no message types defined
         internal static bool IntegrationTestNoMessages;
+        internal static Dictionary<Type, NetworkMessageTypes> TypeToNetworkMessageType;
 
         public List<NetworkMessageManager.MessageWithHandler> GetMessages()
         {
@@ -81,7 +82,7 @@ namespace Unity.Netcode
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // Add new Message types to this table paired with its new NetworkMessageTypes enum
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            var messageTypes = new Dictionary<Type, NetworkMessageTypes>
+            TypeToNetworkMessageType = new Dictionary<Type, NetworkMessageTypes>
             {
                 { typeof(ConnectionApprovedMessage), NetworkMessageTypes.ConnectionApproved }, // This MUST be first
                 { typeof(ConnectionRequestMessage), NetworkMessageTypes.ConnectionRequest }, // This MUST be second
@@ -111,19 +112,19 @@ namespace Unity.Netcode
             };
 
             // Assure the type to lookup table count and NetworkMessageType enum count matches (i.e. to catch human error when adding new messages)
-            if (messageTypes.Count != messageTypeCount)
+            if (TypeToNetworkMessageType.Count != messageTypeCount)
             {
-                throw new Exception($"Message type to Message type index count mistmatch! Table Count: {messageTypes.Count} | Index Count: {messageTypeCount}");
+                throw new Exception($"Message type to Message type index count mistmatch! Table Count: {TypeToNetworkMessageType.Count} | Index Count: {messageTypeCount}");
             }
 
             // Now order the allowed types list based on the order of the NetworkMessageType enum
             foreach (var messageHandler in __network_message_types)
             {
-                if (!messageTypes.ContainsKey(messageHandler.MessageType))
+                if (!TypeToNetworkMessageType.ContainsKey(messageHandler.MessageType))
                 {
                     throw new Exception($"Missing message type from lookup table: {messageHandler.MessageType}");
                 }
-                adjustedMessageTypes[(int)messageTypes[messageHandler.MessageType]] = messageHandler;
+                adjustedMessageTypes[(int)TypeToNetworkMessageType[messageHandler.MessageType]] = messageHandler;
             }
 
             // return the NetworkMessageType enum ordered list
