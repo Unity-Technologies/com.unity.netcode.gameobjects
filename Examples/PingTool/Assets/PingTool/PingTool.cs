@@ -103,6 +103,11 @@ namespace Unity.Netcode.Examples.PingTool
                 m_NetStatsMonitor.Visible = false;
             }
 #endif
+
+            if (PingToolHelp)
+            {
+                PingToolHelp.text = PingToolHelp.text.Replace("<>", $"<{NetStatsMonitorToggle}>");
+            }
         }
 
         protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
