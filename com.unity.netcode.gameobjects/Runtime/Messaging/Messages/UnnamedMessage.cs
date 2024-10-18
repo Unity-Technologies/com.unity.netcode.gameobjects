@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     internal struct UnnamedMessage : INetworkMessage
@@ -20,6 +22,7 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
+            // Debug.Log($"UnnamedMessage::Handle [CUSTOM] {context.MessageSize}");
             ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeUnnamedMessage(context.SenderId, m_ReceivedData, context.SerializedHeaderSize);
         }
     }

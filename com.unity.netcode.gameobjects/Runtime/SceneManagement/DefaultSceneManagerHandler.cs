@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 
 
@@ -21,16 +24,40 @@ namespace Unity.Netcode
 
         internal Dictionary<string, Dictionary<int, SceneEntry>> SceneNameToSceneHandles = new Dictionary<string, Dictionary<int, SceneEntry>>();
 
-        public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
         {
-            var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-            sceneEventProgress.SetAsyncOperation(operation);
+            AsyncOperationHandle<SceneInstance> operation = default;
+            if (loadSceneMode == LoadSceneMode.Single)
+            {
+                operation = Addressables.LoadSceneAsync(sceneName, LoadSceneMode.Additive, false);
+                // Handle the async load
+                operation.Completed += handle =>
+                {
+                    var sceneInstance = handle.Result;
+                    var current = SceneManager.GetActiveScene();
+                    var async = sceneInstance.ActivateAsync();
+                    async.completed += asyncOperation =>
+                    {
+                        var scene = sceneInstance.Scene;
+                        SceneManager.SetActiveScene(scene);
+                        SceneManager.UnloadSceneAsync(current);
+                    };
+
+                };
+                sceneEventProgress.SetAsyncOperation(operation);
+            }
+            else
+            {
+                operation = Addressables.LoadSceneAsync(sceneName, loadSceneMode);
+                sceneEventProgress.SetAsyncOperation(operation);
+            }
+
             return operation;
         }
 
-        public AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance scene, SceneEventProgress sceneEventProgress)
         {
-            var operation = SceneManager.UnloadSceneAsync(scene);
+            var operation = Addressables.UnloadSceneAsync(scene);
             sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
@@ -167,8 +194,9 @@ namespace Unity.Netcode
         /// same application instance is still running, the same scenes are still loaded on the client, and
         /// upon reconnecting the client doesn't have to unload the scenes and then reload them)
         /// </summary>
-        public void PopulateLoadedScenes(ref Dictionary<int, Scene> scenesLoaded, NetworkManager networkManager)
+        public void PopulateLoadedScenes(ref Dictionary<int, NetworkSceneManager.SceneData> scenesLoaded, NetworkManager networkManager)
         {
+            Debug.LogError($"PopulateLoadedScenes START");
             SceneNameToSceneHandles.Clear();
             var sceneCount = SceneManager.sceneCount;
             for (int i = 0; i < sceneCount; i++)
@@ -189,7 +217,7 @@ namespace Unity.Netcode
                     SceneNameToSceneHandles[scene.name].Add(scene.handle, sceneEntry);
                     if (!scenesLoaded.ContainsKey(scene.handle))
                     {
-                        scenesLoaded.Add(scene.handle, scene);
+                        scenesLoaded.Add(scene.handle, new NetworkSceneManager.SceneData(null, scene));
                     }
                 }
                 else
@@ -197,6 +225,7 @@ namespace Unity.Netcode
                     throw new Exception($"[Duplicate Handle] Scene {scene.name} already has scene handle {scene.handle} registered!");
                 }
             }
+            Debug.LogError($"PopulateLoadedScenes END");
         }
 
         private List<Scene> m_ScenesToUnload = new List<Scene>();
@@ -371,7 +400,7 @@ namespace Unity.Netcode
                     // If the scene is not already in the ScenesLoaded list, then add it
                     if (!sceneManager.ScenesLoaded.ContainsKey(scene.handle))
                     {
-                        sceneManager.ScenesLoaded.Add(scene.handle, scene);
+                        sceneManager.ScenesLoaded.Add(scene.handle, new NetworkSceneManager.SceneData(null, scene));
                     }
                 }
             }

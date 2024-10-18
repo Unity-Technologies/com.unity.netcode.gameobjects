@@ -822,7 +822,7 @@ namespace Unity.Netcode
             get => MessageManager.FragmentedMessageMaxSize;
         }
 
-        internal void Initialize(bool server)
+        public virtual void Initialize(bool server)
         {
             // Make sure the ServerShutdownState is reset when initializing
             if (server)
@@ -1280,7 +1280,7 @@ namespace Unity.Netcode
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
-        private void OnDestroy()
+        public virtual void OnDestroy()
         {
             ShutdownInternal();
 

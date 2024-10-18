@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using AsyncOperation = UnityEngine.AsyncOperation;
 
@@ -61,7 +64,7 @@ namespace Unity.Netcode
     /// Server side only:
     /// This tracks the progress of clients during a load or unload scene event
     /// </summary>
-    internal class SceneEventProgress
+    public class SceneEventProgress
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
@@ -77,14 +80,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
-        internal delegate bool OnCompletedDelegate(SceneEventProgress sceneEventProgress);
+        public delegate bool OnCompletedDelegate(SceneEventProgress sceneEventProgress);
 
         /// <summary>
         /// The callback invoked when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
-        internal OnCompletedDelegate OnComplete;
+        public OnCompletedDelegate OnComplete;
 
-        internal Action<uint> OnSceneEventCompleted;
+        public Action<uint, string> OnSceneEventCompleted;
 
         /// <summary>
         /// This will make sure that we only have timed out if we never completed
@@ -97,17 +100,17 @@ namespace Unity.Netcode
         /// <summary>
         /// The hash value generated from the full scene path
         /// </summary>
-        internal uint SceneHash { get; set; }
+        internal string SceneName { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
         internal uint SceneEventId;
 
         private Coroutine m_TimeOutCoroutine;
-        private AsyncOperation m_AsyncOperation;
+        private AsyncOperationHandle<SceneInstance> m_AsyncOperation;
 
         private NetworkManager m_NetworkManager { get; }
 
-        internal SceneEventProgressStatus Status { get; set; }
+        public SceneEventProgressStatus Status { get; set; }
 
         internal SceneEventType SceneEventType { get; set; }
 
@@ -120,7 +123,7 @@ namespace Unity.Netcode
             {
                 // If we are the host, then add the host-client to the list
                 // of clients that completed if the AsyncOperation is done.
-                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
+                if (m_NetworkManager.IsHost && m_AsyncOperation.IsDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -139,7 +142,7 @@ namespace Unity.Netcode
                 // If we are the host, then add the host-client to the list
                 // of clients that did not complete if the AsyncOperation is
                 // not done.
-                if (m_NetworkManager.IsHost && !m_AsyncOperation.isDone)
+                if (m_NetworkManager.IsHost && !m_AsyncOperation.IsDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -252,22 +255,59 @@ namespace Unity.Netcode
             // Note: Integration tests process scene loading through a queue
             // and the AsyncOperation could not be assigned for several
             // network tick periods. Return false if that is the case.
-            return m_AsyncOperation == null ? false : m_AsyncOperation.isDone;
+
+            // If we're async loading a scene that we tell not to activate, we need to check that the downstream scene has been activated before calling out
+            var initialValid = m_AsyncOperation.IsValid() && m_AsyncOperation.IsDone;
+            if (initialValid)
+            {
+                var res = m_AsyncOperation.Result;
+                return res.Scene.isLoaded;
+            }
+
+            return false;
+        }
+
+        public AsyncOperationHandle<SceneInstance> GetHandle()
+        {
+            return m_AsyncOperation;
         }
 
         /// <summary>
         /// Sets the AsyncOperation for the scene load/unload event
         /// </summary>
-        internal void SetAsyncOperation(AsyncOperation asyncOperation)
+        public void SetAsyncOperation(AsyncOperationHandle<SceneInstance> asyncOperation)
         {
+            // Debug.Log($"[SceneEventProgress] SetAsyncOperation ");
             m_AsyncOperation = asyncOperation;
-            m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
+            m_AsyncOperation.Completed += new Action<AsyncOperationHandle<SceneInstance>>(asyncOp2 =>
             {
                 // Don't invoke the callback if the network session is disconnected
                 // during a SceneEventProgress
-                if (IsNetworkSessionActive())
+                if (asyncOp2.Status == AsyncOperationStatus.Succeeded)
                 {
-                    OnSceneEventCompleted?.Invoke(SceneEventId);
+                    var sceneInstance = asyncOp2.Result;
+                    if (!sceneInstance.Scene.isLoaded)
+                    {
+                        var asyncLoad = sceneInstance.ActivateAsync();
+                        asyncLoad.completed += operation =>
+                        {
+                            if (IsNetworkSessionActive())
+                            {
+                                OnSceneEventCompleted?.Invoke(SceneEventId, asyncOp2.Result.Scene.name);
+                            }
+                        };
+                    }
+                    else
+                    {
+                        if (IsNetworkSessionActive())
+                        {
+                            OnSceneEventCompleted?.Invoke(SceneEventId, asyncOp2.Result.Scene.name);
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"Failed to load async scene: {asyncOp2.OperationException}");
                 }
 
                 // Go ahead and try finishing even if the network session is terminated/terminating

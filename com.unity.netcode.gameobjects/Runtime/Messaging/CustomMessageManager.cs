@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TrollKing.Core;
 using Unity.Collections;
 using UnityEngine;
 
@@ -11,11 +12,19 @@ namespace Unity.Netcode
     /// </summary>
     public class CustomMessagingManager
     {
+        private static readonly NetworkLogScope Log = new NetworkLogScope(nameof(CustomMessagingManager));
+
         private readonly NetworkManager m_NetworkManager;
 
         internal CustomMessagingManager(NetworkManager networkManager)
         {
+            Log.Info(() => $"Constructor");
             m_NetworkManager = networkManager;
+        }
+
+        ~CustomMessagingManager()
+        {
+            Log.Info(() => $"Deconstructor");
         }
 
         /// <summary>
@@ -32,6 +41,8 @@ namespace Unity.Netcode
 
         internal void InvokeUnnamedMessage(ulong clientId, FastBufferReader reader, int serializedHeaderSize)
         {
+            // Debug.Log($"CustomMessageManager::InvokeUnnamedMessage [CUSTOM] {clientId} {reader.Length} {serializedHeaderSize}");
+
             if (OnUnnamedMessage != null)
             {
                 var pos = reader.Position;
