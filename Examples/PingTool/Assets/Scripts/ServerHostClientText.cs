@@ -8,7 +8,7 @@ public class ServerHostClientText : NetworkBehaviour
 
     private Color m_Color;
     private Color m_ColorAlpha;
-    private Vector3 m_LocalPosition;
+    private Vector3 m_AnchoredPosition3D;
 
     public void SetColor(Color color)
     {
@@ -19,7 +19,8 @@ public class ServerHostClientText : NetworkBehaviour
 
     private void Awake()
     {
-        m_LocalPosition = transform.localPosition;
+        // Get the anchored 3D position
+        m_AnchoredPosition3D = (transform as RectTransform).anchoredPosition3D;
         m_DisplayText = GetComponent<Text>();
     }
 
@@ -45,7 +46,8 @@ public class ServerHostClientText : NetworkBehaviour
                 m_DisplayText.text = $"Client-{NetworkManager.LocalClientId}";
             }
         }
-        transform.localPosition = m_LocalPosition;
+        // Apply the AnchoredPosition3D to account for any adjustments in resolution/size
+        (transform as RectTransform).anchoredPosition3D = m_AnchoredPosition3D;
     }
 
     public override void OnNetworkDespawn()
