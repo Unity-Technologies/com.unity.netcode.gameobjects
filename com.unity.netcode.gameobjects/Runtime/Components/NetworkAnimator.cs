@@ -207,6 +207,10 @@ namespace Unity.Netcode.Components
         [SerializeField]
         internal List<TransitionStateinfo> TransitionStateInfoList;
 
+        [HideInInspector]
+        [SerializeField]
+        private int m_TotalParameterSize;
+
         // Used to get the associated transition information required to synchronize late joining clients with transitions
         // [Layer][DestinationState][TransitionStateInfo]
         private Dictionary<int, Dictionary<int, TransitionStateinfo>> m_DestinationStateToTransitioninfo = new Dictionary<int, Dictionary<int, TransitionStateinfo>>();
@@ -229,6 +233,7 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
 
 #if UNITY_EDITOR
         private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
@@ -263,7 +268,6 @@ namespace Unity.Netcode.Components
                             {
                                 case AnimatorControllerParameterType.Trigger:
                                     {
-
                                         if (transition.destinationStateMachine != null)
                                         {
                                             var destinationStateMachine = transition.destinationStateMachine;
@@ -297,6 +301,32 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
+        private void OnValidate()
+        {
+            m_TotalParameterSize = sizeof(uint);
+            var parameters = m_Animator.parameters;
+            // Calculate the size of the parameter write buffer needed
+            foreach (var parameter in parameters)
+            {
+                switch (parameter.type)
+                {
+                    case AnimatorControllerParameterType.Int:
+                    case AnimatorControllerParameterType.Bool:
+                    case AnimatorControllerParameterType.Trigger:
+                        {
+                            m_TotalParameterSize += sizeof(int) * 2;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Float:
+                        {
+                            m_TotalParameterSize += sizeof(float) + sizeof(int);
+                            break;
+                        }
+                }
+            }
+        }
+
 #endif
 
         /// <summary>
@@ -507,10 +537,6 @@ namespace Unity.Netcode.Components
             return NetworkManager ? !NetworkManager.DistributedAuthorityMode : true;
         }
 
-        // Animators only support up to 32 parameters
-        // TODO: Look into making this a range limited property
-        private const int k_MaxAnimationParams = 32;
-
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
         private float[] m_LayerWeights;
@@ -534,7 +560,7 @@ namespace Unity.Netcode.Components
         }
 
         // 128 bytes per Animator
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter;
 
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
@@ -586,6 +612,13 @@ namespace Unity.Netcode.Components
 
         protected virtual void Awake()
         {
+            if (m_ParameterWriter.IsInitialized)
+            {
+                m_ParameterWriter.Dispose();
+            }
+            m_ParameterWriter = new FastBufferWriter(m_TotalParameterSize, Allocator.Persistent);
+
+
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
             // when running in owner authoritative mode and the owner changes.
