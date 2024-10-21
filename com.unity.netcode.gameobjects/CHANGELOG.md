@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkAnimator` would statically allocate write buffer space for `Animator` parameters that could cause a write error if the number of parameters exceeded the space allocated.
+
 ### Changed
 
 ## [2.1.1] - 2024-10-18
