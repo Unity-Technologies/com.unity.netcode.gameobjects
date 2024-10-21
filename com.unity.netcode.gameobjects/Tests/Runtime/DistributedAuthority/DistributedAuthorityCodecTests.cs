@@ -625,7 +625,8 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             var writer = new FastBufferWriter(1024, Allocator.Temp);
-            message.Serialize(writer, 0);
+            // Serialize the message using the known message version
+            message.Serialize(writer, message.Version);
 
             var testName = TestContext.CurrentContext.Test.Name;
             if (!m_ExpectedMessages.ContainsKey(testName))
