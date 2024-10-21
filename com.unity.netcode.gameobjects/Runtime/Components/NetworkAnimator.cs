@@ -207,10 +207,6 @@ namespace Unity.Netcode.Components
         [SerializeField]
         internal List<TransitionStateinfo> TransitionStateInfoList;
 
-        [HideInInspector]
-        [SerializeField]
-        private int m_TotalParameterSize;
-
         // Used to get the associated transition information required to synchronize late joining clients with transitions
         // [Layer][DestinationState][TransitionStateInfo]
         private Dictionary<int, Dictionary<int, TransitionStateinfo>> m_DestinationStateToTransitioninfo = new Dictionary<int, Dictionary<int, TransitionStateinfo>>();
@@ -298,31 +294,6 @@ namespace Unity.Netcode.Components
                             }
                         }
                     }
-                }
-            }
-        }
-
-        private void OnValidate()
-        {
-            m_TotalParameterSize = sizeof(uint);
-            var parameters = m_Animator.parameters;
-            // Calculate the size of the parameter write buffer needed
-            foreach (var parameter in parameters)
-            {
-                switch (parameter.type)
-                {
-                    case AnimatorControllerParameterType.Int:
-                    case AnimatorControllerParameterType.Bool:
-                    case AnimatorControllerParameterType.Trigger:
-                        {
-                            m_TotalParameterSize += sizeof(int) * 2;
-                            break;
-                        }
-                    case AnimatorControllerParameterType.Float:
-                        {
-                            m_TotalParameterSize += sizeof(float) + sizeof(int);
-                            break;
-                        }
                 }
             }
         }
@@ -612,12 +583,13 @@ namespace Unity.Netcode.Components
 
         protected virtual void Awake()
         {
-            if (m_ParameterWriter.IsInitialized)
+            if (!m_Animator)
             {
-                m_ParameterWriter.Dispose();
+#if !UNITY_EDITOR
+                Debug.LogError($"{nameof(NetworkAnimator)} {name} does not have an {nameof(UnityEngine.Animator)} assigned to it. The {nameof(NetworkAnimator)} will not initialize properly.");
+#endif
+                return;
             }
-            m_ParameterWriter = new FastBufferWriter(m_TotalParameterSize, Allocator.Persistent);
-
 
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
@@ -647,6 +619,9 @@ namespace Unity.Netcode.Components
                     m_LayerWeights[layer] = layerWeightNow;
                 }
             }
+
+            // The total initialization size calculated for the m_ParameterWriter write buffer.
+            var totalParameterSize = sizeof(uint);
 
             // Build our reference parameter values to detect when they change
             var parameters = m_Animator.parameters;
@@ -688,7 +663,37 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CachedAnimatorParameters[i] = cacheParam;
+
+                // Calculate parameter sizes (index + type size)
+                switch (parameter.type)
+                {
+                    case AnimatorControllerParameterType.Int:
+                        {
+                            totalParameterSize += sizeof(int) * 2;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Bool:
+                    case AnimatorControllerParameterType.Trigger:
+                        {
+                            // Bool is serialized to 1 byte
+                            totalParameterSize += sizeof(int) + 1;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Float:
+                        {
+                            totalParameterSize += sizeof(int) + sizeof(float);
+                            break;
+                        }
+                }
             }
+
+            if (m_ParameterWriter.IsInitialized)
+            {
+                m_ParameterWriter.Dispose();
+            }
+
+            // Create our parameter write buffer for serialization
+            m_ParameterWriter = new FastBufferWriter(totalParameterSize, Allocator.Persistent);
         }
 
         /// <summary>
