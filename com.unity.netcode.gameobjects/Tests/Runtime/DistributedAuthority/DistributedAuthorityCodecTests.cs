@@ -205,13 +205,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkVariableDelta()
         {
+            var component = Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>();
             var message = new NetworkVariableDeltaMessage
             {
-                NetworkObjectId = 0,
-                NetworkBehaviourIndex = 1,
-                DeliveryMappedNetworkVariableIndex = new HashSet<int> { 2, 3, 4 },
+                NetworkObjectId = Client.LocalClient.PlayerObject.NetworkObjectId,
+                NetworkBehaviourIndex = component.NetworkBehaviourId,
+                DeliveryMappedNetworkVariableIndex = new HashSet<int> { 0, 1 },
                 TargetClientId = 5,
-                NetworkBehaviour = Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>(),
+                NetworkBehaviour = component,
             };
 
             yield return SendMessage(ref message);
@@ -569,7 +570,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator SendMessage<T>(ref T message) where T : INetworkMessage
         {
-            Client.MessageManager.SetVersion(k_ClientId, XXHash.Hash32(typeof(T).FullName), 0);
+            Client.MessageManager.SetVersion(k_ClientId, XXHash.Hash32(typeof(T).FullName), message.Version);
 
             var clientIds = new NativeArray<ulong>(1, Allocator.Temp);
             clientIds[0] = k_ClientId;
