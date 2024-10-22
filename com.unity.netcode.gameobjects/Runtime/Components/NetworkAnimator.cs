@@ -230,6 +230,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+
 #if UNITY_EDITOR
         private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
         {
@@ -263,7 +264,6 @@ namespace Unity.Netcode.Components
                             {
                                 case AnimatorControllerParameterType.Trigger:
                                     {
-
                                         if (transition.destinationStateMachine != null)
                                         {
                                             var destinationStateMachine = transition.destinationStateMachine;
@@ -297,6 +297,7 @@ namespace Unity.Netcode.Components
                 }
             }
         }
+
 #endif
 
         /// <summary>
@@ -507,10 +508,6 @@ namespace Unity.Netcode.Components
             return NetworkManager ? !NetworkManager.DistributedAuthorityMode : true;
         }
 
-        // Animators only support up to 32 parameters
-        // TODO: Look into making this a range limited property
-        private const int k_MaxAnimationParams = 32;
-
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
         private float[] m_LayerWeights;
@@ -534,7 +531,7 @@ namespace Unity.Netcode.Components
         }
 
         // 128 bytes per Animator
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter;
 
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
@@ -586,6 +583,14 @@ namespace Unity.Netcode.Components
 
         protected virtual void Awake()
         {
+            if (!m_Animator)
+            {
+#if !UNITY_EDITOR
+                Debug.LogError($"{nameof(NetworkAnimator)} {name} does not have an {nameof(UnityEngine.Animator)} assigned to it. The {nameof(NetworkAnimator)} will not initialize properly.");
+#endif
+                return;
+            }
+
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
             // when running in owner authoritative mode and the owner changes.
@@ -614,6 +619,9 @@ namespace Unity.Netcode.Components
                     m_LayerWeights[layer] = layerWeightNow;
                 }
             }
+
+            // The total initialization size calculated for the m_ParameterWriter write buffer.
+            var totalParameterSize = sizeof(uint);
 
             // Build our reference parameter values to detect when they change
             var parameters = m_Animator.parameters;
@@ -655,7 +663,37 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CachedAnimatorParameters[i] = cacheParam;
+
+                // Calculate parameter sizes (index + type size)
+                switch (parameter.type)
+                {
+                    case AnimatorControllerParameterType.Int:
+                        {
+                            totalParameterSize += sizeof(int) * 2;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Bool:
+                    case AnimatorControllerParameterType.Trigger:
+                        {
+                            // Bool is serialized to 1 byte
+                            totalParameterSize += sizeof(int) + 1;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Float:
+                        {
+                            totalParameterSize += sizeof(int) + sizeof(float);
+                            break;
+                        }
+                }
             }
+
+            if (m_ParameterWriter.IsInitialized)
+            {
+                m_ParameterWriter.Dispose();
+            }
+
+            // Create our parameter write buffer for serialization
+            m_ParameterWriter = new FastBufferWriter(totalParameterSize, Allocator.Persistent);
         }
 
         /// <summary>
