@@ -183,6 +183,11 @@ namespace Unity.Netcode
         /// </summary>
         public event OnSessionOwnerPromotedDelegateHandler OnSessionOwnerPromoted;
 
+        /// <summary>
+        /// When a server or client is initializing, before the network connecting is established
+        /// </summary>
+        public event Action OnInitialized;
+
         internal void SetSessionOwner(ulong sessionOwner)
         {
             var previousSessionOwner = CurrentSessionOwner;
@@ -1255,6 +1260,17 @@ namespace Unity.Netcode
 
             NetworkConfig.InitializePrefabs();
             PrefabHandler.RegisterPlayerPrefab();
+
+            // Invoke initialized callback
+            try
+            {
+                OnInitialized?.Invoke();
+            }
+            catch (Exception)
+            {
+                Shutdown();
+                throw;
+            }
         }
 
         private enum StartType
