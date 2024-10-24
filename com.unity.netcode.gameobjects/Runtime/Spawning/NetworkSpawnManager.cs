@@ -87,7 +87,13 @@ namespace Unity.Netcode
                     playerObject.Observers.Add(player.OwnerClientId);
                 }
             }
-            playerObject.Observers.Add(playerObject.OwnerClientId);
+
+            // Only if spawn with observers is set or we are using a distributed authority network topology and this is the client's player should we add
+            // the owner as an observer.
+            if (playerObject.SpawnWithObservers || (NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClientId == playerObject.OwnerClientId))
+            {
+                playerObject.Observers.Add(playerObject.OwnerClientId);
+            }
 
             m_PlayerObjects.Add(playerObject);
             if (!m_PlayerObjectsTable.ContainsKey(playerObject.OwnerClientId))
