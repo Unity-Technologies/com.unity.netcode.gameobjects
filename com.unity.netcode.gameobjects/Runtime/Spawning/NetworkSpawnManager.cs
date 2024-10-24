@@ -87,6 +87,7 @@ namespace Unity.Netcode
                     playerObject.Observers.Add(player.OwnerClientId);
                 }
             }
+            playerObject.Observers.Add(playerObject.OwnerClientId);
 
             m_PlayerObjects.Add(playerObject);
             if (!m_PlayerObjectsTable.ContainsKey(playerObject.OwnerClientId))
@@ -110,8 +111,9 @@ namespace Unity.Netcode
             if (playerNetworkClient.PlayerObject != null && m_PlayerObjects.Contains(playerNetworkClient.PlayerObject))
             {
                 // Just remove the previous player object but keep the assigned observers of the NetworkObject
-                RemovePlayerObject(playerNetworkClient.PlayerObject, true);
+                RemovePlayerObject(playerNetworkClient.PlayerObject);
             }
+
             // Now update the associated NetworkClient's player object
             NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].AssignPlayerObject(ref playerObject);
             AddPlayerObject(playerObject);
@@ -120,7 +122,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Removes a player object and updates all other players' observers list
         /// </summary>
-        private void RemovePlayerObject(NetworkObject playerObject, bool keepObservers = false)
+        private void RemovePlayerObject(NetworkObject playerObject, bool destroyingObject = false)
         {
             if (!playerObject.IsPlayerObject)
             {
@@ -141,16 +143,21 @@ namespace Unity.Netcode
                 }
             }
 
-            // If we want to keep the observers, then exit early
-            if (keepObservers)
+            if (NetworkManager.ConnectionManager.ConnectedClients.ContainsKey(playerObject.OwnerClientId) && destroyingObject)
             {
-                return;
+                NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].PlayerObject = null;
             }
 
-            foreach (var player in m_PlayerObjects)
-            {
-                player.Observers.Remove(playerObject.OwnerClientId);
-            }
+            // If we want to keep the observers, then exit early
+            //if (keepObservers)
+            //{
+            //    return;
+            //}
+
+            //foreach (var player in m_PlayerObjects)
+            //{
+            //    player.Observers.Remove(playerObject.OwnerClientId);
+            //}
         }
 
         internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
@@ -1552,7 +1559,7 @@ namespace Unity.Netcode
 
             if (networkObject.IsPlayerObject)
             {
-                RemovePlayerObject(networkObject);
+                RemovePlayerObject(networkObject, destroyGameObject);
             }
 
             // Always clear out the observers list when despawned
