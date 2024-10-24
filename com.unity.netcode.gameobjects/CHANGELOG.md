@@ -12,7 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where `NetworkAnimator` would statically allocate write buffer space for `Animator` parameters that could cause a write error if the number of parameters exceeded the space allocated.
+- Fixed issue where `NotOwnerRpcTarget` or `OwnerRpcTarget` were not using their replacements `NotAuthorityRpcTarget` and `AuthorityRpcTarget` which would invoke a warning.
+- Fixed issue where `NetworkAnimator` would statically allocate write buffer space for `Animator` parameters that could cause a write error if the number of parameters exceeded the space allocated. (#3108)
 
 ### Changed
 
