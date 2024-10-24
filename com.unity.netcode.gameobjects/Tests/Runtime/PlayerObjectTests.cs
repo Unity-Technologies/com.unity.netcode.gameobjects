@@ -1,4 +1,7 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -182,6 +185,152 @@ namespace Unity.Netcode.RuntimeTests
                     PlayerTransformMatches(subClient.SpawnManager.SpawnedObjects[client.LocalClient.PlayerObject.NetworkObjectId]);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// This test validates that when a player is spawned it has all observers
+    /// properly set and the spawned and player object lists are properly populated.
+    /// It also validates that when a player is despawned and the client is still connected
+    /// that the client maintains its observers for other players.
+    /// </summary>
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    internal class PlayerSpawnAndDespawnTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 4;
+
+        private StringBuilder m_ErrorLog = new StringBuilder();
+
+        public PlayerSpawnAndDespawnTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        private bool ValidateObservers(ulong playerClientId, NetworkObject player, ref List<NetworkManager> networkManagers)
+        {
+            foreach (var networkManager in networkManagers)
+            {
+                if (player != null && player.IsSpawned)
+                {
+                    if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(player.NetworkObjectId))
+                    {
+                        m_ErrorLog.AppendLine($"Client-{networkManager.LocalClientId} does not contain a spawned object entry {nameof(NetworkObject)}-{player.NetworkObjectId} for Client-{playerClientId}!");
+                        return false;
+                    }
+
+                    var playerClone = networkManager.SpawnManager.SpawnedObjects[player.NetworkObjectId];
+                    foreach (var clientId in networkManager.ConnectedClientsIds)
+                    {
+                        if (!playerClone.IsNetworkVisibleTo(clientId))
+                        {
+                            m_ErrorLog.AppendLine($"Client-{networkManager.LocalClientId} failed visibility check for Client-{clientId} on {nameof(NetworkObject)}-{player.NetworkObjectId} for Client-{playerClientId}!");
+                            return false;
+                        }
+                    }
+
+                    var foundPlayerClone = (NetworkObject)null;
+                    foreach (var playerObject in networkManager.SpawnManager.PlayerObjects)
+                    {
+                        if (playerObject.OwnerClientId == playerClientId && playerObject.NetworkObjectId == player.NetworkObjectId)
+                        {
+                            foundPlayerClone = playerObject;
+                            break;
+                        }
+                    }
+                    if (!foundPlayerClone)
+                    {
+                        m_ErrorLog.AppendLine($"Client-{networkManager.LocalClientId} does not contain a player entry for {nameof(NetworkObject)}-{player.NetworkObjectId} for Client-{playerClientId}!");
+                        return false;
+                    }
+
+                }
+                else
+                {
+                    // If the player client in question is despawned, then no NetworkManager instance
+                    // should contain a clone of that (or the client's NetworkManager instance as well)
+                    foreach (var playerClone in networkManager.SpawnManager.PlayerObjects)
+                    {
+                        if (playerClone.OwnerClientId == playerClientId)
+                        {
+                            m_ErrorLog.AppendLine($"Client-{networkManager.LocalClientId} contains a player {nameof(NetworkObject)}-{playerClone.NetworkObjectId} for Client-{playerClientId} when it should be despawned!");
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        private bool ValidateAllClientPlayerObservers()
+        {
+            var networkManagers = new List<NetworkManager>();
+
+            if (m_ServerNetworkManager.IsHost)
+            {
+                networkManagers.Add(m_ServerNetworkManager);
+            }
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                networkManagers.Add(networkManager);
+            }
+
+            m_ErrorLog.Clear();
+            var success = true;
+            foreach (var networkManager in networkManagers)
+            {
+                var spawnedOrNot = networkManager.LocalClient.PlayerObject == null ? "despawned" : "spawned";
+                m_ErrorLog.AppendLine($"Validating Client-{networkManager.LocalClientId} {spawnedOrNot} player.");
+                if (networkManager.LocalClient == null)
+                {
+                    m_ErrorLog.AppendLine($"No {nameof(NetworkClient)} found for Client-{networkManager.LocalClientId}!");
+                    success = false;
+                    break;
+                }
+                if (!ValidateObservers(networkManager.LocalClientId, networkManager.LocalClient.PlayerObject, ref networkManagers))
+                {
+                    m_ErrorLog.AppendLine($"Client-{networkManager.LocalClientId} validation pass failed.");
+                    success = false;
+                    break;
+                }
+            }
+            networkManagers.Clear();
+            return success;
+        }
+
+
+        [UnityTest]
+        public IEnumerator PlayerSpawnDespawn()
+        {
+            // Validate all observers are properly set with all players spawned
+            yield return WaitForConditionOrTimeOut(ValidateAllClientPlayerObservers);
+            AssertOnTimeout($"First Validation Failed:\n {m_ErrorLog}");
+            var selectedClient = m_ClientNetworkManagers[Random.Range(0, m_ClientNetworkManagers.Count() - 1)];
+            var playerSelected = selectedClient.LocalClient.PlayerObject;
+
+            if (m_DistributedAuthority)
+            {
+                playerSelected.Despawn(false);
+            }
+            else
+            {
+                m_ServerNetworkManager.SpawnManager.SpawnedObjects[playerSelected.NetworkObjectId].Despawn(true);
+            }
+
+            // Validate all observers are properly set with one of the players despawned
+            yield return WaitForConditionOrTimeOut(ValidateAllClientPlayerObservers);
+            AssertOnTimeout($"Second Validation Failed:\n {m_ErrorLog}");
+
+            if (m_DistributedAuthority)
+            {
+                playerSelected.SpawnAsPlayerObject(selectedClient.LocalClientId, false);
+            }
+            else
+            {
+                SpawnPlayerObject(m_ServerNetworkManager.NetworkConfig.PlayerPrefab, selectedClient);
+            }
+
+            // Validate all observers are properly set when the client's player is respawned.
+            yield return WaitForConditionOrTimeOut(ValidateAllClientPlayerObservers);
+            AssertOnTimeout($"Third Validation Failed:\n {m_ErrorLog}");
         }
     }
 }

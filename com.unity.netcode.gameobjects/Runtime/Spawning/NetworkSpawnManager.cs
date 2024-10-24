@@ -88,6 +88,13 @@ namespace Unity.Netcode
                 }
             }
 
+            // Only if spawn with observers is set or we are using a distributed authority network topology and this is the client's player should we add
+            // the owner as an observer.
+            if (playerObject.SpawnWithObservers || (NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClientId == playerObject.OwnerClientId))
+            {
+                playerObject.Observers.Add(playerObject.OwnerClientId);
+            }
+
             m_PlayerObjects.Add(playerObject);
             if (!m_PlayerObjectsTable.ContainsKey(playerObject.OwnerClientId))
             {
@@ -110,8 +117,9 @@ namespace Unity.Netcode
             if (playerNetworkClient.PlayerObject != null && m_PlayerObjects.Contains(playerNetworkClient.PlayerObject))
             {
                 // Just remove the previous player object but keep the assigned observers of the NetworkObject
-                RemovePlayerObject(playerNetworkClient.PlayerObject, true);
+                RemovePlayerObject(playerNetworkClient.PlayerObject);
             }
+
             // Now update the associated NetworkClient's player object
             NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].AssignPlayerObject(ref playerObject);
             AddPlayerObject(playerObject);
@@ -120,7 +128,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Removes a player object and updates all other players' observers list
         /// </summary>
-        private void RemovePlayerObject(NetworkObject playerObject, bool keepObservers = false)
+        private void RemovePlayerObject(NetworkObject playerObject, bool destroyingObject = false)
         {
             if (!playerObject.IsPlayerObject)
             {
@@ -141,16 +149,21 @@ namespace Unity.Netcode
                 }
             }
 
-            // If we want to keep the observers, then exit early
-            if (keepObservers)
+            if (NetworkManager.ConnectionManager.ConnectedClients.ContainsKey(playerObject.OwnerClientId) && destroyingObject)
             {
-                return;
+                NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].PlayerObject = null;
             }
 
-            foreach (var player in m_PlayerObjects)
-            {
-                player.Observers.Remove(playerObject.OwnerClientId);
-            }
+            // If we want to keep the observers, then exit early
+            //if (keepObservers)
+            //{
+            //    return;
+            //}
+
+            //foreach (var player in m_PlayerObjects)
+            //{
+            //    player.Observers.Remove(playerObject.OwnerClientId);
+            //}
         }
 
         internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
@@ -1550,23 +1563,9 @@ namespace Unity.Netcode
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            // DANGO-TODO: When we fix the issue with observers not being applied to NetworkObjects,
-            // (client connect/disconnect) we can remove this hacky way of doing this.
-            // Basically, when a player disconnects and/or is destroyed they are removed as an observer from all other client
-            // NetworkOject instances.
-            if (networkObject.IsPlayerObject && !networkObject.IsOwner && networkObject.OwnerClientId != NetworkManager.LocalClientId)
-            {
-                foreach (var netObject in SpawnedObjects)
-                {
-                    if (netObject.Value.Observers.Contains(networkObject.OwnerClientId))
-                    {
-                        netObject.Value.Observers.Remove(networkObject.OwnerClientId);
-                    }
-                }
-            }
             if (networkObject.IsPlayerObject)
             {
-                RemovePlayerObject(networkObject);
+                RemovePlayerObject(networkObject, destroyGameObject);
             }
 
             // Always clear out the observers list when despawned
