@@ -76,7 +76,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
 
     # Platform specific Execution
-    - utr --testproject={{ project.path }} architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --editor-location=.Editor --suite=playmode --scripting-backend=il2cpp --platform={{ platform.standalone }} --artifacts_path=build/logs --player-load-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testCategory=!Performance --testfilter=Unity.Netcode.RuntimeTests --reruncount=1 --clean-library-on-rerun
+    - utr --suite=playmode --artifacts_path=build/logs --player-load-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testCategory=!Performance --testfilter=Unity.Netcode.RuntimeTests --reruncount=1 --clean-library-on-rerun
 
   variables:
 # PS4 related

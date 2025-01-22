@@ -23,7 +23,6 @@ desktop_standalone_tests_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     - sudo apt-get update -q
     - sudo apt install -qy imagemagick
 {% endif %}
-    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
   
     # Platform specific UTR setup
@@ -48,16 +47,16 @@ desktop_standalone_tests_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     # Run Standalone tests
     - |
 {% if platform.name == "win" %} 
-      utr.bat --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      utr.bat --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% else %} 
-      ./utr --suite=playmode --platform={{ platform.standalone }} --scripting-backend={{ backend }} --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      ./utr --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% endif %} 
 
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"
-        - "build/test-results/**"
+        - artifacts/**/*
+        - build/test-results/**
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
 {% endfor -%}
