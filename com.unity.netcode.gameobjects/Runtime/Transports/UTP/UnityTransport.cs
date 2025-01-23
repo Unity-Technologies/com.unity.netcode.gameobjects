@@ -1223,7 +1223,7 @@ namespace Unity.Netcode.Transports.UTP
 #if DEBUG
             if (m_State != State.Listening)
             {
-                Debug.LogWarning("DisconnectRemoteClient should be called on a listening server!");
+                Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
                 return;
             }
 #endif
