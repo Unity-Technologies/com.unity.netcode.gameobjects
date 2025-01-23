@@ -35,10 +35,10 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
 {% endif %}
   
-  # Installing editor
+# Installing editor
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
   
-  # Build Player
+# Build Player
     - |
 {% if platform.name == "win" %}
       utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
@@ -46,15 +46,15 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
       ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
 {% endif %}
 
-artifacts:
-  players:
-    paths:
-      - build/players/**/*
-  logs:
-    paths:
-      - build/logs/**/*
-dependencies:
-  - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
+  artifacts:
+    players:
+      paths:
+        - build/players/**/*
+    logs:
+      paths:
+        - build/logs/**/*
+  dependencies:
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -91,12 +91,12 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
       ./utr --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% endif %}
 
-artifacts:
-  logs:
-    paths:
-      - build/test-results/**
-dependencies:
-  - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+  artifacts:
+    logs:
+      paths:
+        - build/test-results/**
+  dependencies:
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
