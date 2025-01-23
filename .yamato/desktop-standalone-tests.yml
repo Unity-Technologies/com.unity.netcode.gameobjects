@@ -7,58 +7,96 @@
 # Builds are made on each supported editor as in project.metafile declaration
 # Builds are made with different scripting backends as in project.metafile declaration
 # ARM64 architectures are for now not considered since Windows_arm64 is recommended to use only after builds (would require separation here) and when it comes to macOS_arm64 there is problem with OpenCL not being available
+  
+# Build phase
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-desktop_standalone_tests_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
-  name : Standalone Tests - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
+desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
+  name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    # Installing tools
+# Installing tools
 {% if platform.name == "ubuntu" %}
     - sudo apt-get update -q
     - sudo apt install -qy imagemagick
 {% endif %}
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
   
-    # Platform specific UTR setup
+# Platform specific UTR setup
     - |
 {% if platform.name == "win" %}
       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
 {% else %}
       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
 {% endif %}
-    
-    # Installing editor
+  
+  # Installing editor
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-    
-    # Build Player
+  
+  # Build Player
     - |
-{% if platform.name == "win" %} 
-      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun
-{% else %} 
-      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun
-{% endif %}  
+{% if platform.name == "win" %}
+      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
+{% else %}
+      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
+{% endif %}
 
-    # Run Standalone tests
+artifacts:
+  players:
+    paths:
+      - build/players/**/*
+  logs:
+    paths:
+      - build/logs/**/*
+dependencies:
+  - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  
+  
+  
+  
+# Run phase
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.all -%}
+{% for backend in scripting_backends -%}
+desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
+  name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
+  agent:
+    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+# Platform specific UTR setup
     - |
-{% if platform.name == "win" %} 
+{% if platform.name == "win" %}
+      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+{% else %}
+      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
+{% endif %}
+  
+# Run Standalone tests
+    - |
+{% if platform.name == "win" %}
       utr.bat --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
-{% else %} 
+{% else %}
       ./utr --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
-{% endif %} 
+{% endif %}
 
-  artifacts:
-    logs:
-      paths:
-        - artifacts/**/*
-        - build/test-results/**
-  dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
+artifacts:
+  logs:
+    paths:
+      - build/test-results/**
+dependencies:
+  - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
