@@ -58,7 +58,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator PrefabSessionIstantiationPass([Values(4, 3, 2, 1)] int iterationsLeft)
         {
-            m_EnableVerboseDebug = true;
             // Start out waiting for a long duration before updating the NetworkVariable so each
             // next iteration we change it earlier than the previous. This validates that the
             // NetworkVariable's last update time is being reset each time a persisted NetworkObject
