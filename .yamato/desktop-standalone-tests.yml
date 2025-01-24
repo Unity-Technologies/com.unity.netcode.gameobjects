@@ -41,9 +41,9 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 # Build Player
     - |
 {% if platform.name == "win" %}
-      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
+      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter=Unity.Netcode.RuntimeTests --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
 {% else %}
-      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
+      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter=Unity.Netcode.RuntimeTests --player-save-path=build/players --artifacts_path=build/logs --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
 {% endif %}
 
   artifacts:
@@ -86,9 +86,9 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 # Run Standalone tests
     - |
 {% if platform.name == "win" %}
-      utr.bat --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      utr.bat --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testproject={{ project.path }} --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% else %}
-      ./utr --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testfilter=Unity.Netcode.RuntimeTests --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      ./utr --suite=playmode --player-load-path=build/players --artifacts_path=build/test-results --testproject={{ project.path }} --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% endif %}
 
   artifacts:
