@@ -41,7 +41,8 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
-    paths:
+    logs:
+      paths:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
@@ -50,7 +51,9 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       - {{ project.name }}/*.log
       - {{ project.name }}/Builds/*.log
       - build/test-results/**
-      - build/players/**
+    players:
+      paths:
+        - build/players/**
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -88,7 +91,8 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
-    paths:
+    logs:
+      paths:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
@@ -97,7 +101,6 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       - {{ project.name }}/*.log
       - {{ project.name }}/Builds/*.log
       - build/test-results/**
-      - build/players/**
   dependencies:
     - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
