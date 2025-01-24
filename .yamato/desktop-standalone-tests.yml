@@ -47,9 +47,9 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% endif %}
 
   artifacts:
-      paths:
-        - build/players/**/*
-        - build/logs/**/*
+    paths:
+      - build/players/**/*
+      - build/logs/**/*
         
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
@@ -90,8 +90,8 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
   artifacts:
-      paths:
-        - build/test-results/**
+    paths:
+      - build/test-results/**
   dependencies:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
 {% endfor -%}

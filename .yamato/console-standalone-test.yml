@@ -41,16 +41,16 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
-      paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
-        - build/players/**
+    paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - {{ project.name }}/Logs/**
+      - {{ project.name }}/Library/*.log
+      - {{ project.name }}/*.log
+      - {{ project.name }}/Builds/*.log
+      - build/test-results/**
+      - build/players/**
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -88,16 +88,16 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
-      paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
-        - build/players/**
+    paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - {{ project.name }}/Logs/**
+      - {{ project.name }}/Library/*.log
+      - {{ project.name }}/*.log
+      - {{ project.name }}/Builds/*.log
+      - build/test-results/**
+      - build/players/**
   dependencies:
     - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}

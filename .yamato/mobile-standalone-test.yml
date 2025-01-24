@@ -38,7 +38,7 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     - ./utr --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter=Unity.Netcode.RuntimeTests.* --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun --build-only
 {% endif %}
   artifacts:
-      paths:
+    paths:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
@@ -90,16 +90,16 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     - ./utr --suite=playmode --artifacts-path=artifacts --player-load-path=build/players --player-connection-ip=%BOKKEN_HOST_IP% --reruncount=1 --clean-library-on-rerun
 {% endif %}
   artifacts:
-      paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
-        - build/players/**
+    paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - {{ project.name }}/Logs/**
+      - {{ project.name }}/Library/*.log
+      - {{ project.name }}/*.log
+      - {{ project.name }}/Builds/*.log
+      - build/test-results/**
+      - build/players/**
   dependencies:
     - .yamato/mobile-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
