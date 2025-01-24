@@ -145,7 +145,8 @@ namespace Unity.Netcode.RuntimeTests
                         }
                         var instance = networkManager.SpawnManager.SpawnedObjects[spawnedObject.NetworkObjectId].GetComponent<TestBehaviour>();
                         // Check to make sure all clients' delta between updates is not greater than the wait period plus the baseWaitTime.
-                        if (instance.LastUpdateDelta >= (waitPeriod + baseWaitTime))
+                        // Ignore the first iteration as that becomes our baseline.
+                        if (iterationsLeft < 4 && instance.LastUpdateDelta >= (waitPeriod + baseWaitTime))
                         {
                             VerboseDebug($"Last Spawn Delta = {instance.LastUpdateDelta} is greater or equal to {waitPeriod + baseWaitTime}");
                             return false;
