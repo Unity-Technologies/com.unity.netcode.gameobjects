@@ -87,9 +87,9 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 # Run Standalone tests
     - |
 {% if platform.name == "win" %}
-      utr.bat --suite=playmode --player-load-path=players --artifacts-path=test-results --testproject={{ project.path }} --testfilter="Unity.Netcode.RuntimeTests.*" --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      utr.bat --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --testfilter="Unity.Netcode.RuntimeTests.*" --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% else %}
-      ./utr --suite=playmode --player-load-path=players --artifacts-path=test-results --testproject={{ project.path }} --testfilter="Unity.Netcode.RuntimeTests.*" --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
+      ./utr --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --testfilter="Unity.Netcode.RuntimeTests.*" --playergraphicsapi=Null --reruncount=1 --clean-library-on-rerun
 {% endif %}
 
   artifacts:
