@@ -1,0 +1,54 @@
+{% metadata_file .yamato/project.metafile %}
+---
+
+# Executes package tests for each package referenced in the project using the newest compatible version of the package dependencies.
+# This is just to ensure that no critical change is made. It will be run on a default editor and default platform (it can be discussed if we should run it per all editors and platforms)
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
+updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
+  name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}
+      rerun: always
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  
+  
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+updated-dependency_badges_{{ project.name }}:
+  name: Badges for Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci project izon -d --project-path {{ projects.default.path }}
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+{% for platform in test_platforms.default -%}
+{% for project in projects.default -%}
+{% for editor in validation_editors.default -%}
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
