@@ -28,7 +28,7 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     
     # Platform specific Build
-    - utr --testproject={{ project.path }} architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor  --artifacts-path=build/logs --player-save-path=build/players --testfilter=Unity.Netcode.RuntimeTests.* --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only
+    - utr --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
 
   variables:
 # PS4 related
@@ -41,19 +41,12 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     NINTENDO_SDK_ROOT: 'C:\Nintendo\nx_sdk-18_3_0\NintendoSDK'
     UNITY_NINTENDOSDK_CLI_TOOLS: '${NINTENDO_SDK_ROOT}\Tools\CommandLineTools'
   artifacts:
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - artifacts/**/*
-      - {{ project.name }}/Logs/**
-      - {{ project.name }}/Library/*.log
-      - {{ project.name }}/*.log
-      - {{ project.name }}/Builds/*.log
-      - build/test-results/**
     players:
       paths:
-        - build/players/**
+        - "build/players/**/*"
+    logs:
+      paths:
+        - "artifacts/**/*"
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -75,10 +68,12 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     # Installing tools.
+    - sudo pip install unity-downloader-cli
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --fast --wait
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
 
     # Platform specific Execution
-    - utr --suite=playmode -testproject={{ project.path }} --artifacts-path=build/logs --player-load-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun
+    - utr --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 
   variables:
 # PS4 related
@@ -93,14 +88,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
   artifacts:
     logs:
       paths:
-      - '*.log'
-      - '*.xml'
-      - artifacts/**/*
-      - {{ project.name }}/Logs/**
-      - {{ project.name }}/Library/*.log
-      - {{ project.name }}/*.log
-      - {{ project.name }}/Builds/*.log
-      - build/test-results/**
+        - "test-results/**/*"
   dependencies:
     - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}

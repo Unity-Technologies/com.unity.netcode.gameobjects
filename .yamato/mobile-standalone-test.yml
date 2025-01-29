@@ -31,27 +31,20 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% if platform.base == "win" %}
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat 
     - python .yamato/disable-burst-if-requested.py --project-path {{ project.path }} --platform {{ platform.name }}
-    - utr.bat --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts_path=artifacts --testfilter=Unity.Netcode.RuntimeTests.* --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun --build-only
+    - utr.bat --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
 {% else %}
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
-    - ./utr --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts_path=artifacts --testfilter=Unity.Netcode.RuntimeTests.* --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun --build-only
+    - ./utr --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
 {% endif %}
   artifacts:
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - artifacts/**/*
-      - {{ project.name }}/Logs/**
-      - {{ project.name }}/Library/*.log
-      - {{ project.name }}/*.log
-      - {{ project.name }}/Builds/*.log
-      - build/test-results/**
-      - artifacts/**
     players:
       paths:
-        - build/players/**
+        - "build/players/**/*"
+    logs:
+      paths:
+        - "artifacts/**/*"
+  
   variables:
     CI: true
     ENABLE_BURST_COMPILATION: False
@@ -75,7 +68,13 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
 {% endif %}
   # Skip repository cloning
   skip_checkout: true
-  commands:    
+  commands:
+    # Installing tools
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+
+    # Installing editor. We still need the editor to run tests on standalone build
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait
+      
 {% if platform.standalone == "Android" %}
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
@@ -85,24 +84,17 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
-      utr --suite=playmode --artifacts_path=artifacts --player-load-path=build/players --player-connection-ip=%BOKKEN_HOST_IP% --reruncount=1 --clean-library-on-rerun
+      utr --suite=playmode --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 {% else %}
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
     # Run tests
-    - ./utr --suite=playmode --artifacts-path=artifacts --player-load-path=build/players --player-connection-ip=%BOKKEN_HOST_IP% --reruncount=1 --clean-library-on-rerun
+    - ./utr --suite=playmode --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 {% endif %}
   artifacts:
     logs:
       paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
+        - "test-results/**/*"
   dependencies:
     - .yamato/mobile-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}

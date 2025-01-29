@@ -49,10 +49,10 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   artifacts:
     players:
       paths:
-        - "build/players/**"
+        - "build/players/**/*"
     logs:
       paths:
-        - "artifacts/**"
+        - "artifacts/**/*"
         
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}
@@ -83,21 +83,22 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% else %}
       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
 {% endif %}
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
 
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
   
 # Run Standalone tests
     - |
 {% if platform.name == "win" %}
-      utr.bat --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+      utr.bat --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 {% else %}
-      ./utr --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+      ./utr --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 {% endif %}
 
   artifacts:
     logs:
       paths:
-        - "test-results/**"
+        - "test-results/**/*"
   dependencies:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
 {% endfor -%}
