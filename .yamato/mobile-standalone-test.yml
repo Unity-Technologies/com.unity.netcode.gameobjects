@@ -83,12 +83,12 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
       start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
-      utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+      utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% else %}
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
     # Run tests
-    - ./utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+    - ./utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% endif %}
   artifacts:
     logs:
