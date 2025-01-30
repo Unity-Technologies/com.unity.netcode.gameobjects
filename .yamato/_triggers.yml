@@ -54,6 +54,8 @@ develop_nightly:
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone_trunk
     # Build player for webgl platform on trunk
     - .yamato/_run-all.yml#run_all_webgl_builds_trunk
+    # Build player for webgl platform on trunk
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
 
 
 # Run all tests on weekly bases
