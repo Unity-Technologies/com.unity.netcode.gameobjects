@@ -29,6 +29,7 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
   
 {% for project in projects.default -%}
 {% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
 updated-dependency_badges_{{ project.name }}:
   name: Badges for Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
@@ -37,7 +38,7 @@ updated-dependency_badges_{{ project.name }}:
     flavor: {{ platform.flavor }}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project izon -d --project-path {{ projects.default.path }}
+    - upm-ci project izon -d --project-path {{ project.path }}
   artifacts:
     logs:
       paths:
@@ -47,6 +48,7 @@ updated-dependency_badges_{{ project.name }}:
 {% for project in projects.default -%}
 {% for editor in validation_editors.default -%}
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}
+{% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

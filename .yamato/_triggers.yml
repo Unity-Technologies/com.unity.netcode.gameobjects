@@ -84,15 +84,3 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_webgl_builds
     # Run code coverage test
     - .yamato/code-coverage.yml#code_coverage_ubuntu_trunk
-      
-# Run all Github badges updates on nightly basis.
-badges_nightly:
-  name: "\U0001F319 [Nightly] Run All Badges (izion) Updates"
-  triggers:
-    recurring:
-      - branch: develop-2.0.0
-        frequency: daily
-        rerun: always
-  dependencies:
-    # Run updated dependencies badges
-    - .yamato/project-updated-dependencies-test.yml#updated-dependency_badges_testproject
