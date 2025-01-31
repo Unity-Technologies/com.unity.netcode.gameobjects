@@ -36,20 +36,13 @@ test_platforms:
           standalone: StandaloneOSX
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
     mobile_build:
-        - name: android-armV7
+        - name: android
           type: Unity::VM
           image: package-ci/win10:v4
           flavor: b1.large
           standalone: Android
           base: win
           architecture: armv7
-        - name: android-arm64
-          type: Unity::VM
-          image: package-ci/win11:v4
-          flavor: b1.large
-          standalone: Android
-          base: win
-          architecture: arm64
         # iOS modern builds are ARM64-only, thus no testing with armv7 (as in android case)
         - name: ios-arm64
           type: Unity::VM::osx
