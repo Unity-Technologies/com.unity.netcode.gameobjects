@@ -53,6 +53,12 @@ namespace TestProject.RuntimeTests
             return m_CanStartServerAndClients;
         }
 
+        public enum DespawnMode
+        {
+            Despawn,
+            DeferredDespawn,
+        }
+
         /// <summary>
         /// This verifies that in-scene placed NetworkObjects will be properly
         /// synchronized if:
@@ -61,8 +67,13 @@ namespace TestProject.RuntimeTests
         /// NetworkObject as a NetworkPrefab
         /// </summary>
         [UnityTest]
-        public IEnumerator InSceneNetworkObjectSynchAndSpawn()
+        public IEnumerator InSceneNetworkObjectSynchAndSpawn([Values] DespawnMode despawnMode)
         {
+            if (!m_DistributedAuthority && despawnMode == DespawnMode.DeferredDespawn)
+            {
+                Assert.Ignore("Deferred Despawn is only valid with Distributed Authority mode.");
+            }
+
             NetworkObjectTestComponent.VerboseDebug = true;
             // Because despawning a client will cause it to shutdown and clean everything in the
             // scene hierarchy, we have to prevent one of the clients from spawning initially before
@@ -99,7 +110,16 @@ namespace TestProject.RuntimeTests
 
             // Despawn the in-scene placed NetworkObject
             Debug.Log("Despawning In-Scene placed NetworkObject");
-            serverObject.Despawn(false);
+
+            if (despawnMode == DespawnMode.Despawn)
+            {
+                serverObject.Despawn(false);
+            }
+            else
+            {
+                serverObject.DeferDespawn(1, false);
+            }
+
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
             AssertOnTimeout($"Timed out waiting for all in-scene instances to be despawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()}");
 
@@ -129,6 +149,12 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
             AssertOnTimeout($"Timed out waiting for all in-scene instances to be spawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {clientCount}");
+
+            if (despawnMode == DespawnMode.DeferredDespawn)
+            {
+                // TODO: Check if this is the expected behavior
+                serverObject.DeferredDespawnTick = 0;
+            }
 
             // Test NetworkHide on the first client
             var firstClientId = m_ClientNetworkManagers[0].LocalClientId;
