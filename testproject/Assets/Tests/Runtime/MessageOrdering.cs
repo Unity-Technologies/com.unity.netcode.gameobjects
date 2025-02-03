@@ -66,7 +66,7 @@ namespace TestProject.RuntimeTests
             {
                 client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
-
+            m_Prefab.gameObject.SetActive(false);
             // Start the instances
             if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
@@ -80,6 +80,7 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Check to make sure all clients are connected
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
+            m_Prefab.gameObject.SetActive(true);
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
@@ -125,7 +126,7 @@ namespace TestProject.RuntimeTests
             {
                 client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
-
+            m_Prefab.gameObject.SetActive(false);
             // Start the instances
             if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
@@ -138,7 +139,7 @@ namespace TestProject.RuntimeTests
 
             // [Host-Side] Check to make sure all clients are connected
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, m_ClientNetworkManagers.Length + 1, null, 512);
-
+            m_Prefab.gameObject.SetActive(true);
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
@@ -229,7 +230,7 @@ namespace TestProject.RuntimeTests
             }
 
             var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
-
+            m_Prefab.gameObject.SetActive(false);
             // Start the instances
             if (!NetcodeIntegrationTestHelpers.Start(false, server, clients))
             {
@@ -242,7 +243,7 @@ namespace TestProject.RuntimeTests
 
             // [Host-Side] Check to make sure all clients are connected
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length, null, 512);
-
+            m_Prefab.gameObject.SetActive(true);
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
             serverNetworkObject.NetworkManagerOwner = server;
