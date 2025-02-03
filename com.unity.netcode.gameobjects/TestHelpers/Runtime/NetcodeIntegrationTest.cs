@@ -1244,6 +1244,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
+        }
+
+        /// <summary>
+        /// Destroys any remaining NetworkManager instances
+        /// </summary>
+        private void DestroyNetworkManagers()
+        {
+            var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+            foreach (var networkManager in networkManagers)
+            {
+                Object.DestroyImmediate(networkManager.gameObject);
+            }
         }
 
         /// <summary>
