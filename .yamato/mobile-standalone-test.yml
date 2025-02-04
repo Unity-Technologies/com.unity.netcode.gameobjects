@@ -80,8 +80,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
 
     # Connect to Android device and run tests
     - |
-      start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
-      start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
+      %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
       utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% else %}
     # Download standalone UnityTestRunner
