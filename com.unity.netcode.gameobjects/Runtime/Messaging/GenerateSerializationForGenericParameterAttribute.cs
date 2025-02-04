@@ -43,20 +43,20 @@ namespace Unity.Netcode
     /// public class MyClass&lt;T&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MySubclass1 : MyClass&lt;Foo&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MySubclass2&lt;T&gt; : MyClass&lt;T&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// [SerializesGenericParameter(1)]
     /// public class MySubclass3&lt;TTypeOne, TTypeTwo&gt; : MyClass&lt;TTypeOne&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MyBehaviour : NetworkBehaviour
     /// {
     ///     public MySubclass1 TheValue;

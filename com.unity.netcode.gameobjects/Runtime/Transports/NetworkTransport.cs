@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// The generic transport class all Netcode for GameObjects network transport implementations
     /// derive from.  Use this class to add a custom transport.
-    /// <seealso cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
+    /// <see cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
     /// </summary>
     public abstract class NetworkTransport : MonoBehaviour
     {
@@ -104,13 +104,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        /// /// <param name="networkManager">optionally pass in NetworkManager</param>
+        /// <param name="networkManager">optionally pass in NetworkManager</param>
         public abstract void Initialize(NetworkManager networkManager = null);
 
         /// <summary>
         /// Invoked by NetworkManager at the beginning of its EarlyUpdate.
         /// For order of operations see: <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>
         /// </summary>
+        /// <remarks>
         /// Useful to handle processing any transport-layer events such as processing inbound messages or changes in connection state(s).
         /// </remarks>
         protected virtual void OnEarlyUpdate()

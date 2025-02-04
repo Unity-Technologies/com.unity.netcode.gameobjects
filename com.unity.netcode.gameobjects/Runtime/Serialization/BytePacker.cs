@@ -6,7 +6,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Utility class for packing values in serialization.
-    /// <seealso cref="ByteUnpacker"/> to unpack packed values.
+    /// <see cref="ByteUnpacker"/> to unpack packed values.
     /// </summary>
     public static class BytePacker
     {

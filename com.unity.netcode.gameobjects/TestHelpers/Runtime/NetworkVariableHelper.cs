@@ -14,7 +14,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </list>
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of value managed by the NetworkVariable</typeparam>
     public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
     {
         private readonly NetworkVariable<T> m_NetworkVariable;

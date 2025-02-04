@@ -135,11 +135,11 @@ namespace Unity.Netcode
         /// Invoke this method to check if a collection's items are dirty.
         /// The default behavior is to exit early if the <see cref="NetworkVariable{T}"/> is already dirty.
         /// </summary>
-        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
         /// <remarks>
         /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changees to the collection items.<br />
-        /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set <param name="forceCheck"/> to true. <br />
+        /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set forceCheck param to true. <br />
         /// </remarks>
+        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
         public bool CheckDirtyState(bool forceCheck = false)
         {
             var isDirty = base.IsDirty();

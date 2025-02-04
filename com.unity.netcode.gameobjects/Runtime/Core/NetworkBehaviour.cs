@@ -529,12 +529,12 @@ namespace Unity.Netcode
                 m_NetworkObject.NetworkManager.IsServer;
         }
 
-        ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
-        ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
-        ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
-        ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
-        ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
-        ///   how NetworkObject works but it was close to the release and too risky to change
+        //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
+        //  its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
+        //  (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
+        //  need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
+        //  the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
+        //  how NetworkObject works but it was close to the release and too risky to change
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance.
         /// </summary>
@@ -819,7 +819,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// In client-server contexts, this method is invoked on both the server and the local client of the owner when <see cref="Netcode.NetworkObject"/> ownership is assigned.
-        /// <para>In distributed authority contexts, this method is only invoked on the local client that has been assigned ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
+        /// In distributed authority contexts, this method is only invoked on the local client that has been assigned ownership of the associated <see cref="Netcode.NetworkObject"/>.
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -856,7 +856,7 @@ namespace Unity.Netcode
         /// <summary>
         /// In client-server contexts, this method is invoked on the local client when it loses ownership of the associated <see cref="Netcode.NetworkObject"/>
         /// and on the server when any client loses ownership.
-        /// <para>In distributed authority contexts, this method is only invoked on the local client that has lost ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
+        /// In distributed authority contexts, this method is only invoked on the local client that has lost ownership of the associated <see cref="Netcode.NetworkObject"/>.
         /// </summary>
         public virtual void OnLostOwnership() { }
 
@@ -1321,8 +1321,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the local instance of a NetworkObject with a given NetworkId.
         /// </summary>
-        /// <param name="networkId"></param>
-        /// <returns></returns>
+        /// <param name="networkId">The unique network identifier of the NetworkObject to retrieve</param>
+        /// <returns>The NetworkObject instance if found, null if no object exists with the specified networkId</returns>
         protected NetworkObject GetNetworkObject(ulong networkId)
         {
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
@@ -1345,7 +1345,6 @@ namespace Unity.Netcode
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
         /// is in read mode or write mode.
         /// </typeparam>
-        /// <param name="targetClientId">the relative client identifier being synchronized</param>
         protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 

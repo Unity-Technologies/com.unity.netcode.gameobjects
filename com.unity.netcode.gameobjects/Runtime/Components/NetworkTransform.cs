@@ -1482,9 +1482,8 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If a derived class overrides this, then make sure to invoke this base method!
         /// </remarks>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serializer"></param>
-        /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
+        /// <typeparam name="T">The serializer type for buffer operations</typeparam>
+        /// <param name="serializer">The buffer serializer used for network state synchronization</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
@@ -3171,7 +3170,7 @@ namespace Unity.Netcode.Components
         /// This method is only invoked by the owner
         /// Use: OnInitialize(ref NetworkTransformState replicatedState) to be notified on all instances
         /// </summary>
-        /// <param name="replicatedState"></param>
+        /// <param name="replicatedState">The NetworkVariable containing the <see cref="NetworkTransformState"/></param>
         protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
 
@@ -3498,11 +3497,11 @@ namespace Unity.Netcode.Components
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
         ///  just the desired one(s)
         /// </summary>
-        /// <param name="posIn"></param> new position to move to.  Can be null
-        /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
+        /// <param name="posIn">new position to move to. Can be null</param>
+        /// <param name="rotIn">new rotation to rotate to. Can be null</param>
         /// <param name="scaleIn">new scale to scale to. Can be null</param>
         /// <param name="teleportDisabled">When true (the default) the <see cref="NetworkObject"/> will not be teleported and, if enabled, will interpolate. When false the <see cref="NetworkObject"/> will teleport/apply the parameters provided immediately.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown when the function is called on non-spawned object or, when it's called without proper authority</exception>
         public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool teleportDisabled = true)
         {
             if (!IsSpawned)
@@ -3638,10 +3637,10 @@ namespace Unity.Netcode.Components
         /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
         /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
         /// </remarks>
-        /// <param name="newPosition"></param> new position to move to.
-        /// <param name="newRotation"></param> new rotation to rotate to.
+        /// <param name="newPosition">new position to move to.</param>
+        /// <param name="newRotation">new rotation to rotate to.</param>
         /// <param name="newScale">new scale to scale to.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown when called from a non-authoritative context (client without ownership)</exception>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)
@@ -3703,7 +3702,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc cref="INetworkUpdateSystem.OnUpdate"/>
         /// <remarks>
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.

@@ -251,7 +251,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">The debug message to be logged when verbose debugging is enabled</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void VerboseDebug(string msg)
         {
@@ -686,7 +686,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates the server and clients
         /// </summary>
-        /// <param name="numberOfClients"></param>
+        /// <param name="numberOfClients">The number of client instances to create</param>
         protected void CreateServerAndClients(int numberOfClients)
         {
             VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
@@ -1781,7 +1781,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         ///     public MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
         /// }
         /// </summary>
-        /// <param name="hostOrServer"></param>
+        /// <param name="hostOrServer">Specifies whether to run the test as a Host or Server configuration</param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
@@ -1880,8 +1880,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will only simulate the netcode update loop, as well as update events on
         /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
         /// </summary>
-        /// <param name="amountOfTimeInSeconds"></param>
-        /// <param name="numFramesToSimulate"></param>
+        /// <param name="amountOfTimeInSeconds">The total amount of time to simulate, in seconds</param>
+        /// <param name="numFramesToSimulate">The number of frames to distribute the time across</param>
         protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate)
         {
             var interval = amountOfTimeInSeconds / numFramesToSimulate;
