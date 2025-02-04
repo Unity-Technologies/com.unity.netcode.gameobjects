@@ -24,7 +24,7 @@ namespace Unity.Netcode
         /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
-        /// <returns></returns>
+        /// <returns>The instantiated NetworkObject instance. Returns null if instantiation fails.</returns>
         NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
