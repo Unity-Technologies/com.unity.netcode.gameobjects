@@ -54,11 +54,11 @@ test_platforms:
     mobile_test:
         - name: android
           type: Unity::mobile::shield
-          image: package-ci/ubuntu-22.04:v4
+          image: package-ci/win10:v4
           flavor: b1.large
           model: ShieldPro
           standalone: Android
-          base: ubuntu
+          base: win
           architecture: armv7
         - name: ios-arm64
           type: Unity::mobile::iPhone
