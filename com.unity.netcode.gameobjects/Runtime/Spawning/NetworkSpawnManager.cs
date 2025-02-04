@@ -1584,14 +1584,12 @@ namespace Unity.Netcode
 
                 if (m_TargetClientIds.Count > 0 && !NetworkManager.ShutdownInProgress)
                 {
-                    // DANGO-TODO: Reconfigure Client-side object destruction on despawn
-                    bool destroyOnClient = !(networkObject.IsSceneObject == false && destroyGameObject == false);
-
                     var message = new DestroyObjectMessage
                     {
                         NetworkObjectId = networkObject.NetworkObjectId,
                         DeferredDespawnTick = networkObject.DeferredDespawnTick,
-                        DestroyGameObject = destroyOnClient,
+                        // DANGO-TODO: Reconfigure Client-side object destruction on despawn
+                        DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true,
                         IsTargetedDestroy = false,
                         IsDistributedAuthority = distributedAuthority,
                     };
