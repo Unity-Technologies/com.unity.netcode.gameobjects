@@ -352,7 +352,7 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// A <see cref="BufferedLinearInterpolator<T>"/> <see cref="Vector3"/> implementation.
+    /// A <see cref="BufferedLinearInterpolator{T}"/> <see cref="Vector3"/> implementation.
     /// </summary>
     public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
     {
