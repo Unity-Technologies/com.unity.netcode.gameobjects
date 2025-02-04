@@ -455,9 +455,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Write a NativeArray of INetworkSerializables
         /// </summary>
-        /// <param name="array">The value to write</param>
-        /// <param name="count"></param>
-        /// <param name="offset"></param>
+        /// <param name="array">The NativeArray containing the values to write</param>
+        /// <param name="count">The number of elements to write. If -1 (default), writes array.Length - offset elements</param>
+        /// <param name="offset">The starting position in the array. Defaults to 0</param>
         /// <typeparam name="T">The type of the value</typeparam>
         public void WriteNetworkSerializable<T>(NativeArray<T> array, int count = -1, int offset = 0) where T : unmanaged, INetworkSerializable
         {
@@ -473,10 +473,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Write a NativeList of INetworkSerializables
         /// </summary>
-        /// <param name="array">The value to write</param>
-        /// <param name="count"></param>
-        /// <param name="offset"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="array">The NativeArray containing the values to write</param>
+        /// <param name="count">The number of elements to write. If -1 (default), writes array.Length - offset elements</param>
+        /// <param name="offset">The starting position in the array. Defaults to 0/param>
+        /// <typeparam name="T">The type of the value</typeparam>
         public void WriteNetworkSerializable<T>(NativeList<T> array, int count = -1, int offset = 0) where T : unmanaged, INetworkSerializable
         {
             int sizeInTs = count != -1 ? count : array.Length - offset;
