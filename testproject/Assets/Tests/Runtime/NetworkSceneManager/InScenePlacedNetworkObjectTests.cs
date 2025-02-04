@@ -56,7 +56,7 @@ namespace TestProject.RuntimeTests
         public enum DespawnMode
         {
             Despawn,
-            DeferredDespawn,
+            DeferDespawn,
         }
 
         /// <summary>
@@ -69,9 +69,9 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator InSceneNetworkObjectSynchAndSpawn([Values] DespawnMode despawnMode)
         {
-            if (!m_DistributedAuthority && despawnMode == DespawnMode.DeferredDespawn)
+            if (!m_DistributedAuthority && despawnMode == DespawnMode.DeferDespawn)
             {
-                Assert.Ignore("Deferred Despawn is only valid with Distributed Authority mode.");
+                Assert.Ignore($"Test ignored as DeferDespawn is only valid with Distributed Authority mode.");
             }
 
             NetworkObjectTestComponent.VerboseDebug = true;
@@ -149,12 +149,6 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
             AssertOnTimeout($"Timed out waiting for all in-scene instances to be spawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {clientCount}");
-
-            if (despawnMode == DespawnMode.DeferredDespawn)
-            {
-                // TODO: Check if this is the expected behavior
-                serverObject.DeferredDespawnTick = 0;
-            }
 
             // Test NetworkHide on the first client
             var firstClientId = m_ClientNetworkManagers[0].LocalClientId;

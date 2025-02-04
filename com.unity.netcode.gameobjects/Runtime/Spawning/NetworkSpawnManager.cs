@@ -1582,19 +1582,16 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (networkObject.IsSceneObject == false && destroyGameObject == false)
-                {
-                    // DANGO-TODO: Check that this is still a valid restriction
-                    Debug.LogWarning("Only Scene Objects are valid to not be destroyed when despawned");
-                }
-
                 if (m_TargetClientIds.Count > 0 && !NetworkManager.ShutdownInProgress)
                 {
+                    // DANGO-TODO: Reconfigure Client-side object destruction on despawn
+                    bool destroyOnClient = !(networkObject.IsSceneObject == false && destroyGameObject == false);
+
                     var message = new DestroyObjectMessage
                     {
                         NetworkObjectId = networkObject.NetworkObjectId,
                         DeferredDespawnTick = networkObject.DeferredDespawnTick,
-                        DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true,
+                        DestroyGameObject = destroyOnClient,
                         IsTargetedDestroy = false,
                         IsDistributedAuthority = distributedAuthority,
                     };
@@ -1607,6 +1604,7 @@ namespace Unity.Netcode
             }
 
             networkObject.IsSpawned = false;
+            networkObject.DeferredDespawnTick = 0;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
