@@ -12,8 +12,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 - Fixed issue where a spawned `NetworkObject` that was registered with a prefab handler and owned by a client would invoke destroy more than once on the host-server side if the client disconnected while the `NetworkObject` was still spawned. (#3200)
+- Fixed issue where `NetworkVariableBase` derived classes were not being re-initialized if the associated `NetworkObject` instance was not destroyed and re-spawned. (#3181)
 
 ### Changed
 
