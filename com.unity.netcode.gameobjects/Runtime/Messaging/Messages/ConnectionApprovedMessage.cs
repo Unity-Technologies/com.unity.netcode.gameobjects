@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -43,11 +44,13 @@ namespace Unity.Netcode
 
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
+        private const int k_AddSessionStateToken = 3;
         private const int k_AddCMBServiceConfig = 2;
         private const int k_VersionAddClientIds = 1;
-        public int Version => k_AddCMBServiceConfig;
+        public int Version => k_AddSessionStateToken;
 
         public ulong OwnerClientId;
+		public ulong SessionStateToken;
         public int NetworkTick;
         // The cloud state service should set this if we are restoring a session
         public ServiceConfig ServiceConfig;
@@ -108,6 +111,10 @@ namespace Unity.Netcode
             // ============================================================
 
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
+            if (targetVersion >= k_AddSessionStateToken)
+            {
+                writer.WriteValueSafe(SessionStateToken);
+            }
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
             if (IsDistributedAuthority)
             {
@@ -199,6 +206,10 @@ namespace Unity.Netcode
             // ============================================================
             m_ReceiveMessageVersion = receivedMessageVersion;
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+            if (receivedMessageVersion >= k_AddSessionStateToken)
+            {
+                reader.ReadValueSafe(out SessionStateToken);
+            }
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
             if (networkManager.DistributedAuthorityMode)
             {
