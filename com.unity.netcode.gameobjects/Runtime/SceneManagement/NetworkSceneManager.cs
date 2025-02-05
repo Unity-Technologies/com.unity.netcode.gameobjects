@@ -3131,21 +3131,56 @@ namespace Unity.Netcode
             DeferredObjectCreationList.Clear();
         }
 
+        /// <summary>
+        /// The scene map type <see cref="SceneMap"/>.
+        /// </summary>
         public enum MapTypes
         {
+            /// <summary>
+            /// Denotes the server to client scene map type.
+            /// </summary>
             ServerToClient,
+            /// <summary>
+            /// Denotes the client to server scene map type.
+            /// </summary>
             ClientToServer
         }
+
+        /// <summary>
+        /// Provides the status of a loaded scene
+        /// </summary>
         public struct SceneMap : INetworkSerializable
         {
+            /// <summary>
+            /// The scene mapping type <see cref="MapTypes"/>.
+            /// </summary>
             public MapTypes MapType;
+            /// <summary>
+            /// The <see cref="UnityEngine.SceneManagement.Scene"/> struct of the scene mapped.
+            /// </summary>
             public Scene Scene;
+            /// <summary>
+            /// When true, the scene is present.
+            /// </summary>
             public bool ScenePresent;
+            /// <summary>
+            /// The name of the scene
+            /// </summary>
             public string SceneName;
+            /// <summary>
+            /// The scene's server handle (a.k.a network scene handle)
+            /// </summary>
             public int ServerHandle;
+            /// <summary>
+            /// The mapped handled. This could be the ServerHandle or LocalHandle depending upon context (client or server).
+            /// </summary>
             public int MappedLocalHandle;
+            /// <summary>
+            /// The local handle of the scene.
+            /// </summary>
             public int LocalHandle;
 
+            /// <inheritdoc cref="INetworkSerializable.NetworkSerialize{T}(BufferSerializer{T})"/>
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref MapType);
@@ -3165,6 +3200,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Returns the list of all scene mappings when scene management is enabled.
+        /// </summary>
+        /// <param name="mapType">The map type to return <see cref="MapTypes"/></param>
+        /// <returns></returns>
         public List<SceneMap> GetSceneMapping(MapTypes mapType)
         {
             var mapping = new List<SceneMap>();

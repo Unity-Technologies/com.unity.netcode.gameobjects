@@ -147,6 +147,10 @@ namespace Unity.Netcode
             OnPostLateUpdate();
         }
 
+        /// <summary>
+        /// Invoked to acquire the network topology for the current network session.
+        /// </summary>
+        /// <returns><see cref="NetworkTopologyTypes"/></returns>
         protected virtual NetworkTopologyTypes OnCurrentTopology()
         {
             return NetworkTopologyTypes.ClientServer;
@@ -158,9 +162,21 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// The two network topology types supported by Netcode for GameObjects.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DistributedAuthority"/> is only supported using <see cref="Transports.UTP.UnityTransport"/>.
+    /// </remarks>
     public enum NetworkTopologyTypes
     {
+        /// <summary>
+        /// The traditional client-server network topology. 
+        /// </summary>
         ClientServer,
+        /// <summary>
+        /// The distributed authorityy network topology only supported by <see cref="Transports.UTP.UnityTransport"/>.
+        /// </summary>
         DistributedAuthority
     }
 
