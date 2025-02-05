@@ -50,7 +50,7 @@ namespace Unity.Netcode
         public int Version => k_AddSessionStateToken;
 
         public ulong OwnerClientId;
-		public ulong SessionStateToken;
+        public ulong SessionStateToken;
         public int NetworkTick;
         // The cloud state service should set this if we are restoring a session
         public ServiceConfig ServiceConfig;
