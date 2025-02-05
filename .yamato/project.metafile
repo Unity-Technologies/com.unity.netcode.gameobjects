@@ -54,7 +54,7 @@ test_platforms:
     mobile_test:
         - name: android
           type: Unity::mobile::shield
-          image: package-ci/win10:v4
+          image: dots-ci/android:v3.2855892
           flavor: b1.large
           model: ShieldPro
           standalone: Android
