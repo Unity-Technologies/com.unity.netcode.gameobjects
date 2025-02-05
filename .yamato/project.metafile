@@ -56,7 +56,6 @@ test_platforms:
           type: Unity::mobile::shield
           image: dots-ci/android:v3.2855892
           flavor: b1.large
-          model: ShieldPro
           standalone: Android
           base: win
           architecture: armv7
