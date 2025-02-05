@@ -131,6 +131,9 @@ namespace Unity.Netcode
             m_CachedProxyRpcTarget.Lock();
         }
 
+        /// <summary>
+        /// Invoked when this class is disposed.
+        /// </summary>
         public void Dispose()
         {
             Everyone.Dispose();
@@ -382,6 +385,7 @@ namespace Unity.Netcode
         /// This override is only recommended if you either have no strict performance requirements,
         /// or have the group of client IDs cached so it is not created each time.
         /// </summary>
+        /// <typeparam name="T">The type</typeparam>
         /// <param name="clientIds">The IDs of the client that should receive the message.</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
@@ -520,6 +524,7 @@ namespace Unity.Netcode
         /// This override is only recommended if you either have no strict performance requirements,
         /// or have the group of client IDs cached so it is not created each time.
         /// </summary>
+        /// <typeparam name="T">The type</typeparam>
         /// <param name="excludedClientIds">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
