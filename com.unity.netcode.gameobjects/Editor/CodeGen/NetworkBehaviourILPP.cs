@@ -968,11 +968,42 @@ namespace Unity.Netcode.Editor.CodeGen
                                 continue;
                             }
 
+                            // to reduce unnecessary type resolution, we first check if it can be an extension without type resolution
+
+                            var mayHaveExtension = false;
+
+                            foreach (var attr in method.CustomAttributes)
+                            {
+                                if (attr.Constructor.DeclaringType.FullName == extensionConstructor.DeclaringType.FullName)
+                                {
+                                    mayHaveExtension = true;
+                                    break;
+                                }
+                            }
+
+                            if (!mayHaveExtension)
+                            {
+                                continue;
+                            }
+
+                            var parameters = method.Parameters;
+
+                            if (parameters.Count != 2 || parameters[0].ParameterType is not ByReferenceType byRefType)
+                            {
+                                continue;
+                            }
+
+                            if (byRefType.ElementType.FullName != m_FastBufferWriter_TypeRef.FullName && byRefType.ElementType.FullName != m_FastBufferReader_TypeRef.FullName)
+                            {
+                                continue;
+                            }
+
                             var isExtension = false;
 
                             foreach (var attr in method.CustomAttributes)
                             {
-                                if (attr.Constructor.Resolve() == extensionConstructor.Resolve())
+                                if (attr.Constructor.DeclaringType.FullName == extensionConstructor.DeclaringType.FullName &&
+                                    attr.Constructor.Resolve() == extensionConstructor.Resolve())
                                 {
                                     isExtension = true;
                                 }
@@ -983,13 +1014,11 @@ namespace Unity.Netcode.Editor.CodeGen
                                 continue;
                             }
 
-                            var parameters = method.Parameters;
-
-                            if (parameters.Count == 2 && parameters[0].ParameterType.Resolve() == m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
+                            if (parameters[0].ParameterType.Resolve() == m_FastBufferWriter_TypeRef.MakeByReferenceType().Resolve())
                             {
                                 m_FastBufferWriter_ExtensionMethodRefs.Add(m_MainModule.ImportReference(method));
                             }
-                            else if (parameters.Count == 2 && parameters[0].ParameterType.Resolve() == m_FastBufferReader_TypeRef.MakeByReferenceType().Resolve())
+                            else if (parameters[0].ParameterType.Resolve() == m_FastBufferReader_TypeRef.MakeByReferenceType().Resolve())
                             {
                                 m_FastBufferReader_ExtensionMethodRefs.Add(m_MainModule.ImportReference(method));
                             }
