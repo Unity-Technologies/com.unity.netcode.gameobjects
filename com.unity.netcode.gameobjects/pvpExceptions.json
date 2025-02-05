@@ -1,0 +1,13 @@
+{
+	"exempts": {
+		"PVP-41-1": {
+			"errors": [
+				"CHANGELOG.md: line 9: Unreleased section is not allowed for public release"
+			]
+		}
+    },
+	"extends": [
+		"rme",
+		"supported"
+	]
+}
