@@ -1550,8 +1550,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void LogWaitForMessages()
         {
-            VerboseDebug(m_WaitForLog.ToString());
-            m_WaitForLog.Clear();
+            // If there is nothing to log, then don't log anything
+            if (m_WaitForLog.Length > 0)
+            {
+                VerboseDebug(m_WaitForLog.ToString());
+                m_WaitForLog.Clear();
+            }
         }
 
         private IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)

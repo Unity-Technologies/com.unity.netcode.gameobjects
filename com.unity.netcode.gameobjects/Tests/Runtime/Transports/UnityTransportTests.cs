@@ -547,7 +547,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_Server.DisconnectRemoteClient(m_Client1.ServerClientId);
 
-                LogAssert.Expect(LogType.Assert, "DisconnectRemoteClient should be called on a listening server");
+                LogAssert.Expect(LogType.Warning, $"{nameof(UnityTransport.DisconnectRemoteClient)} should only be called on a listening server!");
             }
             else if (afterShutdownAction == AfterShutdownAction.DisconnectLocalClient)
             {
