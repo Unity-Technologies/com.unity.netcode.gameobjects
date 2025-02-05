@@ -75,13 +75,17 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait
       
 {% if platform.standalone == "Android" %}
-    # Download standalone UnityTestRunner
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    # Download standalone UnityTestRunner and ADB setup
+    - command: curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey.pub -O %USERPROFILE%/.android/adbkey.pub
+    - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey -O %USERPROFILE%/.android/adbkey
+    - command: gsudo NetSh Advfirewall set allprofiles state off
 
-    # Connect to Android device and run tests
-    - |
-      %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
-      utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
+    # Connect to Android device
+    - command: '"%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP%'
+
+    # Run tests
+    - utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% else %}
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
