@@ -54,7 +54,7 @@ test_platforms:
     mobile_test:
         - name: android
           type: Unity::mobile::shield
-          image: dots-ci/android:v3.2855892
+          image: package-ci/win10:v4
           flavor: b1.large
           standalone: Android
           base: win
