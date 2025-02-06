@@ -1167,7 +1167,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="clientId">The client to disconnect</param>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
+#if DEBUG
+            if (m_State != State.Listening)
+            {
+                Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
+                return;
+            }
+#endif
 
             if (m_State == State.Listening)
             {
@@ -1239,7 +1245,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
+#if DEBUG
+            if (sizeof(ulong) != UnsafeUtility.SizeOf<NetworkConnection>())
+            {
+                Debug.LogWarning($"Netcode connection id size {sizeof(ulong)} does not match UTP connection id size {UnsafeUtility.SizeOf<NetworkConnection>()}!");
+                return;
+            }
+#endif
 
             NetworkManager = networkManager;
 
