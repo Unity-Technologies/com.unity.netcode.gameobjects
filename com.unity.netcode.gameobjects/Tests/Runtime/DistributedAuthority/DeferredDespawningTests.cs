@@ -9,6 +9,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(SetDestroyGameObject.DestroyGameObject)]
+    [TestFixture(SetDestroyGameObject.DontDestroyGameObject)]
     internal class DeferredDespawningTests : IntegrationTestWithApproximation
     {
         private const int k_DaisyChainedCount = 5;
@@ -16,8 +18,16 @@ namespace Unity.Netcode.RuntimeTests
         private List<GameObject> m_DaisyChainedDespawnObjects = new List<GameObject>();
         private List<ulong> m_HasReachedEnd = new List<ulong>();
 
-        public DeferredDespawningTests() : base(HostOrServer.DAHost)
+        public enum SetDestroyGameObject
         {
+            DestroyGameObject,
+            DontDestroyGameObject,
+        }
+        private bool m_DestroyGameObject;
+
+        public DeferredDespawningTests(SetDestroyGameObject destroyGameObject) : base(HostOrServer.DAHost)
+        {
+            m_DestroyGameObject = destroyGameObject == SetDestroyGameObject.DestroyGameObject;
         }
 
         protected override void OnServerAndClientsCreated()
@@ -45,12 +55,28 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DeferredDespawning()
         {
+            // Setup for test
+            DeferredDespawnDaisyChained.DestroyGameObject = m_DestroyGameObject;
             DeferredDespawnDaisyChained.EnableVerbose = m_EnableVerboseDebug;
+            DeferredDespawnDaisyChained.ClientRelativeInstances = new Dictionary<ulong, Dictionary<ulong, DeferredDespawnDaisyChained>>();
+
+            // Spawn the initial object
             var rootInstance = SpawnObject(m_DaisyChainedDespawnObjects[0], m_ServerNetworkManager);
             DeferredDespawnDaisyChained.ReachedLastChainInstance = ReachedLastChainObject;
+
+            // Wait for the chain of objects to spawn and despawn
             var timeoutHelper = new TimeoutHelper(300);
             yield return WaitForConditionOrTimeOut(HaveAllClientsReachedEndOfChain, timeoutHelper);
             AssertOnTimeout($"Timed out waiting for all children to reach the end of their chained deferred despawns!", timeoutHelper);
+
+            if (m_DestroyGameObject)
+            {
+                Assert.IsTrue(rootInstance == null); // Assert.IsNull doesn't work here
+            }
+            else
+            {
+                Assert.IsTrue(rootInstance != null); // Assert.IsNotNull doesn't work here
+            }
         }
 
         private bool HaveAllClientsReachedEndOfChain()
@@ -88,9 +114,10 @@ namespace Unity.Netcode.RuntimeTests
     internal class DeferredDespawnDaisyChained : NetworkBehaviour
     {
         public static bool EnableVerbose;
+        public static bool DestroyGameObject;
         public static Action<ulong> ReachedLastChainInstance;
         private const int k_StartingDeferTick = 4;
-        public static Dictionary<ulong, Dictionary<ulong, DeferredDespawnDaisyChained>> ClientRelativeInstances = new Dictionary<ulong, Dictionary<ulong, DeferredDespawnDaisyChained>>();
+        public static Dictionary<ulong, Dictionary<ulong, DeferredDespawnDaisyChained>> ClientRelativeInstances;
         public bool IsRoot;
         public GameObject PrefabToSpawnWhenDespawned;
         public bool WasContactedByPeviousChainMember { get; private set; }
@@ -182,7 +209,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 FailTest($"[{nameof(InvokeDespawn)}] Client is not the authority but this was invoked (integration test logic issue)!");
             }
-            NetworkObject.DeferDespawn(DeferDespawnTick);
+            NetworkObject.DeferDespawn(DeferDespawnTick, DestroyGameObject);
         }
 
         public override void OnDeferringDespawn(int despawnTick)
@@ -241,7 +268,7 @@ namespace Unity.Netcode.RuntimeTests
                     continue;
                 }
 
-                // This should happen shortly afte the instances spawns (based on the deferred despawn count)
+                // This should happen shortly after the instances spawn (based on the deferred despawn count)
                 if (!IsRoot && !ClientRelativeInstances[clientId][NetworkObjectId].WasContactedByPeviousChainMember)
                 {
                     // exit early if the non-authority instance has not been contacted yet
