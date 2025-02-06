@@ -993,12 +993,17 @@ namespace Unity.Netcode.Editor.CodeGen
 
                             var parameters = method.Parameters;
 
-                            if (parameters.Count != 2 || parameters[0].ParameterType is not ByReferenceType firstParameterType)
+                            if (parameters.Count != 2)
                             {
                                 continue;
                             }
 
-                            if (firstParameterType.ElementType.FullName != m_FastBufferWriter_TypeRef.FullName && firstParameterType.ElementType.FullName != m_FastBufferReader_TypeRef.FullName)
+                            var firstParameterType = parameters[0].ParameterType;
+
+                            // ReadValueSafe() and WriteValueSafe() can use both by-ref and non-by-ref type for the first parameter type
+                            var firstParameterElementType = firstParameterType is ByReferenceType byRefType ? byRefType.ElementType : firstParameterType;
+
+                            if (firstParameterElementType.FullName != m_FastBufferWriter_TypeRef.FullName && firstParameterElementType.FullName != m_FastBufferReader_TypeRef.FullName)
                             {
                                 continue;
                             }
@@ -1011,6 +1016,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                     attr.Constructor.Resolve() == extensionConstructor.Resolve())
                                 {
                                     isExtension = true;
+                                    break;
                                 }
                             }
 
