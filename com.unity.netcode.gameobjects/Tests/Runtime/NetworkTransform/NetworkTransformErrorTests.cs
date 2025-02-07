@@ -98,22 +98,28 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-
+        /// <summary>
+        /// Validates the fix where <see cref="NetworkTransformMessage"/> would throw an exception
+        /// if a user sets a <see cref="GameObject"/> with one or more <see cref="NetworkBehaviour"/> components
+        /// to inactive.
+        /// </summary>
         [UnityTest]
         public IEnumerator DisabledGameObjectErrorTest()
         {
             var instance = SpawnObject(m_AuthorityPrefab, m_ServerNetworkManager);
             var networkObjectInstance = instance.GetComponent<NetworkObject>();
-            var networkTransformInstance = instance.GetComponent<NetworkTransform>();
+            var networkTransformInstance = instance.GetComponentInChildren<NetworkTransform>();
 
             yield return WaitForConditionOrTimeOut(() => ObjectSpawnedOnAllClients(networkObjectInstance.NetworkObjectId));
             AssertOnTimeout("Timed out waiting for object to spawn!");
 
-            LogAssert.Expect(LogType.Error, $"[Netcode] {nameof(NetworkBehaviour)} index {networkTransformInstance.NetworkBehaviourId} was out of bounds for NonAuthorityPrefab(Clone). " +
-                $"{nameof(NetworkBehaviour)}s must be the same, and in the same order, between server and client.");
-            LogAssert.Expect(LogType.Error, $"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} " +
+            var errorMessage = $"[Netcode] {nameof(NetworkBehaviour)} index {networkTransformInstance.NetworkBehaviourId} was out of bounds for {m_NonAuthorityPrefab.name}(Clone). " +
+                $"{nameof(NetworkBehaviour)}s must be the same, and in the same order, between server and client.";
+            LogAssert.Expect(LogType.Error, errorMessage);
+            errorMessage = $"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} " +
                 $"({networkTransformInstance.NetworkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have " +
-                $"{nameof(NetworkBehaviour)} components on them.");
+                $"{nameof(NetworkBehaviour)} components on them.";
+            LogAssert.Expect(LogType.Error, errorMessage);
 
             yield return new WaitForSeconds(0.3f);
         }
