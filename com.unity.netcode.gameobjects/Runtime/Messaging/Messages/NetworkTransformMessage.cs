@@ -94,8 +94,20 @@ namespace Unity.Netcode
             }
             else
             {
-                Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Target NetworkObject does not exist!");
-                return false;
+                ownerAuthoritativeServerSide = networkManager.DAHost;
+                // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message.
+                if (ownerAuthoritativeServerSide)
+                {
+                    // We need to deserialize the state so we can send it to other connected clients (i.e. it will be re-serialized again).
+                    reader.ReadNetworkSerializableInPlace(ref State);
+                    // Fall through to act like a proxy for this message.
+                }
+                else
+                {
+                    // Otherwise we can error out because we either shouldn't be receiving this message.
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Target NetworkObject ({networkObjectId}) does not exist!");
+                    return false;
+                }
             }
 
             unsafe
@@ -118,12 +130,6 @@ namespace Unity.Netcode
                         {
                             ByteUnpacker.ReadValueBitPacked(reader, out targetId);
                             targetIds[i] = targetId;
-                        }
-
-                        if (!isSpawnedLocally)
-                        {
-                            // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message
-                            ownerAuthoritativeServerSide = networkManager.DAHost && !isSpawnedLocally;
                         }
                     }
 
@@ -173,7 +179,6 @@ namespace Unity.Netcode
                             {
                                 continue;
                             }
-
                             networkManager.MessageManager.SendMessage(ref currentMessage, networkDelivery, clientId);
                         }
                         // Dispose of the reader used for forwarding
