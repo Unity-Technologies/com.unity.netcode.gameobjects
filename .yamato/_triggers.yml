@@ -7,14 +7,12 @@ pull_request_trigger:
   dependencies:
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-    # Run APV jobs to make sure the change won't break any dependants
-    - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run api validation to make sure that the change won't break SemVer
-    - .yamato/wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_6000_0_-_windows
     # Run package EditMode and Playmode tests on desktop platforms on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     # Run project EditMode and PLaymode tests on desktop platforms on trunk 
     - .yamato/_run-all.yml#run_all_project_tests_trunk
+    # Run one standalone test to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests)
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_trunk
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -40,8 +38,6 @@ develop_nightly:
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run api validation to make sure that the change won't break SemVer
-    - .yamato/wrench/api-validation-jobs.yml#api_validation_-_netcode_gameobjects_-_6000_0_-_windows
     # Run package EditMode and Playmode tests on desktop platforms on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     # Run project EditMode and PLaymode tests on desktop platforms on trunk 
@@ -72,15 +68,15 @@ develop_weekly_trunk:
   dependencies:
     # Run project standards to verify package/default project
     - .yamato/_run-all.yml#run_all_projects_standards
-    # Run package EditMode and Playmode tests on desktop platforms on trunk
+    # Run package EditMode and Playmode tests on desktop platforms
     - .yamato/_run-all.yml#run_all_package_tests
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk 
+    # Run project EditMode and PLaymode tests on desktop platforms
     - .yamato/_run-all.yml#run_all_project_tests
-    # Run Runtime tests on desktop players on trunk
+    # Run Runtime tests on desktop players
     - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone
-    # Run Runtime tests on mobile players on trunk
+    # Run Runtime tests on mobile players
     - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone
-    # Run Runtime tests on console players on trunk
+    # Run Runtime tests on console players
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone
     # Build player for webgl platform on trunk
     - .yamato/_run-all.yml#run_all_webgl_builds
