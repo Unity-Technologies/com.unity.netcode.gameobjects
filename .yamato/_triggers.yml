@@ -18,11 +18,11 @@ pull_request_trigger:
   triggers:
     cancel_old_ci: true
     pull_requests:
-    - targets:
-        only:
-          - "develop"
-          - "develop-2.0.0"
-          - "/release\/.*/"
+      - targets:
+          only:
+            - "develop"
+            - "develop-2.0.0"
+            - "/release\/.*/"
             
 
 # Run all tests on trunk on nightly basis.

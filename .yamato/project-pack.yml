@@ -2,10 +2,11 @@
 ---
 
 # Jobs that iterate through and packs all NGO projects listed (to use in different jobs)
-# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) will be used to save resources and speed up the process
+# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) coul be used to save resources and speed up the process
+# If everyone adheres to this rule it can create bottlenecks (since everyone would use this machine) so we decided to pack project with the same platform as the given job runs on
 {% for project in projects.all -%}
-{% for platform in small_agent_platform -%}
-project_pack_-_{{ project.name }}:
+{% for platform in test_platforms.desktop -%}
+project_pack_-_{{ project.name }}_{{ platform.name }}:
   name: Project Pack - {{ project.name }} [{{ platform.name }}]
   agent:
     type: {{ platform.type }}

@@ -22,6 +22,6 @@ code_coverage_{{ platform.name }}_{{ editor }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo
+    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}

@@ -21,6 +21,6 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo
+    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}

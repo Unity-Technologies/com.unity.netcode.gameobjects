@@ -2,9 +2,10 @@
 ---
 
 # Packs Netcode for GameObjects together with performing initial checks. 
-# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) will be used to save resources and speed up the process
-{% for platform in small_agent_platform -%}
-package_pack_-_ngo:
+# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) could be used to save resources and speed up the process.
+# If everyone adheres to this rule it can create bottlenecks (since everyone would use this machine) so we decided to pack with the same platform as the given job runs on
+{% for platform in test_platforms.desktop -%}
+package_pack_-_ngo_{{ platform.name }}:
   name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
   agent:
     type: {{ platform.type }}

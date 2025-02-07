@@ -20,7 +20,7 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}
+    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
       rerun: always
 {% endfor -%}
 {% endfor -%}
