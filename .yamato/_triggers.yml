@@ -6,7 +6,7 @@ pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_{{ test_platforms.default.name }}_{{ projects.default.name }}_{{ validation_editors.default }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run api validation to make sure that the change won't break SemVer
@@ -37,7 +37,7 @@ develop_nightly:
         rerun: always
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_{{ test_platforms.default.name }}_{{ projects.default.name }}_{{ validation_editors.default }}
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run api validation to make sure that the change won't break SemVer
