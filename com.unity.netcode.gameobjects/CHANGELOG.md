@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
 - Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 - Fixed issue where a spawned `NetworkObject` that was registered with a prefab handler and owned by a client would invoke destroy more than once on the host-server side if the client disconnected while the `NetworkObject` was still spawned. (#3200)
