@@ -104,12 +104,16 @@ namespace Unity.Netcode.RuntimeTests
         {
             var instance = SpawnObject(m_AuthorityPrefab, m_ServerNetworkManager);
             var networkObjectInstance = instance.GetComponent<NetworkObject>();
+            var networkTransformInstance = instance.GetComponent<NetworkTransform>();
 
             yield return WaitForConditionOrTimeOut(() => ObjectSpawnedOnAllClients(networkObjectInstance.NetworkObjectId));
             AssertOnTimeout("Timed out waiting for object to spawn!");
 
-            LogAssert.Expect(LogType.Error, "[Netcode] NetworkBehaviour index 3 was out of bounds for NonAuthorityPrefab(Clone). NetworkBehaviours must be the same, and in the same order, between server and client.");
-            LogAssert.Expect(LogType.Error, "[NetworkTransformMessage][Invalid] Targeted NetworkTransform, NetworkBehaviourId (3), does not exist! Make sure you are not spawning NetworkObjects with disabled GameObjects that have NetworkBehaviour components on them.");
+            LogAssert.Expect(LogType.Error, $"[Netcode] {nameof(NetworkBehaviour)} index {networkTransformInstance.NetworkBehaviourId} was out of bounds for NonAuthorityPrefab(Clone). " +
+                $"{nameof(NetworkBehaviour)}s must be the same, and in the same order, between server and client.");
+            LogAssert.Expect(LogType.Error, $"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} " +
+                $"({networkTransformInstance.NetworkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have " +
+                $"{nameof(NetworkBehaviour)} components on them.");
 
             yield return new WaitForSeconds(0.3f);
         }
