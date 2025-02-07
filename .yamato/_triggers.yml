@@ -21,6 +21,7 @@ pull_request_trigger:
             - "develop"
             - "develop-2.0.0"
             - "/release\/.*/"
+      - drafts: false
             
 
 # Run all tests on trunk on nightly basis.
