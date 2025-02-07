@@ -1156,6 +1156,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         protected IEnumerator CoroutineShutdownAndCleanUp()
@@ -1195,6 +1198,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         /// <summary>
@@ -1244,6 +1250,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
+
+        }
+
+        /// <summary>
+        /// Destroys any remaining NetworkManager instances
+        /// </summary>
+        private void DestroyNetworkManagers()
+        {
+            var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+            foreach (var networkManager in networkManagers)
+            {
+                Object.DestroyImmediate(networkManager.gameObject);
+            }
         }
 
         /// <summary>
