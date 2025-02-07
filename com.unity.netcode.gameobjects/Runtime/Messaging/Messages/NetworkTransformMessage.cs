@@ -71,8 +71,21 @@ namespace Unity.Netcode
             if (isSpawnedLocally)
             {
                 networkObject = networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+                if (networkObject.ChildNetworkBehaviours.Count <= networkBehaviourId || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
+                {
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid][length] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    return false;
+                }
+
                 // Get the target NetworkTransform
-                NetworkTransform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
+                var transform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
+                if (transform == null)
+                {
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid][cast] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    return false;
+                }
+
+                NetworkTransform = transform;
                 isServerAuthoritative = NetworkTransform.IsServerAuthoritative();
                 ownerAuthoritativeServerSide = !isServerAuthoritative && networkManager.IsServer;
 
@@ -81,8 +94,8 @@ namespace Unity.Netcode
             }
             else
             {
-                // Deserialize the state
-                reader.ReadNetworkSerializableInPlace(ref State);
+                Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Target NetworkObject does not exist!");
+                return false;
             }
 
             unsafe
