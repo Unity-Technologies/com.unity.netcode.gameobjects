@@ -98,7 +98,7 @@ namespace Unity.Netcode
                 // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message.
                 if (ownerAuthoritativeServerSide)
                 {
-                    // We need to deserialize the state so we can send it to other connected clients (i.e. it will be re-serialized again).
+                    // We need to deserialize the state to our local State property so we can extract the reliability used.
                     reader.ReadNetworkSerializableInPlace(ref State);
                     // Fall through to act like a proxy for this message.
                 }
@@ -151,7 +151,10 @@ namespace Unity.Netcode
                         ownerClientId = context.SenderId;
                     }
 
-                    var networkDelivery = State.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
+                    // Depending upon whether it is spawned locally or not, get the deserialized state
+                    var stateToUse = NetworkTransform != null ? NetworkTransform.InboundState : State;
+                    // Determine the reliability used to send the message
+                    var networkDelivery = stateToUse.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
                     // Forward the state update if there are any remote clients to foward it to
                     if (networkManager.ConnectionManager.ConnectedClientsList.Count > (networkManager.IsHost ? 2 : 1))
