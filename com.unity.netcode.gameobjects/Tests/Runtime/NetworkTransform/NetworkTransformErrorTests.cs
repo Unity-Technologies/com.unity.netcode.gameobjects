@@ -11,8 +11,8 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-        private GameObject m_ServerPrefab;
-        private GameObject m_ClientPrefab;
+        private GameObject m_AuthorityPrefab;
+        private GameObject m_NonAuthorityPrefab;
 
         private HostAndClientPrefabHandler m_HostAndClientPrefabHandler;
 
@@ -24,23 +24,30 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private class HostAndClientPrefabHandler : INetworkPrefabInstanceHandler
         {
-            private readonly GameObject m_HostPrefab;
-            private readonly GameObject m_ClientPrefab;
+            /// <summary>
+            /// The registered prefab is the prefab the networking stack is instantiated with.
+            /// Registering the prefab simulates the prefab that exists on the authority.
+            /// </summary>
+            private readonly GameObject m_RegisteredPrefab;
 
-            public HostAndClientPrefabHandler(GameObject hostPrefab, GameObject clientPrefab)
+            /// <summary>
+            /// Mocks the registered prefab changing on the non-authority after registration.
+            /// Allows testing situations mismatched GameObject state between the authority and non-authority.
+            /// </summary>
+            private readonly GameObject m_InstantiatedPrefab;
+
+            public HostAndClientPrefabHandler(GameObject authorityPrefab, GameObject nonAuthorityPrefab)
             {
-                m_HostPrefab = hostPrefab;
-                m_ClientPrefab = clientPrefab;
+                m_RegisteredPrefab = authorityPrefab;
+                m_InstantiatedPrefab = nonAuthorityPrefab;
             }
 
+            /// <summary>
+            /// Returns the prefab that will mock the instantiated prefab not matching the registered prefab
+            /// </summary>
             public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
             {
-                // Owner clientID
-                if (ownerClientId == 0)
-                {
-                    return Object.Instantiate(m_ClientPrefab).GetComponent<NetworkObject>();
-                }
-                return Object.Instantiate(m_HostPrefab).GetComponent<NetworkObject>();
+                return Object.Instantiate(m_InstantiatedPrefab).GetComponent<NetworkObject>();
             }
 
             public void Destroy(NetworkObject networkObject)
@@ -50,7 +57,8 @@ namespace Unity.Netcode.RuntimeTests
 
             public void Register(NetworkManager networkManager)
             {
-                networkManager.PrefabHandler.AddHandler(m_HostPrefab, this);
+                // Register the version that will be spawned by the authority (i.e. Host)
+                networkManager.PrefabHandler.AddHandler(m_RegisteredPrefab, this);
             }
         }
 
@@ -67,18 +75,20 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            // Full non-disabled GameObjects prefab on server side
-            m_ServerPrefab = CreateNetworkObjectPrefab("ServerPrefab");
-            AddChildToNetworkObject<EmptyNetworkBehaviour>(m_ServerPrefab.transform);
-            AddChildToNetworkObject<EmptyNetworkBehaviour>(m_ServerPrefab.transform);
-            AddChildToNetworkObject<NetworkTransform>(m_ServerPrefab.transform);
+            // Create a prefab that has many child NetworkBehaviours
+            m_AuthorityPrefab = CreateNetworkObjectPrefab("AuthorityPrefab");
+            AddChildToNetworkObject<EmptyNetworkBehaviour>(m_AuthorityPrefab.transform);
+            AddChildToNetworkObject<EmptyNetworkBehaviour>(m_AuthorityPrefab.transform);
+            AddChildToNetworkObject<NetworkTransform>(m_AuthorityPrefab.transform);
 
-            // Mock disabled GameObjects prefab on client side
-            m_ClientPrefab = CreateNetworkObjectPrefab("ClientPrefab");
-            AddChildToNetworkObject<NetworkTransform>(m_ClientPrefab.transform);
+            // Create a second prefab with only one NetworkBehaviour
+            // This simulates the GameObjects on the other NetworkBehaviours being disabled
+            m_NonAuthorityPrefab = CreateNetworkObjectPrefab("NonAuthorityPrefab");
+            AddChildToNetworkObject<NetworkTransform>(m_NonAuthorityPrefab.transform);
 
-            // Create and register prefab handler to handle server and client versions of prefabs
-            m_HostAndClientPrefabHandler = new HostAndClientPrefabHandler(m_ServerPrefab, m_ClientPrefab);
+            // Create and register a prefab handler
+            // The prefab handler will behave as if the GameObjects have been disabled on the non-authority client
+            m_HostAndClientPrefabHandler = new HostAndClientPrefabHandler(m_AuthorityPrefab, m_NonAuthorityPrefab);
             m_HostAndClientPrefabHandler.Register(m_ServerNetworkManager);
             foreach (var client in m_ClientNetworkManagers)
             {
@@ -92,14 +102,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DisabledGameObjectErrorTest()
         {
-            var instance = SpawnObject(m_ServerPrefab, m_ServerNetworkManager);
+            var instance = SpawnObject(m_AuthorityPrefab, m_ServerNetworkManager);
             var networkObjectInstance = instance.GetComponent<NetworkObject>();
 
             yield return WaitForConditionOrTimeOut(() => ObjectSpawnedOnAllClients(networkObjectInstance.NetworkObjectId));
             AssertOnTimeout("Timed out waiting for object to spawn!");
 
-            LogAssert.Expect(LogType.Error, "[Netcode] NetworkBehaviour index 3 was out of bounds for ClientPrefab(Clone). NetworkBehaviours must be the same, and in the same order, between server and client.");
-            LogAssert.Expect(LogType.Error, "[NetworkTransformMessage][Invalid][length] Targeted NetworkTransform, NetworkBehaviourId (3), does not exist! Make sure you are not spawning NetworkObjects with disabled GameObjects that have NetworkBehaviour components on them.");
+            LogAssert.Expect(LogType.Error, "[Netcode] NetworkBehaviour index 3 was out of bounds for NonAuthorityPrefab(Clone). NetworkBehaviours must be the same, and in the same order, between server and client.");
+            LogAssert.Expect(LogType.Error, "[NetworkTransformMessage][Invalid] Targeted NetworkTransform, NetworkBehaviourId (3), does not exist! Make sure you are not spawning NetworkObjects with disabled GameObjects that have NetworkBehaviour components on them.");
 
             yield return new WaitForSeconds(0.3f);
         }
