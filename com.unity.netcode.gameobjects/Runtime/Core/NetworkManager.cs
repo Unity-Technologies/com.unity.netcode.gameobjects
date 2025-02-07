@@ -1665,6 +1665,10 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
+
+            // In the event any exceptions occurred and objects are destroyed prior to being despawned,
+            // clear out the NetworkObject scene migration synchronization table and removal list.
+            NetworkObject.CleanNetworkObjectSynchronization();
         }
 
 
