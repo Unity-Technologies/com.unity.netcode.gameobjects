@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
 - Fixed issue where the scene migration synchronization table was not cleaned up if the `GameObject` of a `NetworkObject` is destroyed before it should have been. (#3230)
 - Fixed issue where the scene migration synchronization table was not cleaned up upon `NetworkManager` shutting down. (#3230)
 - Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
