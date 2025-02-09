@@ -150,7 +150,7 @@ namespace Unity.Netcode
                     {
                         networkObject.DeferredDespawnTick = DeferredDespawnTick;
                         var hasCallback = networkObject.OnDeferredDespawnComplete != null;
-                        networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback);
+                        networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback, DestroyGameObject);
                         return;
                     }
                 }

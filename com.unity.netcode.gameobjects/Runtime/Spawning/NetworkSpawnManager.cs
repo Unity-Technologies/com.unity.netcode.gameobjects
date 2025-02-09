@@ -1450,7 +1450,7 @@ namespace Unity.Netcode
             }
 
             // Since we are spawing in-scene placed NetworkObjects for already loaded scenes,
-            // we need to add any in-scene placed NetworkObject to our tracking table 
+            // we need to add any in-scene placed NetworkObject to our tracking table
             var clearFirst = true;
             foreach (var sceneLoaded in NetworkManager.SceneManager.ScenesLoaded)
             {
@@ -1588,6 +1588,7 @@ namespace Unity.Netcode
                     {
                         NetworkObjectId = networkObject.NetworkObjectId,
                         DeferredDespawnTick = networkObject.DeferredDespawnTick,
+                        // DANGO-TODO: Reconfigure Client-side object destruction on despawn
                         DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true,
                         IsTargetedDestroy = false,
                         IsDistributedAuthority = distributedAuthority,
@@ -1601,6 +1602,7 @@ namespace Unity.Netcode
             }
 
             networkObject.IsSpawned = false;
+            networkObject.DeferredDespawnTick = 0;
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
@@ -1920,6 +1922,7 @@ namespace Unity.Netcode
         {
             public int TickToDespawn;
             public bool HasDeferredDespawnCheck;
+            public bool DestroyGameObject;
             public ulong NetworkObjectId;
         }
 
@@ -1931,12 +1934,13 @@ namespace Unity.Netcode
         /// <param name="networkObjectId">associated NetworkObject</param>
         /// <param name="tickToDespawn">when to despawn the NetworkObject</param>
         /// <param name="hasDeferredDespawnCheck">if true, user script is to be invoked to determine when to despawn</param>
-        internal void DeferDespawnNetworkObject(ulong networkObjectId, int tickToDespawn, bool hasDeferredDespawnCheck)
+        internal void DeferDespawnNetworkObject(ulong networkObjectId, int tickToDespawn, bool hasDeferredDespawnCheck, bool destroyGameObject)
         {
             var deferredDespawnObject = new DeferredDespawnObject()
             {
                 TickToDespawn = tickToDespawn,
                 HasDeferredDespawnCheck = hasDeferredDespawnCheck,
+                DestroyGameObject = destroyGameObject,
                 NetworkObjectId = networkObjectId,
             };
             DeferredDespawnObjects.Add(deferredDespawnObject);
@@ -2001,7 +2005,7 @@ namespace Unity.Netcode
                 }
                 var networkObject = SpawnedObjects[deferredObjectEntry.NetworkObjectId];
                 // Local instance despawns the instance
-                OnDespawnObject(networkObject, true);
+                OnDespawnObject(networkObject, deferredObjectEntry.DestroyGameObject);
                 DeferredDespawnObjects.Remove(deferredObjectEntry);
             }
         }
