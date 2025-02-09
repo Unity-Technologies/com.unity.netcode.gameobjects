@@ -319,6 +319,9 @@ namespace Unity.Netcode
                     EditorUtility.SetDirty(this);
                 }
                 IsSceneObject = true;
+
+                // Default scene migration synchronization to false for in-scene placed NetworkObjects
+                SceneMigrationSynchronization = false;
             }
         }
 #endif // UNITY_EDITOR
@@ -1622,6 +1625,9 @@ namespace Unity.Netcode
                 }
                 // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
             }
+
+            // Always attempt to remove from scene changed updates
+            RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
@@ -3347,8 +3353,8 @@ namespace Unity.Netcode
             if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
                 !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject || gameObject.scene.handle == SceneOriginHandle)
             {
-                // If this NetworkObject did register for SceneMigrationSynchronization and scene management is enabled and the gameObject is null, 
-                if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement && !gameObject)
+                // If this NetworkObject did register for SceneMigrationSynchronization and scene management is enabled and the gameObject is null.
+                if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement && (IsSceneObject != false || !gameObject))
                 {
                     // then mark this instance to be removed from the scene migration synchronization list.
                     CleanUpDisposedObjects.Add(NetworkObjectId);
