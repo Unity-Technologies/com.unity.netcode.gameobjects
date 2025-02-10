@@ -156,7 +156,7 @@ namespace Unity.Netcode.RuntimeTests
             var childOne = (GameObject)null;
             var childTwo = (GameObject)null;
             var networkObject = (NetworkObject)null;
-            
+
             for (int i = 0; i < instances; i++)
             {
                 rootObject = SpawnObject(m_GenericPrefab, m_ClientNetworkManagers[0]);
