@@ -1,9 +1,10 @@
-{
+﻿{
   "baseBranches": ["develop", "develop-2.0.0"],
+  "dependencyDashboard": true,
   
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>unity/renovate-config"
+    "local>Unity-Technologies/unity-renovate-config"
   ],
   "prConcurrentLimit": 100,
   // Ignore commits produced by github actions workflows
