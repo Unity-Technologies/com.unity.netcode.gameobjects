@@ -1659,7 +1659,20 @@ namespace Unity.Netcode
                 }
                 if (NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
+                    if (!NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(gameObject.scene.handle))
+                    {
+                        // Most likely this issue is due to an integration test
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogWarning($"Failed to find scene handle {gameObject.scene.handle} for {gameObject.name}!");
+                        }
+                        // Just use the existing handle
+                        NetworkSceneHandle = gameObject.scene.handle;
+                    }
+                    else
+                    {
+                        NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
+                    }
                 }
                 if (DontDestroyWithOwner && !IsOwnershipDistributable)
                 {
