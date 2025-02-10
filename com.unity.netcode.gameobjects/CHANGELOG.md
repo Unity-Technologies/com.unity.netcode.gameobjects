@@ -14,12 +14,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
 - Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
-- Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
+- Fixed issue with distributing parented children that have the distributable and/or transferrable permissions set and have the same owner as the root parent, that has the distributable permission set, were not being distributed to the same client upon the owning client disconnecting when using a distributed authority network topology. (#3203)
 - Fixed issue where a spawned `NetworkObject` that was registered with a prefab handler and owned by a client would invoke destroy more than once on the host-server side if the client disconnected while the `NetworkObject` was still spawned. (#3200)
 - Fixed issue where `NetworkVariableBase` derived classes were not being re-initialized if the associated `NetworkObject` instance was not destroyed and re-spawned. (#3181)
 
 ### Changed
 
+- Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 
 ## [2.2.0] - 2024-12-12
 
