@@ -87,13 +87,25 @@ namespace Unity.Netcode.RuntimeTests
             var newOwnerId = m_OriginalOwnerId;
             foreach (var spawnedObject in m_AltTargetSpawnedObjects)
             {
-                if (spawnedObject.OwnerClientId == m_OriginalOwnerId)
+                var isParentLocked = spawnedObject.transform.parent != null ? spawnedObject.transform.parent.GetComponent<NetworkObject>().IsOwnershipLocked : false;
+                if (!isParentLocked && !spawnedObject.IsOwnershipLocked && spawnedObject.OwnerClientId == m_OriginalOwnerId)
                 {
                     m_ErrorMsg.AppendLine($"{spawnedObject.name} still is owned by Client-{m_OriginalOwnerId}!");
                 }
-                else if (m_OriginalOwnerId == newOwnerId)
+                else if (!isParentLocked && !spawnedObject.IsOwnershipLocked && m_OriginalOwnerId == newOwnerId)
                 {
                     newOwnerId = spawnedObject.OwnerClientId;
+                }
+                else if ((isParentLocked || spawnedObject.IsOwnershipLocked) && spawnedObject.OwnerClientId != m_OriginalOwnerId)
+                {
+                    if (isParentLocked)
+                    {
+                        m_ErrorMsg.AppendLine($"{spawnedObject.name}'s parent was locked but its owner changed to Client-{m_OriginalOwnerId}!");
+                    }
+                    else
+                    {
+                        m_ErrorMsg.AppendLine($"{spawnedObject.name} was locked but its owner changed to Client-{m_OriginalOwnerId}!");
+                    }
                 }
 
                 if (spawnedObject.OwnerClientId != newOwnerId)
@@ -126,9 +138,16 @@ namespace Unity.Netcode.RuntimeTests
             UponDisconnect
         }
 
+        public enum OwnershipLocking
+        {
+            NoLocking,
+            LockRootParent,
+            LockTargetChild,
+        }
+
 
         [UnityTest]
-        public IEnumerator DistributeOwnerHierarchy([Values] DistributionTypes distributionType)
+        public IEnumerator DistributeOwnerHierarchy([Values] DistributionTypes distributionType, [Values] OwnershipLocking ownershipLock)
         {
             m_NetworkManagers.Clear();
             m_TargetSpawnedObjects.Clear();
@@ -162,6 +181,10 @@ namespace Unity.Netcode.RuntimeTests
                 rootObject = SpawnObject(m_GenericPrefab, m_ClientNetworkManagers[0]);
                 networkObject = rootObject.GetComponent<NetworkObject>();
                 networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
+                if (ownershipLock == OwnershipLocking.LockRootParent && distributionType == DistributionTypes.UponConnect)
+                {
+                    networkObject.SetOwnershipLock(true);
+                }
                 m_TargetSpawnedObjects.Add(networkObject);
 
                 // Used to validate nested transferable transfers to the same owner
@@ -174,6 +197,10 @@ namespace Unity.Netcode.RuntimeTests
                 childTwo = SpawnObject(m_GenericPrefab, m_ClientNetworkManagers[0]);
                 networkObject = childTwo.GetComponent<NetworkObject>();
                 networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
+                if (ownershipLock == OwnershipLocking.LockTargetChild && distributionType == DistributionTypes.UponConnect)
+                {
+                    networkObject.SetOwnershipLock(true);
+                }
                 m_TargetSpawnedObjects.Add(childTwo.GetComponent<NetworkObject>());
 
                 childOne.transform.parent = rootObject.transform;
