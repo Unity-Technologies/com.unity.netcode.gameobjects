@@ -1,11 +1,11 @@
 {
-  "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
     "com.unity.ide.rider": "3.0.34",
-    "com.unity.multiplayer.tools": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#release/1.1.1",
+    "com.unity.multiplayer.tools": "1.1.1",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
     "com.unity.test-framework": "1.1.33",
     "com.unity.test-framework.performance": "2.8.0-preview",
+    "com.unity.transport": "1.5.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
