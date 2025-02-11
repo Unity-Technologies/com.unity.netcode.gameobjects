@@ -140,7 +140,14 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(HaveLogsBeenReceived);
                 AssertOnTimeout($"Not all expected logs were received when destroying a {nameof(NetworkObject)} on the client side during an active session!");
             }
-            Assert.IsFalse(m_ClientNetworkManagers[0].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+            if (m_DistributedAuthority)
+            {
+                Assert.IsFalse(m_ClientNetworkManagers[1].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+            }
+            else
+            {
+                Assert.IsFalse(m_ClientNetworkManagers[0].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+            }
         }
 
         private bool HaveLogsBeenReceived()
