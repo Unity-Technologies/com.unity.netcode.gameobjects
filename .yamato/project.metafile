@@ -128,6 +128,9 @@ validation_editors:
     default:
         - trunk
     all:
+        - 2021.3
+        - 2022.3
+        - 2023.3
         - 6000.0
         - 6000.1 
         - trunk
