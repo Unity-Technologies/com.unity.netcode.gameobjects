@@ -1233,7 +1233,7 @@ namespace Unity.Netcode.Transports.UTP
                 var networkConnection = ParseClientId(transportId);
                 if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
                 {
-                    return m_Driver.GetRemoteEndpoint(networkConnection);
+                    return m_Driver.RemoteEndPoint(networkConnection);
                 }
             }
             return new NetworkEndpoint();
