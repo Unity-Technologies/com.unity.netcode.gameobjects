@@ -1,50 +1,23 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-{% for project in projects -%}
-pack_{{ project.name }}:
-  name: Pack {{ project.name }}
-  agent:
-    type: Unity::VM
-    image: package-ci/ubuntu-22.04:v4
-    flavor: b1.small
-  commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project pack --project-path {{ project.path }}
-    - upm-pvp xray --packages "upm-ci~/packages/*.tgz" --results upm-ci~/xray
-    - upm-pvp require "$XRAY_PROFILE" --allow-missing --results upm-ci~/xray --exemptions upm-ci~/xray/new-exemptions.json || true
-    - upm-pvp require "$XRAY_PROFILE ./pvp-exemptions.json" --results upm-ci~/xray
-  artifacts:
-    packages:
-      paths:
-        - "upm-ci~/**"
-{% endfor -%}
 
-# Pack minimal project with different versions of dependencies
-{% for project in projects -%}
-{% if project.name == "minimalproject" -%}
-{% for dependency in dependencies -%}
-pack_{{ project.name }}_{{ dependency.name }}@{{ dependency.version }}:
-  name: Pack {{ project.name }} with {{ dependency.name }}@{{ dependency.version }}
+# Jobs that iterate through and packs all NGO projects listed (to use in different jobs)
+# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) coul be used to save resources and speed up the process
+# If everyone adheres to this rule it can create bottlenecks (since everyone would use this machine) so we decided to pack project with the same platform as the given job runs on
+{% for project in projects.all -%}
+{% for platform in test_platforms.desktop -%}
+project_pack_-_{{ project.name }}_{{ platform.name }}:
+  name: Project Pack - {{ project.name }} [{{ platform.name }}]
   agent:
-    type: Unity::VM
-    image: package-ci/ubuntu-22.04:v4
-    flavor: b1.small
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - curl -L https://artifactory.prd.it.unity3d.com/artifactory/api/gpg/key/public | sudo apt-key add -
-    - sudo sh -c "echo 'deb https://artifactory.prd.it.unity3d.com/artifactory/unity-apt-local bionic main' > /etc/apt/sources.list.d/unity.list"
-    - sudo apt update
-    - sudo apt install -y unity-config
-    - unity-config settings project-path {{ project.path }}
-    - unity-config project add dependency {{ dependency.name }}@{{ dependency.version }}
+    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - upm-ci project pack --project-path {{ project.path }}
-    - upm-pvp xray --packages "upm-ci~/packages/*.tgz" --results upm-ci~/xray
-    - upm-pvp require "$XRAY_PROFILE" --allow-missing --results upm-ci~/xray --exemptions upm-ci~/xray/new-exemptions.json || true
-    - upm-pvp require "$XRAY_PROFILE ./pvp-exemptions.json" --results upm-ci~/xray
   artifacts:
     packages:
       paths:
-        - "upm-ci~/**"
+        - "upm-ci~/packages/**/*"
 {% endfor -%}
-{% endif -%}
 {% endfor -%}

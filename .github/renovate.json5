@@ -1,7 +1,7 @@
 ﻿{
   "baseBranches": ["develop", "develop-2.0.0"],
   "dependencyDashboard": true,
-  
+
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>Unity-Technologies/unity-renovate-config"
@@ -15,6 +15,7 @@
     "**/*~/**"
   ],
   "packageRules": [
+
     // Run unity-upm-project and unity-upm-package only on weekends to reduce PR noise
     // Also ensure dependencies won't be downgraded when they don't exist in the public repositories
     {
