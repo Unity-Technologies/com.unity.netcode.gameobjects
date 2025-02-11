@@ -1600,10 +1600,7 @@ namespace Unity.Netcode
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
-                if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
-                {
-                    RemoveNetworkObjectFromSceneChangedUpdates(this);
-                }
+                NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
                 // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
                 // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
@@ -1627,7 +1624,7 @@ namespace Unity.Netcode
             }
 
             // Always attempt to remove from scene changed updates
-            RemoveNetworkObjectFromSceneChangedUpdates(this);
+            NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
@@ -2391,11 +2388,6 @@ namespace Unity.Netcode
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
-            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
-            {
-                AddNetworkObjectToSceneChangedUpdates(this);
-            }
-
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
@@ -2450,20 +2442,14 @@ namespace Unity.Netcode
             }
         }
 
-
-
         internal void InvokeBehaviourNetworkDespawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            NetworkManager.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
-            }
-
-            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
-            {
-                RemoveNetworkObjectFromSceneChangedUpdates(this);
             }
         }
 
@@ -3275,54 +3261,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal static Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
-        internal static List<ulong> CleanUpDisposedObjects = new List<ulong>();
-
-        internal static void CleanNetworkObjectSynchronization()
-        {
-            NetworkObjectsToSynchronizeSceneChanges.Clear();
-            CleanUpDisposedObjects.Clear();
-        }
-
-        internal static void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
-        {
-            if (!NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
-            {
-                NetworkObjectsToSynchronizeSceneChanges.Add(networkObject.NetworkObjectId, networkObject);
-            }
-
-            networkObject.UpdateForSceneChanges();
-        }
-
-        internal static void RemoveNetworkObjectFromSceneChangedUpdates(NetworkObject networkObject)
-        {
-            if (NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
-            {
-                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObject.NetworkObjectId);
-            }
-        }
-
-        internal static void UpdateNetworkObjectSceneChanges()
-        {
-            foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
-            {
-                entry.Value.UpdateForSceneChanges();
-            }
-
-            // Exit early if there is nothing to clean up
-            if (CleanUpDisposedObjects.Count == 0)
-            {
-                return;
-            }
-
-            // Clean up any NetworkObjects that no longer exist (destroyed before they should be or the like)
-            foreach (var networkObjectId in CleanUpDisposedObjects)
-            {
-                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObjectId);
-            }
-            CleanUpDisposedObjects.Clear();
-        }
-
         private void Awake()
         {
             m_ChildNetworkBehaviours = null;
@@ -3345,7 +3283,7 @@ namespace Unity.Netcode
         /// to add this same functionality to in-scene placed NetworkObjects until we have a way to generate
         /// per-NetworkObject-instance unique GlobalObjectIdHash values for in-scene placed NetworkObjects.
         /// </remarks>
-        internal void UpdateForSceneChanges()
+        internal bool UpdateForSceneChanges()
         {
             // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
@@ -3357,14 +3295,15 @@ namespace Unity.Netcode
                 if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement && (IsSceneObject != false || !gameObject))
                 {
                     // then mark this instance to be removed from the scene migration synchronization list.
-                    CleanUpDisposedObjects.Add(NetworkObjectId);
+                    return false;
                 }
-                return;
+
             }
 
             // Otherwise, this has to be a dynamically spawned NetworkObject that has been
             // migrated to a new scene.
             SceneChangedUpdate(gameObject.scene, true);
+            return true;
         }
 
         /// <summary>

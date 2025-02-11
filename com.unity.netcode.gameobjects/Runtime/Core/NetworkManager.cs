@@ -401,7 +401,7 @@ namespace Unity.Netcode
                         }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
-                        NetworkObject.UpdateNetworkObjectSceneChanges();
+                        SpawnManager.UpdateNetworkObjectSceneChanges();
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
@@ -1665,10 +1665,8 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
-
-            // In the event any exceptions occurred and objects are destroyed prior to being despawned,
-            // clear out the NetworkObject scene migration synchronization table and removal list.
-            NetworkObject.CleanNetworkObjectSynchronization();
+            SpawnManager?.Shutdown();
+            SpawnManager = null;
         }
 
 

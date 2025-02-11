@@ -153,17 +153,6 @@ namespace Unity.Netcode
             {
                 NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].PlayerObject = null;
             }
-
-            // If we want to keep the observers, then exit early
-            //if (keepObservers)
-            //{
-            //    return;
-            //}
-
-            //foreach (var player in m_PlayerObjects)
-            //{
-            //    player.Observers.Remove(playerObject.OwnerClientId);
-            //}
         }
 
         internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
@@ -1161,6 +1150,8 @@ namespace Unity.Netcode
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
 
+            AddNetworkObjectToSceneChangedUpdates(networkObject);
+
             networkObject.InvokeBehaviourNetworkSpawn();
 
             NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, networkId);
@@ -1194,6 +1185,50 @@ namespace Unity.Netcode
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
+        }
+
+
+        internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
+        internal List<ulong> CleanUpDisposedObjects = new List<ulong>();
+
+        internal void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
+        {
+            if ((networkObject.SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement) &&
+                !NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
+            {
+                if (networkObject.UpdateForSceneChanges())
+                {
+                    NetworkObjectsToSynchronizeSceneChanges.Add(networkObject.NetworkObjectId, networkObject);
+                }
+            }
+        }
+
+        internal void RemoveNetworkObjectFromSceneChangedUpdates(NetworkObject networkObject)
+        {
+            if ((networkObject.SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement) &&
+                NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
+            {
+                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObject.NetworkObjectId);
+            }
+        }
+
+        internal void UpdateNetworkObjectSceneChanges()
+        {
+            foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
+            {
+                // If it fails the first update then don't add for updates
+                if (!entry.Value.UpdateForSceneChanges())
+                {
+                    CleanUpDisposedObjects.Add(entry.Key);
+                }
+            }
+
+            // Clean up any NetworkObjects that no longer exist (destroyed before they should be or the like)
+            foreach (var networkObjectId in CleanUpDisposedObjects)
+            {
+                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObjectId);
+            }
+            CleanUpDisposedObjects.Clear();
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
@@ -1727,6 +1762,17 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
+        }
+
+        ~NetworkSpawnManager()
+        {
+            Shutdown();
+        }
+
+        internal void Shutdown()
+        {
+            NetworkObjectsToSynchronizeSceneChanges.Clear();
+            CleanUpDisposedObjects.Clear();
         }
 
         /// <summary>
