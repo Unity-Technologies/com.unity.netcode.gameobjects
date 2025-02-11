@@ -1665,8 +1665,6 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
-            SpawnManager?.Shutdown();
-            SpawnManager = null;
         }
 
 

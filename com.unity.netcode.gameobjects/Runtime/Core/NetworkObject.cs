@@ -3289,20 +3289,18 @@ namespace Unity.Netcode
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
             if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
-                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject || gameObject.scene.handle == SceneOriginHandle)
+                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
             {
-                // If this NetworkObject did register for SceneMigrationSynchronization and scene management is enabled and the gameObject is null.
-                if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement && (IsSceneObject != false || !gameObject))
-                {
-                    // then mark this instance to be removed from the scene migration synchronization list.
-                    return false;
-                }
-
+                // Stop checking for a scene migration
+                return false;
+            }
+            else if (gameObject.scene.handle != SceneOriginHandle)
+            {
+                // If the scene handle has changed, then update and send notification
+                SceneChangedUpdate(gameObject.scene, true);
             }
 
-            // Otherwise, this has to be a dynamically spawned NetworkObject that has been
-            // migrated to a new scene.
-            SceneChangedUpdate(gameObject.scene, true);
+            // Return true (continue checking for scene migration)
             return true;
         }
 
