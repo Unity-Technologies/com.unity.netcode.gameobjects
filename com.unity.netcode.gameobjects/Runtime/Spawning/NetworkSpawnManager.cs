@@ -1187,9 +1187,10 @@ namespace Unity.Netcode
             }
         }
 
-
         internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
-        internal List<ulong> CleanUpDisposedObjects = new List<ulong>();
+
+        // Pre-allocating to avoid the initial constructor hit
+        internal Stack<ulong> CleanUpDisposedObjects = new Stack<ulong>();
 
         internal void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
         {
@@ -1212,23 +1213,22 @@ namespace Unity.Netcode
             }
         }
 
-        internal void UpdateNetworkObjectSceneChanges()
+        internal unsafe void UpdateNetworkObjectSceneChanges()
         {
             foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
             {
                 // If it fails the first update then don't add for updates
                 if (!entry.Value.UpdateForSceneChanges())
                 {
-                    CleanUpDisposedObjects.Add(entry.Key);
+                    CleanUpDisposedObjects.Push(entry.Key);
                 }
             }
 
             // Clean up any NetworkObjects that no longer exist (destroyed before they should be or the like)
-            foreach (var networkObjectId in CleanUpDisposedObjects)
+            while (CleanUpDisposedObjects.Count > 0)
             {
-                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObjectId);
+                NetworkObjectsToSynchronizeSceneChanges.Remove(CleanUpDisposedObjects.Pop());
             }
-            CleanUpDisposedObjects.Clear();
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
