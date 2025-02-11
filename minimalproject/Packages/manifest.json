@@ -1,7 +1,8 @@
 {
-    "dependencies": {
-        "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
-    },
+  "dependencies": {
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
+    "com.unity.transport": "1.5.0"
+  },
     "testables": [
         "com.unity.netcode.gameobjects"
     ]
