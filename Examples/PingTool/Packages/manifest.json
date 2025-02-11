@@ -13,7 +13,7 @@
     "com.unity.multiplayer.tools": "2.2.1",
     "com.unity.netcode.gameobjects": "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git?path=com.unity.netcode.gameobjects#develop-2.0.0",
     "com.unity.services.multiplayer": "1.0.0",
-    "com.unity.test-framework": "1.4.5",
+    "com.unity.test-framework": "1.4.6",
     "com.unity.timeline": "1.8.7",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.9",
     "com.unity.transport": "2.3.0",
