@@ -74,7 +74,7 @@ namespace TestProject.RuntimeTests
                 Assert.Ignore($"Test ignored as DeferDespawn is only valid with Distributed Authority mode.");
             }
 
-            NetworkObjectTestComponent.VerboseDebug = true;
+            NetworkObjectTestComponent.VerboseDebug = false;
             // Because despawning a client will cause it to shutdown and clean everything in the
             // scene hierarchy, we have to prevent one of the clients from spawning initially before
             // we test synchronizing late joining clients with despawned in-scene placed NetworkObjects.
