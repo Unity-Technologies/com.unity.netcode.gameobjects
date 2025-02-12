@@ -28,11 +28,14 @@
       ],
       "rollbackPrs": false
     },
-
     // Enable automerge for Bokken image updates
     {
       "matchDatasources": ["unity-bokken"],
       "automerge": false,
     },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "description": "Disallow major version updates"
+    }
   ],
 }
