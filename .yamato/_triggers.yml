@@ -31,7 +31,7 @@ develop_nightly:
   name: "\U0001F319 [Nightly] Run All Tests [Trunk]"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch: develop
         frequency: daily
         rerun: always
   dependencies:
@@ -63,7 +63,7 @@ develop_weekly_trunk:
   name: "\U0001F319 [Weekly] Run All Tests"
   triggers:
     recurring:
-      - branch: develop-2.0.0
+      - branch: develop
         frequency: weekly
         rerun: always
   dependencies:
