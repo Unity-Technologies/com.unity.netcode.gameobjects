@@ -2,7 +2,7 @@
   "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
     "com.unity.ai.navigation": "2.0.5",
-    "com.unity.ide.rider": "3.0.31",
+    "com.unity.ide.rider": "3.0.34",
     "com.unity.multiplayer.center": "1.0.0",
     "com.unity.multiplayer.tools": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#release/1.1.0",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
