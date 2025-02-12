@@ -5,14 +5,19 @@
 pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
-    # Run project standards to verify package/default project
+    # Run project standards to verify package/default project. This is fine to just run for trunk
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-    # Run package EditMode and Playmode tests on desktop platforms on trunk
+    # Run package EditMode and Playmode package tests on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk 
+    # Run package EditMode and Playmode package tests on minimum supported editor (2021.3 in case of NGOv1.X)
+    - .yamato/_run-all.yml#run_all_package_tests_2021
+    # Run project EditMode and PLaymode project tests on trunk 
     - .yamato/_run-all.yml#run_all_project_tests_trunk
-    # Run one standalone test to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests)
+    # Run project EditMode and PLaymode project tests on minimum supported editor (2021.3 in case of NGOv1.X)
+    - .yamato/_run-all.yml#run_all_project_tests_2021
+    # Run one standalone test to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations (platform/editor)
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_trunk
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_2021.3
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -28,7 +33,7 @@ pull_request_trigger:
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
 # Those tests are all running on trunk editor (since it's daily and running all of them would add a lot of overhead)
 develop_nightly:
-  name: "\U0001F319 [Nightly] Run All Tests [Trunk]"
+  name: "\U0001F319 [Nightly] Run All Tests [Trunk and 2021]"
   triggers:
     recurring:
       - branch: develop
@@ -37,22 +42,30 @@ develop_nightly:
   dependencies:
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_2021
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run package EditMode and Playmode tests on desktop platforms on trunk
+    # Run package EditMode and Playmode tests on desktop platforms on trunk and 2021.3
     - .yamato/_run-all.yml#run_all_package_tests_trunk
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk 
+    - .yamato/_run-all.yml#run_all_package_tests_2021
+    # Run project EditMode and PLaymode tests on desktop platforms on trunk and 2021.3 
     - .yamato/_run-all.yml#run_all_project_tests_trunk
-    # Run Runtime tests on desktop players on trunk
+    - .yamato/_run-all.yml#run_all_project_tests_2021
+    # Run Runtime tests on desktop players on trunk and 2021 editors
     - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_trunk
-    # Run Runtime tests on mobile players on trunk
+    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_2021
+    # Run Runtime tests on mobile players on trunk and 2021 editors
     - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_trunk
-    # Run Runtime tests on console players on trunk
+    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_2021
+    # Run Runtime tests on console players on trunk and 2021 editors
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone_trunk
-    # Build player for webgl platform on trunk
+    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_2021
+    # Build player for webgl platform on trunk and 2021 editors
     - .yamato/_run-all.yml#run_all_webgl_builds_trunk
-    # Build player for webgl platform on trunk
+    - .yamato/_run-all.yml#run_all_webgl_builds_2021
+    # Build player for webgl platform on trunk and 2021 editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_2021.3
 
 
 # Run all tests on weekly bases

@@ -22,6 +22,15 @@ run_all_package_tests_trunk:
 {% endfor -%}
 {% endfor -%}
 
+# Runs all package tests on mimimum supported editor (2021.3 in case of NGOv1.X)
+run_all_package_tests_2021:
+  name: Run All Package Tests [2021.3]
+  dependencies:
+  {% for platform in test_platforms.desktop -%}
+    - .yamato/package-tests.yml#package_test_-_ngo_trunk_{{ platform.name }}
+    - .yamato/package-tests.yml#package_test_-_ngo_2021.3_{{ platform.name }}
+  {% endfor -%}
+
 
 # Runs all projects tests
 run_all_project_tests:
@@ -48,6 +57,19 @@ run_all_project_tests_trunk:
 {% for editor in validation_editors.default -%}
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+
+# Runs all projects tests on mimimum supported editor (2021.3 in case of NGOv1.X)
+run_all_project_tests_2021:
+  name: Run All Project Tests [2021.3]
+  dependencies:
+{% for project in projects.all -%}
+{% if project.has_tests == "true" -%}
+{% for platform in test_platforms.desktop -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_trunk
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -91,6 +113,17 @@ run_all_webgl_builds_trunk:
 {% endfor -%}
 {% endfor -%}
 
+# Runs all WebGL builds on 2021.3 editor
+run_all_webgl_builds_2021:
+  name: Run All WebGl Build [2021.3]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_trunk
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_2021.3
+{% endfor -%}
+{% endfor -%}
+
 
 # Runs all Desktop tests
 run_all_project_tests_desktop_standalone:
@@ -121,6 +154,19 @@ run_all_project_tests_desktop_standalone_trunk:
 {% endfor -%}
 {% endfor -%}
 
+# Runs all Desktop tests on mimimum supported editor (2021.3 in case of NGOv1.X)
+run_all_project_tests_desktop_standalone_2021:
+  name: Run All Standalone Tests - Desktop [2021.3]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for backend in scripting_backends -%}
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_trunk
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_2021.3
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
 # Runs all Mobile tests
 run_all_project_tests_mobile_standalone:
   name: Run All Standalone Tests - Mobile
@@ -143,6 +189,17 @@ run_all_project_tests_mobile_standalone_trunk:
 {% for editor in validation_editors.default -%}
     - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all Mobile tests on mimimum supported editor (2021.3 in case of NGOv1.X)
+run_all_project_tests_mobile_standalone_2021:
+  name: Run All Standalone Tests - Mobile [2021.3]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.mobile_test -%}
+    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_trunk
+    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
 
@@ -169,5 +226,16 @@ run_all_project_tests_console_standalone_trunk:
 {% for editor in validation_editors.default -%}
     - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all Console tests on mimimum supported editor (2021.3 in case of NGOv1.X)
+run_all_project_tests_console_standalone_2021:
+  name: Run All Standalone Tests - Console [2021.3]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.console_test -%}
+    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_trunk
+    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
