@@ -2509,7 +2509,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -2581,7 +2585,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -2598,7 +2606,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {
@@ -3959,7 +3971,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4032,7 +4048,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4049,7 +4069,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {
