@@ -26,10 +26,10 @@ run_all_package_tests_trunk:
 run_all_package_tests_2021:
   name: Run All Package Tests [2021.3]
   dependencies:
-  {% for platform in test_platforms.desktop -%}
+{% for platform in test_platforms.desktop -%}
     - .yamato/package-tests.yml#package_test_-_ngo_trunk_{{ platform.name }}
     - .yamato/package-tests.yml#package_test_-_ngo_2021.3_{{ platform.name }}
-  {% endfor -%}
+{% endfor -%}
 
 
 # Runs all projects tests
@@ -95,7 +95,7 @@ run_all_webgl_builds:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -108,7 +108,7 @@ run_all_webgl_builds_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -119,8 +119,8 @@ run_all_webgl_builds_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_trunk
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_2021.3
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_trunk
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
 
