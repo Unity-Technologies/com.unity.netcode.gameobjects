@@ -13,6 +13,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
+- Fixed issue where the scene migration synchronization table was not cleaned up if the `GameObject` of a `NetworkObject` is destroyed before it should have been. (#3230)
+- Fixed issue where the scene migration synchronization table was not cleaned up upon `NetworkManager` shutting down. (#3230)
 - Fixed `NetworkObject.DeferDespawn` to respect the `DestroyGameObject` parameter. (#3219)
 - Fixed issue where a `NetworkObject` with nested `NetworkTransform` components of varying authority modes was not being taken into consideration and would break both the initial `NetworkTransform` synchronization and fail to properly handle synchronized state updates of the nested `NetworkTransform` components. (#3209)
 - Fixed issue with distributing parented children that have the distributable and/or transferrable permissions set and have the same owner as the root parent, that has the distributable permission set, were not being distributed to the same client upon the owning client disconnecting when using a distributed authority network topology. (#3203)
