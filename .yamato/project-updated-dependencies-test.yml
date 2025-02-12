@@ -4,7 +4,7 @@
 # Executes package tests for each package referenced in the project using the newest compatible version of the package dependencies.
 # This is just to ensure that no critical change is made. It will be run on a default editor and default platform (it can be discussed if we should run it per all editors and platforms)
 {% for project in projects.default -%}
-{% for platform in test_platforms.default -%}
+{% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
   name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]

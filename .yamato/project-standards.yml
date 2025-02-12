@@ -6,7 +6,7 @@
 # Tests are executed for default editor (trunk) on default platform (ubuntu) as in project.metafile declaration since results would be the same across editors and platforms.
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.default -%}
+{% for editor in validation_editors.all -%}
 standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
   name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
