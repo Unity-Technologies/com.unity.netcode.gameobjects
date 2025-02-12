@@ -15,7 +15,6 @@
     "**/*~/**"
   ],
   "packageRules": [
-
     // Run unity-upm-project and unity-upm-package only on weekends to reduce PR noise
     // Also ensure dependencies won't be downgraded when they don't exist in the public repositories
     {
@@ -29,11 +28,14 @@
       ],
       "rollbackPrs": false
     },
-
     // Enable automerge for Bokken image updates
     {
       "matchDatasources": ["unity-bokken"],
       "automerge": false,
     },
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "description": "Disallow major version updates"
+    }
   ],
 }
