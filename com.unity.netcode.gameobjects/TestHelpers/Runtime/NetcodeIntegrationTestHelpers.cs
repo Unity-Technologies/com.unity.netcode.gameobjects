@@ -329,7 +329,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Shutdown the server which forces clients to disconnect
             foreach (var networkManager in NetworkManagerInstances)
             {
-                networkManager.Shutdown();
+                networkManager.Shutdown(true);
                 s_Hooks.Remove(networkManager);
             }
 

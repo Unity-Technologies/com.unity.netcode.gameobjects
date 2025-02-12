@@ -91,7 +91,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool HasTimedOut()
         {
-            return WhenSceneEventHasTimedOut <= m_NetworkManager.RealTimeProvider.RealTimeSinceStartup;
+            return m_NetworkManager == null || WhenSceneEventHasTimedOut <= m_NetworkManager.RealTimeProvider.RealTimeSinceStartup;
         }
 
         /// <summary>
@@ -298,7 +298,7 @@ namespace Unity.Netcode
                     m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
                 }
 
-                if (m_TimeOutCoroutine != null)
+                if (m_TimeOutCoroutine != null && m_NetworkManager != null)
                 {
                     m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
                 }

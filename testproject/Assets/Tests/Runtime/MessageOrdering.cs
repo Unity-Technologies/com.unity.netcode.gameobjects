@@ -36,12 +36,13 @@ namespace TestProject.RuntimeTests
             {
                 Object.Destroy(m_Prefab);
                 m_Prefab = null;
-                NetcodeIntegrationTestHelpers.Destroy();
                 Support.SpawnRpcDespawn.ClientUpdateCount = 0;
                 Support.SpawnRpcDespawn.ServerUpdateCount = 0;
                 Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
                 Support.SpawnRpcDespawn.ExecuteClientRpc = false;
             }
+
+            NetcodeIntegrationTestHelpers.Destroy();
             yield break;
         }
 
@@ -106,16 +107,6 @@ namespace TestProject.RuntimeTests
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var clientHandlers = new List<SpawnRpcDespawnInstanceHandler>();
-            //var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
-            //server.PrefabHandler.AddHandler(networkObject.GlobalObjectIdHash, handler);
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
-                client.PrefabHandler.AddHandler(networkObject, clientHandler);
-                clientHandlers.Add(clientHandler);
-            }
-
             var validNetworkPrefab = new NetworkPrefab
             {
                 Prefab = m_Prefab
@@ -124,6 +115,16 @@ namespace TestProject.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
+            }
+
+            var clientHandlers = new List<SpawnRpcDespawnInstanceHandler>();
+            //var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+            //server.PrefabHandler.AddHandler(networkObject.GlobalObjectIdHash, handler);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+                client.PrefabHandler.AddHandler(networkObject, clientHandler);
+                clientHandlers.Add(clientHandler);
             }
 
             // Start the instances
