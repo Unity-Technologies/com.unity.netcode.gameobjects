@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: semantic-pull-request
         # Internal Unity mirror available at jesseo/action-semantic-pull-request, but actions from private repos aren't supported, so continue to use the public one below
-        uses: amannn/action-semantic-pull-request@b40166f00814508ec3201fc8595b393d451c8cd80
+        uses: amannn/action-semantic-pull-request@b7a9a97cb10fa6e1ae02647e718798175f6b1f1d
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
