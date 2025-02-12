@@ -11,7 +11,7 @@
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:
+webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
