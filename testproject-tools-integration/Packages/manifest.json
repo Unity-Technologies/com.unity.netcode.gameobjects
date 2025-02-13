@@ -6,7 +6,7 @@
     "com.unity.multiplayer.center": "1.0.0",
     "com.unity.multiplayer.tools": "2.2.3",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
-    "com.unity.test-framework": "2.0.1-pre.18",
+    "com.unity.test-framework": "1.4.6",
     "com.unity.test-framework.performance": "3.0.3",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",

@@ -10,7 +10,7 @@
     "com.unity.package-validation-suite": "0.78.0-preview",
     "com.unity.services.authentication": "3.4.0",
     "com.unity.services.core": "1.14.0",
-    "com.unity.test-framework": "2.0.1-pre.18",
+    "com.unity.test-framework": "1.4.6",
     "com.unity.test-framework.performance": "3.0.3",
     "com.unity.timeline": "1.8.8",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.10",

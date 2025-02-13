@@ -12,7 +12,7 @@
     "com.unity.netcode.gameobjects": "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git?path=com.unity.netcode.gameobjects#develop-2.0.0",
     "com.unity.purchasing": "5.0.0-pre.4",
     "com.unity.services.multiplayer": "1.2.0-exp.2",
-    "com.unity.test-framework": "2.0.1-pre.18",
+    "com.unity.test-framework": "1.4.6",
     "com.unity.timeline": "1.8.8",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.10",
     "com.unity.transport": "2.4.0",
