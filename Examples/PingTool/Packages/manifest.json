@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "com.unity.2d.sprite": "1.0.0",
-    "com.unity.2d.tilemap": "1.0.0",
+    "com.unity.2d.sprite": "10.0.7",
+    "com.unity.2d.tilemap": "4.2.1",
     "com.unity.ads": "4.12.0",
     "com.unity.ai.navigation": "2.0.6",
     "com.unity.analytics": "3.8.1",
@@ -12,8 +12,8 @@
     "com.unity.multiplayer.playmode": "1.4.0",
     "com.unity.multiplayer.tools": "2.2.3",
     "com.unity.netcode.gameobjects": "https://github.com/Unity-Technologies/com.unity.netcode.gameobjects.git?path=com.unity.netcode.gameobjects#develop-2.0.0",
-    "com.unity.services.multiplayer": "1.1.1",
-    "com.unity.test-framework": "1.4.6",
+    "com.unity.services.multiplayer": "1.2.0-exp.2",
+    "com.unity.test-framework": "2.0.1-pre.18",
     "com.unity.timeline": "1.8.8",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.10",
     "com.unity.transport": "2.4.0",
