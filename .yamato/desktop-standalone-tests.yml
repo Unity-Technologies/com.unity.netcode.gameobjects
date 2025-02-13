@@ -24,7 +24,9 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% if platform.name == "ubuntu" %}
     - sudo apt-get update -q
     - sudo apt install -qy imagemagick
+    - sudo apt-get install -qy libssl1.1 libssl-dev openssl
 {% endif %}
+  
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
   
 # Platform specific UTR setup
