@@ -24,7 +24,6 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% if platform.name == "ubuntu" %}
     - sudo apt-get update -q
     - sudo apt install -qy imagemagick
-    - sudo apt-get install -qy libssl3 libssl-dev openssl # Added step to mitigate errors related to mainly 2021 editor
 {% endif %}
   
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple

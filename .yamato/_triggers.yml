@@ -17,7 +17,7 @@ pull_request_trigger:
     - .yamato/_run-all.yml#run_all_project_tests_2021
     # Run one standalone test to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations (platform/editor)
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_trunk
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_mono_2021.3
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_2021.3
   triggers:
     cancel_old_ci: true
     pull_requests:
