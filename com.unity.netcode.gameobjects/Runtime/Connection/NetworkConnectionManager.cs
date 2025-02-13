@@ -1225,7 +1225,7 @@ namespace Unity.Netcode
                                     }
                                     NetworkManager.SpawnManager.ChangeOwnership(ownedObject, targetOwner, true);
                                     // DANGO-TODO: Should we try handling inactive NetworkObjects?
-                                    // Ownership gets passed down to all children
+                                    // Ownership gets passed down to all children that have the same owner.
                                     var childNetworkObjects = ownedObject.GetComponentsInChildren<NetworkObject>();
                                     foreach (var childObject in childNetworkObjects)
                                     {
@@ -1245,6 +1245,14 @@ namespace Unity.Netcode
                                         {
                                             continue;
                                         }
+
+                                        // If the child's owner is not the client disconnected and the objects are marked with either distributable or transferable, then
+                                        // do not change ownership.
+                                        if (childObject.OwnerClientId != clientId && (childObject.IsOwnershipDistributable || childObject.IsOwnershipTransferable))
+                                        {
+                                            continue;
+                                        }
+
                                         NetworkManager.SpawnManager.ChangeOwnership(childObject, targetOwner, true);
                                         if (EnableDistributeLogging)
                                         {

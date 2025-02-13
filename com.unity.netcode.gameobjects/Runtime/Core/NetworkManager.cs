@@ -401,7 +401,7 @@ namespace Unity.Netcode
                         }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
-                        NetworkObject.UpdateNetworkObjectSceneChanges();
+                        SpawnManager.UpdateNetworkObjectSceneChanges();
 
                         // This should be invoked just prior to the MessageManager processes its outbound queue.
                         SceneManager.CheckForAndSendNetworkObjectSceneChanged();
