@@ -1,16 +1,10 @@
 # see https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners for more information
 # Order is important; the last matching pattern takes the most precedence.
 
-* @Unity-Technologies/multiplayer-sdk
-Profiling/ @Unity-Technologies/multiplayer-tools
-Metrics/ @Unity-Technologies/multiplayer-tools
-/com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-*.asmdef @chrispope @miniwolf
-package.json @chrispope @miniwolf 
-AssemblyInfo.cs @chrispope @miniwolf
-.editorconfig @chrispope @miniwolf
-.gitignore @chrispope @miniwolf
-.github/ @chrispope @miniwolf
-.yamato/ @chrispope @miniwolf
+*.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.editorconfig @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.gitignore @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.github/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.yamato/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
