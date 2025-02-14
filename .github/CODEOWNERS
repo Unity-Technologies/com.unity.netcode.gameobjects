@@ -2,15 +2,10 @@
 # Order is important; the last matching pattern takes the most precedence.
 
 * @Unity-Technologies/multiplayer-sdk
-Profiling/ @Unity-Technologies/multiplayer-tools
-Metrics/ @Unity-Technologies/multiplayer-tools
-/com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-*.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-.editorconfig @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-.gitignore @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-.github/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
-.yamato/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+*.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+.editorconfig @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+.gitignore @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+.github/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+.yamato/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
