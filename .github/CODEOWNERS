@@ -1,6 +1,7 @@
 # see https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners for more information
 # Order is important; the last matching pattern takes the most precedence.
 
+* @Unity-Technologies/multiplayer-sdk
 *.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
 package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
 AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
