@@ -8,7 +8,7 @@ namespace Unity.Netcode.Components
     /// Half float precision <see cref="Vector3"/>.
     /// </summary>
     /// <remarks>
-    /// The Vector3T<ushort> values are half float values returned by <see cref="Mathf.FloatToHalf(float)"/> for each
+    /// The Vector3T{ushort} values are half float values returned by <see cref="Mathf.FloatToHalf(float)"/> for each
     /// individual axis and the 16 bits of the half float are stored as <see cref="ushort"/> values since C# does not have
     /// a half float type.
     /// </remarks>
@@ -129,7 +129,7 @@ namespace Unity.Netcode.Components
         /// Constructor
         /// </summary>
         /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
-        /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
+        /// <param name="axisToSynchronize">The axis to synchronize.</param>
         public HalfVector3(Vector3 vector3, bool3 axisToSynchronize)
         {
             Axis = half3.zero;

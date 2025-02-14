@@ -25,7 +25,7 @@ all_preview_apv_jobs:
     cancel_old_ci: true
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (MacOS).
 preview_apv_-_2021_3_-_macos:
@@ -35,7 +35,7 @@ preview_apv_-_2021_3_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -48,10 +48,7 @@ preview_apv_-_2021_3_-_macos:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2021.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh macos 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -79,10 +76,10 @@ preview_apv_-_2021_3_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (Ubuntu).
 preview_apv_-_2021_3_-_ubuntu:
@@ -92,7 +89,7 @@ preview_apv_-_2021_3_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -105,10 +102,7 @@ preview_apv_-_2021_3_-_ubuntu:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2021.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh ubuntu 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -136,10 +130,10 @@ preview_apv_-_2021_3_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (Windows).
 preview_apv_-_2021_3_-_windows:
@@ -150,7 +144,7 @@ preview_apv_-_2021_3_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -163,10 +157,7 @@ preview_apv_-_2021_3_-_windows:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2021.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: python PythonScripts/editor_manifest_validator.py --version=2021.3 --wrench-config=.yamato/wrench/wrench_config.json
   after:
-  - command: cmd.exe /c "curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.bat --output run_standalone_instability_detection-latest.bat --retry 5 || exit 0"
-  - command: cmd.exe /c "run_standalone_instability_detection-latest.bat 0.5.1 || exit 0"
-    timeout: 10
-    retries: 1
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     Crash Dumps:
       paths:
@@ -194,10 +185,10 @@ preview_apv_-_2021_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (MacOS).
 preview_apv_-_2022_3_-_macos:
@@ -207,7 +198,7 @@ preview_apv_-_2022_3_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -220,10 +211,7 @@ preview_apv_-_2022_3_-_macos:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2022.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh macos 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -251,10 +239,10 @@ preview_apv_-_2022_3_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Ubuntu).
 preview_apv_-_2022_3_-_ubuntu:
@@ -264,7 +252,7 @@ preview_apv_-_2022_3_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -277,10 +265,7 @@ preview_apv_-_2022_3_-_ubuntu:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2022.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh ubuntu 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -308,10 +293,10 @@ preview_apv_-_2022_3_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Windows).
 preview_apv_-_2022_3_-_windows:
@@ -322,7 +307,7 @@ preview_apv_-_2022_3_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -335,10 +320,7 @@ preview_apv_-_2022_3_-_windows:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=2022.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: python PythonScripts/editor_manifest_validator.py --version=2022.3 --wrench-config=.yamato/wrench/wrench_config.json
   after:
-  - command: cmd.exe /c "curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.bat --output run_standalone_instability_detection-latest.bat --retry 5 || exit 0"
-  - command: cmd.exe /c "run_standalone_instability_detection-latest.bat 0.5.1 || exit 0"
-    timeout: 10
-    retries: 1
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     Crash Dumps:
       paths:
@@ -366,10 +348,10 @@ preview_apv_-_2022_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (MacOS).
 preview_apv_-_6000_0_-_macos:
@@ -379,7 +361,7 @@ preview_apv_-_6000_0_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -392,10 +374,7 @@ preview_apv_-_6000_0_-_macos:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh macos 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -423,10 +402,10 @@ preview_apv_-_6000_0_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Ubuntu).
 preview_apv_-_6000_0_-_ubuntu:
@@ -436,7 +415,7 @@ preview_apv_-_6000_0_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -449,10 +428,7 @@ preview_apv_-_6000_0_-_ubuntu:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh ubuntu 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -480,10 +456,10 @@ preview_apv_-_6000_0_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Windows).
 preview_apv_-_6000_0_-_windows:
@@ -494,7 +470,7 @@ preview_apv_-_6000_0_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -507,10 +483,7 @@ preview_apv_-_6000_0_-_windows:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: python PythonScripts/editor_manifest_validator.py --version=6000.0 --wrench-config=.yamato/wrench/wrench_config.json
   after:
-  - command: cmd.exe /c "curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.bat --output run_standalone_instability_detection-latest.bat --retry 5 || exit 0"
-  - command: cmd.exe /c "run_standalone_instability_detection-latest.bat 0.5.1 || exit 0"
-    timeout: 10
-    retries: 1
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     Crash Dumps:
       paths:
@@ -538,10 +511,10 @@ preview_apv_-_6000_0_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (MacOS).
 preview_apv_-_6000_1_-_macos:
@@ -551,7 +524,7 @@ preview_apv_-_6000_1_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -564,10 +537,7 @@ preview_apv_-_6000_1_-_macos:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh macos 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -595,10 +565,10 @@ preview_apv_-_6000_1_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (Ubuntu).
 preview_apv_-_6000_1_-_ubuntu:
@@ -608,7 +578,7 @@ preview_apv_-_6000_1_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -621,10 +591,7 @@ preview_apv_-_6000_1_-_ubuntu:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh ubuntu 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -652,10 +619,10 @@ preview_apv_-_6000_1_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (Windows).
 preview_apv_-_6000_1_-_windows:
@@ -666,7 +633,7 @@ preview_apv_-_6000_1_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -679,10 +646,7 @@ preview_apv_-_6000_1_-_windows:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: python PythonScripts/editor_manifest_validator.py --version=6000.1 --wrench-config=.yamato/wrench/wrench_config.json
   after:
-  - command: cmd.exe /c "curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.bat --output run_standalone_instability_detection-latest.bat --retry 5 || exit 0"
-  - command: cmd.exe /c "run_standalone_instability_detection-latest.bat 0.5.1 || exit 0"
-    timeout: 10
-    retries: 1
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     Crash Dumps:
       paths:
@@ -710,10 +674,10 @@ preview_apv_-_6000_1_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (MacOS).
 preview_apv_-_6000_2_-_macos:
@@ -723,7 +687,7 @@ preview_apv_-_6000_2_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -736,10 +700,7 @@ preview_apv_-_6000_2_-_macos:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh macos 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -767,10 +728,10 @@ preview_apv_-_6000_2_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Ubuntu).
 preview_apv_-_6000_2_-_ubuntu:
@@ -780,7 +741,7 @@ preview_apv_-_6000_2_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -793,10 +754,7 @@ preview_apv_-_6000_2_-_ubuntu:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
   after:
-  - command: curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.sh --output run_standalone_instability_detection-latest.sh --retry 5 || exit 0
-  - command: bash ./run_standalone_instability_detection-latest.sh ubuntu 0.5.1 || exit 0
-    timeout: 10
-    retries: 1
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
   artifacts:
     Crash Dumps:
       paths:
@@ -824,10 +782,10 @@ preview_apv_-_6000_2_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Windows).
 preview_apv_-_6000_2_-_windows:
@@ -838,7 +796,7 @@ preview_apv_-_6000_2_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_236616cc910608f3016a29947795c2e53f0c0dbfa45128d551397825ed65689e.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -851,10 +809,7 @@ preview_apv_-_6000_2_-_windows:
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
   - command: python PythonScripts/editor_manifest_validator.py --version=6000.2 --wrench-config=.yamato/wrench/wrench_config.json
   after:
-  - command: cmd.exe /c "curl -s https://artifactory-slo.bf.unity3d.com/artifactory/automation-and-tooling/infrastructure-instability-detection/standalone/setup/run_standalone_instability_detection-latest.bat --output run_standalone_instability_detection-latest.bat --retry 5 || exit 0"
-  - command: cmd.exe /c "run_standalone_instability_detection-latest.bat 0.5.1 || exit 0"
-    timeout: 10
-    retries: 1
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
     Crash Dumps:
       paths:
@@ -882,8 +837,8 @@ preview_apv_-_6000_2_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.36.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.36.0
+    Wrench: 0.10.37.0
 

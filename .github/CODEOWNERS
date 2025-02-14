@@ -7,10 +7,10 @@ Metrics/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
 /com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-workflows
 /com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-*.asmdef @chrispope @miniwolf @NoelStephensUnity @fluong6
-package.json @chrispope @miniwolf @NoelStephensUnity @fluong6
-AssemblyInfo.cs @chrispope @miniwolf @NoelStephensUnity @fluong6
-.editorconfig @chrispope @miniwolf @NoelStephensUnity @fluong6
-.gitignore @chrispope @miniwolf @NoelStephensUnity @fluong6
-.github/ @chrispope @miniwolf @NoelStephensUnity @fluong6
-.yamato/ @chrispope @miniwolf @NoelStephensUnity @fluong6
+*.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.editorconfig @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.gitignore @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.github/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot
+.yamato/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot

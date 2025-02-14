@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Tests whether time is accessible and has correct values inside Update/FixedUpdate.
         /// This test applies only when <see cref="Time.timeScale"> is 1.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An IEnumerator for the UnityTest coroutine that validates time values in the player loop.</returns>
         [UnityTest]
         public IEnumerator PlayerLoopFixedTimeTest()
         {
@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Tests whether time is accessible and has correct values inside Update, for multiples <see cref="Time.timeScale"/> values.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An IEnumerator for the UnityTest coroutine that validates time values under different time scales.</returns>
         [UnityTest]
         public IEnumerator PlayerLoopTimeTest_WithDifferentTimeScale([Values(0.0f, 0.1f, 0.5f, 1.0f, 2.0f, 5.0f)] float timeScale)
         {
@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Tests whether the time system invokes the correct amount of ticks over a period of time.
         /// Note we cannot test against Time.Time directly because of floating point precision. Our time is more precise leading to different results.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An IEnumerator for the UnityTest coroutine.</returns>
         [UnityTest]
         public IEnumerator CorrectAmountTicksTest()
         {

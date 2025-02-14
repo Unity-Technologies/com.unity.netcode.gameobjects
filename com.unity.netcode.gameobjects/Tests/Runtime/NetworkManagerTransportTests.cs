@@ -173,8 +173,14 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator GetEndpointReportedCorrectly()
         {
             var serverUnityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            var serverEndpoint = new NetworkEndpoint();
+            var clientEndpoint = new NetworkEndpoint();
+#else
             var serverEndpoint = new NetworkEndPoint();
             var clientEndpoint = new NetworkEndPoint();
+#endif
             foreach (var client in m_ClientNetworkManagers)
             {
                 var unityTransport = client.NetworkConfig.NetworkTransport as UnityTransport;

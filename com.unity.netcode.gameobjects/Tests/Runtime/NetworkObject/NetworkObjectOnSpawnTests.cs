@@ -229,7 +229,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Test that callbacks are run for playerobject spawn, despawn, regular spawn, destroy on server.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An IEnumerator for the UnityTest coroutine that validates callback execution.</returns>
         [UnityTest]
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {

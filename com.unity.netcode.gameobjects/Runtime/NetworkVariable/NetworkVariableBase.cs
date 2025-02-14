@@ -144,7 +144,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Sets the update traits for this network variable to determine how frequently it will send updates.
         /// </summary>
-        /// <param name="traits"></param>
+        /// <param name="traits">The new update traits to apply to this network variable</param>
         public void SetUpdateTraits(NetworkVariableUpdateTraits traits)
         {
             UpdateTraits = traits;
@@ -155,7 +155,7 @@ namespace Unity.Netcode
         /// If not, no update will be sent even if the variable is dirty, unless the time since last update exceeds
         /// the <see cref="UpdateTraits"/>' <see cref="NetworkVariableUpdateTraits.MaxSecondsBetweenUpdates"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the variable exceeds the dirtiness threshold or the time since the last update exceeds MaxSecondsBetweenUpdates. otherwise, false</returns>
         public virtual bool ExceedsDirtinessThreshold()
         {
             return true;

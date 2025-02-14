@@ -106,7 +106,12 @@ namespace Unity.Netcode.Transports.UTP
         {
             unsafe
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var writer = new DataStreamWriter(m_Data.GetUnsafePtr() + TailIndex, Capacity - TailIndex);
+#else
                 var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, Capacity - TailIndex);
+#endif
+
 
                 writer.WriteInt(data.Count);
 
@@ -145,7 +150,11 @@ namespace Unity.Netcode.Transports.UTP
             {
                 unsafe
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    UnsafeUtility.MemMove(m_Data.GetUnsafePtr(), m_Data.GetUnsafePtr() + HeadIndex, Length);
+#else
                     UnsafeUtility.MemMove(m_Data.GetUnsafePtr(), (byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
+#endif
                 }
 
                 TailIndex = Length;
@@ -231,8 +240,12 @@ namespace Unity.Netcode.Transports.UTP
                 if (bytesToWrite > softMaxBytes && bytesToWrite <= writer.Capacity)
                 {
                     writer.WriteInt(messageLength);
-                    WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
 
+#if UTP_TRANSPORT_2_0_ABOVE
+                    WriteBytes(ref writer, m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
+#else
+                    WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
+#endif
                     return bytesToWrite;
                 }
                 else
@@ -248,7 +261,12 @@ namespace Unity.Netcode.Transports.UTP
                         if (bytesWritten + bytesToWrite <= softMaxBytes)
                         {
                             writer.WriteInt(messageLength);
+
+#if UTP_TRANSPORT_2_0_ABOVE
+                            WriteBytes(ref writer, m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
+#else
                             WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + reader.GetBytesRead(), messageLength);
+#endif
 
                             readerOffset += bytesToWrite;
                             bytesWritten += bytesToWrite;
@@ -292,7 +310,12 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
+
+#if UTP_TRANSPORT_2_0_ABOVE
+                WriteBytes(ref writer, m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+#else
                 WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+#endif
             }
 
             return copyLength;

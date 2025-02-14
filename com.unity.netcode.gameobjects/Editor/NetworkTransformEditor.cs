@@ -39,7 +39,7 @@ namespace Unity.Netcode.Editor
 
         public virtual bool HideInterpolateValue => false;
 
-        /// <inheritdoc/>
+        /// <inheritdoc cref="UnityEditor.Editor.OnEnable"/>
         public void OnEnable()
         {
             m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));

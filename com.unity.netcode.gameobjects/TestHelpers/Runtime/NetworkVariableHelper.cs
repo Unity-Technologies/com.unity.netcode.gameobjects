@@ -8,11 +8,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// delegate handler.  It then will expose that single delegate invocation
     /// to anything that registers for this NetworkVariableHelper's instance's OnValueChanged event.
     /// This allows us to register any NetworkVariable type as well as there are basically two "types of types":
-    /// IEquatable<T>
+    /// IEquatable{T}
     /// ValueType
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of value managed by the NetworkVariable</typeparam>
     public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
