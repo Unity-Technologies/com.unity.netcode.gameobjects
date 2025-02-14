@@ -1,9 +1,6 @@
 {
   "dependencies": {
-    "com.unity.ai.navigation": "2.0.5",
-    "com.unity.multiplayer.center": "1.0.0",
-    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
-    "com.unity.modules.accessibility": "1.0.0"
+    "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
   },
   "testables": [
     "com.unity.netcode.gameobjects"
