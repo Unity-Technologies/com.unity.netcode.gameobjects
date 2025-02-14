@@ -38,7 +38,7 @@ namespace Unity.Netcode
         /// Adds a prefab to the prefab list. Performing this here will apply the operation to all
         /// <see cref="NetworkManager"/>s that reference this list.
         /// </summary>
-        /// <param name="prefab"></param>
+        /// <param name="prefab">The NetworkPrefab to add to the shared list</param>
         public void Add(NetworkPrefab prefab)
         {
             List.Add(prefab);
@@ -49,7 +49,7 @@ namespace Unity.Netcode
         /// Removes a prefab from the prefab list. Performing this here will apply the operation to all
         /// <see cref="NetworkManager"/>s that reference this list.
         /// </summary>
-        /// <param name="prefab"></param>
+        /// <param name="prefab">The NetworkPrefab to remove from the shared list</param>
         public void Remove(NetworkPrefab prefab)
         {
             List.Remove(prefab);
