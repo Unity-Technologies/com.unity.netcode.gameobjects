@@ -249,7 +249,7 @@ namespace Unity.Netcode.RuntimeTests
             /// <summary>
             /// Invoke when <see cref="NetworkManager"/>s are created but not started.
             /// </summary>
-            /// <param name="networkManager"></param>
+            /// <param name="networkManager">The NetworkManager instance to assign a handler to. Must not be null and must not already have a handler assigned.</param>
             public static void AssignHandler(NetworkManager networkManager)
             {
                 if (s_PrefabInstanceHandlers.Count > 0)
@@ -273,7 +273,12 @@ namespace Unity.Netcode.RuntimeTests
                 return null;
             }
 
-
+            /// <summary>
+            /// Validates that a NetworkManager has the minimum required number of persisted instances.
+            /// </summary>
+            /// <param name="networkManager">The NetworkManager instance to validate. Must not be null.</param>
+            /// <param name="minCount">The minimum number of instances that should exist. Must be greater than or equal to zero.</param>
+            /// <returns>True if the NetworkManager has at least the minimum required instances, false otherwise or if the NetworkManager is not registered.</returns>
             public static bool ValidatePersistedInstances(NetworkManager networkManager, int minCount)
             {
                 if (s_AssignedInstances.ContainsKey(networkManager))
@@ -286,9 +291,9 @@ namespace Unity.Netcode.RuntimeTests
 
             /// <summary>
             /// Releases back to the queue and if destroy is true it will completely
-            /// remove all references so they are cleaned up when 
+            /// remove all references so they are cleaned up when
             /// </summary>
-            /// <param name="destroy"></param>
+            /// <param name="destroy">If true, completely removes all references and cleans up instances. If false, returns handlers to the queue for reuse.</param>
             public static void ReleaseAll(bool destroy = false)
             {
                 foreach (var entry in s_AssignedInstances)

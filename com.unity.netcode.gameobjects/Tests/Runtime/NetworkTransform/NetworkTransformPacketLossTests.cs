@@ -192,7 +192,7 @@ namespace Unity.Netcode.RuntimeTests
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
         /// <remarks>
-        /// When testing < 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
+        /// When testing 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
         /// When testing 3 axis: Interpolation is enabled, sometimes an axis is intentionally excluded during a
         /// delta update, and it runs through 8 delta updates per unique test.
         /// </remarks>
@@ -478,7 +478,7 @@ namespace Unity.Netcode.RuntimeTests
             // Match the first position update
             if (Approximately(m_RandomPosition, networkTransformState.GetPosition()))
             {
-                // Teleport to the m_RandomPosition plus the 
+                // Teleport to the m_RandomPosition plus the
                 m_AuthoritativeTransform.SetState(m_TeleportOffset + m_RandomPosition, null, null, false);
                 m_AuthoritativeTransform.AuthorityPushedTransformState -= OnAuthorityPushedTransformState;
                 m_Teleported = true;

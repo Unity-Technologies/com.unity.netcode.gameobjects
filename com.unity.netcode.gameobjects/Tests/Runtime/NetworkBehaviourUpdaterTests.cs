@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Creates a prefab with two instances of this NetworkBehaviour
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The created prefab</returns>
         public static GameObject CreatePrefabGameObject(NetVarCombinationTypes netVarsToCheck)
         {
             var gameObject = new GameObject
