@@ -28,6 +28,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
+        - "pvp-results/*"
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
