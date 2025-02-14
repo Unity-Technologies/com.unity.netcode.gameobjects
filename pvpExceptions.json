@@ -778,7 +778,7 @@
           "Unity.Netcode.RuntimeTests.ULongEnum: A: undocumented",
           "Unity.Netcode.RuntimeTests.ULongEnum: B: undocumented",
           "Unity.Netcode.RuntimeTests.ULongEnum: C: undocumented",
-          "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: bool ValidateInstanceSpawnCount(int): missing <param name='minCount'>",
+          "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: bool ValidateInstanceSpawnCount(int): missing <param name=\"minCount\">",
           "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: bool ValidateInstanceSpawnCount(int): missing <returns>"
         ]
       }
