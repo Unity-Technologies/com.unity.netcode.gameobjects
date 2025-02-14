@@ -828,9 +828,5 @@
           "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: missing <param name=\"duplicatedValue\">"
         ]
       }
-    },
-	"extends": [
-		"rme",
-		"supported"
-	]
+    }
 }
