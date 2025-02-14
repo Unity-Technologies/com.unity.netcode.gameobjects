@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// This is a wrapper that adds `INetworkSerializeByMemcpy` support to existing structs that the developer
     /// doesn't have the ability to modify (for example, external structs like `Guid`).
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type to be wrapped, must be unmanaged and implement IEquatable{T}</typeparam>
     public struct ForceNetworkSerializeByMemcpy<T> : INetworkSerializeByMemcpy, IEquatable<ForceNetworkSerializeByMemcpy<T>> where T : unmanaged, IEquatable<T>
     {
         /// <summary>

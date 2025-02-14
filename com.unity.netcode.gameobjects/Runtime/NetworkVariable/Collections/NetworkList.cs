@@ -30,10 +30,10 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkList() { }
 
-        /// <inheritdoc/>
-        /// <param name="values"></param>
-        /// <param name="readPerm"></param>
-        /// <param name="writePerm"></param>
+        /// <inheritdoc cref="NetworkList{T}"/>
+        /// <param name="values">An optional collection of initial values to populate the list. If null, the list will start empty.</param>
+        /// <param name="readPerm">The read permission level for the network list. Determines who can read the list (e.g., server-only or everyone). Default is defined by DefaultReadPerm</param>
+        /// <param name="writePerm">The write permission level for the network list. Determines who can modify the list (e.g., server-only or specific clients). Default is defined by DefaultWritePerm.</param>
         public NetworkList(IEnumerable<T> values = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -54,7 +54,7 @@ namespace Unity.Netcode
             Dispose();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.ResetDirty"/>
         public override void ResetDirty()
         {
             base.ResetDirty();
@@ -64,7 +64,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.IsDirty"/>
         public override bool IsDirty()
         {
             // we call the base class to allow the SetDirty() mechanism to work
@@ -76,7 +76,7 @@ namespace Unity.Netcode
             MarkNetworkBehaviourDirty();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.WriteDelta"/>
         public override void WriteDelta(FastBufferWriter writer)
         {
 
@@ -132,7 +132,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Writeield"/>
         public override void WriteField(FastBufferWriter writer)
         {
             writer.WriteValueSafe((ushort)m_List.Length);
@@ -142,7 +142,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.ReadField"/>
         public override void ReadField(FastBufferReader reader)
         {
             m_List.Clear();
@@ -155,7 +155,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.ReadDelta"/>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             /// This is only invoked by <see cref="NetworkVariableDeltaMessage"/> and the only time
@@ -394,7 +394,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.PostDeltaRead"/>
         /// <remarks>
         /// For NetworkList, we just need to reset dirty if a server has read deltas
         /// </remarks>
@@ -406,13 +406,13 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.GetEnumerator"/>
         public IEnumerator<T> GetEnumerator()
         {
             return m_List.GetEnumerator();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Add"/>
         public void Add(T item)
         {
             // check write permissions
@@ -434,7 +434,7 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Clear"/>
         public void Clear()
         {
             // check write permissions
@@ -454,14 +454,14 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Contains"/>
         public bool Contains(T item)
         {
             int index = m_List.IndexOf(item);
             return index != -1;
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Remove"/>
         public bool Remove(T item)
         {
             // check write permissions
@@ -488,16 +488,16 @@ namespace Unity.Netcode
             return true;
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Count"/>
         public int Count => m_List.Length;
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.IndexOf"/>
         public int IndexOf(T item)
         {
             return m_List.IndexOf(item);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Insert"/>
         public void Insert(int index, T item)
         {
             // check write permissions
@@ -527,7 +527,7 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.RemoveAt"/>
         public void RemoveAt(int index)
         {
             // check write permissions
@@ -551,7 +551,7 @@ namespace Unity.Netcode
 
 
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.this"/>
         public T this[int index]
         {
             get => m_List[index];

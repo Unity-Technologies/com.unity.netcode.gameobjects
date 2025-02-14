@@ -810,14 +810,12 @@ namespace Unity.Netcode
         /// <summary>
         /// This callback is invoked once the local server is stopped.
         /// </summary>
-        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
         public event Action<bool> OnServerStopped = null;
 
         /// <summary>
         /// The callback to invoke once the local client stops
         /// </summary>
         /// <remarks>The parameter states whether the client was running in host mode</remarks>
-        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
         public event Action<bool> OnClientStopped = null;
 
         /// <summary>
@@ -1108,14 +1106,14 @@ namespace Unity.Netcode
         /// <summary>
         /// <see cref="NetworkPrefabHandler.AddNetworkPrefab(GameObject)"/>
         /// </summary>
-        /// <param name="prefab"></param>
-        /// <exception cref="Exception"></exception>
+        /// <param name="prefab">The GameObject prefab to register for network spawning</param>
+        /// <exception cref="Exception">Thrown when the prefab is invalid or already registered</exception>
         public void AddNetworkPrefab(GameObject prefab) => PrefabHandler.AddNetworkPrefab(prefab);
 
         /// <summary>
         /// <see cref="NetworkPrefabHandler.RemoveNetworkPrefab(GameObject)"/>
         /// </summary>
-        /// <param name="prefab"></param>
+        /// <param name="prefab">The GameObject prefab to unregister from network spawning</param>
         public void RemoveNetworkPrefab(GameObject prefab) => PrefabHandler.RemoveNetworkPrefab(prefab);
 
         /// <summary>
@@ -1127,7 +1125,6 @@ namespace Unity.Netcode
         /// and thus should be large enough to ensure it can hold each message type.
         /// This value defaults to 1296.
         /// </summary>
-        /// <param name="size"></param>
         public int MaximumTransmissionUnitSize
         {
             set => MessageManager.NonFragmentedMessageMaxSize = value & ~7; // Round down to nearest word aligned size
@@ -1139,8 +1136,8 @@ namespace Unity.Netcode
         /// This determines the maximum size of a message batch that can be sent to that client.
         /// If not set for any given client, <see cref="MaximumTransmissionUnitSize"/> will be used instead.
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="size"></param>
+        /// <param name="clientId">The unique identifier of the client peer</param>
+        /// <param name="size">The MTU size in bytes for this specific peer</param>
         public void SetPeerMTU(ulong clientId, int size)
         {
             MessageManager.PeerMTUSizes[clientId] = size;
@@ -1150,8 +1147,8 @@ namespace Unity.Netcode
         /// Queries the current MTU size for a client.
         /// If no MTU has been set for that client, will return <see cref="MaximumTransmissionUnitSize"/>
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <returns></returns>
+        /// <param name="clientId">he unique identifier of the client peer</param>
+        /// <returns>The MTU size in bytes for the specified peer. If no custom MTU has been set for this peer, returns the global <see cref="MaximumTransmissionUnitSize"/> value.</returns>
         public int GetPeerMTU(ulong clientId)
         {
             if (MessageManager.PeerMTUSizes.TryGetValue(clientId, out var ret))
@@ -1166,7 +1163,6 @@ namespace Unity.Netcode
         /// Sets the maximum size of a message (or message batch) passed through the transport with the ReliableFragmented delivery.
         /// Warning: setting this value too low may result in the SDK becoming non-functional with projects that have a large number of NetworkBehaviours or NetworkVariables, as the SDK relies on the transport's ability to fragment some messages when they grow beyond the MTU size.
         /// </summary>
-        /// <param name="size"></param>
         public int MaximumFragmentedMessageSize
         {
             set => MessageManager.FragmentedMessageMaxSize = value;

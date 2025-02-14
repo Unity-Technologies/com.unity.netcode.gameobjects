@@ -32,6 +32,7 @@ namespace Unity.Netcode
         /// generic, it is better to check their equality yourself.
         /// </summary>
         public static EqualsDelegate AreEqual { get; internal set; }
+
         /// <summary>
         ///     Serialize a value using the best-known serialization method for a generic value.
         ///     Will reliably serialize any value that is passed to it correctly with no boxing.
@@ -47,8 +48,8 @@ namespace Unity.Netcode
         ///     <see cref="UserNetworkVariableSerialization{T}" />.<see cref="UserNetworkVariableSerialization{T}.WriteValue" /> is called, which, by default,
         ///     will throw an exception, unless you have assigned a user serialization callback to it at runtime.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
+        /// <param name="writer">The FastBufferWriter to write the serialized data to</param>
+        /// <param name="value">Reference to the value to serialize</param>
         public static void Write(FastBufferWriter writer, ref T value)
         {
             Serializer.Write(writer, ref value);
@@ -72,8 +73,8 @@ namespace Unity.Netcode
         ///     <see cref="UserNetworkVariableSerialization{T}" />.<see cref="UserNetworkVariableSerialization{T}.ReadValue" /> is called, which, by default,
         ///     will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="value"></param>
+        /// <param name="reader">The FastBufferReader to read the serialized data from</param>
+        /// <param name="value">Reference to store the deserialized value</param>
         public static void Read(FastBufferReader reader, ref T value)
         {
             Serializer.Read(reader, ref value);
@@ -94,8 +95,9 @@ namespace Unity.Netcode
         ///     <see cref="UserNetworkVariableSerialization{T}" />.<see cref="UserNetworkVariableSerialization{T}.WriteValue" /> is called, which, by default,
         ///     will throw an exception, unless you have assigned a user serialization callback to it at runtime.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
+        /// <param name="writer">The FastBufferWriter to write the serialized delta to</param>
+        /// <param name="value">Reference to the current value</param>
+        /// <param name="previousValue">Reference to the previous value for delta comparison</param>
         public static void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
         {
             Serializer.WriteDelta(writer, ref value, ref previousValue);
@@ -119,8 +121,8 @@ namespace Unity.Netcode
         ///     <see cref="UserNetworkVariableSerialization{T}" />.<see cref="UserNetworkVariableSerialization{T}.ReadValue" /> is called, which, by default,
         ///     will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="value"></param>
+        /// <param name="reader">The FastBufferReader to read the serialized delta from</param>
+        /// <param name="value">Reference to update with the deserialized delta</param>
         public static void ReadDelta(FastBufferReader reader, ref T value)
         {
             Serializer.ReadDelta(reader, ref value);
@@ -143,8 +145,8 @@ namespace Unity.Netcode
         ///     <see cref="UserNetworkVariableSerialization{T}" />.<see cref="UserNetworkVariableSerialization{T}.DuplicateValue" /> is called, which, by default,
         ///     will throw an exception, unless you have assigned a user duplication callback to it at runtime.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="duplicatedValue"></param>
+        /// <param name="value">The source value to duplicate</param>
+        /// <param name="duplicatedValue">Reference to store the duplicated value</param>
         public static void Duplicate(in T value, ref T duplicatedValue)
         {
             Serializer.Duplicate(value, ref duplicatedValue);

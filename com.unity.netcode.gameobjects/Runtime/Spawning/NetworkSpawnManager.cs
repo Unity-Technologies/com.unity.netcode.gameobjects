@@ -55,6 +55,10 @@ namespace Unity.Netcode
 
         private Dictionary<ulong, List<NetworkObject>> m_PlayerObjectsTable = new Dictionary<ulong, List<NetworkObject>>();
 
+        /// <summary>
+        /// Returns the connect client identifiers
+        /// </summary>
+        /// <returns>connected client identifier list</returns>
         public List<ulong> GetConnectedPlayers()
         {
             return m_PlayerObjectsTable.Keys.ToList();
@@ -403,6 +407,11 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Not used.
+        /// </summary>
+        /// <param name="perviousOwner">not used</param>
+        /// <param name="newOwner">not used</param>
         protected virtual void InternalOnOwnershipChanged(ulong perviousOwner, ulong newOwner)
         {
 

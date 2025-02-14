@@ -11,7 +11,7 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public partial class NetcodeEditorBase<TT> : UnityEditor.Editor where TT : MonoBehaviour
     {
-        /// <inheritdoc/>
+        /// <inheritdoc cref="UnityEditor.Editor.OnEnable"/>
         public virtual void OnEnable()
         {
         }
