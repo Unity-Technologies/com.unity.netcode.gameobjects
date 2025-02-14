@@ -12,7 +12,12 @@
   "ignorePaths": [
     "**/node_modules/**",
     // Don't renovate files in special folders using ~ as suffix
-    "**/*~/**"
+    "**/*~/**",
+    "com.unity.netcode.gameobjects/**/*",
+    "Examples/**/*",
+    "testproject/**/*",
+    "minimalproject/**/*",
+    "testproject-tools-integration/**/*"
   ],
   "packageRules": [
     // Run unity-upm-project and unity-upm-package only on weekends to reduce PR noise
@@ -27,8 +32,6 @@
         "every weekend"
       ],
       "rollbackPrs": false,
-      "editorCompatibilityCheckEnabled": true,
-      "minimumUnityVersion": "6000.0"
     }
   ],
 }
