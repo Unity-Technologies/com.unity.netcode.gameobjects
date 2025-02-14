@@ -71,8 +71,21 @@ namespace Unity.Netcode
             if (isSpawnedLocally)
             {
                 networkObject = networkManager.SpawnManager.SpawnedObjects[networkObjectId];
+                if (networkObject.ChildNetworkBehaviours.Count <= networkBehaviourId || networkObject.ChildNetworkBehaviours[networkBehaviourId] == null)
+                {
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    return false;
+                }
+
                 // Get the target NetworkTransform
-                NetworkTransform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
+                var transform = networkObject.ChildNetworkBehaviours[networkBehaviourId] as NetworkTransform;
+                if (transform == null)
+                {
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Targeted {nameof(NetworkTransform)}, {nameof(NetworkBehaviour.NetworkBehaviourId)} ({networkBehaviourId}), does not exist! Make sure you are not spawning {nameof(NetworkObject)}s with disabled {nameof(GameObject)}s that have {nameof(NetworkBehaviour)} components on them.");
+                    return false;
+                }
+
+                NetworkTransform = transform;
                 isServerAuthoritative = NetworkTransform.IsServerAuthoritative();
                 ownerAuthoritativeServerSide = !isServerAuthoritative && networkManager.IsServer;
 
@@ -81,8 +94,20 @@ namespace Unity.Netcode
             }
             else
             {
-                // Deserialize the state
-                reader.ReadNetworkSerializableInPlace(ref State);
+                ownerAuthoritativeServerSide = networkManager.DAHost;
+                // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message.
+                if (ownerAuthoritativeServerSide)
+                {
+                    // We need to deserialize the state to our local State property so we can extract the reliability used.
+                    reader.ReadNetworkSerializableInPlace(ref State);
+                    // Fall through to act like a proxy for this message.
+                }
+                else
+                {
+                    // Otherwise we can error out because we either shouldn't be receiving this message.
+                    Debug.LogError($"[{nameof(NetworkTransformMessage)}][Invalid] Target NetworkObject ({networkObjectId}) does not exist!");
+                    return false;
+                }
             }
 
             unsafe
@@ -106,12 +131,6 @@ namespace Unity.Netcode
                             ByteUnpacker.ReadValueBitPacked(reader, out targetId);
                             targetIds[i] = targetId;
                         }
-
-                        if (!isSpawnedLocally)
-                        {
-                            // If we are the DAHost and the NetworkObject is hidden from the host we still need to forward this message
-                            ownerAuthoritativeServerSide = networkManager.DAHost && !isSpawnedLocally;
-                        }
                     }
 
                     var ownerClientId = (ulong)0;
@@ -132,7 +151,10 @@ namespace Unity.Netcode
                         ownerClientId = context.SenderId;
                     }
 
-                    var networkDelivery = State.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
+                    // Depending upon whether it is spawned locally or not, get the deserialized state
+                    var stateToUse = NetworkTransform != null ? NetworkTransform.InboundState : State;
+                    // Determine the reliability used to send the message
+                    var networkDelivery = stateToUse.IsReliableStateUpdate() ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
                     // Forward the state update if there are any remote clients to foward it to
                     if (networkManager.ConnectionManager.ConnectedClientsList.Count > (networkManager.IsHost ? 2 : 1))
@@ -160,7 +182,6 @@ namespace Unity.Netcode
                             {
                                 continue;
                             }
-
                             networkManager.MessageManager.SendMessage(ref currentMessage, networkDelivery, clientId);
                         }
                         // Dispose of the reader used for forwarding

@@ -54,6 +54,10 @@ namespace Unity.Netcode
 
         private Dictionary<ulong, List<NetworkObject>> m_PlayerObjectsTable = new Dictionary<ulong, List<NetworkObject>>();
 
+        /// <summary>
+        /// Returns the connect client identifiers
+        /// </summary>
+        /// <returns>connected client identifier list</returns>
         public List<ulong> GetConnectedPlayers()
         {
             return m_PlayerObjectsTable.Keys.ToList();
@@ -153,17 +157,6 @@ namespace Unity.Netcode
             {
                 NetworkManager.ConnectionManager.ConnectedClients[playerObject.OwnerClientId].PlayerObject = null;
             }
-
-            // If we want to keep the observers, then exit early
-            //if (keepObservers)
-            //{
-            //    return;
-            //}
-
-            //foreach (var player in m_PlayerObjects)
-            //{
-            //    player.Observers.Remove(playerObject.OwnerClientId);
-            //}
         }
 
         internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
@@ -413,6 +406,11 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Not used.
+        /// </summary>
+        /// <param name="perviousOwner">not used</param>
+        /// <param name="newOwner">not used</param>
         protected virtual void InternalOnOwnershipChanged(ulong perviousOwner, ulong newOwner)
         {
 
@@ -1161,6 +1159,8 @@ namespace Unity.Netcode
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
 
+            AddNetworkObjectToSceneChangedUpdates(networkObject);
+
             networkObject.InvokeBehaviourNetworkSpawn();
 
             NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnSpawn, networkId);
@@ -1193,6 +1193,50 @@ namespace Unity.Netcode
             if (networkObject.IsSceneObject.Value && networkObject.InScenePlacedSourceGlobalObjectIdHash != 0)
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
+            }
+        }
+
+        internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
+
+        // Pre-allocating to avoid the initial constructor hit
+        internal Stack<ulong> CleanUpDisposedObjects = new Stack<ulong>();
+
+        internal void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
+        {
+            if ((networkObject.SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement) &&
+                !NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
+            {
+                if (networkObject.UpdateForSceneChanges())
+                {
+                    NetworkObjectsToSynchronizeSceneChanges.Add(networkObject.NetworkObjectId, networkObject);
+                }
+            }
+        }
+
+        internal void RemoveNetworkObjectFromSceneChangedUpdates(NetworkObject networkObject)
+        {
+            if ((networkObject.SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement) &&
+                NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
+            {
+                NetworkObjectsToSynchronizeSceneChanges.Remove(networkObject.NetworkObjectId);
+            }
+        }
+
+        internal unsafe void UpdateNetworkObjectSceneChanges()
+        {
+            foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
+            {
+                // If it fails the first update then don't add for updates
+                if (!entry.Value.UpdateForSceneChanges())
+                {
+                    CleanUpDisposedObjects.Push(entry.Key);
+                }
+            }
+
+            // Clean up any NetworkObjects that no longer exist (destroyed before they should be or the like)
+            while (CleanUpDisposedObjects.Count > 0)
+            {
+                NetworkObjectsToSynchronizeSceneChanges.Remove(CleanUpDisposedObjects.Pop());
             }
         }
 
@@ -1729,6 +1773,17 @@ namespace Unity.Netcode
             NetworkManager = networkManager;
         }
 
+        ~NetworkSpawnManager()
+        {
+            Shutdown();
+        }
+
+        internal void Shutdown()
+        {
+            NetworkObjectsToSynchronizeSceneChanges.Clear();
+            CleanUpDisposedObjects.Clear();
+        }
+
         /// <summary>
         /// DANGO-TODO: Until we have the CMB Server end-to-end with all features verified working via integration tests,
         /// I am keeping this debug toggle available. (NSS)
@@ -1755,16 +1810,24 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                // We first check for a parent and then if the parent is a NetworkObject
+                if (networkObject.transform.parent != null)
+                {
+                    // If the parent is a NetworkObject, has the same owner, and this NetworkObject has the distributable =or= transferable permission
+                    // then skip this child (NetworkObjects are always parented directly under other NetworkObjects)
+                    // (later we determine if all children with the same owner will be transferred together as a group)
+                    var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
+                    if (parentNetworkObject != null && parentNetworkObject.OwnerClientId == networkObject.OwnerClientId
+                        && (networkObject.IsOwnershipDistributable || networkObject.IsOwnershipTransferable))
+                    {
+                        continue;
+                    }
+                }
+
+                // At this point we only allow things marked with the distributable permission and is not locked to be distributed
                 if (networkObject.IsOwnershipDistributable && !networkObject.IsOwnershipLocked)
                 {
-                    if (networkObject.transform.parent != null)
-                    {
-                        var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
-                        if (parentNetworkObject != null && parentNetworkObject.OwnerClientId == networkObject.OwnerClientId)
-                        {
-                            continue;
-                        }
-                    }
+
                     // We have to check if it is an in-scene placed NetworkObject and if it is get the source prefab asset GlobalObjectIdHash value of the in-scene placed instance
                     // since all in-scene placed instances use unique GlobalObjectIdHash values.
                     var globalOjectIdHash = networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value ? networkObject.InScenePlacedSourceGlobalObjectIdHash : networkObject.GlobalObjectIdHash;
@@ -1879,8 +1942,29 @@ namespace Unity.Netcode
                     {
                         if ((i % offsetCount) == 0)
                         {
+                            var children = ownerList.Value[i].GetComponentsInChildren<NetworkObject>();
+                            // Since the ownerList.Value[i] has to be distributable, then transfer all child NetworkObjects
+                            // with the same owner clientId and are marked as distributable also to the same client to keep
+                            // the owned distributable parent with the owned distributable children
+                            foreach (var child in children)
+                            {
+                                // Ignore the parent and any child that does not have the same owner or that is already owned by the currently targeted client
+                                if (child == ownerList.Value[i] || child.OwnerClientId != ownerList.Value[i].OwnerClientId || child.OwnerClientId == clientId)
+                                {
+                                    continue;
+                                }
+                                if ((!child.IsOwnershipDistributable || !child.IsOwnershipTransferable) && NetworkManager.LogLevel == LogLevel.Developer)
+                                {
+                                    NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferrable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
+                                    continue;
+                                }
+                                // Transfer ownership of all distributable =or= transferrable children with the same owner to the same client to preserve the sibling ownership tree.
+                                ChangeOwnership(child, clientId, true);
+                                // Note: We don't increment the distributed count for these children as they are skipped when getting the object distribution
+                            }
+                            // Finally, transfer ownership of the root parent
                             ChangeOwnership(ownerList.Value[i], clientId, true);
-                            //if (EnableDistributeLogging)
+                            if (EnableDistributeLogging)
                             {
                                 Debug.Log($"[Client-{ownerList.Key}][NetworkObjectId-{ownerList.Value[i].NetworkObjectId} Distributed to Client-{clientId}");
                             }

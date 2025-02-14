@@ -1482,9 +1482,8 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If a derived class overrides this, then make sure to invoke this base method!
         /// </remarks>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serializer"></param>
-        /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
+        /// <typeparam name="T">The serializer type for buffer operations</typeparam>
+        /// <param name="serializer">The buffer serializer used for network state synchronization</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
@@ -1679,8 +1678,8 @@ namespace Unity.Netcode.Components
                     // Synchronize any nested NetworkTransforms with the parent's
                     foreach (var childNetworkTransform in NetworkObject.NetworkTransforms)
                     {
-                        // Don't update the same instance
-                        if (childNetworkTransform == this)
+                        // Don't update the same instance or any nested NetworkTransform with a different authority mode
+                        if (childNetworkTransform == this || childNetworkTransform.AuthorityMode != AuthorityMode)
                         {
                             continue;
                         }
@@ -2908,8 +2907,8 @@ namespace Unity.Netcode.Components
                 // Synchronize any nested NetworkTransforms with the parent's
                 foreach (var childNetworkTransform in NetworkObject.NetworkTransforms)
                 {
-                    // Don't update the same instance
-                    if (childNetworkTransform == this)
+                    // Don't update the same instance or any nested NetworkTransform with a different authority mode
+                    if (childNetworkTransform == this || childNetworkTransform.AuthorityMode != AuthorityMode)
                     {
                         continue;
                     }
@@ -3032,15 +3031,29 @@ namespace Unity.Netcode.Components
             // For all child NetworkTransforms nested under the same NetworkObject,
             // we apply the initial synchronization based on their parented/ordered
             // heirarchy.
-            if (SynchronizeState.IsSynchronizing && m_IsFirstNetworkTransform)
+            if (SynchronizeState.IsSynchronizing)
             {
-                foreach (var child in NetworkObject.NetworkTransforms)
+                if (m_IsFirstNetworkTransform)
                 {
-                    child.ApplySynchronization();
+                    foreach (var child in NetworkObject.NetworkTransforms)
+                    {
+                        // Don't initialize any nested NetworkTransforms that this instance has authority over
+                        if (child.CanCommitToTransform)
+                        {
+                            continue;
+                        }
+                        child.ApplySynchronization();
 
-                    // For all nested (under the root/same NetworkObject) child NetworkTransforms, we need to run through
-                    // initialization once more to assure any values applied or stored are relative to the Root's transform.
-                    child.InternalInitialization();
+                        // For all like-authority nested (under the root/same NetworkObject) child NetworkTransforms, we need to run through
+                        // initialization once more to assure any values applied or stored are relative to the Root's transform.
+                        child.InternalInitialization();
+                    }
+                }
+                else // Otherwise, just run through standard synchronization of this instance
+                if (!CanCommitToTransform)
+                {
+                    ApplySynchronization();
+                    InternalInitialization();
                 }
             }
         }
@@ -3075,25 +3088,40 @@ namespace Unity.Netcode.Components
             // This is a special case for client-server where a server is spawning an owner authoritative NetworkObject but has yet to serialize anything.
             // When the server detects that:
             // - We are not in a distributed authority session (DAHost check).
-            // - This is the first/root NetworkTransform.
             // - We are in owner authoritative mode.
             // - The NetworkObject is not owned by the server.
             // - The SynchronizeState.IsSynchronizing is set to false.
             // Then we want to:
             // - Force the "IsSynchronizing" flag so the NetworkTransform has its state updated properly and runs through the initialization again.
             // - Make sure the SynchronizingState is updated to the instantiated prefab's default flags/settings.
-            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && m_IsFirstNetworkTransform && !OnIsServerAuthoritative() && !IsOwner && !SynchronizeState.IsSynchronizing)
+            if (NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode && !IsOwner && !OnIsServerAuthoritative() && !SynchronizeState.IsSynchronizing)
             {
-                // Assure the first/root NetworkTransform has the synchronizing flag set so the server runs through the final post initialization steps
-                SynchronizeState.IsSynchronizing = true;
-                // Assure the SynchronizeState matches the initial prefab's values for each associated NetworkTransfrom (this includes root + all children)
-                foreach (var child in NetworkObject.NetworkTransforms)
+                // Handle the first/root NetworkTransform slightly differently to have a sequenced synchronization of like authority nested NetworkTransform components
+                if (m_IsFirstNetworkTransform)
                 {
-                    child.ApplyPlayerTransformState();
+                    // Assure the NetworkTransform has the synchronizing flag set so the server runs through the final post initialization steps
+                    SynchronizeState.IsSynchronizing = true;
+
+                    // Assure the SynchronizeState matches the initial prefab's values for each associated NetworkTransfrom (this includes root + all children)
+                    foreach (var child in NetworkObject.NetworkTransforms)
+                    {
+                        // Don't ApplyPlayerTransformState to any nested NetworkTransform with a different authority mode
+                        if (child != this && child.AuthorityMode != AuthorityMode)
+                        {
+                            continue;
+                        }
+                        child.ApplyPlayerTransformState();
+                    }
                 }
+                else
+                {
+                    ApplyPlayerTransformState();
+                }
+
                 // Now fall through to the final synchronization portion of the spawning for NetworkTransform
             }
 
+            // Standard non-authority synchronization is handled here
             if (!CanCommitToTransform && NetworkManager.IsConnectedClient && SynchronizeState.IsSynchronizing)
             {
                 NonAuthorityFinalizeSynchronization();
@@ -3171,7 +3199,7 @@ namespace Unity.Netcode.Components
         /// This method is only invoked by the owner
         /// Use: OnInitialize(ref NetworkTransformState replicatedState) to be notified on all instances
         /// </summary>
-        /// <param name="replicatedState"></param>
+        /// <param name="replicatedState">The NetworkVariable containing the <see cref="NetworkTransformState"/></param>
         protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
 
@@ -3498,11 +3526,11 @@ namespace Unity.Netcode.Components
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
         ///  just the desired one(s)
         /// </summary>
-        /// <param name="posIn"></param> new position to move to.  Can be null
-        /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
+        /// <param name="posIn">new position to move to. Can be null</param>
+        /// <param name="rotIn">new rotation to rotate to. Can be null</param>
         /// <param name="scaleIn">new scale to scale to. Can be null</param>
         /// <param name="teleportDisabled">When true (the default) the <see cref="NetworkObject"/> will not be teleported and, if enabled, will interpolate. When false the <see cref="NetworkObject"/> will teleport/apply the parameters provided immediately.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown when the function is called on non-spawned object or, when it's called without proper authority</exception>
         public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool teleportDisabled = true)
         {
             if (!IsSpawned)
@@ -3638,10 +3666,10 @@ namespace Unity.Netcode.Components
         /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
         /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
         /// </remarks>
-        /// <param name="newPosition"></param> new position to move to.
-        /// <param name="newRotation"></param> new rotation to rotate to.
+        /// <param name="newPosition">new position to move to.</param>
+        /// <param name="newRotation">new rotation to rotate to.</param>
         /// <param name="newScale">new scale to scale to.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown when called from a non-authoritative context (client without ownership)</exception>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)
@@ -3703,7 +3731,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <inheritdoc/>
+        /// <inheritdoc cref="INetworkUpdateSystem.OnUpdate"/>
         /// <remarks>
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.

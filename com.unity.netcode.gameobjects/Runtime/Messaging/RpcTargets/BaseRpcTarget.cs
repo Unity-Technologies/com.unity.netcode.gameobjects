@@ -3,12 +3,12 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Base class for RPC (Remote Procedure Call) target implementations.
+    /// The base abstract RPC Target class used by all universal RPC targets.
     /// </summary>
     public abstract class BaseRpcTarget : IDisposable
     {
         /// <summary>
-        /// The NetworkManager instance associated with this RPC target.
+        /// The <see cref="NetworkManager"/> instance which can be used to handle sending and receiving the specific target(s)
         /// </summary>
         protected NetworkManager m_NetworkManager;
         private bool m_Locked;

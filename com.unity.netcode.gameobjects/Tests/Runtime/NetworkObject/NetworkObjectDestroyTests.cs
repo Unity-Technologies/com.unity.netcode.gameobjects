@@ -23,6 +23,13 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObjectDestroyTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
+        protected override void OnCreatePlayerPrefab()
+        {
+            var playerNetworkObject = m_PlayerPrefab.GetComponent<NetworkObject>();
+            playerNetworkObject.SceneMigrationSynchronization = true;
+            base.OnCreatePlayerPrefab();
+        }
+
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
         /// </summary>
@@ -132,6 +139,14 @@ namespace Unity.Netcode.RuntimeTests
             {
                 yield return WaitForConditionOrTimeOut(HaveLogsBeenReceived);
                 AssertOnTimeout($"Not all expected logs were received when destroying a {nameof(NetworkObject)} on the client side during an active session!");
+            }
+            if (m_DistributedAuthority)
+            {
+                Assert.IsFalse(m_ClientNetworkManagers[1].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+            }
+            else
+            {
+                Assert.IsFalse(m_ClientNetworkManagers[0].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
             }
         }
 
