@@ -13,11 +13,11 @@ package_pack_-_ngo_{{ platform.name }}:
     flavor: {{ platform.flavor }}
   timeout: 0.25
   variables:
-    XRAY_PROFILE: "supported rme ./pvpExceptions.json"
+    XRAY_PROFILE: "supported ./pvpExceptions.json"
   commands:
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
-    - upm-pvp require "$XRAY_PROFILE" --results pvp-results --allow-missing
+    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
   artifacts:
     packages:
       paths:
