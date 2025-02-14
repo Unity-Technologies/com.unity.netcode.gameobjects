@@ -5,14 +5,6 @@
           "CHANGELOG.md: line 9: Unreleased section is not allowed for public release"
         ]
       },
-      "PVP-150-1": {
-        "errors": [
-          "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: void AssignHandler(NetworkManager): empty <param> tag",
-          "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: void ReleaseAll(bool): empty <param> tag",
-          "Unity.Netcode.RuntimeTests.NetworkVariableBaseInitializesWhenPersisted.PrefabInstanceHandler: bool ValidateInstanceSpawnCount(int): XML is not well-formed: Expected an end tag for element 'summary'",
-          "Unity.Netcode.Transports.UTP.UnityTransport: NetworkConnection Connect(NetworkEndPoint): empty <returns> tag"
-        ]
-      },
       "PVP-151-1": {
         "errors": [
           "Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings: undocumented",

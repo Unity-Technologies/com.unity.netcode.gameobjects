@@ -3204,7 +3204,7 @@ namespace Unity.Netcode
         /// Returns the list of all scene mappings when scene management is enabled.
         /// </summary>
         /// <param name="mapType">The map type to return <see cref="MapTypes"/></param>
-        /// <returns></returns>
+        /// <returns>A list of <see cref="SceneMap"/> objects representing the scene mappings.</returns>
         public List<SceneMap> GetSceneMapping(MapTypes mapType)
         {
             var mapping = new List<SceneMap>();

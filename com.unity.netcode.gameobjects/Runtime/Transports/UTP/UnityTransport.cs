@@ -600,7 +600,7 @@ namespace Unity.Netcode.Transports.UTP
         /// Virtual method that is invoked during <see cref="StartClient"/>.
         /// </summary>
         /// <param name="serverEndpoint">The <see cref="NetworkEndpoint"/> that the client is connecting to.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="NetworkConnection"/> representing the connection to the server, or an invalid connection if the connection attempt fails.</returns>
         protected virtual NetworkConnection Connect(NetworkEndpoint serverEndpoint)
         {
             return m_Driver.Connect(serverEndpoint);
