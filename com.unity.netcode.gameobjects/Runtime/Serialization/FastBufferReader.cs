@@ -8,9 +8,9 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Optimized class used for reading values from a byte stream
-    /// <seealso cref="FastBufferWriter"/>
-    /// <seealso cref="BytePacker"/>
-    /// <seealso cref="ByteUnpacker"/>
+    /// <see cref="FastBufferWriter"/>
+    /// <see cref="BytePacker"/>
+    /// <see cref="ByteUnpacker"/>
     /// </summary>
     public struct FastBufferReader : IDisposable
     {
@@ -93,22 +93,22 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
+        /// A new buffer will be created using the specified allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the internal allocator param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
-        /// <param name="buffer"></param>
+        /// <param name="buffer">The NativeArray to create the reader from</param>
         /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
-        /// <param name="length"></param>
-        /// <param name="offset"></param>
+        /// <param name="length">The number of bytes to read from the buffer. If set to -1, the entire buffer length will be used</param>
+        /// <param name="offset">The offset into the buffer to start reading from</param>
         /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
@@ -168,15 +168,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
+        /// A new buffer will be created using the given specified allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the specified allocator passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the internal allocator param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
@@ -193,15 +193,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
+        /// A new buffer will be created using the given specified allocator  and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the specified allocator  passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the internal Allocator param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
@@ -220,10 +220,10 @@ namespace Unity.Netcode
         /// want to change the copyAllocator that a reader is allocated to - for example, upgrading a Temp reader to
         /// a Persistent one to be processed later.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
+        /// A new buffer will be created using the given specified allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the specified allocator passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
@@ -435,9 +435,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Read an INetworkSerializable
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type that implements INetworkSerializable and can be deserialized</typeparam>
         /// <param name="value">INetworkSerializable instance</param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException">Thrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable, new()
         {
             value = new T();
@@ -449,8 +449,8 @@ namespace Unity.Netcode
         /// Read an array of INetworkSerializables
         /// </summary>
         /// <param name="value">INetworkSerializable instance</param>
-        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <typeparam name="T">the array to read the values of type `T` from</typeparam>
+        /// <exception cref="NotImplementedException">Thrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializable<T>(out T[] value) where T : INetworkSerializable, new()
         {
             ReadValueSafe(out int size);
@@ -466,8 +466,8 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">INetworkSerializable instance</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <typeparam name="T">the array to read the values of type `T` from</typeparam>
+        /// <exception cref="NotImplementedException">Thrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializable<T>(out NativeArray<T> value, Allocator allocator) where T : unmanaged, INetworkSerializable
         {
             ReadValueSafe(out int size);
@@ -484,8 +484,8 @@ namespace Unity.Netcode
         /// Read a NativeList of INetworkSerializables
         /// </summary>
         /// <param name="value">INetworkSerializable instance</param>
-        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <typeparam name="T">the array to read the values of type `T` from</typeparam>
+        /// <exception cref="NotImplementedException">Thrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializableInPlace<T>(ref NativeList<T> value) where T : unmanaged, INetworkSerializable
         {
             ReadValueSafe(out int size);
@@ -501,9 +501,9 @@ namespace Unity.Netcode
         /// Read an INetworkSerializable in-place, without constructing a new one
         /// Note that this will NOT check for null before calling NetworkSerialize
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type that implements INetworkSerializable and can be deserialized</typeparam>
         /// <param name="value">INetworkSerializable instance</param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="NotImplementedException">hrown if the type T does not properly implement NetworkSerialize</exception>
         public void ReadNetworkSerializableInPlace<T>(ref T value) where T : INetworkSerializable
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(this));
@@ -591,11 +591,11 @@ namespace Unity.Netcode
         /// Read a partial value. The value is zero-initialized and then the specified number of bytes is read into it.
         /// </summary>
         /// <param name="value">Value to read</param>
-        /// <param name="bytesToRead">Number of bytes</param>
-        /// <param name="offsetBytes">Offset into the value to write the bytes</param>
-        /// <typeparam name="T">the type value to read the value into</typeparam>
-        /// <exception cref="InvalidOperationException"></exception>
-        /// <exception cref="OverflowException"></exception>
+        /// <param name="bytesToRead">The number of bytes to read from the buffer into the value</param>
+        /// <param name="offsetBytes">The offset in bytes from the start of the value where the read bytes will be written</param>
+        /// <typeparam name="T">The unmanaged type to read into. Must be unmanaged to allow direct memory access</typeparam>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to use BufferReader in bytewise mode while in a bitwise context</exception>
+        /// <exception cref="OverflowException">Thrown when attempting to read without first calling TryBeginRead() or when reading beyond the allowed read mark</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadPartialValue<T>(out T value, int bytesToRead, int offsetBytes = 0) where T : unmanaged
         {
@@ -1614,7 +1614,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">the value to read</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator)
@@ -1636,7 +1635,6 @@ namespace Unity.Netcode
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">the value to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValueSafeTemp<T>(out NativeArray<T> value)
@@ -1680,7 +1678,6 @@ namespace Unity.Netcode
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
         /// <param name="value">the value to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafeInPlace<T>(ref NativeList<T> value)

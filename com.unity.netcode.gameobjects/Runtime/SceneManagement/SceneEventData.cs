@@ -11,7 +11,7 @@ namespace Unity.Netcode
     /// Used by <see cref="NetworkSceneManager"/> for <see cref="SceneEventMessage"/> messages.<br/>
     /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br/>
     /// See also: <br/>
-    /// <seealso cref="SceneEvent"/>
+    /// <see cref="SceneEvent"/>
     /// </summary>
     public enum SceneEventType : byte
     {

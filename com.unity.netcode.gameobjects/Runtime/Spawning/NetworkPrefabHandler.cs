@@ -24,7 +24,7 @@ namespace Unity.Netcode
         /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
-        /// <returns></returns>
+        /// <returns>The instantiated NetworkObject instance. Returns null if instantiation fails.</returns>
         NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="prefabAssetNetworkObject"> the <see cref="NetworkObject"/> of the network prefab asset to be overridden</param>
         /// <param name="instanceHandler">the class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface to be registered</param>
-        /// <returns></returns>
+        /// <returns>true (registered) false (failed to register)</returns>
         public bool AddHandler(NetworkObject prefabAssetNetworkObject, INetworkPrefabInstanceHandler instanceHandler)
         {
             return AddHandler(prefabAssetNetworkObject.GlobalObjectIdHash, instanceHandler);
@@ -92,7 +92,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="globalObjectIdHash"> the <see cref="NetworkObject.GlobalObjectIdHash"/> value of the network prefab asset being overridden</param>
         /// <param name="instanceHandler">a class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface</param>
-        /// <returns></returns>
+        /// <returns>true (registered) false (failed to register)</returns>
         public bool AddHandler(uint globalObjectIdHash, INetworkPrefabInstanceHandler instanceHandler)
         {
             if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
@@ -343,8 +343,8 @@ namespace Unity.Netcode
         /// should not be relied on and code shouldn't be written around it - your code should be written so that
         /// the asset is expected to be loaded before it's needed.
         /// </summary>
-        /// <param name="prefab"></param>
-        /// <exception cref="Exception"></exception>
+        /// <param name="prefab">The GameObject with NetworkObject component to add as a network prefab</param>
+        /// <exception cref="Exception">Thrown when adding prefabs after startup with ForceSamePrefabs is enabled or prefab doesn't have a NetworkObject component</exception>
         public void AddNetworkPrefab(GameObject prefab)
         {
             if (m_NetworkManager.IsListening && m_NetworkManager.NetworkConfig.ForceSamePrefabs)
@@ -375,7 +375,8 @@ namespace Unity.Netcode
         /// Like AddNetworkPrefab, when NetworkConfig.ForceSamePrefabs is enabled,
         /// this cannot be called after connecting.
         /// </summary>
-        /// <param name="prefab"></param>
+        /// <param name="prefab">The GameObject to remove from the network prefab list</param>
+        /// <exception cref="Exception">Thrown when attempting to remove prefabs after startup with ForceSamePrefabs enabled</exception>
         public void RemoveNetworkPrefab(GameObject prefab)
         {
             if (m_NetworkManager.IsListening && m_NetworkManager.NetworkConfig.ForceSamePrefabs)

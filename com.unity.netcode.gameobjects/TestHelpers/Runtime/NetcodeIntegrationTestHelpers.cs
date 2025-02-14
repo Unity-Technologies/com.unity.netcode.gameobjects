@@ -267,7 +267,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Used to add a client to the already existing list of clients
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
-        /// <param name="clients"></param>
+        /// <param name="clients">Output array containing the newly created NetworkManager instances.</param>
+        /// <param name="useMockTransport">If true, uses mock transport for testing. Defaults to false.</param>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
         {
             clients = new NetworkManager[clientCount];
@@ -284,7 +285,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Stops one single client and makes sure to cleanup any static variables in this helper
         /// </summary>
-        /// <param name="clientToStop"></param>
+        /// <param name="clientToStop">The NetworkManager instance to stop. Must not be null.</param>
+        /// <param name="destroy">If true, destroys the GameObject and removes from NetworkManagerInstances. Defaults to true.</param>
         public static void StopOneClient(NetworkManager clientToStop, bool destroy = true)
         {
             clientToStop.Shutdown();
@@ -299,7 +301,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts one single client and makes sure to register the required hooks and handlers
         /// </summary>
-        /// <param name="clientToStart"></param>
+        /// <param name="clientToStart">The NetworkManager instance to start. Must not be null.</param>
         public static void StartOneClient(NetworkManager clientToStart)
         {
             clientToStart.StartClient();
@@ -605,7 +607,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator WaitForClientConnected(NetworkManager client, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, timeout);
@@ -616,7 +618,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clients">The clients to be connected</param>
         /// <param name="result">The result. If null, it will automatically assert<</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         /// <returns></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
@@ -672,7 +674,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, timeout);
@@ -683,7 +685,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             if (!server.IsServer)
@@ -718,7 +720,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -749,7 +751,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -785,7 +787,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="maxTries">The max frames to wait for</param>
         public static void GetNetworkObjectByRepresentationWithTimeTravel(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxTries = 60)
         {
             if (result == null)
@@ -818,7 +820,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="minFrames">The min frames to wait for</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator WaitForCondition(Func<bool> predicate, ResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
@@ -858,7 +860,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits for a message of the given type to be received
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
-        /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
@@ -886,7 +888,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits for a message of the given type to be received
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
-        /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         internal static IEnumerator WaitForMessageOfTypeHandled<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
@@ -910,7 +912,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
-        /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         internal static IEnumerator WaitForMessageMeetingRequirementHandled<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];

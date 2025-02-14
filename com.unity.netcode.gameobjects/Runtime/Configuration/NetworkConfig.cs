@@ -152,7 +152,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>
-        /// <returns></returns>
+        /// <returns>base64 encoded string containing the serialized network configuration</returns>
         public string ToBase64()
         {
             NetworkConfig config = this;
@@ -219,8 +219,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
-        /// <param name="cache"></param>
-        /// <returns></returns>
+        /// <param name="cache">When true, caches the computed hash value for future retrievals, when false, always recomputes the hash</param>
+        /// <returns>A 64-bit hash value representing the configuration state</returns>
         public ulong GetConfig(bool cache = true)
         {
             if (m_ConfigHash != null && cache)
@@ -264,8 +264,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Compares a SHA256 hash with the current NetworkConfig instances hash
         /// </summary>
-        /// <param name="hash"></param>
-        /// <returns></returns>
+        /// <param name="hash">The 64-bit hash value to compare against this configuration's hash</param>
+        /// <returns>
+        /// True if the hashes match, indicating compatible configurations.
+        /// False if the hashes differ, indicating potentially incompatible configurations.
+        /// </returns>
         public bool CompareConfig(ulong hash)
         {
             return hash == GetConfig();

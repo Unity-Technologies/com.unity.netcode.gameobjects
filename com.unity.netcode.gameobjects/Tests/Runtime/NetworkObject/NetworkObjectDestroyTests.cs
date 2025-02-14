@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>An IEnumerator for the UnityTest coroutine that validates object destruction and cleanup.</returns>
         [UnityTest]
         public IEnumerator TestNetworkObjectServerDestroy()
         {

@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkTransformBase : IntegrationTestWithApproximation
     {
 
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
         protected const int k_PositionRotationScaleIterations = 3;
         protected const int k_PositionRotationScaleIterations3Axis = 8;
 
@@ -132,7 +132,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Override to provide the number of clients
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The number of clients to create. Default implementation returns 1.</returns>
         protected virtual int OnNumberOfClients()
         {
             return 1;
@@ -353,7 +353,10 @@ namespace Unity.Netcode.RuntimeTests
         /// Returns true when the server-host and all clients have
         /// instantiated the child object to be used in <see cref="NetworkTransformParentingLocalSpaceOffsetTests"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>
+        /// Returns true if The authority instance exists OR The sub-child instance exists (if HasSubChild is true) OR All clients have received their instances.
+        /// Returns false if any of these conditions are not met.
+        /// </returns>
         protected bool AllChildObjectInstancesAreSpawned()
         {
             if (ChildObjectComponent.AuthorityInstance == null)

@@ -12,14 +12,30 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+  variables:
+    XRAY_PROFILE: "supported ./pvpExceptions.json"
+    UNITY_EXT_LOGGING: 1
   commands:
-    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %}upm-ci package test -u {{ editor }} --package-path com.unity.netcode.gameobjects --type package-tests --extra-utr-arg="--extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun"
+    # Platform specific UTR setup
+    - |
+{% if platform.name == "win" %}
+      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+{% else %}
+      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
+{% endif %}
+  
+    # Validate packages.
+    - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
+    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results
+    # Run UTR to test packages.
+    - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
+    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} {% if platform.name == "win" %} utr.bat {% else %} ./utr {% endif %} --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
+        - "pvp-results/*"
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}

@@ -19,7 +19,7 @@ namespace Unity.Netcode
         /// Creates a new instance of the <see cref="NetworkBehaviourReference{T}"/> struct.
         /// </summary>
         /// <param name="networkBehaviour">The <see cref="NetworkBehaviour"/> to reference.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown when the provided NetworkBehaviour does not have an associated NetworkObject. This can happen if the behaviour is not properly attached to a networked GameObject.</exception>
         public NetworkBehaviourReference(NetworkBehaviour networkBehaviour)
         {
             if (networkBehaviour == null)
