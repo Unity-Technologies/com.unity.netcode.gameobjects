@@ -1518,7 +1518,7 @@ namespace Unity.Netcode
         {
             if (networkObject.HasAuthority)
             {
-                Debug.LogError($"OnDespawnNonAuthorityObject called on object {networkObject.NetworkObjectId} when is current client {NetworkManager.LocalClientId} has authority on this object.");
+                NetworkLog.LogError($"OnDespawnNonAuthorityObject called on object {networkObject.NetworkObjectId} when is current client {NetworkManager.LocalClientId} has authority on this object.");
             }
 
             // On the non-authority, never destroy the game object when InScenePlaced, otherwise always destroy on non-authority side
