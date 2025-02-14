@@ -13,7 +13,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   variables:
-    XRAY_PROFILE: "supported pvpExceptions.json"
+    XRAY_PROFILE: "supported ./pvpExceptions.json"
     UNITY_EXT_LOGGING: 1
   commands:
     - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
