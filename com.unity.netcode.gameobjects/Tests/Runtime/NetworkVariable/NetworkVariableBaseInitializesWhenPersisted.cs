@@ -253,7 +253,7 @@ namespace Unity.Netcode.RuntimeTests
             /// <summary>
             /// Invoke when <see cref="NetworkManager"/>s are created but not started.
             /// </summary>
-            /// <param name="networkManager"></param>
+            /// <param name="networkManager">The <see cref="NetworkManager"/> instance to assign a handler to. Must not be null and must not already have a handler assigned.</param>
             public static void AssignHandler(NetworkManager networkManager)
             {
                 if (s_PrefabInstanceHandlers.Count > 0)
@@ -290,9 +290,9 @@ namespace Unity.Netcode.RuntimeTests
 
             /// <summary>
             /// Releases back to the queue and if destroy is true it will completely
-            /// remove all references so they are cleaned up when 
+            /// remove all references so they are cleaned up when
             /// </summary>
-            /// <param name="destroy"></param>
+            /// <param name="destroy">If true, completely removes all references and cleans up instances. If false, returns handlers to the queue for reuse.</param>
             public static void ReleaseAll(bool destroy = false)
             {
                 foreach (var entry in s_AssignedInstances)
@@ -333,6 +333,7 @@ namespace Unity.Netcode.RuntimeTests
             /// <summary>
             /// This validates that the instances persisted to the next test set and persisted
             /// between network sessions
+            /// </summary>
             public bool ValidateInstanceSpawnCount(int minCount)
             {
                 // First pass we should have no instances
