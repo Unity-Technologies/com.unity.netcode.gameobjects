@@ -7,7 +7,7 @@
     "local>Unity-Technologies/unity-renovate-config"
   ],
   "prConcurrentLimit": 100,
-  // Ignore commits produced by Github actions workflows
+  // Ignore commits produced by GitHub actions workflows
   "gitIgnoredAuthors": ["githubaction@githubaction.com"],
   "ignorePaths": [
     "**/node_modules/**",
