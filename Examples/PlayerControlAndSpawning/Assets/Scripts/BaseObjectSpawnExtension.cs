@@ -115,7 +115,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
         m_AuthorityGameObjectInstance = m_AuthorityNetworkObjectInstance.gameObject;
     }
 
-    [Rpc(SendTo.Server)]
+    [Rpc(SendTo.Authority)]
     private void SpawnObjectRpc(bool isPlayerObject, RpcParams rpcParams = default)
     {
         SpawnObject(rpcParams.Receive.SenderClientId, isPlayerObject);
