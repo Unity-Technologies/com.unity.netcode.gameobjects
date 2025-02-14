@@ -1,8 +1,8 @@
 {
   "registry": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates",
   "dependencies": {
-    "com.unity.ai.navigation": "2.0.6",
-    "com.unity.ide.rider": "3.0.34",
+    "com.unity.ai.navigation": "2.0.5",
+    "com.unity.ide.rider": "3.0.31",
     "com.unity.multiplayer.center": "1.0.0",
     "com.unity.multiplayer.tools": "2.2.3",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
