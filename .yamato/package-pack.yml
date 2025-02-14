@@ -12,12 +12,16 @@ package_pack_-_ngo_{{ platform.name }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   timeout: 0.25
+  variables:
+    XRAY_PROFILE: "supported ./pvpExceptions.json"
   commands:
-    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.it.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci package pack --package-path com.unity.netcode.gameobjects
-    - upm-pvp xray --packages "upm-ci~/packages/*.tgz" --results upm-ci~/xray
-    - upm-pvp require "supported rme com.unity.netcode.gameobjects/pvpExceptions.json" --allow-missing --results upm-ci~/xray --exemptions upm-ci~/xray/new-exemptions.json
+    - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
+    - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
+    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
   artifacts:
+    logs:
+      paths:
+        - "pvp-results/*"
     packages:
       paths:
         - "upm-ci~/**"

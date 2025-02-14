@@ -357,6 +357,9 @@ namespace Unity.Netcode.Transports.UTP
                 }
             }
 
+            /// <summary>
+            /// Returns true if the end point address is of type <see cref="NetworkFamily.Ipv6"/>.
+            /// </summary>
             public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
         }
 
@@ -427,6 +430,9 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int> TransportDisposed;
         internal NetworkDriver NetworkDriver => m_Driver;
 
+        /// <summary>
+        /// Provides access to the <see cref="Networking.Transport.NetworkDriver"/> for this <see cref="UnityTransport"/> instance.
+        /// </summary>
         protected NetworkDriver m_Driver;
 
         /// <summary>
@@ -590,6 +596,11 @@ namespace Unity.Netcode.Transports.UTP
             return true;
         }
 
+        /// <summary>
+        /// Virtual method that is invoked during <see cref="StartClient"/>.
+        /// </summary>
+        /// <param name="serverEndpoint">The <see cref="NetworkEndpoint"/> that the client is connecting to.</param>
+        /// <returns>A <see cref="NetworkConnection"/> representing the connection to the server, or an invalid connection if the connection attempt fails.</returns>
         protected virtual NetworkConnection Connect(NetworkEndpoint serverEndpoint)
         {
             return m_Driver.Connect(serverEndpoint);
@@ -1572,7 +1583,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 #endif
-
+        /// <inheritdoc cref="NetworkTransport.OnCurrentTopology"/>
         protected override NetworkTopologyTypes OnCurrentTopology()
         {
             return m_NetworkManager != null ? m_NetworkManager.NetworkConfig.NetworkTopology : NetworkTopologyTypes.ClientServer;
