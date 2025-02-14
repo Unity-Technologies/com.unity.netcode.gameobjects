@@ -114,6 +114,10 @@ namespace Unity.Netcode
             // If this NetworkObject does not exist on this instance then exit early
             if (!networkObject)
             {
+                if (networkManager.LogLevel <= LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[{nameof(DestroyObjectMessage)}] Received destroy object message for NetworkObjectId ({NetworkObjectId}) on Client-{networkManager.LocalClientId}, but that {nameof(NetworkObject)} does not exist!");
+                }
                 return;
             }
 
@@ -178,5 +182,4 @@ namespace Unity.Netcode
             networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback);
         }
     }
-
 }
