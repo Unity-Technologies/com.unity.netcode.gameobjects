@@ -102,7 +102,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
                 }
                 else
                 {
-                    DespawnObject();
+                    DespawnObject(m_ExtendedNetworkManager.LocalClientId);
                 }
             }
         }
@@ -121,11 +121,12 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
         SpawnObject(rpcParams.Receive.SenderClientId, isPlayerObject);
     }
 
-    protected virtual void DespawnObject()
+    protected virtual void DespawnObject(ulong playerId)
     {
         if (CanDespawnObject() && m_AuthorityNetworkObjectInstance.HasAuthority)
         {
-            m_AuthorityNetworkObjectInstance.Despawn();
+            var networkObjectInstance = GetSpawnedNetworkObject();
+            networkObjectInstance.Despawn();
             m_AuthorityNetworkObjectInstance = null;
             m_AuthorityGameObjectInstance = null;
             OnObjectDespawned();
@@ -135,10 +136,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
     [Rpc(SendTo.Authority)]
     private void DespawnObjectRpc(RpcParams rpcParams = default)
     {
-        if (m_AuthorityNetworkObjectInstance)
-        {
-            DespawnObject();
-        }
+        DespawnObject(rpcParams.Receive.SenderClientId);
     }
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)

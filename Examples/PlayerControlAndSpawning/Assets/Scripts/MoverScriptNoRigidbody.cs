@@ -159,6 +159,8 @@ public class MoverScriptNoRigidbody : NetworkTransform
         m_CharacterController.enabled = CanCommitToTransform;
         if (CanCommitToTransform)
         {
+            Camera.main.transform.position = s_CameraOriginalPosition;
+            Camera.main.transform.rotation = s_CameraOriginalRotation;
             m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
             Random.InitState((int)System.DateTime.Now.Ticks);
             if (!ManualSpawn)
@@ -214,17 +216,19 @@ public class MoverScriptNoRigidbody : NetworkTransform
         if (IsOwner)
         {
             Camera.main.transform.SetParent(NetworkManager.transform, false);
+            Camera.main.transform.position = s_CameraOriginalPosition;
+            Camera.main.transform.rotation = s_CameraOriginalRotation;
         }
-        Camera.main.transform.position = s_CameraOriginalPosition;
-        Camera.main.transform.rotation = s_CameraOriginalRotation;
-
         base.OnNetworkDespawn();
     }
 
     public override void OnDestroy()
     {
-        Camera.main.transform.position = s_CameraOriginalPosition;
-        Camera.main.transform.rotation = s_CameraOriginalRotation;
+        if (IsOwner)
+        {
+            Camera.main.transform.position = s_CameraOriginalPosition;
+            Camera.main.transform.rotation = s_CameraOriginalRotation;
+        }
         base.OnDestroy();
     }
 
