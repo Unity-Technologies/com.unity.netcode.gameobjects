@@ -19,7 +19,6 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
         m_InitialPrefabPosition = PrefabToSpawn.transform.position;
         var networkObject = PrefabToSpawn.GetComponent<NetworkObject>();
         networkObject.DestroyWithScene = DestroyWithScene;
-        MoverScriptNoRigidbody.SetCameraTransform(Camera.main.transform);
         base.OnInitialize();
     }
 

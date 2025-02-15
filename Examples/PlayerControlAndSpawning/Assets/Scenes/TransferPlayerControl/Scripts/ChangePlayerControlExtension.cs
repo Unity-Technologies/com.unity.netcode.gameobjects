@@ -7,6 +7,12 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
 
     private NetworkVariable<int> m_FollowPlayerIndex = new NetworkVariable<int>();
 
+    protected override void OnInitialize()
+    {
+        MoverScriptNoRigidbody.SetCameraTransform(Camera.main.transform);
+        base.OnInitialize();
+    }
+
     private void ChangeClientOwner()
     {
         bool leftBracket = Input.GetKeyDown(KeyCode.LeftBracket);

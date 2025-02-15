@@ -21,7 +21,6 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
     private SerializedProperty m_Gravity;
     private SerializedProperty m_ContinualChildMotion;
 
-
     public override void OnEnable()
     {
         m_SpawnAsPlayer = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.SpawnAsPlayer));
@@ -68,12 +67,40 @@ public class MoverScriptNoRigidbody : NetworkTransform
     [HideInInspector]
     public bool MoverScriptNoRigidbodyExpanded;
 #endif
+    private static Transform s_CameraParent;
     private static Vector3 s_CameraOriginalPosition;
     private static Quaternion s_CameraOriginalRotation;
+
+    /// <summary>
+    /// This should be invoked from an extension component attached
+    /// to the <see cref="ExtendedNetworkManager"/>'s <see cref="GameObject"/>
+    /// </summary>
+    /// <param name="transform">The camera's transform to track</param>
     public static void SetCameraTransform(Transform transform)
     {
+        s_CameraParent = transform.parent;
         s_CameraOriginalPosition = transform.position;
         s_CameraOriginalRotation = transform.rotation;
+    }
+
+    /// <summary>
+    /// Invoke when the camera needs to be reset back to its original
+    /// parent, position, and rotation.
+    /// </summary>
+    public static void ResetCamera()
+    {
+        if (!Camera.main || !s_CameraParent)
+        {
+            return;
+        }
+
+        if (Camera.main.transform.parent && Camera.main.transform.parent != s_CameraParent)
+        {
+            var parent = s_CameraParent != null ? (s_CameraParent, false) : (null, true);
+            Camera.main.transform.SetParent(parent.s_CameraParent, parent.Item2);
+        }
+        Camera.main.transform.position = s_CameraOriginalPosition;
+        Camera.main.transform.rotation = s_CameraOriginalRotation;
     }
 
     private static bool s_EnablePlayerParentingText = true;
@@ -119,6 +146,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
     private Vector3 m_WorldMotion = Vector3.zero;
     private CharacterController m_CharacterController;
     private PlayerBallMotion m_PlayerBallMotion;
+    private bool m_IsOwnerCached;
 
     protected override void Awake()
     {
@@ -157,10 +185,10 @@ public class MoverScriptNoRigidbody : NetworkTransform
     {
         base.OnNetworkPostSpawn();
         m_CharacterController.enabled = CanCommitToTransform;
+        m_IsOwnerCached = IsOwner;
         if (CanCommitToTransform)
         {
-            Camera.main.transform.position = s_CameraOriginalPosition;
-            Camera.main.transform.rotation = s_CameraOriginalRotation;
+            ResetCamera();
             m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
             Random.InitState((int)System.DateTime.Now.Ticks);
             if (!ManualSpawn)
@@ -201,7 +229,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         else if (previous == NetworkManager.LocalClientId)
         {
             m_CharacterController.enabled = false;
-            Camera.main.transform.SetParent(NetworkManager.transform, false);
+            Camera.main.transform.SetParent(s_CameraParent, false);
             Camera.main.transform.position = s_CameraOriginalPosition;
             Camera.main.transform.rotation = s_CameraOriginalRotation;
         }
@@ -213,21 +241,20 @@ public class MoverScriptNoRigidbody : NetworkTransform
     public override void OnNetworkDespawn()
     {
         m_CharacterController.enabled = false;
-        if (IsOwner)
+        // If we were the owner or the camera is parented under this instance, then reset the camera.
+        if (m_IsOwnerCached || (Camera.main && Camera.main.transform.parent == transform))
         {
-            Camera.main.transform.SetParent(NetworkManager.transform, false);
-            Camera.main.transform.position = s_CameraOriginalPosition;
-            Camera.main.transform.rotation = s_CameraOriginalRotation;
+            ResetCamera();
         }
         base.OnNetworkDespawn();
     }
 
     public override void OnDestroy()
     {
-        if (IsOwner)
+        // If we were the owner or the camera is parented under this instance, then reset the camera.
+        if (m_IsOwnerCached || (Camera.main && Camera.main.transform.parent == transform))
         {
-            Camera.main.transform.position = s_CameraOriginalPosition;
-            Camera.main.transform.rotation = s_CameraOriginalRotation;
+            ResetCamera();
         }
         base.OnDestroy();
     }
@@ -241,14 +268,6 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
         if (!SpawnAsPlayer)
         {
-            //if (IsHost)
-            //{
-            //    if (ChangeClientOwner())
-            //    {
-            //        return;
-            //    }
-            //}
-
             if (!CanCommitToTransform)
             {
                 Camera.main.transform.LookAt(transform);
@@ -261,42 +280,6 @@ public class MoverScriptNoRigidbody : NetworkTransform
         }
         ApplyInput();
     }
-
-    //private int m_CurrentFollowPlayerIndex = 0;
-
-    //private bool ChangeClientOwner()
-    //{
-    //    bool leftBracket = Input.GetKeyDown(KeyCode.LeftBracket);
-    //    bool rightBracket = Input.GetKeyDown(KeyCode.RightBracket);
-
-    //    if ((leftBracket || rightBracket) && NetworkManager.ConnectedClientsIds.Count > 0)
-    //    {
-    //        if (leftBracket)
-    //        {
-    //            m_CurrentFollowPlayerIndex--;
-    //            if (m_CurrentFollowPlayerIndex < 0)
-    //            {
-    //                m_CurrentFollowPlayerIndex = NetworkManager.ConnectedClientsIds.Count - 1;
-    //            }
-    //        }
-    //        else
-    //        {
-    //            m_CurrentFollowPlayerIndex++;
-    //        }
-
-    //        m_CurrentFollowPlayerIndex %= NetworkManager.ConnectedClientsIds.Count;
-
-    //        var playerId = NetworkManager.ConnectedClientsIds[m_CurrentFollowPlayerIndex];
-    //        if (playerId != OwnerClientId)
-    //        {
-    //            NetworkObject.ChangeOwnership(playerId);
-    //            return true;
-    //        }
-    //    }
-
-    //    return false;
-    //}
-
 
     private Vector3 m_PushMotion = Vector3.zero;
     /// <summary>
@@ -412,5 +395,4 @@ public class MoverScriptNoRigidbody : NetworkTransform
             }
         }
     }
-
 }

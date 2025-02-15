@@ -130,6 +130,7 @@ GameObject:
   - component: {fileID: 455857870}
   - component: {fileID: 455857875}
   - component: {fileID: 455857871}
+  - component: {fileID: 455857877}
   - component: {fileID: 455857876}
   m_Layer: 0
   m_Name: ExtendedNetworkManager
@@ -245,6 +246,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7714497b95b25c43b81a0818d6d8a71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SortOrder: 500
   Scenes:
   - {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
   - {fileID: 102900000, guid: bf970f06455bb694ca0349757a152978, type: 3}
@@ -253,6 +255,19 @@ MonoBehaviour:
   m_SceneNames:
   - CharacterControllerA
   - CharacterControllerB
+--- !u!114 &455857877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455857869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9504f255aa6d5e4a864aae9f545525c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortOrder: 100
 --- !u!1 &935558357
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,7 +304,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.2947668, g: 0.29753572, b: 0.3018868, a: 0}
+  m_BackGroundColor: {r: 0.0738252, g: 0.1391589, b: 0.1981132, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

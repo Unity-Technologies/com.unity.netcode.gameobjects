@@ -8,6 +8,8 @@ public enum ScreenSpaceRegions
 
 public interface IExtensionHandler
 {
+    uint GetSortOrder();
+
     void Initialize(ExtendedNetworkManager extendedNetworkManager);
 
     bool HasInitialized();

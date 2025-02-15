@@ -67,7 +67,7 @@ public class SceneLoadingExtension : BaseMonoExtension
     {
         m_HasDisconnectToSceneName = !string.IsNullOrEmpty(m_DisconnectToSceneName);
         if (m_SceneNames.Count > 0)
-        { 
+        {
             m_CurrentSceneName = m_SceneNames[0];
             UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
         }
@@ -80,6 +80,7 @@ public class SceneLoadingExtension : BaseMonoExtension
         {
             if (m_CurrentSceneName != m_SceneNames[0])
             {
+                MoverScriptNoRigidbody.ResetCamera();
                 UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
             }
         }
@@ -101,8 +102,8 @@ public class SceneLoadingExtension : BaseMonoExtension
         if (retButtonValues.Item2)
         {
             totalRectSize = retButtonValues.Item1;
-
-            if (m_ConnectionState == ConnectionStates.Connected)
+            Destroy(Camera.main);
+            if (m_ConnectionState == ConnectionStates.Connected || m_ExtendedNetworkManager.IsListening)
             {
                 m_ExtendedNetworkManager.OnClientStopped += OnStopped;
                 m_ExtendedNetworkManager.OnServerStopped += OnStopped;
@@ -116,17 +117,14 @@ public class SceneLoadingExtension : BaseMonoExtension
         return totalRectSize;
     }
 
-    private Camera m_CurrentMain;
     private void ReturnMainMenu()
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += ExitSceneLoaded;
-        m_CurrentMain = Camera.main;
         UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(m_DisconnectToSceneName);
     }
 
     private void ExitSceneLoaded(UnityEngine.SceneManagement.Scene arg0, UnityEngine.SceneManagement.LoadSceneMode arg1)
     {
-        Destroy(m_CurrentMain.gameObject);
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= ExitSceneLoaded;
         Destroy(m_ExtendedNetworkManager.gameObject);
     }
@@ -156,7 +154,7 @@ public class SceneLoadingExtension : BaseMonoExtension
                     {
                         totalRectSize = ReturnToMainMenu(totalRectSize);
                     }
-                    if (m_ConnectionState == ConnectionStates.Connected)
+                    if (m_ExtendedNetworkManager.IsAuthorityInstance() && m_ConnectionState == ConnectionStates.Connected)
                     {
                         totalRectSize = DrawLabel(totalRectSize, $"[Tab] Load Next Scene");
                     }

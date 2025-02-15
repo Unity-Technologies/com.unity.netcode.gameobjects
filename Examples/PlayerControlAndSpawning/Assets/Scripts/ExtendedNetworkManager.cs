@@ -112,8 +112,6 @@ public class ExtendedNetworkManager : NetworkManager
 
     [SerializeField]
     private bool m_ServicesRegistered;
-
-    private string m_SessionName;
     private string m_ProfileName;
     private Task m_SessionTask;
 
@@ -125,7 +123,7 @@ public class ExtendedNetworkManager : NetworkManager
     {
         m_ConnectionState = connectionState;
         var extensions = s_Extensions.ToArray();
-        foreach(var extension in extensions)
+        foreach (var extension in extensions)
         {
             extension.StatusUpdate(connectionState);
         }
@@ -145,10 +143,27 @@ public class ExtendedNetworkManager : NetworkManager
 
     private static List<IExtensionHandler> s_Extensions = new List<IExtensionHandler>();
 
+    private static List<IExtensionHandler> s_PendingAttachments = new List<IExtensionHandler>();
+    private static List<IExtensionHandler> s_PendingDetachments = new List<IExtensionHandler>();
+
+    private static int SortExtensions(IExtensionHandler first, IExtensionHandler second)
+    {
+        // If the second is the first's parent then move the first down
+        if (first.GetSortOrder() > second.GetSortOrder())
+        {
+            return 1;
+        }
+        else if (first.GetSortOrder() < second.GetSortOrder())
+        {
+            return -1;
+        }
+        // Otherwise, don't move the first at all
+        return 0;
+    }
+
     public static void AttachExtension(IExtensionHandler extendedUpdateHandler)
     {
-        s_Extensions.Add(extendedUpdateHandler);
-
+        s_PendingAttachments.Add(extendedUpdateHandler);
         if (Instance && !extendedUpdateHandler.HasInitialized())
         {
             extendedUpdateHandler.Initialize(Instance);
@@ -156,9 +171,34 @@ public class ExtendedNetworkManager : NetworkManager
         }
     }
 
+    public static void ProcessAttachDetachExtensions()
+    {
+        if (s_PendingAttachments.Count > 0)
+        {
+            foreach (var extension in s_PendingAttachments)
+            {
+                if (!s_Extensions.Contains(extension))
+                {
+                    s_Extensions.Add(extension);
+                }
+            }
+            s_PendingAttachments.Clear();
+            s_Extensions.Sort(SortExtensions);
+        }
+
+        if (s_PendingDetachments.Count > 0)
+        {
+            foreach (var extension in s_PendingDetachments)
+            {
+                s_Extensions.Remove(extension);
+            }
+            s_PendingDetachments.Clear();
+        }
+    }
+
     public static void DetachExtension(IExtensionHandler extendedUpdateHandler)
     {
-        s_Extensions.Remove(extendedUpdateHandler);
+        s_PendingDetachments.Add(extendedUpdateHandler);
     }
 
     private void Awake()
@@ -193,7 +233,7 @@ public class ExtendedNetworkManager : NetworkManager
             }
         }
 
-        foreach(var extension in s_Extensions)
+        foreach (var extension in s_Extensions)
         {
             if (!extension.HasInitialized())
             {
@@ -208,7 +248,7 @@ public class ExtendedNetworkManager : NetworkManager
         OnClientDisconnectCallback -= OnClientDisconnect;
         OnConnectionEvent -= OnClientConnectionEvent;
 
-        for(int i = s_Extensions.Count - 1; i >= 0; i--)
+        for (int i = s_Extensions.Count - 1; i >= 0; i--)
         {
             if (s_Extensions[i].HasInitialized())
             {
@@ -229,129 +269,38 @@ public class ExtendedNetworkManager : NetworkManager
         Debug.LogError($"Failed to sign in {m_ProfileName} anonymously: {error}");
     }
 
-    private Rect OnDrawLiveServiceGUI(Rect currentRect)
+    public void CreateOrConnectToSession(string sessionName)
     {
-        var retFieldValues = DrawTextField(currentRect, m_SessionName);
-        currentRect = retFieldValues.Item1;
-        m_SessionName = retFieldValues.Item2;
-
-        var retButtonValues = DrawButton(currentRect, "Create or Connect To Session");
-
-        if (retButtonValues.Item2)
-        {
-            currentRect = retButtonValues.Item1;
-            NetworkConfig.UseCMBService = true;
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            m_SessionTask = ConnectThroughLiveService();
-            UpdateConnectionState(ConnectionStates.Connecting);
-            LogMessage($"Connecting to session {m_SessionName}...");
-        }
-
-        return currentRect;
+        NetworkConfig.UseCMBService = true;
+        OnClientStopped += ClientStopped;
+        OnClientStarted += ClientStarted;
+        m_SessionTask = ConnectThroughLiveService(sessionName);
+        UpdateConnectionState(ConnectionStates.Connecting);
     }
 
-    private Rect OnDrawDAHostGUI(Rect currentRect)
+    public void StartClientHostedSession(bool isHost)
     {
-        var retValues = DrawButton(currentRect, "Start Host");
-        if (retValues.Item2)
+        OnClientStopped += ClientStopped;
+        OnClientStarted += ClientStarted;
+        if (isHost)
         {
-            currentRect = retValues.Item1;
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
             StartHost();
-        }
-
-        retValues = DrawButton(currentRect, "Start Client");
-        if (retValues.Item2)
-        {
-            currentRect = retValues.Item1;
-            OnClientStopped += ClientStopped;
-            OnClientStarted += ClientStarted;
-            StartClient();
-        }
-        return currentRect;
-    }
-
-    private Rect OnUpdateGUIDisconnected(Rect currentRect)
-    {
-        currentRect = DrawLabel(currentRect, "Session Name");
-
-        var connectionType = ConnectionType;
-        if (NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer && connectionType != ConnectionTypes.Host)
-        {
-            connectionType = ConnectionTypes.Host;
-        }
-
-        switch (connectionType)
-        {
-            case ConnectionTypes.LiveService:
-                {
-                    currentRect = OnDrawLiveServiceGUI(currentRect);
-                    break;
-                }
-            case ConnectionTypes.Host:
-                {
-                    currentRect = OnDrawDAHostGUI(currentRect);
-                    break;
-                }
-        }
-
-        var scenesPreloaded = new System.Text.StringBuilder();
-        scenesPreloaded.Append("Scenes Preloaded: ");
-        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
-        {
-            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
-            scenesPreloaded.Append($"[{scene.name}]");
-        }
-        currentRect = DrawLabel(currentRect, scenesPreloaded.ToString());
-        return currentRect;
-    }
-
-    private Rect OnUpdateGUIConnected(Rect currentRect)
-    {
-        if (CMBServiceConnection)
-        {
-            currentRect = DrawLabel(currentRect, $"Session: {m_SessionName}");
         }
         else
         {
-            if (DistributedAuthorityMode)
-            {
-                currentRect = DrawLabel(currentRect, $"DAHosted Session");
-            }
-            else
-            {
-                currentRect = DrawLabel(currentRect, $"Client-Server Session");
-                //if (IsHost)
-                //{
-                //    GUILayout.Label($"Bracket Keys ([ or ]) change ownership");
-                //}
-            }
+            StartClient();
         }
-        return currentRect;
     }
 
     private void OnGUI()
     {
-        var topLeftRect = new Rect(10, 10, 800, 800);
+        var halfWidth = (Display.main.renderingWidth * 0.5f);
+        var height = Display.main.renderingHeight;
+        var topLeftRect = new Rect(10, 10, halfWidth, height);
         GUILayout.BeginArea(topLeftRect);
         foreach (var extension in s_Extensions)
         {
             topLeftRect = extension.GUIUpdate(topLeftRect, ScreenSpaceRegions.TopLeft);
-        }
-        switch (m_ConnectionState)
-        {
-            case ConnectionStates.None:
-                {
-                    topLeftRect = OnUpdateGUIDisconnected(topLeftRect);
-                    break;
-                }
-            case ConnectionStates.Connected:
-                {
-                    topLeftRect = OnUpdateGUIConnected(topLeftRect);
-                    break;
-                }
         }
 
         if (m_MessageLogs.Count > 0)
@@ -366,67 +315,32 @@ public class ExtendedNetworkManager : NetworkManager
         }
         GUILayout.EndArea();
 
-        var currentRect = new Rect(Display.main.renderingWidth - 260, 10, 250, 180);
+        var currentRect = new Rect(Display.main.renderingWidth - halfWidth, 10, halfWidth - 10, height);
         GUILayout.BeginArea(currentRect);
-        if (m_ConnectionState == ConnectionStates.Connected)
-        {
-            var retButtonValues = DrawButton(currentRect, "Disconnect");
-            if (retButtonValues.Item2)
-            {
-                currentRect = retButtonValues.Item1;
-                if (m_CurrentSession != null && m_CurrentSession.State == SessionState.Connected)
-                {
-                    m_CurrentSession.LeaveAsync();
-                    m_CurrentSession = null;
-                }
-                else
-                {
-                    Shutdown();
-                }
-            }
-        }
-
         foreach (var extension in s_Extensions)
         {
             currentRect = extension.GUIUpdate(currentRect, ScreenSpaceRegions.TopRight);
         }
-
         GUILayout.EndArea();
     }
 
-    protected Rect DrawLabel(Rect currentRect, string msg)
+    public void DisconnectFromSession()
     {
-        GUILayout.Label($"{msg}");
-        var rect = GUILayoutUtility.GetLastRect();
-        currentRect.height += rect.height;
-        return currentRect;
-    }
-
-    protected (Rect, string) DrawTextField(Rect currentRect, string value)
-    {
-        value = GUILayout.TextField(value);
-        var rect = GUILayoutUtility.GetLastRect();
-        currentRect.height += rect.height;
-        return (currentRect, value);
-    }
-
-    protected (Rect, bool) DrawButton(Rect currentTotalRect, string text, float width = 200)
-    {
-        var clicked = false;
-        if (GUILayout.Button($"{text}", GUILayout.Width(width)))
+        if (m_CurrentSession != null && m_CurrentSession.State == SessionState.Connected)
         {
-            var rect = GUILayoutUtility.GetLastRect();
-            currentTotalRect.height += rect.height;
-            clicked = true;
+            m_CurrentSession.LeaveAsync();
+            m_CurrentSession = null;
         }
-        return (currentTotalRect,clicked);
+        else
+        {
+            Shutdown();
+        }
     }
 
     private void ClientStarted()
     {
         OnClientStarted -= ClientStarted;
         UpdateConnectionState(ConnectionStates.Connected);
-        LogMessage($"Connected to session {m_SessionName}.");
     }
 
     private void ClientStopped(bool isHost)
@@ -437,17 +351,17 @@ public class ExtendedNetworkManager : NetworkManager
         m_CurrentSession = null;
     }
 
-    private async Task<ISession> ConnectThroughLiveService()
+    private async Task<ISession> ConnectThroughLiveService(string sessionName)
     {
         try
         {
             var options = new SessionOptions()
             {
-                Name = m_SessionName,
+                Name = sessionName,
                 MaxPlayers = 32
             }.WithDistributedAuthorityNetwork();
 
-            m_CurrentSession = await MultiplayerService.Instance.CreateOrJoinSessionAsync(m_SessionName, options);
+            m_CurrentSession = await MultiplayerService.Instance.CreateOrJoinSessionAsync(sessionName, options);
             return m_CurrentSession;
         }
         catch (Exception e)
@@ -466,6 +380,10 @@ public class ExtendedNetworkManager : NetworkManager
 
     private void Update()
     {
+        // This avoids adding or removing exceptions while processing extensions
+        // by deferring the attach and detach when no extensions are being processed.
+        ProcessAttachDetachExtensions();
+
         if (m_ConnectionState == ConnectionStates.Connected)
         {
             foreach (var extension in s_Extensions)
