@@ -1,8 +1,17 @@
 using System.Collections;
 using System.Linq;
-using Unity.Collections;
-using UnityEngine.TestTools;
+// System namespaces first
+using System.Collections;
+using System.Linq;
+
+// Test framework namespaces second
 using NUnit.Framework;
+using UnityEngine.TestTools;
+
+// Unity core namespaces third
+using Unity.Collections;
+
+// Unity specific packages last
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 #if MULTIPLAYER_TOOLS
