@@ -16,7 +16,8 @@
     "com.unity.netcode.gameobjects/**/*",
     "testproject/**/*",
     "minimalproject/**/*",
-    "testproject-tools-integration/**/*"
+    "testproject-tools-integration/**/*",
+    "Examples/**/*"
   ],
   "packageRules": [
 
