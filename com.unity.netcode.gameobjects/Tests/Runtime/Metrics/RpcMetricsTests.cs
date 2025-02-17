@@ -1,19 +1,12 @@
-#if MULTIPLAYER_TOOLS
-// System namespaces
 using System.Collections;
 using System.Linq;
-
-// Unity core namespaces
 using Unity.Collections;
 using UnityEngine.TestTools;
-
-// Unity test framework
 using NUnit.Framework;
-
-// Unity multiplayer specific
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
+#if MULTIPLAYER_TOOLS
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class RpcMetricsTests : DualClientMetricTestBase
