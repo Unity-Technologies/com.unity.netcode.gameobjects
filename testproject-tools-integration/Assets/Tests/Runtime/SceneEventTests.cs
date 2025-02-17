@@ -2,13 +2,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+
 using NUnit.Framework;
+using UnityEngine.TestTools;
+
+using Unity.Collections;
+using UnityEngine.SceneManagement;
+
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode;
-using Unity.Netcode.TestHelpers.Runtime.Metrics;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
+
 using SceneEventType = Unity.Netcode.SceneEventType;
 
 namespace TestProject.ToolsIntegration.RuntimeTests

@@ -1,10 +1,17 @@
 #if MULTIPLAYER_TOOLS
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+// System namespaces
 using System.Collections;
+
+// Test framework
 using NUnit.Framework;
-using Unity.Collections;
-using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine.TestTools;
+
+// Unity core
+using Unity.Collections;
+
+// Unity multiplayer specific
+using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics

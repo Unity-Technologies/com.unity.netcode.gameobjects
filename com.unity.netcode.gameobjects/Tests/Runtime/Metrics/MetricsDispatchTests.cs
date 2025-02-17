@@ -1,9 +1,14 @@
 #if MULTIPLAYER_TOOLS
-using System;
+// System namespaces
 using System.Collections;
+using System;
+
+// Test framework
 using NUnit.Framework;
-using Unity.Multiplayer.Tools.NetStats;
 using UnityEngine.TestTools;
+
+// Unity namespaces
+using Unity.Multiplayer.Tools.NetStats;
 using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
