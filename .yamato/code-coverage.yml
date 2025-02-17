@@ -24,7 +24,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
 {% endif %}
 
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} {% if platform.name == "win" %} utr.bat {% else %} ./utr {% endif %} --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --artifacts-path=test-results  --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun
+    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} {% if platform.name == "win" %} utr.bat {% else %} ./utr {% endif %} --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --artifacts-path=test-results --coverage-results-path=test-results/CoverageResults  --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun
   artifacts:
     logs:
       paths:
