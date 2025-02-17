@@ -28,7 +28,7 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Tests whether time is accessible and has correct values inside Update/FixedUpdate.
-        /// This test applies only when <see cref="Time.timeScale"> is 1.
+        /// This test applies only when <see cref="Time.timeScale"/> is 1.
         /// </summary>
         /// <returns>An IEnumerator for the UnityTest coroutine that validates time values in the player loop.</returns>
         [UnityTest]
