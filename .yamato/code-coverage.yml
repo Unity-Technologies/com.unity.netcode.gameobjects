@@ -15,8 +15,8 @@ code_coverage_{{ platform.name }}_{{ editor }}:
     flavor: {{ platform.flavor }}
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-      # Platform specific UTR setup
-      - |
+    # Platform specific UTR setup
+    - |
 {% if platform.name == "win" %}
         curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
 {% else %}
