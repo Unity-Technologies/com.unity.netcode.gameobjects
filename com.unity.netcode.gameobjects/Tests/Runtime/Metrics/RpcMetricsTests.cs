@@ -3,10 +3,11 @@ using System.Linq;
 using Unity.Collections;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 #if MULTIPLAYER_TOOLS
+using Unity.Multiplayer.Tools.MetricTypes;
+
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class RpcMetricsTests : DualClientMetricTestBase
