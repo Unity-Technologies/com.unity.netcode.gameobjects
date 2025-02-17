@@ -1,7 +1,4 @@
 using Unity.Netcode.Components;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEngine;
@@ -28,6 +25,8 @@ namespace Unity.Netcode.Editor
         }
     }
 #if UNITY_UNET_PRESENT
+    using Unity.Netcode.Transports.UNET;
+
     /// <summary>
     /// Internal use. Hides the script field for UNetTransport.
     /// </summary>
