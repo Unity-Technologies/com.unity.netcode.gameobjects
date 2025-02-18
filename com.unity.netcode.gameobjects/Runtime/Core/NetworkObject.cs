@@ -508,6 +508,9 @@ namespace Unity.Netcode
         [Flags]
         public enum OwnershipStatus
         {
+            /// <summary>
+            ///  When set, this instance will have no permissions (i.e. cannot distribute, transfer, etc).
+            /// </summary>
             None = 0,
             /// <summary>
             ///  When set, this instance will be automatically redistributed when a client joins (if not locked or no request is pending) or leaves.
