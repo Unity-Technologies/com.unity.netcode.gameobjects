@@ -19,11 +19,11 @@ code_coverage_{{ platform.name }}_{{ editor }}:
       
     - upm-ci package pack --package-path com.unity.netcode.gameobjects
 
-    - DISPLAY=:0 upm-ci package test -u {{ editor }} --package-path upm-ci~/packages/com.unity.netcode.gameobjects-*.tgz --enable-code-coverage --code-coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --extra-utr-arg="--extra-editor-arg=--burst-disable-compilation --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun"
+    - DISPLAY=:0 upm-ci package test -u {{ editor }} --package-path upm-ci~/packages/com.unity.netcode.gameobjects-*.tgz --artifacts-path=test-results --enable-code-coverage --coverage-results-path=CoverageResults --code-coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --extra-utr-arg="--extra-editor-arg=--burst-disable-compilation --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun"
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
-        - "CoverageResults/**/*"
+        - "**/CoverageResults/**/*"
 {% endfor -%}
 {% endfor -%}
