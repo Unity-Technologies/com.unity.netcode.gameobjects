@@ -11,6 +11,11 @@ namespace Unity.Netcode
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;
+
+        /// <summary>
+        /// Used to communicate whether to destroy the associated game object.
+        /// Should be false if the object is InScenePlaced and true otherwise
+        /// </summary>
         public bool DestroyGameObject;
         private byte m_DestroyFlags;
 
@@ -30,7 +35,7 @@ namespace Unity.Netcode
             set => SetFlag(value, k_ClientTargetedDestroy);
         }
 
-        internal bool IsDeferredDespawn
+        private bool IsDeferredDespawn
         {
             get => GetFlag(k_DeferredDespawn);
 
