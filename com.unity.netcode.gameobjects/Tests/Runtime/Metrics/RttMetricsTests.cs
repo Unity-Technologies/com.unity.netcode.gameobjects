@@ -7,9 +7,9 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
