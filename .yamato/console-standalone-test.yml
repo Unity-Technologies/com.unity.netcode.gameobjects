@@ -15,6 +15,8 @@
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
 {% for editor in validation_editors.all -%}
+# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
+{% if editor != "2023.3" %}
 build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp{% if platform.name == "switch" %}, arm64{% endif %}]
   agent:
@@ -47,6 +49,7 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     logs:
       paths:
         - "artifacts/**/*"
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -57,6 +60,8 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
+# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
+{% if editor != "2023.3" %}
 run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
   name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
@@ -91,6 +96,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
         - "test-results/**/*"
   dependencies:
     - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
