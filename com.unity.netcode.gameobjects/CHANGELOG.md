@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the `NetworkObject.Ownership` custom editor did not take the default "Everything" flag into consideration. (#3305)
 - Fixed DestroyObject flow on non-authority game clients. (#3291)
 - Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
 - Fixed issue where the scene migration synchronization table was not cleaned up if the `GameObject` of a `NetworkObject` is destroyed before it should have been. (#3230)
@@ -24,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwer` permission is set. (#3305)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 
 ## [2.2.0] - 2024-12-12
