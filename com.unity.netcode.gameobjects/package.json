@@ -5,8 +5,8 @@
     "version": "1.12.2",
     "unity": "2021.3",
     "dependencies": {
-        "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.transport": "1.4.0"
+      "com.unity.nuget.mono-cecil": "1.10.1",
+      "com.unity.transport": "1.4.0"
     },
     "samples": [
     {
