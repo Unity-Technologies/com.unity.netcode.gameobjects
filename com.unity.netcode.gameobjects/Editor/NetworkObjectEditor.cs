@@ -114,10 +114,34 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
+                var ownershipProperty = serializedObject.FindProperty(nameof(NetworkObject.Ownership));
+                var sceneObjectProperty = serializedObject.FindProperty(nameof(NetworkObject.IsSceneObject));
+                var previousOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                var allFilter = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
+                var hadAll = previousOwnership == allFilter;
+                var wasNone = previousOwnership == 0;
+                var hadSessionOwner = ownershipProperty.intValue == (int)NetworkObject.OwnershipStatus.SessionOwner;
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
-                if (m_NetworkObject.IsOwnershipSessionOwner)
+
+                var currentOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                if (currentOwnership != previousOwnership)
                 {
-                    m_NetworkObject.Ownership = NetworkObject.OwnershipStatus.SessionOwner;
+                    var hasSessionOwner = currentOwnership.HasFlag(NetworkObject.OwnershipStatus.SessionOwner);
+                    if (hasSessionOwner)
+                    {
+                        if (ownershipProperty.intValue == -1 && !hadAll)
+                        {
+                            ownershipProperty.intValue = (int)allFilter;
+                        }
+                        else if ((hadAll && !hadSessionOwner) || (!hadAll && !hadSessionOwner))
+                        {
+                            ownershipProperty.intValue = (int)NetworkObject.OwnershipStatus.SessionOwner;
+                        }
+                        else if (hadSessionOwner && hasSessionOwner)
+                        {
+                            ownershipProperty.intValue &= (int)~NetworkObject.OwnershipStatus.SessionOwner;
+                        }
+                    }
                 }
                 serializedObject.ApplyModifiedProperties();
                 EditorGUI.EndChangeCheck();
