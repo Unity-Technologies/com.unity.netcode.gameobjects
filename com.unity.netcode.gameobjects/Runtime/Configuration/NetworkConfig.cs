@@ -168,6 +168,48 @@ namespace Unity.Netcode
         [Tooltip("When enabled (default), the player prefab will automatically be spawned (client-side) upon the client being approved and synchronized.")]
         public bool AutoSpawnPlayerPrefabClientSide = true;
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Creates a copy of the current <see cref="NetworkConfig"/>
+        /// </summary>
+        /// <returns>a copy of this <see cref="NetworkConfig"/></returns>
+        internal NetworkConfig Copy()
+        {
+            var networkConfig = new NetworkConfig()
+            {
+                ProtocolVersion = ProtocolVersion,
+                NetworkTransport = NetworkTransport,
+                TickRate = TickRate,
+                ClientConnectionBufferTimeout = ClientConnectionBufferTimeout,
+                ConnectionApproval = ConnectionApproval,
+                EnableTimeResync = EnableTimeResync,
+                TimeResyncInterval = TimeResyncInterval,
+                EnsureNetworkVariableLengthSafety = EnsureNetworkVariableLengthSafety,
+                EnableSceneManagement = EnableSceneManagement,
+                ForceSamePrefabs = ForceSamePrefabs,
+                RecycleNetworkIds = RecycleNetworkIds,
+                NetworkIdRecycleDelay = NetworkIdRecycleDelay,
+                RpcHashSize = RpcHashSize,
+                LoadSceneTimeOut = LoadSceneTimeOut,
+                SpawnTimeout = SpawnTimeout,
+                EnableNetworkLogs = EnableNetworkLogs,
+                NetworkTopology = NetworkTopology,
+                UseCMBService = UseCMBService,
+                AutoSpawnPlayerPrefabClientSide = AutoSpawnPlayerPrefabClientSide,
+#if MULTIPLAYER_TOOLS
+                NetworkMessageMetrics = NetworkMessageMetrics,
+#else
+                NetworkMessageMetrics = false,
+#endif
+                NetworkProfilingMetrics = NetworkProfilingMetrics,
+            };
+
+            return networkConfig;
+        }
+
+#endif 
+
+
 #if MULTIPLAYER_TOOLS
         /// <summary>
         /// Controls whether network messaging metrics will be gathered. (defaults to true)

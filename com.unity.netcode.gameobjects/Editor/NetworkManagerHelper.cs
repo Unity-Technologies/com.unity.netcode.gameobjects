@@ -3,6 +3,7 @@ using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Analytics;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.Editor
@@ -223,6 +224,73 @@ namespace Unity.Netcode.Editor
                 }
             }
             return isParented;
+        }
+
+        private const bool k_EnableAnalyticsLogging = true;
+
+        public void UpdateAnalytics()
+        {
+            if (!EditorAnalytics.enabled)
+            {
+                return;
+            }
+            for (int i = 0; i < NetworkManager.RecentSessions.Count; i++)
+            {
+                var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
+                if (k_EnableAnalyticsLogging)
+                {
+                    networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
+                }
+            }
+        }
+
+
+        private NetworkManagerAnalytics GetNetworkManagerAnalytics(NetworkManager.NetworkSessionInfo networkSession)
+        {
+            var multiplayerSDKInstalled = false;
+            var multiplayerToolsInstalled = false;
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+            multiplayerSDKInstalled = true;
+#endif
+#if MULTIPLAYER_TOOLS
+            multiplayerToolsInstalled = true;
+#endif
+            if (!networkSession.SessionStopped)
+            {
+                Debug.LogWarning($"Session-{networkSession.SessionIndex} was not considered stopped!");
+            }
+            var networkManagerAnalytics = new NetworkManagerAnalytics()
+            {
+                NetworkTopology = networkSession.NetworkConfig.NetworkTopology.ToString(),
+                UsedCMBService = networkSession.UsedCMBService,
+                NetworkTransport = networkSession.Transport,
+                IsUsingMultiplayerSDK = multiplayerSDKInstalled,
+                IsUsingMultiplayerTools = multiplayerToolsInstalled,
+                PlayerPrefabSet = networkSession.PlayerPrefab,
+                ConnectionApproval = networkSession.NetworkConfig.ConnectionApproval,
+                ClientConnectionBufferTimeout = networkSession.NetworkConfig.ClientConnectionBufferTimeout,
+                EnsureNetworkVariableLengthSafety = networkSession.NetworkConfig.EnsureNetworkVariableLengthSafety,
+                EnableSceneManagement = networkSession.NetworkConfig.EnableSceneManagement,
+                LoadSceneTimeOut = networkSession.NetworkConfig.LoadSceneTimeOut,
+                SpawnTimeout = networkSession.NetworkConfig.SpawnTimeout,
+                ForceSamePrefabs = networkSession.NetworkConfig.ForceSamePrefabs,
+                RecycleNetworkIds = networkSession.NetworkConfig.RecycleNetworkIds,
+                NetworkIdRecycleDelay = networkSession.NetworkConfig.NetworkIdRecycleDelay,
+                RpcHashSize = networkSession.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes ? 4 : 8,
+                EnableTimeResync = networkSession.NetworkConfig.EnableTimeResync,
+                TimeResyncInterval = networkSession.NetworkConfig.TimeResyncInterval,
+                TickRate = (int)networkSession.NetworkConfig.TickRate,
+#if MULTIPLAYER_TOOLS
+                NetworkMessageMetrics = networkSession.NetworkConfig.NetworkMessageMetrics,
+#else
+                NetworkMessageMetrics = false,
+#endif
+                NetworkProfilingMetrics = networkSession.NetworkConfig.NetworkProfilingMetrics,
+                WasClient = networkSession.WasClient,
+                WasServer = networkSession.WasServer,
+                SessionDuration = networkSession.SessionEnd - networkSession.SessionStart,
+            };
+            return networkManagerAnalytics;
         }
     }
 #endif

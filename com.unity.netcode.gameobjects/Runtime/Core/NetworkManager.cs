@@ -914,6 +914,22 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
 
+        internal struct NetworkSessionInfo
+        {
+            public int SessionIndex;
+            public bool SessionStopped;
+            public bool PlayerPrefab;
+            public bool WasServer;
+            public bool WasClient;
+            public float SessionStart;
+            public float SessionEnd;
+            public bool UsedCMBService;
+            public string Transport;
+            public NetworkConfig NetworkConfig;
+        }
+
+        internal static List<NetworkSessionInfo> RecentSessions = new List<NetworkSessionInfo>();
+
         /// <summary>
         /// Interface for NetworkManagerHelper
         /// </summary>
@@ -921,6 +937,8 @@ namespace Unity.Netcode
         {
             bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
             void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+
+            void UpdateAnalytics();
         }
 
         internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
@@ -1018,9 +1036,69 @@ namespace Unity.Netcode
 
         private void ModeChanged(PlayModeStateChange change)
         {
-            if (IsListening && change == PlayModeStateChange.ExitingPlayMode)
+            if (change == PlayModeStateChange.EnteredPlayMode)
             {
-                OnApplicationQuit();
+                RecentSessions.Clear();
+            }
+
+            if (change == PlayModeStateChange.ExitingPlayMode)
+            {
+                try
+                {
+                    EndNetworkSession();
+                    NetworkManagerHelper?.UpdateAnalytics();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+                RecentSessions.Clear();
+
+                if (IsListening)
+                {
+                    OnApplicationQuit();
+                }
+            }
+        }
+
+        private void BeginNetworkSession()
+        {
+            if (!EditorAnalytics.enabled)
+            {
+                return;
+            }
+            var newSession = new NetworkSessionInfo()
+            {
+                SessionIndex = RecentSessions.Count,
+                WasClient = IsClient,
+                WasServer = IsServer,
+                SessionStart = Time.realtimeSinceStartup,
+                NetworkConfig = NetworkConfig.Copy(),
+                PlayerPrefab = NetworkConfig.PlayerPrefab != null,
+                Transport = NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.GetType().Name : "None",
+            };
+            RecentSessions.Add(newSession);
+        }
+
+        private void EndNetworkSession()
+        {
+            // If analytics is disabled, then exit early
+            if (!EditorAnalytics.enabled)
+            {
+                return;
+            }
+            if (RecentSessions.Count > 0)
+            {
+                var lastIndex = RecentSessions.Count - 1;
+                var recentSession = RecentSessions[lastIndex];
+                if (recentSession.SessionStopped)
+                {
+                    return;
+                }
+                recentSession.SessionEnd = Time.realtimeSinceStartup;
+                recentSession.UsedCMBService = CMBServiceConnection;
+                recentSession.SessionStopped = true;
+                RecentSessions[lastIndex] = recentSession;
             }
         }
 #endif
@@ -1285,6 +1363,9 @@ namespace Unity.Netcode
 
             NetworkConfig.InitializePrefabs();
             PrefabHandler.RegisterPlayerPrefab();
+#if UNITY_EDITOR
+            BeginNetworkSession();
+#endif
         }
 
         private enum StartType
@@ -1584,6 +1665,10 @@ namespace Unity.Netcode
 
         internal void ShutdownInternal()
         {
+#if UNITY_EDITOR
+            EndNetworkSession();
+#endif
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
