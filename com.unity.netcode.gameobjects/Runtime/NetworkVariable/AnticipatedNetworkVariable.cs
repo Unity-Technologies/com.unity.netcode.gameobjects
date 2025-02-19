@@ -387,6 +387,7 @@ namespace Unity.Netcode
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             m_AuthoritativeValue.ReadDelta(reader, keepDirtyDelta);
+            m_AuthoritativeValue.PostDeltaRead();
         }
     }
 }
