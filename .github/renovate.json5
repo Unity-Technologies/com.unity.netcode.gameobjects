@@ -7,12 +7,17 @@
     "local>Unity-Technologies/unity-renovate-config"
   ],
   "prConcurrentLimit": 100,
-  // Ignore commits produced by github actions workflows
+  // Ignore commits produced by GitHub actions workflows
   "gitIgnoredAuthors": ["githubaction@githubaction.com"],
   "ignorePaths": [
     "**/node_modules/**",
     // Don't renovate files in special folders using ~ as suffix
-    "**/*~/**"
+    "**/*~/**",
+    "com.unity.netcode.gameobjects/**/*",
+    "testproject/**/*",
+    "minimalproject/**/*",
+    "testproject-tools-integration/**/*",
+    "Examples/**/*"
   ],
   "packageRules": [
 
@@ -27,13 +32,7 @@
       "schedule": [
         "every weekend"
       ],
-      "rollbackPrs": false
-    },
-
-    // Enable automerge for Bokken image updates
-    {
-      "matchDatasources": ["unity-bokken"],
-      "automerge": false,
-    },
+      "rollbackPrs": false,
+    }
   ],
 }
