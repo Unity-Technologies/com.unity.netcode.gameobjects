@@ -115,8 +115,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        // I will add this test to track in Jira as next step (after having working CI in place). The job is failing on Android
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Tracked in MTT-11361
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();
