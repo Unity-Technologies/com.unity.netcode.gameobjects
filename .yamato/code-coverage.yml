@@ -20,7 +20,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"
+        - "upm-ci~/**/*"
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}_upmCI
 {% endfor -%}
