@@ -25,7 +25,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwer` permission is set. (#3305)
+- Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
+- Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 
 ## [2.2.0] - 2024-12-12
