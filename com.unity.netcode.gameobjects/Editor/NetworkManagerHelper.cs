@@ -3,7 +3,6 @@ using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Analytics;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.Editor
@@ -226,7 +225,6 @@ namespace Unity.Netcode.Editor
             return isParented;
         }
 
-        private const bool k_EnableAnalyticsLogging = true;
         /// <summary>
         /// Invoked from within <see cref="NetworkManager.ModeChanged"/> when exiting play mode.
         /// </summary>
@@ -242,17 +240,16 @@ namespace Unity.Netcode.Editor
             for (int i = 0; i < NetworkManager.RecentSessions.Count; i++)
             {
                 var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
-                if (k_EnableAnalyticsLogging)
-                {
-                    networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
-                }
-
+#if ENABLE_NGO_ANALYTICS_LOGGING
+                networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
+#endif
                 var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
-
+#if ENABLE_NGO_ANALYTICS_LOGGING
                 if (result != AnalyticsResult.Ok)
                 {
                     Debug.LogWarning($"[Analytics] Problem sending analytics: {result}");
                 }
+#endif
             }
         }
 
@@ -265,11 +262,13 @@ namespace Unity.Netcode.Editor
         {
             var multiplayerSDKInstalled = false;
             var multiplayerToolsInstalled = false;
+            var networkMessageMetrics = false;
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             multiplayerSDKInstalled = true;
 #endif
 #if MULTIPLAYER_TOOLS
             multiplayerToolsInstalled = true;
+            networkMessageMetrics = networkSession.NetworkConfig.NetworkMessageMetrics;
 #endif
             if (!networkSession.SessionStopped)
             {
@@ -296,11 +295,7 @@ namespace Unity.Netcode.Editor
                 EnableTimeResync = networkSession.NetworkConfig.EnableTimeResync,
                 TimeResyncInterval = networkSession.NetworkConfig.TimeResyncInterval,
                 TickRate = (int)networkSession.NetworkConfig.TickRate,
-#if MULTIPLAYER_TOOLS
-                NetworkMessageMetrics = networkSession.NetworkConfig.NetworkMessageMetrics,
-#else
-                NetworkMessageMetrics = false,
-#endif
+                NetworkMessageMetrics = networkMessageMetrics,
                 NetworkProfilingMetrics = networkSession.NetworkConfig.NetworkProfilingMetrics,
                 WasClient = networkSession.WasClient,
                 WasServer = networkSession.WasServer,

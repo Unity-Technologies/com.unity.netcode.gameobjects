@@ -198,8 +198,6 @@ namespace Unity.Netcode
                 AutoSpawnPlayerPrefabClientSide = AutoSpawnPlayerPrefabClientSide,
 #if MULTIPLAYER_TOOLS
                 NetworkMessageMetrics = NetworkMessageMetrics,
-#else
-                NetworkMessageMetrics = false,
 #endif
                 NetworkProfilingMetrics = NetworkProfilingMetrics,
             };
