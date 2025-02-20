@@ -227,13 +227,18 @@ namespace Unity.Netcode.Editor
         }
 
         private const bool k_EnableAnalyticsLogging = true;
-
+        /// <summary>
+        /// Invoked from within <see cref="NetworkManager.ModeChanged"/> when exiting play mode.
+        /// </summary>
         public void UpdateAnalytics()
         {
+            // Exit early if analytics is disabled
             if (!EditorAnalytics.enabled)
             {
                 return;
             }
+
+            // Parse through all of the recent network sessions to generate and send NetworkManager analytics
             for (int i = 0; i < NetworkManager.RecentSessions.Count; i++)
             {
                 var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
@@ -241,10 +246,21 @@ namespace Unity.Netcode.Editor
                 {
                     networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
                 }
+
+                var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
+
+                if (result != AnalyticsResult.Ok)
+                {
+                    Debug.LogWarning($"[Analytics] Problem sending analytics: {result}");
+                }
             }
         }
 
-
+        /// <summary>
+        /// Generates a <see cref="NetworkManagerAnalytics"/> based on the <see cref="NetworkManager.NetworkSessionInfo"/> passed in
+        /// </summary>
+        /// <param name="networkSession">Represents a network session with the used NetworkManager configuration</param>
+        /// <returns></returns>
         private NetworkManagerAnalytics GetNetworkManagerAnalytics(NetworkManager.NetworkSessionInfo networkSession)
         {
             var multiplayerSDKInstalled = false;

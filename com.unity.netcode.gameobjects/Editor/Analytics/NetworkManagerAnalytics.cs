@@ -1,10 +1,13 @@
 #if UNITY_EDITOR
+using System;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Analytics;
 
-namespace Unity.Netcode
+namespace Unity.Netcode.Editor
 {
-    internal struct NetworkManagerAnalytics
+    [Serializable]
+    internal struct NetworkManagerAnalytics : IAnalytic.IData
     {
         public bool IsUsingMultiplayerSDK;
         public bool UsedCMBService;
@@ -12,17 +15,17 @@ namespace Unity.Netcode
         public string NetworkTransport;
         public bool PlayerPrefabSet;
         public bool ConnectionApproval;
-        public float ClientConnectionBufferTimeout;
+        public int ClientConnectionBufferTimeout;
         public bool EnsureNetworkVariableLengthSafety;
         public bool EnableSceneManagement;
-        public float LoadSceneTimeOut;
+        public int LoadSceneTimeOut;
         public float SpawnTimeout;
         public bool ForceSamePrefabs;
         public bool RecycleNetworkIds;
         public float NetworkIdRecycleDelay;
         public int RpcHashSize;
         public bool EnableTimeResync;
-        public float TimeResyncInterval;
+        public int TimeResyncInterval;
         public int TickRate;
         public bool IsUsingMultiplayerTools;
         public bool NetworkMessageMetrics;
@@ -30,10 +33,13 @@ namespace Unity.Netcode
         public bool WasServer;
         public bool WasClient;
         public float SessionDuration;
-        internal void LogAnalytics(int sessionNumber)
+
+        public override string ToString()
         {
             var message = new StringBuilder();
-            message.AppendLine($"{nameof(NetworkManagerAnalytics)}-{sessionNumber} Session Duration: {SessionDuration} Sever: {WasServer} Client: {WasClient}");
+            message.AppendLine($"{nameof(WasServer)}: {WasServer}");
+            message.AppendLine($"{nameof(WasClient)}: {WasClient}");
+            message.AppendLine($"{nameof(SessionDuration)}: {SessionDuration}");
             message.AppendLine($"{nameof(IsUsingMultiplayerSDK)}: {IsUsingMultiplayerSDK}");
             message.AppendLine($"{nameof(UsedCMBService)}: {UsedCMBService}");
             message.AppendLine($"{nameof(NetworkTopology)}: {NetworkTopology}");
@@ -55,7 +61,11 @@ namespace Unity.Netcode
             message.AppendLine($"{nameof(IsUsingMultiplayerTools)}: {IsUsingMultiplayerTools}");
             message.AppendLine($"{nameof(NetworkMessageMetrics)}: {NetworkMessageMetrics}");
             message.AppendLine($"{nameof(NetworkProfilingMetrics)}: {NetworkProfilingMetrics}");
-            Debug.Log($"{message}");
+            return message.ToString();
+        }
+        internal void LogAnalytics(int sessionNumber)
+        {
+            Debug.Log($"{ToString()}");
         }
     }
 }

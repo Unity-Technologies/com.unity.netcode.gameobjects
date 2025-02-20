@@ -1061,6 +1061,12 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// If analytics is enabled, this will create a new <see cref="NetworkSessionInfo"/> struct.
+        /// </summary>
+        /// <remarks>
+        /// Invoked when NetworkManager is started.
+        /// </remarks>
         private void BeginNetworkSession()
         {
             if (!EditorAnalytics.enabled)
@@ -1080,6 +1086,12 @@ namespace Unity.Netcode
             RecentSessions.Add(newSession);
         }
 
+        /// <summary>
+        /// If analytics is enabled, this will finalize the current <see cref="NetworkSessionInfo"/> struct.
+        /// </summary>
+        /// <remarks>
+        /// Invoked when NetworkManager is stopped or upon exiting play mode.
+        /// </remarks>
         private void EndNetworkSession()
         {
             // If analytics is disabled, then exit early
@@ -1091,6 +1103,7 @@ namespace Unity.Netcode
             {
                 var lastIndex = RecentSessions.Count - 1;
                 var recentSession = RecentSessions[lastIndex];
+                // If the session has already been finalized, then exit early.
                 if (recentSession.SessionStopped)
                 {
                     return;
