@@ -117,15 +117,22 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
+
+                // Get the current ownership property and precalculate values in order to handle
+                // the exclusion or inclusion of "all" or just the session owner flags.
                 var ownershipProperty = serializedObject.FindProperty(nameof(NetworkObject.Ownership));
                 var previousOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
                 var hadAll = previousOwnership == k_AllOwnershipFlags;
                 var hadSessionOwner = ownershipProperty.intValue == k_SessionOwnerFlagAsInt;
+
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
 
+                // If the ownership flags were changed
                 var currentOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
                 if (currentOwnership != previousOwnership)
                 {
+                    // Determine if we need to handle setting or removing the session owner flag specifically
+                    // when a user selects the "All" enum flag value.
                     var hasSessionOwner = currentOwnership.HasFlag(NetworkObject.OwnershipStatus.SessionOwner);
                     if (hasSessionOwner)
                     {
