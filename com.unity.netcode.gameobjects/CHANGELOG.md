@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
 
 ## [2.2.0] - 2024-12-12
