@@ -14,6 +14,9 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkObjectEditor : UnityEditor.Editor
     {
+        private const NetworkObject.OwnershipStatus k_AllOwnershipFlags = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
+        private const int k_SessionOwnerFlagAsInt = (int)NetworkObject.OwnershipStatus.SessionOwner;
+
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
@@ -115,12 +118,9 @@ namespace Unity.Netcode.Editor
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
                 var ownershipProperty = serializedObject.FindProperty(nameof(NetworkObject.Ownership));
-                var sceneObjectProperty = serializedObject.FindProperty(nameof(NetworkObject.IsSceneObject));
                 var previousOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
-                var allFilter = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
-                var hadAll = previousOwnership == allFilter;
-                var wasNone = previousOwnership == 0;
-                var hadSessionOwner = ownershipProperty.intValue == (int)NetworkObject.OwnershipStatus.SessionOwner;
+                var hadAll = previousOwnership == k_AllOwnershipFlags;
+                var hadSessionOwner = ownershipProperty.intValue == k_SessionOwnerFlagAsInt;
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
 
                 var currentOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
@@ -131,15 +131,15 @@ namespace Unity.Netcode.Editor
                     {
                         if (ownershipProperty.intValue == -1 && !hadAll)
                         {
-                            ownershipProperty.intValue = (int)allFilter;
+                            ownershipProperty.intValue = (int)k_AllOwnershipFlags;
                         }
                         else if ((hadAll && !hadSessionOwner) || (!hadAll && !hadSessionOwner))
                         {
-                            ownershipProperty.intValue = (int)NetworkObject.OwnershipStatus.SessionOwner;
+                            ownershipProperty.intValue = k_SessionOwnerFlagAsInt;
                         }
                         else if (hadSessionOwner && hasSessionOwner)
                         {
-                            ownershipProperty.intValue &= (int)~NetworkObject.OwnershipStatus.SessionOwner;
+                            ownershipProperty.intValue &= ~k_SessionOwnerFlagAsInt;
                         }
                     }
                 }
