@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
 - Fixed issue where the `NetworkObject.Ownership` custom editor did not take the default "Everything" flag into consideration. (#3305)
 - Fixed DestroyObject flow on non-authority game clients. (#3291)
 - Fixed exception being thrown when a `GameObject` with an associated `NetworkTransform` is disabled. (#3243)
