@@ -9,7 +9,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -29,7 +29,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -60,10 +60,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -75,7 +75,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -95,7 +95,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -126,10 +126,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -141,7 +141,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -161,7 +161,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -192,10 +192,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -207,7 +207,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -227,7 +227,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -258,10 +258,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -273,7 +273,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -293,7 +293,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -324,10 +324,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -339,7 +339,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -359,7 +359,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -390,10 +390,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -405,7 +405,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -425,7 +425,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -456,10 +456,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -471,7 +471,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -491,7 +491,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -522,10 +522,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -537,7 +537,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -557,7 +557,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -588,10 +588,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -603,7 +603,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -623,7 +623,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -654,10 +654,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -669,7 +669,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -689,7 +689,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -720,10 +720,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -735,7 +735,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -755,7 +755,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -786,10 +786,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -801,7 +801,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -821,7 +821,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -852,10 +852,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -867,7 +867,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -887,7 +887,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -918,10 +918,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -933,7 +933,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-56_6391218b3c9a0a6d36cd0b122ff5dd48d68381a518cd09da6f7279c68a7c7962.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-58_ab06748e39f9b01f55b979c0c06d7c1f787e07cbca4dc6ae5eef274fd195612a.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -953,7 +953,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
     timeout: 40
     retries: 1
   after:
@@ -984,10 +984,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.37.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.38.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.37.0
+    Wrench: 0.10.38.0
   labels:
   - Packages:netcode.gameobjects
 
