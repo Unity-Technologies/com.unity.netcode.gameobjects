@@ -1167,7 +1167,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="clientId">The client to disconnect</param>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
+#if DEBUG
+            if (m_State != State.Listening)
+            {
+                Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
+                return;
+            }
+#endif
 
             if (m_State == State.Listening)
             {
@@ -1209,6 +1215,7 @@ namespace Unity.Netcode.Transports.UTP
             return (ulong)ExtractRtt(ParseClientId(clientId));
         }
 
+#if UTP_TRANSPORT_2_0_ABOVE
         /// <summary>
         /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
         /// </summary>
@@ -1227,11 +1234,37 @@ namespace Unity.Netcode.Transports.UTP
                 var networkConnection = ParseClientId(transportId);
                 if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
                 {
-                    return m_Driver.RemoteEndPoint(networkConnection);
+                    return m_Driver.GetRemoteEndpoint(networkConnection);
                 }
             }
             return new NetworkEndpoint();
         }
+#else
+        /// <summary>
+        /// Provides the <see cref="NetworkEndPoint"/> for the NGO client identifier specified.
+        /// </summary>
+        /// <remarks>
+        /// - This is only really useful for direct connections.
+        /// - Relay connections and clients connected using a distributed authority network topology will not provide the client's actual endpoint information.
+        /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
+        /// </remarks>
+        /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
+        /// <returns><see cref="NetworkEndPoint"/></returns>
+        public NetworkEndPoint GetEndpoint(ulong clientId)
+        {
+            if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
+            {
+                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
+                var networkConnection = ParseClientId(transportId);
+                if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
+                {
+                    return m_Driver.RemoteEndPoint(networkConnection);
+                }
+            }
+            return new NetworkEndPoint();
+        }
+#endif
+
 
         /// <summary>
         /// Initializes the transport
@@ -1239,7 +1272,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
+#if DEBUG
+            if (sizeof(ulong) != UnsafeUtility.SizeOf<NetworkConnection>())
+            {
+                Debug.LogWarning($"Netcode connection id size {sizeof(ulong)} does not match UTP connection id size {UnsafeUtility.SizeOf<NetworkConnection>()}!");
+                return;
+            }
+#endif
 
             NetworkManager = networkManager;
 

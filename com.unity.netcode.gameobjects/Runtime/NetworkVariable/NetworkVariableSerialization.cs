@@ -1425,7 +1425,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a managed type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The managed type that implements IEquatable{T}.</typeparam>
         public static void InitializeEqualityChecker_ManagedIEquatable<T>() where T : class, IEquatable<T>
         {
             NetworkVariableSerialization<T>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsObject;
@@ -1434,7 +1434,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The managed type that implements IEquatable{T}.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedIEquatable<T>() where T : unmanaged, IEquatable<T>
         {
             NetworkVariableSerialization<T>.AreEqual = NetworkVariableSerialization<T>.EqualityEquals;
@@ -1443,7 +1443,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The managed type that implements IEquatable{T}.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedIEquatableArray<T>() where T : unmanaged, IEquatable<T>
         {
             NetworkVariableSerialization<NativeArray<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsArray;
@@ -1451,7 +1451,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of elements in the list.</typeparam>
         public static void InitializeEqualityChecker_List<T>()
         {
             NetworkVariableSerialization<List<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsList;
@@ -1459,7 +1459,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of elements in the hash set that implements IEquatable</typeparam>
         public static void InitializeEqualityChecker_HashSet<T>() where T : IEquatable<T>
         {
             NetworkVariableSerialization<HashSet<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsHashSet;
@@ -1467,7 +1467,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable<TKey>.</typeparam>
+        /// <typeparam name="TVal">The type of dictionary values.</typeparam>
         public static void InitializeEqualityChecker_Dictionary<TKey, TVal>()
             where TKey : IEquatable<TKey>
         {
@@ -1478,7 +1479,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged element type that implements IEquatable{T}.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedIEquatableList<T>() where T : unmanaged, IEquatable<T>
         {
             NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsNativeList;
@@ -1486,7 +1487,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged element type that implements IEquatable{T}.</typeparam>
         public static void InitializeEqualityChecker_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
         {
             NetworkVariableSerialization<NativeHashSet<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsNativeHashSet;
@@ -1494,7 +1495,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable<TKey>.</typeparam>
+        /// <typeparam name="TVal">The type of dictionary values.</typeparam>
         public static void InitializeEqualityChecker_NativeHashMap<TKey, TVal>()
             where TKey : unmanaged, IEquatable<TKey>
             where TVal : unmanaged
@@ -1507,7 +1509,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that will be checked for equality using memcmp and only considered
         /// equal if they are bitwise equivalent in memory
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type to register for comparison.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedValueEquals<T>() where T : unmanaged
         {
             NetworkVariableSerialization<T>.AreEqual = NetworkVariableSerialization<T>.ValueEquals;
@@ -1517,7 +1519,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that will be checked for equality using memcmp and only considered
         /// equal if they are bitwise equivalent in memory
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged element type of the array.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedValueEqualsArray<T>() where T : unmanaged
         {
             NetworkVariableSerialization<NativeArray<T>>.AreEqual = NetworkVariableSerialization<T>.ValueEqualsArray;
@@ -1528,7 +1530,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that will be checked for equality using memcmp and only considered
         /// equal if they are bitwise equivalent in memory
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged element type of the list.</typeparam>
         public static void InitializeEqualityChecker_UnmanagedValueEqualsList<T>() where T : unmanaged
         {
             NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.ValueEqualsList;
@@ -1538,7 +1540,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a managed type that will be checked for equality using the == operator
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The managed class type to register for comparison.</typeparam>
         public static void InitializeEqualityChecker_ManagedClassEquals<T>() where T : class
         {
             NetworkVariableSerialization<T>.AreEqual = NetworkVariableSerialization<T>.ClassEquals;
@@ -1591,8 +1593,8 @@ namespace Unity.Netcode
         /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.WriteValue"/> is called, which, by default,
         /// will throw an exception, unless you have assigned a user serialization callback to it at runtime.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
+        /// <param name="writer">The FastBufferWriter to write the serialized data to.</param>
+        /// <param name="value">The value to serialize</param>
         public static void Write(FastBufferWriter writer, ref T value)
         {
             Serializer.Write(writer, ref value);
@@ -1616,8 +1618,8 @@ namespace Unity.Netcode
         /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.ReadValue"/> is called, which, by default,
         /// will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="value"></param>
+        /// <param name="reader">The FastBufferReader to read the serialized data from.</param>
+        /// <param name="value">Reference to store the deserialized value. If null for managed types, a new instance will be created.</param>
         public static void Read(FastBufferReader reader, ref T value)
         {
             Serializer.Read(reader, ref value);
@@ -1638,8 +1640,8 @@ namespace Unity.Netcode
         /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.WriteValue"/> is called, which, by default,
         /// will throw an exception, unless you have assigned a user serialization callback to it at runtime.
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
+        /// <param name="writer">The FastBufferWriter to write the serialized data to.</param>
+        /// <param name="value">The value to serialize</param>
         public static void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
         {
             Serializer.WriteDelta(writer, ref value, ref previousValue);
@@ -1663,8 +1665,8 @@ namespace Unity.Netcode
         /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.ReadValue"/> is called, which, by default,
         /// will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="value"></param>
+        /// <param name="reader">The FastBufferReader to read the serialized data from.</param>
+        /// <param name="value">Reference to store the deserialized value. If null for managed types, a new instance will be created.</param>
         public static void ReadDelta(FastBufferReader reader, ref T value)
         {
             Serializer.ReadDelta(reader, ref value);
@@ -1687,8 +1689,8 @@ namespace Unity.Netcode
         /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.DuplicateValue"/> is called, which, by default,
         /// will throw an exception, unless you have assigned a user duplication callback to it at runtime.
         /// </summary>
-        /// <param name="value"></param>
-        /// <param name="duplicatedValue"></param>
+        /// <param name="value">The source value to duplicate</param>
+        /// <param name="duplicatedValue">Reference to store the duplicated value. For managed types, existing instance will be reused if non-null.</param>
         public static void Duplicate(in T value, ref T duplicatedValue)
         {
             Serializer.Duplicate(value, ref duplicatedValue);
