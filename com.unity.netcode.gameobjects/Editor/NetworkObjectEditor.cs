@@ -14,6 +14,9 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkObjectEditor : UnityEditor.Editor
     {
+        private const NetworkObject.OwnershipStatus k_AllOwnershipFlags = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
+        private const int k_SessionOwnerFlagAsInt = (int)NetworkObject.OwnershipStatus.SessionOwner;
+
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
@@ -114,10 +117,38 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
+
+                // Get the current ownership property and precalculate values in order to handle
+                // the exclusion or inclusion of "all" or just the session owner flags.
+                var ownershipProperty = serializedObject.FindProperty(nameof(NetworkObject.Ownership));
+                var previousOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                var hadAll = previousOwnership == k_AllOwnershipFlags;
+                var hadSessionOwner = ownershipProperty.intValue == k_SessionOwnerFlagAsInt;
+
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
-                if (m_NetworkObject.IsOwnershipSessionOwner)
+
+                // If the ownership flags were changed
+                var currentOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                if (currentOwnership != previousOwnership)
                 {
-                    m_NetworkObject.Ownership = NetworkObject.OwnershipStatus.SessionOwner;
+                    // Determine if we need to handle setting or removing the session owner flag specifically
+                    // when a user selects the "All" enum flag value.
+                    var hasSessionOwner = currentOwnership.HasFlag(NetworkObject.OwnershipStatus.SessionOwner);
+                    if (hasSessionOwner)
+                    {
+                        if (ownershipProperty.intValue == -1 && !hadAll)
+                        {
+                            ownershipProperty.intValue = (int)k_AllOwnershipFlags;
+                        }
+                        else if ((hadAll && !hadSessionOwner) || (!hadAll && !hadSessionOwner))
+                        {
+                            ownershipProperty.intValue = k_SessionOwnerFlagAsInt;
+                        }
+                        else if (hadSessionOwner && hasSessionOwner)
+                        {
+                            ownershipProperty.intValue &= ~k_SessionOwnerFlagAsInt;
+                        }
+                    }
                 }
                 serializedObject.ApplyModifiedProperties();
                 EditorGUI.EndChangeCheck();
