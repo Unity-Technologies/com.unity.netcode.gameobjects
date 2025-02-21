@@ -322,6 +322,15 @@ namespace Unity.Netcode
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
+
+                // Root In-scene placed NetworkObjects have to either have the SessionOwner or Distributable permission flag set.
+                if (transform.parent == null)
+                {
+                    if (!Ownership.HasFlag(OwnershipStatus.SessionOwner) && !Ownership.HasFlag(OwnershipStatus.Distributable))
+                    {
+                        Ownership |= OwnershipStatus.Distributable;
+                    }
+                }
             }
         }
 #endif // UNITY_EDITOR
@@ -493,16 +502,36 @@ namespace Unity.Netcode
         /// <see cref="Transferable"/>: When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
         /// <see cref="RequestRequired"/>: When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
         /// <see cref="SessionOwner"/>: When set, only the current session owner may have ownership over this object.
+        /// <see cref="All"/>: Used within the inspector view only. When selected it will set the Distributable, Transferable, and RequestRequired flags or if those flags are already set it will select the SessionOwner flag by itself.
         /// </summary>
         // Ranges from 1 to 8 bits
         [Flags]
         public enum OwnershipStatus
         {
+            /// <summary>
+            ///  When set, this instance will have no permissions (i.e. cannot distribute, transfer, etc).
+            /// </summary>
             None = 0,
+            /// <summary>
+            ///  When set, this instance will be automatically redistributed when a client joins (if not locked or no request is pending) or leaves.
+            /// </summary>
             Distributable = 1 << 0,
+            /// <summary>
+            /// When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
+            /// </summary>
             Transferable = 1 << 1,
+            /// <summary>
+            /// When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
+            /// </summary>
             RequestRequired = 1 << 2,
+            /// <summary>
+            /// When set, only the current session owner may have ownership over this object.
+            /// </summary>
             SessionOwner = 1 << 3,
+            /// <summary>
+            /// Used within the inspector view only. When selected it will set the Distributable, Transferable, and RequestRequired flags or if those flags are already set it will select the SessionOwner flag by itself.
+            /// </summary>
+            All = ~0,
         }
 
         /// <summary>
