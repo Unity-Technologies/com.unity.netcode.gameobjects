@@ -1967,9 +1967,12 @@ namespace Unity.Netcode
                                 {
                                     continue;
                                 }
-                                if ((!child.IsOwnershipDistributable || !child.IsOwnershipTransferable) && NetworkManager.LogLevel == LogLevel.Developer)
+                                if (!child.IsOwnershipDistributable || !child.IsOwnershipTransferable)
                                 {
-                                    NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferrable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
+                                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                                    {
+                                        NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferrable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
+                                    }
                                     continue;
                                 }
                                 // Transfer ownership of all distributable =or= transferrable children with the same owner to the same client to preserve the sibling ownership tree.
