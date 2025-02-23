@@ -51,8 +51,8 @@ api_validation_-_netcode_gameobjects_-_2021_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.39.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.40.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.39.0
+    Wrench: 0.10.40.0
 
