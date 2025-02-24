@@ -5,11 +5,17 @@ namespace Unity.Netcode
 {
     internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
-        public int Version => 0;
+        private const int k_OptimizeDestroyObjectMessage = 1;
+        public int Version => k_OptimizeDestroyObjectMessage;
 
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;
+
+        /// <summary>
+        /// Used to communicate whether to destroy the associated game object.
+        /// Should be false if the object is InScenePlaced and true otherwise
+        /// </summary>
         public bool DestroyGameObject;
         private byte m_DestroyFlags;
 
@@ -19,19 +25,21 @@ namespace Unity.Netcode
 
         internal bool IsDistributedAuthority;
 
-        internal const byte ClientTargetedDestroy = 0x01;
+        private const byte k_ClientTargetedDestroy = 0x01;
+        private const byte k_DeferredDespawn = 0x02;
 
         internal bool IsTargetedDestroy
         {
-            get
-            {
-                return GetFlag(ClientTargetedDestroy);
-            }
+            get => GetFlag(k_ClientTargetedDestroy);
 
-            set
-            {
-                SetFlag(value, ClientTargetedDestroy);
-            }
+            set => SetFlag(value, k_ClientTargetedDestroy);
+        }
+
+        private bool IsDeferredDespawn
+        {
+            get => GetFlag(k_DeferredDespawn);
+
+            set => SetFlag(value, k_DeferredDespawn);
         }
 
         private bool GetFlag(int flag)
@@ -47,7 +55,11 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
+            // Set deferred despawn flag
+            IsDeferredDespawn = DeferredDespawnTick > 0;
+
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+
             if (IsDistributedAuthority)
             {
                 writer.WriteByteSafe(m_DestroyFlags);
@@ -56,9 +68,17 @@ namespace Unity.Netcode
                 {
                     BytePacker.WriteValueBitPacked(writer, TargetClientId);
                 }
-                BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
+
+                if (targetVersion < k_OptimizeDestroyObjectMessage || IsDeferredDespawn)
+                {
+                    BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
+                }
             }
-            writer.WriteValueSafe(DestroyGameObject);
+
+            if (targetVersion < k_OptimizeDestroyObjectMessage)
+            {
+                writer.WriteValueSafe(DestroyGameObject);
+            }
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -77,18 +97,27 @@ namespace Unity.Netcode
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out TargetClientId);
                 }
-                ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
+
+                if (receivedMessageVersion < k_OptimizeDestroyObjectMessage || IsDeferredDespawn)
+                {
+                    ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
+                }
             }
 
-            reader.ReadValueSafe(out DestroyGameObject);
-
-            if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            if (receivedMessageVersion < k_OptimizeDestroyObjectMessage)
             {
-                // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
-                if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
-                {
-                    networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
-                }
+                reader.ReadValueSafe(out DestroyGameObject);
+            }
+
+            if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
+            {
+                return true;
+            }
+
+            // Client-Server mode we always defer where in distributed authority mode we only defer if it is not a targeted destroy
+            if (!networkManager.DistributedAuthorityMode || (networkManager.DistributedAuthorityMode && !IsTargetedDestroy))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context, k_Name);
             }
             return true;
         }

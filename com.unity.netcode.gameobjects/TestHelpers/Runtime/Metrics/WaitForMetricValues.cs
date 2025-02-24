@@ -21,7 +21,7 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
             dispatcher.RegisterObserver(this);
         }
 
-        abstract public void Observe(MetricCollection collection);
+        public abstract void Observe(MetricCollection collection);
 
         public void AssertMetricValuesHaveNotBeenFound()
         {
