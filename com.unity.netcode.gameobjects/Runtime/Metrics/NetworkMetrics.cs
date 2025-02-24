@@ -1,12 +1,15 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Profiling;
+using Unity.Profiling.LowLevel;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace Unity.Netcode
 {
@@ -18,7 +21,7 @@ namespace Unity.Netcode
 
         static NetworkMetrics()
         {
-            sTransportBytesSent.Value = 0;
+            ResetCounters();
 
             s_SceneEventTypeNames = new Dictionary<uint, string>();
             foreach (SceneEventType type in Enum.GetValues(typeof(SceneEventType)))
@@ -37,7 +40,42 @@ namespace Unity.Netcode
             return name;
         }
 
-        internal static ProfilerCounterValue<float> sTransportBytesSent = new ProfilerCounterValue<float>(ProfilerCategory.Network, "Norbi TransportBytesSent", ProfilerMarkerDataUnit.Bytes);
+//         private static ProfilerCounterValue<float> s_TotalBytesSent = new (ProfilerCategory.Network, $"{NetworkMetricTypes.TotalBytesSent.Id.Name} {NetworkMetricTypes.TotalBytesSent.Id.TypeIndex} {NetworkMetricTypes.TotalBytesSent.Id.EnumValue}", ProfilerMarkerDataUnit.Bytes, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+//         private static ProfilerCounterValue<float> s_TotalBytesReceived = new (ProfilerCategory.Network, $"{NetworkMetricTypes.TotalBytesReceived.Id.Name} {NetworkMetricTypes.TotalBytesReceived.Id.TypeIndex} {NetworkMetricTypes.TotalBytesReceived.Id.EnumValue}", ProfilerMarkerDataUnit.Bytes, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+// #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+//         private static ProfilerCounterValue<float> s_PacketsSent = new(ProfilerCategory.Network, $"{NetworkMetricTypes.PacketsSent.Id.Name} {NetworkMetricTypes.PacketsSent.Id.TypeIndex} {NetworkMetricTypes.PacketsSent.Id.EnumValue}", ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+//         private static ProfilerCounterValue<float> s_PacketsReceived = new(ProfilerCategory.Network, $"{NetworkMetricTypes.PacketsReceived.Id.Name} {NetworkMetricTypes.PacketsReceived.Id.TypeIndex} {NetworkMetricTypes.PacketsReceived.Id.EnumValue}", ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+// #endif
+//         private static ProfilerCounterValue<float> s_RpcSent = new(ProfilerCategory.Network, $"{NetworkMetricTypes.RpcSent.Id.Name} {NetworkMetricTypes.RpcSent.Id.TypeIndex} {NetworkMetricTypes.RpcSent.Id.EnumValue}", ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+//         private static ProfilerCounterValue<float> s_RpcReceived = new(ProfilerCategory.Network, $"{NetworkMetricTypes.RpcReceived.Id.Name} {NetworkMetricTypes.RpcReceived.Id.TypeIndex} {NetworkMetricTypes.RpcReceived.Id.EnumValue}", ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+
+        private static ProfilerCounterValue<float> s_TotalBytesSent = new (ProfilerCategory.Network, NetworkMetricTypes.TotalBytesSent.Id.Name, ProfilerMarkerDataUnit.Bytes, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+        private static ProfilerCounterValue<float> s_TotalBytesReceived = new (ProfilerCategory.Network, NetworkMetricTypes.TotalBytesReceived.Id.Name, ProfilerMarkerDataUnit.Bytes, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+        private static ProfilerCounterValue<float> s_PacketsSent = new(ProfilerCategory.Network, NetworkMetricTypes.PacketsSent.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+        private static ProfilerCounterValue<float> s_PacketsReceived = new(ProfilerCategory.Network, NetworkMetricTypes.PacketsReceived.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+#endif
+        private static ProfilerCounterValue<float> s_RpcSent = new(ProfilerCategory.Network, NetworkMetricTypes.RpcSent.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+        private static ProfilerCounterValue<float> s_RpcReceived = new(ProfilerCategory.Network, NetworkMetricTypes.RpcReceived.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+
+        private static ProfilerCounterValue<float> s_RttToServer = new(ProfilerCategory.Network, NetworkMetricTypes.RttToServer.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+        private static ProfilerCounterValue<float> s_NetworkObjects = new(ProfilerCategory.Network, NetworkMetricTypes.NetworkObjects.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+        private static ProfilerCounterValue<float> s_ConnectedClients = new(ProfilerCategory.Network, NetworkMetricTypes.ConnectedClients.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+        private static ProfilerCounterValue<float> s_PacketLoss = new(ProfilerCategory.Network, NetworkMetricTypes.PacketLoss.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame);
+
+        private static ProfilerCounterValue<float> s_NetworkVariableDeltaSent = new(ProfilerCategory.Network, NetworkMetricTypes.NetworkVariableDeltaSent.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+        private static ProfilerCounterValue<float> s_NetworkVariableDeltaReceived = new(ProfilerCategory.Network, NetworkMetricTypes.NetworkVariableDeltaReceived.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+        private static ProfilerCounterValue<int> s_NetworkVariableDeltaCount = new(ProfilerCategory.Network, NetworkMetricTypes.NetworkVariableDeltaReceived.Id.Name + "Count", ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+
+
+        // public struct NetworkIdNetworkVariableDeltaSent
+        // {
+        //     public ulong networkId;
+        //     public float bytesCount;
+        // }
+        //
+        // private static ProfilerCounterValue<NetworkIdNetworkVariableDeltaSent> s_NetworkVariableDeltaReceivedWithId = new(ProfilerCategory.Network, NetworkMetricTypes.NetworkVariableDeltaReceived.Id.Name, ProfilerMarkerDataUnit.Count, ProfilerCounterOptions.FlushOnEndOfFrame | ProfilerCounterOptions.ResetToZeroOnFlush);
+
         private readonly Counter m_TransportBytesSent = new Counter(NetworkMetricTypes.TotalBytesSent.Id)
         {
             ShouldResetOnDispatch = true,
@@ -96,9 +134,11 @@ namespace Unity.Netcode
 
         public NetworkMetrics()
         {
-            sTransportBytesSent.Value = 0;
-            MonobehaviourHelper.InitMonoBehaviourHelper();
-            MonobehaviourHelper.OnLateUpdate += ResetCounters;
+            ResetCounters();
+
+            // MonobehaviourHelper.InitMonoBehaviourHelper();
+            // MonobehaviourHelper.OnUpdate += ResetCounters;
+            // MonobehaviourHelper.OnOneSecondPassed += ResetCountersEverySecond;
 
             Dispatcher = new MetricDispatcherBuilder()
                 .WithCounters(m_TransportBytesSent, m_TransportBytesReceived)
@@ -133,18 +173,28 @@ namespace Unity.Netcode
             Dispatcher.SetConnectionId(connectionId);
         }
 
+        private readonly Queue<Tuple<long, float>> m_BytesSentQueue = new();
         public void TrackTransportBytesSent(long bytesCount)
         {
             m_TransportBytesSent.Increment(bytesCount);
-            sTransportBytesSent.Value += bytesCount;
-            // sTransportBytesSent.Value = bytesCount;
+            s_TotalBytesSent.Value += bytesCount;
 
-            Debug.Log($"NGO NetworkMetrics, Frame: {Time.frameCount} TrackTransportBytesSent: {bytesCount}, total: {sTransportBytesSent.Value}");
+            m_BytesSentQueue.Enqueue(new Tuple<long, float>(bytesCount, Time.realtimeSinceStartup));
+            var oneSecondAgo = Time.realtimeSinceStartup - 1f;
+            while (m_BytesSentQueue.Count > 0 && m_BytesSentQueue.Peek().Item2 < oneSecondAgo)
+            {
+                m_BytesSentQueue.Dequeue();
+            }
+
+            // Debug.Log($"NGO NetworkMetrics, Frame: {Time.frameCount} TotalBytesSent: {bytesCount}, total: {s_TransportBytesSent.Value}");
         }
 
         public void TrackTransportBytesReceived(long bytesCount)
         {
             m_TransportBytesReceived.Increment(bytesCount);
+            s_TotalBytesReceived.Value += bytesCount;
+
+            // Debug.Log($"NGO NetworkMetrics, Frame: {Time.frameCount} TotalBytesReceived: {bytesCount}, total: {s_TransportBytesReceived.Value}");
         }
 
         public void TrackNetworkMessageSent(ulong receivedClientId, string messageType, long bytesCount)
@@ -228,6 +278,17 @@ namespace Unity.Netcode
             m_UnnamedMessageReceivedEvent.Mark(new UnnamedMessageEvent(new ConnectionInfo(senderClientId), bytesCount));
             IncrementMetricCount();
         }
+        private static readonly int k_NetworkVarDeltaTag = 2;
+        public struct NetworkVarDeltaMetadata
+        {
+            public static readonly Guid MyProjectId = Guid.NewGuid();
+            public ulong networkId;
+            public ulong receiverClientId;
+            public int bytesCount;
+            public uint variableNameHash;
+            public uint behaviorNameHash;
+            public float timestamp;
+        }
 
         public void TrackNetworkVariableDeltaSent(
             ulong receiverClientId,
@@ -248,9 +309,31 @@ namespace Unity.Netcode
                     variableName,
                     networkBehaviourName,
                     bytesCount));
+
+            s_NetworkVariableDeltaSent.Value += bytesCount;
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.NetworkVariableDeltaSent, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics NetworkVariableEvent.SentEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: {s_NetworkVariableDeltaSent.Value}");
+
+            // if (Profiler.enabled)
+            // {
+            //     var deltaMetadata = new NetworkVarDeltaMetadata
+            //     {
+            //         networkId = networkObject.NetworkObjectId,
+            //         receiverClientId = receiverClientId,
+            //         bytesCount = (int)bytesCount,
+            //         variableNameHash = (uint)variableName.GetHashCode(),
+            //         behaviorNameHash = (uint)networkBehaviourName.GetHashCode(),
+            //         timestamp = Time.realtimeSinceStartup
+            //     };
+            //
+            //     Profiler.EmitFrameMetaData(, k_NetworkVarDeltaTag, new[] { deltaMetadata });
+            // }
+
             IncrementMetricCount();
         }
-
         public void TrackNetworkVariableDeltaReceived(
             ulong senderClientId,
             NetworkObject networkObject,
@@ -270,6 +353,17 @@ namespace Unity.Netcode
                     variableName,
                     networkBehaviourName,
                     bytesCount));
+
+            s_NetworkVariableDeltaReceived.Value += bytesCount;
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.NetworkVariableDeltaReceived, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+            // Profiler.EmitSessionMetaData(NetworkVariableEvent.EventId, s_NetworkVariableDeltaCount.Value, new List<NetworkVariableEvent.DataStruct>{data});
+
+            Debug.Log($"NGO NetworkMetrics NetworkVariableEvent.ReceivedEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: {s_NetworkVariableDeltaReceived.Value}");
+
+            // s_NetworkVariableDeltaCount.Value++;
+
             IncrementMetricCount();
         }
 
@@ -281,6 +375,12 @@ namespace Unity.Netcode
             }
 
             m_OwnershipChangeSentEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.OwnershipChangeSent, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics OwnershipChangeEvent.SentEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -293,6 +393,12 @@ namespace Unity.Netcode
 
             m_OwnershipChangeReceivedEvent.Mark(new OwnershipChangeEvent(new ConnectionInfo(senderClientId),
                 GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.OwnershipChangeReceived, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics OwnershipChangeEvent.ReceivedEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -304,6 +410,12 @@ namespace Unity.Netcode
             }
 
             m_ObjectSpawnSentEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.ObjectSpawnedSent, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics ObjectSpawnedEvent.SentEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -315,6 +427,12 @@ namespace Unity.Netcode
             }
 
             m_ObjectSpawnReceivedEvent.Mark(new ObjectSpawnedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.ObjectSpawnedReceived, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics ObjectSpawnedEvent.ReceivedEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -326,6 +444,12 @@ namespace Unity.Netcode
             }
 
             m_ObjectDestroySentEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(receiverClientId), GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.ObjectDestroyedSent, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics ObjectDestroyedEvent.SentEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -337,6 +461,12 @@ namespace Unity.Netcode
             }
 
             m_ObjectDestroyReceivedEvent.Mark(new ObjectDestroyedEvent(new ConnectionInfo(senderClientId), GetObjectIdentifier(networkObject), bytesCount));
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.ObjectDestroyedReceived, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics ObjectDestroyedEvent.ReceivedEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: N/A");
+
             IncrementMetricCount();
         }
 
@@ -359,6 +489,14 @@ namespace Unity.Netcode
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
+
+            s_RpcSent.Value++;
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.RpcSent, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics RpcEvent.SentEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: {s_RpcSent.Value}");
+
             IncrementMetricCount();
         }
 
@@ -393,6 +531,16 @@ namespace Unity.Netcode
                     rpcName,
                     networkBehaviourName,
                     bytesCount));
+
+            s_RpcReceived.Value++;
+
+
+
+            NetworkedObjectByteCounter data = new NetworkedObjectByteCounter {Type = DirectedMetricType.RpcReceived, NetworkId = GetObjectIdentifier(networkObject).NetworkId, BytesCount = bytesCount};
+            Profiler.EmitFrameMetaData(NetworkedObjectByteCounter.Id, 0, new List<NetworkedObjectByteCounter>{data});
+
+            Debug.Log($"NGO NetworkMetrics RpcEvent.ReceivedEvent, Frame: {Time.frameCount} Id: {GetObjectIdentifier(networkObject).NetworkId}, NetworkVariableDeltaReceived: {bytesCount}, total: {s_RpcReceived.Value}");
+
             IncrementMetricCount();
         }
 
@@ -455,9 +603,11 @@ namespace Unity.Netcode
             {
                 return;
             }
-
             m_PacketSentCounter.Increment(packetCount);
+            s_PacketsSent.Value += packetCount;
             IncrementMetricCount();
+
+            // Debug.Log($"NGO NetworkMetrics, Frame: {Time.frameCount} PacketsSent: {packetCount}, total: {s_PacketsSent.Value}");
 #endif
         }
 
@@ -468,11 +618,14 @@ namespace Unity.Netcode
             {
                 return;
             }
-
             m_PacketReceivedCounter.Increment(packetCount);
+            s_PacketsReceived.Value += packetCount;
             IncrementMetricCount();
+
+            // Debug.Log($"NGO NetworkMetrics, Frame: {Time.frameCount} PacketsReceived: {packetCount}, total: {s_PacketsReceived.Value}");
 #endif
         }
+
 
         public void UpdateRttToServer(int rttMilliseconds)
         {
@@ -483,6 +636,7 @@ namespace Unity.Netcode
             }
             var rttSeconds = rttMilliseconds * 1e-3;
             m_RttToServerGauge.Set(rttSeconds);
+            s_RttToServer.Value = (float)rttSeconds;
 #endif
         }
 
@@ -495,6 +649,7 @@ namespace Unity.Netcode
             }
 
             m_NetworkObjectsGauge.Set(count);
+            s_NetworkObjects.Value = count;
 #endif
         }
 
@@ -507,6 +662,7 @@ namespace Unity.Netcode
             }
 
             m_ConnectionsGauge.Set(count);
+            s_ConnectedClients.Value = count;
 #endif
         }
 
@@ -519,20 +675,68 @@ namespace Unity.Netcode
             }
 
             m_PacketLossGauge.Set(packetLoss);
+            s_PacketLoss.Value = packetLoss;
 #endif
         }
 
+        private long CreateByteCounterMagic(NetworkedObjectByteCounter counter)
+        {
+            long result = 0;
+
+            // Pack bits: [NetworkId 24 bits][Type 8 bits][BytesCount 32 bits]
+
+            // NetworkId: Take lowest 24 bits and shift left by 40 positions
+            result |= ((long)counter.NetworkId & 0xFFFFFF) << 40;
+
+            // Type: Shift left by 32 positions
+            result |= ((long)counter.Type & 0xFF) << 32;
+
+            // BytesCount: Place in lowest 32 bits
+            result |= (counter.BytesCount & 0xFFFFFFFF);
+
+            return result;
+        }
+
+
+
+#if UNITY_EDITOR
         [InitializeOnLoadMethod]
+#endif
         private static void ResetCounters()
         {
-            Debug.Log($"Counter reseted in frame: {Time.frameCount}, old value: {sTransportBytesSent.Value}");
-            sTransportBytesSent.Value = 0;
-            Debug.Log($"Counter reseted in frame: {Time.frameCount}, new value: {sTransportBytesSent.Value}");
+            Debug.Log($"Counters reseted in frame: {Time.frameCount}");
+
+            s_TotalBytesSent.Value = 0;
+            s_TotalBytesReceived.Value = 0;
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            s_PacketsSent.Value = 0;
+            s_PacketsReceived.Value = 0;
+#endif
+            s_RpcSent.Value = 0;
+            s_RpcReceived.Value = 0;
+            s_RttToServer.Value = 0;
+            s_NetworkObjects.Value = 0;
+            s_ConnectedClients.Value = 0;
+            s_PacketLoss.Value = 0;
+
+            s_NetworkVariableDeltaSent.Value = 0;
+            s_NetworkVariableDeltaReceived.Value = 0;
+            s_NetworkVariableDeltaCount.Value = 0;
         }
+
+        static readonly NetStatSerializer s_NetStatSerializer = new();
 
         public void DispatchFrame()
         {
             s_FrameDispatch.Begin();
+
+            using var result = s_NetStatSerializer.Serialize(((MetricDispatcher)Dispatcher).MetricCollection);
+            Profiler.EmitFrameMetaData(
+                new Guid("42c5aec2-fb86-4172-a384-34063f1bd332"),
+                0,
+                result);
+
+
             Dispatcher.Dispatch();
             s_FrameDispatch.End();
             m_NumberOfMetricsThisFrame = 0;
