@@ -10,6 +10,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3321)
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3321)
+
 ### Fixed
 
 - Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
