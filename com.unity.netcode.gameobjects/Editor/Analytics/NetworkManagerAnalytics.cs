@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System;
 using System.Text;
-using UnityEngine;
 using UnityEngine.Analytics;
 
 namespace Unity.Netcode.Editor
@@ -22,7 +21,7 @@ namespace Unity.Netcode.Editor
             var message = new StringBuilder();
             message.AppendLine($"{nameof(IsDistributedAuthority)}: {IsDistributedAuthority}");
             message.AppendLine($"{nameof(WasServer)}: {WasServer}");
-            message.AppendLine($"{nameof(WasClient)}: {WasClient}");            
+            message.AppendLine($"{nameof(WasClient)}: {WasClient}");
             message.AppendLine($"{nameof(UsedCMBService)}: {UsedCMBService}");
             message.AppendLine($"{nameof(IsUsingMultiplayerSDK)}: {IsUsingMultiplayerSDK}");
             message.AppendLine($"{nameof(NetworkTransport)}: {NetworkTransport}");
@@ -30,11 +29,12 @@ namespace Unity.Netcode.Editor
             message.AppendLine($"{nameof(TickRate)}: {TickRate}");
             return message.ToString();
         }
+#if ENABLE_NGO_ANALYTICS_LOGGING
         internal void LogAnalytics(int sessionNumber)
         {
             Debug.Log($"{ToString()}");
         }
-
+#endif
         public bool Equals(NetworkManagerAnalytics other)
         {
             return IsDistributedAuthority == other.IsDistributedAuthority && WasServer == other.WasServer && WasClient == other.WasClient
