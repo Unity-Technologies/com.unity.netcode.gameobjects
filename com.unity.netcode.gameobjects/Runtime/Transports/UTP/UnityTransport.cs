@@ -1250,7 +1250,7 @@ namespace Unity.Netcode.Transports.UTP
         /// </remarks>
         /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
         /// <returns><see cref="NetworkEndPoint"/></returns>
-        public NetworkEndPoint GetEndpoint(ulong clientId)
+        public NetworkEndpoint GetEndpoint(ulong clientId)
         {
             if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
             {
@@ -1261,7 +1261,7 @@ namespace Unity.Netcode.Transports.UTP
                     return m_Driver.RemoteEndPoint(networkConnection);
                 }
             }
-            return new NetworkEndPoint();
+            return new NetworkEndpoint();
         }
 #endif
 
