@@ -13,6 +13,11 @@
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
+# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
+# 1) The 2021 editor will soon be out of support
+# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
+# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
+{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
@@ -57,6 +62,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
         
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -70,6 +76,11 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
+# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
+# 1) The 2021 editor will soon be out of support
+# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
+# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
+{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
@@ -102,6 +113,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
         - "test-results/**/*"
   dependencies:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -492,7 +492,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        //[Ignore("Disabling this temporarily until it is migrated into new integration test.")]
         public void WhenASpawnMessageArrivesBeforeThePrefabIsAvailable_ItIsDeferred()
         {
             m_SkipAddingPrefabsToClient = true;
