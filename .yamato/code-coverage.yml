@@ -16,7 +16,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    - DISPLAY=:0 upm-ci package test -u {{ editor }} --package-path com.unity.netcode.gameobjects --enable-code-coverage --code-coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --coverage-upload-options="reportsDir:upm-ci~/test-results;name:netcode_gameobjects;flags:netcode_gameobjects" --extra-utr-arg="--extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun"
+    - DISPLAY=:0 upm-ci package test -u {{ editor }} --package-path com.unity.netcode.gameobjects --enable-code-coverage --code-coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --extra-utr-arg="--extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun"
   artifacts:
     logs:
       paths:
