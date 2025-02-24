@@ -80,7 +80,9 @@ run_all_projects_standards:
 {% for platform in test_platforms.default -%}
 {% for project in projects.all -%}
 {% for editor in validation_editors.default -%}
+{% if editor != "2021.3" or project.name != "testproject" %} # Tracked in MTT-11382
     - .yamato/project-standards.yml#standards_{{ platform.name }}_{{ project.name }}_{{ editor }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
