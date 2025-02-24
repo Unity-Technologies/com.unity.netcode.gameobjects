@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Quaternion = UnityEngine.Quaternion;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
@@ -1503,6 +1504,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356. The job is failing on mobile devices on 2021 editor specifically
         public void WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),

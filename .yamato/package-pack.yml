@@ -26,3 +26,26 @@ package_pack_-_ngo_{{ platform.name }}:
       paths:
         - "upm-ci~/**"
 {% endfor -%}
+
+# This is in essence the same job as the one above with the difference that upm-ci is used instead of upm-pvp
+# The reason for using it is that I had some problems with Code Coverage which in its current form uses upm-ci but if we would use the other pack job (the one above) we would need to use upm-pvp
+# I had some problems with getting it to work so as temporary solution I created this pack job which is used ONLY as a dependency of Code Coverage job (other jobs use the above definition of pack job)
+# TODO: remove this job and utilize the above one for Code Coverage job. This is tracked in MTT-11383
+{% for platform in test_platforms.default -%}
+{% for project in projects.default -%}
+package_pack_-_ngo_{{ platform.name }}_upmCI:
+  name: Package Pack (legacy upm-ci) - NGO [{{ platform.name }}]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+  timeout: 0.25
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci project pack --project-path {{ project.path }}
+  artifacts:
+    packages:
+      paths:
+        - "upm-ci~/packages/**/*"
+{% endfor -%}
+{% endfor -%}

@@ -16,6 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager m_Client;
 
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Tracked in MTT-11356.
         public IEnumerator TestClientTimeInitializationOnConnect([Values(0, 1f)] float serverStartDelay, [Values(0, 1f)] float clientStartDelay, [Values(true, false)] bool isHost)
         {
             // Create multiple NetworkManager instances
