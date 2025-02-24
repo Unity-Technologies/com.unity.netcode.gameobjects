@@ -1589,7 +1589,7 @@ namespace Unity.Netcode.EditorTests
 
             var readerArray = reader.ToArray();
             Assert.True(readerArray.Length == bytes.Length - 1, $"Array of reader should have a length of {bytes.Length - 1} but was {readerArray.Length}!");
-            for(int i = 0; i < readerArray.Length; i++)
+            for (int i = 0; i < readerArray.Length; i++)
             {
                 Assert.True(bytes[i + 1] == readerArray[i], $"Value of {nameof(readerArray)} at index {i} is {readerArray[i]} but should be {bytes[i + 1]}!");
             }
