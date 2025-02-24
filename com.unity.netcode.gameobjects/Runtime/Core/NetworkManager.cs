@@ -918,11 +918,8 @@ namespace Unity.Netcode
         {
             public int SessionIndex;
             public bool SessionStopped;
-            public bool PlayerPrefab;
             public bool WasServer;
             public bool WasClient;
-            public float SessionStart;
-            public float SessionEnd;
             public bool UsedCMBService;
             public string Transport;
             public NetworkConfig NetworkConfig;
@@ -1078,9 +1075,7 @@ namespace Unity.Netcode
                 SessionIndex = RecentSessions.Count,
                 WasClient = IsClient,
                 WasServer = IsServer,
-                SessionStart = Time.realtimeSinceStartup,
                 NetworkConfig = NetworkConfig.Copy(),
-                PlayerPrefab = NetworkConfig.PlayerPrefab != null,
                 Transport = NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.GetType().Name : "None",
             };
             RecentSessions.Add(newSession);
@@ -1108,7 +1103,6 @@ namespace Unity.Netcode
                 {
                     return;
                 }
-                recentSession.SessionEnd = Time.realtimeSinceStartup;
                 recentSession.UsedCMBService = CMBServiceConnection;
                 recentSession.SessionStopped = true;
                 RecentSessions[lastIndex] = recentSession;

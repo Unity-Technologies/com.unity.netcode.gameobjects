@@ -231,18 +231,25 @@ namespace Unity.Netcode.Editor
         public void UpdateAnalytics()
         {
             // Exit early if analytics is disabled
-            if (!EditorAnalytics.enabled)
+            if (!EditorAnalytics.enabled || NetworkManager.RecentSessions.Count == 0)
             {
                 return;
             }
 
+            var previousAnalytics = new NetworkManagerAnalytics();
             // Parse through all of the recent network sessions to generate and send NetworkManager analytics
             for (int i = 0; i < NetworkManager.RecentSessions.Count; i++)
             {
                 var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
+
 #if ENABLE_NGO_ANALYTICS_LOGGING
                 networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
 #endif
+                // If the previous session has no changes to the configuration then skip it (only unique configurations)
+                if (previousAnalytics.Equals(networkManagerAnalytics))
+                {
+                    continue;
+                }
                 var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
 #if ENABLE_NGO_ANALYTICS_LOGGING
                 if (result != AnalyticsResult.Ok)
@@ -250,6 +257,7 @@ namespace Unity.Netcode.Editor
                     Debug.LogWarning($"[Analytics] Problem sending analytics: {result}");
                 }
 #endif
+                previousAnalytics = networkManagerAnalytics;
             }
         }
 
@@ -261,45 +269,26 @@ namespace Unity.Netcode.Editor
         private NetworkManagerAnalytics GetNetworkManagerAnalytics(NetworkManager.NetworkSessionInfo networkSession)
         {
             var multiplayerSDKInstalled = false;
-            var multiplayerToolsInstalled = false;
-            var networkMessageMetrics = false;
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             multiplayerSDKInstalled = true;
 #endif
-#if MULTIPLAYER_TOOLS
-            multiplayerToolsInstalled = true;
-            networkMessageMetrics = networkSession.NetworkConfig.NetworkMessageMetrics;
-#endif
+#if ENABLE_NGO_ANALYTICS_LOGGING
             if (!networkSession.SessionStopped)
             {
                 Debug.LogWarning($"Session-{networkSession.SessionIndex} was not considered stopped!");
             }
+#endif
+
             var networkManagerAnalytics = new NetworkManagerAnalytics()
             {
-                NetworkTopology = networkSession.NetworkConfig.NetworkTopology.ToString(),
-                UsedCMBService = networkSession.UsedCMBService,
-                NetworkTransport = networkSession.Transport,
-                IsUsingMultiplayerSDK = multiplayerSDKInstalled,
-                IsUsingMultiplayerTools = multiplayerToolsInstalled,
-                PlayerPrefabSet = networkSession.PlayerPrefab,
-                ConnectionApproval = networkSession.NetworkConfig.ConnectionApproval,
-                ClientConnectionBufferTimeout = networkSession.NetworkConfig.ClientConnectionBufferTimeout,
-                EnsureNetworkVariableLengthSafety = networkSession.NetworkConfig.EnsureNetworkVariableLengthSafety,
-                EnableSceneManagement = networkSession.NetworkConfig.EnableSceneManagement,
-                LoadSceneTimeOut = networkSession.NetworkConfig.LoadSceneTimeOut,
-                SpawnTimeout = networkSession.NetworkConfig.SpawnTimeout,
-                ForceSamePrefabs = networkSession.NetworkConfig.ForceSamePrefabs,
-                RecycleNetworkIds = networkSession.NetworkConfig.RecycleNetworkIds,
-                NetworkIdRecycleDelay = networkSession.NetworkConfig.NetworkIdRecycleDelay,
-                RpcHashSize = networkSession.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes ? 4 : 8,
-                EnableTimeResync = networkSession.NetworkConfig.EnableTimeResync,
-                TimeResyncInterval = networkSession.NetworkConfig.TimeResyncInterval,
-                TickRate = (int)networkSession.NetworkConfig.TickRate,
-                NetworkMessageMetrics = networkMessageMetrics,
-                NetworkProfilingMetrics = networkSession.NetworkConfig.NetworkProfilingMetrics,
-                WasClient = networkSession.WasClient,
+                IsDistributedAuthority = networkSession.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority,
                 WasServer = networkSession.WasServer,
-                SessionDuration = networkSession.SessionEnd - networkSession.SessionStart,
+                WasClient = networkSession.WasClient,
+                UsedCMBService = networkSession.UsedCMBService,
+                IsUsingMultiplayerSDK = multiplayerSDKInstalled,
+                NetworkTransport = networkSession.Transport,
+                EnableSceneManagement = networkSession.NetworkConfig.EnableSceneManagement,
+                TickRate = (int)networkSession.NetworkConfig.TickRate,
             };
             return networkManagerAnalytics;
         }
