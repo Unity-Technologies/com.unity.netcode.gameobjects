@@ -153,7 +153,6 @@ namespace Unity.Netcode
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
-        /// <exception cref="NotSupportedException"></exception>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)
         {
             if (copyAllocator == Allocator.None)
@@ -178,7 +177,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
         /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
-        /// <exception cref="NotSupportedException"></exception>
         public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)
         {
             if (copyAllocator == Allocator.None)
