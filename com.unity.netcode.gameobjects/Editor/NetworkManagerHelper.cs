@@ -3,6 +3,9 @@ using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
+#if ENABLE_NGO_ANALYTICS_LOGGING
+using UnityEngine.Analytics;
+#endif
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.Editor
@@ -242,14 +245,16 @@ namespace Unity.Netcode.Editor
             {
                 var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
 
-#if ENABLE_NGO_ANALYTICS_LOGGING
-                networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
-#endif
+
                 // If the previous session has no changes to the configuration then skip it (only unique configurations)
                 if (previousAnalytics.Equals(networkManagerAnalytics))
                 {
                     continue;
                 }
+
+#if ENABLE_NGO_ANALYTICS_LOGGING
+                networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
+#endif
                 var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
 #if ENABLE_NGO_ANALYTICS_LOGGING
                 if (result != AnalyticsResult.Ok)

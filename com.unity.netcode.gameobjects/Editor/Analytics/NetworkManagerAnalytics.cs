@@ -1,6 +1,9 @@
 #if UNITY_EDITOR
 using System;
 using System.Text;
+#if ENABLE_NGO_ANALYTICS_LOGGING
+using UnityEngine;
+#endif
 using UnityEngine.Analytics;
 
 namespace Unity.Netcode.Editor
@@ -32,7 +35,7 @@ namespace Unity.Netcode.Editor
 #if ENABLE_NGO_ANALYTICS_LOGGING
         internal void LogAnalytics(int sessionNumber)
         {
-            Debug.Log($"{ToString()}");
+            Debug.Log($"{nameof(NetworkManagerAnalytics)} Session-{sessionNumber}:\n {ToString()}");
         }
 #endif
         public bool Equals(NetworkManagerAnalytics other)
