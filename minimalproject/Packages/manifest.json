@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.ide.rider": "3.0.34",
     "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
   },
     "testables": [
