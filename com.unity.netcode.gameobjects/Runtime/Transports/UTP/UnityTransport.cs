@@ -1241,7 +1241,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 #else
         /// <summary>
-        /// Provides the <see cref="NetworkEndPoint"/> for the NGO client identifier specified.
+        /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
         /// </summary>
         /// <remarks>
         /// - This is only really useful for direct connections.
@@ -1249,8 +1249,8 @@ namespace Unity.Netcode.Transports.UTP
         /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
         /// </remarks>
         /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
-        /// <returns><see cref="NetworkEndPoint"/></returns>
-        public NetworkEndPoint GetEndpoint(ulong clientId)
+        /// <returns><see cref="NetworkEndpoint"/></returns>
+        public NetworkEndpoint GetEndpoint(ulong clientId)
         {
             if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
             {
@@ -1261,7 +1261,7 @@ namespace Unity.Netcode.Transports.UTP
                     return m_Driver.RemoteEndPoint(networkConnection);
                 }
             }
-            return new NetworkEndPoint();
+            return new NetworkEndpoint();
         }
 #endif
 
