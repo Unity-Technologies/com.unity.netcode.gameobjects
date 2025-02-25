@@ -42,7 +42,7 @@ develop_nightly:
   dependencies:
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-#    - .yamato/project-standards.yml#standards_ubuntu_testproject_2021.3  # Tracked in MTT-11382
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_2021.3
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 2021.3
