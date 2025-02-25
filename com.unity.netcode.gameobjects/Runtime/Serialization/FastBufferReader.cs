@@ -136,7 +136,56 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
+
                 Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, copyAllocator, Allocator.Temp);
+            }
+        }
+
+        /// <summary>
+        /// Create a FastBufferReader from an ArraySegment that uses the ArraySegment.Offset for the reader's offset.
+        ///
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        ///
+        /// Allocator.None is not supported for byte[]. If you need this functionality, use a fixed() block
+        /// and ensure the FastBufferReader isn't used outside that block.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy from</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)
+        {
+            if (copyAllocator == Allocator.None)
+            {
+                throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
+            }
+            fixed (byte* data = buffer.Array)
+            {
+
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, buffer.Offset, copyAllocator, Allocator.Temp);
+            }
+        }
+
+        /// <summary>
+        /// Create a FastBufferReader from an ArraySegment that uses the ArraySegment.Offset for the reader's offset and the ArraySegment.Count for the reader's length.
+        ///
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        ///
+        /// Allocator.None is not supported for byte[]. If you need this functionality, use a fixed() block
+        /// and ensure the FastBufferReader isn't used outside that block.
+        /// </summary>
+        /// <param name="buffer">The buffer to copy from</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)
+        {
+            if (copyAllocator == Allocator.None)
+            {
+                throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
+            }
+            fixed (byte* data = buffer.Array)
+            {
+                Handle = CreateHandle(data, buffer.Count, buffer.Offset, copyAllocator, Allocator.Temp);
             }
         }
 

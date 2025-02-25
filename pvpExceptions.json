@@ -731,6 +731,7 @@
           "Unity.Netcode.EditorTests.FastBufferReaderTests: void WhenCallingTryBeginRead_TheAllowedReadPositionIsMarkedRelativeToCurrentPosition(): undocumented",
           "Unity.Netcode.EditorTests.FastBufferReaderTests: void WhenReadingAfterSeeking_TheNewReadComesFromTheCorrectPosition(): undocumented",
           "Unity.Netcode.EditorTests.FastBufferReaderTests: void WhenCallingTryBeginReadInternal_AllowedReadPositionDoesNotMoveBackward(): undocumented",
+          "Unity.Netcode.EditorTests.FastBufferReaderTests: void WhenUsingArraySegment_ConstructorHonorsArraySegmentConfiguration(): undocumented",
           "Unity.Netcode.EditorTests.FastBufferWriterTests: undocumented",
           "Unity.Netcode.EditorTests.FastBufferWriterTests: void RunTypeTest(T): undocumented",
           "Unity.Netcode.EditorTests.FastBufferWriterTests: void RunTypeTestSafe(T): undocumented",
