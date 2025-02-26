@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -11,7 +12,7 @@ namespace Unity.Netcode
     /// <typeparam name="T">The type of interpolated value</typeparam>
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
-        internal float MaxInterpolationBound = 3.0f;
+        internal float MaxInterpolationBound = 1.0f;
         protected internal struct BufferedItem
         {
             public T Item;
@@ -31,14 +32,7 @@ namespace Unity.Netcode
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
-        protected internal T m_InterpStartValue;
-        protected internal T m_CurrentInterpValue;
-        protected internal T m_InterpEndValue;
-
-        private double m_EndTimeConsumed;
-        private double m_StartTimeConsumed;
-
-        protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>(k_BufferCountLimit);
+        protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
 
 
 
@@ -71,6 +65,7 @@ namespace Unity.Netcode
         private BufferedItem m_LastBufferedItemReceived;
         private int m_NbItemsReceivedThisFrame;
 
+        protected internal T m_CurrentInterpValue;
         private int m_LifetimeConsumedCount;
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
@@ -96,8 +91,12 @@ namespace Unity.Netcode
         public void Clear()
         {
             m_Buffer.Clear();
-            m_EndTimeConsumed = 0.0d;
-            m_StartTimeConsumed = 0.0d;
+            m_CurrentInterpValue = default;
+            InterpolateState = new CurrentState()
+            {
+                CurrentValue = default,
+                LerpT = 0.0000001f,
+            };
         }
 
         /// <summary>
@@ -108,18 +107,20 @@ namespace Unity.Netcode
         public void ResetTo(T targetValue, double serverTime)
         {
             m_LifetimeConsumedCount = 1;
-            m_InterpStartValue = targetValue;
-            m_InterpEndValue = targetValue;
-            m_CurrentInterpValue = targetValue;
             m_Buffer.Clear();
-            m_EndTimeConsumed = 0.0d;
-            m_StartTimeConsumed = 0.0d;
-
+            m_Name = GetType().Name;
+            m_CurrentInterpValue = targetValue;
+            InterpolateState = new CurrentState()
+            {
+                CurrentValue = targetValue,
+                LerpT = 0.0000001f,
+            };
             Update(0, serverTime, serverTime);
         }
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
-        private void TryConsumeFromBuffer(double renderTime, double serverTime)
+#if OLDSTUFF
+        private void TryConsumeFromBufferLDK(double renderTime, double serverTime)
         {
             int consumedCount = 0;
             // only consume if we're ready
@@ -152,15 +153,21 @@ namespace Unity.Netcode
                             else if (consumedCount == 0)
                             {
                                 // Interpolating to new value, end becomes start. We then look in our buffer for a new end.
-                                m_StartTimeConsumed = m_EndTimeConsumed;
-                                m_InterpStartValue = m_InterpEndValue;
+
+                                // !!!! This does not account for gaps between values !!!
+                                // if last entry is > several ticks then the range is going to be very large!
+                                m_StartTimeConsumed = renderTime;
+                                m_InterpStartValue = m_CurrentInterpValue;
                             }
 
-                            if (bufferedValue.TimeSent > m_EndTimeConsumed)
+                            if ((bufferedValue.TimeSent - m_StartTimeConsumed) >= k_TickFrequency)
                             {
                                 itemToInterpolateTo = bufferedValue;
                                 m_EndTimeConsumed = bufferedValue.TimeSent;
                                 m_InterpEndValue = bufferedValue.Item;
+                                m_Buffer.RemoveAt(i);
+                                m_LifetimeConsumedCount++;
+                                break;
                             }
                         }
 
@@ -168,6 +175,80 @@ namespace Unity.Netcode
                         consumedCount++;
                         m_LifetimeConsumedCount++;
                     }
+                }
+            }
+        }
+#endif
+        private string m_Name;
+
+        internal struct CurrentState
+        {
+            public BufferedItem? Start;
+
+            public BufferedItem? End;
+
+            public double RelativeTime;
+
+            public T CurrentValue;
+
+            public float LerpT;
+        }
+
+        internal CurrentState InterpolateState;
+
+        private void TryConsumeFromBuffer(double renderTime, double serverTime)
+        {
+            // If we don't have our initial buffered item/starting point or our end point or the end point's time sent is less than the
+            // render time
+            if (!InterpolateState.Start.HasValue || !InterpolateState.End.HasValue || InterpolateState.End.Value.TimeSent < renderTime)
+            {
+                BufferedItem? previousItem = null;
+                while (m_Buffer.TryPeek(out BufferedItem potentialItem))
+                {
+                    if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
+                    {
+                        break;
+                    }
+
+                    if (potentialItem.TimeSent <= serverTime)
+                    {
+                        // We want to initialize and then always set the end
+                        if (!InterpolateState.Start.HasValue)
+                        {
+                            if (m_Buffer.TryDequeue(out BufferedItem start))
+                            {
+                                InterpolateState.Start = start;
+                                InterpolateState.RelativeTime = InterpolateState.Start.Value.TimeSent;
+                                InterpolateState.CurrentValue = start.Item;
+                                InterpolateState.LerpT = 0.0f;
+                                InterpolateState.Start = start;
+                            }
+                        }
+                        else if (!InterpolateState.End.HasValue || InterpolateState.End.Value.TimeSent < potentialItem.TimeSent)
+                        {
+                            if (m_Buffer.TryDequeue(out BufferedItem end))
+                            {
+                                if (InterpolateState.End.HasValue)
+                                {
+                                    InterpolateState.Start = InterpolateState.End;
+                                    //m_CurrentState.RelativeTime = m_CurrentState.End.Value.TimeSent;
+                                }
+                                InterpolateState.End = end;
+                                InterpolateState.LerpT = 0.0f;
+                                m_LifetimeConsumedCount++;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (!InterpolateState.Start.HasValue)
+                    {
+                        break;
+                    }
+                    previousItem = potentialItem;
                 }
             }
         }
@@ -201,48 +282,33 @@ namespace Unity.Netcode
                 throw new InvalidOperationException("trying to update interpolator when no data has been added to it yet");
             }
 
-            // Interpolation example to understand the math below
-            // 4   4.5      6   6.5
-            // |   |        |   |
-            // A   render   B   Server
-
-            if (m_LifetimeConsumedCount >= 1) // shouldn't interpolate between default values, let's wait to receive data first, should only interpolate between real measurements
+            // Only interpolate when there is a start and end point and we have not already reached the end value
+            if (InterpolateState.Start.HasValue && InterpolateState.End.HasValue)
             {
-                float t = 1.0f;
-                double range = m_EndTimeConsumed - m_StartTimeConsumed;
-                if (range > k_SmallValue)
+                if (InterpolateState.LerpT < 1.0f)
                 {
-                    var rangeFactor = 1.0f / (float)range;
-
-                    t = ((float)renderTime - (float)m_StartTimeConsumed) * rangeFactor;
-
-                    if (t < 0.0f)
+                    InterpolateState.RelativeTime = Math.Clamp(InterpolateState.RelativeTime + deltaTime, 0.000001f, InterpolateState.End.Value.TimeSent);
+                    //var t = 1.0f - Mathf.Clamp((float)((m_EndTimeConsumed - renderTime) * rangeFactor), 0.0f, 1.0f);
+                    //var alt_t = 1.0f - Mathf.Clamp((float)((renderTime - m_StartTimeConsumed) * rangeFactor), 0.0f, 1.0f);
+                    InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.End.Value.TimeSent);
+                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.End.Value.Item, InterpolateState.LerpT);
+                    if (InterpolateState.LerpT < 1.0f)
                     {
-                        // There is no mechanism to guarantee renderTime to not be before m_StartTimeConsumed
-                        // This clamps t to a minimum of 0 and fixes issues with longer frames and pauses
-
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogError($"renderTime was before m_StartTimeConsumed. This should never happen. {nameof(renderTime)} is {renderTime}, {nameof(m_StartTimeConsumed)} is {m_StartTimeConsumed}");
-                        }
-                        t = 0.0f;
+                        m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.5f);
                     }
-
-                    if (t > MaxInterpolationBound) // max extrapolation
+                    else
                     {
-                        // TODO this causes issues with teleport, investigate
-                        t = 1.0f;
+                        m_CurrentInterpValue = InterpolateState.CurrentValue;
                     }
                 }
-
-                var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
             m_NbItemsReceivedThisFrame = 0;
             return m_CurrentInterpValue;
         }
 
+
+        private double m_LastSentTime = 0.0f;
         /// <summary>
         /// Add measurements to be used during interpolation. These will be buffered before being made available to be displayed as "latest value".
         /// </summary>
@@ -261,7 +327,7 @@ namespace Unity.Netcode
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                     ResetTo(newMeasurement, sentTime);
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
-                    m_Buffer.Add(m_LastBufferedItemReceived);
+                    m_Buffer.Enqueue(m_LastBufferedItemReceived);
                 }
 
                 return;
@@ -269,10 +335,15 @@ namespace Unity.Netcode
 
             // Part the of reason for disabling extrapolation is how we add and use measurements over time.
             // TODO: Add detailed description of this area in Jira ticket
-            if (sentTime > m_EndTimeConsumed || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
+            if (sentTime > m_LastSentTime || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
-                m_Buffer.Add(m_LastBufferedItemReceived);
+                m_Buffer.Enqueue(m_LastBufferedItemReceived);
+                m_LastSentTime = sentTime;
+            }
+            else
+            {
+                Debug.Log($"[{m_Name}] Dropping measurement -- Time: {sentTime} Value: {newMeasurement}");
             }
         }
 
@@ -315,7 +386,7 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Mathf.Lerp(start, end, time);
+            return Mathf.LerpUnclamped(start, end, time);
         }
 
         /// <inheritdoc />
@@ -348,11 +419,11 @@ namespace Unity.Netcode
         {
             if (IsSlerp)
             {
-                return Quaternion.Slerp(start, end, time);
+                return Quaternion.SlerpUnclamped(start, end, time);
             }
             else
             {
-                return Quaternion.Lerp(start, end, time);
+                return Quaternion.LerpUnclamped(start, end, time);
             }
         }
 
@@ -384,16 +455,19 @@ namespace Unity.Netcode
 
         protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
-            for (int i = 0; i < m_Buffer.Count; i++)
+            var buffer = m_Buffer.ToList();
+            m_Buffer.Clear();
+            for (int i = 0; i < buffer.Count; i++)
             {
-                var entry = m_Buffer[i];
+                var entry = buffer[i];
                 entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer[i] = entry;
+                m_Buffer.Enqueue(entry);
             }
-
-            m_InterpStartValue = ConvertToNewTransformSpace(transform, m_InterpStartValue, inLocalSpace);
+            InterpolateState.CurrentValue = ConvertToNewTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
             m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
-            m_InterpEndValue = ConvertToNewTransformSpace(transform, m_InterpEndValue, inLocalSpace);
+            var end = InterpolateState.End.Value;
+            end.Item = ConvertToNewTransformSpace(transform, end.Item, inLocalSpace);
+            InterpolateState.End = end;
 
             base.OnConvertTransformSpace(transform, inLocalSpace);
         }
@@ -414,11 +488,11 @@ namespace Unity.Netcode
         {
             if (IsSlerp)
             {
-                return Vector3.Slerp(start, end, time);
+                return Vector3.SlerpUnclamped(start, end, time);
             }
             else
             {
-                return Vector3.Lerp(start, end, time);
+                return Vector3.LerpUnclamped(start, end, time);
             }
         }
 
@@ -450,16 +524,20 @@ namespace Unity.Netcode
 
         protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
-            for (int i = 0; i < m_Buffer.Count; i++)
+            var buffer = m_Buffer.ToList();
+            m_Buffer.Clear();
+            for (int i = 0; i < buffer.Count; i++)
             {
-                var entry = m_Buffer[i];
+                var entry = buffer[i];
                 entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer[i] = entry;
+                m_Buffer.Enqueue(entry);
             }
 
-            m_InterpStartValue = ConvertToNewTransformSpace(transform, m_InterpStartValue, inLocalSpace);
+            InterpolateState.CurrentValue = ConvertToNewTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
             m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
-            m_InterpEndValue = ConvertToNewTransformSpace(transform, m_InterpEndValue, inLocalSpace);
+            var end = InterpolateState.End.Value;
+            end.Item = ConvertToNewTransformSpace(transform, end.Item, inLocalSpace);
+            InterpolateState.End = end;
 
             base.OnConvertTransformSpace(transform, inLocalSpace);
         }

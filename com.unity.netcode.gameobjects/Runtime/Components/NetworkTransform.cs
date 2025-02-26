@@ -1785,11 +1785,11 @@ namespace Unity.Netcode.Components
             var positionThreshold = Vector3.one * PositionThreshold;
             var rotationThreshold = Vector3.one * RotAngleThreshold;
 
-            if (m_UseRigidbodyForMotion)
-            {
-                positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
-                rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
-            }
+            //if (m_UseRigidbodyForMotion)
+            //{
+            //    positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
+            //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
+            //}
 #else
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
@@ -3704,10 +3704,9 @@ namespace Unity.Netcode.Components
                 // is to make their cachedRenderTime run 2 ticks behind.
 
                 // TODO: This could most likely just always be 2
-                // var ticksAgo = ((!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode) && !m_CachedNetworkManager.DAHost ? 2 : 1;
-                var ticksAgo = 2;
-
-                var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
+                //var ticksAgo = ((!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode) && !m_CachedNetworkManager.DAHost ? 2 : 1;
+                //var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
+                var cachedRenderTime = serverTime.TimeTicksAgo(2).Time;
 
                 // Now only update the interpolators for the portions of the transform being synchronized
                 if (SynchronizePosition)
