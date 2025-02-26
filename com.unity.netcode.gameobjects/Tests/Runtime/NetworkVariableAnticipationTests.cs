@@ -416,5 +416,38 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(25, otherClientComponent.ReanticipateOnAnticipationFailVariable.Value);
             Assert.AreEqual(20, otherClientComponent.ReanticipateOnAnticipationFailVariable.AuthoritativeValue);
         }
+
+        private int m_PreviousSnapValue;
+        /// <summary>
+        /// Validates the previous value is being properly updated on the non-authoritative side.
+        /// </summary>
+        [Test]
+        public void PreviousValueIsMaintainedProperly()
+        {
+            var testComponent = GetTestComponent();
+
+            testComponent.SnapOnAnticipationFailVariable.OnAuthoritativeValueChanged += OnAuthoritativeValueChanged;
+            testComponent.SnapOnAnticipationFailVariable.Anticipate(10);
+            testComponent.SetSnapValueRpc(10);
+            WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
+            // Verify the previous value is 0
+            Assert.AreEqual(0, m_PreviousSnapValue);
+            testComponent.SetSnapValueRpc(20);
+
+            WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
+            // Verify the previous value is 10
+            Assert.AreEqual(10, m_PreviousSnapValue);
+
+            testComponent.SetSnapValueRpc(30);
+            WaitForMessageReceivedWithTimeTravel<NetworkVariableDeltaMessage>(m_ClientNetworkManagers.ToList());
+            // Verify the previous value is 20
+            Assert.AreEqual(20, m_PreviousSnapValue);
+        }
+
+        private void OnAuthoritativeValueChanged(AnticipatedNetworkVariable<int> anticipatedValue, in int previous, in int current)
+        {
+            m_PreviousSnapValue = previous;
+        }
+
     }
 }
