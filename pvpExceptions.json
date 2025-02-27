@@ -7,8 +7,6 @@
       },
       "PVP-150-1": {
         "errors": [
-          "Unity.Netcode.UserNetworkVariableSerialization<T>: empty <typeparam> tag",
-          "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: unexpected <param name=\"reader\">",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeSerializer_UnmanagedByMemcpy(): empty <typeparam> tag",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeSerializer_UnmanagedByMemcpyArray(): empty <typeparam> tag",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeSerializer_List(): empty <typeparam> tag",
@@ -149,8 +147,6 @@
           "Unity.Netcode.NetworkVariableUpdateTraits: MaxSecondsBetweenUpdates: undocumented",
           "Unity.Netcode.NetworkVariableBase: NetworkBehaviour GetBehaviour(): undocumented",
           "Unity.Netcode.NetworkVariableBase: void MarkNetworkBehaviourDirty(): undocumented",
-          "Unity.Netcode.UserNetworkVariableSerialization<T>.WriteDeltaDelegate: missing <param name=\"previousValue\">",
-          "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: missing <param name=\"duplicatedValue\">",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeSerializer_Dictionary(): missing <typeparam name=\"TKey\">",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeSerializer_Dictionary(): missing <typeparam name=\"TVal\">",
           "Unity.Netcode.NetworkVariableSerializationTypes: void InitializeEqualityChecker_Dictionary(): missing <typeparam name=\"TKey\">",
