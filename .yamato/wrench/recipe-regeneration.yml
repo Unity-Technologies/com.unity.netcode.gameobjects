@@ -11,7 +11,7 @@ test_-_wrench_jobs_up_to_date:
   commands:
   - command: dotnet run --project Tools\CI\NGO.Cookbook.csproj
   - command: |-
-      if [ -n "$(git status --porcelain -- .yamato/wrench)"]; then
+      if [ -n "$(git status --porcelain -- .yamato/wrench)" ]; then
         git status
         echo "Your repo is not clean - diff output:"
         git diff
@@ -26,5 +26,5 @@ test_-_wrench_jobs_up_to_date:
     cancel_old_ci: true
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.41.0
+    Wrench: 0.10.42.0
 
