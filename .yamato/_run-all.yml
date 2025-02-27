@@ -218,10 +218,7 @@ run_all_project_tests_console_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
-{% if editor != "2023.3" %}
     - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
