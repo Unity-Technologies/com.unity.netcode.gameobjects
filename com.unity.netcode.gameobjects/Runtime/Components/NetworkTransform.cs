@@ -3717,7 +3717,13 @@ namespace Unity.Netcode.Components
                 // Now only update the interpolators for the portions of the transform being synchronized
                 if (SynchronizePosition)
                 {
-                    m_PositionInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    //m_PositionInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+#if UNITY_EDITOR
+                    m_PositionInterpolator.NetworkObjectId = NetworkObjectId;
+                    m_PositionInterpolator.NetworkBehaviourId = NetworkBehaviourId;
+                    m_PositionInterpolator.EnableLogging = true;
+#endif
+                    m_PositionInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
                 }
 
                 if (SynchronizeRotation)
@@ -3726,12 +3732,14 @@ namespace Unity.Netcode.Components
                     // When using full precision Slerp towards the target rotation.
                     /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                     m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                    m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    //m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    m_RotationInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
                 }
 
                 if (SynchronizeScale)
                 {
-                    m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    //m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                    m_ScaleInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
                 }
             }
         }

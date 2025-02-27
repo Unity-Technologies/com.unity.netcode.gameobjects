@@ -15,13 +15,15 @@ namespace Unity.Netcode
         internal float MaxInterpolationBound = 1.0f;
         protected internal struct BufferedItem
         {
+            public int ItemId;
             public T Item;
             public double TimeSent;
 
-            public BufferedItem(T item, double timeSent)
+            public BufferedItem(T item, double timeSent,int itemId)
             {
                 Item = item;
                 TimeSent = timeSent;
+                ItemId = itemId;
             }
         }
 
@@ -34,7 +36,7 @@ namespace Unity.Netcode
 
         protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
 
-
+        private int m_BufferCount;
 
         // Buffer consumption scenarios
         // Perfect case consumption
@@ -88,6 +90,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             m_Buffer.Clear();
+            m_BufferCount = 0;
             m_CurrentInterpValue = default;
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
@@ -176,18 +179,26 @@ namespace Unity.Netcode
         {
             public BufferedItem? Target;
 
+            public double ServerTime;
             public double RelativeTime;
+            public double DeltaTime;
 
             public T CurrentValue;
+            public T PreviousValue;
 
             public float LerpT;
+
+            public float LerpV;
 
             public void Reset(T currentValue)
             {
                 CurrentValue = currentValue;
+                PreviousValue = currentValue;
                 // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
                 LerpT = 1.0f;
+                LerpV = 1.0f;
                 RelativeTime = 0.0;
+                DeltaTime = 0.0;
             }
         }
 
@@ -235,15 +246,192 @@ namespace Unity.Netcode
             }
         }
 
+
+#if UNITY_EDITOR
+        internal bool EnableLogging = false;
+        internal ulong NetworkObjectId;
+        internal ushort NetworkBehaviourId;
+
+        private double m_LastDebugUpdate = 0.0;
+
+        private double m_AvgTimeDelta = 0.0;
+
+        private float m_LowestLerpT = float.MaxValue;
+        private float m_LerpTAverage = 0.0f;
+        private int m_MaxBufferedItems = 0;
+        private float m_AverageBufferCount = 0.0f;
+
+        private void LogInfo(double serverTime)
+        {
+            if (!EnableLogging)
+            {
+                return;
+            }
+            if (m_LowestLerpT > InterpolateState.LerpT)
+            {
+                m_LowestLerpT = InterpolateState.LerpT;
+            }
+
+            if (m_LerpTAverage == 0.0f)
+            {
+                m_LerpTAverage = InterpolateState.LerpT;
+            }
+            else
+            {
+                m_LerpTAverage = (m_LerpTAverage + InterpolateState.LerpT) * 0.5f;
+            }
+
+            if (m_MaxBufferedItems < m_Buffer.Count)
+            {
+                m_MaxBufferedItems = m_Buffer.Count;
+            }
+
+            if (m_AverageBufferCount == 0.0f)
+            {
+                m_AverageBufferCount = (m_AverageBufferCount + m_Buffer.Count) * 0.5f;
+            }
+
+            if (m_AvgTimeDelta == 0.0)
+            {
+                m_AvgTimeDelta = InterpolateState.DeltaTime;
+            }
+            else
+            {
+                m_AvgTimeDelta += InterpolateState.DeltaTime;
+                m_AvgTimeDelta *= 0.5;
+            }
+
+            if (m_LastDebugUpdate < serverTime)
+            {
+                Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Min LerpT: {m_LowestLerpT} | Avg LerpT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg TD: {m_AvgTimeDelta}");
+                m_LastDebugUpdate = serverTime + 1.0;
+                m_AverageBufferCount = 0.0f;
+                m_MaxBufferedItems = 0;
+                m_LerpTAverage = 0.0f;
+                m_LowestLerpT = float.MaxValue;
+            }
+        }
+#endif
+
+        private void TryConsumeFromBuffer(NetworkTime networkTime, NetworkTimeSystem networkTimeSystem)
+        {
+            // If we don't have our initial buffered item/starting point or our end point or the end point's time sent is less than the
+            // render time
+            var renderTime = networkTime.TimeTicksAgo(2).Time;
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime && InterpolateState.LerpT >= 1.0f))
+            {
+                BufferedItem? previousItem = null;
+                while (m_Buffer.TryPeek(out BufferedItem potentialItem))
+                {
+                    // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
+                    // to consume.
+                    if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
+                    {
+                        break;
+                    }
+
+                    // At a minimum, the next item should be equal to or less than the server time
+                    if (potentialItem.TimeSent <= networkTimeSystem.ServerTime)
+                    {
+                        if (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent)
+                        {
+                            if (m_Buffer.TryDequeue(out BufferedItem target))
+                            {
+                                if (!InterpolateState.Target.HasValue)
+                                {
+                                    InterpolateState.Target = target;
+                                    InterpolateState.DeltaTime = networkTime.FixedDeltaTime;
+                                }
+                                else
+                                {
+#if UNITY_EDITOR
+                                    LogInfo(networkTimeSystem.ServerTime);
+#endif
+                                    InterpolateState.DeltaTime = networkTime.FixedDeltaTime;
+                                    InterpolateState.Target = target;
+                                }
+                                //InterpolateState.RelativeTime = networkTime.FixedDeltaTime/2.75f;
+                                //InterpolateState.RelativeTime = networkTime.FixedDeltaTime / 3f;
+                                InterpolateState.RelativeTime = 0.0;
+                                InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                                InterpolateState.LerpT = 0.0f;
+                                InterpolateState.LerpV = 0.0f;
+                                InterpolateState.ServerTime = networkTimeSystem.ServerTime;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (!InterpolateState.Target.HasValue)
+                    {
+                        break;
+                    }
+                    previousItem = potentialItem;
+                }
+            }
+        }
+
+
         /// <summary>
-        /// Convenience version of 'Update' mainly for testing
-        ///  the reason we don't want to always call this version is so that on the calling side we can compute
-        ///  the renderTime once for the many things being interpolated (and the many interpolators per object)
+        /// ** Recommended Usage **
+        /// A more precise update for the buffered linear interpolator.
         /// </summary>
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        public T Update(float deltaTime, NetworkTime serverTime)
+        public T Update(float deltaTime, NetworkTime serverTime, NetworkTimeSystem networkTimeSystem)
+        {
+            TryConsumeFromBuffer(serverTime, networkTimeSystem);
+
+
+            // Only interpolate when there is a start and end point and we have not already reached the end value
+            if (InterpolateState.Target.HasValue)
+            {
+                if (InterpolateState.LerpT < 1.0f)
+                {
+                    var serverTimeDelta = Math.Max(0.000000000001, (networkTimeSystem.ServerTime - InterpolateState.ServerTime) + deltaTime);
+
+                    InterpolateState.RelativeTime = Math.Min(InterpolateState.RelativeTime + serverTimeDelta, InterpolateState.DeltaTime);
+
+#if UNITY_EDITOR
+                    //if (EnableLogging)
+                    //{
+                    //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Server Time: {networkTimeSystem.ServerTime} | Time RDelta: {InterpolateState.RelativeTime} | Delta: {InterpolateState.DeltaTime}");
+                    //}
+#endif
+                    //var t = 1.0f - Mathf.Clamp((float)((m_EndTimeConsumed - renderTime) * rangeFactor), 0.0f, 1.0f);
+                    //var alt_t = 1.0f - Mathf.Clamp((float)((renderTime - m_StartTimeConsumed) * rangeFactor), 0.0f, 1.0f);
+                    InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.DeltaTime);
+                    InterpolateState.CurrentValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
+                    m_CurrentInterpValue = InterpolateState.CurrentValue;
+                    //m_CurrentInterpValue = Interpolate(InterpolateState.TargetStartValue, InterpolateState.TargetEndValue, (deltaTime / MaximumInterpolationTime));
+                    //if (InterpolateState.LerpT < 1.0f)
+                    //{
+                    //    m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.5f);
+                    //}
+                    //else
+                    //{
+                    //    m_CurrentInterpValue = InterpolateState.CurrentValue;
+                    //}
+                    //if (InterpolateState.LerpT >= 1.0f)
+                    //{
+                    //    InterpolateState.TargetValue = InterpolateState.CurrentValue;
+                    //}
+                    //InterpolateState.LerpV = Math.Min(InterpolateState.LerpV + (deltaTime / MaximumInterpolationTime), 1.0f);
+                }
+            }
+
+            m_NbItemsReceivedThisFrame = 0;
+            return m_CurrentInterpValue;
+        }
+
+        /// <summary>
+        /// Used for internal testing
+        /// </summary>
+        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
         {
             return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
         }
@@ -299,7 +487,8 @@ namespace Unity.Netcode
             {
                 if (m_LastBufferedItemReceived.TimeSent < sentTime)
                 {
-                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
+                    m_BufferCount++;
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                     ResetTo(newMeasurement, sentTime);
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
                     m_Buffer.Enqueue(m_LastBufferedItemReceived);
@@ -310,7 +499,8 @@ namespace Unity.Netcode
 
             if (sentTime > m_LastMeasurementAddedTime)
             {
-                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
+                m_BufferCount++;
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                 m_Buffer.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
