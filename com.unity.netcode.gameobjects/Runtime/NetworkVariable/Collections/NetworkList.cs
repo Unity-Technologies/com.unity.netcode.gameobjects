@@ -601,7 +601,7 @@ namespace Unity.Netcode
         /// This method checks for write permissions before setting the value.
         /// </remarks>
         /// <param name="index">The zero-based index of the element to get or set.</param>
-        /// <returns>The element at the specified index.</returns>
+        /// <value>The element at the specified index.</value>
         public T this[int index]
         {
             get => m_List[index];
