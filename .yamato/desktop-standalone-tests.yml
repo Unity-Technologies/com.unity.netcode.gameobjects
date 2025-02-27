@@ -44,7 +44,6 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
         
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
-{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
