@@ -1,3 +1,7 @@
+# This file was used before for mobiles and Webgl but was removed (around end of January 2025). The file itself was left here for now in case we would need to use it.
+# This Python script is used to manage Burst AOT (Ahead-Of-Time) compilation settings for Unity builds.
+# An example usage would be "- python .yamato/disable-burst-if-requested.py --project-path {{ project.path }} --platform WebGL"
+
 import argparse
 import json
 import os

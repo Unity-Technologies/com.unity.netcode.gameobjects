@@ -19,12 +19,12 @@ namespace Unity.Netcode
     /// <br/>
     /// The parameter is indicated by index (and is 0-indexed); for example:
     /// <br/>
-    /// <code>
+    /// <c>
     /// [SerializesGenericParameter(1)]
     /// public class MyClass&lt;TTypeOne, TTypeTwo&gt;
     /// {
     /// }
-    /// </code>
+    /// </c>
     /// <br/>
     /// This tells the code generation for <see cref="NetworkVariableSerialization{T}"/> to generate
     /// serialized code for <b>TTypeTwo</b> (generic parameter 1).
@@ -38,32 +38,32 @@ namespace Unity.Netcode
     /// <br/>
     /// This attribute is properly inherited by subclasses. For example:
     /// <br/>
-    /// <code>
+    /// <c>
     /// [SerializesGenericParameter(0)]
     /// public class MyClass&lt;T&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MySubclass1 : MyClass&lt;Foo&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MySubclass2&lt;T&gt; : MyClass&lt;T&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// [SerializesGenericParameter(1)]
     /// public class MySubclass3&lt;TTypeOne, TTypeTwo&gt; : MyClass&lt;TTypeOne&gt;
     /// {
     /// }
-    /// <br/>
+    ///
     /// public class MyBehaviour : NetworkBehaviour
     /// {
     ///     public MySubclass1 TheValue;
     ///     public MySubclass2&lt;Bar&gt; TheValue;
     ///     public MySubclass3&lt;Baz, Qux&gt; TheValue;
     /// }
-    /// </code>
+    /// </c>
     /// <br/>
     /// The above code will trigger generation of serialization code for <b>Foo</b> (passed directly to the
     /// base class), <b>Bar</b> (passed indirectly to the base class), <b>Baz</b> (passed indirectly to the base class),

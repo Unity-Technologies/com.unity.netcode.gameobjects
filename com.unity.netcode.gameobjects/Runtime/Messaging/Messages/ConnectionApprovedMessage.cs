@@ -320,7 +320,7 @@ namespace Unity.Netcode
                     NetworkLog.LogInfo($"[Client-{OwnerClientId}][Scene Management Disabled] Synchronization complete!");
                 }
                 // When scene management is disabled we notify after everything is synchronized
-                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
+                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(OwnerClientId);
 
                 // For convenience, notify all NetworkBehaviours that synchronization is complete.
                 networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();

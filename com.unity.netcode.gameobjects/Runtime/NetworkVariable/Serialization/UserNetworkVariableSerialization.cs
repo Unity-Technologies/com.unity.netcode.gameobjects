@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// extension methods. Finding those methods isn't achievable efficiently at runtime, so this allows
     /// users to tell NetworkVariable about those extension methods (or simply pass in a lambda)
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of value being serialized</typeparam>
     public class UserNetworkVariableSerialization<T>
     {
         /// <summary>
@@ -40,7 +40,6 @@ namespace Unity.Netcode
         /// <summary>
         /// The read value delegate handler definition
         /// </summary>
-        /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
         /// <param name="value">The value of type `T` to be read</param>
         public delegate void DuplicateValueDelegate(in T value, ref T duplicatedValue);
 
