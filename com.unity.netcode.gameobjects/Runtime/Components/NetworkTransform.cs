@@ -1808,9 +1808,15 @@ namespace Unity.Netcode.Components
             if (InLocalSpace != networkState.InLocalSpace)
 #endif
             {
+                // When SwitchTransformSpaceWhenParented is set we automatically set our local space based on whether
+                // we are parented or not.
                 networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
                 isDirty = true;
+                // If SwitchTransformSpaceWhenParented is not set, then we will want to teleport
                 networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
+                // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
+                // If interpolation is enabled, then any non-authority instance will update any pending
+                // buffered values to the correct world or local space values.
                 forceState = SwitchTransformSpaceWhenParented;
             }
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
