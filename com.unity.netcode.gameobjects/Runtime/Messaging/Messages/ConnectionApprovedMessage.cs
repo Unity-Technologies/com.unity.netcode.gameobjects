@@ -9,6 +9,7 @@ namespace Unity.Netcode
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
         public bool ServerRedistribution;
+        public ulong SessionStateToken;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -21,6 +22,11 @@ namespace Unity.Netcode
                 if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
                 {
                     serializer.SerializeValue(ref ServerRedistribution);
+                }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
                 }
             }
             else
@@ -37,19 +43,26 @@ namespace Unity.Netcode
                 {
                     ServerRedistribution = false;
                 }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
+                }
+                else
+                {
+                    SessionStateToken = 0;
+                }
             }
         }
     }
 
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
-        private const int k_AddSessionStateToken = 3;
         private const int k_AddCMBServiceConfig = 2;
         private const int k_VersionAddClientIds = 1;
-        public int Version => k_AddSessionStateToken;
+        public int Version => k_AddCMBServiceConfig;
 
         public ulong OwnerClientId;
-        public ulong SessionStateToken;
         public int NetworkTick;
         // The cloud state service should set this if we are restoring a session
         public ServiceConfig ServiceConfig;
@@ -110,10 +123,6 @@ namespace Unity.Netcode
             // ============================================================
 
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
-            if (targetVersion >= k_AddSessionStateToken)
-            {
-                writer.WriteValueSafe(SessionStateToken);
-            }
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
             if (IsDistributedAuthority)
             {
@@ -205,10 +214,6 @@ namespace Unity.Netcode
             // ============================================================
             m_ReceiveMessageVersion = receivedMessageVersion;
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
-            if (receivedMessageVersion >= k_AddSessionStateToken)
-            {
-                reader.ReadValueSafe(out SessionStateToken);
-            }
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
             if (networkManager.DistributedAuthorityMode)
             {
