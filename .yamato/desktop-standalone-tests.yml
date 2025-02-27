@@ -13,11 +13,6 @@
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
@@ -33,24 +28,11 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
   
-# Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
-  
 # Installing editor
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
   
 # Build Player
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% else %}
-      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% endif %}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
 
   artifacts:
     players:
@@ -76,11 +58,6 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
@@ -88,24 +65,14 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-# Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
+{% if editor == "2021.3" or platform.name == "ubuntu" %}
+    - sudo apt-get install -y libssl1.1 # For this specific configuration there is a difference in what libssl version is installed on the image and what editor uses. This should be removed when 2021 editor is out of support
 {% endif %}
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple # Installing unity downloader
+    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait # Installing appropriate Unity version for the test case. Important to note is the fact that even though we have a build we still need the editor to run tests
 
-    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
-# Run Standalone tests
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-{% else %}
-      ./utr --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-{% endif %}
+# Running Standalone desktop tests
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 
   artifacts:
     logs:
@@ -113,7 +80,6 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
         - "test-results/**/*"
   dependencies:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
