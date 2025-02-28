@@ -17,20 +17,13 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     UNITY_EXT_LOGGING: 1
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    # Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
     
     # Validate packages.
     - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results
     # Run UTR to test packages.
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} {% if platform.name == "win" %} utr.bat {% else %} ./utr {% endif %} --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun
+    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun
   artifacts:
     logs:
       paths:

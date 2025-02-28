@@ -20,25 +20,12 @@ webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:
   commands:
     # Installing tools
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    
-    # Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
   
     # Installing editor
     - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp -w --fast
   
     # Build Player
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% else %}
-      ./utr --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% endif %}
+    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
 
   artifacts:
     logs:
