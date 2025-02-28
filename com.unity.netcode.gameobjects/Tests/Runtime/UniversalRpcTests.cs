@@ -1699,7 +1699,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
 
     }
-    
+
     [TestFixture(ObjType.Server)]
     [TestFixture(ObjType.Client)]
     internal class UniversalRpcTestRpcTargetUse : UniversalRpcTestsBase
