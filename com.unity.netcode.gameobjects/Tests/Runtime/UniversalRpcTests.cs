@@ -1653,6 +1653,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
                 Clear();
             }
+
             serverObj.Stop = true;
             WaitForMessageReceivedWithTimeTravel<RpcMessage>(serverList);
             Assert.IsFalse(serverObj.Stop);
