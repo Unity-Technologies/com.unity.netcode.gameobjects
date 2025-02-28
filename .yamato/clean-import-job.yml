@@ -1,6 +1,6 @@
 ﻿{% metadata_file .yamato/project.metafile %}
 ---
-  
+
 {% for platform in test_platforms.default -%}
 {% for project in projects.default -%}
 {% for editor in validation_editors.all -%}
