@@ -58,7 +58,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-{% if editor == "2021.3" && platform.name == "ubuntu" %}
+{% if editor == "2021.3" and platform.name == "ubuntu" %}
     - sudo apt-get install -y libssl1.1 # For this specific configuration there is a difference in what libssl version is installed on the image and what editor uses. This should be removed when 2021 editor is out of support
 {% endif %}
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple # Installing unity downloader
