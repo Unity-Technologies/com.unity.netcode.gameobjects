@@ -17,12 +17,10 @@ clean_import_{{ project.name }}_{{ editor }}:
   after:
     - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
   artifacts:
-    CrashDumps:
-      paths:
-        - CrashDumps/**
     logs:
       paths:
         - artifacts/**
+        - CrashDumps/**
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
