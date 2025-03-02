@@ -252,5 +252,10 @@ namespace Unity.Netcode
             // the TimeSyncMessage should only take half of the RTT time (legacy was using 1 full RTT)
             m_DesiredLocalTimeOffset = timeDif + (rttSec * 0.5d) + LocalBufferSec;
         }
+
+        internal double ServerTimeOffset => m_DesiredServerTimeOffset;
+        internal double LocalTimeOffset => m_DesiredLocalTimeOffset;
+
+        internal double RawTime => m_TimeSec;
     }
 }

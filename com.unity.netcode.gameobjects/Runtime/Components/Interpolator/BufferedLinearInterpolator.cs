@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -18,12 +19,14 @@ namespace Unity.Netcode
             public int ItemId;
             public T Item;
             public double TimeSent;
+            public float LerpT;
 
-            public BufferedItem(T item, double timeSent,int itemId)
+            public BufferedItem(T item, double timeSent, int itemId)
             {
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
+                LerpT = 0.0f;
             }
         }
 
@@ -94,6 +97,7 @@ namespace Unity.Netcode
             m_CurrentInterpValue = default;
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
+            TargetState.Reset(default);
         }
 
         /// <summary>
@@ -179,30 +183,28 @@ namespace Unity.Netcode
         {
             public BufferedItem? Target;
 
-            public double ServerTime;
+            public double StartTime;
             public double RelativeTime;
             public double DeltaTime;
-
-            public T CurrentValue;
-            public T PreviousValue;
-
             public float LerpT;
 
-            public float LerpV;
-
+            public T TargetValue;
+            public T CurrentValue;
+            public T PreviousValue;
             public void Reset(T currentValue)
             {
                 CurrentValue = currentValue;
                 PreviousValue = currentValue;
+                TargetValue = currentValue;
                 // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
                 LerpT = 1.0f;
-                LerpV = 1.0f;
                 RelativeTime = 0.0;
                 DeltaTime = 0.0;
             }
         }
 
         internal CurrentState InterpolateState;
+        internal CurrentState TargetState;
 
         private void TryConsumeFromBuffer(double renderTime, double serverTime)
         {
@@ -303,7 +305,8 @@ namespace Unity.Netcode
 
             if (m_LastDebugUpdate < serverTime)
             {
-                Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Min LerpT: {m_LowestLerpT} | Avg LerpT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg TD: {m_AvgTimeDelta}");
+                //Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Min LerpT: {m_LowestLerpT} | Avg LerpT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg TD: {m_AvgTimeDelta}");
+                Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}] Min LerpT: {m_LowestLerpT} | Avg LerpT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg TD: {m_AvgTimeDelta}");
                 m_LastDebugUpdate = serverTime + 1.0;
                 m_AverageBufferCount = 0.0f;
                 m_MaxBufferedItems = 0;
@@ -311,16 +314,113 @@ namespace Unity.Netcode
                 m_LowestLerpT = float.MaxValue;
             }
         }
+        //private bool m_LogSegment;
+
+        private float m_AvgDepth;
+
+        private float m_AvgRTT;
+
+        private float m_MaxLerpT = 0.0f;
+
+        private void LogSecondInfo(double serverTime, float lerpT, int depth, float serverHalfRtt)
+        {
+            if (!EnableLogging)
+            {
+                return;
+            }
+            if (m_LowestLerpT > lerpT)
+            {
+                m_LowestLerpT = lerpT;
+            }
+
+            if (m_MaxLerpT < lerpT)
+            {
+                m_MaxLerpT = lerpT;
+            }
+
+            if (m_LerpTAverage == 0.0f)
+            {
+                m_LerpTAverage = lerpT;
+            }
+            else
+            {
+                m_LerpTAverage = (m_LerpTAverage + lerpT) * 0.5f;
+            }
+
+            if (m_AvgRTT == 0.0f)
+            {
+                m_AvgRTT = serverHalfRtt;
+            }
+            else
+            {
+                m_AvgRTT = (m_AvgRTT + serverHalfRtt) * 0.5f;
+            }
+
+            if (m_AvgDepth == 0.0f)
+            {
+                m_AvgDepth = depth;
+            }
+            else
+            {
+                m_AvgDepth = (m_AvgDepth + depth) * 0.5f;
+            }
+
+            
+
+            if (m_MaxBufferedItems < m_Buffer.Count)
+            {
+                m_MaxBufferedItems = m_Buffer.Count;
+            }
+
+            if (m_AverageBufferCount == 0.0f)
+            {
+                m_AverageBufferCount = (m_AverageBufferCount + m_Buffer.Count) * 0.5f;
+            }
+
+            if (m_LastDebugUpdate < serverTime)
+            {
+                //Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Min LerpT: {m_LowestLerpT} | Avg LerpT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg TD: {m_AvgTimeDelta}");
+                Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}] Min/Max LT: {m_LowestLerpT}/{m_MaxLerpT} | Avg LT: {m_LerpTAverage} | Max Count: {m_MaxBufferedItems} | Avg Count: {m_AverageBufferCount} | Avg Depth: {m_AvgDepth} Avg HRtt: {m_AvgRTT}");
+                m_LastDebugUpdate = serverTime + 1.0;
+                m_AverageBufferCount = 0.0f;
+                m_MaxBufferedItems = 0;
+                m_LerpTAverage = 0.0f;
+                m_LowestLerpT = float.MaxValue;
+                m_AvgDepth = 0.0f;
+                m_AvgRTT = 0.0f;
+                m_MaxLerpT = 0.0f;
+                //m_LogSegment = true;
+            }
+        }
 #endif
 
-        private void TryConsumeFromBuffer(NetworkTime networkTime, NetworkTimeSystem networkTimeSystem)
+        ///////////////////////////////
+        /// Close..
+        /// Non-Rigidbody: try changing to local time on clients and stick with server time on the server
+        /// Ridigbody: Not sure how to handle this one... time isn't updated until after FixedUpdate and
+        /// if we apply on fixed update but interpolate after fixed update then we will always be 1 full
+        /// frame behind... (hmmmm)
+        ///////////////////////////////
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="networkTime"></param>
+        /// <param name="networkTimeSystem"></param>
+        private void TryConsumeFromBuffer(double renderTime, NetworkTime serverTime, NetworkTimeSystem networkTimeSystem)
         {
-            // If we don't have our initial buffered item/starting point or our end point or the end point's time sent is less than the
-            // render time
-            var renderTime = networkTime.TimeTicksAgo(2).Time;
-            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime && InterpolateState.LerpT >= 1.0f))
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime))// && InterpolateState.LerpT >= 1.0f))
             {
+                //if (m_Buffer.Count == 0 && InterpolateState.Target.HasValue && (InterpolateState.Target.Value.TimeSent + (serverTime.FixedDeltaTime * 2) < serverTime.Time))
+                //{
+                //    InterpolateState.Reset(InterpolateState.CurrentValue);
+                //    InterpolateState.Target = null;
+                //    m_SmoothVelocity1 = Vector3.zero;
+                //    return;
+                //}
                 BufferedItem? previousItem = null;
+                var startTime = 0.0;
+                var alreadyHasBufferItem = false;
                 while (m_Buffer.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
@@ -331,33 +431,34 @@ namespace Unity.Netcode
                     }
 
                     // At a minimum, the next item should be equal to or less than the server time
-                    if (potentialItem.TimeSent <= networkTimeSystem.ServerTime)
+                    //if (potentialItem.TimeSent <= serverTime.Time)
                     {
-                        if (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent)
+                        if (!InterpolateState.Target.HasValue ||
+                            (potentialItem.TimeSent <= renderTime && InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
                         {
                             if (m_Buffer.TryDequeue(out BufferedItem target))
                             {
                                 if (!InterpolateState.Target.HasValue)
                                 {
                                     InterpolateState.Target = target;
-                                    InterpolateState.DeltaTime = networkTime.FixedDeltaTime;
+                                    InterpolateState.DeltaTime = serverTime.FixedDeltaTime;
                                 }
                                 else
                                 {
-#if UNITY_EDITOR
-                                    LogInfo(networkTimeSystem.ServerTime);
-#endif
-                                    InterpolateState.DeltaTime = networkTime.FixedDeltaTime;
+                                    if (!alreadyHasBufferItem)
+                                    {
+                                        alreadyHasBufferItem = true;
+                                        startTime = InterpolateState.Target.Value.TimeSent;
+                                        InterpolateState.StartTime = networkTimeSystem.RawTime;
+                                        InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                                        InterpolateState.LerpT = 0.0f;
+                                        InterpolateState.RelativeTime = 0.0;
+                                    }
+                                    InterpolateState.DeltaTime = Math.Clamp(target.TimeSent - startTime, serverTime.FixedDeltaTime, serverTime.FixedDeltaTime * m_TimeLerp);
                                     InterpolateState.Target = target;
+                                    //InterpolateState.StartTime = serverTime.Time;
                                 }
-                                //InterpolateState.RelativeTime = networkTime.FixedDeltaTime/2.75f;
-                                //InterpolateState.RelativeTime = networkTime.FixedDeltaTime / 3f;
-                                InterpolateState.RelativeTime = 0.0;
-                                InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                                InterpolateState.LerpT = 0.0f;
-                                InterpolateState.LerpV = 0.0f;
-                                InterpolateState.ServerTime = networkTimeSystem.ServerTime;
-                                break;
+                                //break;
                             }
                         }
                         else
@@ -374,6 +475,89 @@ namespace Unity.Netcode
             }
         }
 
+        private T GetInterpolatedState(NetworkTimeSystem networkTimeSystem, NetworkTime renderTime, float fixedDeltaTime, int depth)
+        {
+            if (m_Buffer.Count < 2)
+            {
+                return m_Buffer.Count == 0 ? m_CurrentInterpValue : m_Buffer.ElementAt(0).Item;
+            }
+            //m_Buffer.ElementAt(0).LerpT = 0.0f;
+            //var timeFactor = (float)((networkTimeSystem.ServerTime - ((depth * fixedDeltaTime) + networkTimeSystem.LocalTimeOffset)) / (m_Buffer.ElementAt(1).TimeSent - m_Buffer.ElementAt(0).TimeSent));
+            var deltaTime = m_Buffer.ElementAt(1).TimeSent - m_Buffer.ElementAt(0).TimeSent;
+            var minStart = fixedDeltaTime / 6;
+            var timeFactor = (float)((renderTime.Time - m_Buffer.ElementAt(0).TimeSent) / deltaTime);
+            float lerpT = Mathf.Clamp(timeFactor, minStart, 1.0f);
+#if UNITY_EDITOR
+            LogSecondInfo(networkTimeSystem.LocalTime, lerpT, depth, (float)networkTimeSystem.LastSyncedRttSec);
+#endif
+            return Interpolate(m_Buffer.ElementAt(0).Item, m_Buffer.ElementAt(1).Item, lerpT);
+            //if (m_Buffer.Count < depth)
+            //{
+            //    depth = m_Buffer.Count - 1;
+            //}
+
+            //var previous = m_Buffer.ElementAt(0);
+            //var currentValue = previous.Item;
+            //var previousTime = previous.TimeSent;
+            ////float latencyFactor = fixedDeltaTime + (networkTimeSystem.LocalTimeOffset > fixedDeltaTime ? (float)networkTimeSystem.LocalTimeOffset : fixedDeltaTime);
+
+            //var depthFactor = 1.0f / depth;
+            //for (int i = 1; i < depth; i++)
+            //{
+            //    var next = m_Buffer.ElementAt(i);
+            //    var depthT = 1.0f - ((i - 1) * depthFactor);
+            //    var adjustedTime = networkTimeSystem.ServerTime - previousTime;
+            //    var depthAdjust = fixedDeltaTime * (depth - 1) * depthT;
+            //    adjustedTime -= depthAdjust;
+            //    if (adjustedTime < 0.0f)
+            //    {
+            //        continue;
+            //    }
+            //    var timeFactor = (float)(adjustedTime / (next.TimeSent - previousTime));
+            //    if (timeFactor < 0.0f)
+            //    {
+            //        Debug.Log($"TF: {timeFactor}!");
+            //    }
+            //    float t = Mathf.Clamp(timeFactor, 0.0f, 1.0f);
+            //    var previousValue = currentValue;
+            //    currentValue = Interpolate(currentValue, next.Item, t);
+            //    if (m_LogSegment)
+            //    {
+            //        Debug.Log($"[{i}] AdjT: {adjustedTime} DepthAdj: {depthAdjust} DepthT: {depthT} TF: {timeFactor} T: {t} Prev: {previousValue} Next: {next.Item} Current: {currentValue}");
+            //    }
+            //    previousTime = next.TimeSent;
+            //}
+            //m_LogSegment = false;
+            //return currentValue;
+        }
+
+
+        private void ProcessStates(NetworkTimeSystem networkTimeSystem,NetworkTime renderTime, float fixedDeltaTime, int depth)
+        {
+            //float latencyFactor = (fixedDeltaTime * depth) + (networkTimeSystem.LocalTimeOffset > fixedDeltaTime ? (float)networkTimeSystem.LocalTimeOffset : fixedDeltaTime);
+            //var minimumTime = networkTimeSystem.ServerTime - ((depth * fixedDeltaTime) + networkTimeSystem.LocalTimeOffset);
+            var minimumTime = renderTime.Time;
+            while (m_Buffer.Count > 0 && m_Buffer.Peek().TimeSent < minimumTime)
+            {
+                m_Buffer.Dequeue();
+            }
+        }
+
+        private float m_TimeLerp = 4.0f;
+
+        private Vector3 m_SmoothVelocity1;
+        private Vector3 m_SmoothVelocity2;
+
+        protected virtual T SmoothDamp(T current, T target,ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
+        {
+            return target;
+        }
+
+        private const float k_DefaultPrecision = 0.0001f;
+        protected virtual bool IsAproximately(T first, T second, float precision = k_DefaultPrecision)
+        {
+            return false;
+        }
 
         /// <summary>
         /// ** Recommended Usage **
@@ -384,46 +568,48 @@ namespace Unity.Netcode
         /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, NetworkTime serverTime, NetworkTimeSystem networkTimeSystem)
         {
-            TryConsumeFromBuffer(serverTime, networkTimeSystem);
+            //var timeLerp = Math.Clamp(2 * (float)(networkTimeSystem.LastSyncedRttSec / serverTime.FixedDeltaTime), 2, 8);
+            //////var renderTime = serverTime.TimeTicksAgo(depth, (float)serverTime.TickOffset);
+            //m_TimeLerp = Mathf.SmoothStep(m_TimeLerp, timeLerp, deltaTime);
+            var renderTime = serverTime.TimeTicksAgo((int)m_TimeLerp).Time;
+            //var renderTime = networkTimeSystem.RawTime - (serverTime.FixedDeltaTime * m_TimeLerp);
+            //var renderTime = serverTime.TimeTicksAgo(2).Time;
+#if UNITY_EDITOR
+            //if (EnableLogging)
+            //{
+            //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Server Time: {networkTimeSystem.ServerTime} | Time RDelta: {InterpolateState.RelativeTime} | Delta: {InterpolateState.DeltaTime}");
+            //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}] RenderTime: {renderTime} Raw Time: {networkTimeSystem.RawTime}");
+            //}
+#endif
+            //var target = GetInterpolatedState(networkTimeSystem, renderTime, serverTime.FixedDeltaTime, depth);
+            ////m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, serverTime.FixedDeltaTime / MaximumInterpolationTime);
+            //m_CurrentInterpValue = target;
+            //ProcessStates(networkTimeSystem, renderTime, serverTime.FixedDeltaTime, depth);
 
 
             // Only interpolate when there is a start and end point and we have not already reached the end value
-            if (InterpolateState.Target.HasValue)
+            if (InterpolateState.Target.HasValue && !IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))
             {
-                if (InterpolateState.LerpT < 1.0f)
-                {
-                    var serverTimeDelta = Math.Max(0.000000000001, (networkTimeSystem.ServerTime - InterpolateState.ServerTime) + deltaTime);
+                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_SmoothVelocity1, (float)InterpolateState.DeltaTime, deltaTime);
+                //var timeDelta = Math.Max(0.000000000001, (serverTime.Time - InterpolateState.StartTime));
+                //InterpolateState.RelativeTime = Math.Min(InterpolateState.RelativeTime + timeDelta, InterpolateState.DeltaTime);
+                //InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.DeltaTime);
 
-                    InterpolateState.RelativeTime = Math.Min(InterpolateState.RelativeTime + serverTimeDelta, InterpolateState.DeltaTime);
-
-#if UNITY_EDITOR
-                    //if (EnableLogging)
-                    //{
-                    //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Server Time: {networkTimeSystem.ServerTime} | Time RDelta: {InterpolateState.RelativeTime} | Delta: {InterpolateState.DeltaTime}");
-                    //}
-#endif
-                    //var t = 1.0f - Mathf.Clamp((float)((m_EndTimeConsumed - renderTime) * rangeFactor), 0.0f, 1.0f);
-                    //var alt_t = 1.0f - Mathf.Clamp((float)((renderTime - m_StartTimeConsumed) * rangeFactor), 0.0f, 1.0f);
-                    InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.DeltaTime);
-                    InterpolateState.CurrentValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
-                    m_CurrentInterpValue = InterpolateState.CurrentValue;
-                    //m_CurrentInterpValue = Interpolate(InterpolateState.TargetStartValue, InterpolateState.TargetEndValue, (deltaTime / MaximumInterpolationTime));
-                    //if (InterpolateState.LerpT < 1.0f)
-                    //{
-                    //    m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.5f);
-                    //}
-                    //else
-                    //{
-                    //    m_CurrentInterpValue = InterpolateState.CurrentValue;
-                    //}
-                    //if (InterpolateState.LerpT >= 1.0f)
-                    //{
-                    //    InterpolateState.TargetValue = InterpolateState.CurrentValue;
-                    //}
-                    //InterpolateState.LerpV = Math.Min(InterpolateState.LerpV + (deltaTime / MaximumInterpolationTime), 1.0f);
-                }
+                //InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                //InterpolateState.CurrentValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
+                //m_CurrentInterpValue = InterpolateState.LerpT < 1.0f ? Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.333333333f) : InterpolateState.CurrentValue;
             }
-
+            //else
+            //{
+            //    TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
+            //}
+            TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
+            m_CurrentInterpValue = InterpolateState.CurrentValue;
+            //m_CurrentInterpValue = SmoothDamp(m_CurrentInterpValue, InterpolateState.TargetValue, ref m_SmoothVelocity2, serverTime.FixedDeltaTime);
+            //TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
+#if UNITY_EDITOR
+            LogInfo(networkTimeSystem.ServerTime);
+#endif
             m_NbItemsReceivedThisFrame = 0;
             return m_CurrentInterpValue;
         }
@@ -453,8 +639,6 @@ namespace Unity.Netcode
                 if (InterpolateState.LerpT < 1.0f)
                 {
                     InterpolateState.RelativeTime = Math.Clamp(InterpolateState.RelativeTime + deltaTime, 0.000001f, InterpolateState.Target.Value.TimeSent);
-                    //var t = 1.0f - Mathf.Clamp((float)((m_EndTimeConsumed - renderTime) * rangeFactor), 0.0f, 1.0f);
-                    //var alt_t = 1.0f - Mathf.Clamp((float)((renderTime - m_StartTimeConsumed) * rangeFactor), 0.0f, 1.0f);
                     InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.Target.Value.TimeSent);
                     InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
                     if (InterpolateState.LerpT < 1.0f)
@@ -504,10 +688,12 @@ namespace Unity.Netcode
                 m_Buffer.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
-            else
+#if UNITY_EDITOR
+            else if (EnableLogging)
             {
                 Debug.Log($"[{m_Name}] Dropping measurement -- Time: {sentTime} Value: {newMeasurement} | Last measurement -- Time: {m_LastMeasurementAddedTime} Value: {m_LastBufferedItemReceived.Item}");
             }
+#endif
         }
 
         /// <summary>
@@ -550,6 +736,19 @@ namespace Unity.Netcode
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
             return Mathf.LerpUnclamped(start, end, time);
+        }
+
+        protected override float SmoothDamp(float current, float target, ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        {
+            var x = currentVelocity.x;
+            var retSmooth = Mathf.SmoothDamp(current, target, ref x, duration, maxSpeed, deltaTime);
+            currentVelocity.x = x;
+            return retSmooth;
+        }
+
+        protected override bool IsAproximately(float first, float second, float precision = 1E-07F)
+        {
+            return Mathf.Approximately(first, second);
         }
 
         /// <inheritdoc />
@@ -601,6 +800,32 @@ namespace Unity.Netcode
             {
                 return Quaternion.Lerp(start, end, time);
             }
+        }
+
+        protected override Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        {
+            Vector3 currentEuler = current.eulerAngles;
+            Vector3 targetEuler = target.eulerAngles;
+            currentEuler.x = Mathf.SmoothDampAngle(currentEuler.x, targetEuler.x, ref currentVelocity.x, duration, maxSpeed, deltaTime);
+            currentEuler.y = Mathf.SmoothDampAngle(currentEuler.y, targetEuler.y, ref currentVelocity.y, duration, maxSpeed, deltaTime);
+            currentEuler.z = Mathf.SmoothDampAngle(currentEuler.z, targetEuler.z, ref currentVelocity.z, duration, maxSpeed, deltaTime);
+            current.eulerAngles = currentEuler;
+            return current;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool Approximately(Quaternion a, Quaternion b, float precision)
+        {
+            return Mathf.Abs(a.x - b.x) <= precision &&
+                Mathf.Abs(a.y - b.y) <= precision &&
+                Mathf.Abs(a.z - b.z) <= precision &&
+                Mathf.Abs(a.w - b.w) <= precision;
+        }
+
+        protected override bool IsAproximately(Quaternion first, Quaternion second, float precision = 1E-07F)
+        {
+            return Approximately(first, second, precision);
+            //return Mathf.Abs(Quaternion.Dot(first, second)) >= 1 - precision;
         }
 
         private Quaternion ConvertToNewTransformSpace(Transform transform, Quaternion rotation, bool inLocalSpace)
@@ -672,6 +897,7 @@ namespace Unity.Netcode
             }
         }
 
+
         private Vector3 ConvertToNewTransformSpace(Transform transform, Vector3 position, bool inLocalSpace)
         {
             if (inLocalSpace)
@@ -683,6 +909,25 @@ namespace Unity.Netcode
             {
                 return transform.TransformPoint(position);
             }
+        }
+
+        protected override Vector3 SmoothDamp(Vector3 current, Vector3 target,ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed)
+        {
+            return Vector3.SmoothDamp(current, target, ref currentVelocity, duration, maxSpeed, deltaTime);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool Approximately(Vector3 a, Vector3 b, float precision)
+        {
+            return Math.Round(Mathf.Abs(a.x - b.x), 2) <= precision &&
+                Math.Round(Mathf.Abs(a.y - b.y), 2) <= precision &&
+                Math.Round(Mathf.Abs(a.z - b.z), 2) <= precision;
+        }
+
+        protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 1E-07F)
+        {
+            return Approximately(first, second, precision);
+            //return Vector3.Distance(first, second) < precision;
         }
 
         protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)

@@ -115,6 +115,8 @@ namespace Unity.Netcode.Components
             // Used for NetworkDeltaPosition delta position synchronization
             internal int NetworkTick;
 
+            internal float TickOffset;
+
             // Used when tracking by state ID is enabled
             internal int StateId;
 
@@ -662,6 +664,8 @@ namespace Unity.Netcode.Components
                         // side updates on every new tick.
                         BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
 
+                        serializer.SerializeValue(ref TickOffset);
+
                     }
                     else
                     {
@@ -669,6 +673,8 @@ namespace Unity.Netcode.Components
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
+
+                        serializer.SerializeValue(ref TickOffset);
                     }
                 }
 
@@ -2162,6 +2168,7 @@ namespace Unity.Netcode.Components
                 {
                     // We use the NetworkTickSystem version since ServerTime is set when updating ticks
                     networkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
+                    networkState.TickOffset = (float)m_CachedNetworkManager.NetworkTickSystem.ServerTime.TickOffset;
                 }
             }
 
@@ -2880,7 +2887,7 @@ namespace Unity.Netcode.Components
             }
 
             // Get the time when this new state was sent
-            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
+            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkTickSystem.TickRate, newState.NetworkTick, newState.TickOffset).Time;
 
             if (LogStateUpdate)
             {
@@ -3701,10 +3708,13 @@ namespace Unity.Netcode.Components
                 var cachedServerTime = serverTime.Time;
                 // var offset = (float)serverTime.TickOffset;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
+                //var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
+                var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
 #else
                 var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #endif
+
+                //var cachedDeltaTime = Time.deltaTime;
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
@@ -3721,7 +3731,7 @@ namespace Unity.Netcode.Components
 #if UNITY_EDITOR
                     m_PositionInterpolator.NetworkObjectId = NetworkObjectId;
                     m_PositionInterpolator.NetworkBehaviourId = NetworkBehaviourId;
-                    m_PositionInterpolator.EnableLogging = true;
+                    m_PositionInterpolator.EnableLogging = false;
 #endif
                     m_PositionInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
                 }
@@ -3770,6 +3780,18 @@ namespace Unity.Netcode.Components
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 
+        internal void OnInterpolateFixedUpdate()
+        {
+            // If not spawned or this instance has authority, exit early
+            if (!m_UseRigidbodyForMotion || !IsSpawned || CanCommitToTransform)
+            {
+                return;
+            }
+
+            // Update interpolation
+            UpdateInterpolation();
+        }
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3783,9 +3805,6 @@ namespace Unity.Netcode.Components
             }
 
             m_NetworkRigidbodyInternal.WakeIfSleeping();
-
-            // Update interpolation
-            UpdateInterpolation();
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
