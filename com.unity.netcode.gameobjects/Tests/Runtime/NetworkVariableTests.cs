@@ -1844,7 +1844,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356. The job is failing on mobile devices on 2021 editor specifically
         public void WhenSerializingAndDeserializingValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -2180,7 +2179,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2646,7 +2644,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2833,7 +2830,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2989,7 +2985,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
 
