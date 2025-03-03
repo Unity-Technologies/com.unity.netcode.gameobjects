@@ -1,23 +1,41 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Jobs that iterate through and packs all NGO projects listed (to use in different jobs)
-# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) coul be used to save resources and speed up the process
-# If everyone adheres to this rule it can create bottlenecks (since everyone would use this machine) so we decided to pack project with the same platform as the given job runs on
-{% for project in projects.all -%}
-{% for platform in test_platforms.desktop -%}
-project_pack_-_{{ project.name }}_{{ platform.name }}:
-  name: Project Pack - {{ project.name }} [{{ platform.name }}]
+# DESCRIPTION--------------------------------------------------------------------------
+  # Defines project packaging jobs for NGO projects
+  # These jobs prepare project packages that will be consumed by other pipeline jobs
+  # While these jobs don't require Unity Editor, they're distributed across platforms to prevent bottlenecks that would occur if all packaging was done on minimal VMs
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. All NGO projects (from project.metafile)
+  # 2. Desktop platforms (Windows, Ubuntu, macOS)
+  # This allows even distribution of packaging workload across different platforms
+  # Each configuration creates a separate packaging job for better parallelization
+  
+# TECHNICAL CONSTRAINTS----------------------------------------------------------------
+  # - No Unity Editor instance required
+  # - No specific platform dependencies
+  # - Could use minimal VM resources but distributed for better throughput
+  # - Requires npm and upm-ci-utils package
+  # - Generates artifacts in upm-ci~/packages directory
+  
+  
+#-------------------------------------------------------------------------------------- 
+
+{% for project in projects.all -%}                                                     # Jobs are being defined per each project as in project.metafile (testproject, minimalproject, testproject-tools-integration).
+{% for platform in test_platforms.desktop -%}                                          # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
+project_pack_-_{{ project.name }}_{{ platform.name }}:                                 # This is a job name when querying from code (for example in _run-all.yml). Notice that parts of it will be filled in from for loops. For example there will be a configuration "project_pack_-_testproject_win" and when querying for this job we could for example change some values to get a given job (for example change platform value) and this will query different job configuration.
+  name: Project Pack - {{ project.name }} [{{ platform.name }}]                        # This is a job name visible in Yamato (notice that here we also use "generated" fields from for loops
   agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    type: {{ platform.type }}                                                          # Defines type from platform configuration (for example Unity::VM). For packing no GPU extension is needed
+    image: {{ platform.image }}                                                        # Bokken image specification
+    flavor: {{ platform.flavor }}                                                      # Memory/CPU allocation configuration
   commands:
-    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project pack --project-path {{ project.path }}
+    - upm-ci project pack --project-path {{ project.path }}                            # upm-ci version of packing command (will be replaced by upm-pvp in the future)
   artifacts:
     packages:
       paths:
-        - "upm-ci~/packages/**/*"
+        - "upm-ci~/packages/**/*"                                                       # Generates artifacts in upm-ci~/packages directory
 {% endfor -%}
 {% endfor -%}
