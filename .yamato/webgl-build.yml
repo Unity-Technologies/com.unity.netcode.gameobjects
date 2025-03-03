@@ -1,40 +1,57 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %}                                           # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on WebGl standalone platform without executing any tests.
-# This setup performs build-only validation since WebGL runs in browser and for tests to be executed we would need to 
-# consider having a web server, browser automation and overall complex test setup.
-# Default project (testptoject) in this case is used as a context.
-# WebGL requires Il2cpp scripting backend so mono is not considered
-# ARM64 architectures are not considered since Windows_arm64 is recommended to use only after builds and when it comes to macOS_arm64 there is problem with OpenCL not being available
-# Builds are made on each desktop platform as in project.metafile declaration
-{% for project in projects.default -%}
-{% for platform in test_platforms.desktop -%}
-{% for editor in validation_editors.all -%}
-webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:
-  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
-  agent:
-    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
-  commands:
-    # Installing tools
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job definition creates job configurations to test building a player on WebGl standalone platform. 
+  # This job will not execute any tests, we only test building process.
+  # This setup performs build-only validation (without running tests) because WebGL runs in browser and for tests to be executed we would need to consider having a web server, browser automation and overall complex test setup which currently we don't have. 
   
-    # Installing editor
-    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp -w --fast
+  # The setup below defines multiple jobs with different configurations (taken from project.metafile in the 1st line).
+  # This is a Yamato specific as it will "compile" this script and generate given configurations which we can easily modify from within project.metafile. 
+  # From there (project.metafile) we could easily add for example a new validation editor or remove unsupported one.
   
-    # Build Player
-    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. Projects (from project.metafile)
+  # 2. Desktop platforms (Windows, Ubuntu, macOS)
+  # 3. Supported Unity Editor versions
+  # This structure allows easy modification of supported configurations via project.metafile
+  
+# TECHNICAL CONSTRAINTS----------------------------------------------------------------
+  # WebGL requires IL2CPP scripting backend (Mono not supported)
+  # x64 architectures preferred for build phase (ARM64 not used to optimize resource usage. For build phase x64 architectures are preferred)
+  # Build validation only (no runtime testing)
 
+
+#-------------------------------------------------------------------------------------- 
+  
+{% for project in projects.default -%}                                                  # Default project (testptoject) in this case is used as a context for the build.
+{% for platform in test_platforms.desktop -%}                                           # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
+{% for editor in validation_editors.all -%}                                             # Jobs are being defined per each supported editor (For NGOv2.X it means 6000+)
+webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:                             # This is a job name when querying from code (for example in _run-all.yml). Notice that parts of it will be filled in from for loops. For example there will be a configuration "webgl_build_testproject_win_6000.0" and when querying for this job we could for example change some values to get a given job (for example change editor value) and this will query different job configuration
+  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]    # This is a job name visible in Yamato (notice that here we also use "generated" fields from for loops
+  agent:
+    type: {{ platform.type }}                                                           # Defines type from platform configuration (for example Unity::VM). For webgl builds no GPU extension is needed
+    image: {{ platform.image }}                                                         # Bokken image specification
+    flavor: {{ platform.flavor }}                                                       # Memory/CPU allocation configuration
+  commands:
+    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp                 # unity-downloader-cli should be already preinstalled on the image. This steps downloads proper editor to build from together with required components (webgl + il2cpp).
+  
+    # The following step builds the player with defined options such as:
+      # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
+      # We specify build platform (--platform), scripting backend (--scripting-backend) and preinstalled editor location (--editor-location)
+      # We will be building project defined in (--testproject)
+      # Custom artifact paths for logs and build output (via --artifacts_path and --player-save-path)
+      # Editor is run in batchmode, which means that Unity runs command line arguments without the need for human interaction. It also suppresses pop-up windows that require human interaction (such as the Save Scene window). We should always run Unity in batch mode when using command line arguments, because it allows automation to run without interruption. (--extra-editor-arg=-batchmode)
+      # Engine is initialized in ‘nographics’ mode since we don't need any graphics for this case (--extra-editor-arg=-nographics)
+      # In case of failure the job will be rerunned once (--reruncount=1) with clean library (--clean-library-on-rerun) 
+      # This will perform only building phase (--build-only) with a default timeout of 3m (--timeout=1800)
+    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     logs:
       paths:
-        - "artifacts/**/*"
-        - "build/players/**/*"
-  variables:
-    CI: true
-    ENABLE_BURST_COMPILATION: False
+        - "artifacts/**/*"                                                              # Build process logs (path defined via --artifacts_path argument)
+        - "build/players/**/*"                                                          # WebGL build output files (path defined via --player-save-path argument)
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
