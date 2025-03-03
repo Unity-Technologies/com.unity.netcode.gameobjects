@@ -1,27 +1,45 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Executes package tests for each package referenced in the project using the newest compatible version of the package dependencies.
-# This is just to ensure that no critical change is made. It will be run on a default editor and default platform (it can be discussed if we should run it per all editors and platforms)
-{% for project in projects.default -%}
-{% for platform in test_platforms.default -%}
-{% for editor in validation_editors.default -%}
+# DESCRIPTION--------------------------------------------------------------------------
+  # Validates package compatibility with latest dependency versions
+  # Tests each package referenced in the project against newest compatible dependency versions
+  # Helps detect potential breaking changes from dependency updates early
+  # Runs on default editor/platform to balance between coverage and resource usage
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. Default projects only (optimized subset from project.metafile)
+  # 2. Default platform (typically Ubuntu for resource efficiency)
+  # 3. Default editor version (latest stable)
+  # This focused configuration allows quick validation while managing resource usage
+  
+# TECHNICAL CONSTRAINTS----------------------------------------------------------------
+  # - Requires successful project packaging before execution
+  # - Tests only NGO package dependencies (com.unity.netcode.gameobjects)
+  # - Uses default configurations to optimize CI resource usage
+  # - Generates test results in upm-ci~/test-results directory
+  # - Dependencies must follow semantic versioning for proper version resolution
+  
+#-------------------------------------------------------------------------------------- 
+  
+{% for project in projects.all -%}                                                    # Jobs are being defined per each project as in project.metafile (testproject, minimalproject, testproject-tools-integration).
+{% for platform in test_platforms.desktop -%}                                         # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
+{% for editor in validation_editors.all -%}                                           # Jobs are being defined per each supported editor (For NGOv2.X it means 6000+)
 updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
   name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    type: {{ platform.type }}                                                         # Defines type from platform configuration (for example Unity::VM). For packing no GPU extension is needed
+    image: {{ platform.image }}                                                       # Bokken image specification
+    flavor: {{ platform.flavor }}                                                     # Memory/CPU allocation configuration
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects          # Execute dependency update tests with specific package filter
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"
+        - "upm-ci~/test-results/**/*"                                                 # Test execution logs and results
   dependencies:
-    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
-      rerun: always
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}  # Requires packaged project to be available
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
