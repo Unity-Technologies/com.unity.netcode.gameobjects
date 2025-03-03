@@ -35,7 +35,7 @@ webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:                     
     image: {{ platform.image }}                                                         # Bokken image specification
     flavor: {{ platform.flavor }}                                                       # Memory/CPU allocation configuration
   commands:
-    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp                 # unity-downloader-cli should be already preinstalled on the image. This steps downloads proper editor to build from together with required components (webgl + il2cpp).
+    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp --wait          # unity-downloader-cli should be already preinstalled on the image. This steps downloads proper editor to build from together with required components (webgl + il2cpp). The --wait flag will ensure that we wait until editor is downloaded
   
     # The following step builds the player with defined options such as:
       # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
