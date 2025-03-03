@@ -1211,25 +1211,22 @@ namespace Unity.Netcode
                                 }
 
                                 var targetOwner = NetworkManager.ServerClientId;
-                                if (predictedClientCount > 1)
+                                // Cycle through the full count of clients to find
+                                // the next viable owner. If none are found, then
+                                // the DAHost defaults to the owner.
+                                for (int j = 0; j < remainingClients.Count; j++)
                                 {
                                     clientCounter++;
-                                    clientCounter %= predictedClientCount;
-                                    targetOwner = remainingClients[clientCounter].ClientId;
+                                    clientCounter = clientCounter % predictedClientCount;
+                                    if (ownedObject.Observers.Contains(remainingClients[clientCounter].ClientId))
+                                    {
+                                        targetOwner = remainingClients[clientCounter].ClientId;
+                                        break;
+                                    }
                                 }
                                 if (EnableDistributeLogging)
                                 {
                                     Debug.Log($"[Disconnected][Client-{clientId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
-                                }
-
-                                if (!ownedObject.Observers.Contains(targetOwner))
-                                {
-                                    targetOwner = NetworkManager.ServerClientId;
-                                }
-
-                                if (!ownedObject.Observers.Contains(targetOwner))
-                                {
-                                    targetOwner = ownedObject.Observers.First();
                                 }
 
                                 NetworkManager.SpawnManager.ChangeOwnership(ownedObject, targetOwner, true);
