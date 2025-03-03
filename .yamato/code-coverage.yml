@@ -1,4 +1,4 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
 # Runs package tests in order to determine code coverage of the NGO package.
@@ -16,14 +16,14 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --code-coverage-options="generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-results-path=test-results/CodeCoverage --code-coverage-options="generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
-        - "test-results/**/*"
         - "test-results/CodeCoverage/**/*"
         - "test-results/CoverageResults/**/*"
-        - "**/**/*"
+        - "test-results/**/coverage.xml"
+        - "test-results/**/Report/**/*"
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
