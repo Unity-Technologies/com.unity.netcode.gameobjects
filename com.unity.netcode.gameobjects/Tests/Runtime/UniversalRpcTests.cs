@@ -918,6 +918,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverride : UniversalRpcTestsBase
@@ -948,6 +949,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSenderClientId : UniversalRpcTestsBase
@@ -978,6 +980,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverrideWithParams : UniversalRpcTestsBase
@@ -1020,6 +1023,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingNoOverrideWithParamsAndRpcParams : UniversalRpcTestsBase
@@ -1062,6 +1066,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestRequireOwnership : UniversalRpcTestsBase
@@ -1098,6 +1103,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestDisallowedOverride : UniversalRpcTestsBase
@@ -1133,6 +1139,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithTargetOverride : UniversalRpcTestsBase
@@ -1166,6 +1173,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithSingleOverride : UniversalRpcTestsBase
@@ -1213,6 +1221,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithSingleNotOverride : UniversalRpcTestsBase
@@ -1260,6 +1269,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithGroupOverride : UniversalRpcTestsBase
@@ -1337,6 +1347,8 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSendingWithGroupNotOverride : UniversalRpcTestsBase
@@ -1415,6 +1427,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestDefaultSendToSpecifiedInParamsSendingToServerAndOwner : UniversalRpcTestsBase
@@ -1425,6 +1438,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestDeferLocal : UniversalRpcTestsBase
@@ -1612,6 +1626,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestMutualRecursion : UniversalRpcTestsBase
@@ -1662,6 +1677,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcTestSelfRecursion : UniversalRpcTestsBase
@@ -1701,6 +1717,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
+    [Timeout(1200000)] // Tracked in MTT-11359
     [TestFixture(ObjType.Server)]
     [TestFixture(ObjType.Client)]
     internal class UniversalRpcTestRpcTargetUse : UniversalRpcTestsBase
