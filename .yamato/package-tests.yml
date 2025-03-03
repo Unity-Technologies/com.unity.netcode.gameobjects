@@ -1,9 +1,33 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Executes PlayMode and EditMode tests of the NGO package in the Editor context
-# Those tests run in the editor so we don't need to consider different scripting backends or architectures
-# Tests are executed for all supported editors on each desktop platform as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # Executes NGO package validation and testing in Editor context
+  # Combines Package Verification Pipeline (PVP) validation with UTR testing
+  # Validates package structure, API compatibility, and runtime behavior
+  # Covers both PlayMode and EditMode tests for the package
+  # Note: Performance tests are explicitly excluded from this validation
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. All desktop platforms (Windows, Ubuntu, macOS)
+  # 2. All supported Unity Editor versions
+  # Package testing is comprehensive across environments because:
+  # - Different platforms may expose platform-specific issues
+  # - Editor versions may have different compatibility requirements
+  # - API compatibility needs validation across all supported versions
+  
+# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+  # - Runs in Editor context only (no player builds)
+  # - No scripting backend variations needed
+  # - Requires successful package pack job
+  # - Uses PVP for package validation
+  # - Requires specific display configuration for Ubuntu
+  # - Supports custom validation profiles via pvpExceptions.json
+  # - Extended logging enabled via UNITY_EXT_LOGGING
+  
+#------------------------------------------------------------------------------------
+
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 package_test_-_ngo_{{ editor }}_{{ platform.name }}:

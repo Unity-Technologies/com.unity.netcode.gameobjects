@@ -1,8 +1,33 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Performance tests for the `com.unity.netcode.gameobjects` package. No performance data will be reported.
-# Performance tests are executed within editor on desktop platforms in context of default project (testproject)
+# DESCRIPTION--------------------------------------------------------------------------
+  # Executes performance tests for NGO package without data reporting
+  # Tests run in Editor context using default project configuration
+  # Focuses on validating performance test execution rather than metrics collection
+  # Serves as a validation step to ensure performance tests are functioning correctly
+  # Note: This configuration explicitly disables performance data reporting
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. All desktop platforms (Windows, Ubuntu, macOS)
+  # 2. All supported Unity Editor versions
+  # 3. Default project only (testproject)
+  # Comprehensive platform/editor coverage ensures test stability
+  # Uses default project to maintain consistent test environment
+  
+# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+  # - Requires Unity Editor installation
+  # - Tests run in Editor context only
+  # - 3600 second (1 hour) timeout limit
+  # - Focuses on Unity.NetCode.* assemblies
+  # - Performance category tests only
+  # - Disables package manager traces
+  # - Includes extensive log collection
+  # - No performance metrics are reported to monitoring systems
+  
+#------------------------------------------------------------------------------------
+
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for project in projects.default -%}

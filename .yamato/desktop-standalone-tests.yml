@@ -1,14 +1,32 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on desktop standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
-# Default project (testptoject) in this case is used as a context.
-# Builds are made on each desktop platform as in project.metafile declaration
-# Builds are made on each supported editor as in project.metafile declaration
-# Builds are made with different scripting backends as in project.metafile declaration
-# ARM64 architectures are for now not considered since Windows_arm64 is recommended to use only after builds (would require separation here) and when it comes to macOS_arm64 there is problem with OpenCL not being available
+# DESCRIPTION--------------------------------------------------------------------------
+  # Desktop platform validation for NGO package using standalone builds
+  # Executes runtime tests (PlayMode equivalent) in standalone player builds
+  # Uses split build and run approach for better resource utilization
+  # Covers all supported desktop platforms with various configurations
   
-# Build phase
+# CONFIGURATION MATRIX---------------------------------------------------------------
+  # Tests are executed across multiple dimensions:
+  # 1. Desktop Platforms: Windows, macOS, Linux
+  # 2. Unity Editor Versions: All supported versions
+  # 3. Scripting Backends: IL2CPP and Mono
+  # Note: ARM64 architectures are currently excluded because:
+  # - Windows ARM64 is post-build only
+  # - macOS ARM64 has OpenCL availability issues
+  
+# TECHNICAL CONSTRAINTS--------------------------------------------------------------
+  # - GPU requirement varies by platform (required for Windows/Linux, optional for macOS)
+  # - Default project used as test context
+  # - Null graphics API used for test execution
+  # - Separate build and run phases for better resource management
+  # - 30-minute timeout for both build and run phases
+  
+#-----------------------------------------------------------------------------------
+
+  
+# Build phase--------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
@@ -43,7 +61,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   
   
   
-# Run phase
+# Run phase--------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}

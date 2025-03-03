@@ -1,17 +1,39 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on console standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
-# Default project (testptoject) in this case is used as a context.
-# Builds/Tests are made on each console platform (PS4, PS5, Switch, XboxOne, XboxSeriesX) as in project.metafile declaration
-# Builds/Tests are made on each supported editor as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # Console platform validation for NGO package using standalone builds
+  # Executes runtime tests (PlayMode equivalent) in standalone console builds
+  # Uses split build/run approach due to console-specific requirements
+  # Covers PS4, PS5, Switch, XboxOne, and XboxSeriesX platforms
   
-# For SOME of the console devices it's necessary to split build and run phases so it was split for all
-# For all consoles we need to use il2cpp scripting backend (so no testing with mono)
-# Switch works only with ARM64 and the rest with x64 architectures
-# For now all platforms used for building are windows based
+  # PLATFORM SPECIFICS-----------------------------------------------------------------
+  # Common Requirements:
+  # - All consoles require IL2CPP scripting backend
+  # - Windows-based build machines required
+  # - Platform-specific SDK environment variables
+  #
+  # Platform-Specific:
+  # - Switch: ARM64 architecture only
+  # - Other Consoles: x64 architecture
+  # - Each console requires specific SDK paths and tools
+  # - Some consoles require specific hardware models for testing
   
-# Builds are made with x64 architecture machines since those are compatible to run on ARM64 devices
+  # TECHNICAL CONSTRAINTS--------------------------------------------------------------
+  # Build Phase:
+  # - Windows build agents required
+  # - Platform-specific SDK installations
+  # - IL2CPP only (no Mono support)
+  # - Architecture varies by console
+  #
+  # Run Phase:
+  # - Requires specific console hardware
+  # - Platform-specific environment setup
+  # - Direct hardware access needed
+  # - Specific SDK versions required
+  
+#-----------------------------------------------------------------------------------
+
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
 {% for editor in validation_editors.all -%}

@@ -1,5 +1,32 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
+
+# DESCRIPTION--------------------------------------------------------------------------
+# Defines three main CI trigger patterns:
+# 1. Pull Request Validation: Basic validation for PR changes
+# 2. Nightly Development: Comprehensive testing on trunk
+# 3. Weekly Full Validation: Complete testing across all editor versions
+# Each pattern represents different balance between validation depth and execution time
+
+# TRIGGER PATTERNS-------------------------------------------------------------------
+# Pull Request:
+# - Triggers on PRs to develop, develop-2.0.0, and release branches
+# - Focuses on critical validation paths
+# - Cancels previous runs on new commits
+# - Excludes draft PRs
+#
+# Nightly:
+# - Runs daily on develop-2.0.0
+# - Includes all test types but only on trunk
+# - Adds platform-specific and APV validation
+#
+# Weekly:
+# - Most comprehensive validation
+# - Runs across all supported editor versions
+# - Includes code coverage analysis
+# - Validates all projects and standards
+
+#-----------------------------------------------------------------------------------
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
 pull_request_trigger:

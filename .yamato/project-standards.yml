@@ -1,9 +1,33 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Project standards are being checked for package (in project context).
-# It should be enough to perform the test on default project (testproject) but to make sure that all projects conform to our standards job for each of them will be available.
-# Tests are executed for default editor (trunk) on default platform (ubuntu) as in project.metafile declaration since results would be the same across editors and platforms.
+# DESCRIPTION--------------------------------------------------------------------------
+  # Validates project compliance with NGO coding standards and conventions
+  # While testproject validation would be sufficient, all projects are checked
+  # to ensure consistent code quality across the entire codebase
+  # Standards validation includes:
+  # - Code formatting compliance
+  # - Project structure validation
+  # - Coding convention adherence
+  # - Solution file synchronization
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. All projects (comprehensive validation)
+  # 2. Default platform only (Ubuntu for efficiency)
+  # 3. Default editor version (trunk)
+  # Results are consistent across platforms/editors, so default configurations
+  # are used to optimize CI resource usage
+  
+# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+  # - Requires .NET SDK installation
+  # - Needs Unity Editor for solution synchronization
+  # - Uses custom standards validation tool (netcode.standards)
+  # - Platform/editor independent validation
+  # - Generates no test artifacts (pass/fail only)
+  
+#------------------------------------------------------------------------------------
+
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
@@ -14,7 +38,7 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    # .NET environment setup
+    # .NET environment setup. Ensures required .NET SDK and formatting tools are available
     - dotnet --version
     - dotnet format --version
     

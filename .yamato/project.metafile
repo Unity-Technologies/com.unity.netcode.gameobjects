@@ -1,3 +1,10 @@
+# DESCRIPTION--------------------------------------------------------------------------
+# Central configuration file defining test environments, platforms, and projects
+# Used to generate CI pipeline configurations through templating
+# Provides consistent environment definitions across all CI jobs
+# Optimizes resource usage through appropriate agent selection
+
+# AGENT CONFIGURATIONS---------------------------------------------------------------
 # The small agent was created to handle jobs that don't involve running Unity (for example pack job).
 # It uses ubuntu since Linux VMs are faster and cheaper to provision than Mac or Windows Virtual Machines (VMs).
 # The b1.small flavour is nearly always sufficient for jobs that don’t involve running Unity Editor.
@@ -7,6 +14,7 @@ small_agent_platform:
       image: package-ci/ubuntu-22.04:v4
       flavor: b1.small
 
+# PLATFORM CONFIGURATIONS-----------------------------------------------------------
 # Platforms that project will/can be tested on.
 test_platforms:
     # Default platform is used for all basic jobs. Ubuntu was chosen since it's fastest and most available
@@ -121,7 +129,7 @@ test_platforms:
           flavor: b1.large
           standalone: GameCoreScarlett
     
-    
+# EDITOR CONFIGURATIONS------------------------------------------------------------
 # Editors to be used for testing.
 # Since NGOv2 official support started from U6 it means that only those editors should be used for testing
 validation_editors:

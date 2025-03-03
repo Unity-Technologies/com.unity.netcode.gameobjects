@@ -1,10 +1,31 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Executes PlayMode and EditMode tests of the given project (ones that have tests) in the Editor context
-# Those tests don't include NGO package tests since they are handled on their respective jobs.
-# Those tests run in the editor so we don't need to consider different scripting backends or architectures
-# Tests are executed for all supported editors on each desktop platform as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # Executes project-specific tests in Unity Editor context
+  # Covers both PlayMode and EditMode tests from project test assemblies
+  # Excludes NGO package tests (handled in separate package test jobs)
+  # Provides validation across all supported Unity Editor versions
+  # Note: These tests focus on project-specific functionality, not package validation
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. All projects with tests (filtered by has_tests flag)
+  # 2. All desktop platforms (Windows, Ubuntu, macOS)
+  # 3. All supported Unity Editor versions
+  # This ensures comprehensive testing across supported environments
+  # Each combination creates a separate test job for parallel execution
+  
+# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+  # - Runs in Editor context only (no player builds required)
+  # - No scripting backend variations needed (Editor uses Mono)
+  # - Architecture variations not applicable (Editor context)
+  # - Requires project packaging as prerequisite
+  # - Special handling for Ubuntu display configuration
+  # - Excludes performance tests for consistent CI execution
+  
+#------------------------------------------------------------------------------------
+
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
@@ -22,9 +43,9 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"
+        - "upm-ci~/test-results/**/*" # Test execution logs and results
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }} # Requires packaged project to be available
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

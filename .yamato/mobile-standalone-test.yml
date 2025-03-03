@@ -1,16 +1,27 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
-  
-# Builds a player on mobile standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
-# Default project (testptoject) in this case is used as a context.
-# Builds/Tests are made on each mobile platform (Android and iOS) as in project.metafile declaration
-# Builds/Tests are made on each supported editor as in project.metafile declaration
-    
-# For mobile devices it's necessary to split build and run phases
-# For iOS we need to use il2cpp. For android we could use both but il2cpp is recommended so for now we will only use il2cpp as scripting backend
-# iOS works only with ARM64 and Android is tested with both ARM64 and ARMv7
 
-# Builds are made with x64 architecture machines since those are compatible to run on ARM64 devices
+# DESCRIPTION--------------------------------------------------------------------------
+  # Mobile platform validation for NGO package consisting of two phases:
+  # 1. Build Phase: Creates standalone players for mobile platforms
+  # 2. Run Phase: Executes runtime tests on actual mobile devices
+  # Uses default project as test context for consistency
+  # Covers both iOS and Android platforms with platform-specific requirements
+  
+# PLATFORM SPECIFICS-----------------------------------------------------------------
+  # iOS Requirements:
+  # - Must use IL2CPP scripting backend
+  # - Only supports ARM64 architecture
+  # - Builds on macOS agents only
+  # 
+  # Android Requirements:
+  # - Uses IL2CPP scripting backend (recommended over Mono)
+  # - Supports both ARM64 and ARMv7 architectures
+  # - Builds on any desktop platform
+  #
+  # Note: All builds use x64 machines for compatibility with ARM64 target devices
+  
+
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_build -%}
 {% for editor in validation_editors.all -%}
