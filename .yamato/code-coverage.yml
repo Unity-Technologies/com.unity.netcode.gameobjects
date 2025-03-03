@@ -16,7 +16,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-results-path=upm-ci~/test-results/CodeCoverage --code-coverage-options="generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-results-path=upm-ci~/test-results/CodeCoverage --coverage-options="generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
