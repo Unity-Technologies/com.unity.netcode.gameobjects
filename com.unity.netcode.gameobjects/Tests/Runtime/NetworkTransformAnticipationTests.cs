@@ -115,7 +115,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Tracked in MTT-11361
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();
@@ -131,7 +130,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AnticipatedState.Position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Scale);
             Assert.AreEqual(Quaternion.LookRotation(new Vector3(2, 3, 4)), testComponent.AnticipatedState.Rotation);
-
         }
 
         [Test]
