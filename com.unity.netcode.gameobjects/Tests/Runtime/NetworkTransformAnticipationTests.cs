@@ -115,7 +115,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // TODO: this ignored test is tracked in MTT-11341
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();
