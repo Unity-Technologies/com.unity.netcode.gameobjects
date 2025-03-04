@@ -31,6 +31,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Ensured that a useful error is thrown when attempting to build a dedicated server with Unity Transport that uses websockets. (#3336)
 - Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
 - Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
