@@ -1,5 +1,6 @@
 using System;
 using Unity.Profiling;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -35,7 +36,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
 #endif
-
+        private double m_PreviousTimeSec;
         private double m_TimeSec;
         private double m_CurrentLocalTimeOffset;
         private double m_DesiredLocalTimeOffset;
@@ -75,8 +76,20 @@ namespace Unity.Netcode
         /// </summary>
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
+        private float m_TickLatencyAverage = 2.0f;
+
+        /// <summary>
+        /// The averaged latency in network ticks between a client and server.
+        /// </summary>
+        /// <remarks>
+        /// For a distributed authority network topology, this latency is between
+        /// the client and the distributed authority service instance.
+        /// </remarks>
+        public int TickLatency = 2;
+
         internal double LastSyncedServerTimeSec { get; private set; }
         internal double LastSyncedRttSec { get; private set; }
+        internal double LastSyncedHalfRttSec { get; private set; }
 
         private NetworkConnectionManager m_ConnectionManager;
         private NetworkTransport m_NetworkTransport;
@@ -101,6 +114,7 @@ namespace Unity.Netcode
             ServerBufferSec = serverBufferSec;
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
+            m_TickLatencyAverage = 2;
         }
 
         /// <summary>
@@ -203,7 +217,14 @@ namespace Unity.Netcode
         /// <returns>True if a hard reset of the time system occurred due to large time offset differences. False if normal time advancement occurred</returns>
         public bool Advance(double deltaTimeSec)
         {
+            m_PreviousTimeSec = m_TimeSec;
             m_TimeSec += deltaTimeSec;
+            // TODO: For client-server, we need a latency message sent by clients to tell us their tick latency
+            if (LastSyncedRttSec > 0.0f)
+            {
+                m_TickLatencyAverage = Mathf.Lerp(m_TickLatencyAverage, (float)((LastSyncedRttSec + deltaTimeSec) / m_NetworkTickSystem.ServerTime.FixedDeltaTimeAsDouble), (float)deltaTimeSec);
+                TickLatency = (int)Mathf.Max(1.0f, Mathf.Round(m_TickLatencyAverage)) + 1;
+            }
 
             if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > HardResetThresholdSec || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > HardResetThresholdSec)
             {
@@ -243,6 +264,7 @@ namespace Unity.Netcode
         public void Sync(double serverTimeSec, double rttSec)
         {
             LastSyncedRttSec = rttSec;
+            LastSyncedHalfRttSec = (rttSec * 0.5d);
             LastSyncedServerTimeSec = serverTimeSec;
 
             var timeDif = serverTimeSec - m_TimeSec;
@@ -250,12 +272,10 @@ namespace Unity.Netcode
             m_DesiredServerTimeOffset = timeDif - ServerBufferSec;
             // We adjust our desired local time offset to be half RTT since the delivery of
             // the TimeSyncMessage should only take half of the RTT time (legacy was using 1 full RTT)
-            m_DesiredLocalTimeOffset = timeDif + (rttSec * 0.5d) + LocalBufferSec;
+            m_DesiredLocalTimeOffset = timeDif + LastSyncedHalfRttSec + LocalBufferSec;
         }
 
         internal double ServerTimeOffset => m_DesiredServerTimeOffset;
         internal double LocalTimeOffset => m_DesiredLocalTimeOffset;
-
-        internal double RawTime => m_TimeSec;
     }
 }
