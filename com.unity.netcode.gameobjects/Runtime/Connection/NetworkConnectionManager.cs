@@ -1259,12 +1259,22 @@ namespace Unity.Netcode
                                         continue;
                                     }
 
-                                    if (!ownedObject.Observers.Contains(targetOwner))
+                                    var childOwner = targetOwner;
+                                    if (!childObject.Observers.Contains(childOwner))
                                     {
-                                        targetOwner = ownedObject.Observers.First();
+                                        for (int j = 0; j < remainingClients.Count; j++)
+                                        {
+                                            clientCounter++;
+                                            clientCounter = clientCounter % predictedClientCount;
+                                            if (ownedObject.Observers.Contains(remainingClients[clientCounter].ClientId))
+                                            {
+                                                childOwner = remainingClients[clientCounter].ClientId;
+                                                break;
+                                            }
+                                        }
                                     }
 
-                                    NetworkManager.SpawnManager.ChangeOwnership(childObject, targetOwner, true);
+                                    NetworkManager.SpawnManager.ChangeOwnership(childObject, childOwner, true);
                                     if (EnableDistributeLogging)
                                     {
                                         Debug.Log($"[Disconnected][Client-{clientId}][Child of {ownedObject.NetworkObjectId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
