@@ -90,15 +90,14 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 
 # If ubuntu, run rust echo server
 {% if platform.name == "ubuntu" %}
-    - git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
-    - pushd mps-common-multiplayer-backend/runtime
+    - |
+      git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
     # Install rust
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     # Build the echo server
-    - $HOME/.cargo/bin/cargo build --example ngo_echo_server
+    - cd ./mps-common-multiplayer-backend && $HOME/.cargo/bin/cargo build --example ngo_echo_server
     # Run the echo server in the background - this will reuse the artifacts from the build
-    - $HOME/.cargo/bin/cargo run --example ngo_echo_server &
-    - popd
+    - cd ./mps-common-multiplayer-backend && $HOME/.cargo/bin/cargo run --example ngo_echo_server &
 {% endif %}
 
 # Run Standalone tests
