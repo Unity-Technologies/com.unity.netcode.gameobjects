@@ -43,7 +43,6 @@ namespace Unity.Netcode.RuntimeTests
             m_LocalSpaceToggles = 0;
             m_FrameRateFractional = 1.0f / Application.targetFrameRate;
             PositionThreshold = MinThreshold;
-            SetMaxInterpolationBound(1.0f);
             base.OnInitialize(ref replicatedState);
         }
 
