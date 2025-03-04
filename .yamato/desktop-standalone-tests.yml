@@ -7,7 +7,7 @@
 # Builds are made on each supported editor as in project.metafile declaration
 # Builds are made with different scripting backends as in project.metafile declaration
 # ARM64 architectures are for now not considered since Windows_arm64 is recommended to use only after builds (would require separation here) and when it comes to macOS_arm64 there is problem with OpenCL not being available
-  
+
 # Build phase
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -24,9 +24,10 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% if platform.name == "ubuntu" %}
     - sudo apt-get update -q
     - sudo apt install -qy imagemagick
+
 {% endif %}
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-  
+
 # Platform specific UTR setup
     - |
 {% if platform.name == "win" %}
@@ -34,10 +35,10 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
 {% else %}
       curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
 {% endif %}
-  
+
 # Installing editor
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
+
 # Build Player
     - |
 {% if platform.name == "win" %}
@@ -53,17 +54,17 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     logs:
       paths:
         - "artifacts/**/*"
-        
+
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
-  
-  
-  
-  
+
+
+
+
 # Run phase
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -86,7 +87,20 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
 
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
+
+# If ubuntu, run rust echo server
+{% if platform.name == "ubuntu" %}
+    - git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+    - pushd mps-common-multiplayer-backend/runtime
+    # Install rust
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    # Build the echo server
+    - cargo build --example ngo_echo_server
+    # Run the echo server in the background - this will reuse the artifacts from the build
+    - cargo run --example ngo_echo_server &
+    - popd
+{% endif %}
+
 # Run Standalone tests
     - |
 {% if platform.name == "win" %}
