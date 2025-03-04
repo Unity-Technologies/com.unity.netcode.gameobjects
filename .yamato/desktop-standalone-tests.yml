@@ -95,9 +95,9 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     # Install rust
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     # Build the echo server
-    - cd ./mps-common-multiplayer-backend && $HOME/.cargo/bin/cargo build --example ngo_echo_server
+    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo build --example ngo_echo_server
     # Run the echo server in the background - this will reuse the artifacts from the build
-    - cd ./mps-common-multiplayer-backend && $HOME/.cargo/bin/cargo run --example ngo_echo_server &
+    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo run --example ngo_echo_server &
 {% endif %}
 
 # Run Standalone tests
