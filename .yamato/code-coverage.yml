@@ -16,12 +16,11 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage --coverage-results-path=test-results/CodeCoverage --coverage-options="generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage -coverage-results-path=$PWD/test-results/CodeCoverage --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
-        - "test-results/CodeCoverage/**/*"
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
