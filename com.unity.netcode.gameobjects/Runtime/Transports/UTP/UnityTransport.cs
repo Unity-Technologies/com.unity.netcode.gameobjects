@@ -1728,22 +1728,24 @@ namespace Unity.Netcode.Transports.UTP
 #endif
 
 #if UTP_TRANSPORT_2_1_ABOVE
-            if (m_UseWebSockets && m_RelayServerData.IsWebSocket == 0)
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
-                Debug.LogError("Transport is configured to use WebSockets, but Relay server data isn't. Be sure to use \"wss\" as the connection type when creating the server data (instead of \"dtls\" or \"udp\").");
-            }
+                if (m_UseWebSockets && m_RelayServerData.IsWebSocket == 0)
+                {
+                    Debug.LogError("Transport is configured to use WebSockets, but Relay server data isn't. Be sure to use \"wss\" as the connection type when creating the server data (instead of \"dtls\" or \"udp\").");
+                }
 
-            if (!m_UseWebSockets && m_RelayServerData.IsWebSocket != 0)
-            {
-                Debug.LogError("Relay server data indicates usage of WebSockets, but \"Use WebSockets\" checkbox isn't checked under \"Unity Transport\" component.");
+                if (!m_UseWebSockets && m_RelayServerData.IsWebSocket != 0)
+                {
+                    Debug.LogError("Relay server data indicates usage of WebSockets, but \"Use WebSockets\" checkbox isn't checked under \"Unity Transport\" component.");
+                }
             }
-        }
 #endif
 
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)
             {
-                driver = NetworkDriver.Create(private new WebSocketNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
             }
             else
             {
@@ -1751,7 +1753,7 @@ namespace Unity.Netcode.Transports.UTP
                 Debug.LogWarning($"WebSockets were used even though they're not selected in NetworkManager. You should check {nameof(UseWebSockets)}', on the Unity Transport component, to silence this warning.");
                 driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
 #else
-                driver = NetworkDriver.Create(private new UDPNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
 #endif
             }
 #else
@@ -1768,10 +1770,10 @@ namespace Unity.Netcode.Transports.UTP
                 out unreliableSequencedFragmentedPipeline,
                 out reliableSequencedPipeline);
 #else
-SetupPipelinesForUtp2(driver,
-    out unreliableFragmentedPipeline,
-    out unreliableSequencedFragmentedPipeline,
-    out reliableSequencedPipeline);
+            SetupPipelinesForUtp2(driver,
+                out unreliableFragmentedPipeline,
+                out unreliableSequencedFragmentedPipeline,
+                out reliableSequencedPipeline);
 #endif
         }
 
@@ -1839,74 +1841,74 @@ SetupPipelinesForUtp2(driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
-{
-
-    unreliableFragmentedPipeline = driver.CreatePipeline(
-        typeof(FragmentationPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-        , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-    );
-
-    unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-        typeof(FragmentationPipelineStage),
-        typeof(UnreliableSequencedPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-        , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-    );
-
-    reliableSequencedPipeline = driver.CreatePipeline(
-        typeof(ReliableSequencedPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-        , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-    );
-}
-#endif
-// -------------- Utility Types -------------------------------------------------------------------------------
-
-
-/// <summary>
-/// Cached information about reliability mode with a certain client
-/// </summary>
-private struct SendTarget : IEquatable<SendTarget>
-{
-    public readonly ulong ClientId;
-    public readonly NetworkPipeline NetworkPipeline;
-
-    public SendTarget(ulong clientId, NetworkPipeline networkPipeline)
-    {
-        ClientId = clientId;
-        NetworkPipeline = networkPipeline;
-    }
-
-    public bool Equals(SendTarget other)
-    {
-        return ClientId == other.ClientId && NetworkPipeline.Equals(other.NetworkPipeline);
-    }
-
-    public override bool Equals(object obj)
-    {
-        return obj is SendTarget other && Equals(other);
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
         {
-            return (ClientId.GetHashCode() * 397) ^ NetworkPipeline.GetHashCode();
+
+            unreliableFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
+
+            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage),
+                typeof(UnreliableSequencedPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
+
+            reliableSequencedPipeline = driver.CreatePipeline(
+                typeof(ReliableSequencedPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
         }
-    }
-}
+#endif
+        // -------------- Utility Types -------------------------------------------------------------------------------
+
+
+        /// <summary>
+        /// Cached information about reliability mode with a certain client
+        /// </summary>
+        private struct SendTarget : IEquatable<SendTarget>
+        {
+            public readonly ulong ClientId;
+            public readonly NetworkPipeline NetworkPipeline;
+
+            public SendTarget(ulong clientId, NetworkPipeline networkPipeline)
+            {
+                ClientId = clientId;
+                NetworkPipeline = networkPipeline;
+            }
+
+            public bool Equals(SendTarget other)
+            {
+                return ClientId == other.ClientId && NetworkPipeline.Equals(other.NetworkPipeline);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is SendTarget other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (ClientId.GetHashCode() * 397) ^ NetworkPipeline.GetHashCode();
+                }
+            }
+        }
     }
 }
