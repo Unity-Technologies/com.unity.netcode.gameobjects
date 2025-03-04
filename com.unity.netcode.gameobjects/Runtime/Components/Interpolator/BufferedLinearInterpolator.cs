@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,33 +11,81 @@ namespace Unity.Netcode
     /// <typeparam name="T">The type of interpolated value</typeparam>
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
-        internal float MaxInterpolationBound = 1.0f;
+        private const float k_AproximatePrecision = 0.0001f;
+
         protected internal struct BufferedItem
         {
             public int ItemId;
             public T Item;
             public double TimeSent;
-            public float LerpT;
 
             public BufferedItem(T item, double timeSent, int itemId)
             {
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
-                LerpT = 0.0f;
             }
         }
+        internal struct CurrentState
+        {
+            public BufferedItem? Target;
 
-        /// <summary>
-        /// There's two factors affecting interpolation: buffering (set in NetworkManager's NetworkTimeSystem) and interpolation time, which is the amount of time it'll take to reach the target. This is to affect the second one.
-        /// </summary>
-        public float MaximumInterpolationTime = 0.1f;
+            public double StartTime;
+            public double RelativeTime;
+            public float TimeToTargetValue;
+            public float DeltaTime;
+            public float LerpT;
 
-        private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
+            public T TargetValue;
+            public T CurrentValue;
+            public T PreviousValue;
 
-        protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
+            private float m_AverageDeltaTime;
 
-        private int m_BufferCount;
+            public float AverageDeltaTime => m_AverageDeltaTime;
+            public float FinalTimeToTarget => TimeToTargetValue - DeltaTime;
+
+            public bool AddDeltaTime(float deltaTime)
+            {
+                if (m_AverageDeltaTime == 0.0f)
+                {
+                    m_AverageDeltaTime = deltaTime;
+                }
+                else
+                {
+                    // Gradually adjust our delta time to keep this
+                    // value more consistent
+                    m_AverageDeltaTime = 3.0f * m_AverageDeltaTime;
+                    m_AverageDeltaTime += deltaTime;
+                    m_AverageDeltaTime *= 0.25f;
+                }
+                DeltaTime = Math.Max(DeltaTime + m_AverageDeltaTime, TimeToTargetValue);
+                LerpT = DeltaTime / TimeToTargetValue;
+                return FinalTimeToTarget <= m_AverageDeltaTime;
+            }
+
+            public bool TargetTimeAproximatelyReached()
+            {
+                if (!Target.HasValue)
+                {
+                    return false;
+                }
+                return (m_AverageDeltaTime * 0.3333333f) >= FinalTimeToTarget;
+            }
+
+            public void Reset(T currentValue)
+            {
+                Target = null;
+                CurrentValue = currentValue;
+                PreviousValue = currentValue;
+                TargetValue = currentValue;
+                // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
+                LerpT = 1.0f;
+                RelativeTime = 0.0;
+                DeltaTime = 0.0f;
+                m_AverageDeltaTime = 0.0f;
+            }
+        }
 
         // Buffer consumption scenarios
         // Perfect case consumption
@@ -67,6 +113,14 @@ namespace Unity.Netcode
         // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
         // that we don't have a very small buffer because of this.
         private const int k_BufferCountLimit = 100;
+
+        /// <summary>
+        /// There's two factors affecting interpolation: buffering (set in NetworkManager's NetworkTimeSystem) and interpolation time, which is the amount of time it'll take to reach the target. This is to affect the second one.
+        /// </summary>
+        public float MaximumInterpolationTime = 0.1f;
+
+        private int m_BufferCount;
+
         private BufferedItem m_LastBufferedItemReceived;
         private int m_NbItemsReceivedThisFrame;
 
@@ -76,19 +130,41 @@ namespace Unity.Netcode
 
         internal bool InLocalSpace;
 
-        protected internal virtual void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
-        {
+        /// <summary>
+        /// The current interpolation state
+        /// </summary>
+        internal CurrentState InterpolateState;
+        protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
 
-        }
+        /// <summary>
+        /// Represents the rate of change for the value being interpolated when smooth dampening is enabled.
+        /// </summary>
+        private T m_RateOfChange;
+
+        private bool m_UseSmoothDamening;
+        protected bool UseSmoothDampening => m_UseSmoothDamening;
+
+        private bool m_IsAngularValue;
+        protected bool IsAngularValue => m_IsAngularValue;
 
         internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
-            OnConvertTransformSpace(transform, inLocalSpace);
+            var count = m_Buffer.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var entry = m_Buffer.Dequeue();
+                entry.Item = OnConvertTransformSpace(transform, entry.Item, inLocalSpace);
+                m_Buffer.Enqueue(entry);
+            }
+            InterpolateState.CurrentValue = OnConvertTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
+            var end = InterpolateState.Target.Value;
+            end.Item = OnConvertTransformSpace(transform, end.Item, inLocalSpace);
+            InterpolateState.Target = end;
             InLocalSpace = inLocalSpace;
         }
 
         /// <summary>
-        /// Resets interpolator to initial state
+        /// Resets interpolator to the defaults.
         /// </summary>
         public void Clear()
         {
@@ -97,122 +173,55 @@ namespace Unity.Netcode
             m_CurrentInterpValue = default;
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
-            TargetState.Reset(default);
+            m_RateOfChange = default;
         }
 
         /// <summary>
-        /// Teleports current interpolation value to targetValue.
+        /// Resets the current interpolator to the target valueTeleports current interpolation value to targetValue.
+        /// <see href="Vector3"></see>
         /// </summary>
-        /// <param name="targetValue">The target value to teleport instantly</param>
+        /// <remarks>
+        /// This is used when first synchronizing/initializing and when telporting an object.
+        /// </remarks>
+        /// <param name="targetValue">The target value to reset the interpolator to</param>
         /// <param name="serverTime">The current server time</param>
-        public void ResetTo(T targetValue, double serverTime)
+        /// <param name="useSmoothDampening">Defaults to true and is the recommened way to achieve a smoother interpolation between buffer item values.</param>
+        /// <param name="isAngularValue">When rotation is expressed as Euler values (i.e. Vector3 and/or float) this helps determine what kind of smooth dampening to use.</param>
+        public void ResetTo(T targetValue, double serverTime, bool useSmoothDampening = true, bool isAngularValue = false)
         {
+#if UNITY_EDITOR
             m_Name = GetType().Name;
+#endif
             // Clear everything first
             Clear();
             // Set our initial value
             InterpolateState.Reset(targetValue);
             // TODO: If we get single lerping working, then m_CurrentInterpValue is no longer needed.
             m_CurrentInterpValue = targetValue;
+
+            m_UseSmoothDamening = useSmoothDampening;
+            m_IsAngularValue = isAngularValue;
+
+            // Add the first measurement for our baseline
+            AddMeasurement(targetValue, serverTime);
         }
 
-        // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
-#if OLDSTUFF
-        private void TryConsumeFromBufferLDK(double renderTime, double serverTime)
+        /// <summary>
+        /// TryConsumeFromBuffer: Smooth Dampening Version
+        /// </summary>
+        /// <param name="renderTime">render time: the time in "ticks ago" relative to the current tick latency</param>
+        /// <param name="minDeltaTime">minimum time delta (defaults to tick frequency)</param>
+        /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer</param>
+        private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime)
         {
-            int consumedCount = 0;
-            // only consume if we're ready
-
-            //  this operation was measured as one of our most expensive, and we should put some thought into this.
-            //   NetworkTransform has (currently) 7 buffered linear interpolators (3 position, 3 scale, 1 rot), and
-            //   each has its own independent buffer and 'm_endTimeConsume'.  That means every frame I have to do 7x
-            //   these checks vs. if we tracked these values in a unified way
-            if (renderTime >= m_EndTimeConsumed)
-            {
-                BufferedItem? itemToInterpolateTo = null;
-                // assumes we're using sequenced messages for netvar syncing
-                // buffer contains oldest values first, iterating from end to start to remove elements from list while iterating
-
-                // calling m_Buffer.Count shows up hot in the profiler.
-                for (int i = m_Buffer.Count - 1; i >= 0; i--) // todo stretch: consume ahead if we see we're missing values due to packet loss
-                {
-                    var bufferedValue = m_Buffer[i];
-                    // Consume when ready and interpolate to last value we can consume. This can consume multiple values from the buffer
-                    if (bufferedValue.TimeSent <= serverTime)
-                    {
-                        if (!itemToInterpolateTo.HasValue || bufferedValue.TimeSent > itemToInterpolateTo.Value.TimeSent)
-                        {
-                            if (m_LifetimeConsumedCount == 0)
-                            {
-                                // if interpolator not initialized, teleport to first value when available
-                                m_StartTimeConsumed = bufferedValue.TimeSent;
-                                m_InterpStartValue = bufferedValue.Item;
-                            }
-                            else if (consumedCount == 0)
-                            {
-                                // Interpolating to new value, end becomes start. We then look in our buffer for a new end.
-
-                                // !!!! This does not account for gaps between values !!!
-                                // if last entry is > several ticks then the range is going to be very large!
-                                m_StartTimeConsumed = renderTime;
-                                m_InterpStartValue = m_CurrentInterpValue;
-                            }
-
-                            if ((bufferedValue.TimeSent - m_StartTimeConsumed) >= k_TickFrequency)
-                            {
-                                itemToInterpolateTo = bufferedValue;
-                                m_EndTimeConsumed = bufferedValue.TimeSent;
-                                m_InterpEndValue = bufferedValue.Item;
-                                m_Buffer.RemoveAt(i);
-                                m_LifetimeConsumedCount++;
-                                break;
-                            }
-                        }
-
-                        m_Buffer.RemoveAt(i);
-                        consumedCount++;
-                        m_LifetimeConsumedCount++;
-                    }
-                }
-            }
-        }
-#endif
-        private string m_Name;
-
-        internal struct CurrentState
-        {
-            public BufferedItem? Target;
-
-            public double StartTime;
-            public double RelativeTime;
-            public double DeltaTime;
-            public float LerpT;
-
-            public T TargetValue;
-            public T CurrentValue;
-            public T PreviousValue;
-            public void Reset(T currentValue)
-            {
-                CurrentValue = currentValue;
-                PreviousValue = currentValue;
-                TargetValue = currentValue;
-                // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
-                LerpT = 1.0f;
-                RelativeTime = 0.0;
-                DeltaTime = 0.0;
-            }
-        }
-
-        internal CurrentState InterpolateState;
-        internal CurrentState TargetState;
-
-        private void TryConsumeFromBuffer(double renderTime, double serverTime)
-        {
-            // If we don't have our initial buffered item/starting point or our end point or the end point's time sent is less than the
-            // render time
-            if (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < renderTime)
+            if (!InterpolateState.Target.HasValue ||
+                (InterpolateState.Target.Value.TimeSent <= renderTime &&
+                (InterpolateState.TargetTimeAproximatelyReached() ||
+                IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))))
             {
                 BufferedItem? previousItem = null;
+                var startTime = 0.0;
+                var alreadyHasBufferItem = false;
                 while (m_Buffer.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
@@ -222,23 +231,46 @@ namespace Unity.Netcode
                         break;
                     }
 
-                    // At a minimum, the next item should be equal to or less than the server time
-                    if (potentialItem.TimeSent <= serverTime)
+                    // If we haven't set a target or the potential item's time sent is less that the current target's time sent
+                    // then pull the BufferedItem from the queue. The second portion of this accounts for scenarios where there
+                    // was bad latency and the buffer has more than one item in the queue that is less than the renderTime. Under
+                    // this scenario, we just want to continue pulling items from the queue until the last item pulled from the
+                    // queue is greater than the redner time or greater than the currently targeted item.
+                    if (!InterpolateState.Target.HasValue ||
+                        (potentialItem.TimeSent <= renderTime && InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
                     {
-                        if (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent)
+                        if (m_Buffer.TryDequeue(out BufferedItem target))
                         {
-                            if (m_Buffer.TryDequeue(out BufferedItem target))
+                            if (!InterpolateState.Target.HasValue)
                             {
                                 InterpolateState.Target = target;
-                                InterpolateState.LerpT = 0.0f;
-                                break;
+
+                                alreadyHasBufferItem = true;
+                                InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                                startTime = InterpolateState.Target.Value.TimeSent;
                             }
-                        }
-                        else
-                        {
-                            break;
+                            else
+                            {
+                                if (!alreadyHasBufferItem)
+                                {
+                                    alreadyHasBufferItem = true;
+                                    startTime = InterpolateState.Target.Value.TimeSent;
+                                    InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                                    InterpolateState.LerpT = 0.0f;
+                                }
+                                // TODO: We might consider creating yet another queue to add these items to and assure that the time is accelerated
+                                // for each item as opposed to losing the resolution of the values.
+                                InterpolateState.TimeToTargetValue = Mathf.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
+                                InterpolateState.Target = target;
+                            }
+                            InterpolateState.DeltaTime = 0.0f;
                         }
                     }
+                    else
+                    {
+                        break;
+                    }
+
                     if (!InterpolateState.Target.HasValue)
                     {
                         break;
@@ -248,8 +280,171 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Used for internal testing
+        /// </summary>
+        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
+        {
+            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
+        }
 
+        /// <summary>
+        /// ** Recommended to use when <see cref="Components.NetworkRigidbodyBase.UseRigidBodyForMotion"/> is enabled. ** <br />
+        /// Provides a closer/more precise update between the current and target values that uses a smooth dampening approach.
+        /// </summary>
+        /// <param name="deltaTime">The last frame time that is either <see cref="Time.deltaTime"/> for non-rigidbody motion and <see cref="Time.fixedDeltaTime"/> when using ridigbody motion.</param>
+        /// <param name="tickLatencyAsTime">The tick latency in relative local time.</param>
+        /// <param name="minDeltaTime">The minimum time delta between the current and target value.</param>
+        /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
+        /// <returns>The newly interpolated value of type 'T'</returns>
+        public T Update(float deltaTime, double tickLatencyAsTime, float minDeltaTime, float maxDeltaTime)
+        {
+            TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+            // Only interpolate when there is a start and end point and we have not already reached the end value
+            if (InterpolateState.Target.HasValue)
+            {
+                InterpolateState.AddDeltaTime(deltaTime);
+                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime, 10000.0f);
+            }
+            m_NbItemsReceivedThisFrame = 0;
+            return InterpolateState.CurrentValue;
+        }
+
+        /// <summary>
+        /// Call to update the state of the interpolators using Lerp.
+        /// </summary>
+        /// <remarks>
+        /// This approah uses double lerping which can result in an over-smoothed result.
+        /// </remarks>
+        /// <param name="deltaTime">time since last call</param>
+        /// <param name="renderTime">our current time</param>
+        /// <param name="serverTime">current server time</param>
+        /// <returns>The newly interpolated value of type 'T'</returns>
+        public T Update(float deltaTime, double renderTime, double serverTime)
+        {
+            TryConsumeFromBuffer(renderTime, deltaTime, (float)(serverTime - renderTime));
+            // Only interpolate when there is a start and end point and we have not already reached the end value
+            if (InterpolateState.Target.HasValue)
+            {
+                InterpolateState.AddDeltaTime(deltaTime);
+                var target = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
+                InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, deltaTime / MaximumInterpolationTime);
+            }
+            m_NbItemsReceivedThisFrame = 0;
+            return InterpolateState.CurrentValue;
+        }
+
+        /// <summary>
+        /// Add measurements to be used during interpolation. These will be buffered before being made available to be displayed as "latest value".
+        /// </summary>
+        /// <param name="newMeasurement">The new measurement value to use</param>
+        /// <param name="sentTime">The time to record for measurement</param>
+        public void AddMeasurement(T newMeasurement, double sentTime)
+        {
+            m_NbItemsReceivedThisFrame++;
+
+            // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
+            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
+            if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
+            {
+                if (m_LastBufferedItemReceived.TimeSent < sentTime)
+                {
+                    m_BufferCount++;
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                    ResetTo(newMeasurement, sentTime);
+                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
+                    m_Buffer.Enqueue(m_LastBufferedItemReceived);
+                }
+                return;
+            }
+
+            // Drop measurements that are received out of order/late
+            if (sentTime > m_LastMeasurementAddedTime)
+            {
+                m_BufferCount++;
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                m_Buffer.Enqueue(m_LastBufferedItemReceived);
+                m_LastMeasurementAddedTime = sentTime;
+            }
 #if UNITY_EDITOR
+            else if (EnableLogging)
+            {
+                Debug.Log($"[{m_Name}] Dropping measurement -- Time: {sentTime} Value: {newMeasurement} | Last measurement -- Time: {m_LastMeasurementAddedTime} Value: {m_LastBufferedItemReceived.Item}");
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Gets latest value from the interpolator. This is updated every update as time goes by.
+        /// </summary>
+        /// <returns>The current interpolated value of type 'T'</returns>
+        public T GetInterpolatedValue()
+        {
+            return InterpolateState.CurrentValue;
+        }
+
+        /// <summary>
+        /// Method to override and adapted to the generic type. This assumes interpolation for that value will be clamped.
+        /// </summary>
+        /// <param name="start">The start value (min)</param>
+        /// <param name="end">The end value (max)</param>
+        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
+        /// <returns>The interpolated value</returns>
+        protected abstract T Interpolate(T start, T end, float time);
+
+        /// <summary>
+        /// Method to override and adapted to the generic type. This assumes interpolation for that value will not be clamped.
+        /// </summary>
+        /// <param name="start">The start value (min)</param>
+        /// <param name="end">The end value (max)</param>
+        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
+        /// <returns>The interpolated value</returns>
+        protected abstract T InterpolateUnclamped(T start, T end, float time);
+
+
+        /// <summary>
+        /// An alternate smoothing method to Lerp.
+        /// </summary>
+        /// <param name="current">Current item <see cref="T"/> value.</param>
+        /// <param name="target">Target item <see cref="T"/> value.</param>
+        /// <param name="rateOfChange">The velocity of change.</param>
+        /// <param name="duration">Total time to smooth between the <paramref name="current"/> and <paramref name="target"/>.</param>
+        /// <param name="deltaTime">The increasing delta time from when start to finish.</param>
+        /// <param name="maxSpeed">Maximum rate of change per pass.</param>
+        /// <returns>The smoothed <see cref="T"/> value.</returns>
+        protected internal virtual T SmoothDamp(T current, T target, ref T rateOfChange, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
+        {
+            return target;
+        }
+
+        /// <summary>
+        /// Determines if two values of type <see cref="T"/> are close to the same value.
+        /// </summary>
+        /// <param name="first">First value of type <see cref="T"/>.</param>
+        /// <param name="second">Second value of type <see cref="T"/>.</param>
+        /// <param name="precision">The precision of the aproximation.</param>
+        /// <returns></returns>
+        protected internal virtual bool IsAproximately(T first, T second, float precision = k_AproximatePrecision)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Converts a value of type <see cref="T"/> from world to local space or vice versa.
+        /// </summary>
+        /// <param name="transform">Reference transform</param>
+        /// <param name="inLocalSpace">local or world space (true or false)</param>
+        protected internal virtual T OnConvertTransformSpace(Transform transform, T item, bool inLocalSpace)
+        {
+            return default;
+        }
+
+        // TODO: Collect data points so a single buffered linear interpolator can provide additional data points
+        // to be visualized in RNSM.
+        #region DEBUG_LOGGING
+#if UNITY_EDITOR
+
+        private string m_Name;
         internal bool EnableLogging = false;
         internal ulong NetworkObjectId;
         internal ushort NetworkBehaviourId;
@@ -365,7 +560,7 @@ namespace Unity.Netcode
                 m_AvgDepth = (m_AvgDepth + depth) * 0.5f;
             }
 
-            
+
 
             if (m_MaxBufferedItems < m_Buffer.Count)
             {
@@ -393,561 +588,6 @@ namespace Unity.Netcode
             }
         }
 #endif
-
-        ///////////////////////////////
-        /// Close..
-        /// Non-Rigidbody: try changing to local time on clients and stick with server time on the server
-        /// Ridigbody: Not sure how to handle this one... time isn't updated until after FixedUpdate and
-        /// if we apply on fixed update but interpolate after fixed update then we will always be 1 full
-        /// frame behind... (hmmmm)
-        ///////////////////////////////
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="networkTime"></param>
-        /// <param name="networkTimeSystem"></param>
-        private void TryConsumeFromBuffer(double renderTime, NetworkTime serverTime, NetworkTimeSystem networkTimeSystem)
-        {
-            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime))// && InterpolateState.LerpT >= 1.0f))
-            {
-                //if (m_Buffer.Count == 0 && InterpolateState.Target.HasValue && (InterpolateState.Target.Value.TimeSent + (serverTime.FixedDeltaTime * 2) < serverTime.Time))
-                //{
-                //    InterpolateState.Reset(InterpolateState.CurrentValue);
-                //    InterpolateState.Target = null;
-                //    m_SmoothVelocity1 = Vector3.zero;
-                //    return;
-                //}
-                BufferedItem? previousItem = null;
-                var startTime = 0.0;
-                var alreadyHasBufferItem = false;
-                while (m_Buffer.TryPeek(out BufferedItem potentialItem))
-                {
-                    // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
-                    // to consume.
-                    if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
-                    {
-                        break;
-                    }
-
-                    // At a minimum, the next item should be equal to or less than the server time
-                    //if (potentialItem.TimeSent <= serverTime.Time)
-                    {
-                        if (!InterpolateState.Target.HasValue ||
-                            (potentialItem.TimeSent <= renderTime && InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
-                        {
-                            if (m_Buffer.TryDequeue(out BufferedItem target))
-                            {
-                                if (!InterpolateState.Target.HasValue)
-                                {
-                                    InterpolateState.Target = target;
-                                    InterpolateState.DeltaTime = serverTime.FixedDeltaTime;
-                                }
-                                else
-                                {
-                                    if (!alreadyHasBufferItem)
-                                    {
-                                        alreadyHasBufferItem = true;
-                                        startTime = InterpolateState.Target.Value.TimeSent;
-                                        InterpolateState.StartTime = networkTimeSystem.RawTime;
-                                        InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                                        InterpolateState.LerpT = 0.0f;
-                                        InterpolateState.RelativeTime = 0.0;
-                                    }
-                                    InterpolateState.DeltaTime = Math.Clamp(target.TimeSent - startTime, serverTime.FixedDeltaTime, serverTime.FixedDeltaTime * m_TimeLerp);
-                                    InterpolateState.Target = target;
-                                    //InterpolateState.StartTime = serverTime.Time;
-                                }
-                                //break;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!InterpolateState.Target.HasValue)
-                    {
-                        break;
-                    }
-                    previousItem = potentialItem;
-                }
-            }
-        }
-
-        private T GetInterpolatedState(NetworkTimeSystem networkTimeSystem, NetworkTime renderTime, float fixedDeltaTime, int depth)
-        {
-            if (m_Buffer.Count < 2)
-            {
-                return m_Buffer.Count == 0 ? m_CurrentInterpValue : m_Buffer.ElementAt(0).Item;
-            }
-            //m_Buffer.ElementAt(0).LerpT = 0.0f;
-            //var timeFactor = (float)((networkTimeSystem.ServerTime - ((depth * fixedDeltaTime) + networkTimeSystem.LocalTimeOffset)) / (m_Buffer.ElementAt(1).TimeSent - m_Buffer.ElementAt(0).TimeSent));
-            var deltaTime = m_Buffer.ElementAt(1).TimeSent - m_Buffer.ElementAt(0).TimeSent;
-            var minStart = fixedDeltaTime / 6;
-            var timeFactor = (float)((renderTime.Time - m_Buffer.ElementAt(0).TimeSent) / deltaTime);
-            float lerpT = Mathf.Clamp(timeFactor, minStart, 1.0f);
-#if UNITY_EDITOR
-            LogSecondInfo(networkTimeSystem.LocalTime, lerpT, depth, (float)networkTimeSystem.LastSyncedRttSec);
-#endif
-            return Interpolate(m_Buffer.ElementAt(0).Item, m_Buffer.ElementAt(1).Item, lerpT);
-            //if (m_Buffer.Count < depth)
-            //{
-            //    depth = m_Buffer.Count - 1;
-            //}
-
-            //var previous = m_Buffer.ElementAt(0);
-            //var currentValue = previous.Item;
-            //var previousTime = previous.TimeSent;
-            ////float latencyFactor = fixedDeltaTime + (networkTimeSystem.LocalTimeOffset > fixedDeltaTime ? (float)networkTimeSystem.LocalTimeOffset : fixedDeltaTime);
-
-            //var depthFactor = 1.0f / depth;
-            //for (int i = 1; i < depth; i++)
-            //{
-            //    var next = m_Buffer.ElementAt(i);
-            //    var depthT = 1.0f - ((i - 1) * depthFactor);
-            //    var adjustedTime = networkTimeSystem.ServerTime - previousTime;
-            //    var depthAdjust = fixedDeltaTime * (depth - 1) * depthT;
-            //    adjustedTime -= depthAdjust;
-            //    if (adjustedTime < 0.0f)
-            //    {
-            //        continue;
-            //    }
-            //    var timeFactor = (float)(adjustedTime / (next.TimeSent - previousTime));
-            //    if (timeFactor < 0.0f)
-            //    {
-            //        Debug.Log($"TF: {timeFactor}!");
-            //    }
-            //    float t = Mathf.Clamp(timeFactor, 0.0f, 1.0f);
-            //    var previousValue = currentValue;
-            //    currentValue = Interpolate(currentValue, next.Item, t);
-            //    if (m_LogSegment)
-            //    {
-            //        Debug.Log($"[{i}] AdjT: {adjustedTime} DepthAdj: {depthAdjust} DepthT: {depthT} TF: {timeFactor} T: {t} Prev: {previousValue} Next: {next.Item} Current: {currentValue}");
-            //    }
-            //    previousTime = next.TimeSent;
-            //}
-            //m_LogSegment = false;
-            //return currentValue;
-        }
-
-
-        private void ProcessStates(NetworkTimeSystem networkTimeSystem,NetworkTime renderTime, float fixedDeltaTime, int depth)
-        {
-            //float latencyFactor = (fixedDeltaTime * depth) + (networkTimeSystem.LocalTimeOffset > fixedDeltaTime ? (float)networkTimeSystem.LocalTimeOffset : fixedDeltaTime);
-            //var minimumTime = networkTimeSystem.ServerTime - ((depth * fixedDeltaTime) + networkTimeSystem.LocalTimeOffset);
-            var minimumTime = renderTime.Time;
-            while (m_Buffer.Count > 0 && m_Buffer.Peek().TimeSent < minimumTime)
-            {
-                m_Buffer.Dequeue();
-            }
-        }
-
-        private float m_TimeLerp = 4.0f;
-
-        private Vector3 m_SmoothVelocity1;
-        private Vector3 m_SmoothVelocity2;
-
-        protected virtual T SmoothDamp(T current, T target,ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
-        {
-            return target;
-        }
-
-        private const float k_DefaultPrecision = 0.0001f;
-        protected virtual bool IsAproximately(T first, T second, float precision = k_DefaultPrecision)
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// ** Recommended Usage **
-        /// A more precise update for the buffered linear interpolator.
-        /// </summary>
-        /// <param name="deltaTime">time since call</param>
-        /// <param name="serverTime">current server time</param>
-        /// <returns>The newly interpolated value of type 'T'</returns>
-        public T Update(float deltaTime, NetworkTime serverTime, NetworkTimeSystem networkTimeSystem)
-        {
-            //var timeLerp = Math.Clamp(2 * (float)(networkTimeSystem.LastSyncedRttSec / serverTime.FixedDeltaTime), 2, 8);
-            //////var renderTime = serverTime.TimeTicksAgo(depth, (float)serverTime.TickOffset);
-            //m_TimeLerp = Mathf.SmoothStep(m_TimeLerp, timeLerp, deltaTime);
-            var renderTime = serverTime.TimeTicksAgo((int)m_TimeLerp).Time;
-            //var renderTime = networkTimeSystem.RawTime - (serverTime.FixedDeltaTime * m_TimeLerp);
-            //var renderTime = serverTime.TimeTicksAgo(2).Time;
-#if UNITY_EDITOR
-            //if (EnableLogging)
-            //{
-            //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}][{InterpolateState.Target.Value.ItemId}] Server Time: {networkTimeSystem.ServerTime} | Time RDelta: {InterpolateState.RelativeTime} | Delta: {InterpolateState.DeltaTime}");
-            //    Debug.Log($"[{m_Name}][{NetworkObjectId}-{NetworkBehaviourId}] RenderTime: {renderTime} Raw Time: {networkTimeSystem.RawTime}");
-            //}
-#endif
-            //var target = GetInterpolatedState(networkTimeSystem, renderTime, serverTime.FixedDeltaTime, depth);
-            ////m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, serverTime.FixedDeltaTime / MaximumInterpolationTime);
-            //m_CurrentInterpValue = target;
-            //ProcessStates(networkTimeSystem, renderTime, serverTime.FixedDeltaTime, depth);
-
-
-            // Only interpolate when there is a start and end point and we have not already reached the end value
-            if (InterpolateState.Target.HasValue && !IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))
-            {
-                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_SmoothVelocity1, (float)InterpolateState.DeltaTime, deltaTime);
-                //var timeDelta = Math.Max(0.000000000001, (serverTime.Time - InterpolateState.StartTime));
-                //InterpolateState.RelativeTime = Math.Min(InterpolateState.RelativeTime + timeDelta, InterpolateState.DeltaTime);
-                //InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.DeltaTime);
-
-                //InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                //InterpolateState.CurrentValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
-                //m_CurrentInterpValue = InterpolateState.LerpT < 1.0f ? Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.333333333f) : InterpolateState.CurrentValue;
-            }
-            //else
-            //{
-            //    TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
-            //}
-            TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
-            m_CurrentInterpValue = InterpolateState.CurrentValue;
-            //m_CurrentInterpValue = SmoothDamp(m_CurrentInterpValue, InterpolateState.TargetValue, ref m_SmoothVelocity2, serverTime.FixedDeltaTime);
-            //TryConsumeFromBuffer(renderTime, serverTime, networkTimeSystem);
-#if UNITY_EDITOR
-            LogInfo(networkTimeSystem.ServerTime);
-#endif
-            m_NbItemsReceivedThisFrame = 0;
-            return m_CurrentInterpValue;
-        }
-
-        /// <summary>
-        /// Used for internal testing
-        /// </summary>
-        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
-        {
-            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
-        }
-
-        /// <summary>
-        /// Call to update the state of the interpolators before reading out
-        /// </summary>
-        /// <param name="deltaTime">time since last call</param>
-        /// <param name="renderTime">our current time</param>
-        /// <param name="serverTime">current server time</param>
-        /// <returns>The newly interpolated value of type 'T'</returns>
-        public T Update(float deltaTime, double renderTime, double serverTime)
-        {
-            TryConsumeFromBuffer(renderTime, serverTime);
-
-            // Only interpolate when there is a start and end point and we have not already reached the end value
-            if (InterpolateState.Target.HasValue)
-            {
-                if (InterpolateState.LerpT < 1.0f)
-                {
-                    InterpolateState.RelativeTime = Math.Clamp(InterpolateState.RelativeTime + deltaTime, 0.000001f, InterpolateState.Target.Value.TimeSent);
-                    InterpolateState.LerpT = (float)(InterpolateState.RelativeTime / InterpolateState.Target.Value.TimeSent);
-                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
-                    if (InterpolateState.LerpT < 1.0f)
-                    {
-                        m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, InterpolateState.CurrentValue, 0.5f);
-                    }
-                    else
-                    {
-                        m_CurrentInterpValue = InterpolateState.CurrentValue;
-                    }
-                }
-            }
-
-            m_NbItemsReceivedThisFrame = 0;
-            return m_CurrentInterpValue;
-        }
-
-        /// <summary>
-        /// Add measurements to be used during interpolation. These will be buffered before being made available to be displayed as "latest value".
-        /// </summary>
-        /// <param name="newMeasurement">The new measurement value to use</param>
-        /// <param name="sentTime">The time to record for measurement</param>
-        public void AddMeasurement(T newMeasurement, double sentTime)
-        {
-            m_NbItemsReceivedThisFrame++;
-
-            // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
-            // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
-            if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
-            {
-                if (m_LastBufferedItemReceived.TimeSent < sentTime)
-                {
-                    m_BufferCount++;
-                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
-                    ResetTo(newMeasurement, sentTime);
-                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
-                    m_Buffer.Enqueue(m_LastBufferedItemReceived);
-                }
-
-                return;
-            }
-
-            if (sentTime > m_LastMeasurementAddedTime)
-            {
-                m_BufferCount++;
-                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
-                m_Buffer.Enqueue(m_LastBufferedItemReceived);
-                m_LastMeasurementAddedTime = sentTime;
-            }
-#if UNITY_EDITOR
-            else if (EnableLogging)
-            {
-                Debug.Log($"[{m_Name}] Dropping measurement -- Time: {sentTime} Value: {newMeasurement} | Last measurement -- Time: {m_LastMeasurementAddedTime} Value: {m_LastBufferedItemReceived.Item}");
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Gets latest value from the interpolator. This is updated every update as time goes by.
-        /// </summary>
-        /// <returns>The current interpolated value of type 'T'</returns>
-        public T GetInterpolatedValue()
-        {
-            return m_CurrentInterpValue;
-        }
-
-        /// <summary>
-        /// Method to override and adapted to the generic type. This assumes interpolation for that value will be clamped.
-        /// </summary>
-        /// <param name="start">The start value (min)</param>
-        /// <param name="end">The end value (max)</param>
-        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
-        /// <returns>The interpolated value</returns>
-        protected abstract T Interpolate(T start, T end, float time);
-
-        /// <summary>
-        /// Method to override and adapted to the generic type. This assumes interpolation for that value will not be clamped.
-        /// </summary>
-        /// <param name="start">The start value (min)</param>
-        /// <param name="end">The end value (max)</param>
-        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
-        /// <returns>The interpolated value</returns>
-        protected abstract T InterpolateUnclamped(T start, T end, float time);
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// This is a buffered linear interpolator for a <see cref="float"/> type value
-    /// </remarks>
-    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
-    {
-        /// <inheritdoc />
-        protected override float InterpolateUnclamped(float start, float end, float time)
-        {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return Mathf.LerpUnclamped(start, end, time);
-        }
-
-        protected override float SmoothDamp(float current, float target, ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
-        {
-            var x = currentVelocity.x;
-            var retSmooth = Mathf.SmoothDamp(current, target, ref x, duration, maxSpeed, deltaTime);
-            currentVelocity.x = x;
-            return retSmooth;
-        }
-
-        protected override bool IsAproximately(float first, float second, float precision = 1E-07F)
-        {
-            return Mathf.Approximately(first, second);
-        }
-
-        /// <inheritdoc />
-        protected override float Interpolate(float start, float end, float time)
-        {
-            return Mathf.Lerp(start, end, time);
-        }
-    }
-
-    /// <inheritdoc />
-    /// <remarks>
-    /// This is a buffered linear interpolator for a <see cref="Quaternion"/> type value
-    /// </remarks>
-    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
-    {
-        /// <summary>
-        /// Use <see cref="Quaternion.Slerp"/> when <see cref="true"/>.
-        /// Use <see cref="Quaternion.Lerp"/> when <see cref="false"/>
-        /// </summary>
-        /// <remarks>
-        /// When using half precision (due to the imprecision) using <see cref="Quaternion.Lerp"/> is
-        /// less processor intensive (i.e. precision is already "imprecise").
-        /// When using full precision (to maintain precision) using <see cref="Quaternion.Slerp"/> is
-        /// more processor intensive yet yields more precise results.
-        /// </remarks>
-        public bool IsSlerp;
-
-        /// <inheritdoc />
-        protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
-        {
-            if (IsSlerp)
-            {
-                return Quaternion.SlerpUnclamped(start, end, time);
-            }
-            else
-            {
-                return Quaternion.LerpUnclamped(start, end, time);
-            }
-        }
-
-        /// <inheritdoc />
-        protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
-        {
-            if (IsSlerp)
-            {
-                return Quaternion.Slerp(start, end, time);
-            }
-            else
-            {
-                return Quaternion.Lerp(start, end, time);
-            }
-        }
-
-        protected override Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
-        {
-            Vector3 currentEuler = current.eulerAngles;
-            Vector3 targetEuler = target.eulerAngles;
-            currentEuler.x = Mathf.SmoothDampAngle(currentEuler.x, targetEuler.x, ref currentVelocity.x, duration, maxSpeed, deltaTime);
-            currentEuler.y = Mathf.SmoothDampAngle(currentEuler.y, targetEuler.y, ref currentVelocity.y, duration, maxSpeed, deltaTime);
-            currentEuler.z = Mathf.SmoothDampAngle(currentEuler.z, targetEuler.z, ref currentVelocity.z, duration, maxSpeed, deltaTime);
-            current.eulerAngles = currentEuler;
-            return current;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool Approximately(Quaternion a, Quaternion b, float precision)
-        {
-            return Mathf.Abs(a.x - b.x) <= precision &&
-                Mathf.Abs(a.y - b.y) <= precision &&
-                Mathf.Abs(a.z - b.z) <= precision &&
-                Mathf.Abs(a.w - b.w) <= precision;
-        }
-
-        protected override bool IsAproximately(Quaternion first, Quaternion second, float precision = 1E-07F)
-        {
-            return Approximately(first, second, precision);
-            //return Mathf.Abs(Quaternion.Dot(first, second)) >= 1 - precision;
-        }
-
-        private Quaternion ConvertToNewTransformSpace(Transform transform, Quaternion rotation, bool inLocalSpace)
-        {
-            if (inLocalSpace)
-            {
-                return Quaternion.Inverse(transform.rotation) * rotation;
-
-            }
-            else
-            {
-                return transform.rotation * rotation;
-            }
-        }
-
-        protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
-        {
-            var buffer = m_Buffer.ToList();
-            m_Buffer.Clear();
-            for (int i = 0; i < buffer.Count; i++)
-            {
-                var entry = buffer[i];
-                entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer.Enqueue(entry);
-            }
-            InterpolateState.CurrentValue = ConvertToNewTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
-            m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
-            var end = InterpolateState.Target.Value;
-            end.Item = ConvertToNewTransformSpace(transform, end.Item, inLocalSpace);
-            InterpolateState.Target = end;
-
-            base.OnConvertTransformSpace(transform, inLocalSpace);
-        }
-    }
-
-    /// <summary>
-    /// A <see cref="BufferedLinearInterpolator{T}"/> <see cref="Vector3"/> implementation.
-    /// </summary>
-    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
-    {
-        /// <summary>
-        /// Use <see cref="Vector3.Slerp"/> when <see cref="true"/>.
-        /// Use <see cref="Vector3.Lerp"/> when <see cref="false"/>
-        /// </summary>
-        public bool IsSlerp;
-        /// <inheritdoc />
-        protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
-        {
-            if (IsSlerp)
-            {
-                return Vector3.SlerpUnclamped(start, end, time);
-            }
-            else
-            {
-                return Vector3.LerpUnclamped(start, end, time);
-            }
-        }
-
-        /// <inheritdoc />
-        protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
-        {
-            if (IsSlerp)
-            {
-                return Vector3.Slerp(start, end, time);
-            }
-            else
-            {
-                return Vector3.Lerp(start, end, time);
-            }
-        }
-
-
-        private Vector3 ConvertToNewTransformSpace(Transform transform, Vector3 position, bool inLocalSpace)
-        {
-            if (inLocalSpace)
-            {
-                return transform.InverseTransformPoint(position);
-
-            }
-            else
-            {
-                return transform.TransformPoint(position);
-            }
-        }
-
-        protected override Vector3 SmoothDamp(Vector3 current, Vector3 target,ref Vector3 currentVelocity, float duration, float deltaTime, float maxSpeed)
-        {
-            return Vector3.SmoothDamp(current, target, ref currentVelocity, duration, maxSpeed, deltaTime);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected bool Approximately(Vector3 a, Vector3 b, float precision)
-        {
-            return Math.Round(Mathf.Abs(a.x - b.x), 2) <= precision &&
-                Math.Round(Mathf.Abs(a.y - b.y), 2) <= precision &&
-                Math.Round(Mathf.Abs(a.z - b.z), 2) <= precision;
-        }
-
-        protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 1E-07F)
-        {
-            return Approximately(first, second, precision);
-            //return Vector3.Distance(first, second) < precision;
-        }
-
-        protected internal override void OnConvertTransformSpace(Transform transform, bool inLocalSpace)
-        {
-            var buffer = m_Buffer.ToList();
-            m_Buffer.Clear();
-            for (int i = 0; i < buffer.Count; i++)
-            {
-                var entry = buffer[i];
-                entry.Item = ConvertToNewTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer.Enqueue(entry);
-            }
-
-            InterpolateState.CurrentValue = ConvertToNewTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
-            m_CurrentInterpValue = ConvertToNewTransformSpace(transform, m_CurrentInterpValue, inLocalSpace);
-            var end = InterpolateState.Target.Value;
-            end.Item = ConvertToNewTransformSpace(transform, end.Item, inLocalSpace);
-            InterpolateState.Target = end;
-
-            base.OnConvertTransformSpace(transform, inLocalSpace);
-        }
+        #endregion
     }
 }

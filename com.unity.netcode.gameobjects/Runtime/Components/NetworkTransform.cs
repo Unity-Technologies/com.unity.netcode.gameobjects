@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
-using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -663,9 +662,6 @@ namespace Unity.Netcode.Components
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
-
-                        serializer.SerializeValue(ref TickOffset);
-
                     }
                     else
                     {
@@ -673,8 +669,6 @@ namespace Unity.Netcode.Components
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
-
-                        serializer.SerializeValue(ref TickOffset);
                     }
                 }
 
@@ -943,6 +937,28 @@ namespace Unity.Netcode.Components
         #endregion
 
         #region PROPERTIES AND GENERAL METHODS
+
+        /// <summary>
+        /// The two ways to smooth during interpolation.
+        /// </summary>
+        public enum InterpolationTypes
+        {
+            /// <summary>
+            /// Uses lerping and yields a linear progression between two values.
+            /// </summary>
+            Lerp,
+            /// <summary>
+            /// Uses a smooth dampening approach and is recommended when <see cref="NetworkRigidbodyBase.UseRigidBodyForMotion"/> is enabled.
+            /// </summary>
+            SmoothDampening
+        }
+
+        public InterpolationTypes InterpolationType;
+
+        public float PositionMaxInterpolationTime = 0.1f;
+        public float RotationMaxInterpolationTime = 0.1f;
+        public float ScaleMaxInterpolationTime = 0.1f;
+
         public enum AuthorityModes
         {
             Server,
@@ -1791,11 +1807,11 @@ namespace Unity.Netcode.Components
             var positionThreshold = Vector3.one * PositionThreshold;
             var rotationThreshold = Vector3.one * RotAngleThreshold;
 
-            //if (m_UseRigidbodyForMotion)
-            //{
-            //    positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
-            //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
-            //}
+            if (m_UseRigidbodyForMotion)
+            {
+                positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
+                rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
+            }
 #else
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
@@ -2168,7 +2184,6 @@ namespace Unity.Netcode.Components
                 {
                     // We use the NetworkTickSystem version since ServerTime is set when updating ticks
                     networkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
-                    networkState.TickOffset = (float)m_CachedNetworkManager.NetworkTickSystem.ServerTime.TickOffset;
                 }
             }
 
@@ -2887,7 +2902,7 @@ namespace Unity.Netcode.Components
             }
 
             // Get the time when this new state was sent
-            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkTickSystem.TickRate, newState.NetworkTick, newState.TickOffset).Time;
+            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkTickSystem.TickRate, newState.NetworkTick).Time;
 
             if (LogStateUpdate)
             {
@@ -2958,11 +2973,10 @@ namespace Unity.Netcode.Components
         /// <see cref="NetworkTransform"/> (i.e. Position, Scale, and Rotation)
         /// </summary>
         /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
+        [Obsolete("This method is no longer valid.", false)]
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
-            m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_PositionInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            // No longer valid
         }
 
         /// <summary>
@@ -3144,11 +3158,21 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// For testing purposes to quickly change the default from Lerp to SmoothDamp
+        /// </summary>
+        internal static bool AssignDefaultInterpolationType;
+        internal static InterpolationTypes DefaultInterpolationType;
+
+        /// <summary>
         /// Create interpolators when first instantiated to avoid memory allocations if the
         /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
         /// </summary>
         protected virtual void Awake()
         {
+            if (AssignDefaultInterpolationType)
+            {
+                InterpolationType = DefaultInterpolationType;
+            }
             // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
             m_PositionInterpolator = new BufferedLinearInterpolatorVector3();
@@ -3697,59 +3721,83 @@ namespace Unity.Netcode.Components
 
         #region UPDATES AND AUTHORITY CHECKS
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
+
+        // Non-Authority
         private void UpdateInterpolation()
         {
-            // Non-Authority
-            if (Interpolate)
-            {
-                AdjustForChangeInTransformSpace();
+            AdjustForChangeInTransformSpace();
 
-                var serverTime = m_CachedNetworkManager.ServerTime;
-                var cachedServerTime = serverTime.Time;
-                // var offset = (float)serverTime.TickOffset;
+            var cachedServerTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                //var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
-                var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
+            var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
 #else
-                var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
+            var cachedDeltaTime = Time.deltaTime;
 #endif
+            var tickLatency = m_CachedNetworkManager.NetworkTimeSystem.TickLatency;
 
-                //var cachedDeltaTime = Time.deltaTime;
-                // With owner authoritative mode, non-authority clients can lag behind
-                // by more than 1 tick period of time. The current "solution" for now
-                // is to make their cachedRenderTime run 2 ticks behind.
-
-                // TODO: This could most likely just always be 2
-                //var ticksAgo = ((!IsServerAuthoritative() && !IsServer) || m_CachedNetworkManager.DistributedAuthorityMode) && !m_CachedNetworkManager.DAHost ? 2 : 1;
-                //var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
-                var cachedRenderTime = serverTime.TimeTicksAgo(2).Time;
-
-                // Now only update the interpolators for the portions of the transform being synchronized
-                if (SynchronizePosition)
+            // If using an owner authoritative motion model
+            if (!IsServerAuthoritative())
+            {
+                // and if we are in a client-server topology (including DAHost)
+                if (!m_CachedNetworkManager.DistributedAuthorityMode ||
+                    (m_CachedNetworkManager.DistributedAuthorityMode && !m_CachedNetworkManager.CMBServiceConnection))
                 {
-                    //m_PositionInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-#if UNITY_EDITOR
-                    m_PositionInterpolator.NetworkObjectId = NetworkObjectId;
-                    m_PositionInterpolator.NetworkBehaviourId = NetworkBehaviourId;
-                    m_PositionInterpolator.EnableLogging = false;
-#endif
-                    m_PositionInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
+                    // If this instance belongs to another client (i.e. not the server/host), then add 1 to our tick latency.
+                    if (!m_CachedNetworkManager.IsServer && !NetworkObject.IsOwnedByServer)
+                    {
+                        // Account for the 2xRTT with owner authoritative
+                        tickLatency += 1;
+                    }
                 }
+            }
 
-                if (SynchronizeRotation)
+            var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
+            var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
+            var maxDeltaTime = 1.0f + (tickLatency * m_CachedNetworkManager.LocalTime.FixedDeltaTime);
+
+            var useLerp = InterpolationType == InterpolationTypes.Lerp;
+
+            // Now only update the interpolators for the portions of the transform being synchronized
+            if (SynchronizePosition)
+            {
+                if (useLerp)
                 {
+                    m_PositionInterpolator.MaximumInterpolationTime = PositionMaxInterpolationTime;
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
+                }
+                else
+                {
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+                }
+            }
+
+            if (SynchronizeRotation)
+            {
+                if (useLerp)
+                {
+                    m_RotationInterpolator.MaximumInterpolationTime = RotationMaxInterpolationTime;
                     // When using half precision Lerp towards the target rotation.
                     // When using full precision Slerp towards the target rotation.
                     /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                     m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                    //m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                    m_RotationInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
                 }
-
-                if (SynchronizeScale)
+                else
                 {
-                    //m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                    m_ScaleInterpolator.Update(cachedDeltaTime, m_CachedNetworkManager.ServerTime, m_CachedNetworkManager.NetworkTimeSystem);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+                }
+            }
+
+            if (SynchronizeScale)
+            {
+                if (useLerp)
+                {
+                    m_ScaleInterpolator.MaximumInterpolationTime = ScaleMaxInterpolationTime;
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
+                }
+                else
+                {
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
                 }
             }
         }
@@ -3772,26 +3820,17 @@ namespace Unity.Netcode.Components
             }
 
             // Update interpolation
-            UpdateInterpolation();
+            if (Interpolate)
+            {
+                UpdateInterpolation();
+            }
+
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-
-        internal void OnInterpolateFixedUpdate()
-        {
-            // If not spawned or this instance has authority, exit early
-            if (!m_UseRigidbodyForMotion || !IsSpawned || CanCommitToTransform)
-            {
-                return;
-            }
-
-            // Update interpolation
-            UpdateInterpolation();
-        }
-
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3805,6 +3844,13 @@ namespace Unity.Netcode.Components
             }
 
             m_NetworkRigidbodyInternal.WakeIfSleeping();
+
+
+            // Update interpolation when enabled
+            if (Interpolate)
+            {
+                UpdateInterpolation();
+            }
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
@@ -3964,17 +4010,20 @@ namespace Unity.Netcode.Components
 
         internal static float GetTickLatency(NetworkManager networkManager)
         {
-            if (s_NetworkTickRegistration.ContainsKey(networkManager))
+            if (networkManager.IsListening)
             {
-                return s_NetworkTickRegistration[networkManager].TicksAgo;
+                return (float)(networkManager.NetworkTimeSystem.TickLatency + networkManager.LocalTime.TickOffset);
             }
-            return 0f;
+            return 0;
         }
 
         /// <summary>
         /// Returns the number of ticks (fractional) a client is latent relative
-        /// to its current RTT.
+        /// to its current averaged RTT.
         /// </summary>
+        /// <remarks>
+        /// Only valid on clients.
+        /// </remarks>
         public static float GetTickLatency()
         {
             return GetTickLatency(NetworkManager.Singleton);
@@ -3982,9 +4031,9 @@ namespace Unity.Netcode.Components
 
         internal static float GetTickLatencyInSeconds(NetworkManager networkManager)
         {
-            if (s_NetworkTickRegistration.ContainsKey(networkManager))
+            if (networkManager.IsListening)
             {
-                return s_NetworkTickRegistration[networkManager].TicksAgoInSeconds();
+                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency).Time;
             }
             return 0f;
         }
@@ -4026,40 +4075,12 @@ namespace Unity.Netcode.Components
                 RemoveTickUpdate(m_NetworkManager);
             }
 
-            internal float TicksAgoInSeconds()
-            {
-                return 2 * m_TickFrequency;
-                // TODO: We need an RTT that updates regularly and not just when the client sends packets
-                // return Mathf.Max(1.0f, TicksAgo) * m_TickFrequency;
-            }
-
             /// <summary>
             /// Invoked once per network tick, this will update any registered
             /// authority instances.
             /// </summary>
             private void TickUpdate()
             {
-                // TODO: We need an RTT that updates regularly and not just when the client sends packets
-                // if (m_UnityTransport != null)
-                // {
-                //     // Determine the desired ticks ago by the RTT (this really should be the combination of the
-                //     // authority and non-authority 1/2 RTT but in the end anything beyond 300ms is considered very poor
-                //     // network quality so latent interpolation is going to be expected).
-                //     var rtt = Mathf.Max(m_TickInMS, m_UnityTransport.GetCurrentRtt(NetworkManager.ServerClientId));
-                //     m_TicksAgoSamples[m_TickSampleIndex] = Mathf.Max(1, (int)(rtt * m_TickFrequency));
-                //     var tickAgoSum = 0.0f;
-                //     foreach (var tickAgo in m_TicksAgoSamples)
-                //     {
-                //         tickAgoSum += tickAgo;
-                //     }
-                //     m_PreviousTicksAgo = TicksAgo;
-                //     TicksAgo = Mathf.Lerp(m_PreviousTicksAgo, tickAgoSum / m_TickRate, m_TickFrequency);
-                //     m_TickSampleIndex = (m_TickSampleIndex + 1) % m_TickRate;
-                //     // Get the partial tick value for when this is all calculated to provide an offset for determining
-                //     // the relative starting interpolation point for the next update
-                //     Offset = m_OffsetTickFrequency * (Mathf.Max(2, TicksAgo) - (int)TicksAgo);
-                // }
-
                 // TODO FIX: The local NetworkTickSystem can invoke with the same network tick as before
                 if (m_NetworkManager.ServerTime.Tick <= m_LastTick)
                 {
@@ -4074,40 +4095,11 @@ namespace Unity.Netcode.Components
                 }
                 m_LastTick = m_NetworkManager.ServerTime.Tick;
             }
-
-
-            private UnityTransport m_UnityTransport;
-            private float m_TickFrequency;
-            // private float m_OffsetTickFrequency;
-            // private ulong m_TickInMS;
-            // private int m_TickSampleIndex;
-            private int m_TickRate;
-            public float TicksAgo { get; private set; }
-            // public float Offset { get; private set; }
-            // private float m_PreviousTicksAgo;
-
-            private List<float> m_TicksAgoSamples = new List<float>();
-
             public NetworkTransformTickRegistration(NetworkManager networkManager)
             {
                 m_NetworkManager = networkManager;
                 m_NetworkTickUpdate = new Action(TickUpdate);
                 networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
-                m_TickRate = (int)m_NetworkManager.NetworkConfig.TickRate;
-                m_TickFrequency = 1.0f / m_TickRate;
-                //// For the offset, it uses the fractional remainder of the tick to determine the offset.
-                //// In order to keep within tick boundaries, we increment the tick rate by 1 to assure it
-                //// will always be < the tick frequency.
-                // m_OffsetTickFrequency = 1.0f / (m_TickRate + 1);
-                // m_TickInMS = (ulong)(1000 * m_TickFrequency);
-                // m_UnityTransport = m_NetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
-                //// Fill the sample with a starting value of 1
-                // for (int i = 0; i < m_TickRate; i++)
-                // {
-                //     m_TicksAgoSamples.Add(1f);
-                // }
-                TicksAgo = 2f;
-                // m_PreviousTicksAgo = 1f;
                 if (networkManager.IsServer)
                 {
                     networkManager.OnServerStopped += OnNetworkManagerStopped;

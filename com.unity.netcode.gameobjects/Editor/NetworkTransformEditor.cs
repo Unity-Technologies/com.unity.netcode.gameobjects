@@ -28,6 +28,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
+        private SerializedProperty m_InterpolationTypeProperty;
 
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
@@ -61,6 +62,7 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
+            m_InterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.InterpolationType));
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
@@ -159,6 +161,10 @@ namespace Unity.Netcode.Editor
             if (!networkTransform.HideInterpolateValue)
             {
                 EditorGUILayout.PropertyField(m_InterpolateProperty);
+                if (networkTransform.Interpolate)
+                {
+                    EditorGUILayout.PropertyField(m_InterpolationTypeProperty);
+                }
             }
             EditorGUILayout.PropertyField(m_SlerpPosition);
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
