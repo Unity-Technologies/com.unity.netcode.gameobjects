@@ -3,43 +3,50 @@
 
 # DESCRIPTION--------------------------------------------------------------------------
   # Validates package compatibility with latest dependency versions
-  # Tests each package referenced in the project against newest compatible dependency versions
+  # Tests each package referenced in the project against the newest compatible dependency versions
   # Helps detect potential breaking changes from dependency updates early
-  # Runs on default editor/platform to balance between coverage and resource usage
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. Default projects only (optimized subset from project.metafile)
-  # 2. Default platform (typically Ubuntu for resource efficiency)
-  # 3. Default editor version (latest stable)
-  # This focused configuration allows quick validation while managing resource usage
+    # 1. Jobs are being defined per each project as in project.metafile (testproject, minimalproject, testproject-tools-integration).
+    # 2. Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
+    # 3. Jobs are being defined per each supported editor (For NGOv2.X it means 6000+)
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Updated Dependencies Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "updated-dependencies_testproject_NGO_win_6000.0" (job name when querying for it)
   
 # TECHNICAL CONSTRAINTS----------------------------------------------------------------
-  # - Requires successful project packaging before execution
-  # - Tests only NGO package dependencies (com.unity.netcode.gameobjects)
-  # - Uses default configurations to optimize CI resource usage
-  # - Generates test results in upm-ci~/test-results directory
-  # - Dependencies must follow semantic versioning for proper version resolution
+  # This job requires successful project packaging before execution (job dependency)
+  # This job tests only NGO package dependencies (com.unity.netcode.gameobjects)
+  # The results are being generated in upm-ci~/test-results directory (specific of upm-ci)
+  # Currently upm-ci is being used but in the future it will be replaced by upm-pvp
+  
+# QUALITY THOUGHTS---------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
 #-------------------------------------------------------------------------------------- 
   
-{% for project in projects.all -%}                                                    # Jobs are being defined per each project as in project.metafile (testproject, minimalproject, testproject-tools-integration).
-{% for platform in test_platforms.desktop -%}                                         # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
-{% for editor in validation_editors.all -%}                                           # Jobs are being defined per each supported editor (For NGOv2.X it means 6000+)
-updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
+{% for project in projects.all -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.all -%}
+updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:                   
   name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
-    type: {{ platform.type }}                                                         # Defines type from platform configuration (for example Unity::VM). For packing no GPU extension is needed
-    image: {{ platform.image }}                                                       # Bokken image specification
-    flavor: {{ platform.flavor }}                                                     # Memory/CPU allocation configuration
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
   commands:
-    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects          # Execute dependency update tests with specific package filter
+    # Execute dependency update tests with specific package filter (we only care about NGO package)
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"                                                 # Test execution logs and results
+        - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}  # Requires packaged project to be available
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

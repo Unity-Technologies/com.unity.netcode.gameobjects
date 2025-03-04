@@ -1,41 +1,45 @@
-{% metadata_file .yamato/project.metafile %}                                           # All configuration that is used to create different configurations (used in for loops) is taken from this file.
+{% metadata_file .yamato/project.metafile %}  # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job definition creates job configurations to test building a player on WebGl standalone platform. 
+  # This job is responsible for validating a successful building of a player on WebGl standalone platform. 
   # This job will not execute any tests, we only test building process.
-  # This setup performs build-only validation (without running tests) because WebGL runs in browser and for tests to be executed we would need to consider having a web server, browser automation and overall complex test setup which currently we don't have. 
-  
-  # The setup below defines multiple jobs with different configurations (taken from project.metafile in the 1st line).
-  # This is a Yamato specific as it will "compile" this script and generate given configurations which we can easily modify from within project.metafile. 
-  # From there (project.metafile) we could easily add for example a new validation editor or remove unsupported one.
+  # This is because WebGL runs in browser and for tests to be executed we would need to consider having a web server, browser automation and overall complex test setup which currently we don't have. 
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. Projects (from project.metafile)
-  # 2. Desktop platforms (Windows, Ubuntu, macOS)
-  # 3. Supported Unity Editor versions
-  # This structure allows easy modification of supported configurations via project.metafile
+    # 1. For the default project (from project.metafile). In this case the default project (testptoject) is used as a context for the build.
+    # 2. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 3. For all supported Unity Editor versions (For NGOv2.X it means 6000+)
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "WebGl Build - testproject [win, 6000.0, il2cpp]" (name visible in Yamato) or "webgl_build_testproject_win_6000.0" (job name when querying for it)
   
 # TECHNICAL CONSTRAINTS----------------------------------------------------------------
   # WebGL requires IL2CPP scripting backend (Mono not supported)
-  # x64 architectures preferred for build phase (ARM64 not used to optimize resource usage. For build phase x64 architectures are preferred)
-  # Build validation only (no runtime testing)
-
-
+  # We are not using ARM64 architectures since we only perform a build action. x64 architectures are preferred for build phase (in order to optimize available resource usage)
+  # We only perform build validation (no runtime testing)
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # In the future we could try to implement an infrastructure to run test in webgl context but this could be quite complicated and would need to be evaluated if it's worth it
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
 #-------------------------------------------------------------------------------------- 
   
-{% for project in projects.default -%}                                                  # Default project (testptoject) in this case is used as a context for the build.
-{% for platform in test_platforms.desktop -%}                                           # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
-{% for editor in validation_editors.all -%}                                             # Jobs are being defined per each supported editor (For NGOv2.X it means 6000+)
-webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:                             # This is a job name when querying from code (for example in _run-all.yml). Notice that parts of it will be filled in from for loops. For example there will be a configuration "webgl_build_testproject_win_6000.0" and when querying for this job we could for example change some values to get a given job (for example change editor value) and this will query different job configuration
-  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]    # This is a job name visible in Yamato (notice that here we also use "generated" fields from for loops
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.all -%}
+webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
-    type: {{ platform.type }}                                                           # Defines type from platform configuration (for example Unity::VM). For webgl builds no GPU extension is needed
-    image: {{ platform.image }}                                                         # Bokken image specification
-    flavor: {{ platform.flavor }}                                                       # Memory/CPU allocation configuration
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
   commands:
-    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp --wait          # unity-downloader-cli should be already preinstalled on the image. This steps downloads proper editor to build from together with required components (webgl + il2cpp). The --wait flag will ensure that we wait until editor is downloaded
+    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp
   
     # The following step builds the player with defined options such as:
       # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
@@ -50,8 +54,8 @@ webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}:                     
   artifacts:
     logs:
       paths:
-        - "artifacts/**/*"                                                              # Build process logs (path defined via --artifacts_path argument)
-        - "build/players/**/*"                                                          # WebGL build output files (path defined via --player-save-path argument)
+        - "artifacts/**/*"
+        - "build/players/**/*"
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -2,27 +2,30 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Executes project-specific tests in Unity Editor context
-  # Covers both PlayMode and EditMode tests from project test assemblies
-  # Excludes NGO package tests (handled in separate package test jobs)
-  # Provides validation across all supported Unity Editor versions
-  # Note: These tests focus on project-specific functionality, not package validation
+  # This job executes project-specific tests in Unity Editor context
+  # Those tests cover both PlayMode and EditMode tests from project test assemblies
+  # We need to note that NGO package tests are not being executed within this job (those are handled in separate package test jobs)
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. All projects with tests (filtered by has_tests flag)
-  # 2. All desktop platforms (Windows, Ubuntu, macOS)
-  # 3. All supported Unity Editor versions
-  # This ensures comprehensive testing across supported environments
-  # Each combination creates a separate test job for parallel execution
+    # 1. For every NGO project defined in projects.all (in project.metafile) with tests (filtered by has_tests flag) [For more info look into project.metafile configuration]
+    # 2. For all desktop platform (Windows, Ubuntu, macOS) defined in test_platforms.desktop (in project.metafile)
+    # 3. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Project Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "test_testproject_win_6000.0" (job name when querying for it)  
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
-  # - Runs in Editor context only (no player builds required)
-  # - No scripting backend variations needed (Editor uses Mono)
-  # - Architecture variations not applicable (Editor context)
-  # - Requires project packaging as prerequisite
-  # - Special handling for Ubuntu display configuration
-  # - Excludes performance tests for consistent CI execution
+  # This job runs in Editor context only (no player builds required)
+  # No scripting backend variations needed (Editor context)
+  # Architecture variations not applicable (Editor context)
+  # Requires project packaging as prerequisite (dependency job)
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
 #------------------------------------------------------------------------------------
 
@@ -37,15 +40,14 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 && {% endif %}upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests --extra-utr-arg="--extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun"
+    - unity-downloader-cli -u {{ editor }} -c Editor
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests --extra-utr-arg="--reruncount=1 --clean-library-on-rerun"
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*" # Test execution logs and results
+        - "upm-ci~/test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }} # Requires packaged project to be available
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

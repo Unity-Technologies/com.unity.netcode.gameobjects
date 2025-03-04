@@ -2,29 +2,31 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Executes NGO package validation and testing in Editor context
-  # Combines Package Verification Pipeline (PVP) validation with UTR testing
-  # Validates package structure, API compatibility, and runtime behavior
-  # Covers both PlayMode and EditMode tests for the package
-  # Note: Performance tests are explicitly excluded from this validation
+  # This job executes package-specific tests in Unity Editor context
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies
+  # Additionally it combines Package Verification Pipeline (PVP) validation. This ensures that package is compatible with Unity standards
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. All desktop platforms (Windows, Ubuntu, macOS)
-  # 2. All supported Unity Editor versions
-  # Package testing is comprehensive across environments because:
-  # - Different platforms may expose platform-specific issues
-  # - Editor versions may have different compatibility requirements
-  # - API compatibility needs validation across all supported versions
+    # 1. For all desktop platform (Windows, Ubuntu, macOS) defined in test_platforms.desktop (in project.metafile)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Package Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "package_test_-_ngo_6000.0_win" (job name when querying for it)   
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
-  # - Runs in Editor context only (no player builds)
-  # - No scripting backend variations needed
-  # - Requires successful package pack job
-  # - Uses PVP for package validation
-  # - Requires specific display configuration for Ubuntu
-  # - Supports custom validation profiles via pvpExceptions.json
-  # - Extended logging enabled via UNITY_EXT_LOGGING
+  # This job runs in Editor context only (no player builds required)
+  # No scripting backend variations needed (Editor context)
+  # Architecture variations not applicable (Editor context)
+  # Requires project packaging as prerequisite (dependency job)
+  # Uses PVP for package validation. Specifically it looks for supported profiles which we should conform to but takes ./pvpExceptions.json file into consideration where we note our known issues related to PVP checks
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # TODO: we should aim to replace target PVP profile from supported to gold
   
 #------------------------------------------------------------------------------------
 
@@ -42,12 +44,13 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
     
-    # Validate packages.
+    # Validate PVP checks for package.
     - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results
+
     # Run UTR to test packages.
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %} UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --reruncount=1 --clean-library-on-rerun
   artifacts:
     logs:
       paths:

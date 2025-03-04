@@ -2,55 +2,54 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Console platform validation for NGO package using standalone builds
-  # Executes runtime tests (PlayMode equivalent) in standalone console builds
-  # Uses split build/run approach due to console-specific requirements
-  # Covers PS4, PS5, Switch, XboxOne, and XboxSeriesX platforms
+  # This file contains Console platform test validation for NGO package consisting of two phases:
+    # 1. Build Phase: Creates standalone players for console platforms
+    # 2. Run Phase: Executes runtime tests on actual console devices
+  # Those phases need to be separated (in contrast to for example desktop tests)
   
-  # PLATFORM SPECIFICS-----------------------------------------------------------------
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all console platform (Switch, ps4, ps5, xbox360, xboxOne) defined in test_platforms.console_ (in project.metafile)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+  # 3. For default project which serves as context
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Build testproject - [win, 6000.0, il2cpp]" (name visible in Yamato) or "console_standalone_build_testproject_win_6000.0" (job name when querying for it)   
+  
+# PLATFORM SPECIFICS-----------------------------------------------------------------
   # Common Requirements:
-  # - All consoles require IL2CPP scripting backend
-  # - Windows-based build machines required
-  # - Platform-specific SDK environment variables
-  #
-  # Platform-Specific:
-  # - Switch: ARM64 architecture only
-  # - Other Consoles: x64 architecture
-  # - Each console requires specific SDK paths and tools
-  # - Some consoles require specific hardware models for testing
-  
-  # TECHNICAL CONSTRAINTS--------------------------------------------------------------
-  # Build Phase:
-  # - Windows build agents required
-  # - Platform-specific SDK installations
-  # - IL2CPP only (no Mono support)
-  # - Architecture varies by console
-  #
-  # Run Phase:
-  # - Requires specific console hardware
-  # - Platform-specific environment setup
-  # - Direct hardware access needed
-  # - Specific SDK versions required
-  
-#-----------------------------------------------------------------------------------
+    # All consoles require IL2CPP scripting backend
+    # Platform-specific SDK environment variables
 
+  # Platform-Specific:
+    # Switch: ARM64 architecture only
+    # Other Consoles: x64 architecture
+    # Each console requires specific SDK paths and tools
+
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+
+  
+  
+# BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
 {% for editor in validation_editors.all -%}
-build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp{% if platform.name == "switch" %}, arm64{% endif %}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    # Installing tools. unity-downloader-cli and utr should be already preinstalled on the image
-    - sudo pip install unity-downloader-cli
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --fast --wait
-    
-    # Platform specific Build
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
     - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -74,11 +73,11 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   
   
   
-# Executes RuntimeTests of the NGO package in the Standalone build for consoles
+# RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
+console_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
   name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
     type: {{ platform.type }}
@@ -88,13 +87,8 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     model: {{ platform.model }}
 {% endif %}
   commands:
-    # Installing tools.
-    - sudo pip install unity-downloader-cli
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --fast --wait
-
-    # Platform specific Execution
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
     - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -110,7 +104,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

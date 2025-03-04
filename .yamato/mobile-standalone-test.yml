@@ -2,38 +2,53 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Mobile platform validation for NGO package consisting of two phases:
-  # 1. Build Phase: Creates standalone players for mobile platforms
-  # 2. Run Phase: Executes runtime tests on actual mobile devices
-  # Uses default project as test context for consistency
-  # Covers both iOS and Android platforms with platform-specific requirements
+  # This file contains Mobile platform test validation for NGO package consisting of two phases:
+    # 1. Build Phase: Creates standalone players for mobile platforms
+    # 2. Run Phase: Executes runtime tests on actual mobile devices
+  # Those phases need to be separated (in contrast to for example desktop tests)
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all mobile platform (Android, iOS) defined in test_platforms.mobile_ (in project.metafile)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+    # 3. For default project which serves as context
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Build testproject - [win, 6000.0, il2cpp]" (name visible in Yamato) or "build_testproject_win_6000.0" (job name when querying for it)   
   
 # PLATFORM SPECIFICS-----------------------------------------------------------------
   # iOS Requirements:
-  # - Must use IL2CPP scripting backend
-  # - Only supports ARM64 architecture
-  # - Builds on macOS agents only
-  # 
-  # Android Requirements:
-  # - Uses IL2CPP scripting backend (recommended over Mono)
-  # - Supports both ARM64 and ARMv7 architectures
-  # - Builds on any desktop platform
-  #
-  # Note: All builds use x64 machines for compatibility with ARM64 target devices
-  
+    # Must use IL2CPP scripting backend
+    # Only supports ARM64 architecture
+    # Builds on macOS agents only
 
+    # Android Requirements:
+      # Uses IL2CPP scripting backend (recommended over Mono)
+      # Supports both ARM64 and ARMv7 architectures
+      # Can be build on any desktop platform
+
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+  
+# BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_build -%}
 {% for editor in validation_editors.all -%}
-build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
-  name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }},  il2cpp]
+mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
       type: {{ platform.type }}
       image: {{ platform.image }}
       flavor: {{ platform.flavor }}
   commands:
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple # Installing unity-downloader-cli
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait # Installing editor
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
     
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
@@ -43,20 +58,16 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     logs:
       paths:
         - "artifacts/**/*"
-  
-  variables:
-    CI: true
-    ENABLE_BURST_COMPILATION: False
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
   
   
-# Executes RuntimeTests of the NGO package in the Standalone build for mobiles
+# RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.all -%}
-run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
+mobile_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
   name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }},  il2cpp]
   agent:
     type: {{ platform.type }}
@@ -65,14 +76,9 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
 {% if platform.model %}
     model: {{ platform.model }}
 {% endif %}
-  # Skip repository cloning
-  skip_checkout: true
   commands:
-    # Installing tools
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-
     # Installing editor. We still need the editor to run tests on standalone build
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
       
 {% if platform.standalone == "Android" %}
     # Download standalone UnityTestRunner and ADB setup
@@ -83,13 +89,13 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
     # Connect to Android device
     - command: '"%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP%'
 
-    # Run tests
+    # Run tests for Android devices
     - |
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
       UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% else %}
 
-    # Run tests
+    # Run tests for non-Android devices
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
 {% endif %}
   artifacts:
@@ -97,7 +103,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/mobile-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

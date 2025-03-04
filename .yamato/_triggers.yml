@@ -3,28 +3,28 @@
 
 # DESCRIPTION--------------------------------------------------------------------------
 # Defines three main CI trigger patterns:
-# 1. Pull Request Validation: Basic validation for PR changes
-# 2. Nightly Development: Comprehensive testing on trunk
-# 3. Weekly Full Validation: Complete testing across all editor versions
-# Each pattern represents different balance between validation depth and execution time
+  # 1. Pull Request Validation: Basic validation for PR changes
+  # 2. Nightly Development: Comprehensive testing on trunk
+  # 3. Weekly Full Validation: Complete testing across all editor versions
+# Each pattern represents different balance between validation depth, execution time and CI resource usage
 
 # TRIGGER PATTERNS-------------------------------------------------------------------
-# Pull Request:
-# - Triggers on PRs to develop, develop-2.0.0, and release branches
-# - Focuses on critical validation paths
-# - Cancels previous runs on new commits
-# - Excludes draft PRs
-#
-# Nightly:
-# - Runs daily on develop-2.0.0
-# - Includes all test types but only on trunk
-# - Adds platform-specific and APV validation
-#
-# Weekly:
-# - Most comprehensive validation
-# - Runs across all supported editor versions
-# - Includes code coverage analysis
-# - Validates all projects and standards
+  # Pull Request:
+    # Triggers on PRs to develop, develop-2.0.0, and release branches
+    # Focuses on critical validation paths that we should validate before merging PRs
+    # Cancels previous runs on new commits
+    # Excludes draft PRs
+
+  # Nightly:
+    # Runs daily on develop-2.0.0 (local configuration)
+    # Includes all test types but only on trunk. TODO: Add validation for minimum supported editor in nightly
+    # Adds platform-specific and APV validation
+
+  # Weekly:
+    # Most comprehensive validation
+    # Runs across all supported editor versions
+    # Includes code coverage analysis
+    # Validates all projects and standards
 
 #-----------------------------------------------------------------------------------
 

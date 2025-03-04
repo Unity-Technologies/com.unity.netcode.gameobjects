@@ -2,40 +2,46 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Defines project packaging jobs for NGO projects
-  # These jobs prepare project packages that will be consumed by other pipeline jobs
-  # While these jobs don't require Unity Editor, they're distributed across platforms to prevent bottlenecks that would occur if all packaging was done on minimal VMs
+  # This job is responsible for packing a specific project. It generates package artifacts (.tgz) required for testing and publishing, ensuring all dependencies are properly bundled and validated before any test execution.
+  # The job itself doesn't test anything specific but rather it prepares project packages that will be consumed by other pipeline jobs.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. All NGO projects (from project.metafile)
-  # 2. Desktop platforms (Windows, Ubuntu, macOS)
-  # This allows even distribution of packaging workload across different platforms
-  # Each configuration creates a separate packaging job for better parallelization
+    # 1. For every NGO project defined in projects.all (in project.metafile)
+    # 2. For all desktop platform (Windows, Ubuntu, macOS) defined in test_platforms.desktop (in project.metafile)
   
-# TECHNICAL CONSTRAINTS----------------------------------------------------------------
-  # - No Unity Editor instance required
-  # - No specific platform dependencies
-  # - Could use minimal VM resources but distributed for better throughput
-  # - Requires npm and upm-ci-utils package
-  # - Generates artifacts in upm-ci~/packages directory
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Project Pack - testproject [win]" (name visible in Yamato) or "project_pack_-_testproject_win" (job name when querying for it)
+  
+# TECHNICAL ASPECTS--------------------------------------------------------------------
+  # Job does not require Unity Editor in order to perform packing.
+  # upm-ci is being used (already preinstalled on images that we use) but in the future it should be replaced by upm-pvp.
+  # In theory, we could just use one platform for packing projects (for example ubuntu) but in order to reduce confusion we are using same platform as the job utilizing project pack as dependency.
+  # Job generates artifacts in upm-ci~/packages directory
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # TODO: we should investigate adding PVP checks into project pack job and generally replacing upm-ci with upm-pvp
   
   
 #-------------------------------------------------------------------------------------- 
 
-{% for project in projects.all -%}                                                     # Jobs are being defined per each project as in project.metafile (testproject, minimalproject, testproject-tools-integration).
-{% for platform in test_platforms.desktop -%}                                          # Jobs are being defined per each desktop platform as in project.metafile declaration (Win, Ubuntu, Mac)
-project_pack_-_{{ project.name }}_{{ platform.name }}:                                 # This is a job name when querying from code (for example in _run-all.yml). Notice that parts of it will be filled in from for loops. For example there will be a configuration "project_pack_-_testproject_win" and when querying for this job we could for example change some values to get a given job (for example change platform value) and this will query different job configuration.
-  name: Project Pack - {{ project.name }} [{{ platform.name }}]                        # This is a job name visible in Yamato (notice that here we also use "generated" fields from for loops
+{% for project in projects.all -%}
+{% for platform in test_platforms.desktop -%}
+project_pack_-_{{ project.name }}_{{ platform.name }}:
+  name: Project Pack - {{ project.name }} [{{ platform.name }}]
   agent:
-    type: {{ platform.type }}                                                          # Defines type from platform configuration (for example Unity::VM). For packing no GPU extension is needed
-    image: {{ platform.image }}                                                        # Bokken image specification
-    flavor: {{ platform.flavor }}                                                      # Memory/CPU allocation configuration
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
   commands:
-    - upm-ci project pack --project-path {{ project.path }}                            # upm-ci version of packing command (will be replaced by upm-pvp in the future)
+    - upm-ci project pack --project-path {{ project.path }}
   artifacts:
     packages:
       paths:
-        - "upm-ci~/packages/**/*"                                                       # Generates artifacts in upm-ci~/packages directory
+        - "upm-ci~/packages/**/*"
 {% endfor -%}
 {% endfor -%}

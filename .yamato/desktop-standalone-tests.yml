@@ -2,31 +2,31 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Desktop platform validation for NGO package using standalone builds
-  # Executes runtime tests (PlayMode equivalent) in standalone player builds
-  # Uses split build and run approach for better resource utilization
-  # Covers all supported desktop platforms with various configurations
+  # This file contains Desktop platform test validation for NGO package consisting of two phases:
+    # 1. Build Phase: Creates standalone players for desktop platforms
+    # 2. Run Phase: Executes runtime tests on actual desktop devices
+  # For desktop devices the phase separation is not necessary, but we did it for consistency with other standalone tests configurations
   
-# CONFIGURATION MATRIX---------------------------------------------------------------
-  # Tests are executed across multiple dimensions:
-  # 1. Desktop Platforms: Windows, macOS, Linux
-  # 2. Unity Editor Versions: All supported versions
-  # 3. Scripting Backends: IL2CPP and Mono
-  # Note: ARM64 architectures are currently excluded because:
-  # - Windows ARM64 is post-build only
-  # - macOS ARM64 has OpenCL availability issues
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all desktop platform (Windows, macOS, Ubuntu) defined in test_platforms.desktop_ (in project.metafile)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+    # 3. For default project which serves as context
+    # 4. For all scripting backends
   
-# TECHNICAL CONSTRAINTS--------------------------------------------------------------
-  # - GPU requirement varies by platform (required for Windows/Linux, optional for macOS)
-  # - Default project used as test context
-  # - Null graphics API used for test execution
-  # - Separate build and run phases for better resource management
-  # - 30-minute timeout for both build and run phases
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Standalone Build - NGO testproject - [win, mono, 6000.0]" (name visible in Yamato) or "desktop_standalone_build_testproject_win_mono_6000.0" (job name when querying for it)   
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
 #-----------------------------------------------------------------------------------
-
   
-# Build phase--------------------------------------------------------------------------
+  
+# BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
@@ -38,10 +38,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait # Installing editor
-  
-# Build Player
+    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     players:
@@ -50,7 +47,6 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     logs:
       paths:
         - "artifacts/**/*"
-        
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
@@ -61,7 +57,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   
   
   
-# Run phase--------------------------------------------------------------------------------
+# RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
@@ -73,12 +69,8 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
-# Run Standalone tests
+    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-
   artifacts:
     logs:
       paths:

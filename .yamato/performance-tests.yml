@@ -2,29 +2,29 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # Executes performance tests for NGO package without data reporting
-  # Tests run in Editor context using default project configuration
-  # Focuses on validating performance test execution rather than metrics collection
-  # Serves as a validation step to ensure performance tests are functioning correctly
-  # Note: This configuration explicitly disables performance data reporting
+  # This job executes performance tests for NGO package.
+  # TODO: Currently NGO don't have any performance tests so this job is a placeholder for the future
+  # This configuration is set to not report any data (at least in current state since we don't have any tests to run)
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-  # 1. All desktop platforms (Windows, Ubuntu, macOS)
-  # 2. All supported Unity Editor versions
-  # 3. Default project only (testproject)
-  # Comprehensive platform/editor coverage ensures test stability
-  # Uses default project to maintain consistent test environment
+    # 1. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 2. For all supported Unity Editor versions (For NGOv2.X it means 6000+)
+    # 3. For the default project (from project.metafile). In this case the default project (testptoject) is used as a context for the build.
+  
+  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
+  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+  
+  # The jobs name being generated would be for example "Performance editor Tests - NGO testproject [win, 6000.0] (No Data Reporting)" (name visible in Yamato) or "performance_editor_tests_-_NGO_testproject_6000.0_no_data_reporting" (job name when querying for it)  
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
-  # - Requires Unity Editor installation
-  # - Tests run in Editor context only
-  # - 3600 second (1 hour) timeout limit
-  # - Focuses on Unity.NetCode.* assemblies
-  # - Performance category tests only
-  # - Disables package manager traces
-  # - Includes extensive log collection
-  # - No performance metrics are reported to monitoring systems
+  # Tests run in Editor context only
+  # No performance metrics are reported to monitoring systems
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # We should discuss how to approach the topic of performance testing
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
 #------------------------------------------------------------------------------------
 
@@ -38,25 +38,15 @@ performance_editor_tests_-_NGO_{{ platform.name }}_{{ editor }}_no_data_reportin
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-      - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-      
       # Installing editor
-      - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
+      - unity-downloader-cli -u {{ editor }} -c Editor
       
       # Build Player
       - UnifiedTestRunner --suite=editor --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --timeout=3600 --artifacts-path=artifacts --extra-editor-arg=-assemblyNames --extra-editor-arg=Unity.NetCode.* --extra-editor-arg=-testCategory --extra-editor-arg=Performance --extra-editor-arg=-enablePackageManagerTraces --reruncount=1 --clean-library-on-rerun --dontreportperformancedata
   artifacts:
     logs:
       paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
+        - "artifacts/**/*"
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

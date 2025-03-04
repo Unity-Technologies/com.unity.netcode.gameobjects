@@ -2,41 +2,8 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-# Defines aggregation jobs that group related test executions
-# Provides both full validation (all editors) and trunk-only variants
-# Groups tests by type (package, project) and platform (desktop, mobile, console)
-# Enables efficient test execution for different validation scenarios
-
-# AGGREGATION PATTERNS---------------------------------------------------------------
-# Two main patterns for each test type:
-# 1. Complete Validation: All supported Unity Editor versions
-# 2. Trunk Validation: Only latest Unity Editor version
-#
-# Test Types:
-# - Package Tests: NGO package validation
-# - Project Tests: Project-specific validation
-# - Standards Tests: Code standards verification
-# - Platform Tests: Platform-specific builds and tests
-#   * Desktop (Windows, macOS, Linux)
-#   * Mobile (iOS, Android)
-#   * Console (PS4, PS5, Switch, Xbox)
-#   * WebGL (build-only validation)
-
-# USAGE GUIDELINES------------------------------------------------------------------
-# Complete Validation:
-# - Use for release validation
-# - Weekly automated runs
-# - Major version updates
-#
-# Trunk Validation:
-# - Use for quick verification
-# - Daily automated runs
-# - PR validation
-#
-# Platform-Specific:
-# - Use when targeting specific platform changes
-# - Hardware-dependent validation
-# - Platform certification requirements
+  # Those jobs group together related test executions
+  # Enables efficient test execution for different validation scenarios
 
 #-----------------------------------------------------------------------------------
 
@@ -112,7 +79,7 @@ run_all_webgl_builds:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -125,7 +92,7 @@ run_all_webgl_builds_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform }}_{{ editor }}
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -167,7 +134,7 @@ run_all_project_tests_mobile_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -180,7 +147,7 @@ run_all_project_tests_mobile_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -193,7 +160,7 @@ run_all_project_tests_console_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -206,7 +173,7 @@ run_all_project_tests_console_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
