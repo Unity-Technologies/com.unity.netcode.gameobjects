@@ -95,6 +95,7 @@ namespace Unity.Netcode
         private NetworkTransport m_NetworkTransport;
         private NetworkTickSystem m_NetworkTickSystem;
         private NetworkManager m_NetworkManager;
+        private double m_TickFrequency;
 
         /// <summary>
         /// <see cref="k_TimeSyncFrequency"/>
@@ -127,6 +128,7 @@ namespace Unity.Netcode
             m_NetworkTransport = networkManager.NetworkConfig.NetworkTransport;
             m_TimeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * networkManager.NetworkConfig.TickRate);
             m_NetworkTickSystem = new NetworkTickSystem(networkManager.NetworkConfig.TickRate, 0, 0);
+            m_TickFrequency = 1.0 / networkManager.NetworkConfig.TickRate;
             // Only the server side needs to register for tick based time synchronization
             if (m_ConnectionManager.LocalClient.IsServer)
             {
@@ -222,7 +224,7 @@ namespace Unity.Netcode
             // TODO: For client-server, we need a latency message sent by clients to tell us their tick latency
             if (LastSyncedRttSec > 0.0f)
             {
-                m_TickLatencyAverage = Mathf.Lerp(m_TickLatencyAverage, (float)((LastSyncedRttSec + deltaTimeSec) / m_NetworkTickSystem.ServerTime.FixedDeltaTimeAsDouble), (float)deltaTimeSec);
+                m_TickLatencyAverage = Mathf.Lerp(m_TickLatencyAverage, (float)((LastSyncedRttSec + deltaTimeSec) / m_TickFrequency), (float)deltaTimeSec);
                 TickLatency = (int)Mathf.Max(1.0f, Mathf.Round(m_TickLatencyAverage));
             }
 

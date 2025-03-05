@@ -2986,10 +2986,11 @@ namespace Unity.Netcode.Components
         /// <see cref="NetworkTransform"/> (i.e. Position, Scale, and Rotation)
         /// </summary>
         /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
-        [Obsolete("This method is no longer valid.", false)]
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
-            // No longer valid
+            m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
         /// <summary>
