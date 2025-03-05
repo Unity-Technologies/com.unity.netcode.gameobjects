@@ -114,8 +114,6 @@ namespace Unity.Netcode.Components
             // Used for NetworkDeltaPosition delta position synchronization
             internal int NetworkTick;
 
-            internal float TickOffset;
-
             // Used when tracking by state ID is enabled
             internal int StateId;
 
@@ -953,10 +951,25 @@ namespace Unity.Netcode.Components
             SmoothDampening
         }
 
+        /// <summary>
+        /// The interpolation type to use for the <see cref="NetworkTransform"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// For more details review <see cref="InterpolationTypes"/>.
+        /// </remarks>
         public InterpolationTypes InterpolationType;
 
+        /// <summary>
+        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for position.
+        /// </summary>
         public float PositionMaxInterpolationTime = 0.1f;
+        /// <summary>
+        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for rotation.
+        /// </summary>
         public float RotationMaxInterpolationTime = 0.1f;
+        /// <summary>
+        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for scale.
+        /// </summary>
         public float ScaleMaxInterpolationTime = 0.1f;
 
         public enum AuthorityModes
