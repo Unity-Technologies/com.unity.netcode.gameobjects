@@ -39,6 +39,7 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     # Execute dependency update tests with specific package filter (we only care about NGO package)
     - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
