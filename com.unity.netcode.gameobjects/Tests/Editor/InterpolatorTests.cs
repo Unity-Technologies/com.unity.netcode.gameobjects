@@ -1,4 +1,3 @@
-using System;
 using NUnit.Framework;
 
 namespace Unity.Netcode.EditorTests
@@ -105,7 +104,6 @@ namespace Unity.Netcode.EditorTests
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f).Within(k_Precision));
         }
 
-        [Ignore("TODO: Fix this test to still handle testing message loss without extrapolation. This is tracked in MTT-11338")]
         [Test]
         public void MessageLoss()
         {
@@ -144,45 +142,7 @@ namespace Unity.Netcode.EditorTests
             serverTime += timeStep; // t = 3
             interpolator.UpdateInternal((float)timeStep, serverTime);
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f));
-
-            // extrapolating to 2.5
-            serverTime += timeStep; // t = 3.5d
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2.5f));
-
-            // next value skips to where it was supposed to be once buffer time is showing the next value
-            serverTime += timeStep; // t = 4
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(3f));
-
-            // interpolation continues as expected
-            serverTime += timeStep; // t = 4.5
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(3.5f));
-
-            serverTime += timeStep; // t = 5
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(4f));
-
-            // lost time=6, extrapolating
-            serverTime += timeStep; // t = 5.5
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(4.5f));
-
-            serverTime += timeStep; // t = 6.0
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5f));
-
-            // misprediction
-            serverTime += timeStep; // t = 6.5
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(5.5f));
-
-            // lerp to right value
-            serverTime += timeStep; // t = 7.0
-            interpolator.UpdateInternal((float)timeStep, serverTime);
-            Assert.That(interpolator.GetInterpolatedValue(), Is.GreaterThan(6.0f));
-            Assert.That(interpolator.GetInterpolatedValue(), Is.LessThanOrEqualTo(100f));
+            // Since there is no extrapolation, the rest of this test was removed.
         }
 
         [Test]
@@ -302,11 +262,10 @@ namespace Unity.Netcode.EditorTests
         {
             var interpolator = new BufferedLinearInterpolatorFloat();
             var serverTime = new NetworkTime(k_MockTickRate, 0.0d);
-            // invalid case, this is undefined behaviour
-            Assert.Throws<InvalidOperationException>(() => interpolator.UpdateInternal(1f, serverTime));
+            var interpolatedValue = interpolator.UpdateInternal(1f, serverTime);
+            Assert.IsTrue(interpolatedValue == 0.0f, $"Expected the result to be 0.0f but was {interpolatedValue}!");
         }
 
-        [Ignore("TODO: Fix this test to still test duplicated values without extrapolation. This is tracked in MTT-11338")]
         [Test]
         public void TestDuplicatedValues()
         {
@@ -340,22 +299,7 @@ namespace Unity.Netcode.EditorTests
             serverTime += 0.5d; // t = 3
             interp = interpolator.UpdateInternal(0.5f, serverTime);
             Assert.That(interp, Is.EqualTo(2f));
-
-            // with unclamped interpolation, we continue mispredicting since the two last values are actually treated as the same. Therefore we're not stopping at "2"
-            serverTime += 0.5d; // t = 3.5
-            interp = interpolator.UpdateInternal(0.5f, serverTime);
-            Assert.That(interp, Is.EqualTo(2.5f));
-
-            serverTime += 0.5d; // t = 4
-            interp = interpolator.UpdateInternal(0.5f, serverTime);
-            Assert.That(interp, Is.EqualTo(3f));
-
-            // we add a measurement with an updated time
-            var pastServerTime = new NetworkTime(k_MockTickRate, 3.0d);
-            interpolator.AddMeasurement(2f, pastServerTime.Time);
-
-            interp = interpolator.UpdateInternal(0.5f, serverTime);
-            Assert.That(interp, Is.EqualTo(2f));
+            // Since there is no extrapolation, the rest of this test was removed.
         }
     }
 }
