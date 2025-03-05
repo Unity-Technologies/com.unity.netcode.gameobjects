@@ -18,10 +18,25 @@ namespace Unity.Netcode
         /// </summary>
         protected internal struct BufferedItem
         {
+            /// <summary>
+            /// THe item identifier
+            /// </summary>
             public int ItemId;
+            /// <summary>
+            /// The item value
+            /// </summary>
             public T Item;
+            /// <summary>
+            /// The time the item was sent.
+            /// </summary>
             public double TimeSent;
 
+            /// <summary>
+            /// The constructor
+            /// </summary>
+            /// <param name="item">The item value.</param>
+            /// <param name="timeSent">The time the item was sent.</param>
+            /// <param name="itemId">The item identifier</param>
             public BufferedItem(T item, double timeSent, int itemId)
             {
                 Item = item;
