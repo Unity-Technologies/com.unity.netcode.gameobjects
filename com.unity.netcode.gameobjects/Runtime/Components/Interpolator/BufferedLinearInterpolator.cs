@@ -155,14 +155,12 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Resets the current interpolator to the target valueTeleports current interpolation value to targetValue.
-        /// <see href="Vector3"></see>
         /// </summary>
         /// <remarks>
         /// This is used when first synchronizing/initializing and when telporting an object.
         /// </remarks>
         /// <param name="targetValue">The target value to reset the interpolator to</param>
-        /// <param name="serverTime">The current server time</param>
-        /// <param name="useSmoothDampening">Defaults to true and is the recommened way to achieve a smoother interpolation between buffer item values.</param>
+        /// <param name="serverTime">The current server time</param>        
         /// <param name="isAngularValue">When rotation is expressed as Euler values (i.e. Vector3 and/or float) this helps determine what kind of smooth dampening to use.</param>
         public void ResetTo(T targetValue, double serverTime, bool isAngularValue = false)
         {
@@ -409,7 +407,7 @@ namespace Unity.Netcode
         /// <param name="first">First value of type <see cref="T"/>.</param>
         /// <param name="second">Second value of type <see cref="T"/>.</param>
         /// <param name="precision">The precision of the aproximation.</param>
-        /// <returns></returns>
+        /// <returns>true if the two values are aproximately the same and false if they are not</returns>
         protected internal virtual bool IsAproximately(T first, T second, float precision = k_AproximatePrecision)
         {
             return false;

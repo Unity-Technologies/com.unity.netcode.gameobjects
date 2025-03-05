@@ -49,7 +49,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// This could result in a potential floating point precision variance on different systems. <br />
-        /// See <see href="FixedDeltaTime"></see> for a more precise value.
+        /// See <see cref="FixedDeltaTimeAsDouble"/> for a more precise value.
         /// </remarks>
         public float FixedDeltaTime => (float)m_TickInterval;
 
