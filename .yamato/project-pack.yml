@@ -6,25 +6,23 @@
   # The job itself doesn't test anything specific but rather it prepares project packages that will be consumed by other pipeline jobs.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
-  # Jobs are generated using nested loops through:
-    # 1. For every NGO project defined in projects.all (in project.metafile)
-    # 2. For all desktop platform (Windows, Ubuntu, macOS) defined in test_platforms.desktop (in project.metafile)
+  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # Jobs configurations are generated using nested loops through:
+    # 1. For all projects (testproject, minimalproject, testproject-tools-integration).
+    # 2. For all desktop platforms (Win, Ubuntu, Mac)
   
   # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
   # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
   
   # The jobs name being generated would be for example "Project Pack - testproject [win]" (name visible in Yamato) or "project_pack_-_testproject_win" (job name when querying for it)
   
-# TECHNICAL ASPECTS--------------------------------------------------------------------
+# TECHNICAL CONSIDERATIONS--------------------------------------------------------------------
   # Job does not require Unity Editor in order to perform packing.
-  # upm-ci is being used (already preinstalled on images that we use) but in the future it should be replaced by upm-pvp.
   # In theory, we could just use one platform for packing projects (for example ubuntu) but in order to reduce confusion we are using same platform as the job utilizing project pack as dependency.
-  # Job generates artifacts in upm-ci~/packages directory
   
-# QUALITY THOUGHTS--------------------------------------------------------------------
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
-  # TODO: we should investigate adding PVP checks into project pack job and generally replacing upm-ci with upm-pvp
+  # TODO: Currently upm-ci is being used but in the future it will be replaced by upm-pvp. Additionally this would allow us to run PVP checks on projects
   
   
 #-------------------------------------------------------------------------------------- 

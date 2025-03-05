@@ -2,7 +2,7 @@
 ---
   
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job executes package tests with code coverage analysis enabled for the NGO (Netcode for GameObjects) package
+  # This job is responsible for executing package tests with code coverage analysis enabled.
   # Coverage analysis provides insights into:
     # Test coverage metrics for NGO assemblies
     # Line and branch coverage statistics
@@ -10,7 +10,7 @@
     # Additional metrics for coverage analysis
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
     # 1. For default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
     # 2. For default editor version (trunk) since coverage would not vary between editors (no need for checks on more editors)
@@ -20,13 +20,14 @@
   
   # The jobs name being generated would be for example "Code Coverage - NGO [testproject, 6000.0]" (name visible in Yamato) or "code_coverage_testproject_6000.0" (job name when querying for it)
   
-#TECHNICAL CONSTRAINTS---------------------------------------------------------------
+#TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # In theory this job also runs package tests, but we don't want to use it as default since is heavier (because of added coverage analysis) and coverage is not changing that often
   # Requires Unity Editor installation
-  # Uses UnifiedTestRunner (UTR) for test execution
-  # Depends on successful package pack job completion
   # Burst compilation is disabled to ensure accurate coverage measurement
+  # In order to properly use -coverage-results-path parameter we need to start it with $PWD (which means the absolute path). Otherwise coverage results will not be visible
   
-# QUALITY THOUGHTS--------------------------------------------------------------------
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # TODO: somewhere in 2025 we will be able to upload resuls to CodeCov from public repos
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
     
     

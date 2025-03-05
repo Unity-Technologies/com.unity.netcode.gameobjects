@@ -2,24 +2,30 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This file contains Mobile platform test validation for NGO package consisting of two phases:
-    # 1. Build Phase: Creates standalone players for mobile platforms
-    # 2. Run Phase: Executes runtime tests on actual mobile devices
-  # Those phases need to be separated (in contrast to for example desktop tests)
+  # This job is responsible for Mobile platform test validation.
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
-  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
-    # 1. For all mobile platform (Android, iOS) defined in test_platforms.mobile_ (in project.metafile)
-    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
-    # 3. For default project which serves as context
+  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # Jobs are generated using nested loops through:
+    # 1. For all mobile platform (Android, iOS)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
+    # 3. For the default project.
   
   # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
   # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
   
   # The jobs name being generated would be for example "Build testproject - [win, 6000.0, il2cpp]" (name visible in Yamato) or "build_testproject_win_6000.0" (job name when querying for it)   
   
-# PLATFORM SPECIFICS-----------------------------------------------------------------
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # For mobile devices a split is required into two phases:
+    # 1. Build Phase: Creates standalone players for mobile platforms
+    # 2. Run Phase: Executes runtime tests on actual mobile devices
+  # The Run phase uses build job as dependency
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+  
+# PLATFORM SPECIFICS--------------------------------------------------------------------
   # iOS Requirements:
     # Must use IL2CPP scripting backend
     # Only supports ARM64 architecture
@@ -29,11 +35,9 @@
       # Uses IL2CPP scripting backend (recommended over Mono)
       # Supports both ARM64 and ARMv7 architectures
       # Can be build on any desktop platform
-
-  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
-  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
   
-# QUALITY THOUGHTS--------------------------------------------------------------------
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # TODO: consider adding all projects that have tests
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
   
@@ -49,7 +53,6 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       flavor: {{ platform.flavor }}
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
-    
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     players:
@@ -77,7 +80,7 @@ mobile_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
     model: {{ platform.model }}
 {% endif %}
   commands:
-    # Installing editor. We still need the editor to run tests on standalone build
+    # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required
     - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
       
 {% if platform.standalone == "Android" %}

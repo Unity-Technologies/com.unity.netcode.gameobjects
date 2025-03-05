@@ -2,25 +2,33 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This file contains Desktop platform test validation for NGO package consisting of two phases:
-    # 1. Build Phase: Creates standalone players for desktop platforms
-    # 2. Run Phase: Executes runtime tests on actual desktop devices
-  # For desktop devices the phase separation is not necessary, but we did it for consistency with other standalone tests configurations
+  # This job is responsible for Desktop platform test validation.
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
-    # 1. For all desktop platform (Windows, macOS, Ubuntu) defined in test_platforms.desktop_ (in project.metafile)
-    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
-    # 3. For default project which serves as context
-    # 4. For all scripting backends
+    # 1. For all desktop platform (Windows, macOS, Ubuntu)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
+    # 3. For the default project.
+    # 4. For all scripting backends (mono, il2cpp)
   
   # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
   # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
   
   # The jobs name being generated would be for example "Standalone Build - NGO testproject - [win, mono, 6000.0]" (name visible in Yamato) or "desktop_standalone_build_testproject_win_mono_6000.0" (job name when querying for it)   
   
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # For desktop devices a split is into two phases is not required but we use it for consistency with setup of others standalone platforms:
+    # 1. Build Phase: Creates standalone players for desktop platforms
+    # 2. Run Phase: Executes runtime tests on actual desktop devices
+  # The Run phase uses build job as dependency
+  
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+
 # QUALITY THOUGHTS--------------------------------------------------------------------
+  # TODO: consider adding all projects that have tests
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
 #-----------------------------------------------------------------------------------

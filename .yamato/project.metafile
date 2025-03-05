@@ -1,8 +1,9 @@
 # DESCRIPTION-----------------------------------------------------------------------------------------------------------------
-# This is the central configuration file defining test environments, platforms, and projects.
-# This is used to generate CI pipeline configurations through templating
-# Provides consistent environment definitions across all CI jobs. It's easier to modify values in central place (for example image reference) than having to modify every job
+# This file is the central configuration file defining test environments, platforms, projects, editors and other parameters used.
+# Data from this file is used to generate CI pipeline configurations through templating in other .yamato/ files.
+# This provides consistent environment definitions across all CI jobs. It's easier to modify values in central place (for example image reference) than having to modify every job
 
+# VALUE MEANING----------------------------------------------------------------------------------------------------------------------------
 # Usual fields being defined are
     # name --> Identifier used to distinguish different configurations in the CI pipeline
     # type --> Specifies the Bokken agent type (e.g., Unity::VM, Unity::VM::osx, Unity::mobile::shield)
@@ -25,9 +26,12 @@ small_agent_platform:
       flavor: b1.small
 
 
-# PLATFORM CONFIGURATIONS-----------------------------------------------------------------------------------------------------
+# PLATFORM CONFIGURATIONS----------------------------------------------------------------------------------------------------------------
 # test_platforms specifies platforms that project will/can be tested on.
 # For desktops we include Windows, Ubuntu and Mac, for mobiles we include Android and iOS, for consoles we include ps4, ps5, switch, xbox360 and xboxOne
+# For mobile and console a split was required for build and test jobs and this is also applied for desktops for consistency (though for desktop this split is not required)
+
+
 test_platforms:
     # Default platform is used for all basic jobs. Ubuntu was chosen since it's fastest and most available
     default:
@@ -144,6 +148,8 @@ test_platforms:
     
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv2.X official support started from 6000.0 editor
+# TODO: When a new editor will be released it should be added to this list
+
 validation_editors:
     default:
         - trunk
@@ -154,15 +160,17 @@ validation_editors:
         
         
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
+
 scripting_backends: 
   - mono
   - il2cpp
 
 
 # PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------
-# Projects within the repository that will be tested.
-# The default project should be used for general validation, code coverage and other tests where choice of project should not matter (we are interested in package)
+# Projects within the repository that will be tested/build.
+# The default project should be used for general validation, code coverage and other tests where choice of project should not matter (because we are interested in NGO package)
 # has_tests --> describes if projects contains any tests to run.
+
 projects:
     default:
         - name: testproject

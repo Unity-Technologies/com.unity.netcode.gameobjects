@@ -2,29 +2,29 @@
 ---
 
 # DESCRIPTION--------------------------------------------------------------------------
-  # This job executes package-specific tests in Unity Editor context
+  # This job is responsible for execution of package-specific tests in Unity Editor context
   # Those tests cover both PlayMode and EditMode tests from package test assemblies
   # Additionally it combines Package Verification Pipeline (PVP) validation. This ensures that package is compatible with Unity standards
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using for loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
+  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
-    # 1. For all desktop platform (Windows, Ubuntu, macOS) defined in test_platforms.desktop (in project.metafile)
-    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors defined in project.metafile)
+    # 1. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
   
   # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
   # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
   
   # The jobs name being generated would be for example "Package Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "package_test_-_ngo_6000.0_win" (job name when querying for it)   
   
-# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This job runs in Editor context only (no player builds required)
   # No scripting backend variations needed (Editor context)
   # Architecture variations not applicable (Editor context)
   # Requires project packaging as prerequisite (dependency job)
   # Uses PVP for package validation. Specifically it looks for supported profiles which we should conform to but takes ./pvpExceptions.json file into consideration where we note our known issues related to PVP checks
   
-# QUALITY THOUGHTS--------------------------------------------------------------------
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   # TODO: we should aim to replace target PVP profile from supported to gold
   
