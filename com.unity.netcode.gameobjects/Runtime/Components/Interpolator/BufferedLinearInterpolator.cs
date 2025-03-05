@@ -13,6 +13,9 @@ namespace Unity.Netcode
     {
         private const float k_AproximatePrecision = 0.0001f;
 
+        /// <summary>
+        /// Represents a buffered item measurement.
+        /// </summary>
         protected internal struct BufferedItem
         {
             public int ItemId;
@@ -117,7 +120,6 @@ namespace Unity.Netcode
         private BufferedItem m_LastBufferedItemReceived;
         private int m_NbItemsReceivedThisFrame;
 
-        protected internal T m_CurrentInterpValue;
         private double m_LastMeasurementAddedTime = 0.0f;
         internal bool EndOfBuffer => m_Buffer.Count == 0;
 
@@ -127,6 +129,10 @@ namespace Unity.Netcode
         /// The current interpolation state
         /// </summary>
         internal CurrentState InterpolateState;
+
+        /// <summary>
+        /// The current buffered items received by the authority.
+        /// </summary>
         protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
 
         /// <summary>
@@ -134,10 +140,11 @@ namespace Unity.Netcode
         /// </summary>
         private T m_RateOfChange;
 
-        private bool m_UseSmoothDamening;
-        protected bool UseSmoothDampening => m_UseSmoothDamening;
-
         private bool m_IsAngularValue;
+
+        /// <summary>
+        /// When true, the value <see cref="T"/> is an angular numeric representation.
+        /// </summary>
         protected bool IsAngularValue => m_IsAngularValue;
 
         /// <summary>
@@ -147,7 +154,6 @@ namespace Unity.Netcode
         {
             m_Buffer.Clear();
             m_BufferCount = 0;
-            m_CurrentInterpValue = default;
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
             m_RateOfChange = default;
@@ -171,8 +177,6 @@ namespace Unity.Netcode
             Clear();
             // Set our initial value
             InterpolateState.Reset(targetValue);
-            // TODO: If we get single lerping working, then m_CurrentInterpValue is no longer needed.
-            m_CurrentInterpValue = targetValue;
             m_IsAngularValue = isAngularValue;
 
             // Add the first measurement for our baseline
@@ -416,8 +420,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Converts a value of type <see cref="T"/> from world to local space or vice versa.
         /// </summary>
-        /// <param name="transform">Reference transform</param>
-        /// <param name="inLocalSpace">local or world space (true or false)</param>
+        /// <param name="transform">Reference transform.</param>
+        /// <param name="item">The item to convert.</param>
+        /// <param name="inLocalSpace">local or world space (true or false).</param>
+        /// <returns>The converted value.</returns>
         protected internal virtual T OnConvertTransformSpace(Transform transform, T item, bool inLocalSpace)
         {
             return default;
