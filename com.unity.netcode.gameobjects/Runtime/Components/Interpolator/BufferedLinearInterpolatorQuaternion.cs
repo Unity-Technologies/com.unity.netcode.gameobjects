@@ -60,6 +60,7 @@ namespace Unity.Netcode
             return Quaternion.Euler(currentEuler);
         }
 
+        /// <inheritdoc />
         protected internal override bool IsAproximately(Quaternion first, Quaternion second, float precision)
         {
             return Mathf.Abs(first.x - second.x) <= precision &&
@@ -68,6 +69,7 @@ namespace Unity.Netcode
                 Mathf.Abs(first.w - second.w) <= precision;
         }
 
+        /// <inheritdoc />
         protected internal override Quaternion OnConvertTransformSpace(Transform transform, Quaternion rotation, bool inLocalSpace)
         {
             if (inLocalSpace)
