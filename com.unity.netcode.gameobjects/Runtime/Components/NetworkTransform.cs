@@ -3753,7 +3753,7 @@ namespace Unity.Netcode.Components
 
             var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
             var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
-            var maxDeltaTime = 1.0f + (tickLatency * m_CachedNetworkManager.LocalTime.FixedDeltaTime);
+            var maxDeltaTime = (tickLatency * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
 
             var useLerp = InterpolationType == InterpolationTypes.Lerp;
 

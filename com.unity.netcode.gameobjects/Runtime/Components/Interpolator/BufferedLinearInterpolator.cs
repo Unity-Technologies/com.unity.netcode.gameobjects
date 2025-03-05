@@ -36,7 +36,6 @@ namespace Unity.Netcode
             public float DeltaTime;
             public float LerpT;
 
-            public T TargetValue;
             public T CurrentValue;
             public T PreviousValue;
 
@@ -45,7 +44,7 @@ namespace Unity.Netcode
             public float AverageDeltaTime => m_AverageDeltaTime;
             public float FinalTimeToTarget => TimeToTargetValue - DeltaTime;
 
-            public bool AddDeltaTime(float deltaTime)
+            public void AddDeltaTime(float deltaTime)
             {
                 if (m_AverageDeltaTime == 0.0f)
                 {
@@ -53,15 +52,10 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Gradually adjust our delta time to keep this
-                    // value more consistent
-                    m_AverageDeltaTime = 3.0f * m_AverageDeltaTime;
                     m_AverageDeltaTime += deltaTime;
-                    m_AverageDeltaTime *= 0.25f;
                 }
                 DeltaTime = Math.Max(DeltaTime + m_AverageDeltaTime, TimeToTargetValue);
                 LerpT = DeltaTime / TimeToTargetValue;
-                return FinalTimeToTarget <= m_AverageDeltaTime;
             }
 
             public bool TargetTimeAproximatelyReached()
@@ -70,7 +64,7 @@ namespace Unity.Netcode
                 {
                     return false;
                 }
-                return (m_AverageDeltaTime * 0.3333333f) >= FinalTimeToTarget;
+                return m_AverageDeltaTime >= FinalTimeToTarget;
             }
 
             public void Reset(T currentValue)
@@ -78,7 +72,6 @@ namespace Unity.Netcode
                 Target = null;
                 CurrentValue = currentValue;
                 PreviousValue = currentValue;
-                TargetValue = currentValue;
                 // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
                 LerpT = 1.0f;
                 RelativeTime = 0.0;
@@ -147,22 +140,6 @@ namespace Unity.Netcode
         private bool m_IsAngularValue;
         protected bool IsAngularValue => m_IsAngularValue;
 
-        internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
-        {
-            var count = m_Buffer.Count;
-            for (int i = 0; i < count; i++)
-            {
-                var entry = m_Buffer.Dequeue();
-                entry.Item = OnConvertTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer.Enqueue(entry);
-            }
-            InterpolateState.CurrentValue = OnConvertTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
-            var end = InterpolateState.Target.Value;
-            end.Item = OnConvertTransformSpace(transform, end.Item, inLocalSpace);
-            InterpolateState.Target = end;
-            InLocalSpace = inLocalSpace;
-        }
-
         /// <summary>
         /// Resets interpolator to the defaults.
         /// </summary>
@@ -187,7 +164,7 @@ namespace Unity.Netcode
         /// <param name="serverTime">The current server time</param>
         /// <param name="useSmoothDampening">Defaults to true and is the recommened way to achieve a smoother interpolation between buffer item values.</param>
         /// <param name="isAngularValue">When rotation is expressed as Euler values (i.e. Vector3 and/or float) this helps determine what kind of smooth dampening to use.</param>
-        public void ResetTo(T targetValue, double serverTime, bool useSmoothDampening = true, bool isAngularValue = false)
+        public void ResetTo(T targetValue, double serverTime, bool isAngularValue = false)
         {
 #if UNITY_EDITOR
             m_Name = GetType().Name;
@@ -198,8 +175,6 @@ namespace Unity.Netcode
             InterpolateState.Reset(targetValue);
             // TODO: If we get single lerping working, then m_CurrentInterpValue is no longer needed.
             m_CurrentInterpValue = targetValue;
-
-            m_UseSmoothDamening = useSmoothDampening;
             m_IsAngularValue = isAngularValue;
 
             // Add the first measurement for our baseline
@@ -212,12 +187,16 @@ namespace Unity.Netcode
         /// <param name="renderTime">render time: the time in "ticks ago" relative to the current tick latency</param>
         /// <param name="minDeltaTime">minimum time delta (defaults to tick frequency)</param>
         /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer</param>
-        private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime)
+        private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime, bool isSmoothed = false)
         {
-            if (!InterpolateState.Target.HasValue ||
-                (InterpolateState.Target.Value.TimeSent <= renderTime &&
-                (InterpolateState.TargetTimeAproximatelyReached() ||
-                IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))))
+            var canGetNextItem = true;
+
+            if (isSmoothed && InterpolateState.Target.HasValue)
+            {
+                canGetNextItem = InterpolateState.TargetTimeAproximatelyReached() || IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+            }
+
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime && canGetNextItem))
             {
                 BufferedItem? previousItem = null;
                 var startTime = 0.0;
@@ -260,7 +239,14 @@ namespace Unity.Netcode
                                 }
                                 // TODO: We might consider creating yet another queue to add these items to and assure that the time is accelerated
                                 // for each item as opposed to losing the resolution of the values.
-                                InterpolateState.TimeToTargetValue = Mathf.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
+                                if (isSmoothed)
+                                {
+                                    InterpolateState.TimeToTargetValue = Mathf.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
+                                }
+                                else
+                                {
+                                    InterpolateState.TimeToTargetValue = (float)(target.TimeSent - startTime);
+                                }
                                 InterpolateState.Target = target;
                             }
                             InterpolateState.DeltaTime = 0.0f;
@@ -299,12 +285,12 @@ namespace Unity.Netcode
         /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, double tickLatencyAsTime, float minDeltaTime, float maxDeltaTime)
         {
-            TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+            TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime, true);
             // Only interpolate when there is a start and end point and we have not already reached the end value
             if (InterpolateState.Target.HasValue)
             {
                 InterpolateState.AddDeltaTime(deltaTime);
-                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime, 10000.0f);
+                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, deltaTime);
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
@@ -437,6 +423,22 @@ namespace Unity.Netcode
         protected internal virtual T OnConvertTransformSpace(Transform transform, T item, bool inLocalSpace)
         {
             return default;
+        }
+
+        internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
+        {
+            var count = m_Buffer.Count;
+            for (int i = 0; i < count; i++)
+            {
+                var entry = m_Buffer.Dequeue();
+                entry.Item = OnConvertTransformSpace(transform, entry.Item, inLocalSpace);
+                m_Buffer.Enqueue(entry);
+            }
+            InterpolateState.CurrentValue = OnConvertTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
+            var end = InterpolateState.Target.Value;
+            end.Item = OnConvertTransformSpace(transform, end.Item, inLocalSpace);
+            InterpolateState.Target = end;
+            InLocalSpace = inLocalSpace;
         }
 
         // TODO: Collect data points so a single buffered linear interpolator can provide additional data points

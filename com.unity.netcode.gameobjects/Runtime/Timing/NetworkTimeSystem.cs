@@ -223,7 +223,7 @@ namespace Unity.Netcode
             if (LastSyncedRttSec > 0.0f)
             {
                 m_TickLatencyAverage = Mathf.Lerp(m_TickLatencyAverage, (float)((LastSyncedRttSec + deltaTimeSec) / m_NetworkTickSystem.ServerTime.FixedDeltaTimeAsDouble), (float)deltaTimeSec);
-                TickLatency = (int)Mathf.Max(1.0f, Mathf.Round(m_TickLatencyAverage)) + 1;
+                TickLatency = (int)Mathf.Max(1.0f, Mathf.Round(m_TickLatencyAverage));
             }
 
             if (Math.Abs(m_DesiredLocalTimeOffset - m_CurrentLocalTimeOffset) > HardResetThresholdSec || Math.Abs(m_DesiredServerTimeOffset - m_CurrentServerTimeOffset) > HardResetThresholdSec)

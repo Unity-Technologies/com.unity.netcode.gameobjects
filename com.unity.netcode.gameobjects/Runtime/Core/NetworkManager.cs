@@ -333,25 +333,6 @@ namespace Unity.Netcode
 
                         MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
-
-                        //foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
-                        //{
-                        //    // if not active or not spawned then skip
-                        //    if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
-                        //    {
-                        //        continue;
-                        //    }
-
-                        //    foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
-                        //    {
-                        //        // only update if enabled
-                        //        if (networkTransformEntry.enabled)
-                        //        {
-                        //            networkTransformEntry.OnInterpolateFixedUpdate();
-                        //            networkTransformEntry.OnFixedUpdate();
-                        //        }
-                        //    }
-                        //}
                     }
                     break;
 #if COM_UNITY_MODULES_PHYSICS
@@ -370,7 +351,6 @@ namespace Unity.Netcode
                                 // only update if enabled
                                 if (networkTransformEntry.enabled)
                                 {
-                                    networkTransformEntry.OnInterpolateFixedUpdate();
                                     networkTransformEntry.OnFixedUpdate();
                                 }
                             }
@@ -382,25 +362,6 @@ namespace Unity.Netcode
                     {
                         NetworkTimeSystem.UpdateTime();
                         AnticipationSystem.Update();
-
-                        //foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
-                        //{
-                        //    // if not active or not spawned then skip
-                        //    if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
-                        //    {
-                        //        continue;
-                        //    }
-
-                        //    foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
-                        //    {
-                        //        // only update if enabled
-                        //        if (networkTransformEntry.enabled)
-                        //        {
-                        //            networkTransformEntry.OnInterpolateFixedUpdate();
-                        //            //networkTransformEntry.OnFixedUpdate();
-                        //        }
-                        //    }
-                        //}
                     }
                     break;
                 case NetworkUpdateStage.PreLateUpdate:
