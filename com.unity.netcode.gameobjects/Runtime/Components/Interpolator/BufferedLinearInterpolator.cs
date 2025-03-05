@@ -225,9 +225,8 @@ namespace Unity.Netcode
         /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer</param>
         private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime)
         {
-            var canGetNextItem = InterpolateState.TargetTimeAproximatelyReached() || IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
-
-            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime && canGetNextItem))
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime &&
+                (InterpolateState.TargetTimeAproximatelyReached() || IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))))
             {
                 BufferedItem? previousItem = null;
                 var startTime = 0.0;
