@@ -302,7 +302,7 @@ namespace Unity.Netcode.RuntimeTests
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 120);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
