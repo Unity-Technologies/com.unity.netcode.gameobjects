@@ -30,8 +30,14 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager Client => m_ClientNetworkManagers[0];
 
         private string m_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
-        private const int k_TransportPort = 7788;
+        private static readonly ushort k_TransportPort = GetPortToBind(7777);
         private const int k_ClientId = 0;
+
+        private static ushort GetPortToBind(ushort defaultPort)
+        {
+            var value = Environment.GetEnvironmentVariable("ECHO_SERVER_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : defaultPort;
+        }
 
         private GameObject m_SpawnObject;
 
