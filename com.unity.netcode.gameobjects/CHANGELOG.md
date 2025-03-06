@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
 - Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
 - Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
 - Fixed issue where the `NetworkObject.Ownership` custom editor did not take the default "Everything" flag into consideration. (#3305)
