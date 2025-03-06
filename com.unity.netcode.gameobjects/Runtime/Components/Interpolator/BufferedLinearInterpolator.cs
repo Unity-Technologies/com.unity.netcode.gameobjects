@@ -451,6 +451,20 @@ namespace Unity.Netcode
         #endregion
 
         /// <summary>
+        /// Convenience version of 'Update' mainly for testing
+        ///  the reason we don't want to always call this version is so that on the calling side we can compute
+        ///  the renderTime once for the many things being interpolated (and the many interpolators per object)
+        /// </summary>
+        /// <param name="deltaTime">time since call</param>
+        /// <param name="serverTime">current server time</param>
+        /// <returns>The newly interpolated value of type 'T'</returns>
+        [Obsolete("This method is being deprecated due to it being only used for internal testing purposes.", false)]
+        public T Update(float deltaTime, NetworkTime serverTime)
+        {
+            return UpdateInternal(deltaTime, serverTime);
+        }
+
+        /// <summary>
         /// Used for internal testing
         /// </summary>
         internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
