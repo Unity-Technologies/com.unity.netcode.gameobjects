@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -114,6 +115,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android })] // Tracked in MTT-11361
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();

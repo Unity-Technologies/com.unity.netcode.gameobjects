@@ -1,0 +1,106 @@
+{% metadata_file .yamato/project.metafile %}
+---
+  
+# Builds a player on mobile standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
+# Default project (testptoject) in this case is used as a context.
+# Builds/Tests are made on each mobile platform (Android and iOS) as in project.metafile declaration
+# Builds/Tests are made on each supported editor as in project.metafile declaration
+    
+# For mobile devices it's necessary to split build and run phases
+# For iOS we need to use il2cpp. For android we could use both but il2cpp is recommended so for now we will only use il2cpp as scripting backend
+# iOS works only with ARM64 and Android is tested with both ARM64 and ARMv7
+
+# Builds are made with x64 architecture machines since those are compatible to run on ARM64 devices
+{% for project in projects.default -%}
+{% for platform in test_platforms.mobile_build -%}
+{% for editor in validation_editors.all -%}
+build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+  name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }},  il2cpp]
+  agent:
+      type: {{ platform.type }}
+      image: {{ platform.image }}
+      flavor: {{ platform.flavor }}
+  commands:
+    # Installing tools
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+      
+    # Installing editor
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait
+    
+    # Platform specific Build
+{% if platform.base == "win" %}
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat 
+    - utr.bat --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+{% else %}
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
+    - chmod +x ./utr
+    - ./utr --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
+{% endif %}
+  artifacts:
+    players:
+      paths:
+        - "build/players/**/*"
+    logs:
+      paths:
+        - "artifacts/**/*"
+  
+  variables:
+    CI: true
+    ENABLE_BURST_COMPILATION: False
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+  
+  
+# Executes RuntimeTests of the NGO package in the Standalone build for mobiles
+{% for project in projects.default -%}
+{% for platform in test_platforms.mobile_test -%}
+{% for editor in validation_editors.all -%}
+run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
+  name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }},  il2cpp]
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }}
+{% endif %}
+  # Skip repository cloning
+  skip_checkout: true
+  commands:
+    # Installing tools
+    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
+
+    # Installing editor. We still need the editor to run tests on standalone build
+    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --fast --wait
+      
+{% if platform.standalone == "Android" %}
+    # Download standalone UnityTestRunner and ADB setup
+    - command: curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
+    - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey.pub -O %USERPROFILE%/.android/adbkey.pub
+    - command: wget http://artifactory-slo.bf.unity3d.com/artifactory/mobile-generic/android/ADBKeys.zip!/adbkey -O %USERPROFILE%/.android/adbkey
+    - command: gsudo NetSh Advfirewall set allprofiles state off
+
+    # Connect to Android device
+    - command: '"%ANDROID_SDK_ROOT%\platform-tools\adb.exe" connect %BOKKEN_DEVICE_IP%'
+
+    # Run tests
+    - |
+      set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
+      utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
+{% else %}
+    # Download standalone UnityTestRunner
+    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
+
+    # Run tests
+    - ./utr --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
+{% endif %}
+  artifacts:
+    logs:
+      paths:
+        - "test-results/**/*"
+  dependencies:
+    - .yamato/mobile-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}

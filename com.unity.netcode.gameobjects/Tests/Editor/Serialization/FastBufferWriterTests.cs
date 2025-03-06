@@ -311,8 +311,11 @@ namespace Unity.Netcode.EditorTests
         {
             int* sizeValue = (int*)(unsafePtr + offset);
             Assert.AreEqual(value.Length, *sizeValue);
-
+#if UTP_TRANSPORT_2_0_ABOVE
+            var asTPointer = value.GetUnsafePtr();
+#else
             var asTPointer = (T*)value.GetUnsafePtr();
+#endif
             var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
             for (var i = 0; i < value.Length; ++i)
             {

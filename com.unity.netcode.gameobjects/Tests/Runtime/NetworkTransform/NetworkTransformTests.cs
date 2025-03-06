@@ -197,7 +197,7 @@ namespace Unity.Netcode.RuntimeTests
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
         /// <remarks>
-        /// When testing < 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
+        /// When testing 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
         /// When testing 3 axis: Interpolation is enabled, sometimes an axis is intentionally excluded during a
         /// delta update, and it runs through 8 delta updates per unique test.
         /// </remarks>
@@ -294,7 +294,7 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated), $"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
                 // For 3 axis, we will skip validating that the non-authority interpolates to its target point at least once.
-                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2 
+                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2
                 // of the axis are being updated to assure interpolation maintains the targeted axial value per axis.
                 // For 2 and 1 axis tests we always validate per delta update
                 if (m_AxisExcluded || axisCount < 3)
