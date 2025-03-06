@@ -77,12 +77,11 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   variables:
-{% if platform.name != "win" %}
     ECHO_SERVER_PORT: "7788"
     # Ensure the DA codec tests will fail if they cannot connect to the echo-server
     # The default is to ignore the codec tests if the echo-server fails to connect
-    ENSURE_CODEC_TESTS: "true"
-{% endif %}
+    ENSURE_CODEC_TESTS: {% if platform.name != "win" %} "true" {% endif %}
+
   commands:
 # Platform specific UTR setup
     - |
