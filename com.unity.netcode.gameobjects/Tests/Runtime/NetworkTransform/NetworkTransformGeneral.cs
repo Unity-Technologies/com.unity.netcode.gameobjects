@@ -268,7 +268,7 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
         {
-            var interpolate = interpolation != Interpolation.EnableInterpolate;
+            var interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
