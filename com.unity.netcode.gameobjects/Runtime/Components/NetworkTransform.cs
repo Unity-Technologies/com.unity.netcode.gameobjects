@@ -420,6 +420,7 @@ namespace Unity.Netcode.Components
             /// UseUnreliableDeltas is enabled. When set, the entire transform will
             /// be or has been synchronized.
             /// </summary>
+            /// <returns>true or false as to whether this state update was an unreliable frame synchronization.</returns>
             public bool IsUnreliableFrameSync()
             {
                 return UnreliableFrameSync;
@@ -432,6 +433,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// Unreliable delivery will only be used if <see cref="UseUnreliableDeltas"/> is set.
             /// </remarks>
+            /// <returns>true or false as to whether this state update was sent with reliable delivery.</returns>
             public bool IsReliableStateUpdate()
             {
                 return ReliableSequenced;
@@ -615,9 +617,7 @@ namespace Unity.Netcode.Components
 
             internal HalfVector3 HalfEulerRotation;
 
-            /// <summary>
-            /// Serializes this <see cref="NetworkTransformState"/>
-            /// </summary>
+            /// <inheritdoc />
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 // Used to calculate the LastSerializedSize value
@@ -1038,11 +1038,25 @@ namespace Unity.Netcode.Components
         [Range(0.01f, 1.0f)]
         public float ScaleMaxInterpolationTime = 0.1f;
 
+        /// <summary>
+        /// Determines if the server or client owner pushes transform states.
+        /// </summary>
         public enum AuthorityModes
         {
+            /// <summary>
+            /// Server pushes transform state updates
+            /// </summary>
             Server,
+            /// <summary>
+            /// Client owner pushes transform state updates.
+            /// </summary>
             Owner,
         }
+
+        /// <summary>
+        /// Determines whether this <see cref="NetworkTransform"/> instance will have state updates pushed by the server or the client owner.
+        /// <see cref="AuthorityModes"/>
+        /// </summary>
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
         [Tooltip("Selects who has authority (sends state updates) over the transform. When the network topology is set to distributed authority, this always defaults to owner authority. If server (the default), then only server-side adjustments to the " +
             "transform will be synchronized with clients. If owner (or client), then only the owner-side adjustments to the transform will be synchronized with both the server and other clients.")]
@@ -1051,7 +1065,6 @@ namespace Unity.Netcode.Components
             "then only the owner-side adjustments to the transform will be synchronized with both the server and other clients.")]
 #endif
         public AuthorityModes AuthorityMode;
-
 
         /// <summary>
         /// When enabled, any parented <see cref="NetworkObject"/>s (children) of this <see cref="NetworkObject"/> will be forced to synchronize their transform when this <see cref="NetworkObject"/> instance sends a state update.<br />
@@ -1312,7 +1325,14 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public bool SwitchTransformSpaceWhenParented = false;
 
+        /// <summary>
+        /// Returns true if position is currently in local space and false if it is in world space.
+        /// </summary>
         protected bool PositionInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_PositionInterpolator != null && m_PositionInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+
+        /// <summary>
+        /// Returns true if rotation is currently in local space and false if it is in world space.
+        /// </summary>
         protected bool RotationInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_RotationInterpolator != null && m_RotationInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
 
         /// <summary>
@@ -1575,16 +1595,12 @@ namespace Unity.Netcode.Components
 
         #region ONSYNCHRONIZE
 
-        /// <summary>
-        /// This is invoked when a new client joins (server and client sides)
-        /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
-        /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well
-        /// </summary>
+        /// <inheritdoc />
         /// <remarks>
-        /// If a derived class overrides this, then make sure to invoke this base method!
+        /// This is invoked when a new client joins (server and client sides).
+        /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState).
+        /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well.
         /// </remarks>
-        /// <typeparam name="T">The serializer type for buffer operations</typeparam>
-        /// <param name="serializer">The buffer serializer used for network state synchronization</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
@@ -2345,6 +2361,9 @@ namespace Unity.Netcode.Components
 
         internal bool LogMotion;
 
+        /// <summary>
+        /// Virtual method invoked on the non-authority side after a new state has been received and applied.
+        /// </summary>
         protected virtual void OnTransformUpdated()
         {
 
@@ -2958,6 +2977,9 @@ namespace Unity.Netcode.Components
 
         }
 
+        /// <summary>
+        /// Virtual method that is invoked on the non-authority side when a state update has been recieved but not yet applied.
+        /// </summary>
         protected virtual void OnBeforeUpdateTransformState()
         {
 
@@ -3516,6 +3538,7 @@ namespace Unity.Netcode.Components
             base.OnGainedOwnership();
         }
 
+        /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             // If we were the previous owner or the newly assigned owner then reinitialize
@@ -4108,6 +4131,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only valid on clients.
         /// </remarks>
+        /// <returns>Returns the tick latency and local offset in seconds and as a float value.</returns>
         public static float GetTickLatency()
         {
             return GetTickLatency(NetworkManager.Singleton);
@@ -4125,6 +4149,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Returns the tick latency in seconds (typically fractional)
         /// </summary>
+        /// <returns>Returns the current tick latency in seconds as a float value.</returns>
         public static float GetTickLatencyInSeconds()
         {
             return GetTickLatencyInSeconds(NetworkManager.Singleton);
