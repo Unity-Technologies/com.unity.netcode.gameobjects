@@ -937,17 +937,26 @@ namespace Unity.Netcode.Components
         #region PROPERTIES AND GENERAL METHODS
 
         /// <summary>
-        /// The two ways to smooth during interpolation.
+        /// The different interpolation types used with <see cref="BufferedLinearInterpolator{T}"/> to help smooth interpolation results.
         /// </summary>
         public enum InterpolationTypes
         {
             /// <summary>
             /// Uses lerping and yields a linear progression between two values.
             /// </summary>
+            /// <remarks>
+            /// For more information:<br />
+            /// - <see cref="PositionMaxInterpolationTime"/><br />
+            /// - <see cref="RotationMaxInterpolationTime"/><br />
+            /// - <see cref="ScaleMaxInterpolationTime"/><br />
+            /// </remarks>
             Lerp,
             /// <summary>
-            /// Uses a smooth dampening approach and is recommended when <see cref="NetworkRigidbodyBase.UseRigidBodyForMotion"/> is enabled.
+            /// Uses a smooth dampening approach for interpolating between two data points and adjusts based on rate of change.
             /// </summary>
+            /// <remarks>
+            /// Unlike <see cref="Lerp"/>, there are no additional values needed to be adjusted for this interpolation type.
+            /// </remarks>
             SmoothDampening
         }
 
@@ -955,37 +964,78 @@ namespace Unity.Netcode.Components
         /// The position interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// For more details review <see cref="InterpolationTypes"/>.
+        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
+        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
+        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
+        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
         /// </remarks>
+        [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes PositionInterpolationType;
 
         /// <summary>
         /// The rotation interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// For more details review <see cref="InterpolationTypes"/>.
+        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
+        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
+        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
+        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
         /// </remarks>
+        [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes RotationInterpolationType;
 
         /// <summary>
         /// The scale interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// For more details review <see cref="InterpolationTypes"/>.
+        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
+        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
+        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
+        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
         /// </remarks>
+        [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes ScaleInterpolationType;
 
         /// <summary>
-        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for position.
+        /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
+        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
+        /// <remarks>
+        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
+        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// </remarks>
+        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Range(0.01f, 1.0f)]
         public float PositionMaxInterpolationTime = 0.1f;
+
         /// <summary>
-        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for rotation.
+        /// The rotation interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
+        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
+        /// <remarks>
+        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
+        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// </remarks>
+        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Range(0.01f, 1.0f)]
         public float RotationMaxInterpolationTime = 0.1f;
+
         /// <summary>
-        /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for scale.
+        /// The scale interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
+        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
+        /// <remarks>
+        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
+        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// </remarks>
+        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Range(0.01f, 1.0f)]
         public float ScaleMaxInterpolationTime = 0.1f;
 
         public enum AuthorityModes

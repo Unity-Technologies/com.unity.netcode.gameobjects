@@ -32,6 +32,10 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_RotationInterpolationTypeProperty;
         private SerializedProperty m_ScaleInterpolationTypeProperty;
 
+        private SerializedProperty m_PositionMaximumInterpolationTimeProperty;
+        private SerializedProperty m_RotationMaximumInterpolationTimeProperty;
+        private SerializedProperty m_ScaleMaximumInterpolationTimeProperty;
+
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
         private SerializedProperty m_UseHalfFloatPrecision;
@@ -66,8 +70,11 @@ namespace Unity.Netcode.Editor
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
 
             m_PositionInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionInterpolationType));
+            m_PositionMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionMaxInterpolationTime));
             m_RotationInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationInterpolationType));
+            m_RotationMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationMaxInterpolationTime));
             m_ScaleInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleInterpolationType));
+            m_ScaleMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleMaxInterpolationTime));
 
 
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
@@ -150,9 +157,21 @@ namespace Unity.Netcode.Editor
             }
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Thresholds", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_PositionThresholdProperty);
-            EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
-            EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            if (networkTransform.SynchronizePosition)
+            {
+                EditorGUILayout.PropertyField(m_PositionThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeRotation)
+            {
+                EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeScale)
+            {
+                EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
@@ -173,18 +192,37 @@ namespace Unity.Netcode.Editor
                     if (networkTransform.SynchronizePosition)
                     {
                         EditorGUILayout.PropertyField(m_PositionInterpolationTypeProperty);
+                        // Only display when using Lerp.
+                        if (networkTransform.PositionInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            EditorGUILayout.PropertyField(m_SlerpPosition);
+                            EditorGUILayout.PropertyField(m_PositionMaximumInterpolationTimeProperty);
+                        }
                     }
                     if (networkTransform.SynchronizeRotation)
                     {
                         EditorGUILayout.PropertyField(m_RotationInterpolationTypeProperty);
+
+                        // Only display when using Lerp.
+                        if (networkTransform.RotationInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            EditorGUILayout.PropertyField(m_RotationMaximumInterpolationTimeProperty);
+                        }
                     }
                     if (networkTransform.SynchronizeScale)
                     {
                         EditorGUILayout.PropertyField(m_ScaleInterpolationTypeProperty);
+                        // Only display when using Lerp.
+                        if (networkTransform.ScaleInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            EditorGUILayout.PropertyField(m_ScaleMaximumInterpolationTimeProperty);
+                        }
                     }
                 }
+
             }
-            EditorGUILayout.PropertyField(m_SlerpPosition);
+            
+            
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
             {

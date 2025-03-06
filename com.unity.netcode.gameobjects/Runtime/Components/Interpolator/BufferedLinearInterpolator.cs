@@ -134,10 +134,15 @@ namespace Unity.Netcode
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
-
         /// <summary>
-        /// There's two factors affecting interpolation: buffering (set in NetworkManager's NetworkTimeSystem) and interpolation time, which is the amount of time it'll take to reach the target. This is to affect the second one.
+        /// Determines how much smoothing will be applied to the 2nd lerp when using the <see cref="Update(float, double, double)"/> (i.e. lerping and not smooth dampening).
         /// </summary>
+        /// <remarks>
+        /// There's two factors affecting interpolation: <br />
+        /// - Buffering: Which can be adjusted in set in the <see cref="NetworkManager.NetworkTimeSystem"/>.<br />
+        /// - Interpolation time: The divisor applied to delta time where the quotient is used as the lerp time.
+        /// </remarks>
+        [Range(0.016f, 1.0f)]
         public float MaximumInterpolationTime = 0.1f;
 
         /// <summary>
@@ -435,7 +440,10 @@ namespace Unity.Netcode
                     }
                 }
                 var target = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, t);
-                InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, deltaTime / MaximumInterpolationTime);
+
+                // Assure our MaximumInterpolationTime is valid and that the second lerp time ranges between deltaTime and 1.0f.
+                var secondLerpTime = Mathf.Clamp(deltaTime / Mathf.Max(deltaTime, MaximumInterpolationTime), deltaTime, 1.0f);
+                InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, secondLerpTime);
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
