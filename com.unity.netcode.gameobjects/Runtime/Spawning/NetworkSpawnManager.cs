@@ -435,20 +435,15 @@ namespace Unity.Netcode
             // For client-server:
             // If ownership changes faster than the latency between the client-server and there are NetworkVariables being updated during ownership changes,
             // then notify the user they could potentially lose state updates if developer logging is enabled.
-            if (!NetworkManager.DistributedAuthorityMode && m_LastChangeInOwnership.ContainsKey(networkObject.NetworkObjectId) && m_LastChangeInOwnership[networkObject.NetworkObjectId] > Time.realtimeSinceStartup)
+            if (NetworkManager.LogLevel == LogLevel.Developer && !NetworkManager.DistributedAuthorityMode && m_LastChangeInOwnership.ContainsKey(networkObject.NetworkObjectId) && m_LastChangeInOwnership[networkObject.NetworkObjectId] > Time.realtimeSinceStartup)
             {
-                var hasNetworkVariables = false;
                 for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
                 {
-                    hasNetworkVariables = networkObject.ChildNetworkBehaviours[i].NetworkVariableFields.Count > 0;
-                    if (hasNetworkVariables)
+                    if (networkObject.ChildNetworkBehaviours[i].NetworkVariableFields.Count > 0)
                     {
+                        NetworkLog.LogWarningServer($"[Rapid Ownership Change Detected][Potential Loss in State] Detected a rapid change in ownership that exceeds a frequency less than {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate! Provide at least {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate between ownership changes to avoid NetworkVariable state loss.");
                         break;
                     }
-                }
-                if (hasNetworkVariables && NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogWarningServer($"[Rapid Ownership Change Detected][Potential Loss in State] Detected a rapid change in ownership that exceeds a frequency less than {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate! Provide at least {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate between ownership changes to avoid NetworkVariable state loss.");
                 }
             }
 
@@ -517,12 +512,20 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-
             if (networkObject.OwnerClientId == clientId && networkObject.PreviousOwnerId == clientId)
             {
                 if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogWarningServer($"[Already Owner] Unnecessary ownership change for {networkObject.name} as it is already the owned by client-{clientId}");
+                }
+                return;
+            }
+
+            if (!networkObject.Observers.Contains(clientId))
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarningServer($"[Invalid Owner] Cannot send Ownership change as client-{clientId} cannot see {networkObject.name}! Use {nameof(NetworkObject.NetworkShow)} first.");
                 }
                 return;
             }
@@ -1877,6 +1880,12 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Distributes an even portion of spawned NetworkObjects to the given client.
+        /// This is called as part of the client connection process to ensure that all clients have a fair share of the spawned NetworkObjects.
+        /// DANGO-TODO: This will be handled by the CMB Service in the future.
+        /// </summary>
+        /// <param name="clientId">Client to distribute NetworkObjects to</param>
         internal void DistributeNetworkObjects(ulong clientId)
         {
             if (!NetworkManager.DistributedAuthorityMode)
@@ -1888,7 +1897,6 @@ namespace Unity.Netcode
             {
                 return;
             }
-
 
             // DA-NGO CMB SERVICE NOTES:
             // The most basic object distribution should be broken up into a table of spawned object types
@@ -1956,6 +1964,11 @@ namespace Unity.Netcode
                     {
                         if ((i % offsetCount) == 0)
                         {
+                            while (!ownerList.Value[i].Observers.Contains(clientId))
+                            {
+                                i++;
+                            }
+
                             var children = ownerList.Value[i].GetComponentsInChildren<NetworkObject>();
                             // Since the ownerList.Value[i] has to be distributable, then transfer all child NetworkObjects
                             // with the same owner clientId and are marked as distributable also to the same client to keep
@@ -1969,13 +1982,10 @@ namespace Unity.Netcode
                                 }
                                 if (!child.IsOwnershipDistributable || !child.IsOwnershipTransferable)
                                 {
-                                    if (NetworkManager.LogLevel == LogLevel.Developer)
-                                    {
-                                        NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferrable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
-                                    }
+                                    NetworkLog.LogWarning($"Sibling {child.name} of root parent {ownerList.Value[i].name} is neither transferable or distributable! Object distribution skipped and could lead to a potentially un-owned or owner-mismatched {nameof(NetworkObject)}!");
                                     continue;
                                 }
-                                // Transfer ownership of all distributable =or= transferrable children with the same owner to the same client to preserve the sibling ownership tree.
+                                // Transfer ownership of all distributable =or= transferable children with the same owner to the same client to preserve the sibling ownership tree.
                                 ChangeOwnership(child, clientId, true);
                                 // Note: We don't increment the distributed count for these children as they are skipped when getting the object distribution
                             }
