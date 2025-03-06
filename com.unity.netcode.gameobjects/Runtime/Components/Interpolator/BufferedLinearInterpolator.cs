@@ -32,7 +32,7 @@ namespace Unity.Netcode
             public double TimeSent;
 
             /// <summary>
-            /// The constructor
+            /// The constructor.
             /// </summary>
             /// <param name="item">The item value.</param>
             /// <param name="timeSent">The time the item was sent.</param>
