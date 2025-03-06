@@ -952,12 +952,28 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// The interpolation type to use for the <see cref="NetworkTransform"/> instance.
+        /// The position interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
         /// For more details review <see cref="InterpolationTypes"/>.
         /// </remarks>
-        public InterpolationTypes InterpolationType;
+        public InterpolationTypes PositionInterpolationType;
+
+        /// <summary>
+        /// The rotation interpolation type to use for the <see cref="NetworkTransform"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// For more details review <see cref="InterpolationTypes"/>.
+        /// </remarks>
+        public InterpolationTypes RotationInterpolationType;
+
+        /// <summary>
+        /// The scale interpolation type to use for the <see cref="NetworkTransform"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// For more details review <see cref="InterpolationTypes"/>.
+        /// </remarks>
+        public InterpolationTypes ScaleInterpolationType;
 
         /// <summary>
         /// When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>, this adjust the maximum interpolation time for position.
@@ -1084,7 +1100,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public bool SyncPositionZ = true;
 
-        private bool SynchronizePosition
+        internal bool SynchronizePosition
         {
             get
             {
@@ -1119,7 +1135,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public bool SyncRotAngleZ = true;
 
-        private bool SynchronizeRotation
+        internal bool SynchronizeRotation
         {
             get
             {
@@ -1151,7 +1167,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public bool SyncScaleZ = true;
 
-        private bool SynchronizeScale
+        internal bool SynchronizeScale
         {
             get
             {
@@ -3187,7 +3203,9 @@ namespace Unity.Netcode.Components
         {
             if (AssignDefaultInterpolationType)
             {
-                InterpolationType = DefaultInterpolationType;
+                PositionInterpolationType = DefaultInterpolationType;
+                RotationInterpolationType = DefaultInterpolationType;
+                ScaleInterpolationType = DefaultInterpolationType;
             }
             // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
@@ -3771,12 +3789,10 @@ namespace Unity.Netcode.Components
             var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
             var maxDeltaTime = (tickLatency * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
 
-            var useLerp = InterpolationType == InterpolationTypes.Lerp;
-
             // Now only update the interpolators for the portions of the transform being synchronized
             if (SynchronizePosition)
             {
-                if (useLerp)
+                if (PositionInterpolationType == InterpolationTypes.Lerp)
                 {
                     m_PositionInterpolator.MaximumInterpolationTime = PositionMaxInterpolationTime;
                     m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
@@ -3789,7 +3805,7 @@ namespace Unity.Netcode.Components
 
             if (SynchronizeRotation)
             {
-                if (useLerp)
+                if (RotationInterpolationType == InterpolationTypes.Lerp)
                 {
                     m_RotationInterpolator.MaximumInterpolationTime = RotationMaxInterpolationTime;
                     // When using half precision Lerp towards the target rotation.
@@ -3806,7 +3822,7 @@ namespace Unity.Netcode.Components
 
             if (SynchronizeScale)
             {
-                if (useLerp)
+                if (ScaleInterpolationType == InterpolationTypes.Lerp)
                 {
                     m_ScaleInterpolator.MaximumInterpolationTime = ScaleMaxInterpolationTime;
                     m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);

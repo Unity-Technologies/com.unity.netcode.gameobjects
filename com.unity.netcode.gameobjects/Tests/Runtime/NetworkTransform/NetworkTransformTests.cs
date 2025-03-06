@@ -71,6 +71,13 @@ namespace Unity.Netcode.RuntimeTests
             NetworkTransform.DefaultInterpolationType = interpolation;
         }
 
+        protected override void OnOneTimeTearDown()
+        {
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
+            base.OnOneTimeTearDown();
+        }
+
         protected override bool m_EnableTimeTravel => true;
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;

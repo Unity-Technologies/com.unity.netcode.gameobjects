@@ -28,7 +28,9 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
-        private SerializedProperty m_InterpolationTypeProperty;
+        private SerializedProperty m_PositionInterpolationTypeProperty;
+        private SerializedProperty m_RotationInterpolationTypeProperty;
+        private SerializedProperty m_ScaleInterpolationTypeProperty;
 
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
@@ -62,7 +64,12 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
-            m_InterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.InterpolationType));
+
+            m_PositionInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionInterpolationType));
+            m_RotationInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationInterpolationType));
+            m_ScaleInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleInterpolationType));
+
+
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
@@ -163,7 +170,18 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_InterpolateProperty);
                 if (networkTransform.Interpolate)
                 {
-                    EditorGUILayout.PropertyField(m_InterpolationTypeProperty);
+                    if (networkTransform.SynchronizePosition)
+                    {
+                        EditorGUILayout.PropertyField(m_PositionInterpolationTypeProperty);
+                    }
+                    if (networkTransform.SynchronizeRotation)
+                    {
+                        EditorGUILayout.PropertyField(m_RotationInterpolationTypeProperty);
+                    }
+                    if (networkTransform.SynchronizeScale)
+                    {
+                        EditorGUILayout.PropertyField(m_ScaleInterpolationTypeProperty);
+                    }
                 }
             }
             EditorGUILayout.PropertyField(m_SlerpPosition);
