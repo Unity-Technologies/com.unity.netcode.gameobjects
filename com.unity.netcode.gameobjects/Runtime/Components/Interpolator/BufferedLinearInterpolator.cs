@@ -192,6 +192,7 @@ namespace Unity.Netcode
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
             m_RateOfChange = default;
+            m_PredictedRateOfChange = default;
         }
 
         /// <summary>
@@ -211,6 +212,7 @@ namespace Unity.Netcode
         private void InternalReset(T targetValue, double serverTime, bool isAngularValue = false, bool addMeasurement = true)
         {
             m_RateOfChange = default;
+            m_PredictedRateOfChange = default;
             // Set our initial value
             InterpolateState.Reset(targetValue);
             m_IsAngularValue = isAngularValue;
