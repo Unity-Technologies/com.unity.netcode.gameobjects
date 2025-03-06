@@ -27,6 +27,8 @@ namespace Unity.Netcode.RuntimeTests
     /// The tests check if they can bind to a rust echo-server at the given address and port, if all tests are ignored.
     /// The rust echo-server is run using `cargo run --example ngo_echo_server -- --port {port}`
     /// The C# port can be configured using the environment variable "ECHO_SERVER_PORT"
+    /// The default behaviour when unity fails to connect to the echo-server is to ignore all tests in this class.
+    /// This can be overridden by setting the environment variable "ENSURE_CODEC_TESTS" to any value - then the tests will fail.
     /// </remarks>
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
@@ -60,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         internal class TestNetworkComponent : NetworkBehaviour
         {
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
-            public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
+            public NetworkVariable<int> myNetworkVar = new NetworkVariable<int>(3);
 
             [Rpc(SendTo.Authority)]
             public void TestAuthorityRpc(byte[] _)
@@ -76,7 +78,15 @@ namespace Unity.Netcode.RuntimeTests
 #else
             if (!CanConnectToServer(m_TransportHost, k_TransportPort))
             {
-                Assert.Ignore($"ignoring DA codec tests because UTP transport cannot connect to the rust echo-server at ${m_TransportHost}:{k_TransportPort}");
+                var shouldFail = Environment.GetEnvironmentVariable("ENSURE_CODEC_TESTS");
+                if (!string.IsNullOrEmpty(shouldFail))
+                {
+                    Assert.Fail($"Failed to connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
+                else
+                {
+                    Assert.Ignore($"ignoring DA codec tests because UTP transport cannot connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
             }
 #endif
             base.OnOneTimeSetup();
@@ -250,9 +260,9 @@ namespace Unity.Netcode.RuntimeTests
             var component = instance.GetComponent<TestNetworkComponent>();
 
             var newValue = 5;
-            component.MyNetworkVar.Value = newValue;
+            component.myNetworkVar.Value = newValue;
             yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
-            Assert.AreEqual(newValue, component.MyNetworkVar.Value);
+            Assert.AreEqual(newValue, component.myNetworkVar.Value);
         }
 
         [UnityTest]
