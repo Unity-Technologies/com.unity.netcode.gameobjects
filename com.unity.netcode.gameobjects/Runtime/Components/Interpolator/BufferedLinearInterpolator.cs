@@ -71,6 +71,7 @@ namespace Unity.Netcode
                 else
                 {
                     m_AverageDeltaTime += deltaTime;
+                    m_AverageDeltaTime *= 0.5f;
                 }
                 DeltaTime = Math.Min(DeltaTime + m_AverageDeltaTime, TimeToTargetValue);
                 LerpT = TimeToTargetValue == 0.0f ? 1.0f : DeltaTime / TimeToTargetValue;
@@ -97,7 +98,7 @@ namespace Unity.Netcode
                 CurrentValue = currentValue;
                 PreviousValue = currentValue;
                 // When reset, we consider ourselves to have already arrived at the target (even if no target is set)
-                LerpT = 1.0f;
+                LerpT = 0.0f;
                 EndTime = 0.0;
                 StartTime = 0.0;
                 ResetDelta();
@@ -169,6 +170,11 @@ namespace Unity.Netcode
         /// </summary>
         private T m_RateOfChange;
 
+        /// <summary>
+        /// Represents the predicted rate of change for the value being interpolated when smooth dampening is enabled.
+        /// </summary>
+        private T m_PredictedRateOfChange;
+
         private bool m_IsAngularValue;
 
         /// <summary>
@@ -225,8 +231,8 @@ namespace Unity.Netcode
         /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer</param>
         private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime)
         {
-            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime &&
-                (InterpolateState.TargetTimeAproximatelyReached() || IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))))
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime
+                 && (InterpolateState.TargetTimeAproximatelyReached() || IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item))))
             {
                 BufferedItem? previousItem = null;
                 var startTime = 0.0;
@@ -309,7 +315,15 @@ namespace Unity.Netcode
             if (InterpolateState.Target.HasValue)
             {
                 InterpolateState.AddDeltaTime(deltaTime);
-                InterpolateState.CurrentValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, deltaTime);
+
+                // Smooth dampen our current time
+                var current = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime);
+                // Smooth dampen a predicted time based on our average delta time 
+                var predict = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
+                // Split the difference between the two.
+                // Note: Since smooth dampening cannot over shoot, both current and predict will eventually become the same or will be very close to the same.
+                // Upon stopping motion, the final resing value should be a very close aproximation of the authority side.
+                InterpolateState.CurrentValue = Interpolate(current, predict, 0.5f);
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
@@ -381,15 +395,6 @@ namespace Unity.Netcode
                 }
             }
         }
-        #endregion
-
-        /// <summary>
-        /// Used for internal testing
-        /// </summary>
-        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
-        {
-            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
-        }
 
         /// <summary>
         /// Call to update the state of the interpolators using Lerp.
@@ -431,6 +436,15 @@ namespace Unity.Netcode
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
+        }
+        #endregion
+
+        /// <summary>
+        /// Used for internal testing
+        /// </summary>
+        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
+        {
+            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
         }
 
         /// <summary>

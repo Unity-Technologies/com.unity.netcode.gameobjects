@@ -1820,11 +1820,13 @@ namespace Unity.Netcode.Components
             var positionThreshold = Vector3.one * PositionThreshold;
             var rotationThreshold = Vector3.one * RotAngleThreshold;
 
-            if (m_UseRigidbodyForMotion)
-            {
-                positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
-                rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
-            }
+            // NSS: Disabling this for the time being
+            // TODO: Determine if we actually need this and if not remove this from NetworkRigidBodyBase
+            //if (m_UseRigidbodyForMotion)
+            //{
+            //    positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
+            //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
+            //}
 #else
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
