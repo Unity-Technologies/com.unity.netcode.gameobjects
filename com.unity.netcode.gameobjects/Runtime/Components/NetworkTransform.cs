@@ -3786,8 +3786,10 @@ namespace Unity.Netcode.Components
             }
 
             var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
+            // Smooth dampening specific:
+            // We clamp between tick rate and bit beyond the tick rate but not 2x tick rate (we predict 2x out)
             var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
-            var maxDeltaTime = (tickLatency * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
+            var maxDeltaTime = (1.666667f * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
 
             // Now only update the interpolators for the portions of the transform being synchronized
             if (SynchronizePosition)

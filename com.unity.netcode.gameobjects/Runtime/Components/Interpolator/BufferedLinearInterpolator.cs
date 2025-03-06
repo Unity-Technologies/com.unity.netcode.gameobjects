@@ -279,6 +279,7 @@ namespace Unity.Netcode
                                 // TODO: We might consider creating yet another queue to add these items to and assure that the time is accelerated
                                 // for each item as opposed to losing the resolution of the values.
                                 InterpolateState.TimeToTargetValue = Mathf.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
+
                                 InterpolateState.Target = target;
                             }
                             InterpolateState.ResetDelta();
@@ -321,11 +322,11 @@ namespace Unity.Netcode
                 // Smooth dampen our current time
                 var current = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime);
                 // Smooth dampen a predicted time based on our average delta time 
-                var predict = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
-                // Split the difference between the two.
+                var predict = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + (InterpolateState.AverageDeltaTime * 2));
+                // Lerp between the current and predicted.
                 // Note: Since smooth dampening cannot over shoot, both current and predict will eventually become the same or will be very close to the same.
                 // Upon stopping motion, the final resing value should be a very close aproximation of the authority side.
-                InterpolateState.CurrentValue = Interpolate(current, predict, 0.5f);
+                InterpolateState.CurrentValue = Interpolate(current, predict, deltaTime);
             }
             m_NbItemsReceivedThisFrame = 0;
             return InterpolateState.CurrentValue;
