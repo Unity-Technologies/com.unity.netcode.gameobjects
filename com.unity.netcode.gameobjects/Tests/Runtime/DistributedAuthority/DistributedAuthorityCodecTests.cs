@@ -16,6 +16,18 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// This class tests the NGO message codec between the C# SDK and the Rust runtime.
+    /// </summary>
+    /// <remarks>
+    /// These tests are run against a rust echo-server.
+    /// This server decodes incoming messages, and then re-encodes them before sending them back to the client.
+    /// Any errors in decoding or encoding messages will not echo the messages back, causing the tests to fail
+    /// No message handling logic is tested in these tests. They are only testing the codec.
+    /// The tests check if they can bind to a rust echo-server at the given address and port, if all tests are ignored.
+    /// The rust echo-server is run using `cargo run --example ngo_echo_server -- --port {port}`
+    /// The C# port can be configured using the environment variable "ECHO_SERVER_PORT"
+    /// </remarks>
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -30,13 +42,17 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager Client => m_ClientNetworkManagers[0];
 
         private string m_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
-        private static readonly ushort k_TransportPort = GetPortToBind(7777);
+        private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
 
-        private static ushort GetPortToBind(ushort defaultPort)
+        /// <summary>
+        /// Configures the port to look for the rust echo-server.
+        /// </summary>
+        /// <returns>The port from the environment variable "ECHO_SERVER_PORT" if it is set and valid; otherwise uses port 7777</returns>
+        private static ushort GetPortToBind()
         {
             var value = Environment.GetEnvironmentVariable("ECHO_SERVER_PORT");
-            return ushort.TryParse(value, out var configuredPort) ? configuredPort : defaultPort;
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7777;
         }
 
         private GameObject m_SpawnObject;
