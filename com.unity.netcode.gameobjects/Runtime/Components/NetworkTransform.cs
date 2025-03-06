@@ -998,43 +998,43 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
         /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
         /// <remarks>
         /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
         /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
         /// </remarks>
-        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float PositionMaxInterpolationTime = 0.1f;
 
         /// <summary>
         /// The rotation interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
         /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
         /// <remarks>
         /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
         /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
         /// </remarks>
-        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float RotationMaxInterpolationTime = 0.1f;
 
         /// <summary>
         /// The scale interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
+        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
+        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
         /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
         /// </summary>
         /// <remarks>
         /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
         /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
         /// </remarks>
-        [Tooltip("The lower the value the smoother, but can result in lost data points (i.e. quick changes in direct). The higher the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
+        [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float ScaleMaxInterpolationTime = 0.1f;
 
