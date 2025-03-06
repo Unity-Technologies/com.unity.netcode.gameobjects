@@ -76,6 +76,8 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+  variables:
+    ECHO_SERVER_PORT: "7788"
   commands:
 # Platform specific UTR setup
     - |
@@ -97,7 +99,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     # Build the echo server
     - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo build --example ngo_echo_server
     # Run the echo server in the background - this will reuse the artifacts from the build
-    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo run --example ngo_echo_server &
+    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
 {% endif %}
 
 # Run Standalone tests
