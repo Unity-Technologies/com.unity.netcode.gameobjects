@@ -221,8 +221,8 @@ namespace Unity.Netcode.Editor
                 }
 
             }
-            
-            
+
+
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
             {
