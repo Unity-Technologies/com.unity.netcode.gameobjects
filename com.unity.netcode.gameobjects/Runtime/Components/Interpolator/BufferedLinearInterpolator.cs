@@ -201,7 +201,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Resets the current interpolator to the target valueTeleports current interpolation value to targetValue.
+        /// Resets the current interpolator to the target value.
         /// </summary>
         /// <remarks>
         /// This is used when first synchronizing/initializing and when telporting an object.
@@ -308,7 +308,7 @@ namespace Unity.Netcode
         /// Interpolation Update to use when smooth dampening is enabled on a <see cref="Components.NetworkTransform"/>.
         /// </summary>
         /// <remarks>
-        /// Alternate recommended interpolation when when <see cref="Components.NetworkRigidbodyBase.UseRigidBodyForMotion"/> is enabled.<br />
+        /// Alternate recommended interpolation when <see cref="Components.NetworkRigidbodyBase.UseRigidBodyForMotion"/> is enabled.<br />
         /// This can provide a precise interpolation result between the current and target values at the expense of not being as smooth as then doulbe Lerp approach.
         /// </remarks>
         /// <param name="deltaTime">The last frame time that is either <see cref="Time.deltaTime"/> for non-rigidbody motion and <see cref="Time.fixedDeltaTime"/> when using ridigbody motion.</param>
@@ -487,6 +487,9 @@ namespace Unity.Netcode
             {
                 if (m_LastBufferedItemReceived.TimeSent < sentTime)
                 {
+                    // Clear the interpolator
+                    Clear();
+                    // Reset to the new value
                     InternalReset(newMeasurement, sentTime, IsAngularValue, false);
                     m_LastMeasurementAddedTime = sentTime;
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
