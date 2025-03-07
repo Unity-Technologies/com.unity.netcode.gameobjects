@@ -3862,6 +3862,10 @@ namespace Unity.Netcode.Components
             // Smooth dampening specific:
             // We clamp between tick rate and bit beyond the tick rate but not 2x tick rate (we predict 2x out)
             var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
+            // The 1.666667f value is a "magic" number tht lies between the FixedDeltaTime and 2 * the averaged
+            // frame update. Since smooth dampening is most useful for Rigidbody motion, the physics update
+            // frequency is roughly 60hz (59.x?) which 2x that value as frequency is typically close to 32-33ms.
+            // Look within the Interpolator.Update for smooth dampening to better understand the above.
             var maxDeltaTime = (1.666667f * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
 
             // Now only update the interpolators for the portions of the transform being synchronized
