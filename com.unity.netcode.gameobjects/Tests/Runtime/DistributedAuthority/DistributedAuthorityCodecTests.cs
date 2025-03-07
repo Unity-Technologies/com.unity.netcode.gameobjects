@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         internal class TestNetworkComponent : NetworkBehaviour
         {
             public NetworkList<int> MyNetworkList = new NetworkList<int>(new List<int> { 1, 2, 3 });
-            public NetworkVariable<int> myNetworkVar = new NetworkVariable<int>(3);
+            public NetworkVariable<int> MyNetworkVar = new NetworkVariable<int>(3);
 
             [Rpc(SendTo.Authority)]
             public void TestAuthorityRpc(byte[] _)
@@ -260,9 +260,9 @@ namespace Unity.Netcode.RuntimeTests
             var component = instance.GetComponent<TestNetworkComponent>();
 
             var newValue = 5;
-            component.myNetworkVar.Value = newValue;
+            component.MyNetworkVar.Value = newValue;
             yield return m_ClientCodecHook.WaitForMessageReceived<NetworkVariableDeltaMessage>();
-            Assert.AreEqual(newValue, component.myNetworkVar.Value);
+            Assert.AreEqual(newValue, component.MyNetworkVar.Value);
         }
 
         [UnityTest]
