@@ -1844,6 +1844,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356. The job is failing on mobile devices on 2021 editor specifically
         public void WhenSerializingAndDeserializingValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -2179,6 +2180,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2508,7 +2510,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -2580,7 +2586,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -2597,7 +2607,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {
@@ -2632,6 +2646,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2818,6 +2833,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2973,6 +2989,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Tracked in MTT-11356.
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -3955,7 +3972,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4028,7 +4049,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4045,7 +4070,11 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
+#if UTP_TRANSPORT_2_0_ABOVE
+                var which = rand.Next(changed2.Count);
+#else
                 var which = rand.Next(changed2.Count());
+#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {

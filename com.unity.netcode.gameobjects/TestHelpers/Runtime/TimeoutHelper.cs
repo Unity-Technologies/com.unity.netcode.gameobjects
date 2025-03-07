@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
-    /// Can be used independently or assigned to <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"></see> in the
+    /// Can be used independently or assigned to <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"/> in the
     /// event the default timeout period needs to be adjusted
     /// </summary>
     public class TimeoutHelper

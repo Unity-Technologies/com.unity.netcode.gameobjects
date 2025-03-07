@@ -114,13 +114,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the time a number of ticks in the past.
+        /// Calculates a NetworkTime value representing a point in the past relative to the current time (few ticks in the past)
         /// </summary>
-        /// <param name="ticks">The number of ticks ago we're querying the time</param>
-        /// <returns></returns>
-        public NetworkTime TimeTicksAgo(int ticks)
+        /// <param name="ticks">The number of ticks ago we're querying the time.</param>
+        /// <param name="offset">Optional parameter to specify a tick offset (fractional) value.</param>
+        /// <returns>A NetworkTime value representing the calculated past time point</returns>
+        public NetworkTime TimeTicksAgo(int ticks, float offset = 0.0f)
         {
-            return this - new NetworkTime(TickRate, ticks);
+            return this - new NetworkTime(TickRate, ticks, offset);
         }
 
         private void UpdateCache()

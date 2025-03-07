@@ -15,7 +15,7 @@ namespace Unity.Netcode
     /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br />
     /// <em>*** Do not start new scene events within scene event notification callbacks.</em><br />
     /// See also: <br />
-    /// <seealso cref="SceneEventType"/>
+    /// <see cref="SceneEventType"/>
     /// </summary>
     public class SceneEvent
     {
@@ -146,10 +146,10 @@ namespace Unity.Netcode
         /// <summary>
         /// The delegate callback definition for scene event notifications.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEvent"/><br />
-        /// <seealso cref="SceneEventData"/>
+        /// <see cref="SceneEvent"/><br />
+        /// <see cref="SceneEventData"/>
         /// </summary>
-        /// <param name="sceneEvent"></param>
+        /// <param name="sceneEvent">SceneEvent which contains information about the scene event, including type, progress, and scene details</param>
         public delegate void SceneEventDelegate(SceneEvent sceneEvent);
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoad event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Load"/>for more information
+        /// <see cref="SceneEventType.Load"/>for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -186,7 +186,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnUnload event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Unload"/> for more information
+        /// <see cref="SceneEventType.Unload"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -196,7 +196,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnSynchronize event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Synchronize"/> for more information
+        /// <see cref="SceneEventType.Synchronize"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         public delegate void OnSynchronizeDelegateHandler(ulong clientId);
@@ -204,8 +204,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoadEventCompleted and OnUnloadEventCompleted events.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.LoadEventCompleted"/><br />
-        /// <seealso cref="SceneEventType.UnloadEventCompleted"/>
+        /// <see cref="SceneEventType.LoadEventCompleted"/><br />
+        /// <see cref="SceneEventType.UnloadEventCompleted"/>
         /// </summary>
         /// <param name="sceneName">scene pertaining to this event</param>
         /// <param name="loadSceneMode"><see cref="LoadSceneMode"/> of the associated event completed</param>
@@ -216,7 +216,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoadComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.LoadComplete"/> for more information
+        /// <see cref="SceneEventType.LoadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
@@ -226,7 +226,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnUnloadComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.UnloadComplete"/> for more information
+        /// <see cref="SceneEventType.UnloadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
@@ -235,7 +235,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnSynchronizeComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.SynchronizeComplete"/> for more information
+        /// <see cref="SceneEventType.SynchronizeComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that completed this event</param>
         public delegate void OnSynchronizeCompleteDelegateHandler(ulong clientId);
@@ -750,6 +750,7 @@ namespace Unity.Netcode
         /// <summary>
         /// This setting changes how clients handle scene loading when initially synchronizing with the server.<br />
         /// The server or host should set this value as clients will automatically be synchronized with the server (or host) side.
+        /// </summary>
         /// <remarks>
         /// <b>LoadSceneMode.Single:</b> All currently loaded scenes on the client will be unloaded and the
         /// server's currently active scene will be loaded in single mode on the client unless it was already
@@ -782,7 +783,7 @@ namespace Unity.Netcode
             // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
             DontDestroyOnLoadScene = networkManager.gameObject.scene;
 
-            // Since the server tracks loaded scenes, we need to add any currently loaded scenes on the 
+            // Since the server tracks loaded scenes, we need to add any currently loaded scenes on the
             // server side when the NetworkManager is started and NetworkSceneManager instantiated when
             // scene management is enabled.
             if (networkManager.IsServer && networkManager.NetworkConfig.EnableSceneManagement)
@@ -1152,7 +1153,7 @@ namespace Unity.Netcode
         /// Unloads an additively loaded scene.  If you want to unload a <see cref="LoadSceneMode.Single"/> mode loaded scene load another <see cref="LoadSceneMode.Single"/> scene.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
-        /// <param name="scene"></param>
+        /// <param name="scene">The Unity Scene to be unloaded</param>
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus UnloadScene(Scene scene)
         {

@@ -93,7 +93,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Add a GameObject with a NetworkObject component
         /// </summary>
         /// <param name="nameOfGameObject">the name of the object</param>
-        /// <returns></returns>
+        /// <returns>A unique identifier (GUID) for the newly created GameObject</returns>
         public static Guid AddGameNetworkObject(string nameOfGameObject)
         {
             var gameObjectId = Guid.NewGuid();
@@ -121,7 +121,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <typeparam name="T">NetworkBehaviour component being added to the GameObject</typeparam>
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
-        /// <returns></returns>
+        /// <returns>The newly added component instance of type T</returns>
         public static T AddComponentToObject<T>(Guid gameObjectIdentifier) where T : NetworkBehaviour
         {
             Assert.IsTrue(InstantiatedGameObjects.ContainsKey(gameObjectIdentifier));

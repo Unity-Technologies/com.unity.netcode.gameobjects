@@ -34,7 +34,7 @@ namespace Unity.Netcode
         internal uint PrefabGlobalObjectIdHash;
 
         /// <summary>
-        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene 
+        /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene
         /// placd NetworkObjects that are not prefab instances, dynamically spawned prefab instances,
         /// or for network prefab assets.
         /// </summary>
@@ -172,8 +172,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will 
-        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to 
+        /// This checks to see if this NetworkObject is an in-scene placed prefab instance. If so it will
+        /// automatically find the source prefab asset's GlobalObjectIdHash value, assign it to
         /// InScenePlacedSourceGlobalObjectIdHash and mark this as being in-scene placed.
         /// </summary>
         /// <remarks>
@@ -1060,7 +1060,7 @@ namespace Unity.Netcode
         /// This is a more convenient way to remove the parent without  having to cast the null value to either <see cref="GameObject"/> or <see cref="NetworkObject"/>
         /// </remarks>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns></returns>
+        /// <returns>True if the parent was successfully removed, false if the operation failed or if there was no parent to remove.</returns>
         public bool TryRemoveParent(bool worldPositionStays = true)
         {
             return TrySetParent((NetworkObject)null, worldPositionStays);

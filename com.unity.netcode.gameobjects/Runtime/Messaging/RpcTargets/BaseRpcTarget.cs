@@ -2,8 +2,14 @@ using System;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The base abstract RPC Target class used by all universal RPC targets.
+    /// </summary>
     public abstract class BaseRpcTarget : IDisposable
     {
+        /// <summary>
+        /// The <see cref="NetworkManager"/> instance which can be used to handle sending and receiving the specific target(s)
+        /// </summary>
         protected NetworkManager m_NetworkManager;
         private bool m_Locked;
 
@@ -22,6 +28,10 @@ namespace Unity.Netcode
             m_NetworkManager = manager;
         }
 
+        /// <summary>
+        /// Can be used to provide additional lock checks before disposing the target.
+        /// </summary>
+        /// <exception cref="Exception">The exception thrown if the target is still locked when disposed.</exception>
         protected void CheckLockBeforeDispose()
         {
             if (m_Locked)
@@ -30,6 +40,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Invoked when the target is disposed.
+        /// </summary>
         public abstract void Dispose();
 
         internal abstract void Send(NetworkBehaviour behaviour, ref RpcMessage message, NetworkDelivery delivery, RpcParams rpcParams);

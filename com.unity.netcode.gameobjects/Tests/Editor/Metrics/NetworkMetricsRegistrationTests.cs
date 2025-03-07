@@ -16,7 +16,7 @@ namespace Unity.Netcode.EditorTests.Metrics
             .ToArray();
 
         [TestCaseSource(nameof(s_MetricTypes))]
-        [Ignore("Disable test while we reevaluate the assumption that INetworkMetricEvent interfaces must be reported from MLAPI.")]
+        [Ignore("Disable test while we reevaluate the assumption that INetworkMetricEvent interfaces must be reported from MLAPI. This is tracked in MTT-11339")]
         public void ValidateThatAllMetricTypesAreRegistered(Type metricType)
         {
             var dispatcher = new NetworkMetrics().Dispatcher as MetricDispatcher;

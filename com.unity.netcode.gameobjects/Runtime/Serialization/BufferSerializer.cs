@@ -301,7 +301,6 @@ namespace Unity.Netcode
         /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value, allocator);
 
@@ -311,7 +310,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The values to read/write</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref NativeList<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
 #endif
@@ -330,8 +328,8 @@ namespace Unity.Netcode
         /// SerializeValuePreChecked methods. But note that the benefit is small and only likely to be
         /// noticeable if serializing a very large number of items.
         /// </summary>
-        /// <param name="amount"></param>
-        /// <returns></returns>
+        /// <param name="amount">The number of values that will need to be read or written</param>
+        /// <returns>True if there is sufficient space available for the specified amount, false otherwise</returns>
         public bool PreCheck(int amount)
         {
             return m_Implementation.PreCheck(amount);

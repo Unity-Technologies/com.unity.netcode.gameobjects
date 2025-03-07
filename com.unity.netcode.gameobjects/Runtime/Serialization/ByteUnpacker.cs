@@ -7,7 +7,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Byte Unpacking Helper Class
     /// Use this class to unpack values during deserialization for values that were packed.
-    /// <seealso cref="BytePacker"/> to pack unpacked values
+    /// <see cref="BytePacker"/> to pack unpacked values
     /// </summary>
     public static class ByteUnpacker
     {
@@ -282,7 +282,7 @@ namespace Unity.Netcode
         /// Reads a string in a packed format
         /// </summary>
         /// <param name="reader">The reader to read from</param>
-        /// <param name="s"></param>
+        /// <param name="s">string to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void ReadValuePacked(FastBufferReader reader, out string s)
         {

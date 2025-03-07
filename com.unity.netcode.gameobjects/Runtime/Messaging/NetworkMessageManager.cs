@@ -827,7 +827,11 @@ namespace Unity.Netcode
         internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeList<ulong> clientIds)
             where T : INetworkMessage
         {
+#if UTP_TRANSPORT_2_0_ABOVE
+            return SendMessage(ref message, delivery, new PointerListWrapper<ulong>(clientIds.GetUnsafePtr(), clientIds.Length));
+#else
             return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
+#endif
         }
 
         internal unsafe void ProcessSendQueues()

@@ -35,7 +35,6 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Tests PrefabHashId returns correctly when the NetworkObject is a prefab.
         /// </summary>
-        /// <returns></returns>
         [Test]
         public void TestPrefabHashIdPropertyIsAPrefab()
         {

@@ -1,59 +1,27 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-# Go through all platforms, editors and packages in the metadata
-# to generate its independent package tests and validation tests.
-# The idea is to only run validation once per package and not mix.
-# the results with package tests
-{% for package in projects.first.packages -%}
-{% for editor in projects.first.test_editors -%}
-{% for platform in test_platforms -%}
-dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}:
-  name : Dependency Test of Project {{ projects.first.name }} - Package {{ package.name }} - {{ editor }} on {{ platform.name }}
+
+# Executes package tests for each package referenced in the project using the newest compatible version of the package dependencies.
+# This is just to ensure that no critical change is made. It will be run on a default editor and default platform (it can be discussed if we should run it per all editors and platforms)
+{% for project in projects.default -%}
+{% for platform in test_platforms.desktop -%}
+{% for editor in validation_editors.all -%}
+updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
+  name : Updated Dependencies Test - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor}}
+    flavor: {{ platform.flavor }}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project test -u {{ editor }} --project-path {{ projects.first.path }} --type updated-dependencies-tests --package-filter {{ package.name }}
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
-  triggers:
-    recurring:
-      - branch: master
-        frequency: 20 * * ?
   dependencies:
-    - path: .yamato/project-pack.yml#pack_{{ projects.first.name }}
+    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
       rerun: always
-
-{% endfor -%}
-{% endfor -%}
-{% endfor -%}
-
-dependency_test_trigger_{{ projects.first.name }}:
-  name: Project {{ projects.first.name }} Dependency Tests Trigger
-  agent:
-    type: Unity::VM
-    image: package-ci/ubuntu-22.04:v4
-    flavor: b1.small
-  commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project izon -d --project-path {{ projects.first.path }}
-  artifacts:
-    logs:
-      paths:
-        - "upm-ci~/test-results/**/*"
-  triggers:
-    recurring:
-      - branch: master
-        frequency: 22 * * ?
-  dependencies:
-{% for package in projects.first.packages -%}
-{% for editor in projects.first.test_editors -%}
-{% for platform in test_platforms -%}
-    - .yamato/project-updated-dependencies-test.yml#dependency_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
