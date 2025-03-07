@@ -6,7 +6,7 @@ namespace Unity.Netcode
     /// <summary>
     /// The generic transport class all Netcode for GameObjects network transport implementations
     /// derive from.  Use this class to add a custom transport.
-    /// <seealso cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
+    /// <see cref="Transports.UTP.UnityTransport"/> for an example of how a transport is integrated
     /// </summary>
     public abstract class NetworkTransport : MonoBehaviour
     {
@@ -104,9 +104,53 @@ namespace Unity.Netcode
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        /// /// <param name="networkManager">optionally pass in NetworkManager</param>
+        /// <param name="networkManager">optionally pass in NetworkManager</param>
         public abstract void Initialize(NetworkManager networkManager = null);
 
+        /// <summary>
+        /// Invoked by NetworkManager at the beginning of its EarlyUpdate.
+        /// For order of operations see: <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>
+        /// </summary>
+        /// <remarks>
+        /// Useful to handle processing any transport-layer events such as processing inbound messages or changes in connection state(s).
+        /// </remarks>
+        protected virtual void OnEarlyUpdate()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager at the beginning of its EarlyUpdate
+        /// </summary>
+        internal void EarlyUpdate()
+        {
+            OnEarlyUpdate();
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager towards the end of the PostLateUpdate.
+        /// For order of operations see: <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>
+        /// </summary>
+        /// <remarks>
+        /// Useful to handle any end of frame transport tasks such as sending queued transport messages.
+        /// </remarks>
+        protected virtual void OnPostLateUpdate()
+        {
+
+        }
+
+        /// <summary>
+        /// Invoked by NetworkManager towards the end of the PostLateUpdate
+        /// </summary>
+        internal void PostLateUpdate()
+        {
+            OnPostLateUpdate();
+        }
+
+        /// <summary>
+        /// Invoked to acquire the network topology for the current network session.
+        /// </summary>
+        /// <returns><see cref="NetworkTopologyTypes"/></returns>
         protected virtual NetworkTopologyTypes OnCurrentTopology()
         {
             return NetworkTopologyTypes.ClientServer;
@@ -118,9 +162,21 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// The two network topology types supported by Netcode for GameObjects.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DistributedAuthority"/> is only supported using <see cref="Transports.UTP.UnityTransport"/>.
+    /// </remarks>
     public enum NetworkTopologyTypes
     {
+        /// <summary>
+        /// The traditional client-server network topology. 
+        /// </summary>
         ClientServer,
+        /// <summary>
+        /// The distributed authorityy network topology only supported by <see cref="Transports.UTP.UnityTransport"/>.
+        /// </summary>
         DistributedAuthority
     }
 

@@ -301,9 +301,8 @@ namespace Unity.Netcode.Editor
 
                 expanded = false;
             }
-
-            serializedObject.ApplyModifiedProperties();
             EditorGUI.EndChangeCheck();
+            serializedObject.ApplyModifiedProperties();
         }
 
         /// <summary>
@@ -348,6 +347,12 @@ namespace Unity.Netcode.Editor
             // If there are no NetworkBehaviours or gameObjects then exit early
             // If we are in play mode and a user is inspecting something then exit early (we don't add NetworkObjects to something when in play mode)
             if (EditorApplication.isPlaying || gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
+            {
+                return;
+            }
+
+            // If this automatic check is disabled, then do not perform this check.
+            if (!NetcodeForGameObjectsEditorSettings.GetCheckForNetworkObjectSetting())
             {
                 return;
             }

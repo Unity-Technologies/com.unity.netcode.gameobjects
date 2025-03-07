@@ -13,7 +13,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkManager), true)]
     [CanEditMultipleObjects]
-    public class NetworkManagerEditor : UnityEditor.Editor
+    public class NetworkManagerEditor : NetcodeEditorBase<NetworkManager>
     {
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
@@ -31,6 +31,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_NetworkTransportProperty;
         private SerializedProperty m_TickRateProperty;
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
+        private SerializedProperty m_AutoSpawnPlayerPrefabClientSide;
         private SerializedProperty m_NetworkTopologyProperty;
 #endif
         private SerializedProperty m_ClientConnectionBufferTimeoutProperty;
@@ -104,6 +105,11 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
@@ -120,8 +126,6 @@ namespace Unity.Netcode.Editor
 #if MULTIPLAYER_TOOLS
             m_NetworkMessageMetrics = m_NetworkConfigProperty.FindPropertyRelative("NetworkMessageMetrics");
 #endif
-
-
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
@@ -144,6 +148,11 @@ namespace Unity.Netcode.Editor
             m_TickRateProperty = m_NetworkConfigProperty.FindPropertyRelative("TickRate");
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
             m_NetworkTopologyProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkTopology");
+            // Only display the auto spawn property when the distributed authority network topology is selected
+            if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+            {
+                m_AutoSpawnPlayerPrefabClientSide = m_NetworkConfigProperty.FindPropertyRelative("AutoSpawnPlayerPrefabClientSide");
+            }
 #endif
             m_ClientConnectionBufferTimeoutProperty = m_NetworkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
             m_ConnectionApprovalProperty = m_NetworkConfigProperty.FindPropertyRelative("ConnectionApproval");
@@ -168,23 +177,16 @@ namespace Unity.Netcode.Editor
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DisplayNetworkManagerProperties()
         {
-            Initialize();
-            CheckNullProperties();
-
-#if !MULTIPLAYER_TOOLS
-            DrawInstallMultiplayerToolsTip();
-#endif
-
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
+
                 EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
                 EditorGUILayout.PropertyField(m_LogLevelProperty);
-
                 EditorGUILayout.Space();
+
                 EditorGUILayout.LabelField("Network Settings", EditorStyles.boldLabel);
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
                 EditorGUILayout.PropertyField(m_NetworkTopologyProperty);
@@ -230,7 +232,16 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Prefab Settings", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+                // Only display the auto spawn property when the distributed authority network topology is selected
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
+                {
+                    EditorGUILayout.PropertyField(m_AutoSpawnPlayerPrefabClientSide, new GUIContent("Auto Spawn Player Prefab"));
+                }
+#endif
                 EditorGUILayout.PropertyField(m_PlayerPrefabProperty, new GUIContent("Default Player Prefab"));
+
+
 
                 if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
                 {
@@ -298,48 +309,50 @@ namespace Unity.Netcode.Editor
                 }
 
                 serializedObject.ApplyModifiedProperties();
+            }
+        }
 
+        private void DisplayCallToActionButtons()
+        {
+            if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
+            {
+                string buttonDisabledReasonSuffix = "";
 
-                // Start buttons below
+                if (!EditorApplication.isPlaying)
                 {
-                    string buttonDisabledReasonSuffix = "";
+                    buttonDisabledReasonSuffix = ". This can only be done in play mode";
+                    GUI.enabled = false;
+                }
 
-                    if (!EditorApplication.isPlaying)
+                if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                {
+                    if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
                     {
-                        buttonDisabledReasonSuffix = ". This can only be done in play mode";
-                        GUI.enabled = false;
+                        m_NetworkManager.StartHost();
                     }
 
-                    if (m_NetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.ClientServer)
+                    if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
                     {
-                        if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartHost();
-                        }
-
-                        if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartServer();
-                        }
-
-                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartClient();
-                        }
-                    }
-                    else
-                    {
-                        if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
-                        {
-                            m_NetworkManager.StartClient();
-                        }
+                        m_NetworkManager.StartServer();
                     }
 
-
-                    if (!EditorApplication.isPlaying)
+                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
                     {
-                        GUI.enabled = true;
+                        m_NetworkManager.StartClient();
                     }
+                }
+                else
+                {
+                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a distributed authority client instance" + buttonDisabledReasonSuffix)))
+                    {
+                        m_NetworkManager.StartClient();
+                    }
+                }
+
+
+                if (!EditorApplication.isPlaying)
+                {
+                    GUI.enabled = true;
                 }
             }
             else
@@ -366,6 +379,21 @@ namespace Unity.Netcode.Editor
                     m_NetworkManager.Shutdown();
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            var networkManager = target as NetworkManager;
+            Initialize();
+            CheckNullProperties();
+#if !MULTIPLAYER_TOOLS
+            DrawInstallMultiplayerToolsTip();
+#endif
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
+            DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
+            DisplayCallToActionButtons();
+            base.OnInspectorGUI();
         }
 
         private static void DrawInstallMultiplayerToolsTip()

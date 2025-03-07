@@ -70,10 +70,6 @@ namespace Unity.Netcode
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (!networkManager.IsClient)
-            {
-                return false;
-            }
 
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             reader.ReadValueSafe(out m_BitField);
@@ -117,22 +113,28 @@ namespace Unity.Netcode
             networkObject.SetNetworkParenting(LatestParent, WorldPositionStays);
             networkObject.ApplyNetworkParenting(RemoveParent);
 
-            // We set all of the transform values after parenting as they are
-            // the values of the server-side post-parenting transform values
-            if (!WorldPositionStays)
+            // This check is primarily for client-server network topologies when the motion model is owner authoritative:
+            // When SyncOwnerTransformWhenParented is enabled, then always apply the transform values.
+            // When SyncOwnerTransformWhenParented is disabled, then only synchronize the transform on non-owner instances.
+            if (networkObject.SyncOwnerTransformWhenParented || (!networkObject.SyncOwnerTransformWhenParented && !networkObject.IsOwner))
             {
-                networkObject.transform.localPosition = Position;
-                networkObject.transform.localRotation = Rotation;
+                // We set all of the transform values after parenting as they are
+                // the values of the server-side post-parenting transform values
+                if (!WorldPositionStays)
+                {
+                    networkObject.transform.localPosition = Position;
+                    networkObject.transform.localRotation = Rotation;
+                }
+                else
+                {
+                    networkObject.transform.position = Position;
+                    networkObject.transform.rotation = Rotation;
+                }
+                networkObject.transform.localScale = Scale;
             }
-            else
-            {
-                networkObject.transform.position = Position;
-                networkObject.transform.rotation = Rotation;
-            }
-            networkObject.transform.localScale = Scale;
 
             // If in distributed authority mode and we are running a DAHost and this is the DAHost, then forward the parent changed message to any remaining clients
-            if (networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection && networkManager.DAHost)
+            if ((networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection && networkManager.DAHost) || (networkObject.AllowOwnerToParent && context.SenderId == networkObject.OwnerClientId && networkManager.IsServer))
             {
                 var size = 0;
                 var message = this;

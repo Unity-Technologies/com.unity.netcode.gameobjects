@@ -357,6 +357,9 @@ namespace Unity.Netcode.Transports.UTP
                 }
             }
 
+            /// <summary>
+            /// Returns true if the end point address is of type <see cref="NetworkFamily.Ipv6"/>.
+            /// </summary>
             public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
         }
 
@@ -405,6 +408,7 @@ namespace Unity.Netcode.Transports.UTP
 
 #if UTP_TRANSPORT_2_0_ABOVE
         [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+        [HideInInspector]
 #endif
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
@@ -426,6 +430,9 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int> TransportDisposed;
         internal NetworkDriver NetworkDriver => m_Driver;
 
+        /// <summary>
+        /// Provides access to the <see cref="Networking.Transport.NetworkDriver"/> for this <see cref="UnityTransport"/> instance.
+        /// </summary>
         protected NetworkDriver m_Driver;
 
         /// <summary>
@@ -589,6 +596,11 @@ namespace Unity.Netcode.Transports.UTP
             return true;
         }
 
+        /// <summary>
+        /// Virtual method that is invoked during <see cref="StartClient"/>.
+        /// </summary>
+        /// <param name="serverEndpoint">The <see cref="NetworkEndpoint"/> that the client is connecting to.</param>
+        /// <returns>A <see cref="NetworkConnection"/> representing the connection to the server, or an invalid connection if the connection attempt fails.</returns>
         protected virtual NetworkConnection Connect(NetworkEndpoint serverEndpoint)
         {
             return m_Driver.Connect(serverEndpoint);
@@ -944,17 +956,13 @@ namespace Unity.Netcode.Transports.UTP
             return false;
         }
 
-        private void Update()
+        /// <summary>
+        /// Handles accepting new connections and processing transport events.
+        /// </summary>
+        protected override void OnEarlyUpdate()
         {
             if (m_Driver.IsCreated)
             {
-                foreach (var kvp in m_SendQueue)
-                {
-                    SendBatchedMessages(kvp.Key, kvp.Value);
-                }
-
-                m_Driver.ScheduleUpdate().Complete();
-
                 if (m_ProtocolType == ProtocolType.RelayUnityTransport && m_Driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
                 {
                     Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
@@ -964,15 +972,38 @@ namespace Unity.Netcode.Transports.UTP
                     return;
                 }
 
+                m_Driver.ScheduleUpdate().Complete();
+
+                // Process any new connections
                 while (AcceptConnection() && m_Driver.IsCreated)
                 {
                     ;
                 }
 
+                // Process any transport events (i.e. connect, disconnect, data, etc)
                 while (ProcessEvent() && m_Driver.IsCreated)
                 {
                     ;
                 }
+            }
+            base.OnEarlyUpdate();
+        }
+
+        /// <summary>
+        /// Handles sending any queued batched messages.
+        /// </summary>
+        protected override void OnPostLateUpdate()
+        {
+            if (m_Driver.IsCreated)
+            {
+                foreach (var kvp in m_SendQueue)
+                {
+                    SendBatchedMessages(kvp.Key, kvp.Value);
+                }
+
+                // Schedule a flush send as the last transport action for the
+                // current frame.
+                m_Driver.ScheduleFlushSend(default).Complete();
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 if (m_NetworkManager)
@@ -981,6 +1012,7 @@ namespace Unity.Netcode.Transports.UTP
                 }
 #endif
             }
+            base.OnPostLateUpdate();
         }
 
         private void OnDestroy()
@@ -1199,7 +1231,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="clientId">The client to disconnect</param>
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
+#if DEBUG
+            if (m_State != State.Listening)
+            {
+                Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
+                return;
+            }
+#endif
 
             if (m_State == State.Listening)
             {
@@ -1242,12 +1280,42 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>
+        /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
+        /// </summary>
+        /// <remarks>
+        /// - This is only really useful for direct connections.
+        /// - Relay connections and clients connected using a distributed authority network topology will not provide the client's actual endpoint information.
+        /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
+        /// </remarks>
+        /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
+        /// <returns><see cref="NetworkEndpoint"/></returns>
+        public NetworkEndpoint GetEndpoint(ulong clientId)
+        {
+            if (m_Driver.IsCreated && m_NetworkManager != null && m_NetworkManager.IsListening)
+            {
+                var transportId = m_NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
+                var networkConnection = ParseClientId(transportId);
+                if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
+                {
+                    return m_Driver.GetRemoteEndpoint(networkConnection);
+                }
+            }
+            return new NetworkEndpoint();
+        }
+
+        /// <summary>
         /// Initializes the transport
         /// </summary>
         /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
+#if DEBUG
+            if (sizeof(ulong) != UnsafeUtility.SizeOf<NetworkConnection>())
+            {
+                Debug.LogWarning($"Netcode connection id size {sizeof(ulong)} does not match UTP connection id size {UnsafeUtility.SizeOf<NetworkConnection>()}!");
+                return;
+            }
+#endif
 
             m_NetworkManager = networkManager;
 
@@ -1450,8 +1518,18 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void Shutdown()
         {
+            if (m_NetworkManager && !m_NetworkManager.ShutdownInProgress)
+            {
+                Debug.LogWarning("Directly calling `UnityTransport.Shutdown()` results in unexpected shutdown behaviour. All pending events will be lost. Use `NetworkManager.Shutdown()` instead.");
+            }
+
             if (m_Driver.IsCreated)
             {
+                while (ProcessEvent() && m_Driver.IsCreated)
+                {
+                    ;
+                }
+
                 // Flush all send queues to the network. NGO can be configured to flush its message
                 // queue on shutdown. But this only calls the Send() method, which doesn't actually
                 // get anything to the network.
@@ -1469,6 +1547,7 @@ namespace Unity.Netcode.Transports.UTP
             DisposeInternals();
 
             m_ReliableReceiveQueues.Clear();
+            m_State = State.Disconnected;
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = 0;
@@ -1504,7 +1583,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 #endif
-
+        /// <inheritdoc cref="NetworkTransport.OnCurrentTopology"/>
         protected override NetworkTopologyTypes OnCurrentTopology()
         {
             return m_NetworkManager != null ? m_NetworkManager.NetworkConfig.NetworkTopology : NetworkTopologyTypes.ClientServer;

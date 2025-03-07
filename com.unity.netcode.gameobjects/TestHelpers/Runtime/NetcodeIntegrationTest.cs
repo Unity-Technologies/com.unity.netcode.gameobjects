@@ -24,10 +24,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Used to determine if a NetcodeIntegrationTest is currently running to
         /// determine how clients will load scenes
         /// </summary>
+        protected const float k_DefaultTimeoutPeriod = 8.0f;
+        protected const float k_TickFrequency = 1.0f / k_DefaultTickRate;
         internal static bool IsRunning { get; private set; }
-
-        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(8.0f);
-        protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
+        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(k_DefaultTimeoutPeriod);
+        protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(k_TickFrequency);
 
         public NetcodeLogAssert NetcodeLogAssert;
         public enum SceneManagementState
@@ -250,7 +251,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">The debug message to be logged when verbose debugging is enabled</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void VerboseDebug(string msg)
         {
@@ -544,9 +545,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private bool AllPlayerObjectClonesSpawned(NetworkManager joinedClient)
         {
             m_InternalErrorLog.Clear();
+            // If we are not checking for spawned players then exit early with a success
+            if (!ShouldCheckForSpawnedPlayers())
+            {
+                return true;
+            }
+
             // Continue to populate the PlayerObjects list until all player object (local and clone) are found
             ClientNetworkManagerPostStart(joinedClient);
-
             var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
             if (playerObjectRelative == null)
             {
@@ -680,7 +686,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates the server and clients
         /// </summary>
-        /// <param name="numberOfClients"></param>
+        /// <param name="numberOfClients">The number of client instances to create</param>
         protected void CreateServerAndClients(int numberOfClients)
         {
             VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
@@ -850,6 +856,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected virtual bool LogAllMessages => false;
 
+        protected virtual bool ShouldCheckForSpawnedPlayers()
+        {
+            return true;
+        }
+
+
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
@@ -938,7 +950,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                         }
                     }
-                    ClientNetworkManagerPostStartInit();
+
+                    if (ShouldCheckForSpawnedPlayers())
+                    {
+                        ClientNetworkManagerPostStartInit();
+                    }
+
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
                     yield return OnServerAndClientsConnected();
@@ -1030,7 +1047,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         }
                     }
 
-                    ClientNetworkManagerPostStartInit();
+                    if (ShouldCheckForSpawnedPlayers())
+                    {
+                        ClientNetworkManagerPostStartInit();
+                    }
 
                     // Notification that at this time the server and client(s) are instantiated,
                     // started, and connected on both sides.
@@ -1136,6 +1156,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         protected IEnumerator CoroutineShutdownAndCleanUp()
@@ -1175,6 +1198,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         /// <summary>
@@ -1224,6 +1250,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
+
+        }
+
+        /// <summary>
+        /// Destroys any remaining NetworkManager instances
+        /// </summary>
+        private void DestroyNetworkManagers()
+        {
+            var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+            foreach (var networkManager in networkManagers)
+            {
+                Object.DestroyImmediate(networkManager.gameObject);
+            }
         }
 
         /// <summary>
@@ -1739,6 +1778,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
         }
 
+        public NetcodeIntegrationTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer)
+        {
+            m_NetworkTopologyType = networkTopologyType;
+            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
+            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
+        }
+
         /// <summary>
         /// Optional Host or Server integration tests
         /// Constructor that allows you To break tests up as a host
@@ -1754,7 +1800,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         ///     public MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
         /// }
         /// </summary>
-        /// <param name="hostOrServer"></param>
+        /// <param name="hostOrServer">Specifies whether to run the test as a Host or Server configuration</param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
@@ -1794,8 +1840,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void LogWaitForMessages()
         {
-            VerboseDebug(m_WaitForLog.ToString());
-            m_WaitForLog.Clear();
+            // If there is nothing to log, then don't log anything
+            if (m_WaitForLog.Length > 0)
+            {
+                VerboseDebug(m_WaitForLog.ToString());
+                m_WaitForLog.Clear();
+            }
         }
 
         private IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
@@ -1853,8 +1903,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will only simulate the netcode update loop, as well as update events on
         /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
         /// </summary>
-        /// <param name="amountOfTimeInSeconds"></param>
-        /// <param name="numFramesToSimulate"></param>
+        /// <param name="amountOfTimeInSeconds">The total amount of time to simulate, in seconds</param>
+        /// <param name="numFramesToSimulate">The number of frames to distribute the time across</param>
         protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate)
         {
             var interval = amountOfTimeInSeconds / numFramesToSimulate;

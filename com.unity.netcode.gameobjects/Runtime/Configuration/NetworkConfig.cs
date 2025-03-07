@@ -13,6 +13,14 @@ namespace Unity.Netcode
     [Serializable]
     public class NetworkConfig
     {
+        // Clamp spawn time outs to prevent dropping messages during scene events
+        // Note: The legacy versions of NGO defaulted to 1s which was too low. As
+        // well, the SpawnTimeOut is now being clamped to within this recommended
+        // range both via UI and when NetworkManager is validated.
+        internal const float MinSpawnTimeout = 10.0f;
+        // Clamp spawn time outs to no more than 1 hour (really that is a bit high)
+        internal const float MaxSpawnTimeout = 3600.0f;
+
         /// <summary>
         /// The protocol version. Different versions doesn't talk to each other.
         /// </summary>
@@ -132,6 +140,8 @@ namespace Unity.Netcode
         /// The amount of time a message will be held (deferred) if the destination NetworkObject needed to process the message doesn't exist yet. If the NetworkObject is not spawned within this time period, all deferred messages for that NetworkObject will be dropped.
         /// </summary>
         [Tooltip("The amount of time a message will be held (deferred) if the destination NetworkObject needed to process the message doesn't exist yet. If the NetworkObject is not spawned within this time period, all deferred messages for that NetworkObject will be dropped.")]
+
+        [Range(MinSpawnTimeout, MaxSpawnTimeout)]
         public float SpawnTimeout = 10f;
 
         /// <summary>
@@ -177,9 +187,24 @@ namespace Unity.Netcode
         public bool NetworkProfilingMetrics = true;
 
         /// <summary>
+        /// Invoked by <see cref="NetworkManager"/> when it is validated.
+        /// </summary>
+        /// <remarks>
+        /// Used to check for potential legacy values that have already been serialized and/or
+        /// runtime modifications to a property outside of the recommended range.
+        /// For each property checked below, provide a brief description of the reason.
+        /// </remarks>
+        internal void OnValidate()
+        {
+            // Legacy NGO versions defaulted this value to 1 second that has since been determiend
+            // any range less than 10 seconds can lead to dropped messages during scene events.
+            SpawnTimeout = Mathf.Clamp(SpawnTimeout, MinSpawnTimeout, MaxSpawnTimeout);
+        }
+
+        /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>
-        /// <returns></returns>
+        /// <returns>base64 encoded string containing the serialized network configuration</returns>
         public string ToBase64()
         {
             NetworkConfig config = this;
@@ -246,8 +271,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
-        /// <param name="cache"></param>
-        /// <returns></returns>
+        /// <param name="cache">When true, caches the computed hash value for future retrievals, when false, always recomputes the hash</param>
+        /// <returns>A 64-bit hash value representing the configuration state</returns>
         public ulong GetConfig(bool cache = true)
         {
             if (m_ConfigHash != null && cache)
@@ -291,8 +316,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Compares a SHA256 hash with the current NetworkConfig instances hash
         /// </summary>
-        /// <param name="hash"></param>
-        /// <returns></returns>
+        /// <param name="hash">The 64-bit hash value to compare against this configuration's hash</param>
+        /// <returns>
+        /// True if the hashes match, indicating compatible configurations.
+        /// False if the hashes differ, indicating potentially incompatible configurations.
+        /// </returns>
         public bool CompareConfig(ulong hash)
         {
             return hash == GetConfig();

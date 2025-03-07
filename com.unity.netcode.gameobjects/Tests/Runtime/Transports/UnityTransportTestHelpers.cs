@@ -36,6 +36,24 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Fail("Timed out while waiting for network event.");
         }
 
+        // Wait to ensure no event is sent.
+        public static IEnumerator EnsureNoNetworkEvent(List<TransportEvent> events, float timeout = MaxNetworkEventWaitTime)
+        {
+            int initialCount = events.Count;
+            float startTime = Time.realtimeSinceStartup;
+
+            while (Time.realtimeSinceStartup - startTime < timeout)
+            {
+                if (events.Count > initialCount)
+                {
+                    Assert.Fail("Received unexpected network event.");
+                }
+
+                yield return new WaitForSeconds(0.01f);
+            }
+        }
+
+
         // Common code to initialize a UnityTransport that logs its events.
         public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
             int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
@@ -43,7 +61,7 @@ namespace Unity.Netcode.RuntimeTests
             var logger = new TransportEventLogger();
             events = logger.Events;
 
-            transport = new GameObject().AddComponent<UnityTransport>();
+            transport = new GameObject().AddComponent<UnityTransportTestComponent>();
 
             transport.OnTransportEvent += logger.HandleEvent;
             transport.MaxPayloadSize = maxPayloadSize;
@@ -89,6 +107,59 @@ namespace Unity.Netcode.RuntimeTests
                     Data = data,
                     ReceiveTime = receiveTime
                 });
+            }
+        }
+
+        internal class UnityTransportTestComponent : UnityTransport, INetworkUpdateSystem
+        {
+            private static List<UnityTransportTestComponent> s_Instances = new List<UnityTransportTestComponent>();
+
+            public static void CleanUp()
+            {
+                for (int i = s_Instances.Count - 1; i >= 0; i--)
+                {
+                    var instance = s_Instances[i];
+                    instance.Shutdown();
+                    DestroyImmediate(instance.gameObject);
+                }
+                s_Instances.Clear();
+            }
+
+            /// <summary>
+            /// Simulate the <see cref="NetworkManager.NetworkUpdate"/> being invoked so <see cref="UnityTransport.EarlyUpdate"/>
+            /// and <see cref="UnityTransport.PostLateUpdate"/> are invoked.
+            /// </summary>
+            public void NetworkUpdate(NetworkUpdateStage updateStage)
+            {
+                switch (updateStage)
+                {
+                    case NetworkUpdateStage.EarlyUpdate:
+                        {
+                            EarlyUpdate();
+                            break;
+                        }
+                    case NetworkUpdateStage.PostLateUpdate:
+                        {
+                            PostLateUpdate();
+                            break;
+                        }
+                }
+            }
+
+            public override void Shutdown()
+            {
+                s_Instances.Remove(this);
+                base.Shutdown();
+                this.UnregisterAllNetworkUpdates();
+            }
+
+            public override void Initialize(NetworkManager networkManager = null)
+            {
+                base.Initialize(networkManager);
+                this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+                this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+                this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
+                s_Instances.Add(this);
             }
         }
     }

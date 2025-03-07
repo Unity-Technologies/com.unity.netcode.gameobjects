@@ -79,9 +79,28 @@ namespace Unity.Netcode
         SpecifiedInParams
     }
 
+    /// <summary>
+    /// This parameter configures a performance optimization. This optimization is not valid in all situations.<br />
+    /// Because BaseRpcTarget is a managed type, allocating a new one is expensive, as it puts pressure on the garbage collector.
+    /// </summary>
+    /// <remarks>
+    /// When using a <see cref="Temp"/> allocation type for the RPC target(s):<br />
+    /// You typically don't need to worry about persisting the <see cref="BaseRpcTarget"/> generated.
+    /// When using a <see cref="Persistent"/> allocation type for the RPC target(s): <br />
+    /// You will want to use <see cref="RpcTarget"/>, which returns <see cref="BaseRpcTarget"/>, during <see cref="NetworkBehaviour"/> initialization (i.e. <see cref="NetworkBehaviour.OnNetworkPostSpawn"/>) and it to a property.<br />
+    /// Then, When invoking the RPC, you would use your <see cref="BaseRpcTarget"/> which is a persisted allocation of a given set of client identifiers.
+    /// !! Important !!<br />
+    /// You will want to invoke <see cref="BaseRpcTarget.Dispose"/> of any persisted properties created via <see cref="RpcTarget"/> when despawning or destroying the associated <see cref="NetworkBehaviour"/> component's <see cref="NetworkObject"/>. Not doing so will result in small memory leaks.
+    /// </remarks>
     public enum RpcTargetUse
     {
+        /// <summary>
+        /// Creates a temporary <see cref="BaseRpcTarget"/> used for the frame an <see cref="RpcAttribute"/> decorated method is invoked.
+        /// </summary>
         Temp,
+        /// <summary>
+        /// Creates a persisted <see cref="BaseRpcTarget"/> that does not change and will persist until <see cref="BaseRpcTarget.Dispose"/> is called.
+        /// </summary>
         Persistent
     }
 
@@ -125,6 +144,9 @@ namespace Unity.Netcode
             m_CachedProxyRpcTarget.Lock();
         }
 
+        /// <summary>
+        /// Invoked when this class is disposed.
+        /// </summary>
         public void Dispose()
         {
             Everyone.Dispose();
@@ -226,11 +248,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Send to a specific single client ID.
         /// </summary>
-        /// <param name="clientId"></param>
+        /// <param name="clientId">The ID of the client to send to</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Single(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to the specified client. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter</returns>
         public BaseRpcTarget Single(ulong clientId, RpcTargetUse use)
         {
             if (clientId == m_NetworkManager.LocalClientId)
@@ -259,11 +281,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Send to everyone EXCEPT a specific single client ID.
         /// </summary>
-        /// <param name="excludedClientId"></param>
+        /// <param name="excludedClientId">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Not(ulong excludedClientId, RpcTargetUse use)
         {
             IGroupRpcTarget target;
@@ -272,7 +294,7 @@ namespace Unity.Netcode
                 if (use == RpcTargetUse.Persistent)
                 {
                     target = new RpcTargetGroup(m_NetworkManager);
-                }
+                } // HELLO from the dark side
                 else
                 {
                     target = m_CachedTargetGroup;
@@ -312,11 +334,11 @@ namespace Unity.Netcode
         /// NativeArrays can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
         /// </summary>
-        /// <param name="clientIds"></param>
+        /// <param name="clientIds">The IDs of the client that should receive the message.</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Group(NativeArray<ulong> clientIds, RpcTargetUse use)
         {
             IGroupRpcTarget target;
@@ -356,11 +378,11 @@ namespace Unity.Netcode
         /// NativeList can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
         /// </summary>
-        /// <param name="clientIds"></param>
+        /// <param name="clientIds">The IDs of the client that should receive the message.</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Group(NativeList<ulong> clientIds, RpcTargetUse use)
         {
             var asArray = clientIds.AsArray();
@@ -373,11 +395,11 @@ namespace Unity.Netcode
         /// if you either have no strict performance requirements, or have the group of client IDs cached so
         /// it is not created each time.
         /// </summary>
-        /// <param name="clientIds"></param>
+        /// <param name="clientIds">The IDs of the client that should receive the message.</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Group(ulong[] clientIds, RpcTargetUse use)
         {
             return Group(new NativeArray<ulong>(clientIds, Allocator.Temp), use);
@@ -390,11 +412,12 @@ namespace Unity.Netcode
         /// This override is only recommended if you either have no strict performance requirements,
         /// or have the group of client IDs cached so it is not created each time.
         /// </summary>
-        /// <param name="clientIds"></param>
+        /// <typeparam name="T">The type</typeparam>
+        /// <param name="clientIds">The IDs of the client that should receive the message.</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Group<T>(T clientIds, RpcTargetUse use) where T : IEnumerable<ulong>
         {
             IGroupRpcTarget target;
@@ -434,11 +457,11 @@ namespace Unity.Netcode
         /// NativeArrays can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
         /// </summary>
-        /// <param name="excludedClientIds"></param>
+        /// <param name="excludedClientIds">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Not(NativeArray<ulong> excludedClientIds, RpcTargetUse use)
         {
             IGroupRpcTarget target;
@@ -494,11 +517,11 @@ namespace Unity.Netcode
         /// NativeList can be trivially constructed using Allocator.Temp, making this an efficient
         /// Group method if the group list is dynamically constructed.
         /// </summary>
-        /// <param name="excludedClientIds"></param>
+        /// <param name="excludedClientIds">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Not(NativeList<ulong> excludedClientIds, RpcTargetUse use)
         {
             var asArray = excludedClientIds.AsArray();
@@ -511,11 +534,11 @@ namespace Unity.Netcode
         /// if you either have no strict performance requirements, or have the group of client IDs cached so
         /// it is not created each time.
         /// </summary>
-        /// <param name="excludedClientIds"></param>
+        /// <param name="excludedClientIds">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Not(ulong[] excludedClientIds, RpcTargetUse use)
         {
             return Not(new NativeArray<ulong>(excludedClientIds, Allocator.Temp), use);
@@ -528,11 +551,12 @@ namespace Unity.Netcode
         /// This override is only recommended if you either have no strict performance requirements,
         /// or have the group of client IDs cached so it is not created each time.
         /// </summary>
-        /// <param name="excludedClientIds"></param>
+        /// <typeparam name="T">The type</typeparam>
+        /// <param name="excludedClientIds">The IDs of the client to exclude from receiving the message</param>
         /// <param name="use"><see cref="RpcTargetUse.Temp"/> will return a cached target, which should not be stored as it will
         /// be overwritten in future calls to Not() or Group(). Do not call Dispose() on Temp targets.<br /><br /><see cref="RpcTargetUse.Persistent"/> will
         /// return a new target, which can be stored, but should not be done frequently because it results in a GC allocation. You must call Dispose() on Persistent targets when you are done with them.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="BaseRpcTarget"/> configured to send to all clients except the specified one. The type of target (cached or new instance) depends on the <paramref name="use"/> parameter and whether the caller is the server</returns>
         public BaseRpcTarget Not<T>(T excludedClientIds, RpcTargetUse use) where T : IEnumerable<ulong>
         {
             IGroupRpcTarget target;

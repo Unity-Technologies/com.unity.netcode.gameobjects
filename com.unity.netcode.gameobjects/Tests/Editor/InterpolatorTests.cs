@@ -105,7 +105,7 @@ namespace Unity.Netcode.EditorTests
             Assert.That(interpolator.GetInterpolatedValue(), Is.EqualTo(2f).Within(k_Precision));
         }
 
-        [Ignore("TODO: Fix this test to still handle testing message loss without extrapolation")]
+        [Ignore("TODO: Fix this test to still handle testing message loss without extrapolation. This is tracked in MTT-11338")]
         [Test]
         public void MessageLoss()
         {
@@ -306,7 +306,7 @@ namespace Unity.Netcode.EditorTests
             Assert.Throws<InvalidOperationException>(() => interpolator.Update(1f, serverTime));
         }
 
-        [Ignore("TODO: Fix this test to still test duplicated values without extrapolation")]
+        [Ignore("TODO: Fix this test to still test duplicated values without extrapolation. This is tracked in MTT-11338")]
         [Test]
         public void TestDuplicatedValues()
         {

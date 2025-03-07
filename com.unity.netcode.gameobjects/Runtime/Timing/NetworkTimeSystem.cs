@@ -200,7 +200,7 @@ namespace Unity.Netcode
         /// Advances the time system by a certain amount of time. Should be called once per frame with Time.unscaledDeltaTime or similar.
         /// </summary>
         /// <param name="deltaTimeSec">The amount of time to advance. The delta time which passed since Advance was last called.</param>
-        /// <returns></returns>
+        /// <returns>True if a hard reset of the time system occurred due to large time offset differences. False if normal time advancement occurred</returns>
         public bool Advance(double deltaTimeSec)
         {
             m_TimeSec += deltaTimeSec;
@@ -248,7 +248,9 @@ namespace Unity.Netcode
             var timeDif = serverTimeSec - m_TimeSec;
 
             m_DesiredServerTimeOffset = timeDif - ServerBufferSec;
-            m_DesiredLocalTimeOffset = timeDif + rttSec + LocalBufferSec;
+            // We adjust our desired local time offset to be half RTT since the delivery of
+            // the TimeSyncMessage should only take half of the RTT time (legacy was using 1 full RTT)
+            m_DesiredLocalTimeOffset = timeDif + (rttSec * 0.5d) + LocalBufferSec;
         }
     }
 }

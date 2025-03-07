@@ -24,17 +24,16 @@ namespace Unity.Netcode
         /// The callback to be invoked when the list gets changed
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
-        internal override NetworkVariableType Type => NetworkVariableType.NetworkList;
 
         /// <summary>
         /// Constructor method for <see cref="NetworkList"/>
         /// </summary>
         public NetworkList() { }
 
-        /// <inheritdoc/>
-        /// <param name="values"></param>
-        /// <param name="readPerm"></param>
-        /// <param name="writePerm"></param>
+        /// <inheritdoc cref="NetworkList{T}"/>
+        /// <param name="values">An optional collection of initial values to populate the list. If null, the list will start empty.</param>
+        /// <param name="readPerm">The read permission level for the network list. Determines who can read the list (e.g., server-only or everyone). Default is defined by DefaultReadPerm</param>
+        /// <param name="writePerm">The write permission level for the network list. Determines who can modify the list (e.g., server-only or specific clients). Default is defined by DefaultWritePerm.</param>
         public NetworkList(IEnumerable<T> values = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -50,7 +49,12 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        ~NetworkList()
+        {
+            Dispose();
+        }
+
+        /// <inheritdoc cref="NetworkVariable{T}.ResetDirty"/>
         public override void ResetDirty()
         {
             base.ResetDirty();
@@ -60,7 +64,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.IsDirty"/>
         public override bool IsDirty()
         {
             // we call the base class to allow the SetDirty() mechanism to work
@@ -72,7 +76,7 @@ namespace Unity.Netcode
             MarkNetworkBehaviourDirty();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.WriteDelta"/>
         public override void WriteDelta(FastBufferWriter writer)
         {
 
@@ -128,23 +132,9 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Writeield"/>
         public override void WriteField(FastBufferWriter writer)
         {
-            if (m_NetworkManager.DistributedAuthorityMode)
-            {
-                writer.WriteValueSafe(NetworkVariableSerialization<T>.Serializer.Type);
-                if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unmanaged)
-                {
-                    // Write the size of the unmanaged serialized type as it has a fixed size. This allows the CMB runtime to correctly read the unmanged type.
-                    var placeholder = new T();
-                    var startPos = writer.Position;
-                    NetworkVariableSerialization<T>.Serializer.Write(writer, ref placeholder);
-                    var size = writer.Position - startPos;
-                    writer.Seek(startPos);
-                    BytePacker.WriteValueBitPacked(writer, size);
-                }
-            }
             writer.WriteValueSafe((ushort)m_List.Length);
             for (int i = 0; i < m_List.Length; i++)
             {
@@ -152,19 +142,10 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.ReadField"/>
         public override void ReadField(FastBufferReader reader)
         {
             m_List.Clear();
-            if (m_NetworkManager.DistributedAuthorityMode)
-            {
-                SerializationTools.ReadType(reader, NetworkVariableSerialization<T>.Serializer);
-                // Collection item type is used by the DA server, drop value here.
-                if (NetworkVariableSerialization<T>.Serializer.Type == NetworkVariableType.Unmanaged)
-                {
-                    ByteUnpacker.ReadValueBitPacked(reader, out int _);
-                }
-            }
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
@@ -174,9 +155,16 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.ReadDelta"/>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
+            /// This is only invoked by <see cref="NetworkVariableDeltaMessage"/> and the only time
+            /// keepDirtyDelta is set is when it is the server processing. To be able to handle previous
+            /// versions, we use IsServer to keep the dirty states received and the keepDirtyDelta to
+            /// actually mark this as dirty and add it to the list of <see cref="NetworkObject"/>s to
+            /// be updated. With the forwarding of deltas being handled by <see cref="NetworkVariableDeltaMessage"/>,
+            /// once all clients have been forwarded the dirty events, we clear them by invoking <see cref="PostDeltaRead"/>.
+            var isServer = m_NetworkManager.IsServer;
             reader.ReadValueSafe(out ushort deltaCount);
             for (int i = 0; i < deltaCount; i++)
             {
@@ -199,7 +187,7 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
@@ -207,7 +195,11 @@ namespace Unity.Netcode
                                     Index = m_List.Length - 1,
                                     Value = m_List[m_List.Length - 1]
                                 });
-                                MarkNetworkObjectDirty();
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -237,7 +229,7 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
@@ -245,7 +237,11 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = m_List[index]
                                 });
-                                MarkNetworkObjectDirty();
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -271,7 +267,7 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
@@ -279,7 +275,11 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
-                                MarkNetworkObjectDirty();
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -299,7 +299,7 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
@@ -307,7 +307,11 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
-                                MarkNetworkObjectDirty();
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -335,7 +339,7 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
@@ -344,7 +348,11 @@ namespace Unity.Netcode
                                     Value = value,
                                     PreviousValue = previousValue
                                 });
-                                MarkNetworkObjectDirty();
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -361,13 +369,18 @@ namespace Unity.Netcode
                                 });
                             }
 
-                            if (keepDirtyDelta)
+                            if (isServer)
                             {
                                 m_DirtyEvents.Add(new NetworkListEvent<T>()
                                 {
                                     Type = eventType
                                 });
-                                MarkNetworkObjectDirty();
+
+                                // Preserve the legacy way of handling this
+                                if (keepDirtyDelta)
+                                {
+                                    MarkNetworkObjectDirty();
+                                }
                             }
                         }
                         break;
@@ -381,13 +394,25 @@ namespace Unity.Netcode
             }
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.PostDeltaRead"/>
+        /// <remarks>
+        /// For NetworkList, we just need to reset dirty if a server has read deltas
+        /// </remarks>
+        internal override void PostDeltaRead()
+        {
+            if (m_NetworkManager.IsServer)
+            {
+                ResetDirty();
+            }
+        }
+
+        /// <inheritdoc cref="NetworkVariable{T}.GetEnumerator"/>
         public IEnumerator<T> GetEnumerator()
         {
             return m_List.GetEnumerator();
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Add"/>
         public void Add(T item)
         {
             // check write permissions
@@ -409,7 +434,7 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Clear"/>
         public void Clear()
         {
             // check write permissions
@@ -429,14 +454,14 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Contains"/>
         public bool Contains(T item)
         {
             int index = m_List.IndexOf(item);
             return index != -1;
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Remove"/>
         public bool Remove(T item)
         {
             // check write permissions
@@ -463,16 +488,16 @@ namespace Unity.Netcode
             return true;
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Count"/>
         public int Count => m_List.Length;
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.IndexOf"/>
         public int IndexOf(T item)
         {
             return m_List.IndexOf(item);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.Insert"/>
         public void Insert(int index, T item)
         {
             // check write permissions
@@ -502,7 +527,7 @@ namespace Unity.Netcode
             HandleAddListEvent(listEvent);
         }
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.RemoveAt"/>
         public void RemoveAt(int index)
         {
             // check write permissions
@@ -526,7 +551,7 @@ namespace Unity.Netcode
 
 
 
-        /// <inheritdoc />
+        /// <inheritdoc cref="NetworkVariable{T}.this"/>
         public T this[int index]
         {
             get => m_List[index];
@@ -580,8 +605,16 @@ namespace Unity.Netcode
         /// </summary>
         public override void Dispose()
         {
-            m_List.Dispose();
-            m_DirtyEvents.Dispose();
+            if (m_List.IsCreated)
+            {
+                m_List.Dispose();
+            }
+
+            if (m_DirtyEvents.IsCreated)
+            {
+                m_DirtyEvents.Dispose();
+            }
+
             base.Dispose();
         }
     }

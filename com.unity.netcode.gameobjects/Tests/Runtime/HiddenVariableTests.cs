@@ -59,13 +59,13 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Changed(int before, int after)
         {
-            VerboseDebug($"Value changed from {before} to {after} on {NetworkManager.LocalClientId}");
+            VerboseDebug($"[Client-{NetworkManager.LocalClientId}][{name}][MyNetworkVariable] Value changed from {before} to {after}");
             ValueOnClient[NetworkManager.LocalClientId] = after;
         }
         public void ListChanged(NetworkListEvent<int> listEvent)
         {
-            Debug.Log($"ListEvent received: type {listEvent.Type}, index {listEvent.Index}, value {listEvent.Value}");
-            Debug.Assert(ExpectedSize == MyNetworkList.Count);
+            VerboseDebug($"[Client-{NetworkManager.LocalClientId}][{name}][MyNetworkList] ListEvent received: type {listEvent.Type}, index {listEvent.Index}, value {listEvent.Value}");
+            Debug.Assert(ExpectedSize == MyNetworkList.Count, $"[{name}] List change failure! Expected Count: {ExpectedSize} Actual Count:{MyNetworkList.Count}");
         }
     }
 
@@ -185,10 +185,13 @@ namespace Unity.Netcode.RuntimeTests
             var otherClient = m_ServerNetworkManager.ConnectedClientsList[2];
             m_NetSpawnedObject = SpawnObject(m_TestNetworkPrefab, m_ClientNetworkManagers[1]).GetComponent<NetworkObject>();
 
-            yield return RefreshGameObects(4);
+            yield return RefreshGameObects(NumberOfClients);
 
             // === Check spawn occurred
             yield return WaitForSpawnCount(NumberOfClients + 1);
+
+            AssertOnTimeout($"Timed out waiting for all clients to spawn {m_NetSpawnedObject.name}");
+
             Debug.Assert(HiddenVariableObject.SpawnCount == NumberOfClients + 1);
             VerboseDebug("Objects spawned");
 
@@ -205,7 +208,6 @@ namespace Unity.Netcode.RuntimeTests
             // ==== Hide our object to a different client
             HiddenVariableObject.ExpectedSize = 2;
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);
-
             currentValueSet = 3;
             m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = currentValueSet;
             m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(currentValueSet);
@@ -222,7 +224,7 @@ namespace Unity.Netcode.RuntimeTests
             VerboseDebug("Object spawned");
 
             // ==== We need a refresh for the newly re-spawned object
-            yield return RefreshGameObects(4);
+            yield return RefreshGameObects(NumberOfClients);
 
             currentValueSet = 4;
             m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = currentValueSet;

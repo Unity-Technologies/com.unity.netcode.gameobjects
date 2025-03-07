@@ -13,24 +13,24 @@ namespace Unity.Netcode.Components
     ///
     /// <list type="bullet">
     ///
-    /// <item><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
-    /// resulting in a "snap" to the new value if it is different from the anticipated value.</item>
+    /// resulting in a "snap" to the new value if it is different from the anticipated value.</description></item>
     ///
-    /// <item><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
     /// <see cref="Smooth"/> from the anticipated value to the authority value with an appropriate
     /// <see cref="Mathf.Lerp"/>-style smooth function), when a more up-to-date value is received from the authority,
-    /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</item>
+    /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</description></item>
     ///
-    /// <item><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
     /// new anticipated value based on the current authoritative value), when a more up-to-date value is received from
     /// the authority, user code calculates a new anticipated value, possibly calling <see cref="Smooth"/> to interpolate
     /// between the previous anticipation and the new anticipation. This is useful for values that change frequently and
     /// need to constantly be re-evaluated, as opposed to values that change only in response to user action and simply
-    /// need a one-time anticipation when the user performs that action.</item>
+    /// need a one-time anticipation when the user performs that action.</description></item>
     ///
     /// </list>
     ///
@@ -138,7 +138,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will be in the given
         /// <see cref="newPosition"/>
         /// </summary>
-        /// <param name="newPosition"></param>
+        /// <param name="newPosition">The anticipated position</param>
         public void AnticipateMove(Vector3 newPosition)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -164,7 +164,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will have the given
         /// <see cref="newRotation"/>
         /// </summary>
-        /// <param name="newRotation"></param>
+        /// <param name="newRotation">The anticipated rotation</param>
         public void AnticipateRotate(Quaternion newRotation)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -190,7 +190,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will have the given
         /// <see cref="newScale"/>
         /// </summary>
-        /// <param name="newScale"></param>
+        /// <param name="newScale">The anticipated scale</param>
         public void AnticipateScale(Vector3 newScale)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -216,7 +216,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, the transform will have the given
         /// <see cref="newState"/>
         /// </summary>
-        /// <param name="newState"></param>
+        /// <param name="newState">The anticipated transform state</param>
         public void AnticipateState(TransformState newState)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -239,19 +239,13 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
-        public override void OnUpdate()
+        private void ProcessSmoothing()
         {
             // If not spawned or this instance has authority, exit early
             if (!IsSpawned)
             {
                 return;
             }
-            // Do not call the base class implementation...
-            // AnticipatedNetworkTransform applies its authoritative state immediately rather than waiting for update
-            // This is because AnticipatedNetworkTransforms may need to reference each other in reanticipating
-            // and we will want all reanticipation done before anything else wants to reference the transform in
-            // OnUpdate()
-            //base.Update();
 
             if (m_CurrentSmoothTime < m_SmoothDuration)
             {
@@ -262,7 +256,7 @@ namespace Unity.Netcode.Components
                 m_AnticipatedTransform = new TransformState
                 {
                     Position = Vector3.Lerp(m_SmoothFrom.Position, m_SmoothTo.Position, pct),
-                    Rotation = Quaternion.Slerp(m_SmoothFrom.Rotation, m_SmoothTo.Rotation, pct),
+                    Rotation = Quaternion.Lerp(m_SmoothFrom.Rotation, m_SmoothTo.Rotation, pct),
                     Scale = Vector3.Lerp(m_SmoothFrom.Scale, m_SmoothTo.Scale, pct)
                 };
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
@@ -272,6 +266,32 @@ namespace Unity.Netcode.Components
                     transform_.localScale = m_AnticipatedTransform.Scale;
                     transform_.rotation = m_AnticipatedTransform.Rotation;
                 }
+            }
+        }
+
+        // TODO: This does not handle OnFixedUpdate
+        // This requires a complete overhaul in this class to switch between using
+        // NetworkRigidbody's position and rotation values.
+        public override void OnUpdate()
+        {
+            ProcessSmoothing();
+            // Do not call the base class implementation...
+            // AnticipatedNetworkTransform applies its authoritative state immediately rather than waiting for update
+            // This is because AnticipatedNetworkTransforms may need to reference each other in reanticipating
+            // and we will want all reanticipation done before anything else wants to reference the transform in
+            // OnUpdate()
+            //base.OnUpdate();
+        }
+
+        /// <summary>
+        /// Since authority does not subscribe to updates (OnUpdate or OnFixedUpdate),
+        /// we have to update every frame to assure authority processes soothing.
+        /// </summary>
+        private void Update()
+        {
+            if (CanCommitToTransform && IsSpawned)
+            {
+                ProcessSmoothing();
             }
         }
 
@@ -347,14 +367,44 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        /// <summary>
+        /// (This replaces the first OnSynchronize for NetworkTransforms)
+        /// This is needed to initialize when fully synchronized since non-authority instances
+        /// don't apply the initial synchronization (new client synchronization) until after
+        /// everything has been spawned and synchronized.
+        /// </summary>
+        protected internal override void InternalOnNetworkSessionSynchronized()
         {
-            base.OnSynchronize(ref serializer);
-            if (!CanCommitToTransform)
+            var wasSynchronizing = SynchronizeState.IsSynchronizing;
+            base.InternalOnNetworkSessionSynchronized();
+            if (!CanCommitToTransform && wasSynchronizing && !SynchronizeState.IsSynchronizing)
             {
                 m_OutstandingAuthorityChange = true;
                 ApplyAuthoritativeState();
                 ResetAnticipatedState();
+
+                m_AnticipatedObject = new AnticipatedObject { Transform = this };
+                NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
+            }
+        }
+
+        /// <summary>
+        /// (This replaces the any subsequent OnSynchronize for NetworkTransforms post client synchronization)
+        /// This occurs on already connected clients when dynamically spawning a NetworkObject for
+        /// non-authoritative instances.
+        /// </summary>
+        protected internal override void InternalOnNetworkPostSpawn()
+        {
+            base.InternalOnNetworkPostSpawn();
+            if (!CanCommitToTransform && NetworkManager.IsConnectedClient && !SynchronizeState.IsSynchronizing)
+            {
+                m_OutstandingAuthorityChange = true;
+                ApplyAuthoritativeState();
+                ResetAnticipatedState();
+                m_AnticipatedObject = new AnticipatedObject { Transform = this };
+                NetworkManager.AnticipationSystem.RegisterForAnticipationEvents(m_AnticipatedObject);
+                NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
             }
         }
 
@@ -365,6 +415,13 @@ namespace Unity.Netcode.Components
                 Debug.LogWarning($"This component is not currently supported in distributed authority.");
             }
             base.OnNetworkSpawn();
+
+            // Non-authoritative instances exit early if the synchronization has yet to
+            // be applied at this point
+            if (SynchronizeState.IsSynchronizing && !CanCommitToTransform)
+            {
+                return;
+            }
             m_OutstandingAuthorityChange = true;
             ApplyAuthoritativeState();
             ResetAnticipatedState();
@@ -406,9 +463,9 @@ namespace Unity.Netcode.Components
         /// <see cref="to"/> over <see cref="durationSeconds"/> of real time. The duration uses
         /// <see cref="Time.deltaTime"/>, so it is affected by <see cref="Time.timeScale"/>.
         /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="durationSeconds"></param>
+        /// <param name="from">Starting transform state</param>
+        /// <param name="to">Target transform state</param>
+        /// <param name="durationSeconds">Interpolation time in seconds</param>
         public void Smooth(TransformState from, TransformState to, float durationSeconds)
         {
             var transform_ = transform;

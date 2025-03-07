@@ -141,28 +141,6 @@ namespace Unity.Netcode
                 {
                     RegisterMessageType(type);
                 }
-
-#if UNITY_EDITOR
-                if (EnableMessageOrderConsoleLog)
-                {
-                    // DANGO-TODO: Remove this when we have some form of message type indices stability in place
-                    // For now, just log the messages and their assigned types for reference purposes.
-                    var networkManager = m_Owner as NetworkManager;
-                    if (networkManager != null)
-                    {
-                        if (networkManager.DistributedAuthorityMode)
-                        {
-                            var messageListing = new StringBuilder();
-                            messageListing.AppendLine("NGO Message Index to Type Listing:");
-                            foreach (var message in m_MessageTypes)
-                            {
-                                messageListing.AppendLine($"[{message.Value}][{message.Key.Name}]");
-                            }
-                            Debug.Log(messageListing);
-                        }
-                    }
-                }
-#endif
             }
             catch (Exception)
             {
@@ -733,7 +711,11 @@ namespace Unity.Netcode
                 }
 
                 ref var writeQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
-                writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length);
+                if (!writeQueueItem.Writer.TryBeginWrite(tmpSerializer.Length + headerSerializer.Length))
+                {
+                    Debug.LogError($"Not enough space to write message, size={tmpSerializer.Length + headerSerializer.Length} space used={writeQueueItem.Writer.Position} total size={writeQueueItem.Writer.Capacity}");
+                    continue;
+                }
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
                 writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);

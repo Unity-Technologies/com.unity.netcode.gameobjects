@@ -12,8 +12,6 @@ namespace Unity.Netcode.RuntimeTests
     internal class NetworkObjectSpawnManyObjectsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-        // "many" in this case means enough to exceed a ushort_max message size written in the header
-        // 1500 is not a magic number except that it's big enough to trigger a failure
         private const int k_SpawnedObjects = 1500;
 
         private NetworkPrefab m_PrefabToSpawn;
@@ -52,19 +50,23 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        // When this test fails it does so without an exception and will wait the default ~6 minutes
-        [Timeout(10000)]
         public IEnumerator WhenManyObjectsAreSpawnedAtOnce_AllAreReceived()
         {
+            var timeStarted = Time.realtimeSinceStartup;
             for (int x = 0; x < k_SpawnedObjects; x++)
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
                 serverObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverObject.Spawn();
             }
+
+            var timeSpawned = Time.realtimeSinceStartup - timeStarted;
+            // Provide plenty of time to spawn all 1500 objects in case the CI VM is running slow
+            var timeoutHelper = new TimeoutHelper(30);
             // ensure all objects are replicated
-            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects);
-            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
+            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
+
+            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
         }
     }
 }

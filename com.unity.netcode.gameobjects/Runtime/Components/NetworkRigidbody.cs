@@ -12,6 +12,9 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Rigidbody")]
     public class NetworkRigidbody : NetworkRigidbodyBase
     {
+
+        public Rigidbody Rigidbody => m_InternalRigidbody;
+
         protected virtual void Awake()
         {
             Initialize(RigidbodyTypes.Rigidbody);

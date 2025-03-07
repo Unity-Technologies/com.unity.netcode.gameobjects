@@ -82,7 +82,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ValidateApprovalTimeout()
         {
             // Just delay for a second
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.25f);
 
             // Verify we haven't received the time out message yet
             NetcodeLogAssert.LogWasNotReceived(LogType.Log, m_ExpectedLogMessage);

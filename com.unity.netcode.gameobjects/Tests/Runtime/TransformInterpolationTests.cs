@@ -63,14 +63,10 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_MaxThresholdFailures = 4;
         private int m_ExceededThresholdCount;
 
-        private void Update()
+        public override void OnUpdate()
         {
             base.OnUpdate();
 
-            if (!IsSpawned || TestComplete)
-            {
-                return;
-            }
 
             // Check the position of the nested object on the client
             if (CheckPosition)
@@ -92,6 +88,17 @@ namespace Unity.Netcode.RuntimeTests
                     m_ExceededThresholdCount = 0;
                 }
             }
+        }
+
+        private void Update()
+        {
+            base.OnUpdate();
+
+            if (!IsSpawned || !CanCommitToTransform || TestComplete)
+            {
+                return;
+            }
+
 
             // Move the nested object on the server
             if (IsMoving)
@@ -136,7 +143,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
                 transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
             }
-
         }
     }
 

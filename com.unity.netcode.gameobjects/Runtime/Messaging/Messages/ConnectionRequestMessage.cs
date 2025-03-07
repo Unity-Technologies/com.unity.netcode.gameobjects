@@ -2,15 +2,52 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
-    internal struct ConnectionRequestMessage : INetworkMessage
+    /// <summary>
+    /// Only used when connecting to the distributed authority service
+    /// </summary>
+    internal struct ClientConfig : INetworkSerializable
     {
-        public int Version => 0;
-
-        public ulong ConfigHash;
-
-        public bool CMBServiceConnection;
+        public SessionConfig SessionConfig;
+        public int SessionVersion => (int)SessionConfig.SessionVersion;
         public uint TickRate;
         public bool EnableSceneManagement;
+
+        // Only gets deserialized but should never be used unless testing
+        public int RemoteClientSessionVersion;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            // Clients always write
+            if (serializer.IsWriter)
+            {
+                var writer = serializer.GetFastBufferWriter();
+                BytePacker.WriteValueBitPacked(writer, SessionVersion);
+                BytePacker.WriteValueBitPacked(writer, TickRate);
+                writer.WriteValueSafe(EnableSceneManagement);
+            }
+            else
+            {
+                var reader = serializer.GetFastBufferReader();
+                ByteUnpacker.ReadValueBitPacked(reader, out RemoteClientSessionVersion);
+                ByteUnpacker.ReadValueBitPacked(reader, out TickRate);
+                reader.ReadValueSafe(out EnableSceneManagement);
+            }
+        }
+    }
+
+    internal struct ConnectionRequestMessage : INetworkMessage
+    {
+        internal const string InvalidSessionVersionMessage = "The client version is not compatible with the session version.";
+
+        // This version update is unidirectional (client to service) and version
+        // handling occurs on the service side. This serialized data is never sent
+        // to a host or server.
+        private const int k_SendClientConfigToService = 1;
+        public int Version => k_SendClientConfigToService;
+
+        public ulong ConfigHash;
+        public bool DistributedAuthority;
+        public ClientConfig ClientConfig;
 
         public byte[] ConnectionData;
 
@@ -34,10 +71,9 @@ namespace Unity.Netcode
             // END FORBIDDEN SEGMENT
             // ============================================================
 
-            if (CMBServiceConnection)
+            if (DistributedAuthority)
             {
-                writer.WriteValueSafe(TickRate);
-                writer.WriteValueSafe(EnableSceneManagement);
+                writer.WriteNetworkSerializable(ClientConfig);
             }
 
             if (ShouldSendConnectionData)
@@ -82,6 +118,11 @@ namespace Unity.Netcode
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
+
+            if (networkManager.DAHost)
+            {
+                reader.ReadNetworkSerializable(out ClientConfig);
+            }
 
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
@@ -144,6 +185,17 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
+
+            // DAHost mocking the service logic to disconnect clients trying to connect with a lower session version
+            if (networkManager.DAHost)
+            {
+                if (ClientConfig.RemoteClientSessionVersion < networkManager.SessionConfig.SessionVersion)
+                {
+                    //Disconnect with reason
+                    networkManager.ConnectionManager.DisconnectClient(senderId, InvalidSessionVersionMessage);
+                    return;
+                }
+            }
 
             if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {

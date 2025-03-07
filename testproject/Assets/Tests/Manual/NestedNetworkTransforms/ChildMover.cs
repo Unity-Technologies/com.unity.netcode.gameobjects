@@ -37,8 +37,11 @@ namespace TestProject.ManualTests
             if (IsSpawned && CanCommitToTransform)
             {
                 var rotateDirection = RotateBasedOnDirection ? movementDirection * RotationSpeed : RotationSpeed;
-
-                transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), RotationSpeed);
+                // Just make sure we are set to local space for this test
+                if (InLocalSpace)
+                {
+                    transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), RotationSpeed);
+                }
             }
         }
 
