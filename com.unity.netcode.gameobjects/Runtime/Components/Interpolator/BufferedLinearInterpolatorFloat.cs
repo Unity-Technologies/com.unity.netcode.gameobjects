@@ -21,13 +21,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        protected internal override bool IsAproximately(float first, float second, float precision = 1E-07F)
+        private protected override bool IsAproximately(float first, float second, float precision = 1E-07F)
         {
             return Mathf.Approximately(first, second);
         }
 
         /// <inheritdoc />
-        protected internal override float SmoothDamp(float current, float target, ref float rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        private protected override float SmoothDamp(float current, float target, ref float rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
         {
             if (IsAngularValue)
             {

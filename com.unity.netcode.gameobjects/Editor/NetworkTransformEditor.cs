@@ -197,35 +197,35 @@ namespace Unity.Netcode.Editor
                     BeginIndent();
                     if (networkTransform.SynchronizePosition)
                     {
-                        DrawIndentedPropertyField(m_PositionInterpolationTypeProperty);
+                        DrawPropertyField(m_PositionInterpolationTypeProperty);
                         // Only display when using Lerp.
                         if (networkTransform.PositionInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
                             BeginIndent();
-                            DrawIndentedPropertyField(m_SlerpPosition);
-                            DrawIndentedPropertyField(m_PositionMaximumInterpolationTimeProperty);
+                            DrawPropertyField(m_SlerpPosition);
+                            DrawPropertyField(m_PositionMaximumInterpolationTimeProperty);
                             EndIndent();
                         }
                     }
                     if (networkTransform.SynchronizeRotation)
                     {
-                        DrawIndentedPropertyField(m_RotationInterpolationTypeProperty);
+                        DrawPropertyField(m_RotationInterpolationTypeProperty);
                         // Only display when using Lerp.
                         if (networkTransform.RotationInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
                             BeginIndent();
-                            DrawIndentedPropertyField(m_RotationMaximumInterpolationTimeProperty);
+                            DrawPropertyField(m_RotationMaximumInterpolationTimeProperty);
                             EndIndent();
                         }
                     }
                     if (networkTransform.SynchronizeScale)
                     {
-                        DrawIndentedPropertyField(m_ScaleInterpolationTypeProperty);
+                        DrawPropertyField(m_ScaleInterpolationTypeProperty);
                         // Only display when using Lerp.
                         if (networkTransform.ScaleInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
                             BeginIndent();
-                            DrawIndentedPropertyField(m_ScaleMaximumInterpolationTimeProperty);
+                            DrawPropertyField(m_ScaleMaximumInterpolationTimeProperty);
                             EndIndent();
                         }
                     }

@@ -47,7 +47,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        protected internal override Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Quaternion rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        private protected override Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Quaternion rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
         {
             Vector3 currentEuler = current.eulerAngles;
             Vector3 targetEuler = target.eulerAngles;
@@ -61,7 +61,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        protected internal override bool IsAproximately(Quaternion first, Quaternion second, float precision)
+        private protected override bool IsAproximately(Quaternion first, Quaternion second, float precision)
         {
             return (1.0f - Quaternion.Dot(first, second)) <= precision;
         }

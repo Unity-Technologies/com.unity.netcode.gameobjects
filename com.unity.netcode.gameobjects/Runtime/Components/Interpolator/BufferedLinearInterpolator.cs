@@ -156,7 +156,7 @@ namespace Unity.Netcode
         private int m_NbItemsReceivedThisFrame;
 
         private double m_LastMeasurementAddedTime = 0.0f;
-        internal bool EndOfBuffer => m_Buffer.Count == 0;
+        internal bool EndOfBuffer => m_BufferQueue.Count == 0;
 
         internal bool InLocalSpace;
 
@@ -168,7 +168,37 @@ namespace Unity.Netcode
         /// <summary>
         /// The current buffered items received by the authority.
         /// </summary>
-        protected internal readonly Queue<BufferedItem> m_Buffer = new Queue<BufferedItem>(k_BufferCountLimit);
+        protected internal readonly Queue<BufferedItem> m_BufferQueue = new Queue<BufferedItem>(k_BufferCountLimit);
+
+        /// <summary>
+        /// The legacy list of <see cref="BufferedItem"/> items.
+        /// </summary>
+        /// <remarks>
+        /// This is replaced by the <see cref="m_BufferQueue"/> of type <see cref="Queue{T}"/>.
+        /// </remarks>
+        [Obsolete("This list is no longer used and will be deprecated.", false)]
+        protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The starting value of type <see cref="T"/> to interpolate from.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_InterpStartValue;
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The current value of type <see cref="T"/>.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_CurrentInterpValue;
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The end (or target) value of type <see cref="T"/> to interpolate towards.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_InterpEndValue;
 
         /// <summary>
         /// Represents the rate of change for the value being interpolated when smooth dampening is enabled.
@@ -192,7 +222,7 @@ namespace Unity.Netcode
         /// </summary>
         public void Clear()
         {
-            m_Buffer.Clear();
+            m_BufferQueue.Clear();
             m_BufferCount = 0;
             m_LastMeasurementAddedTime = 0.0;
             InterpolateState.Reset(default);
@@ -244,7 +274,7 @@ namespace Unity.Netcode
                 BufferedItem? previousItem = null;
                 var startTime = 0.0;
                 var alreadyHasBufferItem = false;
-                while (m_Buffer.TryPeek(out BufferedItem potentialItem))
+                while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
                     // to consume.
@@ -261,7 +291,7 @@ namespace Unity.Netcode
                     if (!InterpolateState.Target.HasValue ||
                         ((potentialItem.TimeSent <= renderTime) && InterpolateState.Target.Value.TimeSent <= potentialItem.TimeSent))
                     {
-                        if (m_Buffer.TryDequeue(out BufferedItem target))
+                        if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
                             if (!InterpolateState.Target.HasValue)
                             {
@@ -316,7 +346,7 @@ namespace Unity.Netcode
         /// <param name="minDeltaTime">The minimum time delta between the current and target value.</param>
         /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        public T Update(float deltaTime, double tickLatencyAsTime, float minDeltaTime, float maxDeltaTime)
+        internal T Update(float deltaTime, double tickLatencyAsTime, float minDeltaTime, float maxDeltaTime)
         {
             TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime);
             // Only interpolate when there is a start and end point and we have not already reached the end value
@@ -353,7 +383,7 @@ namespace Unity.Netcode
             {
                 BufferedItem? previousItem = null;
                 var alreadyHasBufferItem = false;
-                while (m_Buffer.TryPeek(out BufferedItem potentialItem))
+                while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
                     // to consume.
@@ -365,12 +395,11 @@ namespace Unity.Netcode
                     if ((potentialItem.TimeSent <= serverTime) &&
                         (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
                     {
-                        if (m_Buffer.TryDequeue(out BufferedItem target))
+                        if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
                             if (!InterpolateState.Target.HasValue)
                             {
                                 InterpolateState.Target = target;
-
                                 alreadyHasBufferItem = true;
                                 InterpolateState.PreviousValue = InterpolateState.CurrentValue;
                                 InterpolateState.StartTime = target.TimeSent;
@@ -494,7 +523,7 @@ namespace Unity.Netcode
                     m_LastMeasurementAddedTime = sentTime;
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
-                    m_Buffer.Enqueue(m_LastBufferedItemReceived);
+                    m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 }
                 return;
             }
@@ -504,7 +533,7 @@ namespace Unity.Netcode
             {
                 m_BufferCount++;
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
-                m_Buffer.Enqueue(m_LastBufferedItemReceived);
+                m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
         }
@@ -547,7 +576,7 @@ namespace Unity.Netcode
         /// <param name="deltaTime">The increasing delta time from when start to finish.</param>
         /// <param name="maxSpeed">Maximum rate of change per pass.</param>
         /// <returns>The smoothed <see cref="T"/> value.</returns>
-        protected internal virtual T SmoothDamp(T current, T target, ref T rateOfChange, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
+        private protected virtual T SmoothDamp(T current, T target, ref T rateOfChange, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
         {
             return target;
         }
@@ -559,7 +588,7 @@ namespace Unity.Netcode
         /// <param name="second">Second value of type <see cref="T"/>.</param>
         /// <param name="precision">The precision of the aproximation.</param>
         /// <returns>true if the two values are aproximately the same and false if they are not</returns>
-        protected internal virtual bool IsAproximately(T first, T second, float precision = k_AproximatePrecision)
+        private protected virtual bool IsAproximately(T first, T second, float precision = k_AproximatePrecision)
         {
             return false;
         }
@@ -578,12 +607,12 @@ namespace Unity.Netcode
 
         internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
-            var count = m_Buffer.Count;
+            var count = m_BufferQueue.Count;
             for (int i = 0; i < count; i++)
             {
-                var entry = m_Buffer.Dequeue();
+                var entry = m_BufferQueue.Dequeue();
                 entry.Item = OnConvertTransformSpace(transform, entry.Item, inLocalSpace);
-                m_Buffer.Enqueue(entry);
+                m_BufferQueue.Enqueue(entry);
             }
             InterpolateState.CurrentValue = OnConvertTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
             var end = InterpolateState.Target.Value;

@@ -53,13 +53,13 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        protected internal override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
+        private protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
         {
             return Vector3.Distance(first, second) <= precision;
         }
 
         /// <inheritdoc />
-        protected internal override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
+        private protected override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
         {
             if (IsAngularValue)
             {
