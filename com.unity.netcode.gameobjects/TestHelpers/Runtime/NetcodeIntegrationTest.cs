@@ -320,6 +320,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// to troubleshoot a hard to track bug within an
         /// integration test.
         /// </summary>
+        /// <returns>True if verbose debug logging should be enabled; otherwise, false.</returns>
         protected virtual bool OnSetVerboseDebug()
         {
             return false;
@@ -376,6 +377,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
         /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected virtual IEnumerator OnSetup()
         {
             yield return null;
@@ -396,6 +398,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Called before each test is run to perform setup operations.
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -656,7 +659,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="networkManager">The NetworkManager instance of the client to stop.</param>
         /// <param name="destroy">If true, the client's NetworkManager GameObject will be destroyed.</param>
-        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -1649,10 +1651,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Will spawn (x) number of prefab GameObject
         /// <see cref="SpawnObject(GameObject, NetworkManager, bool)"/>
         /// </summary>
-        /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
+        /// <param name="prefabGameObject">the prefab GameObject to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="count">number of instances to create and spawn</param>
-        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="destroyWithScene">If true, the spawned objects will be destroyed when the scene is unloaded. Default is false.</param>
+        /// <returns>A list containing the spawned GameObject instances.</returns>
         protected List<GameObject> SpawnObjects(GameObject prefabGameObject, NetworkManager owner, int count, bool destroyWithScene = false)
         {
             var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
@@ -1661,13 +1664,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Will spawn (x) number of prefab NetworkObjects
+        /// Will spawn (x) number of prefab NetworkObject
         /// <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
         /// </summary>
         /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="count">number of instances to create and spawn</param>
-        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="destroyWithScene">If true, the spawned objects will be destroyed when the scene is unloaded. Default is false.</param>
+        /// <returns>A list containing the spawned GameObject instances.</returns>
         private List<GameObject> SpawnObjects(NetworkObject prefabNetworkObject, NetworkManager owner, int count, bool destroyWithScene = false)
         {
             var gameObjectsSpawned = new List<GameObject>();
@@ -1691,8 +1695,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This can be used to break tests up as a host and a server.
         /// </summary>
         /// <example>
-        /// Decorate your child derived class with TestFixture and then create a constructor at the child level.
-        /// Don't forget to set your constructor public, else Unity will give you a hard to decipher error.
+        /// <para>Decorate your child derived class with TestFixture and then create a constructor at the child level.
+        /// Don't forget to set your constructor public, else Unity will give you a hard to decipher error.</para>
         /// <code>
         /// [TestFixture(HostOrServer.Host)]
         /// [TestFixture(HostOrServer.Server)]
