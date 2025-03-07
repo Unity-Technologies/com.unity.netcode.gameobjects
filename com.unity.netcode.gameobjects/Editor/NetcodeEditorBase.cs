@@ -11,9 +11,28 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public partial class NetcodeEditorBase<TT> : UnityEditor.Editor where TT : MonoBehaviour
     {
+        private const int k_IndentOffset = 15;
+
         /// <inheritdoc cref="UnityEditor.Editor.OnEnable"/>
         public virtual void OnEnable()
         {
+        }
+
+        /// <summary>
+        /// Will draw a property field with an indention level using the default or a specified offset per indention.
+        /// </summary>
+        /// <param name="property">The serialized property to draw as a default field</param>
+        /// <param name="indentLevel">The indention level.</param>
+        /// <param name="offset">Optional indention level offset.</param>
+        protected internal void DrawIndentedPropertyField(SerializedProperty property, int indentLevel, int offset = k_IndentOffset)
+        {
+            var originalWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = originalWidth - (indentLevel * offset);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.Space(indentLevel * offset, false);
+            EditorGUILayout.PropertyField(property, GUILayout.ExpandWidth(true));
+            EditorGUILayout.EndHorizontal();
+            EditorGUIUtility.labelWidth = originalWidth;
         }
 
         /// <summary>

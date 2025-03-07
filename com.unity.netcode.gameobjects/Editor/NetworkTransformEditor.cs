@@ -43,7 +43,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_AuthorityMode;
 
         private static int s_ToggleOffset = 45;
-        private static int s_IndentOffset = 15;
+
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
         private static GUIContent s_PositionLabel = EditorGUIUtility.TrTextContent("Position");
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
@@ -192,30 +192,30 @@ namespace Unity.Netcode.Editor
                 {
                     if (networkTransform.SynchronizePosition)
                     {
-                        DrawIndentedPropertyField(1, m_PositionInterpolationTypeProperty);
+                        DrawIndentedPropertyField(m_PositionInterpolationTypeProperty, 1);
                         // Only display when using Lerp.
                         if (networkTransform.PositionInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
-                            DrawIndentedPropertyField(2, m_SlerpPosition);
-                            DrawIndentedPropertyField(2, m_PositionMaximumInterpolationTimeProperty);
+                            DrawIndentedPropertyField(m_SlerpPosition, 2);
+                            DrawIndentedPropertyField(m_PositionMaximumInterpolationTimeProperty, 2);
                         }
                     }
                     if (networkTransform.SynchronizeRotation)
                     {
-                        DrawIndentedPropertyField(1, m_RotationInterpolationTypeProperty);
+                        DrawIndentedPropertyField(m_RotationInterpolationTypeProperty, 1);
                         // Only display when using Lerp.
                         if (networkTransform.RotationInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
-                            DrawIndentedPropertyField(2, m_RotationMaximumInterpolationTimeProperty);
+                            DrawIndentedPropertyField(m_RotationMaximumInterpolationTimeProperty, 2);
                         }
                     }
                     if (networkTransform.SynchronizeScale)
                     {
-                        DrawIndentedPropertyField(1, m_ScaleInterpolationTypeProperty);
+                        DrawIndentedPropertyField(m_ScaleInterpolationTypeProperty, 1);
                         // Only display when using Lerp.
                         if (networkTransform.ScaleInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
                         {
-                            DrawIndentedPropertyField(2, m_ScaleMaximumInterpolationTimeProperty);
+                            DrawIndentedPropertyField(m_ScaleMaximumInterpolationTimeProperty, 2);
                         }
                     }
                 }
@@ -248,17 +248,6 @@ namespace Unity.Netcode.Editor
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
 #endif // COM_UNITY_MODULES_PHYSICS2D
-        }
-
-        private void DrawIndentedPropertyField(int indentLevel, SerializedProperty property)
-        {
-            var originalWidth = EditorGUIUtility.labelWidth;
-            EditorGUIUtility.labelWidth = originalWidth - (indentLevel * s_IndentOffset) - 2;
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.Space(indentLevel * s_IndentOffset, false);
-            EditorGUILayout.PropertyField(property, GUILayout.ExpandWidth(true));
-            EditorGUILayout.EndHorizontal();
-            EditorGUIUtility.labelWidth = originalWidth;
         }
 
         /// <inheritdoc/>
