@@ -79,7 +79,7 @@ namespace Unity.Netcode.RuntimeTests
             if (!CanConnectToServer(m_TransportHost, k_TransportPort))
             {
                 var shouldFail = Environment.GetEnvironmentVariable("ENSURE_CODEC_TESTS");
-                if (string.IsNullOrEmpty(shouldFail) || shouldFail.ToLower == "false")
+                if (string.IsNullOrEmpty(shouldFail) || shouldFail.ToLower() == "false")
                 {
                     Assert.Ignore($"ignoring DA codec tests because UTP transport cannot connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
                 }
