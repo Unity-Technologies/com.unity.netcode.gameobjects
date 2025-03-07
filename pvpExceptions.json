@@ -7,14 +7,6 @@
       },
       "PVP-151-1": {
         "errors": [
-          "Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings: undocumented",
-          "Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings: NetworkPrefabsPath: undocumented",
-          "Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings: TempNetworkPrefabsPath: undocumented",
-          "Unity.Netcode.Editor.Configuration.NetcodeForGameObjectsProjectSettings: GenerateDefaultNetworkPrefabs: undocumented",
-          "Unity.Netcode.Editor.Configuration.NetworkPrefabProcessor: DefaultNetworkPrefabsPath: undocumented",
-          "Unity.Netcode.Editor.NetworkPrefabsEditor: undocumented",
-          "Unity.Netcode.Editor.NetworkPrefabsEditor: void OnInspectorGUI(): undocumented",
-          "Unity.Netcode.Editor.NetcodeEditorBase<TT>: missing <typeparam name=\"TT\">",
           "Unity.Netcode.Components.AnticipatedNetworkTransform: void OnUpdate(): undocumented",
           "Unity.Netcode.Components.AnticipatedNetworkTransform: void OnNetworkSpawn(): undocumented",
           "Unity.Netcode.Components.AnticipatedNetworkTransform: void OnNetworkDespawn(): undocumented",
