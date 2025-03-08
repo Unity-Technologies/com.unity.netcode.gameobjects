@@ -29,7 +29,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         private protected override float SmoothDamp(float current, float target, ref float rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
         {
-            if (IsAngularValue)
+            if (m_IsAngularValue)
             {
                 return Mathf.SmoothDampAngle(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
             }

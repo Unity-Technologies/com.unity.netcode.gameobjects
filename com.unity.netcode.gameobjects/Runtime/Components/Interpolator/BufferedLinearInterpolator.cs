@@ -11,7 +11,68 @@ namespace Unity.Netcode
     /// <typeparam name="T">The type of interpolated value</typeparam>
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
+        // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
+        // that we don't have a very small buffer because of this.
+        private const int k_BufferCountLimit = 100;
         private const float k_AproximatePrecision = 0.0001f;
+        private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
+
+        #region Legacy notes
+        // Buffer consumption scenarios
+        // Perfect case consumption
+        // | 1 | 2 | 3 |
+        // | 2 | 3 | 4 | consume 1
+        // | 3 | 4 | 5 | consume 2
+        // | 4 | 5 | 6 | consume 3
+        // | 5 | 6 | 7 | consume 4
+        // jittered case
+        // | 1 | 2 | 3 |
+        // | 2 | 3 |   | consume 1
+        // | 3 |   |   | consume 2
+        // | 4 | 5 | 6 | consume 3
+        // | 5 | 6 | 7 | consume 4
+        // bursted case (assuming max count is 5)
+        // | 1 | 2 | 3 |
+        // | 2 | 3 |   | consume 1
+        // | 3 |   |   | consume 2
+        // |   |   |   | consume 3
+        // |   |   |   |
+        // | 4 | 5 | 6 | 7 | 8 | --> consume all and teleport to last value <8> --> this is the nuclear option, ideally this example would consume 4 and 5
+        // instead of jumping to 8, but since in OnValueChange we don't yet have an updated server time (updated in pre-update) to know which value
+        // we should keep and which we should drop, we don't have enough information to do this. Another thing would be to not have the burst in the first place.
+        #endregion
+
+        #region Properties being deprecated
+        /// <summary>
+        /// The legacy list of <see cref="BufferedItem"/> items.
+        /// </summary>
+        /// <remarks>
+        /// This is replaced by the <see cref="m_BufferQueue"/> of type <see cref="Queue{T}"/>.
+        /// </remarks>
+        [Obsolete("This list is no longer used and will be deprecated.", false)]
+        protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The starting value of type <see cref="T"/> to interpolate from.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_InterpStartValue;
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The current value of type <see cref="T"/>.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_CurrentInterpValue;
+
+        /// <summary>
+        /// ** Deprecating **
+        /// The end (or target) value of type <see cref="T"/> to interpolate towards.
+        /// </summary>
+        [Obsolete("This property will be deprecated.", false)]
+        protected internal T m_InterpEndValue;
+        #endregion
 
         /// <summary>
         /// Represents a buffered item measurement.
@@ -44,6 +105,13 @@ namespace Unity.Netcode
                 ItemId = itemId;
             }
         }
+
+        /// <summary>
+        /// The current internal state of the <see cref="BufferedLinearInterpolator{T}"/>.
+        /// </summary>
+        /// <remarks>
+        /// Not public API ready yet.
+        /// </remarks>
         internal struct CurrentState
         {
             public BufferedItem? Target;
@@ -105,35 +173,6 @@ namespace Unity.Netcode
             }
         }
 
-        // Buffer consumption scenarios
-        // Perfect case consumption
-        // | 1 | 2 | 3 |
-        // | 2 | 3 | 4 | consume 1
-        // | 3 | 4 | 5 | consume 2
-        // | 4 | 5 | 6 | consume 3
-        // | 5 | 6 | 7 | consume 4
-        // jittered case
-        // | 1 | 2 | 3 |
-        // | 2 | 3 |   | consume 1
-        // | 3 |   |   | consume 2
-        // | 4 | 5 | 6 | consume 3
-        // | 5 | 6 | 7 | consume 4
-        // bursted case (assuming max count is 5)
-        // | 1 | 2 | 3 |
-        // | 2 | 3 |   | consume 1
-        // | 3 |   |   | consume 2
-        // |   |   |   | consume 3
-        // |   |   |   |
-        // | 4 | 5 | 6 | 7 | 8 | --> consume all and teleport to last value <8> --> this is the nuclear option, ideally this example would consume 4 and 5
-        // instead of jumping to 8, but since in OnValueChange we don't yet have an updated server time (updated in pre-update) to know which value
-        // we should keep and which we should drop, we don't have enough information to do this. Another thing would be to not have the burst in the first place.
-
-        // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
-        // that we don't have a very small buffer because of this.
-        private const int k_BufferCountLimit = 100;
-
-        private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
-
         /// <summary>
         /// Determines how much smoothing will be applied to the 2nd lerp when using the <see cref="Update(float, double, double)"/> (i.e. lerping and not smooth dampening).
         /// </summary>
@@ -146,19 +185,9 @@ namespace Unity.Netcode
         public float MaximumInterpolationTime = 0.1f;
 
         /// <summary>
-        /// The maximum Lerp "t" boundary when using standard lerping for interpolation
+        /// The current buffered items received by the authority.
         /// </summary>
-        internal float MaxInterpolationBound = 3.0f;
-
-        private int m_BufferCount;
-
-        private BufferedItem m_LastBufferedItemReceived;
-        private int m_NbItemsReceivedThisFrame;
-
-        private double m_LastMeasurementAddedTime = 0.0f;
-        internal bool EndOfBuffer => m_BufferQueue.Count == 0;
-
-        internal bool InLocalSpace;
+        protected internal readonly Queue<BufferedItem> m_BufferQueue = new Queue<BufferedItem>(k_BufferCountLimit);
 
         /// <summary>
         /// The current interpolation state
@@ -166,40 +195,16 @@ namespace Unity.Netcode
         internal CurrentState InterpolateState;
 
         /// <summary>
-        /// The current buffered items received by the authority.
+        /// The maximum Lerp "t" boundary when using standard lerping for interpolation
         /// </summary>
-        protected internal readonly Queue<BufferedItem> m_BufferQueue = new Queue<BufferedItem>(k_BufferCountLimit);
+        internal float MaxInterpolationBound = 3.0f;
+        internal bool EndOfBuffer => m_BufferQueue.Count == 0;
+        internal bool InLocalSpace;
 
-        /// <summary>
-        /// The legacy list of <see cref="BufferedItem"/> items.
-        /// </summary>
-        /// <remarks>
-        /// This is replaced by the <see cref="m_BufferQueue"/> of type <see cref="Queue{T}"/>.
-        /// </remarks>
-        [Obsolete("This list is no longer used and will be deprecated.", false)]
-        protected internal readonly List<BufferedItem> m_Buffer = new List<BufferedItem>();
-
-        /// <summary>
-        /// ** Deprecating **
-        /// The starting value of type <see cref="T"/> to interpolate from.
-        /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
-        protected internal T m_InterpStartValue;
-
-        /// <summary>
-        /// ** Deprecating **
-        /// The current value of type <see cref="T"/>.
-        /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
-        protected internal T m_CurrentInterpValue;
-
-        /// <summary>
-        /// ** Deprecating **
-        /// The end (or target) value of type <see cref="T"/> to interpolate towards.
-        /// </summary>
-        [Obsolete("This property will be deprecated.", false)]
-        protected internal T m_InterpEndValue;
-
+        private double m_LastMeasurementAddedTime = 0.0f;
+        private int m_BufferCount;
+        private int m_NbItemsReceivedThisFrame;
+        private BufferedItem m_LastBufferedItemReceived;
         /// <summary>
         /// Represents the rate of change for the value being interpolated when smooth dampening is enabled.
         /// </summary>
@@ -210,12 +215,10 @@ namespace Unity.Netcode
         /// </summary>
         private T m_PredictedRateOfChange;
 
-        private bool m_IsAngularValue;
-
         /// <summary>
         /// When true, the value <see cref="T"/> is an angular numeric representation.
         /// </summary>
-        protected bool IsAngularValue => m_IsAngularValue;
+        private protected bool m_IsAngularValue;
 
         /// <summary>
         /// Resets interpolator to the defaults.
@@ -237,10 +240,12 @@ namespace Unity.Netcode
         /// This is used when first synchronizing/initializing and when telporting an object.
         /// </remarks>
         /// <param name="targetValue">The target value to reset the interpolator to</param>
-        /// <param name="serverTime">The current server time</param>        
+        /// <param name="serverTime">The current server time</param>
         /// <param name="isAngularValue">When rotation is expressed as Euler values (i.e. Vector3 and/or float) this helps determine what kind of smooth dampening to use.</param>
         public void ResetTo(T targetValue, double serverTime, bool isAngularValue = false)
         {
+            // Clear the interpolator
+            Clear();
             InternalReset(targetValue, serverTime, isAngularValue);
         }
 
@@ -518,8 +523,8 @@ namespace Unity.Netcode
                 {
                     // Clear the interpolator
                     Clear();
-                    // Reset to the new value
-                    InternalReset(newMeasurement, sentTime, IsAngularValue, false);
+                    // Reset to the new value but don't automatically add the measurement (prevents recursion)
+                    InternalReset(newMeasurement, sentTime, m_IsAngularValue, false);
                     m_LastMeasurementAddedTime = sentTime;
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
@@ -569,6 +574,9 @@ namespace Unity.Netcode
         /// <summary>
         /// An alternate smoothing method to Lerp.
         /// </summary>
+        /// <remarks>
+        /// Not public API ready yet.
+        /// </remarks>
         /// <param name="current">Current item <see cref="T"/> value.</param>
         /// <param name="target">Target item <see cref="T"/> value.</param>
         /// <param name="rateOfChange">The velocity of change.</param>
@@ -584,6 +592,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Determines if two values of type <see cref="T"/> are close to the same value.
         /// </summary>
+        /// <remarks>
+        /// Not public API ready yet.
+        /// </remarks>
         /// <param name="first">First value of type <see cref="T"/>.</param>
         /// <param name="second">Second value of type <see cref="T"/>.</param>
         /// <param name="precision">The precision of the aproximation.</param>
@@ -605,6 +616,11 @@ namespace Unity.Netcode
             return default;
         }
 
+        /// <summary>
+        /// Invoked by <see cref="Components.NetworkTransform"/> when the transform has transitioned between local to world or vice versa.
+        /// </summary>
+        /// <param name="transform">The transform that the <see cref="Components.NetworkTransform"/> is associated with.</param>
+        /// <param name="inLocalSpace">Whether the <see cref="Components.NetworkTransform"/> is now being tracked in local or world spaced.</param>
         internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
             var count = m_BufferQueue.Count;

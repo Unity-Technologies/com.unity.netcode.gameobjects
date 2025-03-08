@@ -61,7 +61,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         private protected override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
         {
-            if (IsAngularValue)
+            if (m_IsAngularValue)
             {
                 current.x = Mathf.SmoothDampAngle(current.x, target.x, ref rateOfChange.x, duration, maxSpeed, deltaTime);
                 current.y = Mathf.SmoothDampAngle(current.y, target.y, ref rateOfChange.y, duration, maxSpeed, deltaTime);
