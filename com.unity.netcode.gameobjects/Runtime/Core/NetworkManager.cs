@@ -80,6 +80,18 @@ namespace Unity.Netcode
         }
 #endif
 
+        internal SessionConfig SessionConfig;
+
+        /// <summary>
+        /// Used for internal testing purposes
+        /// </summary>
+        internal delegate SessionConfig OnGetSessionConfigHandler();
+        internal OnGetSessionConfigHandler OnGetSessionConfig;
+        private SessionConfig GetSessionConfig()
+        {
+            return OnGetSessionConfig != null ? OnGetSessionConfig.Invoke() : new SessionConfig();
+        }
+
         internal static bool IsDistributedAuthority;
 
         /// <summary>
@@ -162,10 +174,30 @@ namespace Unity.Netcode
             }
         }
 
-        // DANGO-TODO-MVP: Remove these properties once the service handles object distribution
-        internal ulong ClientToRedistribute;
-        internal bool RedistributeToClient;
-        internal int TickToRedistribute;
+        // DANGO-TODO: Determine if this needs to be removed once the service handles object distribution
+        internal List<ulong> ClientsToRedistribute = new List<ulong>();
+        internal bool RedistributeToClients;
+
+        /// <summary>
+        /// Handles object redistribution when scene management is disabled.
+        /// <see cref="NetworkBehaviourUpdater.NetworkBehaviourUpdater_Tick"/>
+        /// DANGO-TODO: Determine if this needs to be removed once the service handles object distribution
+        /// </summary>
+        internal void HandleRedistributionToClients()
+        {
+            if (!DistributedAuthorityMode || !RedistributeToClients || NetworkConfig.EnableSceneManagement || ShutdownInProgress)
+            {
+                return;
+            }
+
+            foreach (var clientId in ClientsToRedistribute)
+            {
+                SpawnManager.DistributeNetworkObjects(clientId);
+            }
+            RedistributeToClients = false;
+            ClientsToRedistribute.Clear();
+        }
+
 
         internal List<NetworkObject> DeferredDespawnObjects = new List<NetworkObject>();
 
@@ -193,11 +225,7 @@ namespace Unity.Netcode
                 foreach (var networkObjectEntry in SpawnManager.SpawnedObjects)
                 {
                     var networkObject = networkObjectEntry.Value;
-                    if (networkObject.IsSceneObject == null || !networkObject.IsSceneObject.Value)
-                    {
-                        continue;
-                    }
-                    if (networkObject.OwnerClientId != LocalClientId)
+                    if (networkObject.IsOwnershipSessionOwner && LocalClient.IsSessionOwner)
                     {
                         SpawnManager.ChangeOwnership(networkObject, LocalClientId, true);
                     }
@@ -291,6 +319,10 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.EarlyUpdate:
                     {
                         UpdateTopology();
+
+                        // Handle processing any new connections or transport events
+                        NetworkConfig.NetworkTransport.EarlyUpdate();
+
                         ConnectionManager.ProcessPendingApprovals();
                         ConnectionManager.PollAndHandleNetworkEvents();
 
@@ -298,6 +330,7 @@ namespace Unity.Netcode
 
                         AnticipationSystem.SetupForUpdate();
                         MessageManager.ProcessIncomingMessageQueue();
+
                         MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
                     }
@@ -379,21 +412,14 @@ namespace Unity.Netcode
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
 
+                        // Handle sending any pending transport messages
+                        NetworkConfig.NetworkTransport.PostLateUpdate();
+
                         // TODO: Determine a better way to handle this
                         NetworkObject.VerifyParentingStatus();
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
-
-                        // DANGO-TODO-MVP: Remove this once the service handles object distribution
-                        // NOTE: This needs to be the last thing done and should happen exactly at this point
-                        // in the update
-                        if (RedistributeToClient && ServerTime.Tick <= TickToRedistribute)
-                        {
-                            RedistributeToClient = false;
-                            SpawnManager.DistributeNetworkObjects(ClientToRedistribute);
-                            ClientToRedistribute = 0;
-                        }
 
                         if (m_ShuttingDown)
                         {
@@ -925,6 +951,9 @@ namespace Unity.Netcode
                 return; // May occur when the component is added
             }
 
+            // Do a validation pass on NetworkConfig properties
+            NetworkConfig.OnValidate();
+
             if (GetComponentInChildren<NetworkObject>() != null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -993,8 +1022,7 @@ namespace Unity.Netcode
         {
             if (IsListening && change == PlayModeStateChange.ExitingPlayMode)
             {
-                // Make sure we are not holding onto anything in case domain reload is disabled
-                ShutdownInternal();
+                OnApplicationQuit();
             }
         }
 #endif
@@ -1160,6 +1188,12 @@ namespace Unity.Netcode
             NetworkTransformUpdate.Clear();
 
             UpdateTopology();
+
+            // Always create a default session config when starting a NetworkManager instance
+            if (DistributedAuthorityMode)
+            {
+                SessionConfig = GetSessionConfig();
+            }
 
             // Make sure the ServerShutdownState is reset when initializing
             if (server)

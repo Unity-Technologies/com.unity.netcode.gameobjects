@@ -36,13 +36,25 @@ namespace Unity.Netcode.RuntimeTests
         {
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
             m_ClientNetworkTransformPrefab = CreateNetworkObjectPrefab("OwnerAuthorityTest");
+            var clientNetworkObject = m_ClientNetworkTransformPrefab.GetComponent<NetworkObject>();
+            // When running in distributed authority mode, make the NetworkObject transferable
+            clientNetworkObject.SetOwnershipStatus(m_DistributedAuthority ? NetworkObject.OwnershipStatus.Transferable : NetworkObject.OwnershipStatus.None);
             var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<TestClientNetworkTransform>();
+            clientNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
             clientNetworkTransform.Interpolate = false;
             clientNetworkTransform.UseHalfFloatPrecision = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            rigidBody.maxDepenetrationVelocity = 0;
+            rigidBody.mass = 100;
+            rigidBody.linearDamping = 100;
             rigidBody.interpolation = RigidbodyInterpolation.None;
             rigidBody.maxLinearVelocity = 0;
+            rigidBody.detectCollisions = false;
+            rigidBody.position = Vector3.zero;
+            rigidBody.rotation = Quaternion.identity;
+            rigidBody.transform.position = Vector3.zero;
+            rigidBody.transform.rotation = Quaternion.identity;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -51,11 +63,22 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
 
             m_NetworkTransformPrefab = CreateNetworkObjectPrefab("ServerAuthorityTest");
-            var networkTransform = m_NetworkTransformPrefab.AddComponent<NetworkTransform>();
+            var networkObject = m_ClientNetworkTransformPrefab.GetComponent<NetworkObject>();
+            // When running in distributed authority mode, make the NetworkObject transferable
+            networkObject.SetOwnershipStatus(m_DistributedAuthority ? NetworkObject.OwnershipStatus.Transferable : NetworkObject.OwnershipStatus.None);
+            var networkTransform = m_NetworkTransformPrefab.AddComponent<TestClientNetworkTransform>();
             rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            rigidBody.maxDepenetrationVelocity = 0;
+            rigidBody.linearDamping = 100;
+            rigidBody.mass = 100;
             rigidBody.interpolation = RigidbodyInterpolation.None;
             rigidBody.maxLinearVelocity = 0;
+            rigidBody.detectCollisions = false;
+            rigidBody.position = Vector3.zero;
+            rigidBody.rotation = Quaternion.identity;
+            rigidBody.transform.position = Vector3.zero;
+            rigidBody.transform.rotation = Quaternion.identity;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
             // assure they don't collide and skew the results the NetworkObjects are already synchronized
             // with skewed results
@@ -276,10 +299,12 @@ namespace Unity.Netcode.RuntimeTests
             };
             if (m_MotionModel == MotionModels.UseRigidbody)
             {
+                TestClientNetworkTransform.EnableLogState(m_EnableVerboseDebug);
                 var ownerRigidbody = ownerInstance.GetComponent<Rigidbody>();
                 ownerRigidbody.Move(valueSetByOwner, rotation);
+                yield return new WaitForFixedUpdate();
                 ownerRigidbody.linearVelocity = Vector3.zero;
-                yield return s_DefaultWaitForTick;
+                yield return new WaitForFixedUpdate();
                 ownerInstance.transform.localScale = valueSetByOwner;
             }
             else
@@ -312,15 +337,22 @@ namespace Unity.Netcode.RuntimeTests
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
             if (m_DistributedAuthority)
             {
-                ownerInstance.NetworkObject.ChangeOwnership(networkManagerNonOwner.LocalClientId);
+                Assert.True(nonOwnerInstance.OwnerClientId != networkManagerNonOwner.LocalClientId, $"Non-Owner Client-{networkManagerNonOwner.LocalClientId} was already the owner prior to changing ownership!");
+                nonOwnerInstance.NetworkObject.ChangeOwnership(networkManagerNonOwner.LocalClientId);
+                nonOwnerInstance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+                Assert.True(nonOwnerInstance.OwnerClientId == networkManagerNonOwner.LocalClientId, $"Client-{networkManagerNonOwner.LocalClientId} failed to change ownership!");
+
+                LogNonOwnerRigidBody(3);
+                yield return WaitForConditionOrTimeOut(() => ownerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
+                Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for original owner {networkManagerOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
             }
             else
             {
                 m_ServerNetworkManager.SpawnManager.ChangeOwnership(serverSideInstance.GetComponent<NetworkObject>(), networkManagerNonOwner.LocalClientId, true);
+                LogNonOwnerRigidBody(3);
+                yield return WaitForConditionOrTimeOut(() => nonOwnerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
+                Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
             }
-            LogNonOwnerRigidBody(3);
-            yield return WaitForConditionOrTimeOut(() => nonOwnerInstance.GetComponent<NetworkObject>().OwnerClientId == networkManagerNonOwner.LocalClientId);
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
 
             LogNonOwnerRigidBody(4);
             // Re-assign the ownership references and wait for the non-owner instance to be notified of ownership change
@@ -331,6 +363,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId) != null);
             nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
             Assert.NotNull(nonOwnerInstance);
+            Assert.True(!nonOwnerInstance.IsOwner, $"Ownership failed to change on Client-{networkManagerNonOwner.LocalClientId} side! Expected owner to be {networkManagerOwner.LocalClientId} but owner is still {networkManagerNonOwner.LocalClientId}!");
 
             // Make sure the owner is not kinematic and the non-owner(s) are kinematic
             Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
@@ -344,7 +377,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
-                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
+                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}\n {nonOwnerInstance.GetComponent<TestClientNetworkTransform>().LogInfoBuilder}");
 
             LogNonOwnerRigidBody(5);
             // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
@@ -358,6 +391,7 @@ namespace Unity.Netcode.RuntimeTests
                 var ownerRigidbody = ownerInstance.GetComponent<Rigidbody>();
                 ownerRigidbody.Move(valueSetByOwner, rotation);
                 LogOwnerRigidBody(2);
+                yield return new WaitForFixedUpdate();
                 ownerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
                 nonOwnerInstance.GetComponent<NetworkTransform>().LogMotion = m_EnableVerboseDebug;
                 ownerRigidbody.linearVelocity = Vector3.zero;
@@ -377,10 +411,11 @@ namespace Unity.Netcode.RuntimeTests
                 LogOwnerRigidBody(4);
                 LogNonOwnerRigidBody(7);
             }
+
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
-                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
+                $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}\n {nonOwnerInstance.GetComponent<TestClientNetworkTransform>().LogInfoBuilder}");
 
             // The last check is to verify non-owners cannot change transform values after ownership has changed
             nonOwnerInstance.transform.position = Vector3.zero;
@@ -445,6 +480,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{m_ClientNetworkManagers[0].name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
+        protected override IEnumerator OnTearDown()
+        {
+            TestClientNetworkTransform.EnableLogState(false);
+            return base.OnTearDown();
+        }
+
         /// <summary>
         /// NetworkTransformOwnershipTests helper behaviour
         /// </summary>
@@ -457,6 +498,10 @@ namespace Unity.Netcode.RuntimeTests
                 NetworkManagerRelativeSpawnedObjects.Clear();
             }
 
+            /// <summary>
+            /// For testing, just before changing ownership the table is cleared to assure that
+            /// ownership tansfer occurs. This will add the new owner to the table.
+            /// </summary>
             public override void OnGainedOwnership()
             {
                 if (!NetworkManagerRelativeSpawnedObjects.ContainsKey(NetworkManager.LocalClientId))
@@ -466,6 +511,10 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnGainedOwnership();
             }
 
+            /// <summary>
+            /// For testing, just before changing ownership the table is cleared to assure that
+            /// ownership tansfer occurs. This will add the previous owner to the table.
+            /// </summary>
             public override void OnLostOwnership()
             {
                 if (!NetworkManagerRelativeSpawnedObjects.ContainsKey(NetworkManager.LocalClientId))
@@ -515,28 +564,57 @@ namespace Unity.Netcode.RuntimeTests
         [DisallowMultipleComponent]
         internal class TestClientNetworkTransform : NetworkTransform
         {
-            //public override void OnNetworkSpawn()
-            //{
-            //    base.OnNetworkSpawn();
-            //    CanCommitToTransform = IsOwner;
-            //}
-
-            //protected override void Update()
-            //{
-            //    CanCommitToTransform = IsOwner;
-            //    base.Update();
-            //    if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
-            //    {
-            //        if (CanCommitToTransform)
-            //        {
-            //            TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-            //        }
-            //    }
-            //}
-
-            protected override bool OnIsServerAuthoritative()
+            public static void EnableLogState(bool enable)
             {
-                return false;
+                s_LogStateEnabled = enable;
+                TrackByStateId = enable;
+            }
+
+            private static bool s_LogStateEnabled;
+
+            internal StringBuilder LogInfoBuilder = new StringBuilder();
+
+            private void LogInfo(NetworkTransformState state)
+            {
+                if (s_LogStateEnabled)
+                {
+                    LogInfoBuilder.AppendLine($"N:{name} | CID:{NetworkManager.LocalClientId} | SID: {state.StateId} |  NT:{NetworkManager.ServerTime.Tick} | Pos: {transform.position} | Sc: {transform.localScale}");
+                }
+            }
+
+            protected override void OnOwnershipChanged(ulong previous, ulong current)
+            {
+
+                if (s_LogStateEnabled)
+                {
+                    LogInfoBuilder.AppendLine($"Ownership Changed: {previous} --> {current} | Position: {transform.position}");
+                }
+                LogInfo(LocalAuthoritativeNetworkState);
+                base.OnOwnershipChanged(previous, current);
+
+                // Assure no velocity is set on this object for this particular test
+                if (current == NetworkManager.LocalClientId)
+                {
+                    GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+                }
+            }
+
+            protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+            {
+                LogInfo(networkTransformState);
+                base.OnAuthorityPushTransformState(ref networkTransformState);
+            }
+
+            protected override void OnBeforeUpdateTransformState()
+            {
+                LogInfo(LocalAuthoritativeNetworkState);
+                base.OnBeforeUpdateTransformState();
+            }
+
+            protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
+            {
+                LogInfo(newState);
+                base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
             }
         }
     }
@@ -791,7 +869,7 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var networkManager in m_NetworkManagers)
             {
-                // Randomize the position 
+                // Randomize the position
                 RandomizeObjectTransformPositions(m_SpawnObject);
 
                 // Create an instance owned by the specified networkmanager

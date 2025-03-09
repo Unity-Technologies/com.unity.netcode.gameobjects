@@ -60,11 +60,11 @@ namespace Unity.Netcode.RuntimeTests
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
             }
-
             m_ServerEvents?.Clear();
             m_Client1Events?.Clear();
             m_Client2Events?.Clear();
 
+            UnityTransportTestComponent.CleanUp();
             yield return null;
         }
 
@@ -217,8 +217,6 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(33, m_ServerEvents[3].Data.First());
             Assert.AreEqual(10, m_ServerEvents[3].Data.Count);
-
-            yield return null;
         }
 
         // Check sending data to multiple clients.
@@ -260,8 +258,6 @@ namespace Unity.Netcode.RuntimeTests
             byte c1Data = m_Client1Events[1].Data.First();
             byte c2Data = m_Client2Events[1].Data.First();
             Assert.That((c1Data == 11 && c2Data == 22) || (c1Data == 22 && c2Data == 11));
-
-            yield return null;
         }
 
         // Check receiving data from multiple clients.
@@ -299,8 +295,6 @@ namespace Unity.Netcode.RuntimeTests
             byte sData1 = m_ServerEvents[2].Data.First();
             byte sData2 = m_ServerEvents[3].Data.First();
             Assert.That((sData1 == 11 && sData2 == 22) || (sData1 == 22 && sData2 == 11));
-
-            yield return null;
         }
 
         // Check that we get disconnected when overflowing the reliable send queue.
@@ -332,8 +326,6 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
-
-            yield return null;
         }
 
         // Check that it's fine to overflow the unreliable send queue (traffic is flushed on overflow).
@@ -373,8 +365,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(NetworkEvent.Data, m_ServerEvents[i].Type);
                 Assert.AreEqual(1024, m_ServerEvents[i].Data.Count);
             }
-
-            yield return null;
         }
 
 #if !UTP_TRANSPORT_2_0_ABOVE
@@ -451,8 +441,6 @@ namespace Unity.Netcode.RuntimeTests
             m_Client1.Shutdown();
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
-
-            yield return null;
         }
 
         [UnityTest]
@@ -472,8 +460,6 @@ namespace Unity.Netcode.RuntimeTests
             m_Client1.DisconnectLocalClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
-
-            yield return null;
         }
 
         [UnityTest]
@@ -493,8 +479,6 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
-
-            yield return null;
         }
 
         [UnityTest]
@@ -514,8 +498,47 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
+        }
 
-            yield return null;
+        public enum AfterShutdownAction
+        {
+            Send,
+            DisconnectRemoteClient,
+            DisconnectLocalClient,
+        }
+
+        [UnityTest]
+        public IEnumerator DoesNotActAfterShutdown([Values] AfterShutdownAction afterShutdownAction)
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            m_Server.Shutdown();
+
+            if (afterShutdownAction == AfterShutdownAction.Send)
+            {
+                var data = new ArraySegment<byte>(new byte[16]);
+                m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+
+                yield return EnsureNoNetworkEvent(m_Client1Events);
+            }
+            else if (afterShutdownAction == AfterShutdownAction.DisconnectRemoteClient)
+            {
+                m_Server.DisconnectRemoteClient(m_Client1.ServerClientId);
+
+                LogAssert.Expect(LogType.Assert, "DisconnectRemoteClient should be called on a listening server");
+            }
+            else if (afterShutdownAction == AfterShutdownAction.DisconnectLocalClient)
+            {
+                m_Server.DisconnectLocalClient();
+
+                yield return EnsureNoNetworkEvent(m_Client1Events);
+            }
         }
     }
 }

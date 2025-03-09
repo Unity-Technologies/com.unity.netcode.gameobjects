@@ -88,6 +88,14 @@ namespace Unity.Netcode.Editor
 
                         while (observerClientIds.MoveNext())
                         {
+                            if (!m_NetworkObject.NetworkManager.ConnectedClients.ContainsKey(observerClientIds.Current))
+                            {
+                                if ((observerClientIds.Current == 0 && m_NetworkObject.NetworkManager.IsHost) || observerClientIds.Current > 0)
+                                {
+                                    Debug.LogWarning($"Client-{observerClientIds.Current} is listed as an observer but is not connected!");
+                                }
+                                continue;
+                            }
                             if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
                             {
                                 EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
@@ -107,6 +115,10 @@ namespace Unity.Netcode.Editor
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
+                if (m_NetworkObject.IsOwnershipSessionOwner)
+                {
+                    m_NetworkObject.Ownership = NetworkObject.OwnershipStatus.SessionOwner;
+                }
                 serializedObject.ApplyModifiedProperties();
                 EditorGUI.EndChangeCheck();
 
@@ -185,9 +197,9 @@ namespace Unity.Netcode.Editor
 
             // The below can cause visual anomalies and/or throws an exception within the EditorGUI itself (index out of bounds of the array). and has
             // The visual anomaly is when you select one field it is set in the drop down but then the flags selection in the popup menu selects more items
-            // even though if you exit the popup menu the flag setting is correct. 
-            //var ownership = (NetworkObject.OwnershipStatus)EditorGUI.EnumFlagsField(position, label, (NetworkObject.OwnershipStatus)property.enumValueFlag);
-            //property.enumValueFlag = (int)ownership;
+            // even though if you exit the popup menu the flag setting is correct.
+            // var ownership = (NetworkObject.OwnershipStatus)EditorGUI.EnumFlagsField(position, label, (NetworkObject.OwnershipStatus)property.enumValueFlag);
+            // property.enumValueFlag = (int)ownership;
             EditorGUI.EndDisabledGroup();
             EditorGUI.EndProperty();
         }

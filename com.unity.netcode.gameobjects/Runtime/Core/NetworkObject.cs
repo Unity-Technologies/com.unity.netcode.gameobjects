@@ -102,10 +102,22 @@ namespace Unity.Netcode
         private const int k_SceneObjectType = 2;
         private const int k_SourceAssetObjectType = 3;
 
+        // Used to track any InContext or InIsolation prefab being edited.
+        private static PrefabStage s_PrefabStage;
+        // The network prefab asset that the edit mode scene has created an instance of (s_PrefabInstance).
+        private static NetworkObject s_PrefabAsset;
+        // The InContext or InIsolation edit mode network prefab scene instance of the prefab asset (s_PrefabAsset).
+        private static NetworkObject s_PrefabInstance;
+
+        private static bool s_DebugPrefabIdGeneration;
+
+
         [ContextMenu("Refresh In-Scene Prefab Instances")]
         internal void RefreshAllPrefabInstances()
         {
             var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+            // Assign the currently selected instance to be updated
+            NetworkObjectRefreshTool.PrefabNetworkObject = this;
             if (!PrefabUtility.IsPartOfAnyPrefab(this) || instanceGlobalId.identifierType != k_ImportedAssetObjectType)
             {
                 EditorUtility.DisplayDialog("Network Prefab Assets Only", "This action can only be performed on a network prefab asset.", "Ok");
@@ -132,25 +144,119 @@ namespace Unity.Netcode
             NetworkObjectRefreshTool.ProcessScenes();
         }
 
+        /// <summary>
+        /// Register for <see cref="PrefabStage"/> opened and closing event notifications.
+        /// </summary>
+        [InitializeOnLoadMethod]
+        private static void OnApplicationStart()
+        {
+            PrefabStage.prefabStageOpened -= PrefabStageOpened;
+            PrefabStage.prefabStageOpened += PrefabStageOpened;
+            PrefabStage.prefabStageClosing -= PrefabStageClosing;
+            PrefabStage.prefabStageClosing += PrefabStageClosing;
+        }
+
+        private static void PrefabStageClosing(PrefabStage prefabStage)
+        {
+            // If domain reloading is enabled, then this will be null when we return from playmode.
+            if (s_PrefabStage == null)
+            {
+                // Determine if we have a network prefab opened in edit mode or not.
+                CheckPrefabStage(prefabStage);
+            }
+
+            s_PrefabStage = null;
+            s_PrefabInstance = null;
+            s_PrefabAsset = null;
+        }
+
+        private static void PrefabStageOpened(PrefabStage prefabStage)
+        {
+            // Determine if we have a network prefab opened in edit mode or not.
+            CheckPrefabStage(prefabStage);
+        }
+
+        /// <summary>
+        /// Determines if we have opened a network prefab in edit mode (InContext or InIsolation)
+        /// </summary>
+        /// <remarks>
+        /// InContext: Typically means a are in prefab edit mode for an in-scene placed network prefab instance.
+        /// (currently no such thing as a network prefab with nested network prefab instances)
+        ///
+        /// InIsolation: Typically means we are in prefb edit mode for a prefab asset.
+        /// </remarks>
+        /// <param name="prefabStage"></param>
+        private static void CheckPrefabStage(PrefabStage prefabStage)
+        {
+            s_PrefabStage = prefabStage;
+            s_PrefabInstance = prefabStage.prefabContentsRoot?.GetComponent<NetworkObject>();
+            if (s_PrefabInstance)
+            {
+                // We acquire the source prefab that the prefab edit mode scene instance was instantiated from differently for InContext than InSolation.
+                if (s_PrefabStage.mode == PrefabStage.Mode.InContext && s_PrefabStage.openedFromInstanceRoot != null)
+                {
+                    // This is needed to handle the scenario where a user completely loads a new scene while in an InContext prefab edit mode.
+                    try
+                    {
+                        s_PrefabAsset = s_PrefabStage.openedFromInstanceRoot?.GetComponent<NetworkObject>();
+                    }
+                    catch
+                    {
+                        s_PrefabAsset = null;
+                    }
+                }
+                else
+                {
+                    // When editing in InIsolation mode, load the original prefab asset from the provided path.
+                    s_PrefabAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(s_PrefabStage.assetPath);
+                }
+
+                if (s_PrefabInstance.GlobalObjectIdHash != s_PrefabAsset.GlobalObjectIdHash)
+                {
+                    s_PrefabInstance.GlobalObjectIdHash = s_PrefabAsset.GlobalObjectIdHash;
+                    // For InContext mode, we don't want to record these modifications (the in-scene GlobalObjectIdHash is serialized with the scene).
+                    if (s_PrefabStage.mode == PrefabStage.Mode.InIsolation)
+                    {
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(s_PrefabAsset);
+                    }
+                }
+            }
+            else
+            {
+                s_PrefabStage = null;
+                s_PrefabInstance = null;
+                s_PrefabAsset = null;
+            }
+        }
+
+        /// <summary>
+        /// GlobalObjectIdHash values are generated during validation.
+        /// </summary>
         internal void OnValidate()
         {
-            // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
+            // Always exit early if we are in prefab edit mode and this instance is the
+            // prefab instance within the InContext or InIsolation edit scene.
+            if (s_PrefabInstance == this)
+            {
+                return;
+            }
+
+            // Do not regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in play mode.
             if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
 
-            // do NOT regenerate GlobalObjectIdHash if Editor is transitioning into or out of PlayMode
+            // Do not regenerate GlobalObjectIdHash if Editor is transitioning into or out of play mode.
             if (!EditorApplication.isPlaying && EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
 
-            // Get a global object identifier for this network prefab
-            var globalId = GetGlobalId();
+            // Get a global object identifier for this network prefab.
+            var globalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
 
-
-            // if the identifier type is 0, then don't update the GlobalObjectIdHash
+            // if the identifier type is 0, then don't update the GlobalObjectIdHash.
             if (globalId.identifierType == k_NullObjectType)
             {
                 return;
@@ -159,47 +265,34 @@ namespace Unity.Netcode
             var oldValue = GlobalObjectIdHash;
             GlobalObjectIdHash = globalId.ToString().Hash32();
 
-            // If the GlobalObjectIdHash value changed, then mark the asset dirty
+            // Always check for in-scene placed to assure any previous version scene assets with in-scene place NetworkObjects gets updated.
+            CheckForInScenePlaced();
+
+            // If the GlobalObjectIdHash value changed, then mark the asset dirty.
             if (GlobalObjectIdHash != oldValue)
             {
-                // Check if this is an in-scnee placed NetworkObject (Special Case for In-Scene Placed)
-                if (!IsEditingPrefab() && gameObject.scene.name != null && gameObject.scene.name != gameObject.name)
+                // Check if this is an in-scnee placed NetworkObject (Special Case for In-Scene Placed).
+                if (IsSceneObject.HasValue && IsSceneObject.Value)
                 {
-                    // Sanity check to make sure this is a scene placed object
+                    // Sanity check to make sure this is a scene placed object.
                     if (globalId.identifierType != k_SceneObjectType)
                     {
-                        // This should never happen, but in the event it does throw and error
+                        // This should never happen, but in the event it does throw and error.
                         Debug.LogError($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}! **Report this error**");
                     }
 
-                    // If this is a prefab instance
+                    // If this is a prefab instance, then we want to mark it as having been updated in order for the udpated GlobalObjectIdHash value to be saved.
                     if (PrefabUtility.IsPartOfAnyPrefab(this))
                     {
-                        // We must invoke this in order for the modifications to get saved with the scene (does not mark scene as dirty)
+                        // We must invoke this in order for the modifications to get saved with the scene (does not mark scene as dirty).
                         PrefabUtility.RecordPrefabInstancePropertyModifications(this);
                     }
                 }
-                else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
+                else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it.
                 {
                     EditorUtility.SetDirty(this);
                 }
             }
-
-            // Always check for in-scene placed to assure any previous version scene assets with in-scene place NetworkObjects gets updated
-            CheckForInScenePlaced();
-        }
-
-        private bool IsEditingPrefab()
-        {
-            // Check if we are directly editing the prefab
-            var stage = PrefabStageUtility.GetPrefabStage(gameObject);
-
-            // if we are not editing the prefab directly (or a sub-prefab), then return the object identifier
-            if (stage == null || stage.assetPath == null)
-            {
-                return false;
-            }
-            return true;
         }
 
         /// <summary>
@@ -210,13 +303,12 @@ namespace Unity.Netcode
         /// <remarks>
         /// This NetworkObject is considered an in-scene placed prefab asset instance if it is:
         /// - Part of a prefab
-        /// - Not being directly edited
         /// - Within a valid scene that is part of the scenes in build list
         /// (In-scene defined NetworkObjects that are not part of a prefab instance are excluded.)
         /// </remarks>
         private void CheckForInScenePlaced()
         {
-            if (PrefabUtility.IsPartOfAnyPrefab(this) && !IsEditingPrefab() && gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            if (PrefabUtility.IsPartOfAnyPrefab(this) && gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
             {
                 var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
                 var assetPath = AssetDatabase.GetAssetPath(prefab);
@@ -228,55 +320,6 @@ namespace Unity.Netcode
                 }
                 IsSceneObject = true;
             }
-        }
-
-        private GlobalObjectId GetGlobalId()
-        {
-            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
-
-            // If not editing a prefab, then just use the generated id
-            if (!IsEditingPrefab())
-            {
-                return instanceGlobalId;
-            }
-
-            // If the asset doesn't exist at the given path, then return the object identifier
-            var prefabStageAssetPath = PrefabStageUtility.GetPrefabStage(gameObject).assetPath;
-            // If (for some reason) the asset path is null return the generated id
-            if (prefabStageAssetPath == null)
-            {
-                return instanceGlobalId;
-            }
-
-            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(prefabStageAssetPath);
-            // If there is no asset at that path (for some odd/edge case reason), return the generated id
-            if (theAsset == null)
-            {
-                return instanceGlobalId;
-            }
-
-            // If we can't get the asset GUID and/or the file identifier, then return the object identifier
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localFileId))
-            {
-                return instanceGlobalId;
-            }
-
-            // Note: If we reached this point, then we are most likely opening a prefab to edit.
-            // The instanceGlobalId will be constructed as if it is a scene object, however when it
-            // is serialized its value will be treated as a file asset (the "why" to the below code).
-
-            // Construct an imported asset identifier with the type being a source asset object type
-            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, k_SourceAssetObjectType, guid, (ulong)localFileId, 0);
-
-            // If we can't parse the result log an error and return the instanceGlobalId
-            if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
-            {
-                Debug.LogError($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default ({instanceGlobalId})! ** Please Report This Error **");
-                return instanceGlobalId;
-            }
-
-            // Otherwise, return the constructed identifier for the source prefab asset
-            return prefabGlobalId;
         }
 #endif // UNITY_EDITOR
 
@@ -397,6 +440,13 @@ namespace Unity.Netcode
         public bool IsOwnershipDistributable => Ownership.HasFlag(OwnershipStatus.Distributable);
 
         /// <summary>
+        /// When true, the <see cref="NetworkObject"/> can only be owned by the current Session Owner.
+        /// To set <see cref="OwnershipStatus.SessionOwner"/> during runtime, use  <see cref="ChangeOwnership(ulong)"/> to ensure the session owner owns the object.
+        /// Once the session owner owns the object, then use <see cref="SetOwnershipStatus(OwnershipStatus, bool, OwnershipLockActions)"/>.
+        /// </summary>
+        public bool IsOwnershipSessionOwner => Ownership.HasFlag(OwnershipStatus.SessionOwner);
+
+        /// <summary>
         /// Returns true if the <see cref="NetworkObject"/> is has ownership locked.
         /// When locked, the <see cref="NetworkObject"/> cannot be redistributed nor can it be transferred by another client.
         /// To toggle the ownership loked status during runtime, use <see cref="SetOwnershipLock(bool)"/>.
@@ -438,7 +488,8 @@ namespace Unity.Netcode
         /// <see cref="None"/>: If nothing is set, then ownership is considered "static" and cannot be redistributed, requested, or transferred (i.e. a Player would have this).
         /// <see cref="Distributable"/>: When set, this instance will be automatically redistributed when a client joins (if not locked or no request is pending) or leaves.
         /// <see cref="Transferable"/>: When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
-        /// <see cref="RequestRequired"/>: When set, When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
+        /// <see cref="RequestRequired"/>: When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
+        /// <see cref="SessionOwner"/>: When set, only the current session owner may have ownership over this object.
         /// </summary>
         // Ranges from 1 to 8 bits
         [Flags]
@@ -448,6 +499,7 @@ namespace Unity.Netcode
             Distributable = 1 << 0,
             Transferable = 1 << 1,
             RequestRequired = 1 << 2,
+            SessionOwner = 1 << 3,
         }
 
         /// <summary>
@@ -506,7 +558,7 @@ namespace Unity.Netcode
             }
 
             // If we don't have the Transferable flag set and it is not a player object, then it is the same as having a static lock on ownership
-            if (!IsOwnershipTransferable && !IsPlayerObject)
+            if (!(IsOwnershipTransferable || IsPlayerObject) || IsOwnershipSessionOwner)
             {
                 NetworkLog.LogWarning($"Trying to add or remove ownership lock on [{name}] which does not have the {nameof(OwnershipStatus.Transferable)} flag set!");
                 return false;
@@ -539,13 +591,15 @@ namespace Unity.Netcode
         /// <see cref="RequestRequired"/>: The <see cref="NetworkObject"/> requires an ownership request via <see cref="RequestOwnership"/>.
         /// <see cref="RequestInProgress"/>: The <see cref="NetworkObject"/> is already processing an ownership request and ownership cannot be acquired at this time.
         /// <see cref="NotTransferrable"/>: The <see cref="NetworkObject"/> does not have the <see cref="OwnershipStatus.Transferable"/> flag set and ownership cannot be acquired.
+        /// <see cref="SessionOwnerOnly"/>: The <see cref="NetworkObject"/> has the  <see cref="OwnershipStatus.SessionOwner"/> flag set and ownership cannot be acquired.
         /// </summary>
         public enum OwnershipPermissionsFailureStatus
         {
             Locked,
             RequestRequired,
             RequestInProgress,
-            NotTransferrable
+            NotTransferrable,
+            SessionOwnerOnly
         }
 
         /// <summary>
@@ -567,6 +621,7 @@ namespace Unity.Netcode
         /// <see cref="RequestRequiredNotSet"/>: The <see cref="OwnershipStatus.RequestRequired"/> flag is not set on this <see cref="NetworkObject"/>
         /// <see cref="Locked"/>: The current owner has locked ownership which means requests are not available at this time.
         /// <see cref="RequestInProgress"/>: There is already a known request in progress. You can scan for ownership changes and try upon
+        /// <see cref="SessionOwnerOnly"/>: This object is marked as SessionOwnerOnly and therefore cannot be requested
         /// a change in ownership or just try again after a specific period of time or no longer attempt to request ownership.
         /// </summary>
         public enum OwnershipRequestStatus
@@ -576,6 +631,7 @@ namespace Unity.Netcode
             RequestRequiredNotSet,
             Locked,
             RequestInProgress,
+            SessionOwnerOnly,
         }
 
         /// <summary>
@@ -588,6 +644,7 @@ namespace Unity.Netcode
         /// <see cref="OwnershipRequestStatus.RequestRequiredNotSet"/>: The <see cref="OwnershipStatus.RequestRequired"/> flag is not set on this <see cref="NetworkObject"/>
         /// <see cref="OwnershipRequestStatus.Locked"/>: The current owner has locked ownership which means requests are not available at this time.
         /// <see cref="OwnershipRequestStatus.RequestInProgress"/>: There is already a known request in progress. You can scan for ownership changes and try upon
+        /// <see cref="OwnershipRequestStatus.SessionOwnerOnly"/>: This object can only belong the the session owner and so cannot be requested
         /// a change in ownership or just try again after a specific period of time or no longer attempt to request ownership.
         /// </remarks>
         /// <returns><see cref="OwnershipRequestStatus"/></returns>
@@ -615,6 +672,12 @@ namespace Unity.Netcode
             if (IsRequestInProgress)
             {
                 return OwnershipRequestStatus.RequestInProgress;
+            }
+
+            // Exit early if it has the SessionOwner flag
+            if (IsOwnershipSessionOwner)
+            {
+                return OwnershipRequestStatus.SessionOwnerOnly;
             }
 
             // Otherwise, send the request ownership message
@@ -673,7 +736,7 @@ namespace Unity.Netcode
             {
                 response = OwnershipRequestResponseStatus.RequestInProgress;
             }
-            else if (!IsOwnershipRequestRequired && !IsOwnershipTransferable)
+            else if (!(IsOwnershipRequestRequired || IsOwnershipTransferable) || IsOwnershipSessionOwner)
             {
                 response = OwnershipRequestResponseStatus.CannotRequest;
             }
@@ -793,6 +856,12 @@ namespace Unity.Netcode
         /// </remarks>
         public bool SetOwnershipStatus(OwnershipStatus status, bool clearAndSet = false, OwnershipLockActions lockAction = OwnershipLockActions.None)
         {
+            if (status.HasFlag(OwnershipStatus.SessionOwner) && !NetworkManager.LocalClient.IsSessionOwner)
+            {
+                NetworkLog.LogWarning("Only the session owner is allowed to set the ownership status to session owner only.");
+                return false;
+            }
+
             // If it already has the flag do nothing
             if (!clearAndSet && Ownership.HasFlag(status))
             {
@@ -804,13 +873,25 @@ namespace Unity.Netcode
                 Ownership = OwnershipStatus.None;
             }
 
-            // Faster to just OR a None status than to check
-            // if it is !None before "OR'ing".
-            Ownership |= status;
-
-            if (lockAction != OwnershipLockActions.None)
+            if (status.HasFlag(OwnershipStatus.SessionOwner))
             {
-                SetOwnershipLock(lockAction == OwnershipLockActions.SetAndLock);
+                Ownership = OwnershipStatus.SessionOwner;
+            }
+            else if (Ownership.HasFlag(OwnershipStatus.SessionOwner))
+            {
+                NetworkLog.LogWarning("No other ownership statuses may be set while SessionOwner is set.");
+                return false;
+            }
+            else
+            {
+                // Faster to just OR a None status than to check
+                // if it is !None before "OR'ing".
+                Ownership |= status;
+
+                if (lockAction != OwnershipLockActions.None)
+                {
+                    SetOwnershipLock(lockAction == OwnershipLockActions.SetAndLock);
+                }
             }
 
             SendOwnershipStatusUpdate();
@@ -1586,7 +1667,7 @@ namespace Unity.Netcode
                     // DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set
                     if (NetworkManager.LogLevel == LogLevel.Developer)
                     {
-                        NetworkLog.LogWarning("DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set. For now, if the NetworkObject does not destroy with the owner it will automatically set DistributeOwnership.");
+                        NetworkLog.LogWarning("DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set. For now, if the NetworkObject does not destroy with the owner it will set ownership to SessionOwner.");
                     }
                 }
             }
@@ -1964,12 +2045,14 @@ namespace Unity.Netcode
 
         internal bool InternalTrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
-            if (parent != null && (IsSpawned ^ parent.IsSpawned))
+            if (parent != null && (IsSpawned ^ parent.IsSpawned) && NetworkManager != null && !NetworkManager.ShutdownInProgress)
             {
-                if (NetworkManager != null && !NetworkManager.ShutdownInProgress)
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
                 {
-                    return false;
+                    var nameOfNotSpawnedObject = IsSpawned ? $" the parent ({parent.name})" : $"the child ({name})";
+                    NetworkLog.LogWarning($"Parenting failed because {nameOfNotSpawnedObject} is not spawned!");
                 }
+                return false;
             }
 
             m_CachedWorldPositionStays = worldPositionStays;
@@ -2892,7 +2975,7 @@ namespace Unity.Netcode
                 SyncObservers = syncObservers,
                 Observers = syncObservers ? Observers.ToArray() : null,
                 NetworkSceneHandle = NetworkSceneHandle,
-                Hash = HostCheckForGlobalObjectIdHashOverride(),
+                Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId
             };
@@ -3244,14 +3327,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Only applies to Host mode.
+        /// Client-Server: Only applies to spawn authority (i.e. Server)
+        /// Distributed Authority: Applies to all clients since they all have spawn authority.
         /// Will return the registered source NetworkPrefab's GlobalObjectIdHash if one exists.
         /// Server and Clients will always return the NetworkObject's GlobalObjectIdHash.
         /// </summary>
-        /// <returns></returns>
-        internal uint HostCheckForGlobalObjectIdHashOverride()
+        /// <returns>appropriate hash value</returns>
+        internal uint CheckForGlobalObjectIdHashOverride()
         {
-            if (NetworkManager.IsServer)
+            if (NetworkManager.IsServer || NetworkManager.DistributedAuthorityMode)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(this))
                 {

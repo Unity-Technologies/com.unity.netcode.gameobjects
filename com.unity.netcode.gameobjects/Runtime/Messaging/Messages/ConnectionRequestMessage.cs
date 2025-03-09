@@ -7,31 +7,28 @@ namespace Unity.Netcode
     /// </summary>
     internal struct ClientConfig : INetworkSerializable
     {
-        /// <summary>
-        /// We start at version 1, where anything less than version 1 on the service side
-        /// is not bypass feature compatible.
-        /// </summary>
-        private const int k_BypassFeatureCompatible = 1;
-        public int Version => k_BypassFeatureCompatible;
+        public SessionConfig SessionConfig;
+        public int SessionVersion => (int)SessionConfig.SessionVersion;
         public uint TickRate;
         public bool EnableSceneManagement;
 
         // Only gets deserialized but should never be used unless testing
-        public int RemoteClientVersion;
+        public int RemoteClientSessionVersion;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
+            // Clients always write
             if (serializer.IsWriter)
             {
                 var writer = serializer.GetFastBufferWriter();
-                BytePacker.WriteValueBitPacked(writer, Version);
+                BytePacker.WriteValueBitPacked(writer, SessionVersion);
                 BytePacker.WriteValueBitPacked(writer, TickRate);
                 writer.WriteValueSafe(EnableSceneManagement);
             }
             else
             {
                 var reader = serializer.GetFastBufferReader();
-                ByteUnpacker.ReadValueBitPacked(reader, out RemoteClientVersion);
+                ByteUnpacker.ReadValueBitPacked(reader, out RemoteClientSessionVersion);
                 ByteUnpacker.ReadValueBitPacked(reader, out TickRate);
                 reader.ReadValueSafe(out EnableSceneManagement);
             }
@@ -40,6 +37,8 @@ namespace Unity.Netcode
 
     internal struct ConnectionRequestMessage : INetworkMessage
     {
+        internal const string InvalidSessionVersionMessage = "The client version is not compatible with the session version.";
+
         // This version update is unidirectional (client to service) and version
         // handling occurs on the service side. This serialized data is never sent
         // to a host or server.
@@ -47,7 +46,7 @@ namespace Unity.Netcode
         public int Version => k_SendClientConfigToService;
 
         public ulong ConfigHash;
-        public bool CMBServiceConnection;
+        public bool DistributedAuthority;
         public ClientConfig ClientConfig;
 
         public byte[] ConnectionData;
@@ -72,7 +71,7 @@ namespace Unity.Netcode
             // END FORBIDDEN SEGMENT
             // ============================================================
 
-            if (CMBServiceConnection)
+            if (DistributedAuthority)
             {
                 writer.WriteNetworkSerializable(ClientConfig);
             }
@@ -119,6 +118,11 @@ namespace Unity.Netcode
             // ============================================================
             // END FORBIDDEN SEGMENT
             // ============================================================
+
+            if (networkManager.DAHost)
+            {
+                reader.ReadNetworkSerializable(out ClientConfig);
+            }
 
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
@@ -181,6 +185,17 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
+
+            // DAHost mocking the service logic to disconnect clients trying to connect with a lower session version
+            if (networkManager.DAHost)
+            {
+                if (ClientConfig.RemoteClientSessionVersion < networkManager.SessionConfig.SessionVersion)
+                {
+                    //Disconnect with reason
+                    networkManager.ConnectionManager.DisconnectClient(senderId, InvalidSessionVersionMessage);
+                    return;
+                }
+            }
 
             if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {

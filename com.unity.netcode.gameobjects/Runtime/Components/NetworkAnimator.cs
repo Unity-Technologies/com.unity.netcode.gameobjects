@@ -230,6 +230,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+
 #if UNITY_EDITOR
         private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
         {
@@ -263,7 +264,6 @@ namespace Unity.Netcode.Components
                             {
                                 case AnimatorControllerParameterType.Trigger:
                                     {
-
                                         if (transition.destinationStateMachine != null)
                                         {
                                             var destinationStateMachine = transition.destinationStateMachine;
@@ -297,18 +297,12 @@ namespace Unity.Netcode.Components
                 }
             }
         }
-#endif
 
         /// <summary>
         /// Creates the TransitionStateInfoList table
         /// </summary>
         private void BuildTransitionStateInfoList()
         {
-#if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                return;
-            }
             if (m_Animator == null)
             {
                 return;
@@ -326,8 +320,17 @@ namespace Unity.Netcode.Components
                 var stateMachine = animatorController.layers[x].stateMachine;
                 ParseStateMachineStates(x, ref animatorController, ref stateMachine);
             }
-#endif
         }
+
+        /// <summary>
+        /// In-Editor Only
+        /// Virtual OnValidate method for custom derived NetworkAnimator classes.
+        /// </summary>
+        protected virtual void OnValidate()
+        {
+            BuildTransitionStateInfoList();
+        }
+#endif
 
         public void OnAfterDeserialize()
         {
@@ -336,7 +339,7 @@ namespace Unity.Netcode.Components
 
         public void OnBeforeSerialize()
         {
-            BuildTransitionStateInfoList();
+            // Do nothing when serializing (handled during OnValidate)
         }
 
         internal struct AnimationState : INetworkSerializable
@@ -419,8 +422,8 @@ namespace Unity.Netcode.Components
             internal bool HasBeenProcessed;
 
             // This is preallocated/populated in OnNetworkSpawn for all instances in the event ownership or
-            // authority changes.  When serializing, IsDirtyCount determines how many AnimationState entries
-            // should be serialized from the list.  When deserializing the list is created and populated with
+            // authority changes. When serializing, IsDirtyCount determines how many AnimationState entries
+            // should be serialized from the list. When deserializing the list is created and populated with
             // only the number of AnimationStates received which is dictated by the deserialized IsDirtyCount.
             internal List<AnimationState> AnimationStates;
 
@@ -496,7 +499,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Override this method and return false to switch to owner authoritative mode
+        /// Override this method and return false to switch to owner authoritative mode.
         /// </summary>
         /// <remarks>
         /// When using a distributed authority network topology, this will default to
@@ -506,10 +509,6 @@ namespace Unity.Netcode.Components
         {
             return NetworkManager ? !NetworkManager.DistributedAuthorityMode : true;
         }
-
-        // Animators only support up to 32 parameters
-        // TODO: Look into making this a range limited property
-        private const int k_MaxAnimationParams = 32;
 
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
@@ -534,7 +533,7 @@ namespace Unity.Netcode.Components
         }
 
         // 128 bytes per Animator
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter;
 
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
@@ -586,6 +585,14 @@ namespace Unity.Netcode.Components
 
         protected virtual void Awake()
         {
+            if (!m_Animator)
+            {
+#if !UNITY_EDITOR
+                Debug.LogError($"{nameof(NetworkAnimator)} {name} does not have an {nameof(UnityEngine.Animator)} assigned to it. The {nameof(NetworkAnimator)} will not initialize properly.");
+#endif
+                return;
+            }
+
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
             // when running in owner authoritative mode and the owner changes.
@@ -614,6 +621,9 @@ namespace Unity.Netcode.Components
                     m_LayerWeights[layer] = layerWeightNow;
                 }
             }
+
+            // The total initialization size calculated for the m_ParameterWriter write buffer.
+            var totalParameterSize = sizeof(uint);
 
             // Build our reference parameter values to detect when they change
             var parameters = m_Animator.parameters;
@@ -655,7 +665,37 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CachedAnimatorParameters[i] = cacheParam;
+
+                // Calculate parameter sizes (index + type size)
+                switch (parameter.type)
+                {
+                    case AnimatorControllerParameterType.Int:
+                        {
+                            totalParameterSize += sizeof(int) * 2;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Bool:
+                    case AnimatorControllerParameterType.Trigger:
+                        {
+                            // Bool is serialized to 1 byte
+                            totalParameterSize += sizeof(int) + 1;
+                            break;
+                        }
+                    case AnimatorControllerParameterType.Float:
+                        {
+                            totalParameterSize += sizeof(int) + sizeof(float);
+                            break;
+                        }
+                }
             }
+
+            if (m_ParameterWriter.IsInitialized)
+            {
+                m_ParameterWriter.Dispose();
+            }
+
+            // Create our parameter write buffer for serialization
+            m_ParameterWriter = new FastBufferWriter(totalParameterSize, Allocator.Persistent);
         }
 
         /// <summary>
@@ -697,7 +737,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Wries all parameter and state information needed to initially synchronize a client
+        /// Writes all parameter and state information needed to initially synchronize a client
         /// </summary>
         private void WriteSynchronizationData<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -772,8 +812,10 @@ namespace Unity.Netcode.Components
                         }
                     }
 
-                    animationState.Transition = isInTransition;        // The only time this could be set to true
-                    animationState.StateHash = stateHash;              // When a transition, this is the originating/starting state
+                    // The only time this could be set to true
+                    animationState.Transition = isInTransition;
+                    // When a transition, this is the originating/starting state
+                    animationState.StateHash = stateHash;
                     animationState.NormalizedTime = normalizedTime;
                     animationState.Layer = layer;
                     animationState.Weight = m_LayerWeights[layer];
@@ -847,7 +889,8 @@ namespace Unity.Netcode.Components
                 {
                     m_TransitionHash[layer] = nt.fullPathHash;
                     m_AnimationHash[layer] = 0;
-                    animState.DestinationStateHash = nt.fullPathHash; // Next state is the destination state for cross fade
+                    // Next state is the destination state for cross fade
+                    animState.DestinationStateHash = nt.fullPathHash;
                     animState.CrossFade = true;
                     animState.Transition = true;
                     animState.Duration = tt.duration;
@@ -865,7 +908,8 @@ namespace Unity.Netcode.Components
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
                     m_AnimationHash[layer] = 0;
-                    animState.StateHash = tt.fullPathHash; // Transitioning from state
+                    // Transitioning from state
+                    animState.StateHash = tt.fullPathHash;
                     animState.CrossFade = false;
                     animState.Transition = true;
                     animState.NormalizedTime = tt.normalizedTime;
@@ -1081,7 +1125,7 @@ namespace Unity.Netcode.Components
         {
             writer.Seek(0);
             writer.Truncate();
-            // Write how many parameter entries we are going to write
+            // Write out how many parameter entries to read
             BytePacker.WriteValuePacked(writer, (uint)m_ParametersToUpdate.Count);
             foreach (var parameterIndex in m_ParametersToUpdate)
             {
@@ -1230,10 +1274,11 @@ namespace Unity.Netcode.Components
                         NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) sub-table does not contain destination state ({animationState.DestinationStateHash})!");
                     }
                 }
-                else if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
-                }
+                // For reference, it is valid to have no transition information
+                //else if (NetworkManager.LogLevel == LogLevel.Developer)
+                //{
+                //    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
+                //}
             }
             else if (animationState.Transition && animationState.CrossFade)
             {
@@ -1436,7 +1481,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Distributed Authority: Internally-called RPC client receiving function to update a trigger when the server wants to forward
-        ///   a trigger for a client to play / reset
+        ///  a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
         [Rpc(SendTo.NotAuthority)]
@@ -1447,7 +1492,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Client Server: Internally-called RPC client receiving function to update a trigger when the server wants to forward
-        ///   a trigger for a client to play / reset
+        ///  a trigger to a client
         /// </summary>
         /// <param name="animationTriggerMessage">the payload containing the trigger data to apply</param>
         /// <param name="clientRpcParams">unused</param>
@@ -1513,7 +1558,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Resets the trigger for the associated animation.  See <see cref="SetTrigger(string)">SetTrigger</see> for more on how triggers are special
+        /// Resets the trigger for the associated animation. See <see cref="SetTrigger(string)">SetTrigger</see> for more on how triggers are special
         /// </summary>
         /// <param name="triggerName">The string name of the trigger to reset</param>
         public void ResetTrigger(string triggerName)
@@ -1529,4 +1574,5 @@ namespace Unity.Netcode.Components
         }
     }
 }
-#endif // COM_UNITY_MODULES_ANIMATION
+// COM_UNITY_MODULES_ANIMATION
+#endif

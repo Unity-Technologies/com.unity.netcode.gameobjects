@@ -28,6 +28,8 @@ namespace Unity.Netcode.Examples.PingTool
         public bool StartWithNetStateMonitorHidden = true;
         public KeyCode NetStatsMonitorToggle = KeyCode.Tab;
 #endif
+        public Text PingRateValue;
+        public Text PingToolHelp;
         public bool EnableConsoleLogging = true;
 
         public UnityEvent<ulong, ClientRtt> LogMessage;
@@ -65,7 +67,7 @@ namespace Unity.Netcode.Examples.PingTool
         private Dictionary<ulong, float> m_NextClientPingTime = new Dictionary<ulong, float>();
         private Dictionary<ulong, Coroutine> m_ClientUpdateRoutines = new Dictionary<ulong, Coroutine>();
         private Slider m_Slider;
-        private Text m_PingRateValue;
+
         private Canvas m_PingUICanvas;
         private bool m_PingRateUpdated;
         private float m_LastUpdatedTime;
@@ -93,7 +95,6 @@ namespace Unity.Netcode.Examples.PingTool
         private void Awake()
         {
             m_Slider = GetComponentInChildren<Slider>();
-            m_PingRateValue = GetComponentInChildren<Text>();
             m_PingUICanvas = GetComponentInChildren<Canvas>();
             m_PingUICanvas.gameObject.SetActive(false);
 #if MULTIPLAYER_TOOLS
@@ -102,6 +103,11 @@ namespace Unity.Netcode.Examples.PingTool
                 m_NetStatsMonitor.Visible = false;
             }
 #endif
+
+            if (PingToolHelp)
+            {
+                PingToolHelp.text = PingToolHelp.text.Replace("<>", $"<{NetStatsMonitorToggle}>");
+            }
         }
 
         protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
@@ -156,9 +162,17 @@ namespace Unity.Netcode.Examples.PingTool
                 InitializeAllClients();
                 NetworkManager.OnConnectionEvent += OnConnectionEvent;
             }
+            UpdatePingRateValue(m_PingRate.Value);
 
-            m_PingRateValue.text = $"{m_PingRate.Value}";
             base.OnNetworkSpawn();
+        }
+
+        private void UpdatePingRateValue(int value)
+        {
+            if (PingRateValue)
+            {
+                PingRateValue.text = $"{m_PingRate.Value}";
+            }
         }
 
         protected override void OnOwnershipChanged(ulong previous, ulong current)
@@ -182,7 +196,7 @@ namespace Unity.Netcode.Examples.PingTool
         private void OnPingRateChanged(int previous, int current)
         {
             InitializePingClientTime(OwnerClientId);
-            m_PingRateValue.text = $"{current}";
+            UpdatePingRateValue(current);
         }
 
         public override void OnNetworkDespawn()
@@ -290,7 +304,7 @@ namespace Unity.Netcode.Examples.PingTool
             if (m_Slider.value != PingRate)
             {
                 PingRate = (int)m_Slider.value;
-                m_PingRateValue.text = $"{PingRate}";
+                UpdatePingRateValue(PingRate);
                 // Flag the last time this value updated for the OwnerMonitorPingRateChange coroutine
                 m_LastUpdatedTime = Time.realtimeSinceStartup;
                 m_PingRateUpdated = true;
@@ -377,6 +391,10 @@ namespace Unity.Netcode.Examples.PingTool
                 if (m_NetStatsMonitor && Input.GetKeyDown(NetStatsMonitorToggle))
                 {
                     m_NetStatsMonitor.Visible = !m_NetStatsMonitor.Visible;
+                    if (PingToolHelp)
+                    {
+                        PingToolHelp.gameObject.SetActive(!m_NetStatsMonitor.Visible);
+                    }
                 }
             }
         }
@@ -422,12 +440,24 @@ namespace Unity.Netcode.Examples.PingTool
         [Rpc(SendTo.SpecifiedInParams)]
         private void PingRpc(float timeSent, RpcParams rpcParams)
         {
+            // Exit early if despawning or shutdown
+            if (!IsSpawned || NetworkManager == null || !NetworkManager.IsListening || NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
             PongRpc(Mathf.Abs(NetworkManager.ServerTime.TimeAsFloat - timeSent), RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
         }
 
         [Rpc(SendTo.SpecifiedInParams)]
         private void PongRpc(float timeDelta, RpcParams rpcParams)
         {
+            // Exit early if despawning or shutdown
+            if (!IsSpawned || NetworkManager == null || !NetworkManager.IsListening || NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
             UpdateClientRTT(rpcParams.Receive.SenderClientId, timeDelta);
         }
 
@@ -448,7 +478,7 @@ namespace Unity.Netcode.Examples.PingTool
             }
 
             var pingEntry = m_ClientPingQueue[clientId];
-            var ping = timeDelta - (latencyToTimeServer * 0.001f);
+            var ping = Mathf.Abs(timeDelta - (latencyToTimeServer * 0.001f));
             pingEntry.PingTime += ping;
             pingEntry.UTP_RTT += currentRTT;
             pingEntry.ReceivedPongs++;

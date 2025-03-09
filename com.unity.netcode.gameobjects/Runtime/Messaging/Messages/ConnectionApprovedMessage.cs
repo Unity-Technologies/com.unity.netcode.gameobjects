@@ -5,23 +5,38 @@ namespace Unity.Netcode
 {
     internal struct ServiceConfig : INetworkSerializable
     {
-        public uint Version;
+        public uint SessionVersion;
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
+        public bool ServerRedistribution;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (serializer.IsWriter)
             {
-                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), Version);
+                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), SessionVersion);
                 serializer.SerializeValue(ref IsRestoredSession);
                 BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), CurrentSessionOwner);
+
+                if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
+                {
+                    serializer.SerializeValue(ref ServerRedistribution);
+                }
             }
             else
             {
-                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out Version);
+                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out SessionVersion);
                 serializer.SerializeValue(ref IsRestoredSession);
                 ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out CurrentSessionOwner);
+
+                if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
+                {
+                    serializer.SerializeValue(ref ServerRedistribution);
+                }
+                else
+                {
+                    ServerRedistribution = false;
+                }
             }
         }
     }
@@ -190,11 +205,13 @@ namespace Unity.Netcode
                 if (receivedMessageVersion >= k_AddCMBServiceConfig)
                 {
                     reader.ReadNetworkSerializable(out ServiceConfig);
+                    networkManager.SessionConfig = new SessionConfig(ServiceConfig);
                 }
                 else
                 {
                     reader.ReadValueSafe(out IsRestoredSession);
                     ByteUnpacker.ReadValueBitPacked(reader, out CurrentSessionOwner);
+                    networkManager.SessionConfig = new SessionConfig(SessionConfig.NoFeatureCompatibility);
                 }
             }
 
