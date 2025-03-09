@@ -67,42 +67,6 @@ public class MoverScriptNoRigidbody : NetworkTransform
     [HideInInspector]
     public bool MoverScriptNoRigidbodyExpanded;
 #endif
-    private static Transform s_CameraParent;
-    private static Vector3 s_CameraOriginalPosition;
-    private static Quaternion s_CameraOriginalRotation;
-
-    /// <summary>
-    /// This should be invoked from an extension component attached
-    /// to the <see cref="ExtendedNetworkManager"/>'s <see cref="GameObject"/>
-    /// </summary>
-    /// <param name="transform">The camera's transform to track</param>
-    public static void SetCameraTransform(Transform transform)
-    {
-        s_CameraParent = transform.parent;
-        s_CameraOriginalPosition = transform.position;
-        s_CameraOriginalRotation = transform.rotation;
-    }
-
-    /// <summary>
-    /// Invoke when the camera needs to be reset back to its original
-    /// parent, position, and rotation.
-    /// </summary>
-    public static void ResetCamera()
-    {
-        if (!Camera.main || !s_CameraParent)
-        {
-            return;
-        }
-
-        if (Camera.main.transform.parent && Camera.main.transform.parent != s_CameraParent)
-        {
-            var parent = s_CameraParent != null ? (s_CameraParent, false) : (null, true);
-            Camera.main.transform.SetParent(parent.s_CameraParent, parent.Item2);
-        }
-        Camera.main.transform.position = s_CameraOriginalPosition;
-        Camera.main.transform.rotation = s_CameraOriginalRotation;
-    }
-
     private static bool s_EnablePlayerParentingText = true;
 
     [Tooltip("When set to false this object can be spawned and ownership changed amongst clients.")]
@@ -150,11 +114,11 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
     protected override void Awake()
     {
+        base.Awake();
         m_ParentedText = GetComponentInChildren<TextMesh>();
         m_ParentedText?.gameObject.SetActive(false);
         m_PlayerColor = GetComponent<PlayerColor>();
         m_PlayerBallMotion = GetComponentInChildren<PlayerBallMotion>();
-        base.Awake();
     }
 
     /// <summary>
@@ -188,7 +152,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         m_IsOwnerCached = IsOwner;
         if (CanCommitToTransform)
         {
-            ResetCamera();
+            CameraViewExtension.Instance.ResetCamera();
             m_PlayerBallMotion?.SetContinualMotion(ContinualChildMotion);
             Random.InitState((int)System.DateTime.Now.Ticks);
             if (!ManualSpawn)
@@ -196,13 +160,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
                 transform.position += new Vector3(Random.Range(-SpawnRadius, SpawnRadius), 1.25f, Random.Range(0, SpawnRadius));
                 SetState(transform.position, null, null, false);
             }
-            Camera.main.transform.SetParent(transform, false);
-        }
-
-        m_PlayerColor.UpdatePlayerColor();
-        if (IsOwner)
-        {
-            m_PlayerColor.SetTextColor(NetworkManager.LocalClientId);
+            CameraViewExtension.Instance.ParentCamera(transform);
         }
         gameObject.name = $"Player-{OwnerClientId}";
         UpdateParentedText();
@@ -220,18 +178,14 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
         if (previous != current && current == NetworkManager.LocalClientId)
         {
-            m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
+            m_PlayerBallMotion?.SetContinualMotion(ContinualChildMotion);
             m_CharacterController.enabled = true;
-            Camera.main.transform.position = s_CameraOriginalPosition;
-            Camera.main.transform.rotation = s_CameraOriginalRotation;
-            Camera.main.transform.SetParent(transform, false);
+            CameraViewExtension.Instance.ParentCamera(transform);
         }
-        else if (previous == NetworkManager.LocalClientId)
+        else if (previous == NetworkManager.LocalClientId && CameraViewExtension.Instance.IsParentedUnder(transform))
         {
             m_CharacterController.enabled = false;
-            Camera.main.transform.SetParent(s_CameraParent, false);
-            Camera.main.transform.position = s_CameraOriginalPosition;
-            Camera.main.transform.rotation = s_CameraOriginalRotation;
+            CameraViewExtension.Instance.ResetCamera();
         }
         m_PlayerColor.UpdatePlayerColor();
         gameObject.name = $"Player-{OwnerClientId}";
@@ -241,20 +195,20 @@ public class MoverScriptNoRigidbody : NetworkTransform
     public override void OnNetworkDespawn()
     {
         m_CharacterController.enabled = false;
-        // If we were the owner or the camera is parented under this instance, then reset the camera.
-        if (m_IsOwnerCached || (Camera.main && Camera.main.transform.parent == transform))
+        // If the camera is parented under this instance, then reset the camera.
+        if (CameraViewExtension.Instance.IsParentedUnder(transform))
         {
-            ResetCamera();
+            CameraViewExtension.Instance.ResetCamera();
         }
         base.OnNetworkDespawn();
     }
 
     public override void OnDestroy()
     {
-        // If we were the owner or the camera is parented under this instance, then reset the camera.
-        if (m_IsOwnerCached || (Camera.main && Camera.main.transform.parent == transform))
+        // If the camera is parented under this instance, then reset the camera.
+        if (CameraViewExtension.Instance.IsParentedUnder(transform))
         {
-            ResetCamera();
+            CameraViewExtension.Instance.ResetCamera();
         }
         base.OnDestroy();
     }
@@ -351,7 +305,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         if (Input.GetKeyDown(KeyCode.C))
         {
             ContinualChildMotion = !ContinualChildMotion;
-            m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
+            m_PlayerBallMotion?.SetContinualMotion(ContinualChildMotion);
         }
 
         m_PushMotion = Vector3.Lerp(m_PushMotion, Vector3.zero, 0.35f);

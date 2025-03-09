@@ -17,18 +17,18 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
 
     public uint SortOrder = 500;
+    public DrawHandler Draw;
 
     protected ExtendedNetworkManager m_ExtendedNetworkManager;
     protected ConnectionStates m_ConnectionState;
 
     protected NetworkSceneManager SceneManager => m_ExtendedNetworkManager.SceneManager;
 
-    private bool m_IsAlignRight;
-
     protected bool m_ApplicationExitPending;
 
     private void Awake()
     {
+        Draw = new DrawHandler();
         ExtendedNetworkManager.AttachExtension(this);
     }
 
@@ -84,6 +84,16 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
         m_ConnectionState = connectionState;
     }
 
+    protected virtual bool OnIsAuthorityInstance()
+    {
+        return m_ExtendedNetworkManager.IsAuthorityInstance();
+    }
+
+    public bool IsAuthorityInstance()
+    {
+        return OnIsAuthorityInstance();
+    }
+
     protected virtual void OnAuthorityUpdate()
     {
 
@@ -111,90 +121,11 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
     public Rect GUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        m_IsAlignRight = screenSpaceRegion == ScreenSpaceRegions.TopRight;
+        if (m_ApplicationExitPending)
+        {
+            return totalRectSize;
+        }
+        Draw.AlignRight = screenSpaceRegion == ScreenSpaceRegions.TopRight;
         return OnGUIUpdate(totalRectSize, screenSpaceRegion);
-    }
-
-    protected Rect DrawLabel(Rect currentRect, string msg, float width = 400.0f)
-    {
-        if (m_IsAlignRight)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            width = 200.0f;
-        }
-
-        GUILayout.Label($"{msg}", GUILayout.Width(width));
-        var rect = GUILayoutUtility.GetLastRect();
-        currentRect.height += rect.height;
-        if (m_IsAlignRight)
-        {
-            GUILayout.EndHorizontal();
-        }
-
-        return currentRect;
-    }
-
-    protected (Rect, bool) DrawToggle(Rect currentRect, bool toggleState, string label)
-    {
-        if (m_IsAlignRight)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-        }
-
-        toggleState = GUILayout.Toggle(toggleState, label);
-        var rect = GUILayoutUtility.GetLastRect();
-        currentRect.height += rect.height;
-
-        if (m_IsAlignRight)
-        {
-            GUILayout.EndHorizontal();
-        }
-
-        return (currentRect, toggleState);
-    }
-
-    protected (Rect, string) DrawTextField(Rect currentRect, string value)
-    {
-        if (m_IsAlignRight)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-        }
-
-        value = GUILayout.TextField(value);
-        var rect = GUILayoutUtility.GetLastRect();
-        currentRect.height += rect.height;
-
-        if (m_IsAlignRight)
-        {
-            GUILayout.EndHorizontal();
-        }
-
-        return (currentRect, value);
-    }
-
-    protected (Rect, bool) DrawButton(Rect currentTotalRect, string text, float width = 200)
-    {
-        if (m_IsAlignRight)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-        }
-
-        var clicked = false;
-        if (GUILayout.Button($"{text}", GUILayout.Width(width)))
-        {
-            var rect = GUILayoutUtility.GetLastRect();
-            currentTotalRect.height += rect.height;
-            clicked = true;
-        }
-
-        if (m_IsAlignRight)
-        {
-            GUILayout.EndHorizontal();
-        }
-        return (currentTotalRect, clicked);
     }
 }

@@ -73,10 +73,11 @@ public enum ConnectionStates
 {
     None,
     Connecting,
+    Started,
     Connected,
 }
 
-public class ExtendedNetworkManager : NetworkManager
+public class ExtendedNetworkManager : NetworkManager, ISerializationCallbackReceiver
 {
 #if UNITY_EDITOR
     // Inspector view expand/collapse settings for this derived child class
@@ -108,6 +109,20 @@ public class ExtendedNetworkManager : NetworkManager
         base.OnValidateComponent();
     }
 #endif
+
+
+    public void OnBeforeSerialize()
+    {
+#if UNITY_EDITOR
+        m_ServicesRegistered = CloudProjectSettings.organizationName != string.Empty && CloudProjectSettings.organizationId != string.Empty;
+#endif
+    }
+
+    public void OnAfterDeserialize()
+    {
+
+    }
+
     private ISession m_CurrentSession;
 
     [SerializeField]
@@ -117,15 +132,30 @@ public class ExtendedNetworkManager : NetworkManager
 
 
     #region Application Exit Scripts and Properties
-    public bool CanQuitApplication;
+    private bool m_CanQuitApplication = true;
+    public bool CanQuitApplication
+    {
+        get
+        {
+            return m_CanQuitApplication;
+        }
+        set
+        {
+            m_CanQuitApplication = value;
+        }
+    }
 
     public delegate bool ApplicationQuitEventHandler();
     public ApplicationQuitEventHandler CanApplicationQuit;
 
     private bool m_ApplicationExitPendingStatus;
+
+    /// <summary>
+    /// This takes over the NetworkManager's <see cref="NetworkManager.OnApplicationQuit"/> method.
+    /// </summary>
     private void OnApplicationQuit()
     {
-        // Overrides default NetworkManager behavior (do nothing)
+        // overwrite the NetworkManager's OnApplicationQuit and do nothing here.
     }
 
     /// <summary>
@@ -147,22 +177,15 @@ public class ExtendedNetworkManager : NetworkManager
     }
 
     /// <summary>
-    /// Registered within <see cref="Start"/>.
-    /// </summary>
-    private bool ApplicationWantsToQuit()
-    {
-        return CheckToQuitApplication();
-    }
-
-    /// <summary>
     /// Handles the logic behind determining whether we can allow the 
     /// application to exit or if we need to wait for the NetworkManager
     /// to shutdown.
     /// </summary>
     /// <remarks>
+    /// Registered within <see cref="Start"/>. <br />
     /// Much of the logic driving this is within the <see cref="ControlApplicationExitExtension"/> extension script.
     /// </remarks>
-    private bool CheckToQuitApplication()
+    private bool ApplicationWantsToQuit()
     {
         // This is just to simulate some other condition that must be met
         // to allow the application to exit and to verify when we don't want
@@ -175,11 +198,14 @@ public class ExtendedNetworkManager : NetworkManager
         }
 
         var canQuit = CanApplicationQuit != null ? CanApplicationQuit.Invoke() : true;
+
+        Debug.Log($"Application can quit: {canQuit}");
         // If we cannot quit yet, then block exiting the application
         if (!canQuit)
         {
             return false;
         }
+
         // We can now exit the application
         return true;
     }
@@ -195,7 +221,7 @@ public class ExtendedNetworkManager : NetworkManager
     public void QuitApplication()
     {
 #if UNITY_EDITOR
-        if (CheckToQuitApplication())
+        if (ApplicationWantsToQuit())
         {
             // When in the editor exit play mode to simulate the application exiting
             EditorApplication.ExitPlaymode();
@@ -292,6 +318,7 @@ public class ExtendedNetworkManager : NetworkManager
 
     private async void Start()
     {
+        OnDestroying += OnDestroyingNetworkManager;
         Screen.SetResolution((int)(Screen.currentResolution.width * 0.40f), (int)(Screen.currentResolution.height * 0.40f), FullScreenMode.Windowed);
         SetFrameRate(TargetFrameRate, EnableVSync);
         SetSingleton();
@@ -331,8 +358,9 @@ public class ExtendedNetworkManager : NetworkManager
         }
     }
 
-    private void OnDestroy()
+    private void OnDestroyingNetworkManager(NetworkManager obj)
     {
+        OnDestroying -= OnDestroyingNetworkManager;
         OnClientConnectedCallback -= OnClientConnected;
         OnClientDisconnectCallback -= OnClientDisconnect;
         OnConnectionEvent -= OnClientConnectionEvent;
@@ -344,6 +372,7 @@ public class ExtendedNetworkManager : NetworkManager
                 s_Extensions[i].Destroying();
             }
         }
+        s_Extensions.Clear();
     }
 
     private void SignedIn()
@@ -363,6 +392,7 @@ public class ExtendedNetworkManager : NetworkManager
         NetworkConfig.UseCMBService = true;
         OnClientStopped += ClientStopped;
         OnClientStarted += ClientStarted;
+        OnConnectionEvent += ConnectionEvent;
         m_SessionTask = ConnectThroughLiveService(sessionName);
         UpdateConnectionState(ConnectionStates.Connecting);
     }
@@ -371,6 +401,7 @@ public class ExtendedNetworkManager : NetworkManager
     {
         OnClientStopped += ClientStopped;
         OnClientStarted += ClientStarted;
+        OnConnectionEvent += ConnectionEvent;
         if (isHost)
         {
             StartHost();
@@ -378,6 +409,15 @@ public class ExtendedNetworkManager : NetworkManager
         else
         {
             StartClient();
+        }
+    }
+
+    private void ConnectionEvent(NetworkManager arg1, ConnectionEventData connectionEvent)
+    {
+        if (connectionEvent.EventType == Unity.Netcode.ConnectionEvent.ClientConnected && connectionEvent.ClientId == LocalClientId)
+        {
+            OnConnectionEvent -= ConnectionEvent;
+            UpdateConnectionState(ConnectionStates.Connected);
         }
     }
 
@@ -407,9 +447,14 @@ public class ExtendedNetworkManager : NetworkManager
 
         var currentRect = new Rect(Display.main.renderingWidth - halfWidth, 10, halfWidth - 10, height);
         GUILayout.BeginArea(currentRect);
-        foreach (var extension in s_Extensions)
+        var extensionCount = s_Extensions.Count;
+        for (int i = 0; i < extensionCount; i++)
         {
-            currentRect = extension.GUIUpdate(currentRect, ScreenSpaceRegions.TopRight);
+            if (s_Extensions.Count != extensionCount)
+            {
+                break;
+            }
+            currentRect = s_Extensions[i].GUIUpdate(currentRect, ScreenSpaceRegions.TopRight);
         }
         GUILayout.EndArea();
     }
@@ -430,7 +475,7 @@ public class ExtendedNetworkManager : NetworkManager
     private void ClientStarted()
     {
         OnClientStarted -= ClientStarted;
-        UpdateConnectionState(ConnectionStates.Connected);
+        UpdateConnectionState(ConnectionStates.Started);
     }
 
     private void ClientStopped(bool isHost)
@@ -477,7 +522,7 @@ public class ExtendedNetworkManager : NetworkManager
         {
             foreach (var extension in s_Extensions)
             {
-                if (IsAuthorityInstance())
+                if (extension.IsAuthorityInstance())
                 {
                     extension.AuthorityUpdate();
                 }

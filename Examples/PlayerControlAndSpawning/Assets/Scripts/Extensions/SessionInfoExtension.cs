@@ -8,15 +8,6 @@ public class SessionInfoExtension : BaseMonoExtension
 
     public string SessionName { get; private set; }
 
-    protected override void OnInitialize()
-    {
-        if (Camera.main)
-        {
-            MoverScriptNoRigidbody.SetCameraTransform(Camera.main.transform);
-        }
-        base.OnInitialize();
-    }
-
     protected override void OnStatusUpdate(ConnectionStates previousState, ConnectionStates currentState)
     {
         if (previousState == ConnectionStates.Connected && currentState == ConnectionStates.None)
@@ -32,11 +23,11 @@ public class SessionInfoExtension : BaseMonoExtension
 
     private Rect OnDrawLiveServiceGUI(Rect currentRect)
     {
-        var retFieldValues = DrawTextField(currentRect, SessionName);
+        var retFieldValues = Draw.TextField(currentRect, SessionName);
         currentRect = retFieldValues.Item1;
         SessionName = retFieldValues.Item2;
 
-        var retButtonValues = DrawButton(currentRect, "Create or Connect To Session");
+        var retButtonValues = Draw.Button(currentRect, "Create or Connect To Session");
 
         if (retButtonValues.Item2)
         {
@@ -48,16 +39,17 @@ public class SessionInfoExtension : BaseMonoExtension
         return currentRect;
     }
 
-    private Rect OnDrawDAHostGUI(Rect currentRect)
+    private Rect OnDrawHostedGUI(Rect currentRect)
     {
-        var retValues = DrawButton(currentRect, "Start Host");
+        var prefixText = m_ExtendedNetworkManager.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority ? "DA-" : "";
+        var retValues = Draw.Button(currentRect, $"Start {prefixText}Host");
         if (retValues.Item2)
         {
             currentRect = retValues.Item1;
             m_ExtendedNetworkManager.StartClientHostedSession(true);
         }
 
-        retValues = DrawButton(currentRect, "Start Client");
+        retValues = Draw.Button(currentRect, $"Start {prefixText}Client");
         if (retValues.Item2)
         {
             currentRect = retValues.Item1;
@@ -84,7 +76,7 @@ public class SessionInfoExtension : BaseMonoExtension
                 }
             case ExtendedNetworkManager.ConnectionTypes.Host:
                 {
-                    currentRect = OnDrawDAHostGUI(currentRect);
+                    currentRect = OnDrawHostedGUI(currentRect);
                     break;
                 }
         }
@@ -99,7 +91,7 @@ public class SessionInfoExtension : BaseMonoExtension
             }
         }
 
-        currentRect = DrawLabel(currentRect, m_ScenesPreloaded.ToString());
+        currentRect = Draw.Label(currentRect, m_ScenesPreloaded.ToString());
         return currentRect;
     }
 
@@ -107,17 +99,17 @@ public class SessionInfoExtension : BaseMonoExtension
     {
         if (m_ExtendedNetworkManager.CMBServiceConnection)
         {
-            currentRect = DrawLabel(currentRect, $"Session: {SessionName}");
+            currentRect = Draw.Label(currentRect, $"Session: {SessionName}");
         }
         else
         {
             if (m_ExtendedNetworkManager.DistributedAuthorityMode)
             {
-                currentRect = DrawLabel(currentRect, $"DAHosted Session");
+                currentRect = Draw.Label(currentRect, $"DAHosted Session");
             }
             else
             {
-                currentRect = DrawLabel(currentRect, $"Client-Server Session");
+                currentRect = Draw.Label(currentRect, $"Client-Server Session");
             }
         }
         return currentRect;
@@ -145,11 +137,10 @@ public class SessionInfoExtension : BaseMonoExtension
     {
         if (m_ConnectionState == ConnectionStates.Connected)
         {
-            var retButtonValues = DrawButton(totalRectSize, "Disconnect");
+            var retButtonValues = Draw.Button(totalRectSize, "Disconnect");
             if (retButtonValues.Item2)
             {
                 totalRectSize = retButtonValues.Item1;
-                MoverScriptNoRigidbody.ResetCamera();
                 m_ExtendedNetworkManager.DisconnectFromSession();
             }
         }
@@ -158,11 +149,6 @@ public class SessionInfoExtension : BaseMonoExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        if (m_ApplicationExitPending)
-        {
-            return totalRectSize;
-        }
-
         switch (screenSpaceRegion)
         {
             case ScreenSpaceRegions.TopLeft:

@@ -18,6 +18,8 @@ public interface IExtensionHandler
 
     void StatusUpdate(ConnectionStates connectionState);
 
+    bool IsAuthorityInstance();
+
     void AuthorityUpdate();
 
     void NonAuthorityUpdate();

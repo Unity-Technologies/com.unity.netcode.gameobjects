@@ -737,7 +737,7 @@ GameObject:
   - component: {fileID: 571224925323069553}
   - component: {fileID: 2509722539211228765}
   m_Layer: 0
-  m_Name: ControlllerNoRigidbody 1
+  m_Name: ControlllerNoRigidbodyWithChildren
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

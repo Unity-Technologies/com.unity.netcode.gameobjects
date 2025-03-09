@@ -45,6 +45,14 @@ public class BootstrapHandler : MonoBehaviour
     }
 #endif
 
+    private void Awake()
+    {
+        if (CameraViewExtension.Instance)
+        {
+            Destroy(CameraViewExtension.Instance.gameObject);
+        }
+    }
+
     private void OnGUI()
     {
         GUILayout.BeginArea(new Rect(10, 10, 300, 800));

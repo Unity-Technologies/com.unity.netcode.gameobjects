@@ -10,6 +10,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 #if UNITY_EDITOR
     public List<SceneAsset> Scenes = new List<SceneAsset>();
 
+    public SceneAsset HUDScene;
     public SceneAsset DisconnectToScene;
 
     protected override void OnValidateComponent()
@@ -18,6 +19,10 @@ public class SceneLoadingExtension : BaseMonoExtension
         if (DisconnectToScene)
         {
             m_DisconnectToSceneName = DisconnectToScene.name;
+        }
+        if (HUDScene != null)
+        {
+            m_HUDSceneName = HUDScene.name;
         }
         m_SceneNames.Clear();
         if (Scenes.Count > 0)
@@ -34,13 +39,21 @@ public class SceneLoadingExtension : BaseMonoExtension
         base.OnValidateComponent();
     }
 #endif
+    public KeyCode NextSceneKeyCode = KeyCode.Tab;
+
     [HideInInspector]
     [SerializeField]
     private string m_DisconnectToSceneName;
+
+    [HideInInspector]
+    [SerializeField]
+    private string m_HUDSceneName;
+
     [HideInInspector]
     [SerializeField]
     private List<string> m_SceneNames = new List<string>();
     private string m_CurrentSceneName;
+
     private bool m_SceneEventIsLoading;
     private bool m_HasDisconnectToSceneName;
 
@@ -60,7 +73,26 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     private void OnLoadEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
+        SceneManager.OnLoadEventCompleted -= OnLoadEventCompleted;
+        if (string.IsNullOrEmpty(m_HUDSceneName))
+        {
+            m_SceneEventIsLoading = false;
+        }
+        else
+        {
+            var result = SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+            if (result == SceneEventProgressStatus.Started)
+            {
+                SceneManager.OnLoadEventCompleted += OnLoadHUDEventCompleted;
+            }
+        }
+    }
+
+    private void OnLoadHUDEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        SceneManager.OnLoadEventCompleted -= OnLoadHUDEventCompleted;
         m_SceneEventIsLoading = false;
+
     }
 
     protected override void OnInitialize()
@@ -70,6 +102,10 @@ public class SceneLoadingExtension : BaseMonoExtension
         {
             m_CurrentSceneName = m_SceneNames[0];
             UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
+            if (!string.IsNullOrEmpty(m_HUDSceneName))
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+            }
         }
         base.OnInitialize();
     }
@@ -80,8 +116,18 @@ public class SceneLoadingExtension : BaseMonoExtension
         {
             if (m_CurrentSceneName != m_SceneNames[0])
             {
-                MoverScriptNoRigidbody.ResetCamera();
                 UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
+                if (!string.IsNullOrEmpty(m_HUDSceneName))
+                {
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                }
+            }
+        }
+        else if (currentState == ConnectionStates.Connected)
+        {
+            if (IsAuthorityInstance())
+            {
+                m_ExtendedNetworkManager.SceneManager.SetClientSynchronizationMode(UnityEngine.SceneManagement.LoadSceneMode.Additive);
             }
         }
         base.OnStatusUpdate(previousState, currentState);
@@ -89,7 +135,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override void OnAuthorityUpdate()
     {
-        if (!m_SceneEventIsLoading && m_SceneNames.Count > 1 && Input.GetKeyDown(KeyCode.Tab))
+        if (!m_SceneEventIsLoading && m_SceneNames.Count > 1 && Input.GetKeyDown(NextSceneKeyCode))
         {
             LoadNextScene();
         }
@@ -98,7 +144,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     private Rect ReturnToMainMenu(Rect totalRectSize)
     {
-        var retButtonValues = DrawButton(totalRectSize, "Main Menu");
+        var retButtonValues = Draw.Button(totalRectSize, "Main Menu");
         if (retButtonValues.Item2)
         {
             totalRectSize = retButtonValues.Item1;
@@ -126,7 +172,10 @@ public class SceneLoadingExtension : BaseMonoExtension
     private void ExitSceneLoaded(UnityEngine.SceneManagement.Scene arg0, UnityEngine.SceneManagement.LoadSceneMode arg1)
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= ExitSceneLoaded;
-        Destroy(m_ExtendedNetworkManager.gameObject);
+        if (m_ExtendedNetworkManager.gameObject)
+        {
+            Destroy(m_ExtendedNetworkManager.gameObject);
+        }
     }
 
     private void OnStopped(bool wasHost)
@@ -138,18 +187,13 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        if (m_ApplicationExitPending)
-        {
-            return totalRectSize;
-        }
-
         switch (screenSpaceRegion)
         {
             case ScreenSpaceRegions.TopLeft:
                 {
-                    if (m_ConnectionState == ConnectionStates.Connected && m_ExtendedNetworkManager.IsAuthorityInstance())
+                    if (m_ConnectionState == ConnectionStates.Connected && IsAuthorityInstance())
                     {
-                        totalRectSize = DrawLabel(totalRectSize, $"Current Scene: {m_CurrentSceneName}");
+                        totalRectSize = Draw.Label(totalRectSize, $"Current Scene: {m_CurrentSceneName}");
                     }
                     break;
                 }
@@ -159,12 +203,12 @@ public class SceneLoadingExtension : BaseMonoExtension
                     {
                         totalRectSize = ReturnToMainMenu(totalRectSize);
                     }
-                    if (m_ExtendedNetworkManager.IsAuthorityInstance() && m_ConnectionState == ConnectionStates.Connected)
+                    if (IsAuthorityInstance() && m_ConnectionState == ConnectionStates.Connected)
                     {
                         // If there is only one scene then no need to draw this
                         if (m_SceneNames.Count > 1)
                         {
-                            totalRectSize = DrawLabel(totalRectSize, $"[Tab] Load Next Scene");
+                            totalRectSize = Draw.Label(totalRectSize, $"[{NextSceneKeyCode}] Load Next Scene");
                         }
                     }
                     break;

@@ -9,7 +9,7 @@ public class SingleObjectSpawnExtension : BaseMonoExtension
 
     protected override void OnStatusUpdate(ConnectionStates previousState, ConnectionStates currentState)
     {
-        if (m_ExtendedNetworkManager.IsAuthorityInstance())
+        if (IsAuthorityInstance())
         {
             if (currentState == ConnectionStates.Connected && !m_PrefabInstance && PrefabToSpawn)
             {

@@ -2,11 +2,13 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ServerHostClientText : NetworkBehaviour
+public class Identifier : NetworkBehaviour
 {
     private Text m_DisplayText;
 
+
     private Color m_Color;
+    private Color m_OriginalColor;
     private Color m_ColorAlpha;
     private Vector3 m_AnchoredPosition;
 
@@ -21,11 +23,7 @@ public class ServerHostClientText : NetworkBehaviour
     {
         m_AnchoredPosition = (transform as RectTransform).anchoredPosition3D;
         m_DisplayText = GetComponent<Text>();
-        
-    }
-
-    private void Start()
-    {
+        m_OriginalColor = m_DisplayText.color;
         if (m_DisplayText != null)
         {
             m_DisplayText.text = string.Empty;
@@ -35,6 +33,7 @@ public class ServerHostClientText : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        SetColor(ClientColorExtension.GetClientColor(NetworkManager.LocalClientId));
         if (m_DisplayText != null)
         {
             if (NetworkManager.IsServer)
@@ -47,6 +46,13 @@ public class ServerHostClientText : NetworkBehaviour
             }
         }
         (transform as RectTransform).anchoredPosition3D = m_AnchoredPosition;
+        UpdateTextColor();
+    }
+
+    protected override void OnInSceneObjectsSpawned()
+    {
+
+        base.OnInSceneObjectsSpawned();
     }
 
     public override void OnNetworkDespawn()
@@ -54,6 +60,7 @@ public class ServerHostClientText : NetworkBehaviour
         if (m_DisplayText != null)
         {
             m_DisplayText.text = string.Empty;
+            m_DisplayText.color = m_OriginalColor;
         }
         base.OnNetworkDespawn();
     }

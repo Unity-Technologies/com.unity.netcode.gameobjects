@@ -3,24 +3,45 @@ using UnityEngine;
 
 public class ChangePlayerControlExtension : BaseObjectSpawnExtension
 {
+    public KeyCode PrevClientKeyCode = KeyCode.LeftBracket;
+    public KeyCode NextClientKeyCode = KeyCode.RightBracket;
     private int m_CurrentFollowPlayerIndex = 0;
 
     private NetworkVariable<int> m_FollowPlayerIndex = new NetworkVariable<int>();
 
     protected override void OnInitialize()
     {
-        MoverScriptNoRigidbody.SetCameraTransform(Camera.main.transform);
+        m_ExtendedNetworkManager.OnConnectionEvent += OnConnectionEvent;
         base.OnInitialize();
+    }
+
+    private void OnConnectionEvent(NetworkManager arg1, ConnectionEventData eventData)
+    {
+        if (!IsAuthorityInstance())
+        {
+            return;
+        }
+        // If the current owner disconnects...
+        if (eventData.EventType == ConnectionEvent.PeerDisconnected)
+        {
+            var spawnedObject = GetSpawnedNetworkObject();
+            // and if we have spawned an object to transfer control...
+            if (spawnedObject && eventData.ClientId == spawnedObject.OwnerClientId)
+            {
+                // the authority of this session takes ownership.
+                spawnedObject.ChangeOwnership(OwnerClientId);
+            }
+        }
     }
 
     private void ChangeClientOwner()
     {
-        bool leftBracket = Input.GetKeyDown(KeyCode.LeftBracket);
-        bool rightBracket = Input.GetKeyDown(KeyCode.RightBracket);
+        bool previousClient = Input.GetKeyDown(PrevClientKeyCode);
+        bool nextClient = Input.GetKeyDown(NextClientKeyCode);
 
-        if ((leftBracket || rightBracket) && NetworkManager.ConnectedClientsIds.Count > 0)
+        if ((previousClient || nextClient) && NetworkManager.ConnectedClientsIds.Count > 0)
         {
-            if (leftBracket)
+            if (previousClient)
             {
                 m_CurrentFollowPlayerIndex--;
                 if (m_CurrentFollowPlayerIndex < 0)
@@ -44,9 +65,35 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
         }
     }
 
+    private void UpdateFollowPlayerIndex(ulong playerId)
+    {
+        for (int i = 0; i < NetworkManager.ConnectedClientsIds.Count; i++)
+        {
+            if (NetworkManager.ConnectedClientsIds[i] == playerId)
+            {
+                m_CurrentFollowPlayerIndex = i;
+                m_FollowPlayerIndex.Value = m_CurrentFollowPlayerIndex;
+            }
+        }
+    }
+
+    protected override void SpawnObject(ulong playerId, bool isPlayerObject)
+    {
+        base.SpawnObject(playerId, isPlayerObject);
+        GetSpawnedNetworkObject().GetComponent<OwnershipChangeNonAuthorityHandler>().OwnershipChanged += SpawnedObjectOwnershipChanged;
+    }
+
+    private void SpawnedObjectOwnershipChanged(ulong previous, ulong current)
+    {
+        if (HasAuthority)
+        {
+            UpdateFollowPlayerIndex(current);
+        }
+    }
+
     protected override void OnObjectDespawned()
     {
-        if (m_ExtendedNetworkManager.IsAuthorityInstance())
+        if (IsAuthorityInstance())
         {
             m_CurrentFollowPlayerIndex = 0;
             if (IsSpawned)
@@ -64,7 +111,7 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
 
     protected override void OnGeneralUpdate()
     {
-        if (m_ExtendedNetworkManager.IsAuthorityInstance())
+        if (IsAuthorityInstance())
         {
             ChangeClientOwner();
         }
@@ -82,9 +129,10 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
         {
             case ScreenSpaceRegions.TopRight:
                 {
-                    if (m_ConnectionState == ConnectionStates.Connected && m_ExtendedNetworkManager.IsAuthorityInstance())
+                    if (m_ConnectionState == ConnectionStates.Connected && IsAuthorityInstance())
                     {
-                        totalRectSize = DrawLabel(totalRectSize, $"([ or ]) changes player control");
+                        totalRectSize = Draw.Label(totalRectSize, $"[{PrevClientKeyCode}] Previous Client");
+                        totalRectSize = Draw.Label(totalRectSize, $"[{NextClientKeyCode}] Next Client");
                     }
                     break;
                 }
@@ -92,7 +140,7 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
                 {
                     if (m_ConnectionState == ConnectionStates.Connected && GetSpawnedNetworkObject())
                     {
-                        totalRectSize = DrawLabel(totalRectSize, $"Client-{GetSpawnedNetworkObject().OwnerClientId} is in control.");
+                        totalRectSize = Draw.Label(totalRectSize, $"Client-{GetSpawnedNetworkObject().OwnerClientId} is in control.");
                     }
                     break;
                 }

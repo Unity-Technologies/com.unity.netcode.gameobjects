@@ -17,6 +17,8 @@ public class ControlApplicationExitExtension : BaseMonoExtension
 
     protected override void OnInitialize()
     {
+        // Start off by setting the additional check to false
+        m_ExtendedNetworkManager.CanQuitApplication = false;
         m_CanExitApplication = m_ExitPending = false;
         m_ExtendedNetworkManager.CanApplicationQuit = CanApplicationQuit;
         base.OnInitialize();
@@ -121,14 +123,14 @@ public class ControlApplicationExitExtension : BaseMonoExtension
 
     private Rect TopRightGUI(Rect totalRectSize)
     {
-        var retButtonValues = DrawButton(totalRectSize, "Quit");
+        var retButtonValues = Draw.Button(totalRectSize, "Quit");
         if (retButtonValues.Item2 && m_ExtendedNetworkManager.CanQuitApplication)
         {
             m_ExtendedNetworkManager.QuitApplication();
             return retButtonValues.Item1;
         }
         totalRectSize = retButtonValues.Item1;
-        var retToggleValues = DrawToggle(totalRectSize, m_ExtendedNetworkManager.CanQuitApplication, "Can Quit");
+        var retToggleValues = Draw.Toggle(totalRectSize, m_ExtendedNetworkManager.CanQuitApplication, "Can Quit");
         m_ExtendedNetworkManager.CanQuitApplication = retToggleValues.Item2;
         totalRectSize = retToggleValues.Item1;
         return totalRectSize;
@@ -136,10 +138,6 @@ public class ControlApplicationExitExtension : BaseMonoExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        if (m_ApplicationExitPending)
-        {
-            return totalRectSize;
-        }
         switch (screenSpaceRegion)
         {
             case ScreenSpaceRegions.TopRight:

@@ -32,5 +32,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/ControlQuitApplication/ControlExitingApplication.unity
     guid: f71bd75841677d64b9946f4bda8e59bc
+  - enabled: 1
+    path: Assets/Scenes/HUDOverlay.unity
+    guid: d86d68247f777c044896d2218fe666a2
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

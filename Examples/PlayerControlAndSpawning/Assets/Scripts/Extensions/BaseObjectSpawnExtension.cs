@@ -7,6 +7,8 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
     [Range(2.0f, 20.0f)]
     public float SpawnRadius = 5.0f;
     public bool DestroyWithScene = false;
+    public KeyCode SpawnKeyCode = KeyCode.Return;
+    public KeyCode DespawnKeyCode = KeyCode.Backspace;
 
     private Vector3 m_InitialPrefabPosition = Vector3.zero;
 
@@ -76,7 +78,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
             return;
         }
         OnGeneralUpdate();
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (Input.GetKeyDown(SpawnKeyCode))
         {
             if (CanSpawnObject())
             {
@@ -91,7 +93,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
             }
         }
 
-        if (Input.GetKeyDown(KeyCode.Backspace))
+        if (Input.GetKeyDown(DespawnKeyCode))
         {
             if (CanDespawnObject())
             {
@@ -140,7 +142,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        if (!IsSpawned || m_ApplicationExitPending)
+        if (!IsSpawned)
         {
             return totalRectSize;
         }
@@ -150,8 +152,8 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
                 {
                     if (m_ConnectionState == ConnectionStates.Connected)
                     {
-                        totalRectSize = DrawLabel(totalRectSize, $"[Enter] Spawn Player");
-                        totalRectSize = DrawLabel(totalRectSize, $"[Backspace] Despawn Player");
+                        totalRectSize = Draw.Label(totalRectSize, $"[{SpawnKeyCode}] Spawn Player");
+                        totalRectSize = Draw.Label(totalRectSize, $"[{DespawnKeyCode}] Despawn Player");
                     }
                     break;
                 }
