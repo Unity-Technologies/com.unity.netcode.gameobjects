@@ -26,5 +26,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TransferPlayerControl/TransferPlayerControlB.unity
     guid: 431da54156af0c744885e50be8735351
+  - enabled: 1
+    path: Assets/Scenes/ControlQuitApplication/ControlExitingApplicationBootStrap.unity
+    guid: 9616abc5253323748801704699a11cbf
+  - enabled: 1
+    path: Assets/Scenes/ControlQuitApplication/ControlExitingApplication.unity
+    guid: f71bd75841677d64b9946f4bda8e59bc
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

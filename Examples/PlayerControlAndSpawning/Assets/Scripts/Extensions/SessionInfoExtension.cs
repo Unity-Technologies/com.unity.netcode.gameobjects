@@ -158,6 +158,11 @@ public class SessionInfoExtension : BaseMonoExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
+        if (m_ApplicationExitPending)
+        {
+            return totalRectSize;
+        }
+
         switch (screenSpaceRegion)
         {
             case ScreenSpaceRegions.TopLeft:

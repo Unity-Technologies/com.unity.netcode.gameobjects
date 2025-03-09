@@ -89,7 +89,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override void OnAuthorityUpdate()
     {
-        if (!m_SceneEventIsLoading && Input.GetKeyDown(KeyCode.Tab))
+        if (!m_SceneEventIsLoading && m_SceneNames.Count > 1 && Input.GetKeyDown(KeyCode.Tab))
         {
             LoadNextScene();
         }
@@ -138,6 +138,11 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
+        if (m_ApplicationExitPending)
+        {
+            return totalRectSize;
+        }
+
         switch (screenSpaceRegion)
         {
             case ScreenSpaceRegions.TopLeft:
@@ -156,7 +161,11 @@ public class SceneLoadingExtension : BaseMonoExtension
                     }
                     if (m_ExtendedNetworkManager.IsAuthorityInstance() && m_ConnectionState == ConnectionStates.Connected)
                     {
-                        totalRectSize = DrawLabel(totalRectSize, $"[Tab] Load Next Scene");
+                        // If there is only one scene then no need to draw this
+                        if (m_SceneNames.Count > 1)
+                        {
+                            totalRectSize = DrawLabel(totalRectSize, $"[Tab] Load Next Scene");
+                        }
                     }
                     break;
                 }

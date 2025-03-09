@@ -149,11 +149,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ScenesToLoad:
+  - SceneToLoad: ControlExitingApplicationBootStrap
+    DisplayName: Control Exit Application
   - SceneToLoad: ManualSpawningBootStrap
     DisplayName: Manual Player Spawning
   - SceneToLoad: TransferPlayerControlBootStrap
     DisplayName: Transfer Player Control
   SceneEntries:
+  - SceneAsset: {fileID: 102900000, guid: 9616abc5253323748801704699a11cbf, type: 3}
+    DisplayName: Control Exit Application
   - SceneAsset: {fileID: 102900000, guid: bcdb10568a3717a4f9b9c93a94dad00f, type: 3}
     DisplayName: Manual Player Spawning
   - SceneAsset: {fileID: 102900000, guid: 0a1b94bbb79d90d43907e2ddc6217477, type: 3}

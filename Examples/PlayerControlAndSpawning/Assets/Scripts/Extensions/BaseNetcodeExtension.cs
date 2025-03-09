@@ -23,6 +23,7 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
     protected NetworkSceneManager SceneManager => m_ExtendedNetworkManager.SceneManager;
 
     private bool m_IsAlignRight;
+    protected bool m_ApplicationExitPending;
 
     private void Awake()
     {
@@ -35,6 +36,15 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
         base.OnDestroy();
     }
 
+    protected virtual void OnApplicationExitPending()
+    {
+    }
+
+    public void ApplicationExitPending()
+    {
+        m_ApplicationExitPending = true;
+        OnApplicationExitPending();
+    }
     public uint GetSortOrder()
     {
         return SortOrder;
@@ -121,6 +131,26 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
         }
 
         return currentRect;
+    }
+
+    protected (Rect, bool) DrawToggle(Rect currentRect, bool toggleState, string label)
+    {
+        if (m_IsAlignRight)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+        }
+
+        toggleState = GUILayout.Toggle(toggleState, label);
+        var rect = GUILayoutUtility.GetLastRect();
+        currentRect.height += rect.height;
+
+        if (m_IsAlignRight)
+        {
+            GUILayout.EndHorizontal();
+        }
+
+        return (currentRect, toggleState);
     }
 
     protected (Rect, string) DrawTextField(Rect currentRect, string value)

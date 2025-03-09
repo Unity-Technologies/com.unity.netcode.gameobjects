@@ -116,6 +116,96 @@ public class ExtendedNetworkManager : NetworkManager
     private Task m_SessionTask;
 
 
+    #region Application Exit Scripts and Properties
+    public bool CanQuitApplication;
+
+    public delegate bool ApplicationQuitEventHandler();
+    public ApplicationQuitEventHandler CanApplicationQuit;
+
+    private bool m_ApplicationExitPendingStatus;
+    private void OnApplicationQuit()
+    {
+        // Overrides default NetworkManager behavior (do nothing)
+    }
+
+    /// <summary>
+    /// Invoked by the <see cref="ControlApplicationExitExtension"/> when the application exit
+    /// process begins.
+    /// </summary>
+    public void ApplicationExitInProgress()
+    {
+        if (!m_ApplicationExitPendingStatus)
+        {
+            m_ApplicationExitPendingStatus = true;
+            // Notify all extensions to allow them to handle the application
+            // exit process and to prevent their runtime UI from drawing.
+            foreach (var extension in s_Extensions)
+            {
+                extension.ApplicationExitPending();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Registered within <see cref="Start"/>.
+    /// </summary>
+    private bool ApplicationWantsToQuit()
+    {
+        return CheckToQuitApplication();
+    }
+
+    /// <summary>
+    /// Handles the logic behind determining whether we can allow the 
+    /// application to exit or if we need to wait for the NetworkManager
+    /// to shutdown.
+    /// </summary>
+    /// <remarks>
+    /// Much of the logic driving this is within the <see cref="ControlApplicationExitExtension"/> extension script.
+    /// </remarks>
+    private bool CheckToQuitApplication()
+    {
+        // This is just to simulate some other condition that must be met
+        // to allow the application to exit and to verify when we don't want
+        // the application to exit it will not exit.
+        if (!CanQuitApplication)
+        {
+            // Some other condition prevents us from being able to shutdown,
+            // block exiting the application. (testing purposes)
+            return false;
+        }
+
+        var canQuit = CanApplicationQuit != null ? CanApplicationQuit.Invoke() : true;
+        // If we cannot quit yet, then block exiting the application
+        if (!canQuit)
+        {
+            return false;
+        }
+        // We can now exit the application
+        return true;
+    }
+
+    /// <summary>
+    /// Handles quitting the application.
+    /// </summary>
+    /// <remarks>
+    /// This allows us to also test this logic within the editor.
+    /// This is invoked by the UI: <see cref="ControlApplicationExitExtension.TopRightGUI(Rect)"/>
+    /// This is invoked when the NetworkManager stops: <see cref="ClientStopped(bool)"/>
+    /// </remarks>
+    public void QuitApplication()
+    {
+#if UNITY_EDITOR
+        if (CheckToQuitApplication())
+        {
+            // When in the editor exit play mode to simulate the application exiting
+            EditorApplication.ExitPlaymode();
+        }
+#else
+        // When running in a stand alone build, invoke the application quit method
+        Application.Quit();
+#endif
+    }
+    #endregion
 
     private ConnectionStates m_ConnectionState;
 
@@ -142,7 +232,6 @@ public class ExtendedNetworkManager : NetworkManager
     }
 
     private static List<IExtensionHandler> s_Extensions = new List<IExtensionHandler>();
-
     private static List<IExtensionHandler> s_PendingAttachments = new List<IExtensionHandler>();
     private static List<IExtensionHandler> s_PendingDetachments = new List<IExtensionHandler>();
 
@@ -201,15 +290,15 @@ public class ExtendedNetworkManager : NetworkManager
         s_PendingDetachments.Add(extendedUpdateHandler);
     }
 
-    private void Awake()
+    private async void Start()
     {
         Screen.SetResolution((int)(Screen.currentResolution.width * 0.40f), (int)(Screen.currentResolution.height * 0.40f), FullScreenMode.Windowed);
         SetFrameRate(TargetFrameRate, EnableVSync);
         SetSingleton();
-    }
 
-    private async void Start()
-    {
+        Application.wantsToQuit -= ApplicationWantsToQuit;
+        Application.wantsToQuit += ApplicationWantsToQuit;
+
         OnClientConnectedCallback += OnClientConnected;
         OnClientDisconnectCallback += OnClientDisconnect;
         OnConnectionEvent += OnClientConnectionEvent;
@@ -298,6 +387,7 @@ public class ExtendedNetworkManager : NetworkManager
         var height = Display.main.renderingHeight;
         var topLeftRect = new Rect(10, 10, halfWidth, height);
         GUILayout.BeginArea(topLeftRect);
+
         foreach (var extension in s_Extensions)
         {
             topLeftRect = extension.GUIUpdate(topLeftRect, ScreenSpaceRegions.TopLeft);
@@ -376,7 +466,6 @@ public class ExtendedNetworkManager : NetworkManager
     {
         return IsServer || LocalClient.IsSessionOwner;
     }
-
 
     private void Update()
     {

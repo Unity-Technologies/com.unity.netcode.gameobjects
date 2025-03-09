@@ -189,7 +189,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
         if (CanCommitToTransform)
         {
             ResetCamera();
-            m_PlayerBallMotion.SetContinualMotion(ContinualChildMotion);
+            m_PlayerBallMotion?.SetContinualMotion(ContinualChildMotion);
             Random.InitState((int)System.DateTime.Now.Ticks);
             if (!ManualSpawn)
             {
@@ -356,7 +356,7 @@ public class MoverScriptNoRigidbody : NetworkTransform
 
         m_PushMotion = Vector3.Lerp(m_PushMotion, Vector3.zero, 0.35f);
 
-        m_PlayerBallMotion.HasMotion(moveMotion);
+        m_PlayerBallMotion?.HasMotion(moveMotion);
     }
 
     private void OnGUI()

@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -26,6 +25,8 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
     private bool m_IsAlignRight;
 
+    protected bool m_ApplicationExitPending;
+
     private void Awake()
     {
         ExtendedNetworkManager.AttachExtension(this);
@@ -34,6 +35,16 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
     private void OnDestroy()
     {
         ExtendedNetworkManager.DetachExtension(this);
+    }
+
+    protected virtual void OnApplicationExitPending()
+    {
+    }
+
+    public void ApplicationExitPending()
+    {
+        m_ApplicationExitPending = true;
+        OnApplicationExitPending();
     }
 
     protected virtual void OnInitialize()
@@ -122,6 +133,26 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
         }
 
         return currentRect;
+    }
+
+    protected (Rect, bool) DrawToggle(Rect currentRect, bool toggleState, string label)
+    {
+        if (m_IsAlignRight)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+        }
+
+        toggleState = GUILayout.Toggle(toggleState, label);
+        var rect = GUILayoutUtility.GetLastRect();
+        currentRect.height += rect.height;
+
+        if (m_IsAlignRight)
+        {
+            GUILayout.EndHorizontal();
+        }
+
+        return (currentRect, toggleState);
     }
 
     protected (Rect, string) DrawTextField(Rect currentRect, string value)

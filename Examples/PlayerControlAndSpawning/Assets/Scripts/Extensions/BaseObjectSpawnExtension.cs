@@ -140,7 +140,7 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
 
     protected override Rect OnGUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion)
     {
-        if (!IsSpawned)
+        if (!IsSpawned || m_ApplicationExitPending)
         {
             return totalRectSize;
         }

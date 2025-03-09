@@ -22,5 +22,7 @@ public interface IExtensionHandler
 
     void NonAuthorityUpdate();
 
+    void ApplicationExitPending();
+
     public Rect GUIUpdate(Rect totalRectSize, ScreenSpaceRegions screenSpaceRegion);
 }
