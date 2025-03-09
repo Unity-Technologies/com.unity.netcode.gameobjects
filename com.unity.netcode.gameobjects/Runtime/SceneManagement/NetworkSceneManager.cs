@@ -2855,6 +2855,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
+            Log.Info(() => "PopulateScenePlacedObjects");
             if (clearScenePlacedObjects)
             {
                 ScenePlacedObjects.Clear();
@@ -2874,6 +2875,7 @@ namespace Unity.Netcode
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.gameObject.scene.handle;
+                Log.Info(() => $"PopulateScenePlacedObjects object={networkObjectInstance.gameObject} sceneHandle={sceneHandle} hash={globalObjectIdHash}");
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
                 if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
                     networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
@@ -2889,6 +2891,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        Log.Error(() => $"Duplicate hash ids from object={ScenePlacedObjects[globalObjectIdHash][sceneHandle].gameObject.NetworkGetScenePath()}");
                         var exitingEntryName = ScenePlacedObjects[globalObjectIdHash][sceneHandle] != null ? ScenePlacedObjects[globalObjectIdHash][sceneHandle].name : "Null Entry";
                         throw new Exception($"{networkObjectInstance.name} tried to registered with {nameof(ScenePlacedObjects)} which already contains " +
                             $"the same {nameof(NetworkObject.GlobalObjectIdHash)} value {globalObjectIdHash} for {exitingEntryName}!");

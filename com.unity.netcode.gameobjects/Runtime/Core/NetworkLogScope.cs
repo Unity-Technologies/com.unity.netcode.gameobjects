@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace TrollKing.Core
 {
@@ -98,6 +100,84 @@ namespace TrollKing.Core
         {
             UnityEngine.Debug.LogError($"[{m_LoggerName}] {e}");
             UnityEngine.Debug.LogException(e);
+        }
+    }
+
+    public static class NetworkGameObjectUtility
+    {
+        private static readonly NetworkLogScope Log = new NetworkLogScope(nameof(NetworkGameObjectUtility));
+
+        private static string NetworkGetScenePathRecursive(Transform go, string path)
+        {
+            if (go.parent == null)
+            {
+                return $"{go.gameObject.scene.name}:{go.name}:{path}";
+            }
+
+            return NetworkGetScenePathRecursive(go.parent, $"{go.name}:{path}");
+        }
+
+        // Depth first, we are going all the way down each leg
+        public static void NetworkGetAllHierarchyChildrenRecursive(this GameObject source, ref Queue<GameObject> queue)
+        {
+            if (source == null)
+            {
+                return;
+            }
+
+            int children = source.transform.childCount;
+            for (int i = 0; i < children; i++)
+            {
+                var child = source.transform.GetChild(i);
+                var go = child.gameObject;
+                Log.Debug(() => $"AddingHierarchyChild {go}");
+                queue.Enqueue(go);
+                NetworkGetAllHierarchyChildrenRecursive(go, ref queue);
+            }
+        }
+
+        public static Queue<GameObject> NetworkGetAllHierarchyChildren(this GameObject root)
+        {
+            var retVal = new Queue<GameObject>();
+            if (root == null)
+            {
+                return retVal;
+            }
+            Log.Debug(() => $"AddingHierarchyParent {root}");
+            retVal.Enqueue(root);
+            root.NetworkGetAllHierarchyChildrenRecursive(ref retVal);
+            return retVal;
+        }
+
+        public static string NetworkGetScenePath(this GameObject go)
+        {
+            return NetworkGetScenePath(go.transform);
+        }
+
+        public static string NetworkGetScenePath(this Transform go)
+        {
+            return NetworkGetScenePathRecursive(go, "");
+        }
+
+        public static string NetworkGetSceneName(this GameObject go)
+        {
+            return go.scene.name;
+        }
+
+        public static bool NetworkTryGetComponentInParent<T>(this GameObject go, out T comp)
+        {
+            var parent = go.transform;
+            while (parent != null && parent.parent != parent)
+            {
+                if (parent.TryGetComponent(out comp))
+                {
+                    return true;
+                }
+                parent = parent.parent;
+            }
+
+            comp = default;
+            return false;
         }
     }
 }
