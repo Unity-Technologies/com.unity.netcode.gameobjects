@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 {
 #if UNITY_EDITOR
+    [HideInInspector]
+    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>();
     protected virtual void OnValidateComponent()
     {
 
@@ -11,6 +14,34 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
     private void OnValidate()
     {
+        IsExpandedTable.Clear();
+        var typeList = new List<SerializableType>();
+        var parent = new SerializableType(GetType());
+        while (parent != null)
+        {
+            typeList.Add(parent);
+            if (!IsExpandedTable.ContainsKey(parent))
+            {
+                IsExpandedTable.Add(parent, false);
+            }
+            parent = new SerializableType(parent.Type.BaseType);
+            if (parent.Type == typeof(MonoBehaviour))
+            {
+                break;
+            }
+        }
+        foreach(var type in IsExpandedTable.Keys)
+        {
+            if (typeList.Contains(type))
+            {
+                typeList.Remove(type);
+            }
+        }
+        foreach (var type in typeList)
+        {
+            IsExpandedTable.Remove(type);
+        }
+
         OnValidateComponent();
     }
 #endif

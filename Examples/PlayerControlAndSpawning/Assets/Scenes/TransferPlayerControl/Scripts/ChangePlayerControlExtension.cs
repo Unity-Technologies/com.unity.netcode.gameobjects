@@ -80,7 +80,7 @@ public class ChangePlayerControlExtension : BaseObjectSpawnExtension
     protected override void SpawnObject(ulong playerId, bool isPlayerObject)
     {
         base.SpawnObject(playerId, isPlayerObject);
-        GetSpawnedNetworkObject().GetComponent<OwnershipChangeNonAuthorityHandler>().OwnershipChanged += SpawnedObjectOwnershipChanged;
+        GetSpawnedNetworkObject().GetComponent<OwnershipChangeNonAuthorityExtension>().OwnershipChanged += SpawnedObjectOwnershipChanged;
     }
 
     private void SpawnedObjectOwnershipChanged(ulong previous, ulong current)

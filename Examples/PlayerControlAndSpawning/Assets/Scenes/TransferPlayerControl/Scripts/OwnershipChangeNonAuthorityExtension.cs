@@ -2,7 +2,7 @@ using System;
 using Unity.Netcode;
 using UnityEngine;
 
-public class OwnershipChangeNonAuthorityHandler : BaseNetcodeExtension
+public class OwnershipChangeNonAuthorityExtension : BaseNetcodeExtension
 {
     public KeyCode OwnershipKeyCode = KeyCode.O;
 

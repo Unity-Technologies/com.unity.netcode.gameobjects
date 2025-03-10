@@ -1,9 +1,15 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 {
 #if UNITY_EDITOR
+    [HideInInspector]
+    public bool BaseNetcodeExtensionExpanded;
+    [HideInInspector]
+    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>();
+
     protected virtual void OnValidateComponent()
     {
 
@@ -11,6 +17,34 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 
     private void OnValidate()
     {
+        IsExpandedTable.Clear();
+        var typeList = new List<SerializableType>();
+        var parent = new SerializableType(GetType());
+        while (parent != null)
+        {
+            typeList.Add(parent);
+            if (!IsExpandedTable.ContainsKey(parent))
+            {
+                IsExpandedTable.Add(parent, false);
+            }
+            parent = new SerializableType(parent.Type.BaseType);
+            if (parent.Type == typeof(NetworkBehaviour))
+            {
+                break;
+            }
+        }
+        foreach (var type in IsExpandedTable.Keys)
+        {
+            if (typeList.Contains(type))
+            {
+                typeList.Remove(type);
+            }
+        }
+        foreach (var type in typeList)
+        {
+            IsExpandedTable.Remove(type);
+        }
+
         OnValidateComponent();
     }
 #endif

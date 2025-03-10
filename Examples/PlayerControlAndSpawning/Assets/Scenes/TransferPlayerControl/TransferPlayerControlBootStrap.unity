@@ -198,7 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4d8d44c602b97b47ba488a40c66267c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkManagerExpanded: 1
+  NetworkManagerExpanded: 0
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 455857871}
@@ -228,12 +228,12 @@ MonoBehaviour:
     OldPrefabList: []
   RunInBackground: 1
   LogLevel: 1
-  ExtendedNetworkManagerExpanded: 1
+  ExtendedNetworkManagerExpanded: 0
   ConnectionType: 1
   TargetFrameRate: 100
   EnableVSync: 0
-  m_OriginalVSyncCount: 0
-  m_ServicesRegistered: 1
+  m_OriginalVSyncCount: 1
+  m_ServicesRegistered: 0
 --- !u!114 &455857876
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,14 +246,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7714497b95b25c43b81a0818d6d8a71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: SceneLoadingExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
   SortOrder: 500
   Scenes:
   - {fileID: 102900000, guid: 49bdcd10a317f9a46b960d53efcee2f7, type: 3}
   - {fileID: 102900000, guid: dca504c81361aa04ebbcbb272425e506, type: 3}
   HUDScene: {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
-  DisconnectToScene: {fileID: 102900000, guid: 51f7715e0d0cf6c4aa52296036a4403c, type: 3}
+  MainMenuScene: {fileID: 102900000, guid: 51f7715e0d0cf6c4aa52296036a4403c, type: 3}
   NextSceneKeyCode: 9
-  m_DisconnectToSceneName: BootStrap
+  m_MainMenuSceneName: BootStrap
   m_HUDSceneName: HUDOverlay
   m_SceneNames:
   - TransferPlayerControlA
@@ -270,6 +277,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0fb7c0fa78a88d5419876e62e7e77ccf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: SingleObjectSpawnExtension, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
   SortOrder: 500
   PrefabToSpawn: {fileID: 3405683504318728836, guid: bc28fbf44ca36f742b419bd2c110f48c, type: 3}
 --- !u!114 &455857878
@@ -284,7 +298,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9504f255aa6d5e4a864aae9f545525c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortOrder: 100
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: SessionInfoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
+  SortOrder: 99
 --- !u!1 &1184702125
 GameObject:
   m_ObjectHideFlags: 0

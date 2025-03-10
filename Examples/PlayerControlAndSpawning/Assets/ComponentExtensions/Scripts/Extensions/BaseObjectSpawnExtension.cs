@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class BaseObjectSpawnExtension : BaseNetcodeExtension
 {
+#if UNITY_EDITOR
+    [HideInInspector]
+    public bool BaseObjectSpawnExtensionExpanded;
+#endif
+
     public GameObject PrefabToSpawn;
     [Range(2.0f, 20.0f)]
     public float SpawnRadius = 5.0f;
@@ -14,7 +19,6 @@ public class BaseObjectSpawnExtension : BaseNetcodeExtension
 
     private GameObject m_AuthorityGameObjectInstance;
     private NetworkObject m_AuthorityNetworkObjectInstance;
-    protected MoverScriptNoRigidbody m_MoverScriptNoRigidbody { get; private set; }
 
     protected override void OnInitialize()
     {

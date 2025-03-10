@@ -221,11 +221,11 @@ GameObject:
   - component: {fileID: 8921789205124766479}
   - component: {fileID: 8921789205124766478}
   - component: {fileID: 3121348088455848731}
+  - component: {fileID: 2509722539211228765}
   - component: {fileID: 8921789205124766474}
   - component: {fileID: 871737567343884637}
   - component: {fileID: 571224925323069553}
   - component: {fileID: -1866817662884762912}
-  - component: {fileID: 2509722539211228765}
   m_Layer: 0
   m_Name: ControlllerNoRigidbodyWithRpcOwnership
   m_TagString: Player
@@ -351,6 +351,27 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!65 &2509722539211228765
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8921789205124766477}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1.4, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &8921789205124766474
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -452,26 +473,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  BaseNetcodeExtensionExpanded: 0
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: OwnershipChangeNonAuthorityExtension, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseNetcodeExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
   SortOrder: 500
-  KeyToChangeOwnership: 111
---- !u!65 &2509722539211228765
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8921789205124766477}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1.4, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  OwnershipKeyCode: 111

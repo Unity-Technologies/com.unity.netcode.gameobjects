@@ -123,16 +123,21 @@ public class ControlApplicationExitExtension : BaseMonoExtension
 
     private Rect TopRightGUI(Rect totalRectSize)
     {
-        var retButtonValues = Draw.Button(totalRectSize, "Quit");
+        var retButtonValues = Draw.Button(totalRectSize, "Exit Application");
         if (retButtonValues.Item2 && m_ExtendedNetworkManager.CanQuitApplication)
         {
             m_ExtendedNetworkManager.QuitApplication();
             return retButtonValues.Item1;
         }
         totalRectSize = retButtonValues.Item1;
-        var retToggleValues = Draw.Toggle(totalRectSize, m_ExtendedNetworkManager.CanQuitApplication, "Can Quit");
+        var retToggleValues = Draw.Toggle(totalRectSize, m_ExtendedNetworkManager.CanQuitApplication, "Can Exit");
         m_ExtendedNetworkManager.CanQuitApplication = retToggleValues.Item2;
         totalRectSize = retToggleValues.Item1;
+
+        retToggleValues = Draw.Toggle(totalRectSize, CountDownBeforeExit, "Delay Exit");
+        CountDownBeforeExit = retToggleValues.Item2;
+        totalRectSize = retToggleValues.Item1;
+
         return totalRectSize;
     }
 

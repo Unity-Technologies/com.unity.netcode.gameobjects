@@ -9,16 +9,15 @@ public class SceneLoadingExtension : BaseMonoExtension
 {
 #if UNITY_EDITOR
     public List<SceneAsset> Scenes = new List<SceneAsset>();
-
     public SceneAsset HUDScene;
-    public SceneAsset DisconnectToScene;
+    public SceneAsset MainMenuScene;
 
     protected override void OnValidateComponent()
     {
-        m_DisconnectToSceneName = string.Empty;
-        if (DisconnectToScene)
+        m_MainMenuSceneName = string.Empty;
+        if (MainMenuScene)
         {
-            m_DisconnectToSceneName = DisconnectToScene.name;
+            m_MainMenuSceneName = MainMenuScene.name;
         }
         if (HUDScene != null)
         {
@@ -43,7 +42,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     [HideInInspector]
     [SerializeField]
-    private string m_DisconnectToSceneName;
+    private string m_MainMenuSceneName;
 
     [HideInInspector]
     [SerializeField]
@@ -97,7 +96,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override void OnInitialize()
     {
-        m_HasDisconnectToSceneName = !string.IsNullOrEmpty(m_DisconnectToSceneName);
+        m_HasDisconnectToSceneName = !string.IsNullOrEmpty(m_MainMenuSceneName);
         if (m_SceneNames.Count > 0)
         {
             m_CurrentSceneName = m_SceneNames[0];
@@ -166,7 +165,7 @@ public class SceneLoadingExtension : BaseMonoExtension
     private void ReturnMainMenu()
     {
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += ExitSceneLoaded;
-        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(m_DisconnectToSceneName);
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(m_MainMenuSceneName);
     }
 
     private void ExitSceneLoaded(UnityEngine.SceneManagement.Scene arg0, UnityEngine.SceneManagement.LoadSceneMode arg1)
