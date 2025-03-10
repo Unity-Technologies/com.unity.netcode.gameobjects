@@ -30,6 +30,8 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
+        /// <typeparam name="T">The type of the serializer.</typeparam>
+        /// <param name="serializer">The serializer used to serialize or deserialize the state.</param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (!SynchronizeBase)
@@ -105,6 +107,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only applies to the authoritative side for <see cref="NetworkTransform"/> instances.
         /// </remarks>
+        /// <returns>The current delta position as a <see cref="Vector3"/> with half float precision.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetConvertedDelta()
         {
@@ -120,6 +123,7 @@ namespace Unity.Netcode.Components
         /// Precision loss adjustments are one network tick behind on the
         /// non-authoritative side.
         /// </remarks>
+        /// <returns>The current delta position as a <see cref="Vector3"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetDeltaPosition()
         {

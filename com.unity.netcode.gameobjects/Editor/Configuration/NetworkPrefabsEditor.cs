@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Unity.Netcode.Editor
 {
+    /// <summary>
+    /// Custom editor for the <see cref="NetworkPrefabsList"/> class.
+    /// </summary>
     [CustomEditor(typeof(NetworkPrefabsList), true)]
     [CanEditMultipleObjects]
     public class NetworkPrefabsEditor : UnityEditor.Editor
@@ -11,6 +14,9 @@ namespace Unity.Netcode.Editor
         private ReorderableList m_NetworkPrefabsList;
         private SerializedProperty m_IsDefaultBool;
 
+        /// <summary>
+        /// Initializes the custom editor when it is enabled.
+        /// </summary>
         private void OnEnable()
         {
             m_IsDefaultBool = serializedObject.FindProperty(nameof(NetworkPrefabsList.IsDefault));
