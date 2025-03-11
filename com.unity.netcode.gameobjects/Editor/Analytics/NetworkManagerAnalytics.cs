@@ -1,9 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Text;
-#if ENABLE_NGO_ANALYTICS_LOGGING
 using UnityEngine;
-#endif
 using UnityEngine.Analytics;
 
 namespace Unity.Netcode.Editor
@@ -32,12 +30,11 @@ namespace Unity.Netcode.Editor
             message.AppendLine($"{nameof(TickRate)}: {TickRate}");
             return message.ToString();
         }
-#if ENABLE_NGO_ANALYTICS_LOGGING
-        internal void LogAnalytics(int sessionNumber)
+
+        internal void LogAnalyticData(int sessionNumber)
         {
             Debug.Log($"{nameof(NetworkManagerAnalytics)} Session-{sessionNumber}:\n {ToString()}");
         }
-#endif
         public bool Equals(NetworkManagerAnalytics other)
         {
             return IsDistributedAuthority == other.IsDistributedAuthority && WasServer == other.WasServer && WasClient == other.WasClient

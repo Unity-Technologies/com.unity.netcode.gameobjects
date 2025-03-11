@@ -8,6 +8,8 @@ namespace Unity.Netcode.Editor
     {
         private T m_Data;
 
+        internal T Data => m_Data;
+
         public AnalyticsHandler(T data)
         {
             m_Data = data;

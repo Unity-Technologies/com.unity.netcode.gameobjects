@@ -3,14 +3,22 @@ using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
-#if ENABLE_NGO_ANALYTICS_LOGGING
-using UnityEngine.Analytics;
-#endif
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.Editor
 {
 #if UNITY_EDITOR
+    internal struct NetworkSessionInfo
+    {
+        public int SessionIndex;
+        public bool SessionStopped;
+        public bool WasServer;
+        public bool WasClient;
+        public bool UsedCMBService;
+        public string Transport;
+        public NetworkConfig NetworkConfig;
+    }
+
     /// <summary>
     /// Specialized editor specific NetworkManager code
     /// </summary>
@@ -30,6 +38,7 @@ namespace Unity.Netcode.Editor
         private static void InitializeOnload()
         {
             Singleton = new NetworkManagerHelper();
+
             NetworkManager.NetworkManagerHelper = Singleton;
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
@@ -228,74 +237,15 @@ namespace Unity.Netcode.Editor
             return isParented;
         }
 
-        /// <summary>
-        /// Invoked from within <see cref="NetworkManager.ModeChanged"/> when exiting play mode.
-        /// </summary>
-        public void UpdateAnalytics()
-        {
-            // Exit early if analytics is disabled
-            if (!EditorAnalytics.enabled || NetworkManager.RecentSessions.Count == 0)
-            {
-                return;
-            }
-
-            var previousAnalytics = new NetworkManagerAnalytics();
-            // Parse through all of the recent network sessions to generate and send NetworkManager analytics
-            for (int i = 0; i < NetworkManager.RecentSessions.Count; i++)
-            {
-                var networkManagerAnalytics = GetNetworkManagerAnalytics(NetworkManager.RecentSessions[i]);
-
-
-                // If the previous session has no changes to the configuration then skip it (only unique configurations)
-                if (previousAnalytics.Equals(networkManagerAnalytics))
-                {
-                    continue;
-                }
-
-#if ENABLE_NGO_ANALYTICS_LOGGING
-                networkManagerAnalytics.LogAnalytics(NetworkManager.RecentSessions[i].SessionIndex);
-#endif
-                var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
-#if ENABLE_NGO_ANALYTICS_LOGGING
-                if (result != AnalyticsResult.Ok)
-                {
-                    Debug.LogWarning($"[Analytics] Problem sending analytics: {result}");
-                }
-#endif
-                previousAnalytics = networkManagerAnalytics;
-            }
-        }
+        internal NetcodeAnalytics NetcodeAnalytics = new NetcodeAnalytics();
 
         /// <summary>
-        /// Generates a <see cref="NetworkManagerAnalytics"/> based on the <see cref="NetworkManager.NetworkSessionInfo"/> passed in
+        /// Directly define the interface method to keep this internal
         /// </summary>
-        /// <param name="networkSession">Represents a network session with the used NetworkManager configuration</param>
-        /// <returns></returns>
-        private NetworkManagerAnalytics GetNetworkManagerAnalytics(NetworkManager.NetworkSessionInfo networkSession)
+        /// <returns>The <see cref="NetcodeAnalytics"/> instance which is derived from the <see cref="NetworkManager.NetcodeAnalytics"/> abstract class.</returns>
+        NetworkManager.NetcodeAnalytics NetworkManager.INetworkManagerHelper.Analytics()
         {
-            var multiplayerSDKInstalled = false;
-#if MULTIPLAYER_SERVICES_SDK_INSTALLED
-            multiplayerSDKInstalled = true;
-#endif
-#if ENABLE_NGO_ANALYTICS_LOGGING
-            if (!networkSession.SessionStopped)
-            {
-                Debug.LogWarning($"Session-{networkSession.SessionIndex} was not considered stopped!");
-            }
-#endif
-
-            var networkManagerAnalytics = new NetworkManagerAnalytics()
-            {
-                IsDistributedAuthority = networkSession.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority,
-                WasServer = networkSession.WasServer,
-                WasClient = networkSession.WasClient,
-                UsedCMBService = networkSession.UsedCMBService,
-                IsUsingMultiplayerSDK = multiplayerSDKInstalled,
-                NetworkTransport = networkSession.Transport,
-                EnableSceneManagement = networkSession.NetworkConfig.EnableSceneManagement,
-                TickRate = (int)networkSession.NetworkConfig.TickRate,
-            };
-            return networkManagerAnalytics;
+            return NetcodeAnalytics;
         }
     }
 #endif
