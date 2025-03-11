@@ -10,8 +10,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3321)
+- Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3321)
+
 ### Fixed
 
+- Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
+- Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
 - Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
 - Fixed issue where the `NetworkObject.Ownership` custom editor did not take the default "Everything" flag into consideration. (#3305)
 - Fixed DestroyObject flow on non-authority game clients. (#3291)
@@ -26,6 +31,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Ensured that a useful error is thrown when attempting to build a dedicated server with Unity Transport that uses websockets. (#3336)
 - Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
 - Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)
