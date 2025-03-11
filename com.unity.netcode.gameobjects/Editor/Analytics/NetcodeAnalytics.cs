@@ -7,6 +7,20 @@ using UnityEngine.Analytics;
 namespace Unity.Netcode.Editor
 {
     /// <summary>
+    /// Used to collection network session configuration information
+    /// </summary>
+    internal struct NetworkSessionInfo
+    {
+        public int SessionIndex;
+        public bool SessionStopped;
+        public bool WasServer;
+        public bool WasClient;
+        public bool UsedCMBService;
+        public string Transport;
+        public NetworkConfig NetworkConfig;
+    }
+
+    /// <summary>
     /// Netcode for GameObjects Analytics Class
     /// </summary>
     internal class NetcodeAnalytics : NetworkManager.NetcodeAnalytics

@@ -8,17 +8,6 @@ using UnityEngine.SceneManagement;
 namespace Unity.Netcode.Editor
 {
 #if UNITY_EDITOR
-    internal struct NetworkSessionInfo
-    {
-        public int SessionIndex;
-        public bool SessionStopped;
-        public bool WasServer;
-        public bool WasClient;
-        public bool UsedCMBService;
-        public string Transport;
-        public NetworkConfig NetworkConfig;
-    }
-
     /// <summary>
     /// Specialized editor specific NetworkManager code
     /// </summary>
