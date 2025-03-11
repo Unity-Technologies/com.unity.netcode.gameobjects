@@ -87,8 +87,8 @@ namespace Unity.Netcode.Editor
         /// <param name="networkManager">The <see cref="NetworkManager"/> instance when the session is started.</param>
         internal override void SessionStarted(NetworkManager networkManager)
         {
-            // If analytics is disabled, then exit early
-            if (!EditorAnalytics.enabled)
+            // If analytics is disabled and we are not running an integration test, then exit early.
+            if (!EditorAnalytics.enabled && !IsIntegrationTest)
             {
                 return;
             }
@@ -111,8 +111,8 @@ namespace Unity.Netcode.Editor
         /// <param name="networkManager">The <see cref="NetworkManager"/> instance.</param>
         internal override void SessionStopped(NetworkManager networkManager)
         {
-            // If analytics is disabled or there are no sessions, then exit early
-            if (!EditorAnalytics.enabled || RecentSessions.Count == 0)
+            // If analytics is disabled and we are not running an integration test or there are no sessions, then exit early.
+            if ((!EditorAnalytics.enabled && !IsIntegrationTest) || RecentSessions.Count == 0)
             {
                 return;
             }
@@ -134,8 +134,8 @@ namespace Unity.Netcode.Editor
         /// </summary>
         private void UpdateAnalytics(NetworkManager networkManager)
         {
-            // Exit early if analytics is disabled or there are no sessions to process.
-            if (!EditorAnalytics.enabled || RecentSessions.Count == 0)
+            // If analytics is disabled and we are not running an integration test or there are no sessions to process, then exit early.
+            if ((!EditorAnalytics.enabled && !IsIntegrationTest) || RecentSessions.Count == 0)
             {
                 return;
             }
@@ -169,6 +169,7 @@ namespace Unity.Netcode.Editor
                     continue;
                 }
 
+                // If not running an integration test, then go ahead and send the anlytics event data.
                 if (!IsIntegrationTest)
                 {
                     var result = EditorAnalytics.SendAnalytic(new NetworkManagerAnalyticsHandler(networkManagerAnalytics));
