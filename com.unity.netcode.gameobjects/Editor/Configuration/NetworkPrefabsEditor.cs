@@ -88,6 +88,9 @@ namespace Unity.Netcode.Editor
             m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
         }
 
+        /// <summary>
+        /// Draws the custom inspector GUI for the NetworkPrefabsEditor.
+        /// </summary>
         public override void OnInspectorGUI()
         {
             using (new EditorGUI.DisabledScope(true))
