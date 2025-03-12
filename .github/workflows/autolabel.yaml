@@ -1,5 +1,8 @@
 name: Update issue labels
 
+# Trigger for the workflow
+# This trigger will populate the github.event object
+# Details on properties are here: https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=created#issue_comment
 on:
   issue_comment:
     types: [created]
@@ -23,23 +26,18 @@ jobs:
     steps:
       - name: Calculate labels
         run: |
-          ADD_LABELS=()
-          REMOVE_LABELS=()
 
           if [[ "${{ github.event.comment.author_association }}" == "MEMBER" ]]; then
-            ADD_LABELS+="${{ env.AWAITING_RESPONSE}}"
+            echo ADD="${{ env.AWAITING_RESPONSE}}" >> $GITHUB_ENV
           else
-            REMOVE_LABELS+="${{ env.AWAITING_RESPONSE}}"
+            echo REMOVE="${{ env.AWAITING_RESPONSE}}" >> $GITHUB_ENV
           fi
 
-
-          # Add further label logic here - uses bash
-
-          echo "ADD_LABELS=$(IFS=,; echo "${ADD_LABELS[*]}")" >> $GITHUB_ENV
-          echo "REMOVE_LABELS=$(IFS=,; echo "${REMOVE_LABELS[*]}")" >> $GITHUB_ENV
-
       - name: Update labels
-        run: gh issue edit "$NUMBER" --add-label "$ADD_LABELS" --remove-label "$REMOVE_LABELS"
+        # This runs a command using the github cli: https://cli.github.com/manual/gh_issue_edit
+        # If $ADD is set, it will add the label, otherwise it will remove the label
+        # There is no need to check if $ADD or $REMOVE is set, as the command will ignore it if it is empty
+        run: gh issue edit "$NUMBER" --add-label "$ADD" --remove-label "$REMOVE"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
