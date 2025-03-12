@@ -9,7 +9,7 @@
   # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
     # 1. For all console platform (Switch, ps4, ps5, xbox360, xboxOne)
     # 2. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
-  ` # 3. For the default project.
+    # 3. For the default project.
 
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # For console devices a split is required into two phases:
