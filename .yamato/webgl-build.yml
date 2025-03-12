@@ -7,16 +7,10 @@
   # This is because WebGL runs in browser and for tests to be executed we would need to consider having a web server, browser automation and overall complex test setup which currently we don't have. 
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs configurations are generated using nested loops through:
     # 1. For the default project (project is used only as a context for the build).
     # 2. For all desktop platforms (Windows, Ubuntu, macOS)
     # 3. For all supported Unity Editor versions (For NGOv2.X it means 6000+)
-  
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-  
-  # The jobs name being generated would be for example "WebGl Build - testproject [win, 6000.0, il2cpp]" (name visible in Yamato) or "webgl_build_testproject_win_6000.0" (job name when querying for it)
   
 # TECHNICAL CONSIDERATIONS----------------------------------------------------------------
   # WebGL requires IL2CPP scripting backend (Mono is not supported)

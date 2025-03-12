@@ -6,17 +6,11 @@
   # This helps detect potential breaking changes from dependency updates early
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs configurations are generated using nested loops through:
     # 1. For all projects (testproject, minimalproject, testproject-tools-integration).
     # 2. For all desktop platforms (Win, Ubuntu, Mac)
     # 3. For all supported editors (For NGOv2.X it means 6000+)
-  
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-  
-  # The jobs name being generated would be for example "Updated Dependencies Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "updated-dependencies_testproject_NGO_win_6000.0" (job name when querying for it)
-  
+
 # TECHNICAL CONSIDERATIONS----------------------------------------------------------------
   # This job requires successful project packaging before execution (job dependency)
   # This job tests only NGO package dependencies (com.unity.netcode.gameobjects)

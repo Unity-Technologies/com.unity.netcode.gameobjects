@@ -7,16 +7,10 @@
   # Currently because of lack of performance tests this job will always return "no tests have been selected" and because oif that it's not included in any trigger jobs.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs configurations are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
     # 2. For all supported Unity Editor versions (For NGOv2.X it means 6000+)
     # 3. For the default project (project is used only as a context for the build). TODO-comment: if performance tests would be included in projects then we should make an approperiate split.
-  
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-  
-  # The jobs name being generated would be for example "Performance editor Tests - NGO testproject [win, 6000.0] (No Data Reporting)" (name visible in Yamato) or "performance_editor_tests_-_NGO_testproject_6000.0_no_data_reporting" (job name when querying for it)  
   
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # Tests are run in Editor context only

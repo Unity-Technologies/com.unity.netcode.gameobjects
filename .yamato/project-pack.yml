@@ -6,15 +6,9 @@
   # The job itself doesn't test anything specific but rather it prepares project packages that will be consumed by other pipeline jobs.
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs configurations are generated using nested loops through:
     # 1. For all projects (testproject, minimalproject, testproject-tools-integration).
     # 2. For all desktop platforms (Win, Ubuntu, Mac)
-  
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-  
-  # The jobs name being generated would be for example "Project Pack - testproject [win]" (name visible in Yamato) or "project_pack_-_testproject_win" (job name when querying for it)
   
 # TECHNICAL CONSIDERATIONS--------------------------------------------------------------------
   # Job does not require Unity Editor in order to perform packing.

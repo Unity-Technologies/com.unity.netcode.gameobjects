@@ -7,16 +7,10 @@
   # NGO package tests are NOT being executed within this job (those are handled in separate package test jobs)
   
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs configurations are generated using nested loops through:
     # 1. For all projects WITH TESTS (filtered by has_tests flag) (testproject, testproject-tools-interation) [For more info look into project.metafile configuration]
     # 2. For all desktop platforms (Windows, Ubuntu, macOS)
     # 3. For all supported Unity Editor versions (for NGOv2.X this means 6000.0+ editors)
-  
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-  
-  # The jobs name being generated would be for example "Project Test - NGO testproject [win, 6000.0]" (name visible in Yamato) or "test_testproject_win_6000.0" (job name when querying for it)  
   
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This job runs in Editor context only (no player builds is required)

@@ -5,13 +5,8 @@
   # Those jobs group together related test as dependencies to allow to easily manage running a given set of tests.
   # This enables efficient test execution for different validation scenarios
 
-# CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
-  # Jobs are generated using nested loops through:
-  
-  # It's important to ensure that all generated in such way dependencies exist (this can be verified in Yamato)
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
+# QUALITY CONSIDERATIONS---------------------------------------------------------------
+  # It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
 
 #-----------------------------------------------------------------------------------
 

@@ -8,14 +8,8 @@
   # Because of that validation we can detect errors at the early stage of testing so not to waste CI resources
 
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
-  # It may seem that there is only 1 job defined, but we are using "for" loops based on .yamato/project.metafile configuration. Yamato "compiles" this code in order to generate jobs with multiple given configurations
   # Jobs are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
-
-  # In theory, we could manually write jobs for every configuration. However, this approach would be more error-prone, especially when modifications or fixes are needed, as it would require keeping track of all configurations.
-  # The downside of our current approach is that it can sometimes impact readability due to the use of nested if and for statements.
-
-  # The jobs name being generated would be for example "Package Pack (and x-ray) - NGO [win]" (name visible in Yamato) or "package_pack_-_ngo_win" (job name when querying for it)   
 
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # Job does not require Unity Editor in order to perform packing.
