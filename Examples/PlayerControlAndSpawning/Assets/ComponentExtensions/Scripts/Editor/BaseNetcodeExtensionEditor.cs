@@ -30,6 +30,7 @@ public class BaseNetcodeExtensionEditor : Editor
     /// </summary>
     private void BuildSerializedProperties()
     {
+        m_SerializedProperties.Clear();
         var baseNetcodeExtension = target as BaseNetcodeExtension;
         foreach (var entry in baseNetcodeExtension.IsExpandedTable)
         {
@@ -111,7 +112,12 @@ public class BaseNetcodeExtensionEditor : Editor
         for (int i = 0; i < keys.Count; i++)
         {
             var type = keys[i];
-            // If this is the actual type of the component, then just draw its properties.
+            if (!m_SerializedProperties.ContainsKey(type.Type))
+            {
+                // If the type has no properties then just draw its name
+                EditorGUILayout.LabelField($"{type.Type.Name}");
+            }
+            else // If this is the actual type of the component, then just draw its properties.
             if (type.Type == targetType)
             {
                 DrawSerializedProperties(type);

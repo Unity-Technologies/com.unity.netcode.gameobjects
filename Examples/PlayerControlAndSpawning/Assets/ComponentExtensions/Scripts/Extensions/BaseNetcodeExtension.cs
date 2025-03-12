@@ -1,6 +1,14 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
+
+public enum NetworkObjectStatus
+{
+    Spawned,
+    Despawned
+}
 
 public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 {
@@ -8,7 +16,7 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
     [HideInInspector]
     public bool BaseNetcodeExtensionExpanded;
     [HideInInspector]
-    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>();
+    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>(new SerializableTypeComparer());
 
     protected virtual void OnValidateComponent()
     {
@@ -17,7 +25,6 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 
     private void OnValidate()
     {
-        IsExpandedTable.Clear();
         var typeList = new List<SerializableType>();
         var parent = new SerializableType(GetType());
         while (parent != null)
@@ -25,7 +32,10 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
             typeList.Add(parent);
             if (!IsExpandedTable.ContainsKey(parent))
             {
-                IsExpandedTable.Add(parent, false);
+                if (!IsExpandedTable.Keys.Contains(parent))
+                {
+                    IsExpandedTable.Add(parent, false);
+                }
             }
             parent = new SerializableType(parent.Type.BaseType);
             if (parent.Type == typeof(NetworkBehaviour))
@@ -52,6 +62,8 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
     public uint SortOrder = 500;
     public DrawHandler Draw;
 
+    public Action<NetworkObject, NetworkObjectStatus> NetworkObjectStatusUpdate;
+
     protected ExtendedNetworkManager m_ExtendedNetworkManager;
     protected ConnectionStates m_ConnectionState;
 
@@ -59,10 +71,16 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 
     protected bool m_ApplicationExitPending;
 
+    protected virtual void OnAwake()
+    {
+
+    }
+
     private void Awake()
     {
         Draw = new DrawHandler();
         ExtendedNetworkManager.AttachExtension(this);
+        OnAwake();
     }
 
     public override void OnDestroy()
@@ -160,5 +178,17 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
         }
         Draw.AlignRight = screenSpaceRegion == ScreenSpaceRegions.TopRight;
         return OnGUIUpdate(totalRectSize, screenSpaceRegion);
+    }
+
+    protected override void OnNetworkPostSpawn()
+    {
+        NetworkObjectStatusUpdate?.Invoke(NetworkObject, NetworkObjectStatus.Spawned);
+        base.OnNetworkPostSpawn();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        NetworkObjectStatusUpdate?.Invoke(NetworkObject, NetworkObjectStatus.Despawned);
+        base.OnNetworkDespawn();
     }
 }

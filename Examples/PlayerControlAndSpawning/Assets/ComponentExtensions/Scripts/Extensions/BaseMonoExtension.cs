@@ -6,7 +6,7 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 {
 #if UNITY_EDITOR
     [HideInInspector]
-    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>();
+    public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>(new SerializableTypeComparer());
     protected virtual void OnValidateComponent()
     {
 
@@ -14,7 +14,6 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
     private void OnValidate()
     {
-        IsExpandedTable.Clear();
         var typeList = new List<SerializableType>();
         var parent = new SerializableType(GetType());
         while (parent != null)
@@ -30,7 +29,7 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
                 break;
             }
         }
-        foreach(var type in IsExpandedTable.Keys)
+        foreach (var type in IsExpandedTable.Keys)
         {
             if (typeList.Contains(type))
             {

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -26,9 +27,15 @@ public class SerializableType : IEquatable<SerializableType>
         }
     }
 
+    public override int GetHashCode()
+    {
+        return m_AssemblyQualifiedName.GetHashCode();
+    }
+
     public bool Equals(SerializableType other)
     {
-        return Type == other.Type;
+        var isEqual = Type.Equals(other.Type);
+        return isEqual;
     }
 
     public SerializableType(Type type)
@@ -38,6 +45,23 @@ public class SerializableType : IEquatable<SerializableType>
     public SerializableType()
     {
 
+    }
+}
+
+public class SerializableTypeComparer : IEqualityComparer<SerializableType>
+{
+    public bool Equals(SerializableType first, SerializableType second)
+    {
+        if (first is null || second is null)
+        {
+            return false;
+        }
+        return first.Equals(second);
+    }
+
+    public int GetHashCode(SerializableType serializableType)
+    {
+        return serializableType.GetHashCode();
     }
 }
 #endif

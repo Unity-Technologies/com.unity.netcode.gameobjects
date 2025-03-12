@@ -149,6 +149,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ScenesToLoad:
+  - SceneToLoad: InSceneObjectSpawningBootStrap
+    DisplayName: In-Scene Object Spawning
   - SceneToLoad: ControlExitingApplicationBootStrap
     DisplayName: Control Exit Application
   - SceneToLoad: ManualSpawningBootStrap
@@ -156,6 +158,8 @@ MonoBehaviour:
   - SceneToLoad: TransferPlayerControlBootStrap
     DisplayName: Transfer Player Control
   SceneEntries:
+  - SceneAsset: {fileID: 102900000, guid: e973f69547bc0a248877650e68fd2637, type: 3}
+    DisplayName: In-Scene Object Spawning
   - SceneAsset: {fileID: 102900000, guid: 9616abc5253323748801704699a11cbf, type: 3}
     DisplayName: Control Exit Application
   - SceneAsset: {fileID: 102900000, guid: bcdb10568a3717a4f9b9c93a94dad00f, type: 3}

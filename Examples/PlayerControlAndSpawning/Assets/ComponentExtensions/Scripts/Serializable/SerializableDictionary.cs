@@ -42,5 +42,10 @@ public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IS
             Add(m_Keys[i], m_Values[i]);
         }
     }
+
+    public SerializableDictionary(IEqualityComparer<TKey> equalityComparer) : base(equalityComparer)
+    {
+
+    }
 }
 #endif

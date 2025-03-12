@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/BootStrap.unity
     guid: 51f7715e0d0cf6c4aa52296036a4403c
   - enabled: 1
+    path: Assets/Scenes/HUDOverlay.unity
+    guid: d86d68247f777c044896d2218fe666a2
+  - enabled: 1
     path: Assets/Scenes/ManualPlayerSpawning/CharacterControllerA.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
@@ -25,7 +28,7 @@ EditorBuildSettings:
     guid: 49bdcd10a317f9a46b960d53efcee2f7
   - enabled: 1
     path: Assets/Scenes/TransferPlayerControl/TransferPlayerControlB.unity
-    guid: 431da54156af0c744885e50be8735351
+    guid: dca504c81361aa04ebbcbb272425e506
   - enabled: 1
     path: Assets/Scenes/ControlQuitApplication/ControlExitingApplicationBootStrap.unity
     guid: 9616abc5253323748801704699a11cbf
@@ -33,7 +36,10 @@ EditorBuildSettings:
     path: Assets/Scenes/ControlQuitApplication/ControlExitingApplication.unity
     guid: f71bd75841677d64b9946f4bda8e59bc
   - enabled: 1
-    path: Assets/Scenes/HUDOverlay.unity
-    guid: d86d68247f777c044896d2218fe666a2
+    path: Assets/Scenes/InSceneObjectSpawning/InSceneObjectSpawningBootStrap.unity
+    guid: e973f69547bc0a248877650e68fd2637
+  - enabled: 1
+    path: Assets/Scenes/InSceneObjectSpawning/InSceneObjectSpawning.unity
+    guid: 830576e5b4653834aa0ffe6741fd34b0
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

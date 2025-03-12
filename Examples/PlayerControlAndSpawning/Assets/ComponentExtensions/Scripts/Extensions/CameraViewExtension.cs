@@ -3,7 +3,7 @@ using UnityEngine;
 public class CameraViewExtension : BaseMonoExtension
 {
     public static CameraViewExtension Instance;
-    private Camera m_Camera;
+    protected Camera m_Camera;
 
     private Vector3 m_CameraOriginalPosition;
     private Quaternion m_CameraOriginalRotation;
