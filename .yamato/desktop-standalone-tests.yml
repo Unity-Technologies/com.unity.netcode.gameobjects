@@ -70,9 +70,31 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+
+# Set additional variables for running the echo server
+{% if platform.name != "win" %}
+  variables:
+    ECHO_SERVER_PORT: "7788"
+    # Set this to ensure the DA codec tests will fail if they cannot connect to the echo-server
+    # The default is to ignore the codec tests if the echo-server fails to connect
+    ENSURE_CODEC_TESTS: "true"
+{% endif %}
+
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
+
+# If ubuntu, run rust echo server
+{% if platform.name != "win" %}
+    - git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+    # Install rust
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    # Build the echo server
+    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo build --example ngo_echo_server
+    # Run the echo server in the background - this will reuse the artifacts from the build
+    - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
+{% endif %}
+
   artifacts:
     logs:
       paths:
