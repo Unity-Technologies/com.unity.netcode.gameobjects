@@ -64,7 +64,7 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.all -%}
-mobile_standalone_test_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
+mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }},  il2cpp]
   agent:
     type: {{ platform.type }}
