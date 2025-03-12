@@ -2159,6 +2159,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2612,6 +2613,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2798,6 +2800,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2953,6 +2956,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
 
