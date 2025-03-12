@@ -71,7 +71,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
 
-# Set additional variables for running the echo server
+# Set additional variables for running the echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %}
   variables:
     ECHO_SERVER_PORT: "7788"
@@ -84,7 +84,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --wait
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
 
-# If ubuntu, run rust echo server
+# If ubuntu, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %}
     - git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
     # Install rust
