@@ -158,6 +158,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            //TODO: Remove this when we determine what the random failure is
             m_EnableVerboseDebug = true;
             TestComponentHelper.ClientsRegistered.Clear();
             TestComponentHelper.NetworkObjectIdToIndex.Clear();
@@ -170,6 +171,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
+            //TODO: Remove this when we determine what the random failure is
             m_EnableVerboseDebug = false;
             if (m_ServerSideParent != null && m_ServerSideParent.GetComponent<NetworkObject>().IsSpawned)
             {
