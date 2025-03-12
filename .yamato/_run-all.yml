@@ -1,5 +1,15 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
+
+# DESCRIPTION--------------------------------------------------------------------------
+# Those jobs group together related test as dependencies to allow to easily manage running a given set of tests.
+# This enables efficient test execution for different validation scenarios
+
+# QUALITY CONSIDERATIONS---------------------------------------------------------------
+# It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
+
+#-----------------------------------------------------------------------------------
+
 
 # Runs all package tests
 run_all_package_tests:
