@@ -42,7 +42,7 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     - dotnet --version
     - dotnet format --version
     
-    - unity-downloader-cli -u {{ editor }} -c editor # Downloads basic editor
+    - unity-downloader-cli -u {{ editor }} -c editor --wait # Downloads basic editor
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
     - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --check # Runs standards check
 {% endfor -%}

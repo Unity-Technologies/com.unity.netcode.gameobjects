@@ -33,7 +33,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp # Downloading the editor with additional webgl and il2cpp components
+    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp --wait # Downloading the editor with additional webgl and il2cpp components
   
     # The following step builds the player with defined options such as:
       # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
