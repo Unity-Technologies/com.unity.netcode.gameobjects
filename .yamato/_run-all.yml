@@ -170,7 +170,7 @@ run_all_project_tests_mobile_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -183,7 +183,7 @@ run_all_project_tests_mobile_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -194,7 +194,7 @@ run_all_project_tests_mobile_standalone_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
 
