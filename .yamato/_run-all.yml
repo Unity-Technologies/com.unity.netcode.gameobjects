@@ -216,7 +216,7 @@ run_all_project_tests_console_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -229,7 +229,7 @@ run_all_project_tests_console_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -240,6 +240,6 @@ run_all_project_tests_console_standalone_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
