@@ -34,7 +34,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
   commands:
-    - unity-downloader-cli -u {{ editor }} -c Editor --wait
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
     - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage -coverage-results-path=$PWD/test-results/CodeCoverage --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
