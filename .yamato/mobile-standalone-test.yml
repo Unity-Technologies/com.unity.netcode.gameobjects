@@ -45,6 +45,9 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       type: {{ platform.type }}
       image: {{ platform.image }}
       flavor: {{ platform.flavor }}
+{% if platform.model %}
+      model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
@@ -71,7 +74,7 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
 {% if platform.model %}
-    model: {{ platform.model }}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
     # Installing editor. We still need the editor to run tests on standalone build and for that the Editor is required

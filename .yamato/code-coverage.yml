@@ -34,6 +34,9 @@ code_coverage_{{ platform.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
