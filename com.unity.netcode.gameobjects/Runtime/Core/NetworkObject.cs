@@ -2567,11 +2567,36 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// Used when changing ownership, this will mark any owner read permission base NetworkVariables as dirty
+        /// and will check if any owner write permission NetworkVariables are dirty (primarily for collections) so
+        /// the new owner will get a full state update prior to changing ownership.
+        /// </summary>
+        /// <remarks>
+        /// We have to pass in the original owner and previous owner to "reset" back to the current state of this
+        /// NetworkObject in order to preserve the same ownership change flow. By the time this is invoked, the
+        /// new and previous owner ids have already been set.
+        /// </remarks>
+        /// <param name="originalOwnerId">the owner prior to beginning the change in ownership change.</param>
+        /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
+        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
+            var currentOwnerId = OwnerClientId;
+            OwnerClientId = originalOwnerId;
+            PreviousOwnerId = originalPreviousOwnerId;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].MarkOwnerReadVariablesDirty();
+                ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
+            }
+            // Force send a state update for all owner read NetworkVariables
+            // and any currently dirty owner write NetworkVariables.
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+            // Now set the new owner identifier back to its original new owner identifier
+            OwnerClientId = currentOwnerId;
+            // The previous owner should now be the originalOwnerId at this point.
+            if (PreviousOwnerId != originalOwnerId)
+            {
+                Debug.LogError($"[NetworkVaraible][Full Synchronization] Expected {nameof(PreviousOwnerId)} ({PreviousOwnerId}) to be the original owner id ({originalOwnerId})!");
             }
         }
 
