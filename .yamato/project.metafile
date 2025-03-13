@@ -58,6 +58,7 @@ test_platforms:
           image: package-ci/macos-13:v4
           flavor: m1.mac
           standalone: StandaloneOSX
+          model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
     # TODO: For android we could consider adding ARM64 configuration
     mobile_build:
