@@ -558,9 +558,9 @@ namespace Unity.Netcode
             // Always notify locally on the server when a new owner is assigned
             networkObject.InvokeBehaviourOnGainedOwnership();
 
-            if (networkObject.PreviousOwnerId == NetworkManager.LocalClientId)
+            // If we are the original owner, then we want to synchronize owner read & write NetworkVariables.
+            if (originalOwner == NetworkManager.LocalClientId)
             {
-                // Mark any owner read variables as dirty
                 networkObject.SynchronizeOwnerNetworkVariables(originalOwner, originalPreviousOwnerId);
             }
 

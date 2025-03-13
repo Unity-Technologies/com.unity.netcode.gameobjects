@@ -2591,13 +2591,10 @@ namespace Unity.Netcode
             // Force send a state update for all owner read NetworkVariables
             // and any currently dirty owner write NetworkVariables.
             NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
-            // Now set the new owner identifier back to its original new owner identifier
+            // Now set the new owner identifier back to its original new owner identifier and
+            // set the previous owner back to the original owner identifier.
             OwnerClientId = currentOwnerId;
-            // The previous owner should now be the originalOwnerId at this point.
-            if (PreviousOwnerId != originalOwnerId)
-            {
-                Debug.LogError($"[NetworkVaraible][Full Synchronization] Expected {nameof(PreviousOwnerId)} ({PreviousOwnerId}) to be the original owner id ({originalOwnerId})!");
-            }
+            PreviousOwnerId = originalOwnerId;
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
