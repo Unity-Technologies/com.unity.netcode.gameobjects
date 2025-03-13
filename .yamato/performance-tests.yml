@@ -31,6 +31,9 @@ performance_editor_tests_-_NGO_{{ platform.name }}_{{ editor }}_no_data_reportin
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor # Installing basic editor
     - UnifiedTestRunner --suite=editor --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --timeout=3600 --artifacts-path=artifacts --extra-editor-arg=-assemblyNames --extra-editor-arg=Unity.NetCode.* --extra-editor-arg=-testCategory --extra-editor-arg=Performance --extra-editor-arg=-enablePackageManagerTraces --reruncount=1 --clean-library-on-rerun --dontreportperformancedata

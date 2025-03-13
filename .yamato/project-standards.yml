@@ -36,6 +36,9 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     # .NET environment setup. Ensures required .NET SDK and formatting tools are available
     - dotnet --version

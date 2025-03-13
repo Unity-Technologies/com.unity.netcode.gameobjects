@@ -32,6 +32,9 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
     UNITY_EXT_LOGGING: 1

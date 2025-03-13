@@ -31,6 +31,9 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects

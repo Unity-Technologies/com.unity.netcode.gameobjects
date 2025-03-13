@@ -30,6 +30,9 @@ package_pack_-_ngo_{{ platform.name }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   timeout: 0.25
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
