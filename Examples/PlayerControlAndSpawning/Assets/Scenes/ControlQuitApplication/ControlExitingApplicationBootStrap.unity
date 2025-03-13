@@ -246,18 +246,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7714497b95b25c43b81a0818d6d8a71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BaseMonoExtensionExpanded: 0
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: SceneLoadingExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 500
-  SceneLoadingExtensionExpanded: 1
-  Scenes:
-  - {fileID: 102900000, guid: f71bd75841677d64b9946f4bda8e59bc, type: 3}
-  HUDScene: {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
   MainMenuScene: {fileID: 102900000, guid: 51f7715e0d0cf6c4aa52296036a4403c, type: 3}
+  Scenes:
+  - ActiveScene: {fileID: 102900000, guid: 813372f13c0fe6b49859f7198ba0afd1, type: 3}
+    AdditveScenes:
+    - {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
+    - {fileID: 102900000, guid: f71bd75841677d64b9946f4bda8e59bc, type: 3}
   NextSceneKeyCode: 9
   m_MainMenuSceneName: BootStrap
-  m_HUDSceneName: HUDOverlay
-  m_SceneNames:
-  - ControlExitingApplication
+  m_SceneEntries:
+  - Index: 0
+    ActiveScene: SceneWithGreyFloor
+    AdditveScenes:
+    - HUDOverlay
+    - ControlExitingApplication
 --- !u!114 &455857878
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -270,7 +281,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9504f255aa6d5e4a864aae9f545525c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BaseMonoExtensionExpanded: 0
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: SessionInfoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 100
 --- !u!114 &455857879
 MonoBehaviour:
@@ -284,7 +302,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104c1bb6d6f602b4b869360da211a846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BaseMonoExtensionExpanded: 0
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: ControlApplicationExitExtension, Assembly-CSharp,
+        Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 501
   CountDownBeforeExit: 1
   CountDownPeriod: 5

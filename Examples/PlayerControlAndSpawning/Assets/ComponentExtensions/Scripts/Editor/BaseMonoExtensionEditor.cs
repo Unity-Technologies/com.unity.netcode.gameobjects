@@ -113,19 +113,24 @@ public class BaseMonoExtensionEditor : Editor
         for (int i = 0; i < keys.Count; i++)
         {
             var type = keys[i];
+            // If the type has no properties...
             if (!m_SerializedProperties.ContainsKey(type.Type))
             {
-                // If the type has no properties then just draw its name
-                EditorGUILayout.LabelField($"{type.Type.Name}");
+                // ... and as long as it is not the lowest leaf/derived child class...
+                if (type.Type != targetType)
+                {
+                    // then put a place holder label for this class derivation level.
+                    EditorGUILayout.LabelField($"{type.Type.Name}");
+                }
             }
-            else // If this is the actual type of the component, then just draw its properties.
+            else // If this is the lowest leaf/derived child class then just draw its properties.
             if (type.Type == targetType)
             {
                 DrawSerializedProperties(type);
             }
             else
             {
-                // Otherwise, any parent class of the target type will be placed within a foldout group.
+                // Otherwise, any parent class of the lowest leaf/derived child class will be placed within a foldout group.
                 DrawFoldoutGroup(type);
             }
             EditorGUILayout.Space();

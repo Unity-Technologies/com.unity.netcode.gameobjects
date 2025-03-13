@@ -1,24 +1,44 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraViewExtension : BaseMonoExtension
 {
-    public static CameraViewExtension Instance;
+    private static List<CameraViewExtension> s_Instances = new List<CameraViewExtension>();
+    internal static void DestroyCameraInstances()
+    {
+        var instanceCount = s_Instances.Count;
+        for (int i = instanceCount - 1; i >= 0; i--)
+        {
+            Destroy(s_Instances[i].gameObject);
+        }
+    }
+
+
+    public bool DestroyOnLoad = true;
     protected Camera m_Camera;
 
     private Vector3 m_CameraOriginalPosition;
     private Quaternion m_CameraOriginalRotation;
+
+
+    protected override void OnAwake()
+    {
+        if (!s_Instances.Contains(this))
+        {
+            s_Instances.Add(this);
+        }
+        base.OnAwake();
+    }
 
     protected override void OnInitialize()
     {
         m_Camera = GetComponent<Camera>();
         m_CameraOriginalPosition = m_Camera.transform.position;
         m_CameraOriginalRotation = m_Camera.transform.rotation;
-        if (Instance && Instance.gameObject && Instance.gameObject != gameObject)
+        if (!DestroyOnLoad)
         {
-            Destroy(Instance.gameObject);
+            DontDestroyOnLoad(gameObject);
         }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
         base.OnInitialize();
     }
 
@@ -46,7 +66,10 @@ public class CameraViewExtension : BaseMonoExtension
         m_Camera.transform.parent = null;
         m_Camera.transform.position = m_CameraOriginalPosition;
         m_Camera.transform.rotation = m_CameraOriginalRotation;
-        DontDestroyOnLoad(gameObject);
+        if (!DestroyOnLoad)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
     }
 
     protected override void OnStatusUpdate(ConnectionStates previousState, ConnectionStates currentState)

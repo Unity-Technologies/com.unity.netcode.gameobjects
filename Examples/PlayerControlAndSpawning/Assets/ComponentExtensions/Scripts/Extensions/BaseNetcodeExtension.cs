@@ -12,6 +12,7 @@ public enum NetworkObjectStatus
 
 public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
 {
+    #region UNITY EDITOR
 #if UNITY_EDITOR
     [HideInInspector]
     public bool BaseNetcodeExtensionExpanded;
@@ -58,11 +59,20 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
         OnValidateComponent();
     }
 #endif
+    #endregion
 
     public uint SortOrder = 500;
     public DrawHandler Draw;
 
     public Action<NetworkObject, NetworkObjectStatus> NetworkObjectStatusUpdate;
+
+    /// <summary>
+    /// This is controlled by the NetworkObject's <see cref="NetworkObject.DestroyWithScene"/> property.
+    /// </summary>
+    /// <remarks>
+    /// We don't need to handle migrating the BaseNetcodeExtension since it will be auto-migrated by NGO.
+    /// </remarks>
+    public bool DestroyOnLoad => ShouldDestroyOnLoad();
 
     protected ExtendedNetworkManager m_ExtendedNetworkManager;
     protected ConnectionStates m_ConnectionState;
@@ -178,6 +188,15 @@ public class BaseNetcodeExtension : NetworkBehaviour, IExtensionHandler
         }
         Draw.AlignRight = screenSpaceRegion == ScreenSpaceRegions.TopRight;
         return OnGUIUpdate(totalRectSize, screenSpaceRegion);
+    }
+
+    private bool ShouldDestroyOnLoad()
+    {
+        if (!NetworkObject)
+        {
+            return true;
+        }
+        return NetworkObject.DestroyWithScene;
     }
 
     protected override void OnNetworkPostSpawn()

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3514997534049192678}
   - component: {fileID: 2649731244621549141}
   - component: {fileID: -1620324843741193180}
+  - component: {fileID: 196205783948352028}
   m_Layer: 0
   m_Name: PlayerSpawner
   m_TagString: Untagged
@@ -71,5 +72,41 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  BaseNetcodeExtensionExpanded: 0
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: ManualPlayerSpawnExtension, Assembly-CSharp, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseObjectSpawnExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseNetcodeExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 000000
+  SortOrder: 500
+  BaseObjectSpawnExtensionExpanded: 0
   PrefabToSpawn: {fileID: 8921789205124766477, guid: 8ae02ac62e2067144b8ff06d48aeb47a, type: 3}
   SpawnRadius: 5
+  DestroyWithScene: 0
+  SpawnKeyCode: 13
+  DespawnKeyCode: 8
+--- !u!114 &196205783948352028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6117988052722214295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fce9a2a5757d5a458fd4cf6b61666ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  IsExpandedTable:
+    m_Keys:
+    - m_AssemblyQualifiedName: DontDestroyOnLoadExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    m_Values: 0000
+  SortOrder: 500
+  DestroyOnLoad: 1

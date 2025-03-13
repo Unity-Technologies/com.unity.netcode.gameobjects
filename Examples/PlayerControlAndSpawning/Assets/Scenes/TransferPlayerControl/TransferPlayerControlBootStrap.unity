@@ -252,19 +252,28 @@ MonoBehaviour:
         Culture=neutral, PublicKeyToken=null
     - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
-    m_Values: 0000
-  SortOrder: 500
-  Scenes:
-  - {fileID: 102900000, guid: 49bdcd10a317f9a46b960d53efcee2f7, type: 3}
-  - {fileID: 102900000, guid: dca504c81361aa04ebbcbb272425e506, type: 3}
-  HUDScene: {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
+    m_Values: 0001
+  DestroyOnLoad: 0
+  SortOrder: 499
   MainMenuScene: {fileID: 102900000, guid: 51f7715e0d0cf6c4aa52296036a4403c, type: 3}
+  Scenes:
+  - ActiveScene: {fileID: 102900000, guid: 813372f13c0fe6b49859f7198ba0afd1, type: 3}
+    AdditveScenes:
+    - {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
+  - ActiveScene: {fileID: 102900000, guid: b27c8730269cd3f4b955cd1eec8ebcf4, type: 3}
+    AdditveScenes:
+    - {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
   NextSceneKeyCode: 9
   m_MainMenuSceneName: BootStrap
-  m_HUDSceneName: HUDOverlay
-  m_SceneNames:
-  - TransferPlayerControlA
-  - TransferPlayerControlB
+  m_SceneEntries:
+  - Index: 0
+    ActiveScene: SceneWithGreyFloor
+    AdditveScenes:
+    - HUDOverlay
+  - Index: 1
+    ActiveScene: SceneWithOrangeFloor
+    AdditveScenes:
+    - HUDOverlay
 --- !u!114 &455857877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -284,6 +293,7 @@ MonoBehaviour:
     - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 500
   PrefabToSpawn: {fileID: 3405683504318728836, guid: bc28fbf44ca36f742b419bd2c110f48c, type: 3}
 --- !u!114 &455857878
@@ -305,6 +315,7 @@ MonoBehaviour:
     - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 99
 --- !u!1 &1184702125
 GameObject:

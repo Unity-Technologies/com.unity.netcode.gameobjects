@@ -1,16 +1,40 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using System;
+using System.Linq;
 #if UNITY_EDITOR
 using UnityEditor;
+
+[Serializable]
+public class SceneAssetEntry
+{
+    [Tooltip("This scene will be loaded in LoadSceneMode.Single")]
+    public SceneAsset ActiveScene;
+    [Tooltip("Scenes loaded additively once the ActiveScene is loaded.")]
+    public List<SceneAsset> AdditveScenes;
+}
 #endif
 
 public class SceneLoadingExtension : BaseMonoExtension
 {
+    [Serializable]
+    internal struct SceneEntry : IEquatable<SceneEntry>
+    {
+        public int Index;
+        public string ActiveScene;
+        public List<string> AdditveScenes;
+
+        public bool Equals(SceneEntry other)
+        {
+            return Index != other.Index;
+        }
+    }
 #if UNITY_EDITOR
-    public List<SceneAsset> Scenes = new List<SceneAsset>();
-    public SceneAsset HUDScene;
+    [Tooltip("The scene to return back to when exiting the ActiveScene.")]
     public SceneAsset MainMenuScene;
+
+    public List<SceneAssetEntry> Scenes = new List<SceneAssetEntry>();
 
     protected override void OnValidateComponent()
     {
@@ -19,50 +43,56 @@ public class SceneLoadingExtension : BaseMonoExtension
         {
             m_MainMenuSceneName = MainMenuScene.name;
         }
-        if (HUDScene != null)
+        m_SceneEntries.Clear();
+        var indexCount = 0;
+        foreach (var sceneAssetEntry in Scenes)
         {
-            m_HUDSceneName = HUDScene.name;
-        }
-        m_SceneNames.Clear();
-        if (Scenes.Count > 0)
-        {
-            foreach (var scene in Scenes)
+            if (!sceneAssetEntry.ActiveScene)
             {
-                if (!scene)
-                {
-                    continue;
-                }
-                m_SceneNames.Add(scene.name);
+                continue;
             }
+            var sceneEntry = new SceneEntry()
+            {
+                Index = indexCount,
+                ActiveScene = sceneAssetEntry.ActiveScene.name,
+                AdditveScenes = new List<string>(),
+
+            };
+            indexCount++;
+            foreach (var additiveScene in sceneAssetEntry.AdditveScenes)
+            {
+                if (additiveScene)
+                {
+                    sceneEntry.AdditveScenes.Add(additiveScene.name);
+                }
+            }
+            m_SceneEntries.Add(sceneEntry);
         }
         base.OnValidateComponent();
     }
 #endif
     public KeyCode NextSceneKeyCode = KeyCode.Tab;
 
+
     [HideInInspector]
     [SerializeField]
+
     private string m_MainMenuSceneName;
 
     [HideInInspector]
     [SerializeField]
-    private string m_HUDSceneName;
-
-    [HideInInspector]
-    [SerializeField]
-    private List<string> m_SceneNames = new List<string>();
-    private string m_CurrentSceneName;
+    private List<SceneEntry> m_SceneEntries = new List<SceneEntry>();
+    private SceneEntry m_CurrentSceneEntry;
 
     private bool m_SceneEventIsLoading;
     private bool m_HasDisconnectToSceneName;
+    private int m_CurrentAdditiveSceneIndex;
 
     private void LoadNextScene()
     {
-        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        var sceneNameIndex = m_SceneNames.IndexOf(activeScene.name);
-        sceneNameIndex = (sceneNameIndex + 1) % m_SceneNames.Count;
-        m_CurrentSceneName = m_SceneNames[sceneNameIndex];
-        var result = SceneManager.LoadScene(m_CurrentSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        var sceneNameIndex = (m_CurrentSceneEntry.Index + 1) % m_SceneEntries.Count;
+        m_CurrentSceneEntry = m_SceneEntries[sceneNameIndex];
+        var result = SceneManager.LoadScene(m_CurrentSceneEntry.ActiveScene, UnityEngine.SceneManagement.LoadSceneMode.Single);
         if (result == SceneEventProgressStatus.Started)
         {
             m_SceneEventIsLoading = true;
@@ -73,54 +103,64 @@ public class SceneLoadingExtension : BaseMonoExtension
     private void OnLoadEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
         SceneManager.OnLoadEventCompleted -= OnLoadEventCompleted;
-        if (string.IsNullOrEmpty(m_HUDSceneName))
+
+        if (m_CurrentSceneEntry.AdditveScenes.Count > 0)
         {
-            m_SceneEventIsLoading = false;
-        }
-        else
-        {
-            var result = SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
-            if (result == SceneEventProgressStatus.Started)
-            {
-                SceneManager.OnLoadEventCompleted += OnLoadHUDEventCompleted;
-            }
+            m_CurrentAdditiveSceneIndex = 0;
+            LoadNextAdditiveScene();
         }
     }
 
-    private void OnLoadHUDEventCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    private void LoadNextAdditiveScene()
     {
-        SceneManager.OnLoadEventCompleted -= OnLoadHUDEventCompleted;
-        m_SceneEventIsLoading = false;
+        if (m_CurrentAdditiveSceneIndex >= m_CurrentSceneEntry.AdditveScenes.Count)
+        {
+            SceneManager.OnLoadEventCompleted -= OnLoadAdditiveSceneCompleted;
+            m_SceneEventIsLoading = false;
+            return;
+        }
 
+        var result = SceneManager.LoadScene(m_CurrentSceneEntry.AdditveScenes[m_CurrentAdditiveSceneIndex], UnityEngine.SceneManagement.LoadSceneMode.Additive);
+        if (result == SceneEventProgressStatus.Started)
+        {
+            SceneManager.OnLoadEventCompleted += OnLoadAdditiveSceneCompleted;
+        }
+    }
+
+
+    private void OnLoadAdditiveSceneCompleted(string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        m_CurrentAdditiveSceneIndex++;
+        LoadNextAdditiveScene();
     }
 
     protected override void OnInitialize()
     {
         m_HasDisconnectToSceneName = !string.IsNullOrEmpty(m_MainMenuSceneName);
-        if (m_SceneNames.Count > 0)
+        LoadFirstSceneEntry();
+        base.OnInitialize();
+    }
+
+    private void LoadFirstSceneEntry()
+    {
+        if (m_SceneEntries.Count > 0)
         {
-            m_CurrentSceneName = m_SceneNames[0];
-            UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
-            if (!string.IsNullOrEmpty(m_HUDSceneName))
+            m_CurrentAdditiveSceneIndex = 0;
+            m_CurrentSceneEntry = m_SceneEntries[0];
+            UnityEngine.SceneManagement.SceneManager.LoadScene(m_CurrentSceneEntry.ActiveScene);
+            while (m_CurrentAdditiveSceneIndex < m_CurrentSceneEntry.AdditveScenes.Count)
             {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                UnityEngine.SceneManagement.SceneManager.LoadScene(m_CurrentSceneEntry.AdditveScenes[m_CurrentAdditiveSceneIndex], UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                m_CurrentAdditiveSceneIndex++;
             }
         }
-        base.OnInitialize();
     }
 
     protected override void OnStatusUpdate(ConnectionStates previousState, ConnectionStates currentState)
     {
         if (previousState == ConnectionStates.Connected && currentState == ConnectionStates.None)
         {
-            if (m_CurrentSceneName != m_SceneNames[0])
-            {
-                UnityEngine.SceneManagement.SceneManager.LoadScene(m_SceneNames[0]);
-                if (!string.IsNullOrEmpty(m_HUDSceneName))
-                {
-                    UnityEngine.SceneManagement.SceneManager.LoadScene(m_HUDSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
-                }
-            }
+            LoadFirstSceneEntry();
         }
         else if (currentState == ConnectionStates.Connected)
         {
@@ -134,7 +174,7 @@ public class SceneLoadingExtension : BaseMonoExtension
 
     protected override void OnAuthorityUpdate()
     {
-        if (!m_SceneEventIsLoading && m_SceneNames.Count > 1 && Input.GetKeyDown(NextSceneKeyCode))
+        if (!m_SceneEventIsLoading && m_SceneEntries.Count > 1 && Input.GetKeyDown(NextSceneKeyCode))
         {
             LoadNextScene();
         }
@@ -192,7 +232,7 @@ public class SceneLoadingExtension : BaseMonoExtension
                 {
                     if (m_ConnectionState == ConnectionStates.Connected && IsAuthorityInstance())
                     {
-                        totalRectSize = Draw.Label(totalRectSize, $"Current Scene: {m_CurrentSceneName}");
+                        totalRectSize = Draw.Label(totalRectSize, $"Current Scene: {m_CurrentSceneEntry.ActiveScene}");
                     }
                     break;
                 }
@@ -205,7 +245,7 @@ public class SceneLoadingExtension : BaseMonoExtension
                     if (IsAuthorityInstance() && m_ConnectionState == ConnectionStates.Connected)
                     {
                         // If there is only one scene then no need to draw this
-                        if (m_SceneNames.Count > 1)
+                        if (m_SceneEntries.Count > 1)
                         {
                             totalRectSize = Draw.Label(totalRectSize, $"[{NextSceneKeyCode}] Load Next Scene");
                         }

@@ -231,7 +231,7 @@ MonoBehaviour:
   ConnectionType: 1
   TargetFrameRate: 100
   EnableVSync: 0
-  m_OriginalVSyncCount: 1
+  m_OriginalVSyncCount: 0
   m_ServicesRegistered: 0
 --- !u!114 &455857876
 MonoBehaviour:
@@ -252,16 +252,22 @@ MonoBehaviour:
     - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 500
-  Scenes:
-  - {fileID: 102900000, guid: 830576e5b4653834aa0ffe6741fd34b0, type: 3}
-  HUDScene: {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
   MainMenuScene: {fileID: 102900000, guid: 51f7715e0d0cf6c4aa52296036a4403c, type: 3}
+  Scenes:
+  - ActiveScene: {fileID: 102900000, guid: 813372f13c0fe6b49859f7198ba0afd1, type: 3}
+    AdditveScenes:
+    - {fileID: 102900000, guid: d86d68247f777c044896d2218fe666a2, type: 3}
+    - {fileID: 102900000, guid: 830576e5b4653834aa0ffe6741fd34b0, type: 3}
   NextSceneKeyCode: 9
   m_MainMenuSceneName: BootStrap
-  m_HUDSceneName: HUDOverlay
-  m_SceneNames:
-  - InSceneObjectSpawning
+  m_SceneEntries:
+  - Index: 0
+    ActiveScene: SceneWithGreyFloor
+    AdditveScenes:
+    - HUDOverlay
+    - InSceneObjectSpawning
 --- !u!114 &455857878
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +287,7 @@ MonoBehaviour:
     - m_AssemblyQualifiedName: BaseMonoExtension, ComponentExtensions, Version=0.0.0.0,
         Culture=neutral, PublicKeyToken=null
     m_Values: 0000
+  DestroyOnLoad: 0
   SortOrder: 100
 --- !u!1 &1184702125
 GameObject:

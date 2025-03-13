@@ -47,10 +47,7 @@ public class BootstrapHandler : MonoBehaviour
 
     private void Awake()
     {
-        if (CameraViewExtension.Instance)
-        {
-            Destroy(CameraViewExtension.Instance.gameObject);
-        }
+        CameraViewExtension.DestroyCameraInstances();
     }
 
     private void OnGUI()

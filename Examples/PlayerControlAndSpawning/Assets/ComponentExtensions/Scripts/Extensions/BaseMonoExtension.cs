@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 {
+    #region UNITY EDITOR
 #if UNITY_EDITOR
     [HideInInspector]
     public SerializableDictionary<SerializableType, bool> IsExpandedTable = new SerializableDictionary<SerializableType, bool>(new SerializableTypeComparer());
@@ -44,10 +45,13 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
         OnValidateComponent();
     }
 #endif
+    #endregion
 
-
+    [Tooltip("Determines where this component's runtime GUI will draw relative to other extension components.")]
+    [Range(-1000, 1000)]
     public uint SortOrder = 500;
-    public DrawHandler Draw;
+
+    public DrawHandler Draw { get; private set; }
 
     protected ExtendedNetworkManager m_ExtendedNetworkManager;
     protected ConnectionStates m_ConnectionState;
@@ -55,6 +59,11 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
     protected NetworkSceneManager SceneManager => m_ExtendedNetworkManager.SceneManager;
 
     protected bool m_ApplicationExitPending;
+
+    protected virtual void OnAwake()
+    {
+
+    }
 
     private void Awake()
     {
@@ -110,8 +119,9 @@ public class BaseMonoExtension : MonoBehaviour, IExtensionHandler
 
     public void StatusUpdate(ConnectionStates connectionState)
     {
-        OnStatusUpdate(m_ConnectionState, connectionState);
+        var previousState = m_ConnectionState;
         m_ConnectionState = connectionState;
+        OnStatusUpdate(previousState, m_ConnectionState);
     }
 
     protected virtual bool OnIsAuthorityInstance()
