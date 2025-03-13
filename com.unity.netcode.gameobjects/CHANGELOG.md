@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue when changing ownership within distributed authority the previous and current owner identifiers could be the same which would cause `NetworkTransform` to fail to change ownership.
+- Fixed issue where an owner that changes ownership, when using a distributed authority network topology, could yield identical previous and current owner identifiers. This could also cause `NetworkTransform` to fail to change ownership which would leave the previous owner still subscribed to network tick events. (#3347)
 - Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
 - Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
 - Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
