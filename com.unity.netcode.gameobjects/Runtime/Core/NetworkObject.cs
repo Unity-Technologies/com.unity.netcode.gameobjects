@@ -2588,13 +2588,18 @@ namespace Unity.Netcode
             {
                 ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
-            // Force send a state update for all owner read NetworkVariables
-            // and any currently dirty owner write NetworkVariables.
-            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
-            // Now set the new owner identifier back to its original new owner identifier and
-            // set the previous owner back to the original owner identifier.
+
+            // Now set the new owner and previous owner identifiers back to their original new values
+            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
+            // operations is **particularly important** as we need to first (above) mark things as dirty
+            // from the context of the original owner and then second (below) we need to send the messages
+            // which requires the new owner to be set for owner read permission NetworkVariables.
             OwnerClientId = currentOwnerId;
             PreviousOwnerId = originalOwnerId;
+
+            // Force send a state update for all owner read NetworkVariables  and any currently dirty
+            // owner write NetworkVariables.
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
