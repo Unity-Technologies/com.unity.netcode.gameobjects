@@ -39,6 +39,9 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --wait
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
@@ -70,6 +73,9 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --wait
     - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
