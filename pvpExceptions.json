@@ -5,6 +5,11 @@
           "CHANGELOG.md: line 9: Unreleased section is not allowed for public release"
         ]
       },
+      "PVP-300-4": {
+        "errors": [
+          "Failed to find a suitable OpenCL device, baking cannot use GPU lightmapper."
+        ]
+      },
       "PVP-150-1": {
         "errors": [
           "Unity.Netcode.Components.NetworkTransform: void OnSynchronize(ref BufferSerializer<T>): empty <typeparam> tag",
