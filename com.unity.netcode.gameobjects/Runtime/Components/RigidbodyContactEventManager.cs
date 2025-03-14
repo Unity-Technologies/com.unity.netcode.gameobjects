@@ -119,6 +119,10 @@ namespace Unity.Netcode.Components
         public void RegisterHandler(IContactEventHandler contactEventHandler, bool register = true)
         {
             var rigidbody = contactEventHandler.GetRigidbody();
+            if (rigidbody == null)
+            {
+                return;
+            }
             var instanceId = rigidbody.GetInstanceID();
             if (register)
             {
