@@ -74,9 +74,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <summary>
-        /// The serialization implementation of <see cref="INetworkSerializable"/>.
-        /// </summary>
+        /// <inheritdoc />
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (serializer.IsReader)

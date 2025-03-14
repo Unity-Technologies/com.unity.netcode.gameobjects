@@ -28,6 +28,13 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
+        private SerializedProperty m_PositionInterpolationTypeProperty;
+        private SerializedProperty m_RotationInterpolationTypeProperty;
+        private SerializedProperty m_ScaleInterpolationTypeProperty;
+
+        private SerializedProperty m_PositionMaximumInterpolationTimeProperty;
+        private SerializedProperty m_RotationMaximumInterpolationTimeProperty;
+        private SerializedProperty m_ScaleMaximumInterpolationTimeProperty;
 
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
@@ -36,6 +43,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_AuthorityMode;
 
         private static int s_ToggleOffset = 45;
+
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
         private static GUIContent s_PositionLabel = EditorGUIUtility.TrTextContent("Position");
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
@@ -61,6 +69,15 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
+
+            m_PositionInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionInterpolationType));
+            m_PositionMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.PositionMaxInterpolationTime));
+            m_RotationInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationInterpolationType));
+            m_RotationMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationMaxInterpolationTime));
+            m_ScaleInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleInterpolationType));
+            m_ScaleMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleMaxInterpolationTime));
+
+
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
@@ -141,9 +158,21 @@ namespace Unity.Netcode.Editor
             }
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Thresholds", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(m_PositionThresholdProperty);
-            EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
-            EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            if (networkTransform.SynchronizePosition)
+            {
+                EditorGUILayout.PropertyField(m_PositionThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeRotation)
+            {
+                EditorGUILayout.PropertyField(m_RotAngleThresholdProperty);
+            }
+
+            if (networkTransform.SynchronizeScale)
+            {
+                EditorGUILayout.PropertyField(m_ScaleThresholdProperty);
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Delivery", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_TickSyncChildren);
@@ -158,9 +187,53 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             if (!networkTransform.HideInterpolateValue)
             {
-                EditorGUILayout.PropertyField(m_InterpolateProperty);
+                if (networkTransform.Interpolate)
+                {
+                    EditorGUILayout.Space();
+                }
+                DrawPropertyField(m_InterpolateProperty, networkTransform.Interpolate ? FontStyle.Bold : FontStyle.Normal);
+                if (networkTransform.Interpolate)
+                {
+                    BeginIndent();
+                    if (networkTransform.SynchronizePosition)
+                    {
+                        DrawPropertyField(m_PositionInterpolationTypeProperty);
+                        // Only display when using Lerp.
+                        if (networkTransform.PositionInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            BeginIndent();
+                            DrawPropertyField(m_SlerpPosition);
+                            DrawPropertyField(m_PositionMaximumInterpolationTimeProperty);
+                            EndIndent();
+                        }
+                    }
+                    if (networkTransform.SynchronizeRotation)
+                    {
+                        DrawPropertyField(m_RotationInterpolationTypeProperty);
+                        // Only display when using Lerp.
+                        if (networkTransform.RotationInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            BeginIndent();
+                            DrawPropertyField(m_RotationMaximumInterpolationTimeProperty);
+                            EndIndent();
+                        }
+                    }
+                    if (networkTransform.SynchronizeScale)
+                    {
+                        DrawPropertyField(m_ScaleInterpolationTypeProperty);
+                        // Only display when using Lerp.
+                        if (networkTransform.ScaleInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+                        {
+                            BeginIndent();
+                            DrawPropertyField(m_ScaleMaximumInterpolationTimeProperty);
+                            EndIndent();
+                        }
+                    }
+                    EndIndent();
+                    EditorGUILayout.Space();
+                }
             }
-            EditorGUILayout.PropertyField(m_SlerpPosition);
+
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
             {
@@ -189,8 +262,6 @@ namespace Unity.Netcode.Editor
             }
 #endif // COM_UNITY_MODULES_PHYSICS2D
         }
-
-
 
         /// <inheritdoc/>
         public override void OnInspectorGUI()
