@@ -39,7 +39,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
     UNITY_EXT_LOGGING: 1
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models.
     
     # Validate PVP checks for package.
     - upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --results pvp-results
