@@ -1975,8 +1975,8 @@ namespace Unity.Netcode
                             // the owned distributable parent with the owned distributable children
                             foreach (var child in children)
                             {
-                                // Ignore the parent and any child that does not have the same owner or that is already owned by the currently targeted client
-                                if (child == ownerList.Value[i] || child.OwnerClientId != ownerList.Value[i].OwnerClientId || child.OwnerClientId == clientId)
+                                // Ignore any child that does not have the same owner, that is already owned by the currently targeted client, or that doesn't have the targeted client as an observer
+                                if (child == ownerList.Value[i] || child.OwnerClientId != ownerList.Value[i].OwnerClientId || child.OwnerClientId == clientId || !child.Observers.Contains(clientId))
                                 {
                                     continue;
                                 }
