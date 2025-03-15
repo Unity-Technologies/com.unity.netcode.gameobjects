@@ -1986,6 +1986,8 @@ namespace Unity.Netcode
         /// </summary>
         internal Func<Scene, bool> ExcludeSceneFromSychronization;
 
+        internal List<ulong> ClientConnectionQueue = new List<ulong>();
+
         /// <summary>
         /// Server Side:
         /// This is used for players that have just had their connection approved and will assure they are synchronized
@@ -1994,8 +1996,21 @@ namespace Unity.Netcode
         /// synchronized.
         /// </summary>
         /// <param name="clientId">newly joined client identifier</param>
-        internal void SynchronizeNetworkObjects(ulong clientId)
+        internal void SynchronizeNetworkObjects(ulong clientId, bool synchronizingService = false)
         {
+            // If this is a newly connecting client, add it to the connecting client queue
+            if (!synchronizingService && !ClientConnectionQueue.Contains(clientId))
+            {
+                ClientConnectionQueue.Add(clientId);
+                // If we are already synchronizing a client, then add this client to the queue and exit.
+                if (ClientConnectionQueue.Count > 1)
+                {
+                    Debug.Log($"Deferring Client-{clientId} synchrnization.");
+                    return;
+                }
+            }
+            
+
             // Update the clients
             NetworkManager.SpawnManager.UpdateObservedNetworkObjects(clientId);
 
@@ -2623,6 +2638,13 @@ namespace Unity.Netcode
                         // DANGO-EXP TODO: Remove this once service distributes objects
                         NetworkManager.SpawnManager.DistributeNetworkObjects(clientId);
                         EndSceneEvent(sceneEventId);
+                        ClientConnectionQueue.Remove(clientId);
+                        Debug.Log($"Client-{clientId} synchronized.");
+                        if (ClientConnectionQueue.Count > 0)
+                        {
+                            Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
+                            SynchronizeNetworkObjects(ClientConnectionQueue[0]);
+                        }
                         break;
                     }
                 default:
