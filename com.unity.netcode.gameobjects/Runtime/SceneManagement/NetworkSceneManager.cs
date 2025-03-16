@@ -1998,18 +1998,26 @@ namespace Unity.Netcode
         /// <param name="clientId">newly joined client identifier</param>
         internal void SynchronizeNetworkObjects(ulong clientId, bool synchronizingService = false)
         {
-            // If this is a newly connecting client, add it to the connecting client queue
-            if (!synchronizingService && !ClientConnectionQueue.Contains(clientId))
+            // If we are connected to a live service hosted session and we are not doing the initial synchronization for the service...
+            if (NetworkManager.CMBServiceConnection && !synchronizingService)
             {
-                ClientConnectionQueue.Add(clientId);
-                // If we are already synchronizing a client, then add this client to the queue and exit.
-                if (ClientConnectionQueue.Count > 1)
+                // then as long as this is a newly connecting client add it to the connecting client queue.
+                // Otherwise, if this is not a newly connecting client (i.e. it is already in the queue), then go ahead and synchronize
+                // that client.
+                if (!ClientConnectionQueue.Contains(clientId))
                 {
-                    Debug.Log($"Deferring Client-{clientId} synchrnization.");
-                    return;
+                    ClientConnectionQueue.Add(clientId);
+                    // If we are already synchronizing one or more clients, then add this client to the queue and exit.
+                    if (ClientConnectionQueue.Count > 1)
+                    {
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            Debug.Log($"Deferring Client-{clientId} synchrnization.");
+                        }
+                        return;
+                    }
                 }
             }
-            
 
             // Update the clients
             NetworkManager.SpawnManager.UpdateObservedNetworkObjects(clientId);
@@ -2638,12 +2646,43 @@ namespace Unity.Netcode
                         // DANGO-EXP TODO: Remove this once service distributes objects
                         NetworkManager.SpawnManager.DistributeNetworkObjects(clientId);
                         EndSceneEvent(sceneEventId);
-                        ClientConnectionQueue.Remove(clientId);
-                        Debug.Log($"Client-{clientId} synchronized.");
-                        if (ClientConnectionQueue.Count > 0)
+
+                        // Exit early if not a distributed authority session or this is a DAHost
+                        // (DAHost has a unique connection per client, so no need to queue synchronization)
+                        if (!NetworkManager.DistributedAuthorityMode || NetworkManager.DAHost)
                         {
-                            Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
-                            SynchronizeNetworkObjects(ClientConnectionQueue[0]);
+                            return;
+                        }
+
+                        // Otherwise, this is a session owner that could have pending clients to synchronize
+                        if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
+                        {
+                            // Remove the client that just synchronized
+                            ClientConnectionQueue.Remove(clientId);
+
+                            // If we have pending clients to synchronize, then make sure they are still connected
+                            while (ClientConnectionQueue.Count > 0)
+                            {
+                                // If the next client is no longer connected then remove it from the list
+                                if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
+                                {
+                                    ClientConnectionQueue.RemoveAt(0);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            // If we still have any pending clients waiting, then synchronize the next one
+                            if (ClientConnectionQueue.Count > 0)
+                            {
+                                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                                {
+                                    Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
+                                }
+                                SynchronizeNetworkObjects(ClientConnectionQueue[0]);
+                            }
                         }
                         break;
                     }
