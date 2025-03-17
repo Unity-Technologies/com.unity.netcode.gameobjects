@@ -421,7 +421,6 @@ namespace Unity.Netcode.Transports.UTP
 
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
-        internal NetworkDriver NetworkDriver => m_Driver;
 
         /// <summary>
         /// Provides access to the <see cref="Networking.Transport.NetworkDriver"/> for this <see cref="UnityTransport"/> instance.
@@ -501,7 +500,7 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 
-            TransportInitialized?.Invoke(GetInstanceID(), NetworkDriver);
+            TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
         }
 
         private void DisposeInternals()

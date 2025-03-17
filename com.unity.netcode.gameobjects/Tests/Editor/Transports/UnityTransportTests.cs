@@ -189,7 +189,7 @@ namespace Unity.Netcode.EditorTests
                     networkManager.StartServer();
                 });
                 // Make sure StartServer failed
-                Assert.False(transport.NetworkDriver.IsCreated);
+                Assert.False(transport.GetNetworkDriver().IsCreated);
                 Assert.False(networkManager.IsServer);
                 Assert.False(networkManager.IsListening);
             }
