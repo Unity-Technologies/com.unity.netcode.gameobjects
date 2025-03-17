@@ -45,11 +45,11 @@ namespace Unity.Netcode.RuntimeTests
             var doubleExpectedServerTickCount = (int)System.Math.Floor(serverTimePassed / server.ServerTime.FixedDeltaTimeAsDouble);
             var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
 
-            Debug.Log($"Server Tick: {server.NetworkTickSystem.ServerTime.Tick} Server Time: {server.NetworkTickSystem.ServerTime.Time} ExpDoubTick: {doubleExpectedServerTickCount} ExpTick: {expectedServerTickCount}");
+            Debug.Log($"Server Tick: {server.NetworkTickSystem.ServerTime.Tick} Prev-ServerTick: {serverTick} Server Time: {server.NetworkTickSystem.ServerTime.Time} ExpDoubTick: {doubleExpectedServerTickCount} ExpTick: {expectedServerTickCount}");
 
             var ticksPassed = server.NetworkTickSystem.ServerTime.Tick - serverTick;
-            Assert.AreEqual(doubleExpectedServerTickCount, ticksPassed, "Double calculated tick count failed.");
-            Assert.AreEqual(expectedServerTickCount, ticksPassed, "FloorToInt calculated tick count failed.");
+            Assert.AreEqual(doubleExpectedServerTickCount, ticksPassed, $"Double calculated tick count failed: DTick ({doubleExpectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
+            Assert.AreEqual(expectedServerTickCount, ticksPassed, $"FloorToInt calculated tick count failed: DTick ({expectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
 
             yield return new WaitForSeconds(clientStartDelay);
 
