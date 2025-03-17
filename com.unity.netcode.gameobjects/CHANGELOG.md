@@ -10,12 +10,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
+- Added a new smooth dampening interpolator type that provides a nice balance between precision and smoothing results. (#3337)
+- Added `NetworkTimeSystem.TickLatency` property that provides the average latency of a client. (#3337)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3321)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3321)
 
 ### Fixed
 
 - Fixed issue where an owner that changes ownership, when using a distributed authority network topology, could yield identical previous and current owner identifiers. This could also cause `NetworkTransform` to fail to change ownership which would leave the previous owner still subscribed to network tick events. (#3347)
+- Fixed issue where the `MaximumInterpolationTime` could not be modified from within the inspector view or runtime. (#3337)
 - Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
 - Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
 - Fixed `OnClientConnectedCallback` passing incorrect `clientId` when scene management is disabled. (#3312)
@@ -32,6 +36,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `BufferedLinearInterpolator<T>.Update(float deltaTime, NetworkTime serverTime)` as being deprecated since this method is only used for internal testing purposes. (#3337)
 - Ensured that a useful error is thrown when attempting to build a dedicated server with Unity Transport that uses websockets. (#3336)
 - Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
 - Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
