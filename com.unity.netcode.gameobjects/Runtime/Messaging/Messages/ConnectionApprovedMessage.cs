@@ -340,7 +340,7 @@ namespace Unity.Netcode
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
                         networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
-                        // With scene management enabled and since the session owner doesn't send a Synchronize scene event synchronize itself,
+                        // With scene management enabled and since the session owner doesn't send a scene event synchronize to itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.
                         networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
 
