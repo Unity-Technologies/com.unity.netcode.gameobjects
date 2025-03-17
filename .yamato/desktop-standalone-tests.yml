@@ -78,7 +78,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
 # Set additional variables for running the echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
-{% if platform.name == "ubuntu" %} # Issues with win and mac are tracked in MTT-11606
+{% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
   variables:
     ECHO_SERVER_PORT: "7788"
     # Set this to ensure the DA codec tests will fail if they cannot connect to the echo-server
@@ -87,11 +87,8 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% endif %}
 
   commands:
-    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
-    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-
 # If ubuntu, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
-{% if platform.name == "ubuntu" %} # Issues with win and mac are tracked in MTT-11606
+{% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
     - git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
     # Install rust
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -101,6 +98,8 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
     - cd ./mps-common-multiplayer-backend/runtime && $HOME/.cargo/bin/cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
 {% endif %}
 
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
   artifacts:
     logs:
       paths:
