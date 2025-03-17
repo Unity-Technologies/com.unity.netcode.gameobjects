@@ -42,10 +42,14 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
+            var doubleExpectedServerTickCount = (int)System.Math.Floor(serverTimePassed / server.ServerTime.FixedDeltaTimeAsDouble);
             var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
 
+            Debug.Log($"Server Tick: {server.NetworkTickSystem.ServerTime.Tick} Server Time: {server.NetworkTickSystem.ServerTime.Time} ExpDoubTick: {doubleExpectedServerTickCount} ExpTick: {expectedServerTickCount}");
+
             var ticksPassed = server.NetworkTickSystem.ServerTime.Tick - serverTick;
-            Assert.AreEqual(expectedServerTickCount, ticksPassed);
+            Assert.AreEqual(doubleExpectedServerTickCount, ticksPassed, "Double calculated tick count failed.");
+            Assert.AreEqual(expectedServerTickCount, ticksPassed, "FloorToInt calculated tick count failed.");
 
             yield return new WaitForSeconds(clientStartDelay);
 
