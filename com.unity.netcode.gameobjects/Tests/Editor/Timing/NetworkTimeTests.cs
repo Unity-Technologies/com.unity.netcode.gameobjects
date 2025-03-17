@@ -54,11 +54,12 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Tracked in MTT-11608
         [TestCase(34d, 0)]
         [TestCase(17.32d, 0.2d / 60d)]
         [TestCase(-42.44d, 1d / 60d - 0.4d / 60d)]
         [TestCase(-6d, 0)]
-        // [TestCase(int.MaxValue / 61d, 0.00082, 10d)] // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60 ------(Tracked in MTT-11608)
+        [TestCase(int.MaxValue / 61d, 0.00082, 10d)] // Int.Max / 61 / (1/60) to get divisor then: Int.Max - divisor * 1 / 60
         public void NetworkTimeCreate(double time, double tickOffset, double epsilon = 0.0001d)
         {
             var networkTime = new NetworkTime(60, time);
