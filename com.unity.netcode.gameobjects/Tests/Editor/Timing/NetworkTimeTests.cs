@@ -38,7 +38,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.OSXPlayer })] // Tracked in MTT-11608
+        [UnityPlatform(exclude = new[] { RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Tracked in MTT-11608
         [TestCase(53.55d, 53.5d, 10u)]
         [TestCase(1013553.55d, 1013553.5d, 10u)]
         [TestCase(0d, 0d, 10u)]
