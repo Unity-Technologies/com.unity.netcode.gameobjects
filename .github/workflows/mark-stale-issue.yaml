@@ -1,0 +1,59 @@
+﻿name: Mark Stale Issues
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+
+env:
+  AWAITING-RESPONSE_LABEL: stat:awaiting-response
+  STALE_LABEL: stale
+  DAYS_BEFORE_STALE: 60  # 2 months
+
+jobs:
+  mark_stale:
+    name: Check and Mark Stale Issues
+    if: ${{ !github.event.issue.pull_request  }} && ${{ github.event.issue.state == 'open' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Get Issues with Awaiting Response
+        id: get_issues
+        run: |
+          # Get all open issues with awaiting-response label
+          ISSUES=$(gh issue list --label "${{ env.AWAITING-RESPONSE_LABEL }}" --json number,labels,updatedAt --jq '.[]')
+          
+          echo "ISSUES=$ISSUES" >> $GITHUB_ENV
+
+      - name: Process Issues
+        run: |
+          current_time=$(date +%s)
+          
+          echo "$ISSUES" | while read -r issue; do
+            # Extract issue details
+            number=$(echo "$issue" | jq -r .number)
+            updated_at=$(echo "$issue" | jq -r .updatedAt)
+            has_stale=$(echo "$issue" | jq -r '.labels[].name | select(. == "stale")' || echo "")
+          
+            # Convert updated_at to timestamp
+            updated_time=$(date -d "$updated_at" +%s)
+          
+            # Calculate days difference
+            days_diff=$(( (current_time - updated_time) / 86400 ))
+          
+            # Check if issue should be marked stale
+            if [[ $days_diff -ge ${{ env.DAYS_BEFORE_STALE }} && -z "$has_stale" ]]; then
+              echo "Marking issue #$number as stale"
+              gh issue edit "$number" --add-label "${{ env.STALE_LABEL }}" \
+                --body-file <(
+                  echo "This issue has been automatically marked as stale because it has been awaiting response for over 2 months without any activity."
+                  echo ""
+                  echo "Please update the issue with any new information or it may be closed in the future."
+                )
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
