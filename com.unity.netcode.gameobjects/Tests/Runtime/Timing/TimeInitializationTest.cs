@@ -42,18 +42,11 @@ namespace Unity.Netcode.RuntimeTests
             yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
 
             var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
-            var doubleExpectedServerTickCount = (int)System.Math.Floor(serverTimePassed / server.ServerTime.FixedDeltaTimeAsDouble);
-            var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
 
-            Debug.Log($"Server Tick: {server.NetworkTickSystem.ServerTime.Tick} Prev-ServerTick: {serverTick} Server Time: {server.NetworkTickSystem.ServerTime.Time} ExpDoubTick: {doubleExpectedServerTickCount} ExpTick: {expectedServerTickCount}");
-
+            // Use FixedDeltaTimeAsDouble and divide the tick frequency into the time passed to get the accurate tick count
+            var expectedServerTickCount = (int)System.Math.Floor(serverTimePassed / server.ServerTime.FixedDeltaTimeAsDouble);
             var ticksPassed = server.NetworkTickSystem.ServerTime.Tick - serverTick;
-            Assert.AreEqual(doubleExpectedServerTickCount, ticksPassed, $"Double calculated tick count failed: DTick ({doubleExpectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
-            if (expectedServerTickCount != ticksPassed)
-            {
-                Debug.Log($"FloorToInt calculated tick count failed: DTick ({expectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
-            }
-            //Assert.AreEqual(expectedServerTickCount, ticksPassed, $"FloorToInt calculated tick count failed: DTick ({expectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
+            Assert.AreEqual(expectedServerTickCount, ticksPassed, $"Calculated tick failed: Tick ({expectedServerTickCount}) TicksPassed ({ticksPassed}) Server Tick ({server.NetworkTickSystem.ServerTime.Tick}) Prev-Server Tick ({serverTick})");
 
             yield return new WaitForSeconds(clientStartDelay);
 
