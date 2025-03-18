@@ -1,4 +1,6 @@
-name: Update issue labels
+# This workflow will update issues with proper "conversation related" labels. This mean that stat:awaiting-repsonse label will be present after Unity account made comments and stat:reply-needed will be present when user made latest comment
+
+name: Update conversation labels of the issue
 
 # Trigger for the workflow
 # This trigger will populate the github.event object
@@ -13,11 +15,12 @@ concurrency:
 
 # Define labels here
 env:
-  AWAITING_RESPONSE: stat:awaiting response
+  AWAITING_RESPONSE: stat:awaiting-response
+  REPLY_NEEDED: stat:reply-needed
 
 jobs:
-  auto_label:
-    name: Calculate and update issue labels
+  conversation_labels:
+    name: Calculate and update conversation labels of the issue
     if: ${{ !github.event.issue.pull_request  }} && ${{ github.event.issue.state == 'open' }}
     runs-on: ubuntu-latest
     permissions:
@@ -28,9 +31,13 @@ jobs:
         run: |
 
           if [[ "${{ github.event.comment.author_association }}" == "MEMBER" ]]; then
-            echo ADD="${{ env.AWAITING_RESPONSE}}" >> $GITHUB_ENV
+            # Unity member commented - add awaiting-response, remove reply-needed
+            echo "ADD=${{ env.AWAITING_RESPONSE }}" >> $GITHUB_ENV
+            echo "REMOVE=${{ env.REPLY_NEEDED }}" >> $GITHUB_ENV
           else
-            echo REMOVE="${{ env.AWAITING_RESPONSE}}" >> $GITHUB_ENV
+            # Non-Unity member commented - add reply-needed, remove awaiting-response
+            echo "ADD=${{ env.REPLY_NEEDED }}" >> $GITHUB_ENV
+            echo "REMOVE=${{ env.AWAITING_RESPONSE }}" >> $GITHUB_ENV
           fi
 
       - name: Update labels
