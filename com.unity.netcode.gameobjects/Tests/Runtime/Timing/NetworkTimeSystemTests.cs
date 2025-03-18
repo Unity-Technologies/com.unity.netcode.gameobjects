@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator CorrectAmountTicksTest()
         {
             NetworkTickSystem tickSystem = NetworkManager.Singleton.NetworkTickSystem;
-            float delta = tickSystem.LocalTime.FixedDeltaTime;
+            double delta = tickSystem.LocalTime.FixedDeltaTimeAsDouble;
             int previous_localTickCalculated = 0;
             int previous_serverTickCalculated = 0;
 
