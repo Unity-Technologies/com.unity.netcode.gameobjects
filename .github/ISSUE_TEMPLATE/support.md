@@ -2,7 +2,7 @@
 name: Support
 about: Have a question or need help with anything?
 title: ''
-labels: stat:awaiting triage, type:support
+labels: stat:awaiting-triage, stat:reply-needed, type:support
 assignees: ''
 
 ---

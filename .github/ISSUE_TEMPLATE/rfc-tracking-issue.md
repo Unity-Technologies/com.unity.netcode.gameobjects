@@ -2,7 +2,7 @@
 name: RFC Tracking Issue
 about: Track the development of a RFC
 title: 'Track RFC #<pr-number>: <description>'
-labels: type:rfc
+labels: stat:awaiting-triage, stat:reply-needed
 assignees: ''
 
 ---
