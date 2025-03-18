@@ -1,4 +1,4 @@
-# This workflow will remove almost all labels from closed issues beside ones that could be relevant for future tracking like: "port:", "type:", "priority:" and "regression"
+# This workflow will remove almost all labels from closed issues beside ones that could be relevant for future tracking like: "port:", "type:", "priority:", "regression" and "stat:imported"
 
 name: Remove labels when issue is closed
 

@@ -1,4 +1,6 @@
-﻿name: Mark Stale Issues
+﻿# This workflow add "stale" label to issues that have "stat:awaiting-response" for more than 60 days meaning that since we don't have enough information we may potentially close such issue
+
+name: Mark Stale Issues
 
 on:
   workflow_dispatch:

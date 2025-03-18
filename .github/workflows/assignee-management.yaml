@@ -15,7 +15,7 @@ on:
     types: [assigned, unassigned, labeled]
 
 env:
-  AWAITING-TRIAGE_LABEL: stat:awaiting triage
+  AWAITING-TRIAGE_LABEL: stat:awaiting-triage
   INVESTIGATING_LABEL: stat:Investigating
 
 jobs:
@@ -59,7 +59,7 @@ jobs:
       issues: write
 
     steps:
-      - name: Assign Issue to Label Creator
+      - name: Assign Issue to person that added Investigating Label
         run: |
           # Assign the issue to the person who added the label
           gh issue edit "$NUMBER" --add-assignee "$ACTOR"
