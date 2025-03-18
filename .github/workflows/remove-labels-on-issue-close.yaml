@@ -19,7 +19,7 @@ jobs:
         id: data
         run: |
           # Convert labels to array and filter out type: labels
-          LABELS_TO_REMOVE=($(echo "$EXISTING_LABELS" | jq -r '.[] | select(startswith("type:") or startswith("port:") or startswith("priority:") or . == "regression" | not)'))
+          LABELS_TO_REMOVE=($(echo "$EXISTING_LABELS" | jq -r '.[] | select(startswith("type:") or startswith("port:") or startswith("priority:") or . == "regression" or . == "stat:imported" | not)'))
           
           # Only proceed if we have labels to remove
           if [ ${#LABELS_TO_REMOVE[@]} -gt 0 ]; then
