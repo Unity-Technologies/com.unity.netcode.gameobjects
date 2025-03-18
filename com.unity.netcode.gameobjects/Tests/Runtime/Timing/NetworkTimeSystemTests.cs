@@ -79,7 +79,6 @@ namespace Unity.Netcode.RuntimeTests
                     previous_localTickCalculated++;
                 }
 
-
                 tickCalculated = NetworkManager.Singleton.ServerTime.Time / delta;
                 previous_serverTickCalculated = (int)tickCalculated;
 
