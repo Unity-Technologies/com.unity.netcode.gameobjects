@@ -3836,11 +3836,12 @@ namespace Unity.Netcode.Components
 
             var cachedServerTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
+            //var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
+            var cachedDeltaTime = Time.deltaTime;
 #else
             var cachedDeltaTime = Time.deltaTime;
 #endif
-            var tickLatency = m_CachedNetworkManager.NetworkTimeSystem.TickLatency;
+            var tickLatency = m_CachedNetworkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset;
 
             // If using an owner authoritative motion model
             if (!IsServerAuthoritative())
@@ -3866,8 +3867,11 @@ namespace Unity.Netcode.Components
             // frame update. Since smooth dampening is most useful for Rigidbody motion, the physics update
             // frequency is roughly 60hz (59.x?) which 2x that value as frequency is typically close to 32-33ms.
             // Look within the Interpolator.Update for smooth dampening to better understand the above.
-            var maxDeltaTime = (1.666667f * m_CachedNetworkManager.ServerTime.FixedDeltaTime);
 
+            
+            //var frameRateRatio = Application.targetFrameRate > 0 ? Application.targetFrameRate * cachedDeltaTime : 100 * cachedDeltaTime;
+            //var maxDeltaTime = (Math.Max(60, frameRateRatio * m_CachedNetworkManager.ServerTime.FixedDeltaTime));
+            var maxDeltaTime = tickLatency * minDeltaTime;
             // Now only update the interpolators for the portions of the transform being synchronized
             if (SynchronizePosition)
             {
@@ -3942,6 +3946,16 @@ namespace Unity.Netcode.Components
         }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+
+        internal void OnFixedUpdateInterpolate()
+        {
+            // Update interpolation when enabled
+            if (Interpolate)
+            {
+                UpdateInterpolation();
+            }
+        }
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3958,10 +3972,10 @@ namespace Unity.Netcode.Components
 
 
             // Update interpolation when enabled
-            if (Interpolate)
-            {
-                UpdateInterpolation();
-            }
+            //if (Interpolate)
+            //{
+            //    UpdateInterpolation();
+            //}
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
@@ -4118,12 +4132,12 @@ namespace Unity.Netcode.Components
 
         #region NETWORK TICK REGISTRATOIN AND HANDLING
         private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
-
+        internal static int InterpolationBufferTickOffset = 2;
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (networkManager.IsListening)
             {
-                return (float)(networkManager.NetworkTimeSystem.TickLatency + networkManager.LocalTime.TickOffset);
+                return (float)(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset + networkManager.LocalTime.TickOffset);
             }
             return 0;
         }
@@ -4145,7 +4159,7 @@ namespace Unity.Netcode.Components
         {
             if (networkManager.IsListening)
             {
-                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency).Time;
+                return (float)networkManager.LocalTime.TimeTicksAgo(networkManager.NetworkTimeSystem.TickLatency + InterpolationBufferTickOffset).Time;
             }
             return 0f;
         }

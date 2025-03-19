@@ -361,7 +361,29 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
+#if COM_UNITY_MODULES_PHYSICS
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.OnFixedUpdateInterpolate();
+                                }
+                            }
+                        }
+#endif
+
                         AnticipationSystem.Update();
+
+
                     }
                     break;
                 case NetworkUpdateStage.PreLateUpdate:
