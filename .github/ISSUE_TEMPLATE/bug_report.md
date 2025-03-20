@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: stat:awaiting triage, type:bug
+labels: stat:awaiting-triage, stat:reply-needed, type:bug
 assignees: ''
 
 ---

@@ -2,7 +2,7 @@
 name: Other Issues
 about: Use this template for any other non-support related issues
 title: ''
-labels: stat:awaiting triage
+labels: stat:awaiting-triage, stat:reply-needed
 assignees: ''
 
 ---
