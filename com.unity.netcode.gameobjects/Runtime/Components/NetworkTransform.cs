@@ -3146,6 +3146,12 @@ namespace Unity.Netcode.Components
         /// <see cref="Quaternion.Lerp(Quaternion, Quaternion, float)"/> for all transform elements being monitored by
         /// <see cref="NetworkTransform"/> (i.e. Position, Scale, and Rotation)
         /// </summary>
+        /// <remarks>
+        /// All of three max interpolation time properties will have this maximum interpolation bound value applied:<br />
+        /// - <see cref="PositionMaxInterpolationTime"/><br />
+        /// - <see cref="RotationMaxInterpolationTime"/><br />
+        /// - <see cref="ScaleMaxInterpolationTime"/><br />
+        /// </remarks>
         /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
