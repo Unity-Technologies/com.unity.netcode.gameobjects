@@ -442,9 +442,9 @@ namespace Unity.Netcode
                         //InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
                         //var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
                         //InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.PredictTarget, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
-                        InterpolateState.Phase1Value = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
+                        InterpolateState.PreviousValue = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
                         var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
-                        InterpolateState.PredictValue = SmoothDamp(InterpolateState.Phase1Value, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
+                        InterpolateState.PredictValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
                         // Determine if smooth dampening is enabled to get our lerp "t" time
                         var timeDelta = lerpSmoothing ? deltaTime / MaximumInterpolationTime : deltaTime;
                         // Lerp between the PreviousValue and PredictedValue using the calculated time delta
