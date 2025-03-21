@@ -1046,7 +1046,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="PositionMaxInterpolationTime"/>.
         /// </remarks>
-        public bool PositionLerpSmoothing;
+        public bool PositionLerpSmoothing = true;
         private bool m_PreviousPositionLerpSmoothing;
 
         /// <summary>
@@ -1069,7 +1069,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="RotationMaxInterpolationTime"/>.
         /// </remarks>
-        public bool RotationLerpSmoothing;
+        public bool RotationLerpSmoothing = true;
         private bool m_PreviousRotationLerpSmoothing;
 
         /// <summary>
@@ -1092,7 +1092,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="ScaleMaxInterpolationTime"/>.
         /// </remarks>
-        public bool ScaleLerpSmoothing;
+        public bool ScaleLerpSmoothing = true;
         private bool m_PreviousScaleLerpSmoothing;
 
         /// <summary>
