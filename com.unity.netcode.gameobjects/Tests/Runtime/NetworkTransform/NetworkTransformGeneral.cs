@@ -4,17 +4,30 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
     internal class NetworkTransformGeneral : NetworkTransformBase
     {
-        public NetworkTransformGeneral(HostOrServer testWithHost, Authority authority) :
+        public NetworkTransformGeneral(HostOrServer testWithHost, Authority authority, NetworkTransform.InterpolationTypes interpolationType) :
             base(testWithHost, authority, RotationCompression.None, Rotation.Euler, Precision.Full)
-        { }
+        {
+            NetworkTransform.AssignDefaultInterpolationType = true;
+            NetworkTransform.DefaultInterpolationType = interpolationType;
+        }
 
         protected override bool m_EnableTimeTravel => true;
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
+
+        protected override void OnOneTimeTearDown()
+        {
+            m_EnableVerboseDebug = false;
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
+            base.OnOneTimeTearDown();
+        }
 
         /// <summary>
         /// Test to verify nonAuthority cannot change the transform directly
@@ -268,40 +281,45 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
         {
-            var interpolate = interpolation != Interpolation.EnableInterpolate;
+            var interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
 
+            m_EnableVerboseDebug = true;
+
+            m_AuthoritativeTransform.Teleport(Vector3.zero, Quaternion.identity, Vector3.one);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(Vector3.zero, Quaternion.identity.eulerAngles, Vector3.one), 800);
+            Assert.True(success, $"Timed out waiting for initialization to be applied!");
+
             // Test one parameter at a time first
-            var newPosition = new Vector3(125f, 35f, 65f);
+            var newPosition = new Vector3(55f, 35f, 65f);
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition));
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
-
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles));
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!");
             Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
             Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
 
             m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale));
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!");
             Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
             Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
 
             // Test all parameters at once
-            newPosition = new Vector3(55f, 95f, -25f);
+            newPosition = new Vector3(-10f, 95f, -25f);
             newRotation = Quaternion.Euler(20, 5, 322);
             newScale = new Vector3(0.5f, 0.5f, 0.5f);
 
             m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale));
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");

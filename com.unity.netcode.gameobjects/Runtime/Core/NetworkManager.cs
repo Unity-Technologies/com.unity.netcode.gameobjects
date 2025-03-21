@@ -910,121 +910,6 @@ namespace Unity.Netcode
 
         internal Override<ushort> PortOverride;
 
-
-#if UNITY_EDITOR
-        internal static INetworkManagerHelper NetworkManagerHelper;
-
-        /// <summary>
-        /// Interface for NetworkManagerHelper
-        /// </summary>
-        internal interface INetworkManagerHelper
-        {
-            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
-            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
-        }
-
-        internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
-
-        internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
-
-        private void Reset()
-        {
-            OnNetworkManagerReset?.Invoke(this);
-        }
-
-        protected virtual void OnValidateComponent()
-        {
-
-        }
-
-        private PackageInfo GetPackageInfo(string packageName)
-        {
-            return AssetDatabase.FindAssets("package").Select(AssetDatabase.GUIDToAssetPath).Where(x => AssetDatabase.LoadAssetAtPath<TextAsset>(x) != null).Select(PackageInfo.FindForAssetPath).Where(x => x != null).First(x => x.name == packageName);
-        }
-
-        internal void OnValidate()
-        {
-            if (NetworkConfig == null)
-            {
-                return; // May occur when the component is added
-            }
-
-            // Do a validation pass on NetworkConfig properties
-            NetworkConfig.OnValidate();
-
-            if (GetComponentInChildren<NetworkObject>() != null)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
-                }
-            }
-
-            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-
-            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
-            if (!activeScene.isDirty || EditorApplication.isUpdating)
-            {
-                return;
-            }
-
-            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
-            NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Clear();
-
-            var prefabs = NetworkConfig.Prefabs.Prefabs;
-            // Check network prefabs and assign to dictionary for quick look up
-            for (int i = 0; i < prefabs.Count; i++)
-            {
-                var networkPrefab = prefabs[i];
-                var networkPrefabGo = networkPrefab?.Prefab;
-                if (networkPrefabGo == null)
-                {
-                    continue;
-                }
-
-                var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
-                if (networkObject == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
-                    }
-
-                    continue;
-                }
-
-                {
-                    var childNetworkObjects = new List<NetworkObject>();
-                    networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
-                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
-                        }
-                    }
-                }
-            }
-
-            try
-            {
-                OnValidateComponent();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
-
-        private void ModeChanged(PlayModeStateChange change)
-        {
-            if (IsListening && change == PlayModeStateChange.ExitingPlayMode)
-            {
-                OnApplicationQuit();
-            }
-        }
-#endif
-
         /// <summary>
         /// Determines if the NetworkManager's GameObject is parented under another GameObject and
         /// notifies the user that this is not allowed for the NetworkManager.
@@ -1285,6 +1170,9 @@ namespace Unity.Netcode
 
             NetworkConfig.InitializePrefabs();
             PrefabHandler.RegisterPlayerPrefab();
+#if UNITY_EDITOR
+            BeginNetworkSession();
+#endif
         }
 
         private enum StartType
@@ -1584,6 +1472,10 @@ namespace Unity.Netcode
 
         internal void ShutdownInternal()
         {
+#if UNITY_EDITOR
+            EndNetworkSession();
+#endif
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
@@ -1721,5 +1613,211 @@ namespace Unity.Netcode
             ParseArg(k_OverridePortArg, ref PortOverride);
 #endif
         }
+
+#if UNITY_EDITOR
+        internal static INetworkManagerHelper NetworkManagerHelper;
+
+        /// <summary>
+        /// Interface for NetworkManagerHelper
+        /// </summary>
+        internal interface INetworkManagerHelper
+        {
+            bool NotifyUserOfNestedNetworkManager(NetworkManager networkManager, bool ignoreNetworkManagerCache = false, bool editorTest = false);
+
+            void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false);
+
+            internal NetcodeAnalytics Analytics();
+        }
+
+        internal abstract class NetcodeAnalytics
+        {
+            internal abstract void ModeChanged(PlayModeStateChange playModeState, NetworkManager networkManager);
+
+            internal abstract void SessionStarted(NetworkManager networkManager);
+
+            internal abstract void SessionStopped(NetworkManager networkManager);
+
+            internal abstract void OnOneTimeSetup();
+
+            internal abstract void OnOneTimeTearDown();
+        }
+
+        internal delegate void ResetNetworkManagerDelegate(NetworkManager manager);
+
+        internal static ResetNetworkManagerDelegate OnNetworkManagerReset;
+
+        private void Reset()
+        {
+            OnNetworkManagerReset?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Invoked when validating the <see cref="NetworkManager"/> component.
+        /// </summary>
+        protected virtual void OnValidateComponent()
+        {
+
+        }
+
+        private PackageInfo GetPackageInfo(string packageName)
+        {
+            return AssetDatabase.FindAssets("package").Select(AssetDatabase.GUIDToAssetPath).Where(x => AssetDatabase.LoadAssetAtPath<TextAsset>(x) != null).Select(PackageInfo.FindForAssetPath).Where(x => x != null).First(x => x.name == packageName);
+        }
+
+        internal void OnValidate()
+        {
+            if (NetworkConfig == null)
+            {
+                return; // May occur when the component is added
+            }
+
+            // Do a validation pass on NetworkConfig properties
+            NetworkConfig.OnValidate();
+
+            if (GetComponentInChildren<NetworkObject>() != null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkManager)} cannot be a {nameof(NetworkObject)}.");
+                }
+            }
+
+            var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+
+            // If the scene is not dirty or the asset database is currently updating then we can skip updating the NetworkPrefab information
+            if (!activeScene.isDirty || EditorApplication.isUpdating)
+            {
+                return;
+            }
+
+            // During OnValidate we will always clear out NetworkPrefabOverrideLinks and rebuild it
+            NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.Clear();
+
+            var prefabs = NetworkConfig.Prefabs.Prefabs;
+            // Check network prefabs and assign to dictionary for quick look up
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                var networkPrefab = prefabs[i];
+                var networkPrefabGo = networkPrefab?.Prefab;
+                if (networkPrefabGo == null)
+                {
+                    continue;
+                }
+
+                var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
+                if (networkObject == null)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
+                    }
+
+                    continue;
+                }
+
+                {
+                    var childNetworkObjects = new List<NetworkObject>();
+                    networkPrefabGo.GetComponentsInChildren(true, childNetworkObjects);
+                    if (childNetworkObjects.Count > 1) // total count = 1 root NetworkObject + n child NetworkObjects
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                        }
+                    }
+                }
+            }
+
+            try
+            {
+                OnValidateComponent();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        internal void ModeChanged(PlayModeStateChange playModeState)
+        {
+            if (playModeState == PlayModeStateChange.ExitingPlayMode)
+            {
+                if (IsListening)
+                {
+                    OnApplicationQuit();
+                }
+            }
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.ModeChanged(playModeState, this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+
+        }
+
+        /// <summary>
+        /// Invoked when NetworkManager is started.
+        /// </summary>
+        private void BeginNetworkSession()
+        {
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.SessionStarted(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Invoked when NetworkManager is stopped or upon exiting play mode.
+        /// </summary>
+        private void EndNetworkSession()
+        {
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.SessionStopped(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+#endif
+
+#if UNITY_INCLUDE_TESTS
+        /// <summary>
+        /// Used for integration tests
+        /// </summary>
+        internal static void OnOneTimeSetup()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.OnOneTimeSetup();
+            }
+            catch { }
+#endif
+        }
+
+        /// <summary>
+        /// Used for integration tests
+        /// </summary>
+        internal static void OnOneTimeTearDown()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                NetworkManagerHelper?.Analytics()?.OnOneTimeTearDown();
+            }
+            catch { }
+#endif
+        }
+#endif
+
     }
 }
