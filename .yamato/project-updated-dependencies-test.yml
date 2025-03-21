@@ -1,9 +1,28 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Executes package tests for each package referenced in the project using the newest compatible version of the package dependencies.
-# This is just to ensure that no critical change is made. It will be run on a default editor and default platform (it can be discussed if we should run it per all editors and platforms)
-{% for project in projects.default -%}
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible fo validating package compatibility with latest dependency versions.
+  # This helps detect potential breaking changes from dependency updates early
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs configurations are generated using nested loops through:
+    # 1. For all projects (testproject, minimalproject, testproject-tools-integration).
+    # 2. For all desktop platforms (Win, Ubuntu, Mac)
+    # 3. For all supported editors (For NGOv1.X it means 2021.3+)
+  
+# TECHNICAL CONSIDERATIONS----------------------------------------------------------------
+  # This job requires successful project packaging before execution (job dependency)
+  # This job tests only NGO package dependencies (com.unity.netcode.gameobjects)
+  # The results are being generated in upm-ci~/test-results directory (specific of upm-ci)
+  
+# QUALITY CONSIDERATIONS---------------------------------------------------------------------
+  # TODO: Currently upm-ci is being used but in the future it will be replaced by upm-pvp
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#-------------------------------------------------------------------------------------- 
+  
+{% for project in projects.all -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
@@ -12,16 +31,18 @@ updated-dependencies_{{ project.name }}_NGO_{{ platform.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type updated-dependencies-tests --package-filter com.unity.netcode.gameobjects
   artifacts:
     logs:
       paths:
         - "upm-ci~/test-results/**/*"
   dependencies:
-    - path: .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
-      rerun: always
+    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

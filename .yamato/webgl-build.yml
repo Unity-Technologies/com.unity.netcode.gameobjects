@@ -1,53 +1,55 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %}  # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on WebGl standalone platform without executing any tests.
-# This setup performs build-only validation since WebGL runs in browser and for tests to be executed we would need to 
-# consider having a web server, browser automation and overall complex test setup.
-# Default project (testptoject) in this case is used as a context.
-# WebGL requires Il2cpp scripting backend so mono is not considered
-# ARM64 architectures are not considered since Windows_arm64 is recommended to use only after builds and when it comes to macOS_arm64 there is problem with OpenCL not being available
-# Builds are made on each desktop platform as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for validating a successful building of a player on WebGl standalone platform. 
+  # This job WILL NOT execute any tests, we only validate the building process.
+  # This is because WebGL runs in browser and for tests to be executed we would need to consider having a web server, browser automation and overall complex test setup which currently we don't have. 
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs configurations are generated using nested loops through:
+    # 1. For the default project (project is used only as a context for the build).
+    # 2. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 3. For all supported Unity Editor versions (For NGOv1.X it means 2021.3+)
+  
+# TECHNICAL CONSIDERATIONS----------------------------------------------------------------
+  # WebGL requires IL2CPP scripting backend (Mono is not supported)
+  # We are not using ARM64 architectures since we only perform a build action. x64 architectures are preferred for build phase (in order to optimize available resource usage)
+  # We only perform build validation (no runtime testing)
+  
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # In the future we could try to implement an infrastructure to run test in webgl context but this could be quite complicated and would need to be evaluated if it's worth it
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#-------------------------------------------------------------------------------------- 
+  
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
-    type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
+    type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    # Installing tools
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    
-    # Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c webgl -c il2cpp {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloading the editor with additional webgl and il2cpp components
   
-    # Installing editor
-    - unity-downloader-cli -u {{ editor }} -c Editor -c webgl -c il2cpp -w --fast
-  
-    # Build Player
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% else %}
-      ./utr --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg="-cloudEnvironment staging" --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% endif %}
-
+    # The following step builds the player with defined options such as:
+    # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
+    # Editor is run in batchmode, which means that Unity runs command line arguments without the need for human interaction. It also suppresses pop-up windows that require human interaction (such as the Save Scene window). We should always run Unity in batch mode when using command line arguments, because it allows automation to run without interruption. (--extra-editor-arg=-batchmode)
+    # Engine is initialized in ‘nographics’ mode since we don't need any graphics for this case (--extra-editor-arg=-nographics)
+    # In case of failure the job will be rerunned once (--reruncount=1) with clean library (--clean-library-on-rerun) 
+    # This will perform only building phase (--build-only) with a timeout of 3m (--timeout=1800)
+    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     logs:
       paths:
         - "artifacts/**/*"
         - "build/players/**/*"
-  variables:
-    CI: true
-    ENABLE_BURST_COMPILATION: False
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

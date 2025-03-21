@@ -1,4 +1,22 @@
-# The small agent was created to handle jobs that don't involve running Unity (for example pack job).
+# DESCRIPTION-----------------------------------------------------------------------------------------------------------------
+    # This file is the central configuration file defining test environments, platforms, projects, editors and other parameters used.
+    # Data from this file is used to generate CI pipeline configurations through templating in other .yamato/ files.
+    # This provides consistent environment definitions across all CI jobs. It's easier to modify values in central place (for example image reference) than having to modify every job
+
+# VALUE MEANING----------------------------------------------------------------------------------------------------------------------------
+    # Usual fields being defined are
+        # name --> Identifier used to distinguish different configurations in the CI pipeline
+        # type --> Specifies the Bokken agent type (e.g., Unity::VM, Unity::VM::osx, Unity::mobile::shield)
+        # image --> Defines the package-ci Bokken image to use for the environment (e.g., package-ci/ubuntu-22.04:v4). This is basically a device configuration
+        # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
+        # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
+        # model --> Defines specific hardware model requirements (e.g., rtx2080, SE for iPhone SE)
+        # base --> Indicates the base operating system for build operations (e.g., win, mac)
+        # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
+
+
+# SMALL AGENT CONFIGURATION---------------------------------------------------------------------------------------------------
+# The small agent was created to handle jobs that don't involve running Unity and are in general super light when it comes to resource usage (for example pack job).
 # It uses ubuntu since Linux VMs are faster and cheaper to provision than Mac or Windows Virtual Machines (VMs).
 # The b1.small flavour is nearly always sufficient for jobs that don’t involve running Unity Editor.
 small_agent_platform: 
@@ -7,7 +25,13 @@ small_agent_platform:
       image: package-ci/ubuntu-22.04:v4
       flavor: b1.small
 
-# Platforms that project will/can be tested on.
+
+# PLATFORM CONFIGURATIONS----------------------------------------------------------------------------------------------------------------
+# test_platforms specifies platforms that project will/can be tested on.
+# For desktops we include Windows, Ubuntu and Mac, for mobiles we include Android and iOS, for consoles we include ps4, ps5, switch, xbox360 and xboxOne
+# For mobile and console a split was required for build and test jobs and this is also applied for desktops for consistency (though for desktop this split is not required)
+
+
 test_platforms:
     # Default platform is used for all basic jobs. Ubuntu was chosen since it's fastest and most available
     default:
@@ -31,10 +55,12 @@ test_platforms:
           model: rtx2080
         - name: mac
           type: Unity::VM::osx
-          image: package-ci/macos-13:v4
+          image: package-ci/macos-13-arm64:v4 # ARM64 to support M1 model (below)
           flavor: m1.mac
           standalone: StandaloneOSX
+          model: M1 # The default model (an x64 Intel Mac VM) quite often caused a known issue of doing all the bitflips in packages resulting in failures
     # For mobile devices there is a split between the build and run phase so there is a need of splitting specification for both
+    # TODO: For android we could consider adding ARM64 configuration
     mobile_build:
         - name: android
           type: Unity::VM
@@ -43,7 +69,7 @@ test_platforms:
           standalone: Android
           base: win
           architecture: armv7
-        # iOS modern builds are ARM64-only, thus no testing with armv7 (as in android case)
+        # iOS modern builds are ARM64-only, thus no testing with armv7
         - name: ios-arm64
           type: Unity::VM::osx
           image: package-ci/macos-13:v4
@@ -121,30 +147,33 @@ test_platforms:
           flavor: b1.large
           standalone: GameCoreScarlett
     
-    
-# Editors to be used for testing.
-# Since NGOv2 official support started from U6 it means that only those editors should be used for testing
+# EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
+# Editors to be used for testing. NGOv1.X official support started from 2021.3 editor
+# TODO: When a new editor will be released it should be added to this list. Correct also if we will stop supporting one of the editors present here
+
 validation_editors:
     default:
         - trunk
     all:
         - 2021.3
         - 2022.3
-        - 2023.3
         - 6000.0
         - 6000.1 
         - trunk
         
         
-# Scripting backends used by Standalone RunTimeTests
+# Scripting backends used by Standalone RunTimeTests---------------------------------------------------
+
 scripting_backends: 
   - mono
   - il2cpp
 
 
-# Projects within the repository that will be tested. Name will be used
-# for job ids, so it should not contain spaces/non-supported characters
-# The default project will also be used for validation, code coverage etc.
+# PROJECTS CONFIGURATIONS-------------------------------------------------------------------------------
+# Projects within the repository that will be tested/build.
+# The default project should be used for general validation, code coverage and other tests where choice of project should not matter (because we are interested in NGO package)
+# has_tests --> describes if projects contains any tests to run.
+
 projects:
     default:
         - name: testproject

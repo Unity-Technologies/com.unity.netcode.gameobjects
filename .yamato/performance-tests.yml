@@ -1,8 +1,27 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Performance tests for the `com.unity.netcode.gameobjects` package. No performance data will be reported.
-# Performance tests are executed within editor on desktop platforms in context of default project (testproject)
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for executing performance tests for NGO package.
+  # Its configuration is set to not report any data but just to give results (at least in current state since we don't have any tests to run).
+  # Currently, because of lack of performance tests this job will always return "no tests have been selected" and because oif that it's not included in any trigger jobs.
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs configurations are generated using nested loops through:
+    # 1. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 2. For all supported Unity Editor versions (For NGOv1.X it means 2021.3+)
+    # 3. For the default project (project is used only as a context for the build). TODO-comment: if performance tests would be included in projects then we should make an appropriate split.
+  
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # Tests are run in Editor context only
+  # No performance metrics are reported to monitoring systems
+  
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # TODO: Currently NGO don't have any performance tests so this job is a placeholder for the future. We should discuss how to approach the topic of performance testing
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#------------------------------------------------------------------------------------
+  
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for project in projects.default -%}
@@ -12,44 +31,17 @@ performance_editor_tests_-_NGO_{{ platform.name }}_{{ editor }}_no_data_reportin
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-      # Installing tools
-{% if platform.name == "ubuntu" %}
-      - sudo apt-get update -q
-      - sudo apt install -qy imagemagick
-{% endif %}
-      - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-      
-      # Platform specific UTR setup
-{% if platform.name == "win" %}
-      - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
-      
-      # Installing editor
-      - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-      
-      # Build Player
-      - |
-{% if platform.name == "win" %} 
-        utr.bat --suite=editor --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --timeout=3600 --artifacts-path=artifacts --extra-editor-arg=-assemblyNames --extra-editor-arg=Unity.NetCode.* --extra-editor-arg=-testCategory --extra-editor-arg=Performance --extra-editor-arg=-enablePackageManagerTraces --reruncount=1 --clean-library-on-rerun --dontreportperformancedata
-{% else %} 
-        ./utr --suite=editor --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --timeout=3600 --artifacts-path=artifacts --extra-editor-arg=-assemblyNames --extra-editor-arg=Unity.NetCode.* --extra-editor-arg=-testCategory --extra-editor-arg=Performance --extra-editor-arg=-enablePackageManagerTraces --reruncount=1 --clean-library-on-rerun --dontreportperformancedata  
-{% endif %} 
-
+      - unity-downloader-cli -u {{ editor }} -c Editor --wait {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor
+      - UnifiedTestRunner --suite=editor --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --timeout=3600 --artifacts-path=artifacts --extra-editor-arg=-assemblyNames --extra-editor-arg=Unity.NetCode.* --extra-editor-arg=-testCategory --extra-editor-arg=Performance --extra-editor-arg=-enablePackageManagerTraces --reruncount=1 --clean-library-on-rerun --dontreportperformancedata
+      # TODO: when performance tests will be present we need to add actuall execution of this test
   artifacts:
     logs:
       paths:
-        - '*.log'
-        - '*.xml'
-        - artifacts/**/*
-        - {{ project.name }}/Logs/**
-        - {{ project.name }}/Library/*.log
-        - {{ project.name }}/*.log
-        - {{ project.name }}/Builds/*.log
-        - build/test-results/**
+        - "artifacts/**/*"
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -1,10 +1,30 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Runs package tests in order to determine code coverage of the NGO package.
-# In essence it's performing the same task as .yamato/package-test jobs with the overhead being the measured code coverage
-# It's ok for code coverage to be performed only on one platform (default) since code coverage won't change much between those.
-# Default platform was chosen (ubuntu) since it's the fastest and most resource friendly with default editor.
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for executing package tests with code coverage analysis enabled.
+  # Coverage analysis provides insights into:
+  # Test coverage metrics for NGO assemblies
+  # Line and branch coverage statistics
+  # Generated HTML reports for coverage visualization
+  # Additional metrics for coverage analysis
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+  # 1. For default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
+  # 2. For default editor version (trunk) since coverage would not vary between editors (no need for checks on more editors)
+  
+#TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # In theory this job also runs package tests, but we don't want to use it as default since is heavier (because of added coverage analysis) and coverage is not changing that often
+  # Requires Unity Editor installation
+  # Burst compilation is disabled to ensure accurate coverage measurement
+  # In order to properly use -coverage-results-path parameter we need to start it with $PWD (which means the absolute path). Otherwise, coverage results will not be visible
+  
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # TODO: somewhere in 2025 we will be able to upload resuls to CodeCov from public repos
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+  
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.default -%}
 code_coverage_{{ platform.name }}_{{ editor }}:
@@ -13,16 +33,18 @@ code_coverage_{{ platform.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    - npm install -g upm-ci-utils@stable --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    - DISPLAY=:0 upm-ci package test -u {{ editor }} --package-path com.unity.netcode.gameobjects --enable-code-coverage --code-coverage-options 'generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime' --extra-utr-arg="--extra-editor-arg=--burst-disable-compilation --extra-editor-arg=testCategory --extra-editor-arg=!Performance --timeout=1800 --reruncount=1 --clean-library-on-rerun"
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
+    - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage -coverage-results-path=$PWD/test-results/CodeCoverage --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
-        - "upm-ci~/test-results/**/*"
-        - "upm-ci~/test-results/CoverageResults/**/*"
+        - "test-results/**/*"
   dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}_upmCI
+    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}

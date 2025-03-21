@@ -1,9 +1,28 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Packs Netcode for GameObjects together with performing initial checks. 
-# For this job no specific platform support and no running Unity instance is required so small agent (as per project.metafile definition) could be used to save resources and speed up the process.
-# If everyone adheres to this rule it can create bottlenecks (since everyone would use this machine) so we decided to pack with the same platform as the given job runs on
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for packing a specific package. It generates package artifacts (.tgz) required for testing and publishing, ensuring all dependencies are properly bundled and validated before any test execution.
+  # The job itself doesn't test anything specific but rather it prepares project packages that will be consumed by other pipeline jobs.
+  # The job performs additional validation by using Package Verification Pipeline (PVP). It includes x-ray validation for quick package structure verification
+  # Because of that validation we can detect errors at the early stage of testing so not to waste CI resources
+
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops through:
+    # 1. For all desktop platforms (Windows, Ubuntu, macOS)
+
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # Job does not require Unity Editor in order to perform packing.
+  # Job uses PVP x-ray for lightweight validation
+  # Job generates both packages artifacts and pvp-results file.
+  # In theory, we could just use one platform for packing projects (for example ubuntu) but in order to reduce confusion we are using same platform as the job utilizing project pack as dependency.
+
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # TODO: we should aim to replace target PVP profile from supported to gold
+
+#------------------------------------------------------------------------------------
+  
 {% for platform in test_platforms.desktop -%}
 package_pack_-_ngo_{{ platform.name }}:
   name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
@@ -11,6 +30,9 @@ package_pack_-_ngo_{{ platform.name }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   timeout: 0.25
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
@@ -25,27 +47,4 @@ package_pack_-_ngo_{{ platform.name }}:
     packages:
       paths:
         - "upm-ci~/**"
-{% endfor -%}
-
-# This is in essence the same job as the one above with the difference that upm-ci is used instead of upm-pvp
-# The reason for using it is that I had some problems with Code Coverage which in its current form uses upm-ci but if we would use the other pack job (the one above) we would need to use upm-pvp
-# I had some problems with getting it to work so as temporary solution I created this pack job which is used ONLY as a dependency of Code Coverage job (other jobs use the above definition of pack job)
-# TODO: remove this job and utilize the above one for Code Coverage job. This is tracked in MTT-11383
-{% for platform in test_platforms.default -%}
-{% for project in projects.default -%}
-package_pack_-_ngo_{{ platform.name }}_upmCI:
-  name: Package Pack (legacy upm-ci) - NGO [{{ platform.name }}]
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
-  timeout: 0.25
-  commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project pack --project-path {{ project.path }}
-  artifacts:
-    packages:
-      paths:
-        - "upm-ci~/packages/**/*"
-{% endfor -%}
 {% endfor -%}

@@ -1,5 +1,15 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
+
+# DESCRIPTION--------------------------------------------------------------------------
+  # Those jobs group together related test as dependencies to allow to easily manage running a given set of tests.
+  # This enables efficient test execution for different validation scenarios
+
+# QUALITY CONSIDERATIONS---------------------------------------------------------------
+  # It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
+
+#-----------------------------------------------------------------------------------
+
 
 # Runs all package tests
 run_all_package_tests:
@@ -130,13 +140,7 @@ run_all_project_tests_desktop_standalone:
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if editor != "2021.3" or platform.name != "ubuntu" %}
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -164,13 +168,7 @@ run_all_project_tests_desktop_standalone_2021:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if platform.name != "ubuntu" %}
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_2021.3
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -182,7 +180,7 @@ run_all_project_tests_mobile_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.all -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -195,7 +193,7 @@ run_all_project_tests_mobile_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -206,7 +204,7 @@ run_all_project_tests_mobile_standalone_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-    - .yamato/mobile-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}
 
@@ -218,10 +216,7 @@ run_all_project_tests_console_standalone:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
-{% if editor != "2023.3" %}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
-{% endif -%}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -234,7 +229,7 @@ run_all_project_tests_console_standalone_trunk:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.default -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -245,6 +240,6 @@ run_all_project_tests_console_standalone_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-    - .yamato/console-standalone-test.yml#run_{{ project.name }}_tests_{{ platform.name }}_2021.3
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
 {% endfor -%}
 {% endfor -%}

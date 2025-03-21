@@ -2,7 +2,7 @@
 name: Feedback
 about: Provide feedback to the Netcode for GameObjects team
 title: ''
-labels: stat:awaiting triage, type:feedback
+labels: stat:awaiting-triage, stat:reply-needed, type:feedback
 assignees: ''
 
 ---
