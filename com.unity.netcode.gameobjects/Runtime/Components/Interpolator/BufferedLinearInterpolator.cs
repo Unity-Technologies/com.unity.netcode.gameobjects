@@ -118,10 +118,10 @@ namespace Unity.Netcode
 
             public double StartTime;
             public double EndTime;
-            public float TimeToTargetValue;
-            public float DeltaTime;
-            public float DeltaTimePredict;
-            public float MaxDeltaTime;
+            public double TimeToTargetValue;
+            public double DeltaTime;
+            public double DeltaTimePredict;
+            public double MaxDeltaTime;
             public float LerpT;
             public float LerpTPredict;
             public bool TargetReached;
@@ -130,11 +130,13 @@ namespace Unity.Netcode
             public T PreviousValue;
             public T PredictValue;
             public T PredictTarget;
+            public T Phase1Value;
+            public T Phase2Value;
 
             private float m_AverageDeltaTime;
 
             public float AverageDeltaTime => m_AverageDeltaTime;
-            public float FinalTimeToTarget => Mathf.Max(0.0f, TimeToTargetValue - DeltaTime);
+            public double FinalTimeToTarget => Math.Max(0.0, TimeToTargetValue - DeltaTime);
 
             public void AddDeltaTime(float deltaTime)
             {
@@ -147,12 +149,14 @@ namespace Unity.Netcode
                     m_AverageDeltaTime += deltaTime;
                     m_AverageDeltaTime *= 0.5f;
                 }
-                DeltaTime = Math.Min(DeltaTime + m_AverageDeltaTime, TimeToTargetValue);
-                DeltaTimePredict = Math.Min(DeltaTime + DeltaTimePredict, TimeToTargetValue + MaxDeltaTime);
-                LerpT = TimeToTargetValue == 0.0f ? 1.0f : DeltaTime / TimeToTargetValue;
+                DeltaTime = Math.Min(DeltaTime + deltaTime, TimeToTargetValue);
+                DeltaTimePredict = Math.Min(DeltaTime + deltaTime, TimeToTargetValue + MaxDeltaTime);
+                //DeltaTime = Math.Min(DeltaTime + m_AverageDeltaTime, TimeToTargetValue);
+                //DeltaTimePredict = Math.Min(DeltaTimePredict + m_AverageDeltaTime, TimeToTargetValue + MaxDeltaTime);
+                LerpT = (float)(TimeToTargetValue == 0.0 ? 1.0 : DeltaTime / TimeToTargetValue);
                 if (PredictingNext)
                 {
-                    LerpTPredict = TimeToTargetValue == 0.0f ? 1.0f : DeltaTimePredict / TimeToTargetValue;
+                    LerpTPredict = (float)(TimeToTargetValue == 0.0 ? 1.0 : DeltaTimePredict / TimeToTargetValue);
                 }
                 else
                 {
@@ -160,7 +164,7 @@ namespace Unity.Netcode
                 }
             }
 
-            public void SetTimeToTarget(float timeToTarget)
+            public void SetTimeToTarget(double timeToTarget)
             {
                 DeltaTimePredict = 0.0f;
                 LerpTPredict = 0.0f;
@@ -191,6 +195,8 @@ namespace Unity.Netcode
                 PreviousValue = currentValue;
                 PredictValue = currentValue;
                 PredictTarget = currentValue;
+                Phase1Value = currentValue;
+                Phase2Value = currentValue;
                 TargetReached = false;
                 PredictingNext = false;
                 LerpT = 0.0f;
@@ -304,7 +310,7 @@ namespace Unity.Netcode
         /// <param name="renderTime">render time: the time in "ticks ago" relative to the current tick latency</param>
         /// <param name="minDeltaTime">minimum time delta (defaults to tick frequency)</param>
         /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer</param>
-        private void TryConsumeFromBuffer(double renderTime, float minDeltaTime, float maxDeltaTime, bool isPredictedLerp)
+        private void TryConsumeFromBuffer(double renderTime, double minDeltaTime, double maxDeltaTime, bool isPredictedLerp)
         {
             BufferedItem? previousItem = null;
             var startTime = 0.0;
@@ -348,6 +354,8 @@ namespace Unity.Netcode
                             alreadyHasBufferItem = true;
                             InterpolateState.PredictValue = InterpolateState.CurrentValue;
                             InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                            InterpolateState.Phase1Value = InterpolateState.CurrentValue;
+                            InterpolateState.Phase2Value = InterpolateState.CurrentValue;
                             InterpolateState.SetTimeToTarget(minDeltaTime);
                             InterpolateState.TimeToTargetValue = minDeltaTime;
                             startTime = InterpolateState.Target.Value.TimeSent;
@@ -363,17 +371,19 @@ namespace Unity.Netcode
                                 InterpolateState.TargetReached = false;
                                 InterpolateState.PredictingNext = false;
                                 startTime = InterpolateState.Target.Value.TimeSent;
+                                InterpolateState.Phase1Value = InterpolateState.PreviousValue;
+                                InterpolateState.Phase2Value = InterpolateState.PredictValue;
                                 InterpolateState.PredictTarget = target.Item;
                                 InterpolateState.MaxDeltaTime = maxDeltaTime;
-                                if (m_BufferQueue.TryPeek(out BufferedItem lookAheadItem))
-                                {
-                                    InterpolateState.PredictTarget = Interpolate(target.Item, lookAheadItem.Item, InterpolateState.AverageDeltaTime);
-                                    InterpolateState.PredictingNext = true;
-                                }
+                            }
+                            if (m_BufferQueue.TryPeek(out BufferedItem lookAheadItem))
+                            {
+                                InterpolateState.PredictTarget = Interpolate(target.Item, lookAheadItem.Item, InterpolateState.AverageDeltaTime);
+                                InterpolateState.PredictingNext = true;
                             }
                             // TODO: We might consider creating yet another queue to add these items to and assure that the time is accelerated
                             // for each item as opposed to losing the resolution of the values.
-                            var timeToTarget = Mathf.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
+                            var timeToTarget = Math.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime);
                             InterpolateState.SetTimeToTarget(timeToTarget);
                             InterpolateState.Target = target;
                         }
@@ -415,7 +425,7 @@ namespace Unity.Netcode
         /// <param name="isLerpAndExtrapolate">Determines whether to use smooth dampening or extrapolation.</param>
         /// <param name="lerpSmoothing">Determines if lerp smoothing is enabled for this instance.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        internal T Update(float deltaTime, double tickLatencyAsTime, float minDeltaTime, float maxDeltaTime, bool isLerpAndExtrapolate, bool lerpSmoothing)
+        internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool isLerpAndExtrapolate, bool lerpSmoothing)
         {
             TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime, isLerpAndExtrapolate);
             // Only begin interpolation when there is a start and end point
@@ -429,27 +439,36 @@ namespace Unity.Netcode
                     // SmoothDampen or LerpExtrapolateBlend
                     if (!isLerpAndExtrapolate)
                     {
-                        InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime);
-                        var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Mathf.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
-                        InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.PredictTarget, ref m_PredictedRateOfChange, InterpolateState.TimeToTargetValue, predictedTime);
+                        //InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
+                        //var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
+                        //InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.PredictTarget, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
+                        InterpolateState.Phase1Value = SmoothDamp(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
+                        var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
+                        InterpolateState.PredictValue = SmoothDamp(InterpolateState.Phase1Value, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
+                        // Determine if smooth dampening is enabled to get our lerp "t" time
+                        var timeDelta = lerpSmoothing ? deltaTime / MaximumInterpolationTime : deltaTime;
+                        // Lerp between the PreviousValue and PredictedValue using the calculated time delta
+                        InterpolateState.CurrentValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.PredictValue, timeDelta);
                     }
                     else
                     {
-                        InterpolateState.PreviousValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
-                        InterpolateState.PredictValue = InterpolateUnclamped(InterpolateState.PredictValue, InterpolateState.Target.Value.Item, InterpolateState.LerpTPredict);
-                    }
+                        InterpolateState.PreviousValue = Interpolate(InterpolateState.Phase1Value, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
 
-                    // Lerp between the PreviousValue and PredictedValue (extrapolated) using this frame's delta time
-                    var targetValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.PredictValue, deltaTime);
-                    if (lerpSmoothing)
-                    {
-                        // If lerp smoothing is enabled, then smooth current value towards the target value
-                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / MaximumInterpolationTime);
-                    }
-                    else
-                    {
-                        // Otherwise, just assign the target value.
-                        InterpolateState.CurrentValue = targetValue;
+                        // Note: InterpolateState.LerpTPredict is clamped to LerpT if we have no next target
+                        InterpolateState.PredictValue = InterpolateUnclamped(InterpolateState.Phase2Value, InterpolateState.Target.Value.Item, InterpolateState.LerpTPredict);
+
+                        // Lerp between the PreviousValue and PredictedValue using this frame's delta time
+                        var targetValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.PredictValue, deltaTime);
+                        if (lerpSmoothing)
+                        {
+                            // If lerp smoothing is enabled, then smooth current value towards the target value
+                            InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / MaximumInterpolationTime);
+                        }
+                        else
+                        {
+                            // Otherwise, just assign the target value.
+                            InterpolateState.CurrentValue = targetValue;
+                        }
                     }
                 }
             }

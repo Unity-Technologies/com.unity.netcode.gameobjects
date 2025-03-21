@@ -3923,13 +3923,12 @@ namespace Unity.Netcode.Components
         {
             AdjustForChangeInTransformSpace();
 
-            var cachedServerTime = m_CachedNetworkManager.ServerTime.Time;
+            var currentTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
 #else
             var cachedDeltaTime = Time.deltaTime;
 #endif
-
             // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
             // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
             // updates are received.
@@ -3951,10 +3950,10 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
+            var tickLatencyAsTime = m_CachedNetworkManager.ServerTime.TimeTicksAgo(tickLatency).Time;
             // Smooth dampening and extrapolation specific:
             // We clamp between the tick rate frequency and the tick latency x tick rate frequency
-            var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
+            var minDeltaTime = m_CachedNetworkManager.ServerTime.FixedDeltaTimeAsDouble;
 
             // Maximum delta time is the maximum time we will lerp between values. If the time exceeds this due to extreme
             // latency then the value's interpolation rate will be accelerated to reach the goal and continue interpolating
@@ -3979,7 +3978,7 @@ namespace Unity.Netcode.Components
 
                 if (PositionInterpolationType == InterpolationTypes.Lerp)
                 {
-                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, PositionLerpSmoothing);
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, PositionLerpSmoothing);
                 }
                 else
                 {
@@ -4009,7 +4008,7 @@ namespace Unity.Netcode.Components
                     // When using full precision Slerp towards the target rotation.
                     /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                     m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, RotationLerpSmoothing);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, RotationLerpSmoothing);
                 }
                 else
                 {
@@ -4035,7 +4034,7 @@ namespace Unity.Netcode.Components
 
                 if (ScaleInterpolationType == InterpolationTypes.Lerp)
                 {
-                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, ScaleLerpSmoothing);
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, ScaleLerpSmoothing);
                 }
                 else
                 {
