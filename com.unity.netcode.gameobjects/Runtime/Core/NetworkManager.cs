@@ -312,7 +312,7 @@ namespace Unity.Netcode
                 IsDistributedAuthority = DistributedAuthorityMode = transportTopology == NetworkTopologyTypes.DistributedAuthority;
             }
         }
-
+#if COM_UNITY_MODULES_PHYSICS
         internal void CheckNetworkTransformsForDuplicateRegistrations()
         {
             var uniqueEntries = new Dictionary<ulong, NetworkObject>();
@@ -346,6 +346,7 @@ namespace Unity.Netcode
             Debug.Log($"There are {NetworkTransformFixedUpdate.Count} NetworkTransforms registered for the fixed update.");
             Debug.Log($"There are {NetworkTransformUpdate.Count} NetworkTransforms registered for the normal update.");
         }
+#endif
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {

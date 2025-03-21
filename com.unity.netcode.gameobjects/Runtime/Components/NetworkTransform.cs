@@ -965,7 +965,7 @@ namespace Unity.Netcode.Components
             /// - The first phase lerps towards the current tick state update being processed.<br />
             /// - The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum delta time.
             /// The maximum delta time is the tick latency, calculated from an estimated RTT each time the network time is updated, plus the <see cref="InterpolationBufferTickOffset"/>. The sum is multiplied by the tick frequency (one over tick rate).<br />
-            /// - The third phase lerps between the results of the first and second phases by the current delta time.
+            /// - The third phase lerps between the results of the first and second phases by the current delta time.<br />
             /// - The fourth phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
             /// </summary>
             /// <remarks>
@@ -984,7 +984,7 @@ namespace Unity.Netcode.Components
             /// Uses a 3 to 4 phase smooth dampen towards the target, smooth dampen towards the next target, blend the two results, and (optionally) smooth the final value.<br />
             /// - The first phase smooth dampens towards the current tick state update being processed.<br />
             /// - The second phase smooth dampens towards the next tick state's target. If there is no next tick state update, then the target predicted value is the current state target that smooth dampens 1 frame (average delta time) ahead.<br />
-            /// - The third phase lerps between the results of the first and second phases by the current delta time.
+            /// - The third phase lerps between the results of the first and second phases by the current delta time.<br />
             /// - The fourth phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
             /// </summary>
             /// <remarks>
