@@ -85,7 +85,7 @@ namespace Unity.Netcode
         /// For a distributed authority network topology, this latency is between
         /// the client and the distributed authority service instance.
         /// </remarks>
-        public int TickLatency = 2;
+        public int TickLatency = 1;
 
         internal double LastSyncedServerTimeSec { get; private set; }
         internal double LastSyncedRttSec { get; private set; }
