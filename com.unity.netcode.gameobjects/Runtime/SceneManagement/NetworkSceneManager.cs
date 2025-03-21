@@ -2007,7 +2007,7 @@ namespace Unity.Netcode
                 if (!ClientConnectionQueue.Contains(clientId))
                 {
                     ClientConnectionQueue.Add(clientId);
-                    // If we are already synchronizing one or more clients, then add this client to the queue and exit.
+                    // If we are already synchronizing one or more clients, exit early. This client will be synchronized later.
                     if (ClientConnectionQueue.Count > 1)
                     {
                         if (NetworkManager.LogLevel <= LogLevel.Developer)
