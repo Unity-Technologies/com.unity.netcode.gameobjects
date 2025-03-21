@@ -3149,6 +3149,9 @@ namespace Unity.Netcode.Components
         /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
+            PositionMaxInterpolationTime = maxInterpolationBound;
+            RotationMaxInterpolationTime = maxInterpolationBound;
+            ScaleMaxInterpolationTime = maxInterpolationBound;
             m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
             m_PositionInterpolator.MaxInterpolationBound = maxInterpolationBound;
             m_ScaleInterpolator.MaxInterpolationBound = maxInterpolationBound;
@@ -3937,10 +3940,14 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
+            // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
+            // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
+            // updates are received.
             tickLatency += InterpolationBufferTickOffset;
+
             var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
 
-            // Smooth dampening specific:
+            // Smooth dampening and extrapolation specific:
             // We clamp between the tick rate frequency and the tick latency x tick rate frequency
             var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
 
@@ -3957,6 +3964,7 @@ namespace Unity.Netcode.Components
                     m_PositionInterpolator.MaximumInterpolationTime = PositionMaxInterpolationTime;
                 }
 
+                // If either of these two position interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousPositionInterpolationType != PositionInterpolationType || m_PreviousPositionLerpSmoothing != PositionLerpSmoothing)
                 {
                     m_PreviousPositionInterpolationType = PositionInterpolationType;
@@ -3982,6 +3990,7 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.MaximumInterpolationTime = RotationMaxInterpolationTime;
                 }
 
+                // If either of these two rotation interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousRotationInterpolationType != RotationInterpolationType || m_PreviousRotationLerpSmoothing != RotationLerpSmoothing)
                 {
                     m_PreviousRotationInterpolationType = RotationInterpolationType;
@@ -4011,6 +4020,7 @@ namespace Unity.Netcode.Components
                     m_ScaleInterpolator.MaximumInterpolationTime = ScaleMaxInterpolationTime;
                 }
 
+                // If either of these two rotation interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousScaleInterpolationType != ScaleInterpolationType || m_PreviousScaleLerpSmoothing != ScaleLerpSmoothing)
                 {
                     m_PreviousScaleInterpolationType = ScaleInterpolationType;
