@@ -9,6 +9,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Unity.Netcode.Components;
 
 namespace Unity.Netcode
 {
@@ -312,6 +313,40 @@ namespace Unity.Netcode
             }
         }
 
+        internal void CheckNetworkTransformsForDuplicateRegistrations()
+        {
+            var uniqueEntries = new Dictionary<ulong, NetworkObject>();
+            var uniqueNetworkTransforms = new Dictionary<ulong, Dictionary<int, NetworkTransform>>();
+            foreach (var networkObject in NetworkTransformFixedUpdate.Values)
+            {
+                if (!uniqueEntries.ContainsKey(networkObject.NetworkObjectId))
+                {
+                    uniqueEntries.Add(networkObject.NetworkObjectId, networkObject);
+                    uniqueNetworkTransforms.Add(networkObject.NetworkObjectId, new Dictionary<int, NetworkTransform>());
+                    foreach (var networkTransform in networkObject.NetworkTransforms)
+                    {
+                        if (!uniqueNetworkTransforms.ContainsKey(networkTransform.NetworkBehaviourId))
+                        {
+                            if (!uniqueNetworkTransforms[networkObject.NetworkObjectId].ContainsKey(networkTransform.NetworkBehaviourId))
+                            {
+                                uniqueNetworkTransforms[networkObject.NetworkObjectId].Add(networkTransform.NetworkBehaviourId, networkTransform);
+                            }
+                            else
+                            {
+                                Debug.LogError($"{networkObject.name}-{networkObject.NetworkObjectId} {nameof(NetworkTransform)}-{networkTransform.NetworkBehaviourId} has a duplicate {nameof(NetworkTransform)} entry!");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"{networkObject.name}-{networkObject.NetworkObjectId} has a duplicate update entry!");
+                }
+            }
+            Debug.Log($"There are {NetworkTransformFixedUpdate.Count} NetworkTransforms registered for the fixed update.");
+            Debug.Log($"There are {NetworkTransformUpdate.Count} NetworkTransforms registered for the normal update.");
+        }
+
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -361,29 +396,7 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.PreUpdate:
                     {
                         NetworkTimeSystem.UpdateTime();
-#if COM_UNITY_MODULES_PHYSICS
-                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
-                        {
-                            // if not active or not spawned then skip
-                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
-                            {
-                                continue;
-                            }
-
-                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
-                            {
-                                // only update if enabled
-                                if (networkTransformEntry.enabled)
-                                {
-                                    networkTransformEntry.OnFixedUpdateInterpolate();
-                                }
-                            }
-                        }
-#endif
-
                         AnticipationSystem.Update();
-
-
                     }
                     break;
                 case NetworkUpdateStage.PreLateUpdate:

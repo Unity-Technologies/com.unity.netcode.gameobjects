@@ -938,24 +938,65 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// The different interpolation types used with <see cref="BufferedLinearInterpolator{T}"/> to help smooth interpolation results.
+        /// Interpolation types can be changed during runtime.
         /// </summary>
         public enum InterpolationTypes
         {
             /// <summary>
-            /// Uses lerping and yields a linear progression between two values.
+            /// Lerp (original NGO lerping model)<br />
+            /// Uses a 1 to 2 phase interpolation approach where: <br />
+            /// - The fist phase lerps from the previous state update value to the next state update value.<br />
+            /// - The second phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.
             /// </summary>
             /// <remarks>
+            /// Lowest computation cost of the three options.<br />
             /// For more information:<br />
             /// - <see cref="PositionMaxInterpolationTime"/><br />
+            /// - <see cref="PositionLerpSmoothing"/><br />
             /// - <see cref="RotationMaxInterpolationTime"/><br />
+            /// - <see cref="RotationLerpSmoothing"/><br />
             /// - <see cref="ScaleMaxInterpolationTime"/><br />
+            /// - <see cref="ScaleLerpSmoothing"/><br />
             /// </remarks>
             Lerp,
             /// <summary>
-            /// Uses a smooth dampening approach for interpolating between two data points and adjusts based on rate of change.
+            /// Lerp, Extrapolate, and Blend
+            /// Uses a 3 to 4 phase lerp towards the target, extrapolate towards the target, blend the two results, and (optionally) smooth the final value.<br />
+            /// - The first phase lerps towards the current tick state update being processed.<br />
+            /// - The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum delta time.
+            /// The maximum delta time is the tick latency, calculated from an estimated RTT each time the network time is updated, plus the <see cref="InterpolationBufferTickOffset"/>. The sum is multiplied by the tick frequency (one over tick rate).<br />
+            /// - The third phase lerps between the results of the first and second phases by the current delta time.
+            /// - The fourth phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
             /// </summary>
             /// <remarks>
-            /// Unlike <see cref="Lerp"/>, there are no additional values needed to be adjusted for this interpolation type.
+            /// Note: This is slightly more computationally expensive than the <see cref="Lerp"/> approach.<br />
+            /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.<br />
+            /// For more information:<br />
+            /// - <see cref="PositionMaxInterpolationTime"/><br />
+            /// - <see cref="PositionLerpSmoothing"/><br />
+            /// - <see cref="RotationMaxInterpolationTime"/><br />
+            /// - <see cref="RotationLerpSmoothing"/><br />
+            /// - <see cref="ScaleMaxInterpolationTime"/><br />
+            /// - <see cref="ScaleLerpSmoothing"/><br />
+            /// </remarks>
+            LerpExtrapolateBlend,
+            /// <summary>
+            /// Uses a 3 to 4 phase smooth dampen towards the target, smooth dampen towards the next target, blend the two results, and (optionally) smooth the final value.<br />
+            /// - The first phase smooth dampens towards the current tick state update being processed.<br />
+            /// - The second phase smooth dampens towards the next tick state's target. If there is no next tick state update, then the target predicted value is the current state target that smooth dampens 1 frame (average delta time) ahead.<br />
+            /// - The third phase lerps between the results of the first and second phases by the current delta time.
+            /// - The fourth phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
+            /// </summary>
+            /// <remarks>
+            /// Note: Smooth dampening is computationally more expensive than the <see cref="LerpExtrapolateBlend"/> and <see cref="Lerp"/> approaches.<br />
+            /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.
+            /// For more information:<br />
+            /// - <see cref="PositionMaxInterpolationTime"/><br />
+            /// - <see cref="PositionLerpSmoothing"/><br />
+            /// - <see cref="RotationMaxInterpolationTime"/><br />
+            /// - <see cref="RotationLerpSmoothing"/><br />
+            /// - <see cref="ScaleMaxInterpolationTime"/><br />
+            /// - <see cref="ScaleLerpSmoothing"/><br />
             /// </remarks>
             SmoothDampening
         }
@@ -971,6 +1012,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes PositionInterpolationType;
+        private InterpolationTypes m_PreviousPositionInterpolationType;
 
         /// <summary>
         /// The rotation interpolation type to use for the <see cref="NetworkTransform"/> instance.
@@ -983,6 +1025,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes RotationInterpolationType;
+        private InterpolationTypes m_PreviousRotationInterpolationType;
 
         /// <summary>
         /// The scale interpolation type to use for the <see cref="NetworkTransform"/> instance.
@@ -995,6 +1038,16 @@ namespace Unity.Netcode.Components
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes ScaleInterpolationType;
+        private InterpolationTypes m_PreviousScaleInterpolationType;
+
+        /// <summary>
+        /// Controls position interpolaiton smoothing.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="PositionMaxInterpolationTime"/>.
+        /// </remarks>
+        public bool PositionLerpSmoothing;
+        private bool m_PreviousPositionLerpSmoothing;
 
         /// <summary>
         /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
@@ -1011,6 +1064,15 @@ namespace Unity.Netcode.Components
         public float PositionMaxInterpolationTime = 0.1f;
 
         /// <summary>
+        /// Controls rotation interpolaiton smoothing.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="RotationMaxInterpolationTime"/>.
+        /// </remarks>
+        public bool RotationLerpSmoothing;
+        private bool m_PreviousRotationLerpSmoothing;
+
+        /// <summary>
         /// The rotation interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
         /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
         /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
@@ -1023,6 +1085,15 @@ namespace Unity.Netcode.Components
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float RotationMaxInterpolationTime = 0.1f;
+
+        /// <summary>
+        /// Controls scale interpolaiton smoothing.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="ScaleMaxInterpolationTime"/>.
+        /// </remarks>
+        public bool ScaleLerpSmoothing;
+        private bool m_PreviousScaleLerpSmoothing;
 
         /// <summary>
         /// The scale interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
@@ -3388,7 +3459,6 @@ namespace Unity.Netcode.Components
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
             m_IsFirstNetworkTransform = NetworkObject.NetworkTransforms[0] == this;
 
-
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
                 AuthorityMode = AuthorityModes.Owner;
@@ -3456,6 +3526,14 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                // Always set these during initialization for non-authority so we can detect a change in interpolator types
+                m_PreviousPositionInterpolationType = PositionInterpolationType;
+                m_PreviousRotationInterpolationType = RotationInterpolationType;
+                m_PreviousScaleInterpolationType = ScaleInterpolationType;
+                m_PreviousPositionLerpSmoothing = PositionLerpSmoothing;
+                m_PreviousRotationLerpSmoothing = RotationLerpSmoothing;
+                m_PreviousScaleLerpSmoothing = ScaleLerpSmoothing;
+
                 // Non-authority needs to be added to updates for interpolation and applying state purposes
                 m_CachedNetworkManager.NetworkTransformRegistration(NetworkObject, forUpdate, true);
                 // Remove this instance from the tick update
@@ -3829,6 +3907,8 @@ namespace Unity.Netcode.Components
         #region UPDATES AND AUTHORITY CHECKS
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
+
+
         // Non-Authority
         private void UpdateInterpolation()
         {
@@ -3836,8 +3916,7 @@ namespace Unity.Netcode.Components
 
             var cachedServerTime = m_CachedNetworkManager.ServerTime.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            //var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
-            var cachedDeltaTime = Time.deltaTime;
+            var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
 #else
             var cachedDeltaTime = Time.deltaTime;
 #endif
@@ -3858,61 +3937,95 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-
+            tickLatency += InterpolationBufferTickOffset;
             var tickLatencyAsTime = m_CachedNetworkManager.LocalTime.TimeTicksAgo(tickLatency).Time;
-            // Smooth dampening specific:
-            // We clamp between tick rate and bit beyond the tick rate but not 2x tick rate (we predict 2x out)
-            var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
-            // The 1.666667f value is a "magic" number tht lies between the FixedDeltaTime and 2 * the averaged
-            // frame update. Since smooth dampening is most useful for Rigidbody motion, the physics update
-            // frequency is roughly 60hz (59.x?) which 2x that value as frequency is typically close to 32-33ms.
-            // Look within the Interpolator.Update for smooth dampening to better understand the above.
 
-            
-            //var frameRateRatio = Application.targetFrameRate > 0 ? Application.targetFrameRate * cachedDeltaTime : 100 * cachedDeltaTime;
-            //var maxDeltaTime = (Math.Max(60, frameRateRatio * m_CachedNetworkManager.ServerTime.FixedDeltaTime));
+            // Smooth dampening specific:
+            // We clamp between the tick rate frequency and the tick latency x tick rate frequency
+            var minDeltaTime = m_CachedNetworkManager.LocalTime.FixedDeltaTime;
+
+            // Maximum delta time is the maximum time we will lerp between values. If the time exceeds this due to extreme
+            // latency then the value's interpolation rate will be accelerated to reach the goal and continue interpolating
+            // the next state updates.
             var maxDeltaTime = tickLatency * minDeltaTime;
+
             // Now only update the interpolators for the portions of the transform being synchronized
             if (SynchronizePosition)
             {
-                if (PositionInterpolationType == InterpolationTypes.Lerp)
+                if (PositionLerpSmoothing)
                 {
                     m_PositionInterpolator.MaximumInterpolationTime = PositionMaxInterpolationTime;
-                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
+                }
+
+                if (m_PreviousPositionInterpolationType != PositionInterpolationType || m_PreviousPositionLerpSmoothing != PositionLerpSmoothing)
+                {
+                    m_PreviousPositionInterpolationType = PositionInterpolationType;
+                    m_PreviousPositionLerpSmoothing = PositionLerpSmoothing;
+                    m_PositionInterpolator.ResetCurrentState();
+                }
+
+                if (PositionInterpolationType == InterpolationTypes.Lerp)
+                {
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, PositionLerpSmoothing);
                 }
                 else
                 {
-                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
+                        PositionInterpolationType == InterpolationTypes.LerpExtrapolateBlend, PositionLerpSmoothing);
                 }
             }
 
             if (SynchronizeRotation)
             {
-                if (RotationInterpolationType == InterpolationTypes.Lerp)
+                if (RotationLerpSmoothing)
                 {
                     m_RotationInterpolator.MaximumInterpolationTime = RotationMaxInterpolationTime;
+                }
+
+                if (m_PreviousRotationInterpolationType != RotationInterpolationType || m_PreviousRotationLerpSmoothing != RotationLerpSmoothing)
+                {
+                    m_PreviousRotationInterpolationType = RotationInterpolationType;
+                    m_PreviousRotationLerpSmoothing = RotationLerpSmoothing;
+                    m_RotationInterpolator.ResetCurrentState();
+                }
+
+                if (RotationInterpolationType == InterpolationTypes.Lerp)
+                {
                     // When using half precision Lerp towards the target rotation.
                     // When using full precision Slerp towards the target rotation.
                     /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                     m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, RotationLerpSmoothing);
                 }
                 else
                 {
-                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
+                        RotationInterpolationType == InterpolationTypes.LerpExtrapolateBlend, RotationLerpSmoothing);
                 }
             }
 
             if (SynchronizeScale)
             {
-                if (ScaleInterpolationType == InterpolationTypes.Lerp)
+                if (ScaleLerpSmoothing)
                 {
                     m_ScaleInterpolator.MaximumInterpolationTime = ScaleMaxInterpolationTime;
-                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime);
+                }
+
+                if (m_PreviousScaleInterpolationType != ScaleInterpolationType || m_PreviousScaleLerpSmoothing != ScaleLerpSmoothing)
+                {
+                    m_PreviousScaleInterpolationType = ScaleInterpolationType;
+                    m_PreviousScaleLerpSmoothing = ScaleLerpSmoothing;
+                    m_ScaleInterpolator.ResetCurrentState();
+                }
+
+                if (ScaleInterpolationType == InterpolationTypes.Lerp)
+                {
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, cachedServerTime, ScaleLerpSmoothing);
                 }
                 else
                 {
-                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime);
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
+                        ScaleInterpolationType == InterpolationTypes.LerpExtrapolateBlend, ScaleLerpSmoothing);
                 }
             }
         }
@@ -3946,16 +4059,6 @@ namespace Unity.Netcode.Components
         }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-
-        internal void OnFixedUpdateInterpolate()
-        {
-            // Update interpolation when enabled
-            if (Interpolate)
-            {
-                UpdateInterpolation();
-            }
-        }
-
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -3970,12 +4073,11 @@ namespace Unity.Netcode.Components
 
             m_NetworkRigidbodyInternal.WakeIfSleeping();
 
-
             // Update interpolation when enabled
-            //if (Interpolate)
-            //{
-            //    UpdateInterpolation();
-            //}
+            if (Interpolate)
+            {
+                UpdateInterpolation();
+            }
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
@@ -4132,7 +4234,14 @@ namespace Unity.Netcode.Components
 
         #region NETWORK TICK REGISTRATOIN AND HANDLING
         private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
-        internal static int InterpolationBufferTickOffset = 2;
+        /// <summary>
+        /// Adjusts the over-all tick offset (i.e. how many ticks ago) and how wide of a maximum delta time will be used for the various <see cref="InterpolationTypes"/>.        
+        /// </summary>
+        /// <remarks>
+        /// Note: You can adjust this value during runtime. Increasing this value will set non-authority instances that much further behind the authority instance but
+        /// will increase the number of state updates to be processed. This can be useful under higher latency conditions.
+        /// </remarks>
+        public static int InterpolationBufferTickOffset = 0;
         internal static float GetTickLatency(NetworkManager networkManager)
         {
             if (networkManager.IsListening)
