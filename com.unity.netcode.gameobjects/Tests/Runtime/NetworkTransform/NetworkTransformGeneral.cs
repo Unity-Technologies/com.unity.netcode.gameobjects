@@ -289,7 +289,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
 
             m_EnableVerboseDebug = true;
-
+            VerboseDebug($"Target Frame Rate: {Application.targetFrameRate}");
             m_AuthoritativeTransform.Teleport(Vector3.zero, Quaternion.identity, Vector3.one);
             var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(Vector3.zero, Quaternion.identity.eulerAngles, Vector3.one), 800);
             Assert.True(success, $"Timed out waiting for initialization to be applied!");

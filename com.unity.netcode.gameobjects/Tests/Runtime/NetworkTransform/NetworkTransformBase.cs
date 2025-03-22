@@ -632,14 +632,27 @@ namespace Unity.Netcode.RuntimeTests
             var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
             var auhtorityIsEqual = Approximately(authorityPosition, positionToMatch);
             var nonauthorityIsEqual = Approximately(nonAuthorityPosition, positionToMatch);
+            var authorityTimeAndTick = string.Empty;
+            var nonAuthorityTimeAndTick = string.Empty;
+
+            if (m_AuthoritativeTransform.NetworkManager)
+            {
+                var authTime = m_AuthoritativeTransform.NetworkManager.LocalTime;
+                authorityTimeAndTick = $"[{authTime.Time}[{authTime.Tick}]]";
+            }
+            if (m_NonAuthoritativeTransform.NetworkManager)
+            {
+                var nonAuthTime = m_NonAuthoritativeTransform.NetworkManager.LocalTime;
+                nonAuthorityTimeAndTick = $"[{nonAuthTime.Time}[{nonAuthTime.Tick}]]";
+            }
 
             if (!auhtorityIsEqual)
             {
-                VerboseDebug($"Authority position {authorityPosition} != position to match: {positionToMatch}!");
+                VerboseDebug($"[{authorityTimeAndTick}] Authority position {authorityPosition} != position to match: {positionToMatch} [{nonAuthorityTimeAndTick}]!");
             }
             if (!nonauthorityIsEqual)
             {
-                VerboseDebug($"NonAuthority position {nonAuthorityPosition} != position to match: {positionToMatch}!");
+                VerboseDebug($"[{authorityTimeAndTick}] NonAuthority position {nonAuthorityPosition} != position to match: {positionToMatch} [{nonAuthorityTimeAndTick}]!");
             }
             return auhtorityIsEqual && nonauthorityIsEqual;
         }
