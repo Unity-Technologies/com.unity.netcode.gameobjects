@@ -3922,8 +3922,8 @@ namespace Unity.Netcode.Components
         private void UpdateInterpolation()
         {
             AdjustForChangeInTransformSpace();
-
-            var currentTime = m_CachedNetworkManager.ServerTime.Time;
+            var timeSystem = m_CachedNetworkManager.ServerTime;
+            var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
 #else
@@ -3950,10 +3950,10 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            var tickLatencyAsTime = m_CachedNetworkManager.ServerTime.TimeTicksAgo(tickLatency).Time;
+            var tickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time;
             // Smooth dampening and extrapolation specific:
             // We clamp between the tick rate frequency and the tick latency x tick rate frequency
-            var minDeltaTime = m_CachedNetworkManager.ServerTime.FixedDeltaTimeAsDouble;
+            var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
 
             // Maximum delta time is the maximum time we will lerp between values. If the time exceeds this due to extreme
             // latency then the value's interpolation rate will be accelerated to reach the goal and continue interpolating
