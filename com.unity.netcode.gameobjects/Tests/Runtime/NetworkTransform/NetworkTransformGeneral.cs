@@ -300,20 +300,21 @@ namespace Unity.Netcode.RuntimeTests
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
             success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
-            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!\n {m_VerboseDebugLog}");
+            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
             success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles), 800);
-            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {m_VerboseDebugLog}");
+            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
 
             m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
             success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale), 800);
-            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {m_VerboseDebugLog}");
+            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {VerboseDebugLog}");
 
             // Test all parameters at once
             newPosition = new Vector3(-10f, 95f, -25f);
@@ -322,13 +323,13 @@ namespace Unity.Netcode.RuntimeTests
 
             m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
             success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale), 800);
-            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), $"Authoritative position does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), $"Non-Authoritative position does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {m_VerboseDebugLog}");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {m_VerboseDebugLog}");
+            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), $"Authoritative position does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), $"Non-Authoritative position does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {VerboseDebugLog}");
         }
     }
 }

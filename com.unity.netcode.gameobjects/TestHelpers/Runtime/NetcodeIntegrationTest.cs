@@ -38,7 +38,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         private StringBuilder m_InternalErrorLog = new StringBuilder();
-        protected StringBuilder m_VerboseDebugLog = new StringBuilder();
+        internal StringBuilder VerboseDebugLog = new StringBuilder();
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -258,7 +258,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_EnableVerboseDebug)
             {
-                m_VerboseDebugLog.AppendLine(msg);
+                VerboseDebugLog.AppendLine(msg);
                 Debug.Log(msg);
             }
         }
@@ -347,7 +347,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
-            m_VerboseDebugLog.Clear();
+            VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
