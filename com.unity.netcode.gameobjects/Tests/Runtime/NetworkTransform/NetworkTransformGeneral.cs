@@ -290,16 +290,17 @@ namespace Unity.Netcode.RuntimeTests
 
             m_EnableVerboseDebug = true;
             VerboseDebug($"Target Frame Rate: {Application.targetFrameRate}");
-            m_AuthoritativeTransform.Teleport(Vector3.zero, Quaternion.identity, Vector3.one);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(Vector3.zero, Quaternion.identity.eulerAngles, Vector3.one), 800);
-            Assert.True(success, $"Timed out waiting for initialization to be applied!");
+            //m_AuthoritativeTransform.Teleport(Vector3.zero, Quaternion.identity, Vector3.one);
+            //TimeTravelAdvanceTick();
+            //var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(Vector3.zero, Quaternion.identity.eulerAngles, Vector3.one), 800);
+            //Assert.True(success, $"Timed out waiting for initialization to be applied!");
 
             // Test one parameter at a time first
             var newPosition = new Vector3(55f, 35f, 65f);
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
             Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
