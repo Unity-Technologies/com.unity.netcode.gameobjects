@@ -166,6 +166,7 @@ namespace Unity.Netcode
 
             public void SetTimeToTarget(double timeToTarget)
             {
+                m_AverageDeltaTime = 0.0f;
                 DeltaTimePredict = 0.0f;
                 LerpTPredict = 0.0f;
                 LerpT = 0.0f;
@@ -350,9 +351,7 @@ namespace Unity.Netcode
                         if (!InterpolateState.Target.HasValue)
                         {
                             InterpolateState.Target = target;
-
                             alreadyHasBufferItem = true;
-                            InterpolateState.CurrentValue = target.Item;
                             InterpolateState.PredictValue = InterpolateState.CurrentValue;
                             InterpolateState.PreviousValue = InterpolateState.CurrentValue;
                             InterpolateState.Phase1Value = InterpolateState.CurrentValue;
@@ -360,10 +359,8 @@ namespace Unity.Netcode
                             InterpolateState.SetTimeToTarget(minDeltaTime);
                             InterpolateState.TimeToTargetValue = minDeltaTime;
                             startTime = InterpolateState.Target.Value.TimeSent;
-                            InterpolateState.TargetReached = true;
+                            InterpolateState.TargetReached = false;
                             InterpolateState.PredictingNext = false;
-                            InterpolateState.LerpT = 1.0f;
-                            InterpolateState.LerpTPredict = 1.0f;
                             InterpolateState.MaxDeltaTime = maxDeltaTime;
                         }
                         else
