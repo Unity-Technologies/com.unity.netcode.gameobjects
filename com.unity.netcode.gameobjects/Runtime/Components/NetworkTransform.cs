@@ -3925,7 +3925,7 @@ namespace Unity.Netcode.Components
             var timeSystem = m_CachedNetworkManager.ServerTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            var cachedDeltaTime = m_UseRigidbodyForMotion ? Time.fixedDeltaTime : Time.deltaTime;
+            var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
             var cachedDeltaTime = Time.deltaTime;
 #endif

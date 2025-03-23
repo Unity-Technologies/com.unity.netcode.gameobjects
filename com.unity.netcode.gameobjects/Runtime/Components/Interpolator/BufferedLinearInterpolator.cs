@@ -439,9 +439,6 @@ namespace Unity.Netcode
                     // SmoothDampen or LerpExtrapolateBlend
                     if (!isLerpAndExtrapolate)
                     {
-                        //InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
-                        //var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
-                        //InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.PredictTarget, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
                         InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.DeltaTime);
                         var predictedTime = InterpolateState.PredictingNext ? InterpolateState.DeltaTime : Math.Min(InterpolateState.TimeToTargetValue, InterpolateState.DeltaTime + InterpolateState.AverageDeltaTime);
                         InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)predictedTime);
