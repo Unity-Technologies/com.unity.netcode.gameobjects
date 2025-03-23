@@ -34,6 +34,21 @@ namespace TestProject.RuntimeTests
     [TestFixture(Interpolation.NoInterpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+
+    // Lerp, extrapolate, and blend pass
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Half, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.NormalSynchronize)]
+    [TestFixture(NetworkTransform.InterpolationTypes.LerpExtrapolateBlend, Interpolation.Interpolation, Precision.Compressed, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.NormalSynchronize)]
+
     // Smooth dampening interpolation pass
     [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Server, NestedTickSynchronization.TickSynchronized)]
     [TestFixture(NetworkTransform.InterpolationTypes.SmoothDampening, Interpolation.Interpolation, Precision.Full, NetworkTransform.AuthorityModes.Owner, NestedTickSynchronization.TickSynchronized)]
