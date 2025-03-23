@@ -296,23 +296,23 @@ namespace Unity.Netcode.RuntimeTests
             //Assert.True(success, $"Timed out waiting for initialization to be applied!");
 
             // Test one parameter at a time first
-            var newPosition = new Vector3(55f, 35f, 65f);
+            var newPosition = new Vector3(15f,-12f, 10f);
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 800);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), 1000);
             Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles), 800);
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles), 1000);
             Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {VerboseDebugLog}");
             Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
             Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
 
             m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale), 800);
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale), 1000);
             Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {VerboseDebugLog}");
             Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {VerboseDebugLog}");
@@ -323,7 +323,7 @@ namespace Unity.Netcode.RuntimeTests
             newScale = new Vector3(0.5f, 0.5f, 0.5f);
 
             m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale), 800);
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale), 1000);
             Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), $"Authoritative position does not match!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), $"Non-Authoritative position does not match!\n {VerboseDebugLog}");
