@@ -114,13 +114,6 @@ namespace Unity.Netcode.Transports.UTP
             RelayUnityTransport,
         }
 
-        private enum State
-        {
-            Disconnected,
-            Listening,
-            Connected,
-        }
-
         /// <summary>
         /// The default maximum (receive) packet queue size
         /// </summary>
@@ -454,7 +447,6 @@ namespace Unity.Netcode.Transports.UTP
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
-        private State m_State = State.Disconnected;
         private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
@@ -582,8 +574,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var serverConnection = Connect(serverEndpoint);
-            m_ServerClientId = ParseClientId(serverConnection);
+            Connect(serverEndpoint);
 
             return true;
         }
@@ -623,7 +614,6 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            m_State = State.Listening;
             return true;
         }
 
@@ -904,26 +894,20 @@ namespace Unity.Netcode.Transports.UTP
                             default,
                             m_RealTimeProvider.RealTimeSinceStartup);
 
-                        m_State = State.Connected;
+                        m_ServerClientId = clientId;
                         return true;
                     }
                 case TransportNetworkEvent.Type.Disconnect:
                     {
-                        // Handle cases where we're a client receiving a Disconnect event. The
-                        // meaning of the event depends on our current state. If we were connected
-                        // then it means we got disconnected. If we were disconnected means that our
-                        // connection attempt has failed.
-                        if (m_State == State.Connected)
-                        {
-                            m_State = State.Disconnected;
-                            m_ServerClientId = default;
-                        }
-                        else if (m_State == State.Disconnected)
+                        // If we're a client and had not yet set the server client ID, it means
+                        // our connection to the server failed to be established. Any other case
+                        // means a clean disconnect that doesn't require logging.
+                        if (!m_Driver.Listening && m_ServerClientId == default)
                         {
                             Debug.LogError("Failed to connect to server.");
-                            m_ServerClientId = default;
                         }
 
+                        m_ServerClientId = default;
                         m_ReliableReceiveQueues.Remove(clientId);
                         ClearSendQueuesForClientId(clientId);
 
@@ -1179,13 +1163,13 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void DisconnectLocalClient()
         {
-            if (m_State == State.Connected)
+            if (m_ServerClientId != default)
             {
                 FlushSendQueuesForClientId(m_ServerClientId);
 
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
                 {
-                    m_State = State.Disconnected;
+                    m_ServerClientId = default;
 
                     m_ReliableReceiveQueues.Remove(m_ServerClientId);
                     ClearSendQueuesForClientId(m_ServerClientId);
@@ -1208,14 +1192,14 @@ namespace Unity.Netcode.Transports.UTP
         public override void DisconnectRemoteClient(ulong clientId)
         {
 #if DEBUG
-            if (m_State != State.Listening)
+            if (!m_Driver.IsCreated)
             {
                 Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
                 return;
             }
 #endif
 
-            if (m_State == State.Listening)
+            if (m_Driver.IsCreated)
             {
                 FlushSendQueuesForClientId(clientId);
 
@@ -1514,10 +1498,9 @@ namespace Unity.Netcode.Transports.UTP
             DisposeInternals();
 
             m_ReliableReceiveQueues.Clear();
-            m_State = State.Disconnected;
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
-            m_ServerClientId = 0;
+            m_ServerClientId = default;
         }
 
         private void ConfigureSimulator()

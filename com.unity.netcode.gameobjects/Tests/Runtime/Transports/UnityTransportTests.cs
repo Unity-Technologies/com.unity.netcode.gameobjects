@@ -311,6 +311,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
+            var serverClientId = m_Client1.ServerClientId;
+
             m_Server.Shutdown();
 
             var numSends = (maxSendQueueSize / 1024);
@@ -322,7 +324,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             LogAssert.Expect(LogType.Error, "Couldn't add payload of size 1024 to reliable send queue. " +
-                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained.");
+                $"Closing connection {serverClientId} as reliability guarantees can't be maintained.");
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
