@@ -1986,6 +1986,12 @@ namespace Unity.Netcode
         /// </summary>
         internal Func<Scene, bool> ExcludeSceneFromSychronization;
 
+        /// <summary>
+        /// This is used for distributed authority sessions only and assures that
+        /// when many clients attempt to connect at the same time they will be
+        /// handled sequentially so as to not saturate the session owner's maximum
+        /// reliable messages.
+        /// </summary>
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
         /// <summary>
@@ -1996,6 +2002,7 @@ namespace Unity.Netcode
         /// synchronized.
         /// </summary>
         /// <param name="clientId">newly joined client identifier</param>
+        /// <param name="synchronizingService">true only when invoked on a newly connected and approved client.</param>
         internal void SynchronizeNetworkObjects(ulong clientId, bool synchronizingService = false)
         {
             // If we are connected to a live service hosted session and we are not doing the initial synchronization for the service...
