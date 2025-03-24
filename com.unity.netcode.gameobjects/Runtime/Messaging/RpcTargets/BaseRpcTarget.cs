@@ -29,9 +29,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Can be used to provide additional lock checks before disposing the target.
+        /// Verifies the target can be disposed based on its lock state.
         /// </summary>
-        /// <exception cref="Exception">The exception thrown if the target is still locked when disposed.</exception>
+        /// <exception cref="Exception">Thrown when attempting to dispose a locked temporary RPC target</exception>
         protected void CheckLockBeforeDispose()
         {
             if (m_Locked)
@@ -41,7 +41,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Invoked when the target is disposed.
+        /// Releases resources used by the RPC target.
         /// </summary>
         public abstract void Dispose();
 
