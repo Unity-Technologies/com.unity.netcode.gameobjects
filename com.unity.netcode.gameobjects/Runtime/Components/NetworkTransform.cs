@@ -3916,8 +3916,24 @@ namespace Unity.Netcode.Components
         #region UPDATES AND AUTHORITY CHECKS
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
+#if DEBUG_LINEARBUFFER
+        public struct NTPositionStats
+        {
+            public int Tick;
+            public double Time;
+            public double TicksAgoTime;
+            public int BufferCount;
+            public BufferedLinearInterpolator<Vector3>.CurrentState CurrentState;
+        }
 
+        public List<NTPositionStats> PositionStats = new List<NTPositionStats>();
+        public bool GatherStats;
 
+        public void ClearStats()
+        {
+            PositionStats.Clear();
+        }
+#endif
         // Non-Authority
         private void UpdateInterpolation()
         {
@@ -3927,7 +3943,7 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #else
-            var cachedDeltaTime = Time.deltaTime;
+            var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
 #endif
             // Optional user defined tick offset to be used to push the "render time" (the time that will be used to determine if a state update is available)
             // back in order to provide more room for the interpolator to interpolate towards when latency conditions are impacting the frequency that state
@@ -4042,6 +4058,21 @@ namespace Unity.Netcode.Components
                         ScaleInterpolationType == InterpolationTypes.LerpExtrapolateBlend, ScaleLerpSmoothing);
                 }
             }
+
+#if DEBUG_LINEARBUFFER
+            if (GatherStats)
+            {
+                var posStats = new NTPositionStats()
+                {
+                    Tick = timeSystem.Tick,
+                    Time = timeSystem.Time,
+                    TicksAgoTime = tickLatencyAsTime,
+                    BufferCount = m_PositionInterpolator.m_BufferQueue.Count,
+                    CurrentState = m_PositionInterpolator.InterpolateState,
+                };
+                PositionStats.Add(posStats);
+            }
+#endif
         }
 
         /// <inheritdoc cref="INetworkUpdateSystem.OnUpdate"/>
@@ -4066,7 +4097,6 @@ namespace Unity.Netcode.Components
             {
                 UpdateInterpolation();
             }
-
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
