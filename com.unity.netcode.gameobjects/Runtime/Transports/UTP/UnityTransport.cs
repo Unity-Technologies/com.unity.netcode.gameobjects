@@ -164,6 +164,7 @@ namespace Unity.Netcode.Transports.UTP
         [SerializeField]
         private bool m_UseWebSockets = false;
 
+        /// <summary>Whether to use WebSockets as the protocol of communication. Default is UDP.</summary>
         public bool UseWebSockets
         {
             get => m_UseWebSockets;
@@ -176,6 +177,11 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
         [SerializeField]
         private bool m_UseEncryption = false;
+
+        /// <summary>
+        /// Whether to use encryption (default is false). Note that unless using Unity Relay, encryption requires
+        /// providing certificate information with <see cref="SetClientSecrets"/> and <see cref="SetServerSecrets"/>.
+        /// </summary>
         public bool UseEncryption
         {
             get => m_UseEncryption;
