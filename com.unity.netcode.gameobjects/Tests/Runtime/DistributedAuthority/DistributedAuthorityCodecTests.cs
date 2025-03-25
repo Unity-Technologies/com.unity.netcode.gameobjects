@@ -7,9 +7,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
-#if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Networking.Transport;
-#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -73,9 +71,6 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnOneTimeSetup()
         {
             // Prevents the tests from running if no CMB Service is detected
-#if !UTP_TRANSPORT_2_0_ABOVE
-            Assert.Ignore("ignoring DA codec tests because UTP transport must be 2.0");
-#else
             if (!CanConnectToServer(m_TransportHost, k_TransportPort))
             {
                 var shouldFail = Environment.GetEnvironmentVariable("ENSURE_CODEC_TESTS");
@@ -88,7 +83,6 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail($"Failed to connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
                 }
             }
-#endif
             base.OnOneTimeSetup();
         }
 
@@ -611,7 +605,6 @@ namespace Unity.Netcode.RuntimeTests
             return m_ClientCodecHook.WaitForMessageReceived(message);
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
         private static bool CanConnectToServer(string host, ushort port, double timeoutMs = 100)
         {
             var address = Dns.GetHostAddresses(host).First();
@@ -636,7 +629,6 @@ namespace Unity.Netcode.RuntimeTests
             driver.Disconnect(connection);
             return true;
         }
-#endif
     }
 
     internal class CodecTestHooks : INetworkHooks
