@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 #if UNITY_EDITOR
+[assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
 #endif // UNITY_EDITOR
 #if MULTIPLAYER_TOOLS

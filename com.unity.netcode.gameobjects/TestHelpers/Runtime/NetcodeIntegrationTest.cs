@@ -301,6 +301,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
+
+#if UNITY_INCLUDE_TESTS
+            // Provide an external hook to be able to make adjustments to netcode classes prior to running any tests
+            NetworkManager.OnOneTimeSetup();
+#endif
+
             OnOneTimeSetup();
 
             VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
@@ -1293,6 +1299,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             UnloadRemainingScenes();
 
             VerboseDebug($"Exiting {nameof(OneTimeTearDown)}");
+#if UNITY_INCLUDE_TESTS
+            // Provide an external hook to be able to make adjustments to netcode classes after running tests
+            NetworkManager.OnOneTimeTearDown();
+#endif
 
             IsRunning = false;
         }
