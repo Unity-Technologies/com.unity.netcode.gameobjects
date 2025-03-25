@@ -16,8 +16,8 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using Unity.Networking.Transport.Utilities;
 using Unity.Networking.Transport.TLS;
+using Unity.Networking.Transport.Utilities;
 
 namespace Unity.Netcode.Transports.UTP
 {

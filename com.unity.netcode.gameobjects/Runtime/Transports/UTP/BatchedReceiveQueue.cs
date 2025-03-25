@@ -1,7 +1,7 @@
 using System;
-using Unity.Networking.Transport;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Networking.Transport;
 
 namespace Unity.Netcode.Transports.UTP
 {
