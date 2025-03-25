@@ -171,9 +171,6 @@ namespace Unity.Netcode.Transports.UTP
             set => m_UseWebSockets = value;
         }
 
-        /// <summary>
-        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
-        /// </summary>
         [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
         [SerializeField]
         private bool m_UseEncryption = false;
