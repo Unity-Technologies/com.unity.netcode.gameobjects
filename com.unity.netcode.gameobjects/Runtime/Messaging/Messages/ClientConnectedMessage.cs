@@ -73,6 +73,8 @@ namespace Unity.Netcode
                     /// DANGO-TODO: Determine if this needs to be removed once the service handles object distribution
                     networkManager.RedistributeToClients = true;
                     networkManager.ClientsToRedistribute.Add(ClientId);
+
+                    // TODO: We need a client synchronized message or something like that here
                 }
             }
         }
