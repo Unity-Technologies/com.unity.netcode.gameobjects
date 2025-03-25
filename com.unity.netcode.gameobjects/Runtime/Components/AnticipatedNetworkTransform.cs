@@ -50,10 +50,24 @@ namespace Unity.Netcode.Components
         internal override bool HideInterpolateValue => true;
 #endif
 
+        /// <summary>
+        /// Represents a complete transform state for network synchronization and anticipation
+        /// </summary>
         public struct TransformState
         {
+            /// <summary>
+            /// The position component of the transform state in world space coordinates.
+            /// </summary>
             public Vector3 Position;
+
+            /// <summary>
+            /// The rotation component of the transform state as a quaternion.
+            /// </summary>
             public Quaternion Rotation;
+
+            /// <summary>
+            /// The scale component of the transform state in local space.
+            /// </summary>
             public Vector3 Scale;
         }
 
