@@ -16,8 +16,10 @@ using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
-using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
-using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+
+using NetcodeEvent = Unity.Netcode.NetworkEvent;
+using TransportError = Unity.Networking.Transport.Error.StatusCode;
+using TransportEvent = Unity.Networking.Transport.NetworkEvent.Type;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -60,7 +62,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="error">UTP error code.</param>
         /// <param name="connectionId">ID of the connection on which the error occurred.</param>
         /// <returns>Human-readable error message.</returns>
-        public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
+        public static string ErrorToString(TransportError error, ulong connectionId)
         {
             return ErrorToString((int)error, connectionId);
         }
@@ -72,19 +74,19 @@ namespace Unity.Netcode.Transports.UTP
 
         internal static FixedString128Bytes ErrorToFixedString(int error, ulong connectionId)
         {
-            switch ((Networking.Transport.Error.StatusCode)error)
+            switch ((TransportError)error)
             {
-                case Networking.Transport.Error.StatusCode.Success:
+                case TransportError.Success:
                     return k_NetworkSuccess;
-                case Networking.Transport.Error.StatusCode.NetworkIdMismatch:
+                case TransportError.NetworkIdMismatch:
                     return FixedString.Format(k_NetworkIdMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkVersionMismatch:
+                case TransportError.NetworkVersionMismatch:
                     return FixedString.Format(k_NetworkVersionMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkStateMismatch:
+                case TransportError.NetworkStateMismatch:
                     return FixedString.Format(k_NetworkStateMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkPacketOverflow:
+                case TransportError.NetworkPacketOverflow:
                     return k_NetworkPacketOverflow;
-                case Networking.Transport.Error.StatusCode.NetworkSendQueueFull:
+                case TransportError.NetworkSendQueueFull:
                     return k_NetworkSendQueueFull;
                 default:
                     return FixedString.Format("Unknown error code {0}.", error);
@@ -765,7 +767,7 @@ namespace Unity.Netcode.Transports.UTP
                 while (!Queue.IsEmpty)
                 {
                     var result = Driver.BeginSend(pipeline, connection, out var writer);
-                    if (result != (int)Networking.Transport.Error.StatusCode.Success)
+                    if (result != (int)TransportError.Success)
                     {
                         Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
                         return;
@@ -792,7 +794,7 @@ namespace Unity.Netcode.Transports.UTP
                         // and we'll retry sending them later). Otherwise log the error and remove the
                         // message from the queue (we don't want to resend it again since we'll likely
                         // just get the same error again).
-                        if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
+                        if (result != (int)TransportError.NetworkSendQueueFull)
                         {
                             Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
                             Queue.Consume(written);
@@ -838,7 +840,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
+            InvokeOnTransportEvent(NetcodeEvent.Connect,
                 ParseClientId(connection),
                 default,
                 m_RealTimeProvider.RealTimeSinceStartup);
@@ -876,7 +878,7 @@ namespace Unity.Netcode.Transports.UTP
                     break;
                 }
 
-                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, m_RealTimeProvider.RealTimeSinceStartup);
+                InvokeOnTransportEvent(NetcodeEvent.Data, clientId, message, m_RealTimeProvider.RealTimeSinceStartup);
             }
         }
 
@@ -887,9 +889,9 @@ namespace Unity.Netcode.Transports.UTP
 
             switch (eventType)
             {
-                case TransportNetworkEvent.Type.Connect:
+                case TransportEvent.Connect:
                     {
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
+                        InvokeOnTransportEvent(NetcodeEvent.Connect,
                             clientId,
                             default,
                             m_RealTimeProvider.RealTimeSinceStartup);
@@ -897,7 +899,7 @@ namespace Unity.Netcode.Transports.UTP
                         m_ServerClientId = clientId;
                         return true;
                     }
-                case TransportNetworkEvent.Type.Disconnect:
+                case TransportEvent.Disconnect:
                     {
                         // If we're a client and had not yet set the server client ID, it means
                         // our connection to the server failed to be established. Any other case
@@ -911,14 +913,14 @@ namespace Unity.Netcode.Transports.UTP
                         m_ReliableReceiveQueues.Remove(clientId);
                         ClearSendQueuesForClientId(clientId);
 
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                             clientId,
                             default,
                             m_RealTimeProvider.RealTimeSinceStartup);
 
                         return true;
                     }
-                case TransportNetworkEvent.Type.Data:
+                case TransportEvent.Data:
                     {
                         ReceiveMessages(clientId, pipeline, reader);
                         return true;
@@ -940,7 +942,7 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
                         "Use NetworkManager.OnTransportFailure to be notified of such events programmatically.");
 
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
+                    InvokeOnTransportEvent(NetcodeEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
                     return;
                 }
 
@@ -1177,7 +1179,7 @@ namespace Unity.Netcode.Transports.UTP
                     // If we successfully disconnect we dispatch a local disconnect message
                     // this how uNET and other transports worked and so this is just keeping with the old behavior
                     // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                    InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                         m_ServerClientId,
                         default,
                         m_RealTimeProvider.RealTimeSinceStartup);
@@ -1314,12 +1316,12 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by m_RealTimeProvider.RealTimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetcodeEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             payload = default;
             receiveTime = default;
-            return NetcodeNetworkEvent.Nothing;
+            return NetcodeEvent.Nothing;
         }
 
         /// <summary>
@@ -1382,7 +1384,7 @@ namespace Unity.Netcode.Transports.UTP
                         DisconnectRemoteClient(clientId);
 
                         // DisconnectRemoteClient doesn't notify SDK of disconnection.
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                             clientId,
                             default(ArraySegment<byte>),
                             m_RealTimeProvider.RealTimeSinceStartup);
