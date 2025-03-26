@@ -14,11 +14,11 @@ test_platforms:
     flavor: b1.large
   - name: mac
     type: Unity::VM::osx
-    image: package-ci/mac:stable
+    image: package-ci/mac:v4
     flavor: m1.mac
   - name: ubuntu
     type: Unity::VM
-    image: package-ci/ubuntu:stable
+    image: package-ci/ubuntu:v4
     flavor: b1.large
 
 # Projects within the repository that will be tested. Name will be used
