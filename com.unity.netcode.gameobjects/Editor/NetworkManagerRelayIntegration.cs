@@ -1,4 +1,4 @@
-#if UNITY_2022_3_OR_NEWER && (RELAY_SDK_INSTALLED && !UNITY_WEBGL ) || (RELAY_SDK_INSTALLED && UNITY_WEBGL && UTP_TRANSPORT_2_0_ABOVE)
+#if UNITY_2022_3_OR_NEWER && (RELAY_SDK_INSTALLED && !UNITY_WEBGL ) || (RELAY_SDK_INSTALLED && UNITY_WEBGL)
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode.Transports.UTP;
@@ -109,9 +109,7 @@ namespace Unity.Netcode.Editor
             {
                 transport = networkManager.gameObject.AddComponent<UnityTransport>();
             }
-#if UTP_TRANSPORT_2_0_ABOVE
             transport.UseWebSockets = connectionType.StartsWith("ws"); // Probably should be part of SetRelayServerData, but not possible at this point
-#endif
             networkManager.NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
         }

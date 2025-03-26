@@ -169,7 +169,6 @@ namespace Unity.Netcode.EditorTests
             transport.Shutdown();
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
         [Test]
         public void UnityTransport_EmptySecurityStringsShouldThrow([Values("", null)] string cert, [Values("", null)] string secret)
         {
@@ -202,6 +201,5 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
-#endif
     }
 }

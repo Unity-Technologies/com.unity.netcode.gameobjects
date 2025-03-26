@@ -367,63 +367,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-#if !UTP_TRANSPORT_2_0_ABOVE
-        // Check that simulator parameters are effective. We only check with the drop rate, because
-        // that's easy to check and we only really want to make sure the simulator parameters are
-        // configured properly (the simulator pipeline stage is already well-tested in UTP).
-        [UnityTest]
-        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
-        public IEnumerator SimulatorParametersAreEffective()
-        {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-
-            m_Server.SetDebugSimulatorParameters(0, 0, 100);
-
-            m_Server.StartServer();
-            m_Client1.StartClient();
-
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
-
-            var data = new ArraySegment<byte>(new byte[] { 42 });
-            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
-
-            yield return new WaitForSeconds(MaxNetworkEventWaitTime);
-
-            Assert.AreEqual(1, m_ServerEvents.Count);
-
-            yield return null;
-        }
-
-        // Check that RTT is reported correctly.
-        [UnityTest]
-        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
-        public IEnumerator CurrentRttReportedCorrectly()
-        {
-            const int simulatedRtt = 25;
-
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-
-            m_Server.SetDebugSimulatorParameters(simulatedRtt, 0, 0);
-
-            m_Server.StartServer();
-            m_Client1.StartClient();
-
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
-
-            var data = new ArraySegment<byte>(new byte[] { 42 });
-            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
-
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents,
-                timeout: MaxNetworkEventWaitTime + (2 * simulatedRtt));
-
-            Assert.GreaterOrEqual(m_Client1.GetCurrentRtt(m_Client1.ServerClientId), simulatedRtt);
-
-            yield return null;
-        }
-#endif
-
         [UnityTest]
         public IEnumerator SendQueuesFlushedOnShutdown([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
         {

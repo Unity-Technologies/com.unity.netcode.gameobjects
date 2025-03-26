@@ -42,13 +42,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-#if UTP_TRANSPORT_2_0_ABOVE
             var aptr = a.GetUnsafePtr();
             var bptr = b.GetUnsafePtr();
-#else
-            var aptr = (TValueType*)a.GetUnsafePtr();
-            var bptr = (TValueType*)b.GetUnsafePtr();
-#endif
 
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType) * a.Length) == 0;
         }
@@ -216,13 +211,9 @@ namespace Unity.Netcode
                 return false;
             }
 
-#if UTP_TRANSPORT_2_0_ABOVE
             var aptr = a.GetUnsafePtr();
             var bptr = b.GetUnsafePtr();
-#else
-            var aptr = (TValueType*)a.GetUnsafePtr();
-            var bptr = (TValueType*)b.GetUnsafePtr();
-#endif
+
             for (var i = 0; i < a.Length; ++i)
             {
                 if (!EqualityEquals(ref aptr[i], ref bptr[i]))
@@ -246,11 +237,7 @@ namespace Unity.Netcode
                 return true;
             }
 
-#if UTP_TRANSPORT_2_0_ABOVE
             if (a.Count != b.Count)
-#else
-            if (a.Count() != b.Count())
-#endif
             {
                 return false;
             }
@@ -333,11 +320,7 @@ internal class NetworkVariableMapSerialization<TKey, TVal>
             return true;
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
         if (a.Count != b.Count)
-#else
-            if (a.Count() != b.Count())
-#endif
         {
             return false;
         }
