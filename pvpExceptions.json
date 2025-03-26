@@ -928,6 +928,7 @@
           "Unity.Netcode.RuntimeTests.NetworkManagerEventsTests: IEnumerator OnServerStartedCalledWhenServerStarts(): undocumented",
           "Unity.Netcode.RuntimeTests.NetworkManagerEventsTests: IEnumerator OnClientStartedCalledWhenClientStarts(): undocumented",
           "Unity.Netcode.RuntimeTests.NetworkManagerEventsTests: IEnumerator OnClientAndServerStartedCalledWhenHostStarts(): undocumented",
+	  "Unity.Netcode.RuntimeTests.NetworkManagerEventsTests: IEnumerator OnPreShutdownCalledWhenShuttingDown(): undocumented",
           "Unity.Netcode.RuntimeTests.NetworkManagerEventsTests: IEnumerator Teardown(): undocumented",
           "Unity.Netcode.RuntimeTests.NetworkManagerSceneManagerTests: undocumented",
           "Unity.Netcode.RuntimeTests.NetworkManagerSceneManagerTests: void SceneManagerAssigned(): undocumented",
