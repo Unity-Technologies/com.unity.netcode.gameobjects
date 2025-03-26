@@ -413,7 +413,6 @@ namespace Unity.Netcode
         /// <param name="minDeltaTime">The minimum time delta between the current and target value.</param>
         /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
         /// <param name="isLerpAndExtrapolate">Determines whether to use smooth dampening or extrapolation.</param>
-        /// <param name="lerpSmoothing">Determines if lerp smoothing is enabled for this instance.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
         internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool isLerpAndExtrapolate)
         {
