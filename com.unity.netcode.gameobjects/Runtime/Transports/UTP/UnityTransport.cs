@@ -45,56 +45,6 @@ namespace Unity.Netcode.Transports.UTP
     }
 
     /// <summary>
-    /// Helper utility class to convert <see cref="Networking.Transport"/> error codes to human readable error messages.
-    /// </summary>
-    public static class ErrorUtilities
-    {
-        private static readonly FixedString128Bytes k_NetworkSuccess = "Success";
-        private static readonly FixedString128Bytes k_NetworkIdMismatch = "Invalid connection ID {0}.";
-        private static readonly FixedString128Bytes k_NetworkVersionMismatch = "Connection ID is invalid. Likely caused by sending on stale connection {0}.";
-        private static readonly FixedString128Bytes k_NetworkStateMismatch = "Connection state is invalid. Likely caused by sending on connection {0} which is stale or still connecting.";
-        private static readonly FixedString128Bytes k_NetworkPacketOverflow = "Packet is too large to be allocated by the transport.";
-        private static readonly FixedString128Bytes k_NetworkSendQueueFull = "Unable to queue packet in the transport. Likely caused by send queue size ('Max Send Queue Size') being too small.";
-
-        /// <summary>
-        /// Convert a UTP error code to human-readable error message.
-        /// </summary>
-        /// <param name="error">UTP error code.</param>
-        /// <param name="connectionId">ID of the connection on which the error occurred.</param>
-        /// <returns>Human-readable error message.</returns>
-        public static string ErrorToString(TransportError error, ulong connectionId)
-        {
-            return ErrorToString((int)error, connectionId);
-        }
-
-        internal static string ErrorToString(int error, ulong connectionId)
-        {
-            return ErrorToFixedString(error, connectionId).ToString();
-        }
-
-        internal static FixedString128Bytes ErrorToFixedString(int error, ulong connectionId)
-        {
-            switch ((TransportError)error)
-            {
-                case TransportError.Success:
-                    return k_NetworkSuccess;
-                case TransportError.NetworkIdMismatch:
-                    return FixedString.Format(k_NetworkIdMismatch, connectionId);
-                case TransportError.NetworkVersionMismatch:
-                    return FixedString.Format(k_NetworkVersionMismatch, connectionId);
-                case TransportError.NetworkStateMismatch:
-                    return FixedString.Format(k_NetworkStateMismatch, connectionId);
-                case TransportError.NetworkPacketOverflow:
-                    return k_NetworkPacketOverflow;
-                case TransportError.NetworkSendQueueFull:
-                    return k_NetworkSendQueueFull;
-                default:
-                    return FixedString.Format("Unknown error code {0}.", error);
-            }
-        }
-    }
-
-    /// <summary>
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
@@ -769,7 +719,7 @@ namespace Unity.Netcode.Transports.UTP
                     var result = Driver.BeginSend(pipeline, connection, out var writer);
                     if (result != (int)TransportError.Success)
                     {
-                        Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                        Debug.LogError($"Send error on connection {clientId}: {ErrorUtilities.ErrorToFixedString(result)}");
                         return;
                     }
 
@@ -796,7 +746,7 @@ namespace Unity.Netcode.Transports.UTP
                         // just get the same error again).
                         if (result != (int)TransportError.NetworkSendQueueFull)
                         {
-                            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                            Debug.LogError($"Send error on connection {clientId}: {ErrorUtilities.ErrorToFixedString(result)}");
                             Queue.Consume(written);
                         }
 
@@ -1762,6 +1712,39 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     return (ClientId.GetHashCode() * 397) ^ NetworkPipeline.GetHashCode();
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Utility class to convert Unity Transport error codes to human-readable error messages.
+    /// </summary>
+    public static class ErrorUtilities
+    {
+        /// <summary>
+        /// Convert a Unity Transport error code to human-readable error message.
+        /// </summary>
+        /// <param name="error">Unity Transport error code.</param>
+        /// <param name="connectionId">ID of connection on which error occurred (unused).</param>
+        /// <returns>Human-readable error message.</returns>
+        public static string ErrorToString(TransportError error, ulong connectionId)
+        {
+            return ErrorToFixedString((int)error).ToString();
+        }
+
+        internal static FixedString128Bytes ErrorToFixedString(int error)
+        {
+            switch ((TransportError)error)
+            {
+                case TransportError.NetworkVersionMismatch:
+                case TransportError.NetworkStateMismatch:
+                    return "invalid connection state (likely stale/closed connection)";
+                case TransportError.NetworkPacketOverflow:
+                    return "packet is too large for the transport (likely need to increase MTU)";
+                case TransportError.NetworkSendQueueFull:
+                    return "send queue full (need to increase 'Max Send Queue Size' parameter)";
+                default:
+                    return FixedString.Format("unexpected error code {0}", error);
             }
         }
     }
