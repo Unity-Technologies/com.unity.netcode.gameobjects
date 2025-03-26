@@ -432,6 +432,15 @@ namespace Unity.Netcode
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId, bool isAuthorized, bool isRequestApproval = false)
         {
+            if (clientId == networkObject.OwnerClientId)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{nameof(NetworkSpawnManager)}][{nameof(ChangeOwnership)}] Attempting to change ownership to Client-{clientId} when the owner is already {networkObject.OwnerClientId}! (Ignoring)");
+                }
+                return;
+            }
+
             // For client-server:
             // If ownership changes faster than the latency between the client-server and there are NetworkVariables being updated during ownership changes,
             // then notify the user they could potentially lose state updates if developer logging is enabled.
@@ -530,6 +539,10 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Save the previous owner to work around a bit of a nasty issue with assuring NetworkVariables are serialized when ownership changes
+            var originalPreviousOwnerId = networkObject.PreviousOwnerId;
+            var originalOwner = networkObject.OwnerClientId;
+
             // Used to distinguish whether a new owner should receive any currently dirty NetworkVariable updates
             networkObject.PreviousOwnerId = networkObject.OwnerClientId;
 
@@ -545,13 +558,10 @@ namespace Unity.Netcode
             // Always notify locally on the server when a new owner is assigned
             networkObject.InvokeBehaviourOnGainedOwnership();
 
-            if (networkObject.PreviousOwnerId == NetworkManager.LocalClientId)
+            // If we are the original owner, then we want to synchronize owner read & write NetworkVariables.
+            if (originalOwner == NetworkManager.LocalClientId)
             {
-                // Mark any owner read variables as dirty
-                networkObject.MarkOwnerReadVariablesDirty();
-                // Immediately queue any pending deltas and order the message before the
-                // change in ownership message.
-                NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, originalPreviousOwnerId);
             }
 
             var size = 0;
@@ -1815,7 +1825,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="objectByTypeAndOwner">the table to populate</param>
         /// <param name="objectTypeCount">the total number of the specific object type to distribute</param>
-        internal void GetObjectDistribution(ref Dictionary<uint, Dictionary<ulong, List<NetworkObject>>> objectByTypeAndOwner, ref Dictionary<uint, int> objectTypeCount)
+        internal void GetObjectDistribution(ulong clientId, ref Dictionary<uint, Dictionary<ulong, List<NetworkObject>>> objectByTypeAndOwner, ref Dictionary<uint, int> objectTypeCount)
         {
             // DANGO-TODO-MVP: Remove this once the service handles object distribution
             var onlyIncludeOwnedObjects = NetworkManager.CMBServiceConnection;
@@ -1844,6 +1854,11 @@ namespace Unity.Netcode
                 // At this point we only allow things marked with the distributable permission and is not locked to be distributed
                 if (networkObject.IsOwnershipDistributable && !networkObject.IsOwnershipLocked)
                 {
+                    // Don't include anything that is not visible to the new client
+                    if (!networkObject.Observers.Contains(clientId))
+                    {
+                        continue;
+                    }
 
                     // We have to check if it is an in-scene placed NetworkObject and if it is get the source prefab asset GlobalObjectIdHash value of the in-scene placed instance
                     // since all in-scene placed instances use unique GlobalObjectIdHash values.
@@ -1913,7 +1928,7 @@ namespace Unity.Netcode
             var objectTypeCount = new Dictionary<uint, int>();
 
             // Get all spawned objects by type and then by client owner that are spawned and can be distributed
-            GetObjectDistribution(ref distributedNetworkObjects, ref objectTypeCount);
+            GetObjectDistribution(clientId, ref distributedNetworkObjects, ref objectTypeCount);
 
             var clientCount = NetworkManager.ConnectedClientsIds.Count;
 
@@ -1951,7 +1966,6 @@ namespace Unity.Netcode
 
                     var maxDistributeCount = Mathf.Max(ownerList.Value.Count - objPerClient, 1);
                     var distributed = 0;
-
                     // For now when we have more players then distributed NetworkObjects that
                     // a specific client owns, just assign half of the NetworkObjects to the new client
                     var offsetCount = Mathf.Max((int)Math.Round((float)(ownerList.Value.Count / objPerClient)), 1);
@@ -1964,11 +1978,6 @@ namespace Unity.Netcode
                     {
                         if ((i % offsetCount) == 0)
                         {
-                            while (!ownerList.Value[i].Observers.Contains(clientId))
-                            {
-                                i++;
-                            }
-
                             var children = ownerList.Value[i].GetComponentsInChildren<NetworkObject>();
                             // Since the ownerList.Value[i] has to be distributable, then transfer all child NetworkObjects
                             // with the same owner clientId and are marked as distributable also to the same client to keep
@@ -2011,7 +2020,7 @@ namespace Unity.Netcode
                 var builder = new StringBuilder();
                 distributedNetworkObjects.Clear();
                 objectTypeCount.Clear();
-                GetObjectDistribution(ref distributedNetworkObjects, ref objectTypeCount);
+                GetObjectDistribution(clientId, ref distributedNetworkObjects, ref objectTypeCount);
                 builder.AppendLine($"Client Relative Distributed Object Count: (distribution follows)");
                 // Cycle through each prefab type
                 foreach (var objectTypeEntry in distributedNetworkObjects)
@@ -2026,7 +2035,6 @@ namespace Unity.Netcode
                 }
                 Debug.Log(builder.ToString());
             }
-
         }
 
         internal struct DeferredDespawnObject

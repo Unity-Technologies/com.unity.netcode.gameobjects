@@ -270,6 +270,13 @@ namespace Unity.Netcode
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
+                /// Mark the client being connected before running through the spawning synchronization so we
+                /// can assure that if a user attempts to spawn something when an already spawned NetworkObject
+                /// is spawned (during the initial synchronization just below) it will not error out complaining
+                /// about the player not being connected.
+                /// The check for this is done within <see cref="NetworkObject.SpawnInternal(bool, ulong, bool)"/>
+                networkManager.IsConnectedClient = true;
+
                 // DANGO-TODO: This is a temporary fix for no DA CMB scene event handling.
                 // We will either use this same concept or provide some way for the CMB state plugin to handle it.
                 if (networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
@@ -292,9 +299,6 @@ namespace Unity.Netcode
                     NetworkObject.AddSceneObject(sceneObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
-                // Mark the client being connected
-                networkManager.IsConnectedClient = true;
-
                 if (networkManager.AutoSpawnPlayerPrefabClientSide)
                 {
                     networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
@@ -315,14 +319,14 @@ namespace Unity.Netcode
                 if (networkManager.DistributedAuthorityMode && networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
                 {
                     // Mark the client being connected
-                    networkManager.IsConnectedClient = true;
+                    networkManager.IsConnectedClient = networkManager.ConnectionManager.LocalClient.IsApproved;
 
                     networkManager.SceneManager.IsRestoringSession = GetIsSessionRestor();
 
                     if (!networkManager.SceneManager.IsRestoringSession)
                     {
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -334,9 +338,9 @@ namespace Unity.Netcode
                         }
 
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
-                        // With scene management enabled and since the session owner doesn't send a Synchronize scene event synchronize itself,
+                        // With scene management enabled and since the session owner doesn't send a scene event synchronize to itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.
                         networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
 

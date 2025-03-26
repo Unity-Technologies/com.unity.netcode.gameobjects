@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -25,6 +26,12 @@ namespace Unity.Netcode.RuntimeTests
             OnGainedOwnershipFired = true;
         }
 
+        protected override void OnOwnershipChanged(ulong previous, ulong current)
+        {
+            Assert.True(previous != current, $"[{nameof(OnOwnershipChanged)}][Invalid Parameters] Invoked and the previous ({previous}) equals the current ({current})!");
+            base.OnOwnershipChanged(previous, current);
+        }
+
         public override void OnNetworkSpawn()
         {
             if (!SpawnedInstances.ContainsKey(NetworkManager.LocalClientId))
@@ -38,6 +45,12 @@ namespace Unity.Netcode.RuntimeTests
         {
             OnLostOwnershipFired = false;
             OnGainedOwnershipFired = false;
+        }
+
+        [Rpc(SendTo.Authority)]
+        public void ChangeOwnershipRpc(RpcParams rpcParams = default)
+        {
+            NetworkObject.ChangeOwnership(rpcParams.Receive.SenderClientId);
         }
     }
 
@@ -71,6 +84,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
             m_OwnershipPrefab.AddComponent<NetworkObjectOwnershipComponent>();
+            m_OwnershipPrefab.AddComponent<NetworkTransform>();
             if (m_DistributedAuthority)
             {
                 m_OwnershipPrefab.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
@@ -465,7 +479,87 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(ServerHasCorrectClientOwnedObjectCount);
             AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+        }
 
+        /// <summary>
+        /// Validates that when changing ownership NetworkTransform does not enter into a bad state
+        /// because the previous and current owner identifiers are the same. For client-server this
+        /// ends up always being the server, but for distributed authority the authority changes when
+        /// ownership changes.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestAuthorityChangingOwnership()
+        {
+            var authorityManager = (NetworkManager)null;
+            var allNetworkManagers = m_ClientNetworkManagers.ToList();
+            allNetworkManagers.Add(m_ServerNetworkManager);
+
+            if (m_DistributedAuthority)
+            {
+                var authorityId = Random.Range(1, NumberOfClients) - 1;
+                authorityManager = m_ClientNetworkManagers[authorityId];
+                m_OwnershipObject = SpawnObject(m_OwnershipPrefab, authorityManager);
+                m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+            }
+            else
+            {
+                authorityManager = m_ServerNetworkManager;
+                m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+                m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+            }
+            var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
+            bool WaitForClientsToSpawnNetworkObject()
+            {
+                foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                {
+                    if (!clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(WaitForClientsToSpawnNetworkObject);
+            AssertOnTimeout($"Timed out waiting for all clients to spawn the {m_OwnershipNetworkObject.name} {nameof(NetworkObject)} instance!");
+
+            var currentTargetOwner = (ulong)0;
+            bool WaitForAllInstancesToChangeOwnership()
+            {
+                foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                {
+                    if (!clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId))
+                    {
+                        return false;
+                    }
+                    if (clientNetworkManager.SpawnManager.SpawnedObjects[ownershipNetworkObjectId].OwnerClientId != currentTargetOwner)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Change ownership a few times and as long as the previous and current owners are not the same when
+            // OnOwnershipChanged is invoked then the test passed.
+            foreach (var networkManager in allNetworkManagers)
+            {
+                if (networkManager == authorityManager)
+                {
+                    continue;
+                }
+                var clonedObject = networkManager.SpawnManager.SpawnedObjects[ownershipNetworkObjectId];
+
+                if (clonedObject.OwnerClientId == networkManager.LocalClientId)
+                {
+                    continue;
+                }
+
+                var testComponent = clonedObject.GetComponent<NetworkObjectOwnershipComponent>();
+                testComponent.ChangeOwnershipRpc();
+                yield return WaitForAllInstancesToChangeOwnership();
+                AssertOnTimeout($"Timed out waiting for all instances to change ownership to Client-{networkManager.LocalClientId}!");
+            }
         }
     }
 }

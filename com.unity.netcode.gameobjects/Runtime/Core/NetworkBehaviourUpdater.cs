@@ -108,8 +108,6 @@ namespace Unity.Netcode
                 foreach (var dirtyobj in m_DirtyNetworkObjects)
                 {
                     dirtyobj.PostNetworkVariableWrite(forceSend);
-                    // Once done processing, we set the previous owner id to the current owner id
-                    dirtyobj.PreviousOwnerId = dirtyobj.OwnerClientId;
                 }
                 m_DirtyNetworkObjects.Clear();
             }
