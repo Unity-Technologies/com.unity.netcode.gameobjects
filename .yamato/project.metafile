@@ -10,7 +10,7 @@ test_editors:
 test_platforms:
   - name: win
     type: Unity::VM
-    image: package-ci/win10:stable
+    image: package-ci/win10:v4
     flavor: b1.large
   - name: mac
     type: Unity::VM::osx
