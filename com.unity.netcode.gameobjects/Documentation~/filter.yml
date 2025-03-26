@@ -1,0 +1,4 @@
+apiRules:
+  - exclude:
+      uidRegex: .*Test.*
+      type: Namespace
