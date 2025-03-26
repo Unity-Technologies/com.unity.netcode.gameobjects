@@ -14,7 +14,7 @@ test_platforms:
     flavor: b1.large
   - name: mac
     type: Unity::VM::osx
-    image: package-ci/mac:v4
+    image: package-ci/macos-13:v4
     flavor: m1.mac
   - name: ubuntu
     type: Unity::VM
