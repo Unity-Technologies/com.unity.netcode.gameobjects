@@ -1,6 +1,2 @@
-# **Unity MLAPI Manual**
-
-
-# Getting Started
-
-Fill this in
+# Out of development
+No further development planned for com.unity.multiplayer.mlapi

@@ -1,3 +1,6 @@
+# Out of development
+No further development planned for com.unity.multiplayer.mlapi.
+
 # Sysroots
 Contains the repos for both the MLAPI SDK and the UTP transport library
 
