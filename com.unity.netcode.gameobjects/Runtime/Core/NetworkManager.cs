@@ -333,6 +333,25 @@ namespace Unity.Netcode
 
                         MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
+#if COM_UNITY_MODULES_PHYSICS
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.ResetFixedTimeDelta();
+                                }
+                            }
+                        }
+#endif
                     }
                     break;
 #if COM_UNITY_MODULES_PHYSICS

@@ -16,7 +16,6 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Transform")]
     public class NetworkTransform : NetworkBehaviour
     {
-
 #if UNITY_EDITOR
         internal virtual bool HideInterpolateValue => false;
 
@@ -3916,24 +3915,49 @@ namespace Unity.Netcode.Components
         #region UPDATES AND AUTHORITY CHECKS
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
-#if DEBUG_LINEARBUFFER
+#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+        // For debugging purposes
+        public struct BufferEntry
+        {
+            public double TimeSent;
+            public Vector3 Position;
+        }
         public struct NTPositionStats
         {
+            public int FrameCount;
+            public int FixedFrameCount;
+            public int FixedUpdatesPerFrameCount;
+            public int TimeSynchCount;
             public int Tick;
             public double Time;
             public double TicksAgoTime;
             public int BufferCount;
-            public BufferedLinearInterpolator<Vector3>.CurrentState CurrentState;
+            public int TickMeasured;
+            public float LerpT;
+            public float LerpTPredict;
+            public double DeltaTime;
+            public double DeltaTimePredict;
+            public double MaxDeltaTime;
+            public double TimeSent;
+            public double TimeToTargetValue;
+            public Vector3 PreviousValue;
+            public Vector3 PredictValue;
+            public Vector3 CurrentValue;
+            public Vector3 TargetValue;
+
+            public List<BufferEntry> Buffer;
         }
 
-        public List<NTPositionStats> PositionStats = new List<NTPositionStats>();
+        public Dictionary<int, List<NTPositionStats>> PositionStats = new Dictionary<int, List<NTPositionStats>>();
         public bool GatherStats;
+        private int m_LastTimeSyncCount;
 
         public void ClearStats()
         {
             PositionStats.Clear();
         }
 #endif
+
         // Non-Authority
         private void UpdateInterpolation()
         {
@@ -3966,7 +3990,19 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // Get the tick latency (ticks ago) as time (in the past) to process state updates in the queue.
             var tickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time;
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            // If using rigid body for motion, then we need to increment
+            // our tick latency based on the number of times FixedUpdate
+            // is executed.
+            if (m_UseRigidbodyForMotion)
+            {
+                tickLatencyAsTime += m_FixedTimeFrameDelta;
+            }
+#endif
+
             // Smooth dampening and extrapolation specific:
             // We clamp between the tick rate frequency and the tick latency x tick rate frequency
             var minDeltaTime = timeSystem.FixedDeltaTimeAsDouble;
@@ -3983,6 +4019,7 @@ namespace Unity.Netcode.Components
                 {
                     m_PositionInterpolator.MaximumInterpolationTime = PositionMaxInterpolationTime;
                 }
+                m_PositionInterpolator.LerpSmoothEnabled = PositionLerpSmoothing;
 
                 // If either of these two position interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousPositionInterpolationType != PositionInterpolationType || m_PreviousPositionLerpSmoothing != PositionLerpSmoothing)
@@ -3994,12 +4031,12 @@ namespace Unity.Netcode.Components
 
                 if (PositionInterpolationType == InterpolationTypes.Lerp)
                 {
-                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, PositionLerpSmoothing);
+                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        PositionInterpolationType == InterpolationTypes.LerpExtrapolateBlend, PositionLerpSmoothing);
+                        PositionInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
                 }
             }
 
@@ -4009,6 +4046,8 @@ namespace Unity.Netcode.Components
                 {
                     m_RotationInterpolator.MaximumInterpolationTime = RotationMaxInterpolationTime;
                 }
+
+                m_RotationInterpolator.LerpSmoothEnabled = RotationLerpSmoothing;
 
                 // If either of these two rotation interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousRotationInterpolationType != RotationInterpolationType || m_PreviousRotationLerpSmoothing != RotationLerpSmoothing)
@@ -4024,12 +4063,12 @@ namespace Unity.Netcode.Components
                     // When using full precision Slerp towards the target rotation.
                     /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                     m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, RotationLerpSmoothing);
+                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        RotationInterpolationType == InterpolationTypes.LerpExtrapolateBlend, RotationLerpSmoothing);
+                        RotationInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
                 }
             }
 
@@ -4039,6 +4078,8 @@ namespace Unity.Netcode.Components
                 {
                     m_ScaleInterpolator.MaximumInterpolationTime = ScaleMaxInterpolationTime;
                 }
+
+                m_ScaleInterpolator.LerpSmoothEnabled = ScaleLerpSmoothing;
 
                 // If either of these two rotation interpolation related values have changed, then reset the current state being interpolated.
                 if (m_PreviousScaleInterpolationType != ScaleInterpolationType || m_PreviousScaleLerpSmoothing != ScaleLerpSmoothing)
@@ -4050,27 +4091,61 @@ namespace Unity.Netcode.Components
 
                 if (ScaleInterpolationType == InterpolationTypes.Lerp)
                 {
-                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime, ScaleLerpSmoothing);
+                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        ScaleInterpolationType == InterpolationTypes.LerpExtrapolateBlend, ScaleLerpSmoothing);
+                        ScaleInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
                 }
             }
 
-#if DEBUG_LINEARBUFFER
+#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+            // For debugging purposes
             if (GatherStats)
             {
+                if (!m_PositionInterpolator.InterpolateState.Target.HasValue)
+                {
+                    return;
+                }
                 var posStats = new NTPositionStats()
                 {
+                    FrameCount = m_FrameCount,
+                    FixedFrameCount = m_FixedFrameCount,
+                    FixedUpdatesPerFrameCount = m_FixedUpdatesPerFrameCount,
+                    TimeSynchCount = m_CachedNetworkManager.NetworkTimeSystem.SyncCount,
                     Tick = timeSystem.Tick,
                     Time = timeSystem.Time,
                     TicksAgoTime = tickLatencyAsTime,
                     BufferCount = m_PositionInterpolator.m_BufferQueue.Count,
-                    CurrentState = m_PositionInterpolator.InterpolateState,
+                    TickMeasured = (int)Math.Round(m_PositionInterpolator.InterpolateState.Target.Value.TimeSent / timeSystem.FixedDeltaTimeAsDouble, MidpointRounding.AwayFromZero),
+                    LerpT = m_PositionInterpolator.InterpolateState.LerpT,
+                    LerpTPredict = m_PositionInterpolator.InterpolateState.LerpTPredict,
+                    DeltaTime = m_PositionInterpolator.InterpolateState.DeltaTime,
+                    DeltaTimePredict = m_PositionInterpolator.InterpolateState.DeltaTimePredict,
+                    MaxDeltaTime = m_PositionInterpolator.InterpolateState.MaxDeltaTime,
+                    TimeSent = m_PositionInterpolator.InterpolateState.Target.Value.TimeSent,
+                    TimeToTargetValue = m_PositionInterpolator.InterpolateState.TimeToTargetValue,
+                    PreviousValue = m_PositionInterpolator.InterpolateState.PreviousValue,
+                    PredictValue = m_PositionInterpolator.InterpolateState.PredictValue,
+                    CurrentValue = m_PositionInterpolator.InterpolateState.CurrentValue,
+                    TargetValue = m_PositionInterpolator.InterpolateState.Target.Value.Item,
+                    Buffer = new List<BufferEntry>(),
                 };
-                PositionStats.Add(posStats);
+
+                foreach (var entry in m_PositionInterpolator.m_BufferQueue)
+                {
+                    posStats.Buffer.Add(new BufferEntry()
+                    {
+                        TimeSent = entry.TimeSent,
+                        Position = entry.Item,
+                    });
+                }
+                if (!PositionStats.ContainsKey(posStats.TickMeasured))
+                {
+                    PositionStats.Add(posStats.TickMeasured, new List<NTPositionStats>());
+                }
+                PositionStats[posStats.TickMeasured].Add(posStats);
             }
 #endif
         }
@@ -4103,6 +4178,42 @@ namespace Unity.Netcode.Components
         }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+        // For debugging purposes
+        private int m_FrameCount = 0;
+        private int m_FixedFrameCount = 0;
+        private int m_FixedUpdatesPerFrameCount = 0;
+#endif
+
+        // This is used during fixed update in case there are multiple fixed update passes without any frame pass.
+        private float m_FixedTimeFrameDelta;
+
+        // The fixed time (static time step) value for the current frame (in the event it is changed at runtime).
+        private float m_DeltaFixedUpdateCached;
+
+        /// <summary>
+        /// Resets the total fixed update time passed.
+        /// This handles dealing with multiple passes within FixedUpdate and interpolation.
+        /// </summary>
+        internal void ResetFixedTimeDelta()
+        {
+            // If not spawned or this instance has authority, exit early
+            if (!m_UseRigidbodyForMotion || !IsSpawned || CanCommitToTransform)
+            {
+                return;
+            }
+
+            // Get the current fixed delta time (used in fixed upate)
+            m_DeltaFixedUpdateCached = m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime;
+            // Reset the total fixed update time (increased each time physics invokes FixedUpdate within the same frame)
+            m_FixedTimeFrameDelta = 0.0f;
+#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+            // For debugging purposes
+            m_FrameCount++;
+            m_FixedUpdatesPerFrameCount = 0;
+#endif
+        }
+
         /// <summary>
         /// When paired with a NetworkRigidbody and NetworkRigidbody.UseRigidBodyForMotion is enabled,
         /// this will be invoked during <see cref="NetworkRigidbody.FixedUpdate"/>.
@@ -4117,6 +4228,12 @@ namespace Unity.Netcode.Components
 
             m_NetworkRigidbodyInternal.WakeIfSleeping();
 
+#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+            // For debugging purposes
+            m_FixedFrameCount++;
+            m_FixedUpdatesPerFrameCount++;
+#endif
+
             // Update interpolation when enabled
             if (Interpolate)
             {
@@ -4125,6 +4242,10 @@ namespace Unity.Netcode.Components
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
+
+            // Increment the time passed based on our current fixed update rate in case
+            // FixedUpdate is invoked more than once within a single frame.
+            m_FixedTimeFrameDelta += m_DeltaFixedUpdateCached;
         }
 #endif
 
@@ -4279,11 +4400,15 @@ namespace Unity.Netcode.Components
         #region NETWORK TICK REGISTRATOIN AND HANDLING
         private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
         /// <summary>
-        /// Adjusts the over-all tick offset (i.e. how many ticks ago) and how wide of a maximum delta time will be used for the various <see cref="InterpolationTypes"/>.        
+        /// Adjusts the over-all tick offset (i.e. how many ticks ago) and how wide of a maximum delta time will be used for the
+        /// various <see cref="InterpolationTypes"/>.
         /// </summary>
         /// <remarks>
-        /// Note: You can adjust this value during runtime. Increasing this value will set non-authority instances that much further behind the authority instance but
-        /// will increase the number of state updates to be processed. This can be useful under higher latency conditions.
+        /// Note: You can adjust this value during runtime. Increasing this value will set non-authority instances that much further
+        /// behind the authority instance but will increase the number of state updates to be processed. Increasing this can be useful 
+        /// under higher latency conditions.<br />
+        /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
+        /// <see cref="NetworkTimeSystem.TickLatency"/>
         /// </remarks>
         public static int InterpolationBufferTickOffset = 0;
         internal static float GetTickLatency(NetworkManager networkManager)

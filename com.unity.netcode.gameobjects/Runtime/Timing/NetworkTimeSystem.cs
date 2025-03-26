@@ -82,8 +82,14 @@ namespace Unity.Netcode
         /// The averaged latency in network ticks between a client and server.
         /// </summary>
         /// <remarks>
-        /// For a distributed authority network topology, this latency is between
-        /// the client and the distributed authority service instance.
+        /// For a distributed authority network topology, this latency is between the client and the
+        /// distributed authority service instance.<br />
+        /// Note: <see cref="Components.NetworkTransform"/> uses this value plus an additional global
+        /// offset <see cref="Components.NetworkTransform.InterpolationBufferTickOffset"/> when interpolation
+        /// is enabled. <br />
+        /// To see the current <see cref="Components.NetworkTransform"/> tick latency: <br />
+        /// - <see cref="Components.NetworkTransform.GetTickLatency"/> <br />
+        /// - <see cref="Components.NetworkTransform.GetTickLatencyInSeconds"/> <br />
         /// </remarks>
         public int TickLatency = 1;
 
@@ -257,7 +263,7 @@ namespace Unity.Netcode
             Sync(serverTimeSec, rttSec);
             Advance(0);
         }
-
+        internal int SyncCount;
         /// <summary>
         /// Synchronizes the time system with up-to-date network statistics but does not change any time values or advance the time.
         /// </summary>
