@@ -18,7 +18,7 @@ test_platforms:
     flavor: m1.mac
   - name: ubuntu
     type: Unity::VM
-    image: package-ci/ubuntu:v4
+    image: package-ci/ubuntu-22.04:v4
     flavor: b1.large
 
 # Projects within the repository that will be tested. Name will be used
