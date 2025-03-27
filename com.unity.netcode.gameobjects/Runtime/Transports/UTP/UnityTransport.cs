@@ -7,23 +7,17 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
-using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
-using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Burst;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using Unity.Networking.Transport.Utilities;
-#if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Networking.Transport.TLS;
-#endif
-
-#if !UTP_TRANSPORT_2_0_ABOVE
-using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
-#endif
+using Unity.Networking.Transport.Utilities;
+using UnityEngine;
+using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
+using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -166,29 +160,30 @@ namespace Unity.Netcode.Transports.UTP
         [SerializeField]
         private ProtocolType m_ProtocolType;
 
-#if UTP_TRANSPORT_2_0_ABOVE
         [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
         [SerializeField]
         private bool m_UseWebSockets = false;
 
+        /// <summary>Whether to use WebSockets as the protocol of communication. Default is UDP.</summary>
         public bool UseWebSockets
         {
             get => m_UseWebSockets;
             set => m_UseWebSockets = value;
         }
 
-        /// <summary>
-        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
-        /// </summary>
         [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
         [SerializeField]
         private bool m_UseEncryption = false;
+
+        /// <summary>
+        /// Whether to use encryption (default is false). Note that unless using Unity Relay, encryption requires
+        /// providing certificate information with <see cref="SetClientSecrets"/> and <see cref="SetServerSecrets"/>.
+        /// </summary>
         public bool UseEncryption
         {
             get => m_UseEncryption;
             set => m_UseEncryption = value;
         }
-#endif
 
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField]
@@ -406,10 +401,8 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet drop rate (packet loss)
         /// </summary>
 
-#if UTP_TRANSPORT_2_0_ABOVE
         [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
         [HideInInspector]
-#endif
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
             PacketDelayMS = 0,
@@ -732,11 +725,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
-
-#if UTP_TRANSPORT_2_0_ABOVE
         [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
-#endif
-
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)
@@ -1068,11 +1057,7 @@ namespace Unity.Netcode.Transports.UTP
 
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
-#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-#else
-                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
-#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1099,11 +1084,7 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
-#else
-                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1125,11 +1106,7 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
-#else
-                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1342,18 +1319,9 @@ namespace Unity.Netcode.Transports.UTP
             // we sometimes notice a lot of useless resends, especially if using Relay. (We can
             // only do this with UTP 2.0 because 1.X doesn't support that parameter.)
             m_NetworkSettings.WithReliableStageParameters(
-                windowSize: 64
-#if UTP_TRANSPORT_2_0_ABOVE
-                ,
+                windowSize: 64,
                 maximumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500
-#endif
             );
-
-#if !UTP_TRANSPORT_2_0_ABOVE && !UNITY_WEBGL
-            m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
-                receiveQueueCapacity: m_MaxPacketQueueSize,
-                sendQueueCapacity: m_MaxPacketQueueSize);
-#endif
         }
 
         /// <summary>
@@ -1553,8 +1521,7 @@ namespace Unity.Netcode.Transports.UTP
             m_ServerClientId = 0;
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
-        private void ConfigureSimulatorForUtp2()
+        private void ConfigureSimulator()
         {
             // As DebugSimulator is deprecated, the 'packetDelayMs', 'packetJitterMs' and 'packetDropPercentage'
             // parameters are set to the default and are supposed to be changed using Network Simulator tool instead.
@@ -1570,19 +1537,7 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkSettings.WithNetworkSimulatorParameters();
         }
-#else
-        private void ConfigureSimulatorForUtp1()
-        {
-            m_NetworkSettings.WithSimulatorStageParameters(
-                maxPacketCount: 300, // TODO Is there any way to compute a better value?
-                maxPacketSize: NetworkParameterConstants.MTU,
-                packetDelayMs: DebugSimulator.PacketDelayMS,
-                packetJitterMs: DebugSimulator.PacketJitterMS,
-                packetDropPercentage: DebugSimulator.PacketDropRate,
-                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
-            );
-        }
-#endif
+
         /// <inheritdoc cref="NetworkTransport.OnCurrentTopology"/>
         protected override NetworkTopologyTypes OnCurrentTopology()
         {
@@ -1641,24 +1596,15 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7 && !UTP_TRANSPORT_2_0_ABOVE
-            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+            ConfigureSimulator();
 #endif
-
-#if UTP_TRANSPORT_2_0_ABOVE && UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-            ConfigureSimulatorForUtp2();
-#elif !UTP_TRANSPORT_2_0_ABOVE && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            ConfigureSimulatorForUtp1();
-#endif
-
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
-#if UTP_TRANSPORT_2_0_ABOVE
                 sendQueueCapacity: m_MaxPacketQueueSize,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
-#endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -1683,7 +1629,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
-#if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseEncryption)
             {
                 if (m_ProtocolType == ProtocolType.RelayUnityTransport)
@@ -1725,9 +1670,7 @@ namespace Unity.Netcode.Transports.UTP
                     }
                 }
             }
-#endif
 
-#if UTP_TRANSPORT_2_1_ABOVE
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
                 if (m_UseWebSockets && m_RelayServerData.IsWebSocket == 0)
@@ -1740,9 +1683,7 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.LogError("Relay server data indicates usage of WebSockets, but \"Use WebSockets\" checkbox isn't checked under \"Unity Transport\" component.");
                 }
             }
-#endif
 
-#if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)
             {
                 driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
@@ -1756,88 +1697,18 @@ namespace Unity.Netcode.Transports.UTP
                 driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
 #endif
             }
-#else
-            driver = NetworkDriver.Create(m_NetworkSettings);
-#endif
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7 && UTP_TRANSPORT_2_0_ABOVE
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
 
-#if !UTP_TRANSPORT_2_0_ABOVE
-            SetupPipelinesForUtp1(driver,
+            SetupPipelines(driver,
                 out unreliableFragmentedPipeline,
                 out unreliableSequencedFragmentedPipeline,
                 out reliableSequencedPipeline);
-#else
-            SetupPipelinesForUtp2(driver,
-                out unreliableFragmentedPipeline,
-                out unreliableSequencedFragmentedPipeline,
-                out reliableSequencedPipeline);
-#endif
         }
 
-#if !UTP_TRANSPORT_2_0_ABOVE
-        private void SetupPipelinesForUtp1(NetworkDriver driver,
-            out NetworkPipeline unreliableFragmentedPipeline,
-            out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
-            {
-                unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(UnreliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                reliableSequencedPipeline = driver.CreatePipeline(
-                    typeof(ReliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-            }
-            else
-#endif
-            {
-                unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(UnreliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                reliableSequencedPipeline = driver.CreatePipeline(
-                    typeof(ReliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-            }
-        }
-#else
-        private void SetupPipelinesForUtp2(NetworkDriver driver,
+        private void SetupPipelines(NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
@@ -1874,9 +1745,8 @@ namespace Unity.Netcode.Transports.UTP
 #endif
             );
         }
-#endif
-        // -------------- Utility Types -------------------------------------------------------------------------------
 
+        // -------------- Utility Types -------------------------------------------------------------------------------
 
         /// <summary>
         /// Cached information about reliability mode with a certain client
