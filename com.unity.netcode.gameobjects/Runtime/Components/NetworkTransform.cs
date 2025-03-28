@@ -988,11 +988,6 @@ namespace Unity.Netcode.Components
             /// <list type="bullet">
             /// <item><description>The first phase lerps towards the current tick state update being processed.</description></item>
             /// <item><description>The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum state update delta time.</description></item>
-            /// <item>
-            ///     <list type="bullet">
-            ///     <item><description>The maximum state update time is based on <see cref="NetworkTimeSystem.TickLatency"/> plus the <see cref="InterpolationBufferTickOffset"/>. The sum is multiplied by the tick frequency (one over tick rate).</description></item>
-            ///     </list>
-            /// </item>
             /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
             /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
@@ -1044,6 +1039,7 @@ namespace Unity.Netcode.Components
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
         /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
         /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
@@ -1062,6 +1058,7 @@ namespace Unity.Netcode.Components
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
         /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
         /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
@@ -1080,6 +1077,7 @@ namespace Unity.Netcode.Components
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
         /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
         /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
@@ -1558,6 +1556,7 @@ namespace Unity.Netcode.Components
         ///     </item>
         /// </list>
         /// </item>
+        /// </list>
         /// </param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
