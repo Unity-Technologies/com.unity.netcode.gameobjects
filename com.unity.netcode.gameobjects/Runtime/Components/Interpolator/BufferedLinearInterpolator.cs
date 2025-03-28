@@ -377,7 +377,7 @@ namespace Unity.Netcode
                                 if (isPredictedLerp)
                                 {
                                     InterpolateState.Phase1Value = InterpolateState.PreviousValue;
-                                    InterpolateState.Phase2Value = Interpolate(InterpolateState.PreviousValue, target.Item, InterpolateState.AverageDeltaTime);
+                                    InterpolateState.Phase2Value = Interpolate(InterpolateState.PredictValue, target.Item, InterpolateState.AverageDeltaTime);
                                 }
                                 else
                                 {
@@ -462,8 +462,8 @@ namespace Unity.Netcode
                     // If lerp smoothing is enabled, then smooth current value towards the target value
                     if (LerpSmoothEnabled)
                     {
-                        // Apply the smooth lerp from the oneThirpoint to the target to help smooth the final value
-                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / MaximumInterpolationTime);
+                        // Apply the smooth lerp to the target to help smooth the final value.
+                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / (MaximumInterpolationTime * 0.3333f));
                     }
                     else
                     {
