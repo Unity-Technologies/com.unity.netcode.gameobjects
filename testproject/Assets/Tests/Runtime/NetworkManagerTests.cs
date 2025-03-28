@@ -108,16 +108,12 @@ namespace TestProject.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             networkManager.NetworkConfig.EnableSceneManagement = m_UseSceneManagement;
-            foreach (var prefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(prefab);
-            }
             base.OnNewClientCreated(networkManager);
         }
 
         /// <summary>
         /// Validate shutting down a second time does not cause an exception.
-        /// </summary>        
+        /// </summary>
         [UnityTest]
         public IEnumerator ValidateShutdown([Values] ShutdownChecks shutdownCheck)
         {
@@ -132,7 +128,7 @@ namespace TestProject.RuntimeTests
             }
             else
             {
-                // For this test (simplify the complexity) with a late joining client, just remove the 
+                // For this test (simplify the complexity) with a late joining client, just remove the
                 // in-scene placed NetworkObject prior to the client connecting
                 // (We are testing the shutdown sequence)
                 var spawnedObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.ToList();
