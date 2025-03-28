@@ -1535,28 +1535,10 @@ namespace Unity.Netcode.Components
         /// </list>
         /// </remarks>
         /// <param name="getCurrentState">
-        /// <list type="bullet">
-        /// <item>
-        /// <term>Authority</term>
-        /// <description>Always returns the space relative transform position (whether true or false).
-        /// </description></item>
-        /// <item>
-        /// <term>Non-authority:</term>
-        /// <list type="bullet">
-        ///     <item>
-        ///     <term>When false(default)</term>
-        ///     <description>Returns the space relative transform position.
-        ///     </description>
-        ///     </item>
-        ///     <item>
-        ///     <term>When true</term>
-        ///     <description>
-        ///     Returns the authority position from the most recent state update.
-        ///     </description>
-        ///     </item>
-        /// </list>
-        /// </item>
-        /// </list>
+        /// Authority always returns the space relative transform position (whether true or false).<br />
+        /// Non-authority:<br />
+        /// When false (default): returns the space relative transform position.<br />
+        /// When true: returns the authority position from the most recent state update.
         /// </param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1585,38 +1567,28 @@ namespace Unity.Netcode.Components
         /// Helper method that returns the space relative rotation of the transform.
         /// </summary>
         /// <remarks>
-        /// If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation.<br/>
-        /// If InLocalSpace is <see cref="false"/> then it returns the transform.rotation.<br/>
-        /// When invoked on the non-authority side:<br/>
-        /// If <see cref="getCurrentState"/> is true then it will return the most
-        /// current authority rotation from the most recent state update. This can be useful
-        /// if interpolation is enabled and you need to determine the final target rotation.<br/>
-        /// When invoked on the authority side:<br/>
-        /// It will always return the space relative rotation.<br/>
-        /// </remarks>
-        /// <param name="getCurrentState">
+        /// <list type="bullet">
+        /// <item><description>If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation.</description></item>
+        /// <item><description>If InLocalSpace is <see cref="false"/> then it returns the transform.rotation.</description></item>
+        /// </list>
         /// <list type="bullet">
         /// <item>
-        /// <term>Authority</term>
-        /// <description>Always returns the space relative transform rotation (whether true or false).
+        /// <term>When invoked on the non-authority side:</term>
+        /// <description>If <see cref="getCurrentState"/> is true then it will return the most
+        /// current authority position from the most recent state update. This can be useful
+        /// if interpolation is enabled and you need to determine the final target rotation.
         /// </description></item>
         /// <item>
-        /// <term>Non-authority:</term>
-        /// <list type="bullet">
-        ///     <item>
-        ///     <term>When false(default)</term>
-        ///     <description>Returns the space relative transform rotation.
-        ///     </description>
-        ///     </item>
-        ///     <item>
-        ///     <term>When true</term>
-        ///     <description>
-        ///     Returns the authority rotation from the most recent state update.
-        ///     </description>
-        ///     </item>
+        /// <term>When invoked on the authority side:</term>
+        /// <description>It will always return the space relative rotation.
+        /// </description></item>
         /// </list>
-        /// </item>
-        /// </list>
+        /// </remarks>
+        /// <param name="getCurrentState">
+        /// Authority always returns the space relative transform rotation (whether true or false).<br />
+        /// Non-authority:<br />
+        /// When false (default): returns the space relative transform rotation.<br />
+        /// When true: returns the authority rotation from the most recent state update.
         /// </param>
         /// <returns><see cref="Quaternion"/></returns>
         public Quaternion GetSpaceRelativeRotation(bool getCurrentState = false)
@@ -1635,17 +1607,17 @@ namespace Unity.Netcode.Components
         /// Helper method that returns the scale of the transform.
         /// </summary>
         /// <remarks>
-        /// When invoked on the non-authority side:
+        /// When invoked on the non-authority side:<br />
         /// If <see cref="getCurrentState"/> is true then it will return the most
         /// current authority scale from the most recent state update. This can be useful
-        /// if interpolation is enabled and you need to determine the final target scale.
-        /// When invoked on the authority side:
+        /// if interpolation is enabled and you need to determine the final target scale.<br />
+        /// When invoked on the authority side:<br />
         /// It will always return the space relative scale.
         /// </remarks>
         /// <param name="getCurrentState">
-        /// Authority always returns the space relative transform scale (whether true or false).
-        /// Non-authority:
-        /// When false (default): returns the space relative transform scale
+        /// Authority always returns the space relative transform scale (whether true or false).<br />
+        /// Non-authority:<br />
+        /// When false (default): returns the space relative transform scale.<br />
         /// When true: returns the authority scale from the most recent state update.
         /// </param>
         /// <returns><see cref="Vector3"/></returns>
