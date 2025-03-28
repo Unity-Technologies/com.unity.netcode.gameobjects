@@ -20,12 +20,12 @@ namespace Unity.Netcode.RuntimeTests
             /// <summary>
             /// Prefab for the player
             /// </summary>
-            public NetworkObject playerPrefab;
+            public NetworkObject PlayerPrefab;
 
             /// <summary>
             /// The server side NetworkObject that was spawned when the client connected.
             /// </summary>
-            public NetworkObject spawnedPlayer;
+            public NetworkObject SpawnedPlayer;
 
             /// <summary>
             /// Represents the different movement states of the PlayerSpawner during the test lifecycle.
@@ -39,7 +39,7 @@ namespace Unity.Netcode.RuntimeTests
                 // We have moved far enough to test location
                 ReachedPeak,
             }
-            public MoveState moveState = MoveState.NotStarted;
+            public MoveState State = MoveState.NotStarted;
 
             // A count of the number of updates since the player object was spawned.
             private int m_Count;
@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
                 rotation.eulerAngles = Vector3.Slerp(rotation.eulerAngles, m_RotationTarget, Time.deltaTime * 2);
                 transform.rotation = rotation;
 
-                if (moveState != MoveState.PlayerSpawned)
+                if (State != MoveState.PlayerSpawned)
                 {
                     return;
                 }
@@ -73,7 +73,7 @@ namespace Unity.Netcode.RuntimeTests
                 if (m_Count > 10)
                 {
                     // Mark PlayerSpawner as having moved far enough to test.
-                    moveState = MoveState.ReachedPeak;
+                    State = MoveState.ReachedPeak;
                 }
             }
 
@@ -102,10 +102,10 @@ namespace Unity.Netcode.RuntimeTests
             [ServerRpc(RequireOwnership = false)]
             private void RequestPlayerObjectSpawnServerRpc(ServerRpcParams rpcParams = default)
             {
-                spawnedPlayer = Instantiate(playerPrefab);
-                spawnedPlayer.SpawnAsPlayerObject(rpcParams.Receive.SenderClientId);
-                spawnedPlayer.TrySetParent(NetworkObject, false);
-                moveState = MoveState.PlayerSpawned;
+                SpawnedPlayer = Instantiate(PlayerPrefab);
+                SpawnedPlayer.SpawnAsPlayerObject(rpcParams.Receive.SenderClientId);
+                SpawnedPlayer.TrySetParent(NetworkObject, false);
+                State = MoveState.PlayerSpawned;
             }
         }
 
@@ -138,27 +138,27 @@ namespace Unity.Netcode.RuntimeTests
             var childNetworkTransform = playerPrefab.AddComponent<ClientNetworkTransform>();
             childNetworkTransform.InLocalSpace = true;
 
-            parentPlayerSpawner.playerPrefab = playerPrefab.GetComponent<NetworkObject>();
+            parentPlayerSpawner.PlayerPrefab = playerPrefab.GetComponent<NetworkObject>();
 
             base.OnServerAndClientsCreated();
         }
 
         private bool NewPlayerObjectSpawned()
         {
-            return m_ServerPlayerSpawner.spawnedPlayer &&
-                   m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(m_ServerPlayerSpawner.spawnedPlayer.NetworkObjectId);
+            return m_ServerPlayerSpawner.SpawnedPlayer &&
+                   m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(m_ServerPlayerSpawner.SpawnedPlayer.NetworkObjectId);
         }
 
         private bool HasServerInstanceReachedPeakPoint()
         {
-            VerboseDebug($"Client Local: {m_NewClientPlayer.transform.localPosition} Server Local: {m_ServerPlayerSpawner.spawnedPlayer.transform.localPosition}");
-            return m_ServerPlayerSpawner.moveState == PlayerSpawner.MoveState.ReachedPeak;
+            VerboseDebug($"Client Local: {m_NewClientPlayer.transform.localPosition} Server Local: {m_ServerPlayerSpawner.SpawnedPlayer.transform.localPosition}");
+            return m_ServerPlayerSpawner.State == PlayerSpawner.MoveState.ReachedPeak;
         }
 
         private bool ServerClientPositionMatches()
         {
-            return Approximately(m_NewClientPlayer.transform.localPosition, m_ServerPlayerSpawner.spawnedPlayer.transform.localPosition) &&
-                Approximately(m_NewClientPlayer.transform.position, m_ServerPlayerSpawner.spawnedPlayer.transform.position);
+            return Approximately(m_NewClientPlayer.transform.localPosition, m_ServerPlayerSpawner.SpawnedPlayer.transform.localPosition) &&
+                Approximately(m_NewClientPlayer.transform.position, m_ServerPlayerSpawner.SpawnedPlayer.transform.position);
         }
 
         [UnityTest]
@@ -176,7 +176,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Client did not spawn new player object!");
 
             // Save the spawned player object
-            m_NewClientPlayer = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[m_ServerPlayerSpawner.spawnedPlayer.NetworkObjectId];
+            m_NewClientPlayer = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[m_ServerPlayerSpawner.SpawnedPlayer.NetworkObjectId];
 
             // Let the parent PlayerSpawner move for several ticks to get an offset
             yield return WaitForConditionOrTimeOut(HasServerInstanceReachedPeakPoint);
@@ -185,7 +185,7 @@ namespace Unity.Netcode.RuntimeTests
             // Check that the client and server local positions match (they should both be at {0,0,0} local space)
             yield return WaitForConditionOrTimeOut(ServerClientPositionMatches);
             AssertOnTimeout($"Client local position {m_NewClientPlayer.transform.localPosition} does not match" +
-                $" server local position {m_ServerPlayerSpawner.spawnedPlayer.transform.localPosition}");
+                $" server local position {m_ServerPlayerSpawner.SpawnedPlayer.transform.localPosition}");
         }
     }
 }
