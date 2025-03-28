@@ -249,8 +249,6 @@ namespace Unity.Netcode
         /// </summary>
         private protected bool m_IsAngularValue;
 
-        private bool m_WasPredictedLerp;
-
         /// <summary>
         /// Resets interpolator to the defaults.
         /// </summary>
