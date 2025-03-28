@@ -782,6 +782,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
+            Debug.Log($"[Auth]{name} State Pushed.");
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
             AuthorityPushedTransformState?.Invoke(ref networkTransformState);
@@ -792,8 +793,39 @@ namespace Unity.Netcode.RuntimeTests
         public bool StateUpdated { get; internal set; }
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
+            Debug.Log($"[Non-Auth]{name} State Updated.");
             StateUpdated = true;
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
+        }
+
+        protected string GetVector3Values(ref Vector3 vector3)
+        {
+            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
+        }
+
+        protected string GetVector3Values(Vector3 vector3)
+        {
+            return GetVector3Values(ref vector3);
+        }
+
+        public bool EnableVerboseDebug;
+
+        public void GetInterpolatorInfo()
+        {
+            if (!EnableVerboseDebug)
+            {
+                return;
+            }
+            var positionInterpolator = GetPositionInterpolator();
+            var rotationInterpolator = GetRotationInterpolator();
+            Debug.Log($"TT: {positionInterpolator.InterpolateState.TimeToTargetValue} BuffCnt: {positionInterpolator.m_BufferQueue.Count} Pos: {GetVector3Values(positionInterpolator.InterpolateState.CurrentValue)} " +
+                $"Rot: {GetVector3Values(rotationInterpolator.InterpolateState.CurrentValue.eulerAngles)}");
+        }
+
+        public override void OnUpdate()
+        {
+            base.OnUpdate();
+            GetInterpolatorInfo();
         }
 
         protected override bool OnIsServerAuthoritative()
