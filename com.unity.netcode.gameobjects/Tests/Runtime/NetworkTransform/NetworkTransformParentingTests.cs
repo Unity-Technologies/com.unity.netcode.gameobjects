@@ -110,15 +110,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        // Client Authoritative NetworkTransform
-        internal class ClientNetworkTransform : NetworkTransform
-        {
-            protected override bool OnIsServerAuthoritative()
-            {
-                return false;
-            }
-        }
-
         // Don't start with any clients, we will manually spawn a client inside the test
         protected override int NumberOfClients => 0;
 
@@ -136,7 +127,8 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerSpawnerPrefab.AddComponent<NetworkTransform>();
 
             var playerPrefab = CreateNetworkObjectPrefab("Child");
-            var childNetworkTransform = playerPrefab.AddComponent<ClientNetworkTransform>();
+            var childNetworkTransform = playerPrefab.AddComponent<NetworkTransform>();
+            childNetworkTransform.AuthorityMode = NetworkTransform.AuthorityModes.Owner;
             childNetworkTransform.InLocalSpace = true;
 
             parentPlayerSpawner.PlayerPrefab = playerPrefab.GetComponent<NetworkObject>();
