@@ -63,7 +63,10 @@ namespace Unity.Netcode
         /// <inheritdoc />
         private protected override bool IsAproximately(Quaternion first, Quaternion second, float precision)
         {
-            return (1.0f - Quaternion.Dot(first, second)) <= precision;
+            return Mathf.Abs(first.x - second.x) <= precision &&
+                Mathf.Abs(first.y - second.y) <= precision &&
+                Mathf.Abs(first.z - second.z) <= precision &&
+                Mathf.Abs(first.w - second.w) <= precision;
         }
 
         /// <inheritdoc />
