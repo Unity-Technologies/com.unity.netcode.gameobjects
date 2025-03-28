@@ -312,6 +312,17 @@ namespace Unity.Netcode
             var currentTargetTimeReached = false;
             var dequeuedCount = 0;
 
+            // In the event there is nothing left in the queue (i.e. motion/change stopped), we still need to determine if the target has been reached.
+            if (!noStateSet && m_BufferQueue.Count == 0)
+            {
+                if (!InterpolateState.TargetReached)
+                {
+                    InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+                }
+                return;
+            }
+
+            // Continue to process any remaining state updates in the queue (if any)
             while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
             {
                 // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
@@ -325,7 +336,7 @@ namespace Unity.Netcode
                 {
                     potentialItemNeedsProcessing = (potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent >= InterpolateState.Target.Value.TimeSent;
                     currentTargetTimeReached = InterpolateState.TargetTimeAproximatelyReached(potentialItemNeedsProcessing ? 1.0f : 0.85f) || InterpolateState.TargetReached;
-                    if (!potentialItemNeedsProcessing && !InterpolateState.TargetReached)
+                    if (!InterpolateState.TargetReached)
                     {
                         InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
                     }
@@ -366,14 +377,19 @@ namespace Unity.Netcode
                                 if (isPredictedLerp)
                                 {
                                     InterpolateState.Phase1Value = InterpolateState.PreviousValue;
-                                    InterpolateState.Phase2Value = Interpolate(InterpolateState.PredictValue, target.Item, InterpolateState.AverageDeltaTime);
+                                    InterpolateState.Phase2Value = Interpolate(InterpolateState.PreviousValue, target.Item, InterpolateState.AverageDeltaTime);
+                                }
+                                else
+                                {
+                                    InterpolateState.PredictValue = InterpolateState.PreviousValue;
+                                    InterpolateState.PreviousValue = InterpolateState.CurrentValue;
                                 }
                                 InterpolateState.MaxDeltaTime = maxDeltaTime;
                                 InterpolateState.PredictingNext = m_BufferQueue.Count > 0;
                             }
-                            // TODO: We might consider creating yet another queue to add these items to and assure that the time is accelerated
-                            // for each item as opposed to losing the resolution of the values.
-                            InterpolateState.SetTimeToTarget(Math.Clamp((float)(target.TimeSent - startTime), minDeltaTime, maxDeltaTime * dequeuedCount));
+                            // We continue to stretch the time out if we are far behind in processing the buffer.
+                            // TODO: We need to compress time when there is a large amount of items to be processed.
+                            InterpolateState.SetTimeToTarget(Math.Max((float)(target.TimeSent - startTime), minDeltaTime));
                             InterpolateState.Target = target;
                         }
                     }
@@ -446,15 +462,27 @@ namespace Unity.Netcode
                     // If lerp smoothing is enabled, then smooth current value towards the target value
                     if (LerpSmoothEnabled)
                     {
-                        // Progress by 1/3rd of the way towards the target in order to assure the target is reached sooner
-                        var oneThirdPoint = Interpolate(InterpolateState.CurrentValue, targetValue, 0.3333f);
                         // Apply the smooth lerp from the oneThirpoint to the target to help smooth the final value
-                        InterpolateState.CurrentValue = Interpolate(oneThirdPoint, targetValue, deltaTime / MaximumInterpolationTime);
+                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / MaximumInterpolationTime);
                     }
                     else
                     {
                         // Otherwise, just assign the target value.
                         InterpolateState.CurrentValue = targetValue;
+                    }
+                }
+                else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
+                if (m_BufferQueue.Count == 0)
+                {
+                    // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
+                    // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
+                    // we will want to reset the interpolator with the current known value. This prevents the next received state update's
+                    // time to be calculated against the last calculated time which if there is an extended period of time between the two
+                    // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
+                    // starts moving again).
+                    if ((tickLatencyAsTime - InterpolateState.Target.Value.TimeSent) > InterpolateState.MaxDeltaTime + minDeltaTime)
+                    {
+                        InterpolateState.Reset(InterpolateState.CurrentValue);
                     }
                 }
             }
@@ -567,8 +595,7 @@ namespace Unity.Netcode
                 if (LerpSmoothEnabled)
                 {
                     // Assure our MaximumInterpolationTime is valid and that the second lerp time ranges between deltaTime and 1.0f.
-                    var secondLerpTime = Mathf.Clamp(deltaTime / MaximumInterpolationTime, deltaTime, 1.0f);
-                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, secondLerpTime);
+                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, deltaTime / MaximumInterpolationTime);
                 }
                 else
                 {

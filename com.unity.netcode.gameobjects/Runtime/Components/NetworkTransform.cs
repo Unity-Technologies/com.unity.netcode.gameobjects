@@ -936,6 +936,26 @@ namespace Unity.Netcode.Components
         #region PROPERTIES AND GENERAL METHODS
 
         /// <summary>
+        /// Pertains to Owner Authority and Interpolation<br />
+        /// When enabled (default), 1 additional tick is added to the total number of ticks used to calculate the tick latency ("ticks ago") as a time.
+        /// This calculated time value is passed into the respective <see cref="BufferedLinearInterpolator{T}"/> and used to determine if any pending
+        /// state updates in the queue should be processed.
+        /// The additional tick value is only applied when:
+        /// <list type="bullet">
+        /// <item><description>The <see cref="NetworkTransform"/> is using a <see cref="AuthorityModes.Owner"/> authority mode.</description></item>
+        /// <item><description>The non-authority instance is a client (i.e. not host or server).</description></item>
+        /// <item><description>The network topology being used is <see cref="NetworkTopologyTypes.ClientServer"/>.</description></item>
+        /// </list>
+        /// </summary>
+        /// <remarks>
+        /// When calculating the total tick latency as time value, the <see cref="NetworkTimeSystem.TickLatency"/> is added to the <see cref="InterpolationBufferTickOffset"/>
+        /// and if this property is enabled (and the conditions above are met) an additional tick is added to the final resultant value. <br />
+        /// Note: The reason behind this additional tick latency value is due to the 2 RTT timespan when a client state update is sent to the host or server (1 RTT)
+        /// and the host or server relays this state update to all non-authority instances (1 RTT).
+        /// </remarks>
+        public bool AutoOwnerAuthorityTickOffset = true;
+
+        /// <summary>
         /// The different interpolation types used with <see cref="BufferedLinearInterpolator{T}"/> to help smooth interpolation results.
         /// Interpolation types can be changed during runtime.
         /// </summary>
@@ -943,63 +963,75 @@ namespace Unity.Netcode.Components
         {
             /// <summary>
             /// Lerp (original NGO lerping model)<br />
-            /// Uses a 1 to 2 phase interpolation approach where: <br />
-            /// - The fist phase lerps from the previous state update value to the next state update value.<br />
-            /// - The second phase (optional) performs a lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.
+            /// Uses a 1 to 2 phase interpolation approach where:<br />
+            /// <list type="bullet">
+            /// <item><description>The first phase lerps from the previous state update value to the next state update value.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// </list>
             /// </summary>
             /// <remarks>
             /// Lowest computation cost of the three options.<br />
             /// For more information:<br />
-            /// - <see cref="PositionMaxInterpolationTime"/><br />
-            /// - <see cref="PositionLerpSmoothing"/><br />
-            /// - <see cref="RotationMaxInterpolationTime"/><br />
-            /// - <see cref="RotationLerpSmoothing"/><br />
-            /// - <see cref="ScaleMaxInterpolationTime"/><br />
-            /// - <see cref="ScaleLerpSmoothing"/><br />
+            /// <list type="bullet">
+            /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="PositionLerpSmoothing"/></term></item>
+            /// <item><term><see cref="RotationMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="RotationLerpSmoothing"/></term></item>
+            /// <item><term><see cref="ScaleMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
+            /// </list>
             /// </remarks>
             Lerp,
             /// <summary>
             /// Lerp, Extrapolate, and Blend
-            /// Uses a 3 to 5 phase lerp towards the target, extrapolate towards the target, blend the two results, and (optionally) smooth the final value.<br />
-            /// - The first phase lerps towards the current tick state update being processed.<br />
-            /// - The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum delta time.
-            /// The maximum delta time is the tick latency, calculated from an estimated RTT each time the network time is updated, plus the <see cref="InterpolationBufferTickOffset"/>. The sum is multiplied by the tick frequency (one over tick rate).<br />
-            /// - The third phase lerps between the results of the first and second phases by the current delta time.<br />
-            /// - The fourth and fifth phase (optional) performs:
-            /// -- A 1/3rd lerp towards the target from the current respective transform value.
-            /// -- A lerp smoothing where the result of the 1/3rd lerp operation is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
+            /// Uses a 3 to 4 phase approach that lerps towards the target, extrapolate towards the target, blends the two results, and (optionally) smooth the final value.<br />
+            /// <list type="bullet">
+            /// <item><description>The first phase lerps towards the current tick state update being processed.</description></item>
+            /// <item><description>The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum state update delta time.</description></item>
+            /// <item>
+            ///     <list type="bullet">
+            ///     <item><description>The maximum state update time is based on <see cref="NetworkTimeSystem.TickLatency"/> plus the <see cref="InterpolationBufferTickOffset"/>. The sum is multiplied by the tick frequency (one over tick rate).</description></item>
+            ///     </list>
+            /// </item>
+            /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
+            /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// </list>
             /// </summary>
             /// <remarks>
             /// Note: This is slightly more computationally expensive than the <see cref="Lerp"/> approach.<br />
             /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.<br />
             /// For more information:<br />
-            /// - <see cref="PositionMaxInterpolationTime"/><br />
-            /// - <see cref="PositionLerpSmoothing"/><br />
-            /// - <see cref="RotationMaxInterpolationTime"/><br />
-            /// - <see cref="RotationLerpSmoothing"/><br />
-            /// - <see cref="ScaleMaxInterpolationTime"/><br />
-            /// - <see cref="ScaleLerpSmoothing"/><br />
+            /// <list type="bullet">
+            /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="PositionLerpSmoothing"/></term></item>
+            /// <item><term><see cref="RotationMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="RotationLerpSmoothing"/></term></item>
+            /// <item><term><see cref="ScaleMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
+            /// </list>
             /// </remarks>
             LerpExtrapolateBlend,
             /// <summary>
-            /// Uses a 3 to 5 phase smooth dampen towards the target, smooth dampen towards the next target, blend the two results, and (optionally) smooth the final value.<br />
-            /// - The first phase smooth dampens towards the current tick state update being processed.<br />
-            /// - The second phase smooth dampens towards the next tick state's target. If there is no next tick state update, then the target predicted value is the current state target that smooth dampens 1 frame (average delta time) ahead.<br />
-            /// - The third phase lerps between the results of the first and second phases by the current delta time.<br />
-            /// - The fourth and fifth phase (optional) performs:
-            /// -- A 1/3rd lerp towards the target from the current respective transform value.
-            /// -- A lerp smoothing where the result of the 1/3rd lerp operation is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.
+            /// Uses a 3 to 4 phase approach that smooth dampens towards the target, smooth dampens ahead of the target, blends the two results, and (optionally) smooth the final value.<br />
+            /// <list type="bullet">
+            /// <item><description>The first phase smooth dampens towards the current tick state update being processed by the accumulated delta time relative to the time to target.</description></item>
+            /// <item><description>The second phase smooth dampens ahead of the previous phase by the accumulated delta time, relative to the time to target, plus the current delta time for the current update.</description></item>
+            /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
+            /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// </list>
             /// </summary>
             /// <remarks>
             /// Note: Smooth dampening is computationally more expensive than the <see cref="LerpExtrapolateBlend"/> and <see cref="Lerp"/> approaches.<br />
             /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.
             /// For more information:<br />
-            /// - <see cref="PositionMaxInterpolationTime"/><br />
-            /// - <see cref="PositionLerpSmoothing"/><br />
-            /// - <see cref="RotationMaxInterpolationTime"/><br />
-            /// - <see cref="RotationLerpSmoothing"/><br />
-            /// - <see cref="ScaleMaxInterpolationTime"/><br />
-            /// - <see cref="ScaleLerpSmoothing"/><br />
+            /// <list type="bullet">
+            /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="PositionLerpSmoothing"/></term></item>
+            /// <item><term><see cref="RotationMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="RotationLerpSmoothing"/></term></item>
+            /// <item><term><see cref="ScaleMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
+            /// </list>
             /// </remarks>
             SmoothDampening
         }
@@ -1008,10 +1040,15 @@ namespace Unity.Netcode.Components
         /// The position interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
-        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
-        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
-        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
+        /// <list type="bullet">
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description>
+        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description>
+        /// Things to consider:<br />
+        /// <list type="bullet">
+        /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
+        /// <item><description>You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes PositionInterpolationType;
@@ -1021,10 +1058,15 @@ namespace Unity.Netcode.Components
         /// The rotation interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
-        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
-        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
-        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
+        /// <list type="bullet">
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description>
+        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description>
+        /// Things to consider:<br />
+        /// <list type="bullet">
+        /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
+        /// <item><description>You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes RotationInterpolationType;
@@ -1034,17 +1076,22 @@ namespace Unity.Netcode.Components
         /// The scale interpolation type to use for the <see cref="NetworkTransform"/> instance.
         /// </summary>
         /// <remarks>
-        /// - <see cref="InterpolationTypes.Lerp"/> yields a traditional linear result.<br />
-        /// - <see cref="InterpolationTypes.SmoothDampening"/> adjusts based on the rate of change.<br />
-        /// - You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.<br />
-        /// - You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.<br />
+        /// <list type="bullet">
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// Things to consider:<br />
+        /// <list type="bullet">
+        /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
+        /// <item><description>You can change the interpolation type during runtime, but changing between <see cref="InterpolationTypes"/> can result in a slight stutter if the object is in motion.</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("Lerping yields a traditional linear result where smooth dampening will adjust based on the rate of change. You can mix interpolation types for position, rotation, and scale.")]
         public InterpolationTypes ScaleInterpolationType;
         private InterpolationTypes m_PreviousScaleInterpolationType;
 
         /// <summary>
-        /// Controls position interpolaiton smoothing.
+        /// Controls position interpolation smoothing.
         /// </summary>
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="PositionMaxInterpolationTime"/>.
@@ -1053,21 +1100,25 @@ namespace Unity.Netcode.Components
         private bool m_PreviousPositionLerpSmoothing;
 
         /// <summary>
-        /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
-        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
+        /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.<br />
+        /// <list type="bullet">
+        /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
+        /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
+        /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. linear velocity or the like).</description></item>
+        /// </list>
         /// </summary>
         /// <remarks>
-        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
-        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// <list type="bullet">
+        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
+        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float PositionMaxInterpolationTime = 0.1f;
 
         /// <summary>
-        /// Controls rotation interpolaiton smoothing.
+        /// Controls rotation interpolation smoothing.
         /// </summary>
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="RotationMaxInterpolationTime"/>.
@@ -1077,20 +1128,24 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// The rotation interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
-        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
+        /// <list type="bullet">
+        /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
+        /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
+        /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. angular velocity).</description></item>
+        /// </list>
         /// </summary>
         /// <remarks>
-        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
-        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// <list type="bullet">
+        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
+        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float RotationMaxInterpolationTime = 0.1f;
 
         /// <summary>
-        /// Controls scale interpolaiton smoothing.
+        /// Controls scale interpolation smoothing.
         /// </summary>
         /// <remarks>
         /// When enabled, the <see cref="BufferedLinearInterpolator{T}"/> will apply a final lerping pass where the "t" parameter is calculated by dividing the frame time divided by the <see cref="ScaleMaxInterpolationTime"/>.
@@ -1100,13 +1155,17 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// The scale interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
-        /// - The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). <br />
-        /// - The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value). <br />
-        /// - This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. velocity or the like).
+        /// <list type="bullet">
+        /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
+        /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
+        /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value.</description></item>
+        /// </list>
         /// </summary>
         /// <remarks>
-        /// - Only used When <see cref="Interpolate"/> is enabled and using <see cref="InterpolationTypes.Lerp"/>. <br />
-        /// - The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)
+        /// <list type="bullet">
+        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
+        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
@@ -1118,7 +1177,7 @@ namespace Unity.Netcode.Components
         public enum AuthorityModes
         {
             /// <summary>
-            /// Server pushes transform state updates
+            /// Server pushes transform state updates.
             /// </summary>
             Server,
             /// <summary>
@@ -1145,27 +1204,29 @@ namespace Unity.Netcode.Components
         /// This can help to reduce out of sync updates that can lead to slight jitter between a parent and its child/children.
         /// </summary>
         /// <remarks>
-        /// - If this is set on a child and the parent does not have this set then the child will not be tick synchronized with its parent. <br />
-        /// - If the parent instance does not send any state updates, the children will still send state updates when exceeding axis delta threshold. <br />
-        /// - This does not need to be set on children to be applied.
+        /// <list type="bullet">
+        /// <item><description>If this is set on a child and the parent does not have this set then the child will not be tick synchronized with its parent.</description></item>
+        /// <item><description>If the parent instance does not send any state updates, the children will still send state updates when exceeding axis delta threshold.</description></item>
+        /// <item><description>This does not need to be set on children to be applied.</description></item>
+        /// </list>
         /// </remarks>
         [Tooltip("When enabled, any parented children of this instance will send a state update when this instance sends a state update. If this instance doesn't send a state update, the children will still send state updates when reaching their axis specified threshold delta. Children do not have to have this setting enabled.")]
         public bool TickSyncChildren = false;
 
         /// <summary>
-        /// The default position change threshold value.
+        /// The default position change threshold value.<br />
         /// Any changes above this threshold will be replicated.
         /// </summary>
         public const float PositionThresholdDefault = 0.001f;
 
         /// <summary>
-        /// The default rotation angle change threshold value.
+        /// The default rotation angle change threshold value.<br />
         /// Any changes above this threshold will be replicated.
         /// </summary>
         public const float RotAngleThresholdDefault = 0.01f;
 
         /// <summary>
-        /// The default scale change threshold value.
+        /// The default scale change threshold value.<br />
         /// Any changes above this threshold will be replicated.
         /// </summary>
         public const float ScaleThresholdDefault = 0.01f;
@@ -1197,12 +1258,13 @@ namespace Unity.Netcode.Components
         /// are sent using a reliable fragmented sequenced network delivery.
         /// </summary>
         /// <remarks>
-        /// The following more critical state updates are still sent as reliable fragmented sequenced:
-        /// - The initial synchronization state update
-        /// - The teleporting state update.
-        /// - When using half float precision and the `NetworkDeltaPosition` delta exceeds the maximum delta forcing the axis in
-        /// question to be collapsed into the core base position, this state update will be sent as reliable fragmented sequenced.
-        ///
+        /// The following more critical state updates are still sent as reliable fragmented sequenced:<br />
+        /// <list type="bullet">
+        /// <item><description>The initial synchronization state update.</description></item>
+        /// <item><description>The teleporting state update.</description></item>
+        /// <item><description>When using half float precision and the `NetworkDeltaPosition` delta exceeds the maximum delta forcing the axis in
+        /// question to be collapsed into the core base position, this state update will be sent as reliable fragmented sequenced.</description></item>
+        /// </list>
         /// In order to preserve a continual consistency of axial values when unreliable delta messaging is enabled (due to the
         /// possibility of dropping packets), NetworkTransform instances will send 1 axial frame synchronization update per
         /// second (only for the axis marked to synchronize are sent as reliable fragmented sequenced) as long as a delta state
@@ -1324,8 +1386,16 @@ namespace Unity.Netcode.Components
         /// The rotation threshold value that triggers a delta state update by the authoritative instance.
         /// </summary>
         /// <remarks>
-        /// Minimum Value: 0.00001
-        /// Maximum Value: 360.0
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Minimum Value</term>
+        /// <description>0.00001</description>
+        /// </item>
+        /// <item>
+        /// <term>Maximum Value</term>
+        /// <description>360.0</description>
+        /// </item>
+        /// </list>
         /// </remarks>
         [Range(0.00001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
@@ -1339,7 +1409,7 @@ namespace Unity.Netcode.Components
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
-        /// Enable this on the authority side for quaternion synchronization
+        /// Enable this on the authority side for quaternion synchronization.
         /// </summary>
         /// <remarks>
         /// This is synchronized by authority. During runtime, this should only be changed by the
@@ -1355,7 +1425,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// This has a lower precision than half float precision. Recommended only for low precision
         /// scenarios. <see cref="UseHalfFloatPrecision"/> provides better precision at roughly half
-        /// the cost of a full quaternion update.
+        /// the cost of a full quaternion update.<br />
         /// This is synchronized by authority. During runtime, this should only be changed by the
         /// authoritative side. Non-authoritative instances will be overridden by the next
         /// authoritative state update.
@@ -1364,7 +1434,7 @@ namespace Unity.Netcode.Components
         public bool UseQuaternionCompression = false;
 
         /// <summary>
-        /// Enable this to use half float precision for position, rotation, and scale.
+        /// Enable this to use half float precision for position, rotation, and scale.<br />
         /// When enabled, delta position synchronization is used.
         /// </summary>
         /// <remarks>
@@ -1449,20 +1519,44 @@ namespace Unity.Netcode.Components
         /// Helper method that returns the space relative position of the transform.
         /// </summary>
         /// <remarks>
-        /// If InLocalSpace is <see cref="true"/> then it returns the transform.localPosition
-        /// If InLocalSpace is <see cref="false"/> then it returns the transform.position
-        /// When invoked on the non-authority side:
-        /// If <see cref="getCurrentState"/> is true then it will return the most
+        /// <list type="bullet">
+        /// <item><description>If InLocalSpace is <see cref="true"/> then it returns the transform.localPosition.</description></item>
+        /// <item><description>If InLocalSpace is <see cref="false"/> then it returns the transform.position.</description></item>
+        /// </list>
+        /// <list type="bullet">
+        /// <item>
+        /// <term>When invoked on the non-authority side:</term>
+        /// <description>If <see cref="getCurrentState"/> is true then it will return the most
         /// current authority position from the most recent state update. This can be useful
         /// if interpolation is enabled and you need to determine the final target position.
-        /// When invoked on the authority side:
-        /// It will always return the space relative position.
+        /// </description></item>
+        /// <item>
+        /// <term>When invoked on the authority side:</term>
+        /// <description>It will always return the space relative position.
+        /// </description></item>
         /// </remarks>
         /// <param name="getCurrentState">
-        /// Authority always returns the space relative transform position (whether true or false).
-        /// Non-authority:
-        /// When false (default): returns the space relative transform position
-        /// When true: returns the authority position from the most recent state update.
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Authority</term>
+        /// <description>Always returns the space relative transform position (whether true or false).
+        /// </description></item>
+        /// <item>
+        /// <term>Non-authority:</term>
+        /// <list type="bullet">
+        ///     <item>
+        ///     <term>When false(default)</term>
+        ///     <description>Returns the space relative transform position.
+        ///     </description>
+        ///     </item>
+        ///     <item>
+        ///     <term>When true</term>
+        ///     <description>
+        ///     Returns the authority position from the most recent state update.
+        ///     </description>
+        ///     </item>
+        /// </list>
+        /// </item>
         /// </param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1491,20 +1585,37 @@ namespace Unity.Netcode.Components
         /// Helper method that returns the space relative rotation of the transform.
         /// </summary>
         /// <remarks>
-        /// If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation
-        /// If InLocalSpace is <see cref="false"/> then it returns the transform.rotation
-        /// When invoked on the non-authority side:
+        /// If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation.<br/>
+        /// If InLocalSpace is <see cref="false"/> then it returns the transform.rotation.<br/>
+        /// When invoked on the non-authority side:<br/>
         /// If <see cref="getCurrentState"/> is true then it will return the most
         /// current authority rotation from the most recent state update. This can be useful
-        /// if interpolation is enabled and you need to determine the final target rotation.
-        /// When invoked on the authority side:
-        /// It will always return the space relative rotation.
+        /// if interpolation is enabled and you need to determine the final target rotation.<br/>
+        /// When invoked on the authority side:<br/>
+        /// It will always return the space relative rotation.<br/>
         /// </remarks>
         /// <param name="getCurrentState">
-        /// Authority always returns the space relative transform rotation (whether true or false).
-        /// Non-authority:
-        /// When false (default): returns the space relative transform rotation
-        /// When true: returns the authority rotation from the most recent state update.
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Authority</term>
+        /// <description>Always returns the space relative transform rotation (whether true or false).
+        /// </description></item>
+        /// <item>
+        /// <term>Non-authority:</term>
+        /// <list type="bullet">
+        ///     <item>
+        ///     <term>When false(default)</term>
+        ///     <description>Returns the space relative transform rotation.
+        ///     </description>
+        ///     </item>
+        ///     <item>
+        ///     <term>When true</term>
+        ///     <description>
+        ///     Returns the authority rotation from the most recent state update.
+        ///     </description>
+        ///     </item>
+        /// </list>
+        /// </item>
         /// </param>
         /// <returns><see cref="Quaternion"/></returns>
         public Quaternion GetSpaceRelativeRotation(bool getCurrentState = false)
@@ -4004,6 +4115,7 @@ namespace Unity.Netcode.Components
             if (m_UseRigidbodyForMotion)
             {
                 tickLatencyAsTime += m_FixedTimeFrameDelta;
+                currentTime += m_FixedTimeFrameDelta;
             }
 #endif
 
