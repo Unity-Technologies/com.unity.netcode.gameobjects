@@ -2,7 +2,6 @@ using System.Collections;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
