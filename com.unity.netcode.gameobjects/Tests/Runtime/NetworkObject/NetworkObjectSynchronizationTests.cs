@@ -86,7 +86,6 @@ namespace Unity.Netcode.RuntimeTests
 
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_VariableLengthSafety == VariableLengthSafety.EnabledNetVarSafety;
-
             // Disable forcing the same prefabs to avoid failed connections
             networkManager.NetworkConfig.ForceSamePrefabs = false;
             networkManager.LogLevel = m_CurrentLogLevel;
