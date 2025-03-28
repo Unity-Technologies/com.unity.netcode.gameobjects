@@ -754,9 +754,12 @@ namespace Unity.Netcode
                 m_BufferQueue.Enqueue(entry);
             }
             InterpolateState.CurrentValue = OnConvertTransformSpace(transform, InterpolateState.CurrentValue, inLocalSpace);
-            var end = InterpolateState.Target.Value;
-            end.Item = OnConvertTransformSpace(transform, end.Item, inLocalSpace);
-            InterpolateState.Target = end;
+            if (InterpolateState.Target.HasValue)
+            {
+                var end = InterpolateState.Target.Value;
+                end.Item = OnConvertTransformSpace(transform, end.Item, inLocalSpace);
+                InterpolateState.Target = end;
+            }
             InLocalSpace = inLocalSpace;
         }
     }
