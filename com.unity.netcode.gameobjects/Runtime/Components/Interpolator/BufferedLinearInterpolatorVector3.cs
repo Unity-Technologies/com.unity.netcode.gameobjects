@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,6 +14,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsSlerp;
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
         {
             if (IsSlerp)
@@ -26,6 +28,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
         {
             if (IsSlerp)
@@ -39,6 +42,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal override Vector3 OnConvertTransformSpace(Transform transform, Vector3 position, bool inLocalSpace)
         {
             if (inLocalSpace)
@@ -53,12 +57,14 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
         {
             return Vector3.Distance(first, second) <= precision;
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
         {
             if (m_IsAngularValue)

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -21,6 +22,7 @@ namespace Unity.Netcode
         public bool IsSlerp;
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
             if (IsSlerp)
@@ -34,6 +36,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             if (IsSlerp)
@@ -47,6 +50,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override Quaternion SmoothDamp(Quaternion current, Quaternion target, ref Quaternion rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
         {
             Vector3 currentEuler = current.eulerAngles;
@@ -61,6 +65,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override bool IsAproximately(Quaternion first, Quaternion second, float precision)
         {
             return Mathf.Abs(first.x - second.x) <= precision &&
@@ -70,6 +75,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal override Quaternion OnConvertTransformSpace(Transform transform, Quaternion rotation, bool inLocalSpace)
         {
             if (inLocalSpace)
