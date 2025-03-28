@@ -1041,9 +1041,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description>
-        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description>
-        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description>
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
         /// Things to consider:<br />
         /// <list type="bullet">
         /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
@@ -1059,9 +1059,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description>
-        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description>
-        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description>
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
         /// Things to consider:<br />
         /// <list type="bullet">
         /// <item><description>You can have mixed interpolation types between position, rotation, and scale on the same <see cref="NetworkTransform"/> instance.</description></item>
@@ -1534,6 +1534,7 @@ namespace Unity.Netcode.Components
         /// <term>When invoked on the authority side:</term>
         /// <description>It will always return the space relative position.
         /// </description></item>
+        /// </list>
         /// </remarks>
         /// <param name="getCurrentState">
         /// <list type="bullet">
@@ -1616,6 +1617,7 @@ namespace Unity.Netcode.Components
         ///     </item>
         /// </list>
         /// </item>
+        /// </list>
         /// </param>
         /// <returns><see cref="Quaternion"/></returns>
         public Quaternion GetSpaceRelativeRotation(bool getCurrentState = false)
