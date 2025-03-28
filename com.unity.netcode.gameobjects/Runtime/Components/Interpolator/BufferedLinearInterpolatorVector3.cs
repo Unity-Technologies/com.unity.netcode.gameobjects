@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -60,7 +61,9 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
         {
-            return Vector3.Distance(first, second) <= precision;
+            return Math.Round(Mathf.Abs(first.x - second.x), 2) <= precision &&
+                Math.Round(Mathf.Abs(first.y - second.y), 2) <= precision &&
+                Math.Round(Mathf.Abs(first.z - second.z), 2) <= precision;
         }
 
         /// <inheritdoc />
