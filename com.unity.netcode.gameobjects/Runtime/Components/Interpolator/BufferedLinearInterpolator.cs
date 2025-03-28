@@ -335,7 +335,7 @@ namespace Unity.Netcode
                 if (!noStateSet)
                 {
                     potentialItemNeedsProcessing = (potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent >= InterpolateState.Target.Value.TimeSent;
-                    currentTargetTimeReached = InterpolateState.TargetTimeAproximatelyReached(potentialItemNeedsProcessing ? 1.0f : 0.85f) || InterpolateState.TargetReached;
+                    currentTargetTimeReached = InterpolateState.TargetTimeAproximatelyReached(potentialItemNeedsProcessing ? 1.15f : 1.0f) || InterpolateState.TargetReached;
                     if (!InterpolateState.TargetReached)
                     {
                         InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
@@ -463,7 +463,7 @@ namespace Unity.Netcode
                     if (LerpSmoothEnabled)
                     {
                         // Apply the smooth lerp to the target to help smooth the final value.
-                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / (MaximumInterpolationTime * 0.3333f));
+                        InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, targetValue, deltaTime / MaximumInterpolationTime);
                     }
                     else
                     {
@@ -574,10 +574,10 @@ namespace Unity.Netcode
                 // The original BufferedLinearInterpolator lerping script to assure the Smooth Dampening updates do not impact
                 // this specific behavior.
                 float t = 1.0f;
-                double range = InterpolateState.EndTime - InterpolateState.StartTime;
-                if (range > k_SmallValue)
+                InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
+                if (InterpolateState.TimeToTargetValue > k_SmallValue)
                 {
-                    t = (float)((renderTime - InterpolateState.StartTime) / range);
+                    t = (float)((renderTime - InterpolateState.StartTime) / InterpolateState.TimeToTargetValue);
 
                     if (t < 0.0f)
                     {

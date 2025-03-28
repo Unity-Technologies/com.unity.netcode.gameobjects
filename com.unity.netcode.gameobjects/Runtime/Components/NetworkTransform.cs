@@ -4045,6 +4045,15 @@ namespace Unity.Netcode.Components
             PositionStats.Clear();
         }
 #endif
+        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
+        {
+            return m_PositionInterpolator;
+        }
+
+        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
+        {
+            return m_RotationInterpolator;
+        }
 
         // Non-Authority
         private void UpdateInterpolation()
@@ -4145,13 +4154,12 @@ namespace Unity.Netcode.Components
                     m_PreviousRotationLerpSmoothing = RotationLerpSmoothing;
                     m_RotationInterpolator.ResetCurrentState();
                 }
-
+                // When using half precision Lerp towards the target rotation.
+                // When using full precision Slerp towards the target rotation.
+                /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
+                m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
                 if (RotationInterpolationType == InterpolationTypes.Lerp)
                 {
-                    // When using half precision Lerp towards the target rotation.
-                    // When using full precision Slerp towards the target rotation.
-                    /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
-                    m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
                     m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
