@@ -85,8 +85,7 @@ namespace Unity.Netcode.RuntimeTests
             // Disable forcing the same prefabs to avoid failed connections
             networkManager.NetworkConfig.ForceSamePrefabs = false;
             networkManager.LogLevel = m_CurrentLogLevel;
-
-            // To simulate a failure, we exclude the m_InValidNetworkPrefab from the connecting client's side.
+            // To simulate a failure, exclude the m_InValidNetworkPrefab from the connecting client's side.
             networkManager.NetworkConfig.Prefabs.Remove(m_InValidNetworkPrefab);
         }
 
