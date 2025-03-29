@@ -236,6 +236,46 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(2, callbacksInvoked, "either OnServerStarted or OnClientStarted wasn't invoked");
         }
 
+        [UnityTest]
+        public IEnumerator OnPreShutdownCalledWhenShuttingDown()
+        {
+            bool preShutdownInvoked = false;
+            bool shutdownInvoked = false;
+            var gameObject = new GameObject(nameof(OnPreShutdownCalledWhenShuttingDown));
+            m_ServerManager = gameObject.AddComponent<NetworkManager>();
+
+            // Set dummy transport that does nothing
+            var transport = gameObject.AddComponent<DummyTransport>();
+            m_ServerManager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            Action onPreShutdown = () =>
+            {
+                preShutdownInvoked = true;
+                Assert.IsFalse(shutdownInvoked, "OnPreShutdown was invoked after OnServerStopped");
+            };
+
+            Action<bool> onServerStopped = (bool wasAlsoClient) =>
+            {
+                shutdownInvoked = true;
+                Assert.IsTrue(preShutdownInvoked, "OnPreShutdown wasn't invoked before OnServerStopped");
+            };
+
+            // Start server to cause initialization process
+            Assert.True(m_ServerManager.StartServer());
+            Assert.True(m_ServerManager.IsListening);
+
+            m_ServerManager.OnPreShutdown += onPreShutdown;
+            m_ServerManager.OnServerStopped += onServerStopped;
+            m_ServerManager.Shutdown();
+            Object.DestroyImmediate(gameObject);
+
+            yield return WaitUntilManagerShutsdown();
+
+            Assert.False(m_ServerManager.IsListening);
+            Assert.True(preShutdownInvoked, "OnPreShutdown wasn't invoked");
+            Assert.True(shutdownInvoked, "OnServerStopped wasn't invoked");
+        }
+
         private IEnumerator WaitUntilManagerShutsdown()
         {
             /* Need two updates to actually shut down. First one to see the transport failing, which
