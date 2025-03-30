@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.Netcode.Components;
 using UnityEngine;
 using System.Linq;
 
@@ -15,12 +14,14 @@ using UnityEditor;
 [CanEditMultipleObjects]
 public class PlayerBallMotionEditor : NetworkTransformEditor
 {
+    private SerializedProperty m_TrackInstances;
     private SerializedProperty m_RotationAxis;
     private SerializedProperty m_RotationSpeed;
     
 
     public override void OnEnable()
     {
+        m_TrackInstances = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.TrackAuthorityInstances));
         m_RotationAxis = serializedObject.FindProperty(nameof(PlayerBallMotion.RotationAxis));
         m_RotationSpeed = serializedObject.FindProperty(nameof(PlayerBallMotion.RotationSpeed));
         base.OnEnable();
@@ -28,6 +29,7 @@ public class PlayerBallMotionEditor : NetworkTransformEditor
 
     private void DrawPlayerBallMotionProperties()
     {
+        EditorGUILayout.PropertyField(m_TrackInstances);
         EditorGUILayout.PropertyField(m_RotationAxis);
         EditorGUILayout.PropertyField(m_RotationSpeed);
     }
@@ -42,7 +44,7 @@ public class PlayerBallMotionEditor : NetworkTransformEditor
 }
 #endif
 
-public class PlayerBallMotion : NetworkTransform
+public class PlayerBallMotion : AuthorityTrackedNetworkTransform
 {
 #if UNITY_EDITOR
     public bool ExpandPlayerBallMotion;

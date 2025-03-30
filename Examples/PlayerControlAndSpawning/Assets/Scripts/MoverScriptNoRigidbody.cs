@@ -1,6 +1,6 @@
 using UnityEngine;
-using Unity.Netcode.Components;
 using Unity.Netcode;
+using UnityEngine.PlayerLoop;
 #if UNITY_EDITOR
 using Unity.Netcode.Editor;
 using UnityEditor;
@@ -12,6 +12,7 @@ using UnityEditor;
 [CanEditMultipleObjects]
 public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 {
+    private SerializedProperty m_TrackInstances;
     private SerializedProperty m_SpawnAsPlayer;
     private SerializedProperty m_Radius;
     private SerializedProperty m_Increment;
@@ -23,6 +24,7 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 
     public override void OnEnable()
     {
+        m_TrackInstances = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.TrackAuthorityInstances));
         m_SpawnAsPlayer = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.SpawnAsPlayer));
         m_Radius = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.SpawnRadius));
         m_Increment = serializedObject.FindProperty(nameof(MoverScriptNoRigidbody.Increment));
@@ -37,6 +39,7 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 
     private void DisplayerMoverScriptNoRigidbodyProperties()
     {
+        EditorGUILayout.PropertyField(m_TrackInstances);
         EditorGUILayout.PropertyField(m_SpawnAsPlayer);
         EditorGUILayout.PropertyField(m_Radius);
         EditorGUILayout.PropertyField(m_Increment);
@@ -60,7 +63,7 @@ public class MoverScriptNoRigidbodyEditor : NetworkTransformEditor
 /// <summary>
 /// The player controller for the player prefab
 /// </summary>
-public class MoverScriptNoRigidbody : NetworkTransform
+public class MoverScriptNoRigidbody : AuthorityTrackedNetworkTransform
 {
 #if UNITY_EDITOR
     // Inspector view expand/collapse settings for this derived child class
@@ -218,19 +221,28 @@ public class MoverScriptNoRigidbody : NetworkTransform
             return;
         }
 
-        if (!SpawnAsPlayer)
-        {
-            if (!CanCommitToTransform)
-            {
-                Camera.main.transform.LookAt(transform);
-                return;
-            }
-        }
+
         else if (!CanCommitToTransform)
         {
             return;
         }
         ApplyInput();
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsSpawned)
+        {
+            return;
+        }
+
+        if (!SpawnAsPlayer)
+        {
+            if (!CanCommitToTransform)
+            {
+                Camera.main.transform.LookAt(transform, Vector3.up);
+            }
+        }
     }
 
     private Vector3 m_PushMotion = Vector3.zero;

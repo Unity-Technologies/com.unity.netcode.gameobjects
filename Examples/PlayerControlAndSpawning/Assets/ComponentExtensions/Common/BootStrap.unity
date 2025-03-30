@@ -153,7 +153,7 @@ MonoBehaviour:
     DisplayName: In-Scene Object Spawning
   - SceneToLoad: ControlExitingApplicationBootStrap
     DisplayName: Control Exit Application
-  - SceneToLoad: ManualSpawningBootStrap
+  - SceneToLoad: ManualPlayerSpawningBootStrap
     DisplayName: Manual Player Spawning
   - SceneToLoad: TransferPlayerControlBootStrap
     DisplayName: Transfer Player Control
