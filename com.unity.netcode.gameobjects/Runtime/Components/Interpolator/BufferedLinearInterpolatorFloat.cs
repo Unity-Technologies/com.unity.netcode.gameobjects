@@ -34,14 +34,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override float SmoothDamp(float current, float target, ref float rateOfChange, float duration, float deltaTime, float maxSpeed = float.PositiveInfinity)
         {
-            if (m_IsAngularValue)
-            {
-                return Mathf.SmoothDampAngle(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
-            }
-            else
-            {
-                return Mathf.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
-            }
+            return Mathf.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
         }
     }
 }

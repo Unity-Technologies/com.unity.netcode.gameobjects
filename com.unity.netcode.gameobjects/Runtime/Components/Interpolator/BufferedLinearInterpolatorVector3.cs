@@ -70,17 +70,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
         {
-            if (m_IsAngularValue)
-            {
-                current.x = Mathf.SmoothDampAngle(current.x, target.x, ref rateOfChange.x, duration, maxSpeed, deltaTime);
-                current.y = Mathf.SmoothDampAngle(current.y, target.y, ref rateOfChange.y, duration, maxSpeed, deltaTime);
-                current.z = Mathf.SmoothDampAngle(current.z, target.z, ref rateOfChange.z, duration, maxSpeed, deltaTime);
-                return current;
-            }
-            else
-            {
-                return Vector3.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
-            }
+            return Vector3.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
         }
     }
 }
