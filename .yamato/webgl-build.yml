@@ -25,6 +25,7 @@
   
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
+{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.all -%}
 webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
@@ -37,7 +38,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% endif %}
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c webgl -c il2cpp {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloading the editor with additional webgl and il2cpp components
-  
+    
     # The following step builds the player with defined options such as:
     # Suite parameter if defined since it's a mandatory field to define which test suite should be used, but it doesn't matter in this case since we won't run any tests (--suite)
     # Editor is run in batchmode, which means that Unity runs command line arguments without the need for human interaction. It also suppresses pop-up windows that require human interaction (such as the Save Scene window). We should always run Unity in batch mode when using command line arguments, because it allows automation to run without interruption. (--extra-editor-arg=-batchmode)
@@ -51,5 +52,6 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
         - "artifacts/**/*"
         - "build/players/**/*"
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}

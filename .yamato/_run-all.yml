@@ -102,9 +102,11 @@ run_all_webgl_builds:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
+{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.all -%}
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 
@@ -115,9 +117,11 @@ run_all_webgl_builds_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
+{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.default -%}
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 
@@ -127,7 +131,9 @@ run_all_webgl_builds_2021:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
+{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_2021.3
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 
