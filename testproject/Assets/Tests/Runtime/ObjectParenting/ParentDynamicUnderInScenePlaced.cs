@@ -46,15 +46,6 @@ namespace TestProject.RuntimeTests
             return base.OnStartedServerAndClients();
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
-            base.OnNewClientCreated(networkManager);
-        }
-
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);

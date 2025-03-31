@@ -339,7 +339,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
             networkManager.NetworkConfig.TickRate = GetTickRate();
             if (m_EnableVerboseDebug)
             {

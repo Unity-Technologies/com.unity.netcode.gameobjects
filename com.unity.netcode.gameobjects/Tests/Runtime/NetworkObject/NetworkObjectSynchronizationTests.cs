@@ -76,21 +76,17 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
+            // Setup late joining client prefabs first
+            base.OnNewClientCreated(networkManager);
+
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_VariableLengthSafety == VariableLengthSafety.EnabledNetVarSafety;
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                // To simulate a failure, we exclude the m_InValidNetworkPrefab from the connecting
-                // client's side.
-                if (networkPrefab.Prefab.name != m_InValidNetworkPrefab.name)
-                {
-                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-                }
-            }
+
             // Disable forcing the same prefabs to avoid failed connections
             networkManager.NetworkConfig.ForceSamePrefabs = false;
             networkManager.LogLevel = m_CurrentLogLevel;
-            base.OnNewClientCreated(networkManager);
+            // To simulate a failure, exclude the m_InValidNetworkPrefab from the connecting client's side.
+            networkManager.NetworkConfig.Prefabs.Remove(m_InValidNetworkPrefab);
         }
 
         [UnityTest]
