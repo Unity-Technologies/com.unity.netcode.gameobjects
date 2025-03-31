@@ -51,6 +51,11 @@ namespace Unity.Netcode
         public float FixedDeltaTime => (float)m_TickInterval;
 
         /// <summary>
+        /// Gets the fixed delta time as a double. This value is calculated by dividing 1.0 by the <see cref="TickRate"/> and stays constant.
+        /// </summary>
+        public double FixedDeltaTimeAsDouble => m_TickInterval;
+
+        /// <summary>
         /// Gets the amount of network ticks which have passed until reaching the current time value.
         /// </summary>
         public int Tick => m_CachedTick;
