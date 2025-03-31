@@ -2785,7 +2785,7 @@ namespace Unity.Netcode.Components
 
             Initialize();
 
-            if (CanCommitToTransform && UseHalfFloatPrecision)
+            if (CanCommitToTransform)
             {
                 SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
             }
