@@ -432,6 +432,15 @@ namespace Unity.Netcode
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId, bool isAuthorized, bool isRequestApproval = false)
         {
+            if (clientId == networkObject.OwnerClientId)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{nameof(NetworkSpawnManager)}][{nameof(ChangeOwnership)}] Attempting to change ownership to Client-{clientId} when the owner is already {networkObject.OwnerClientId}! (Ignoring)");
+                }
+                return;
+            }
+
             // For client-server:
             // If ownership changes faster than the latency between the client-server and there are NetworkVariables being updated during ownership changes,
             // then notify the user they could potentially lose state updates if developer logging is enabled.
@@ -530,6 +539,10 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Save the previous owner to work around a bit of a nasty issue with assuring NetworkVariables are serialized when ownership changes
+            var originalPreviousOwnerId = networkObject.PreviousOwnerId;
+            var originalOwner = networkObject.OwnerClientId;
+
             // Used to distinguish whether a new owner should receive any currently dirty NetworkVariable updates
             networkObject.PreviousOwnerId = networkObject.OwnerClientId;
 
@@ -545,13 +558,10 @@ namespace Unity.Netcode
             // Always notify locally on the server when a new owner is assigned
             networkObject.InvokeBehaviourOnGainedOwnership();
 
-            if (networkObject.PreviousOwnerId == NetworkManager.LocalClientId)
+            // If we are the original owner, then we want to synchronize owner read & write NetworkVariables.
+            if (originalOwner == NetworkManager.LocalClientId)
             {
-                // Mark any owner read variables as dirty
-                networkObject.MarkOwnerReadVariablesDirty();
-                // Immediately queue any pending deltas and order the message before the
-                // change in ownership message.
-                NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, originalPreviousOwnerId);
             }
 
             var size = 0;

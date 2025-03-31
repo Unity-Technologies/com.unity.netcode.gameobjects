@@ -826,7 +826,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// In client-server contexts, this method is invoked on both the server and the local client of the owner when <see cref="Netcode.NetworkObject"/> ownership is assigned.
-        /// In distributed authority contexts, this method is only invoked on the local client that has been assigned ownership of the associated <see cref="Netcode.NetworkObject"/>.
+        /// In distributed authority contexts, this method is invoked on all clients connected to the session.
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -863,7 +863,7 @@ namespace Unity.Netcode
         /// <summary>
         /// In client-server contexts, this method is invoked on the local client when it loses ownership of the associated <see cref="Netcode.NetworkObject"/>
         /// and on the server when any client loses ownership.
-        /// In distributed authority contexts, this method is only invoked on the local client that has lost ownership of the associated <see cref="Netcode.NetworkObject"/>.
+        /// In distributed authority contexts, this method is invoked on all clients connected to the session.
         /// </summary>
         public virtual void OnLostOwnership() { }
 
@@ -1185,13 +1185,22 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// For owner read permissions, when changing ownership we need to do a full synchronization
+        /// of all NetworkVariables that are owner read permission based since the owner is the only
+        /// instance that knows what the most current values are.
+        /// </summary>
+        internal void MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty()
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
                 {
                     NetworkVariableFields[j].SetDirty(true);
+                }
+                if (NetworkVariableFields[j].WritePerm == NetworkVariableWritePermission.Owner)
+                {
+                    NetworkVariableFields[j].OnCheckIsDirtyState();
                 }
             }
         }

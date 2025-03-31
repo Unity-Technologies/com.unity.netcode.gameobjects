@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
 - Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
 - Added a new smooth dampening interpolator type that provides a nice balance between precision and smoothing results. (#3337)
 - Added `NetworkTimeSystem.TickLatency` property that provides the average latency of a client. (#3337)
@@ -20,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue when using a distributed authority network topology and many clients attempt to connect simultaneously the session owner could max-out the maximum in-flight reliable messages allowed, start dropping packets, and some of the connecting clients would fail to fully synchronize. (#3350)
 - Fixed issue when using a distributed authority network topology and scene management was disabled clients would not be able to spawn any new network prefab instances until synchronization was complete. (#3350)
+- Fixed issue where an owner that changes ownership, when using a distributed authority network topology, could yield identical previous and current owner identifiers. This could also cause `NetworkTransform` to fail to change ownership which would leave the previous owner still subscribed to network tick events. (#3347)
 - Fixed issue where the `MaximumInterpolationTime` could not be modified from within the inspector view or runtime. (#3337)
 - Fixed `ChangeOwnership` changing ownership to clients that are not observers. This also happened with automated object distribution. (#3323)
 - Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3306)
