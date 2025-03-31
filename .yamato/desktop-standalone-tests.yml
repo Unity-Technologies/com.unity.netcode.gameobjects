@@ -1,57 +1,50 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on desktop standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
-# Default project (testptoject) in this case is used as a context.
-# Builds are made on each desktop platform as in project.metafile declaration
-# Builds are made on each supported editor as in project.metafile declaration
-# Builds are made with different scripting backends as in project.metafile declaration
-# ARM64 architectures are for now not considered since Windows_arm64 is recommended to use only after builds (would require separation here) and when it comes to macOS_arm64 there is problem with OpenCL not being available
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for Desktop platform test validation.
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies.
   
-# Build phase
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all desktop platform (Windows, macOS, Ubuntu)
+    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
+    # 3. For the default project.
+    # 4. For all scripting backends (mono, il2cpp)
+  
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # For desktop devices a split is into two phases is not required but we use it for consistency with setup of others standalone platforms:
+    # 1. Build Phase: Creates standalone players for desktop platforms
+    # 2. Run Phase: Executes runtime tests on actual desktop devices
+  # The Run phase uses build job as dependency
+  
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # TODO: consider adding all projects that have tests
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#-----------------------------------------------------------------------------------
+  
+  
+# BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Build - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-# Installing tools
-{% if platform.name == "ubuntu" %}
-    - sudo apt-get update -q
-    - sudo apt install -qy imagemagick
-{% endif %}
-  
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-  
-# Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
-  
-# Installing editor
-    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
-# Build Player
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% else %}
-      ./utr --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-{% endif %}
-
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --testproject={{ project.path }} --scripting-backend={{ backend }} --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --artifacts-path=artifacts --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     players:
       paths:
@@ -59,10 +52,8 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
     logs:
       paths:
         - "artifacts/**/*"
-        
   dependencies:
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
-{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -71,49 +62,29 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
   
   
   
-# Run phase
+# RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.all -%}
 {% for backend in scripting_backends -%}
-# There is an error 'No usable version of libssl' when it comes to building with combination of ubuntu and 2021 editor. It's not really worth to address it since 
-# 1) The 2021 editor will soon be out of support
-# 2) We still have the same coverage by using mac and ubuntu is used in a whole bunch of different tests, so I'm quite sure it won't lead to any bug leaks
-# 3) The solution could be to manually install libss1.1 (since image has libssl3 and this causes conflicts on 2021 editor related to dotnet versions and support). There were several threads on this topic which can be looked on
-{% if editor != "2021.3" or platform.name != "ubuntu" %}
 desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : Standalone Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
     type: {% if platform.name == "mac" %} {{ platform.type }} {% else %} {{ platform.type }}::GPU {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-# Platform specific UTR setup
-    - |
-{% if platform.name == "win" %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-{% else %}
-      curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr && chmod +x utr
-{% endif %}
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-
-    - unity-downloader-cli -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} --fast --wait
-  
-# Run Standalone tests
-    - |
-{% if platform.name == "win" %}
-      utr.bat --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-{% else %}
-      ./utr --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-{% endif %}
-
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %}
+    - UnifiedTestRunner --suite=playmode --player-load-path=build/players --artifacts-path=test-results --testproject={{ project.path }} --editor-location=.Editor --playergraphicsapi=Null --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
   artifacts:
     logs:
       paths:
         - "test-results/**/*"
   dependencies:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

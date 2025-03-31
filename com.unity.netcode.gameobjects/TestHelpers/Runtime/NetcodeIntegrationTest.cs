@@ -25,9 +25,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         internal static bool IsRunning { get; private set; }
 
+        /// <summary>
+        /// A global instance of <see cref="TimeoutHelper"/> used to manage timeouts during integration tests.
+        /// </summary>
         protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(8.0f);
+
+        /// <summary>
+        /// A default wait time used to yield for one tick interval during integration tests.
+        /// This is calculated based on the default tick rate of the server's NetworkManager.
+        /// </summary>
         protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
 
+        /// <summary>
+        /// An instance of <see cref="NetcodeLogAssert"/> used to capture and assert log messages during integration tests.
+        /// This helps in verifying that expected log messages are produced and unexpected log messages are not.
+        /// </summary>
         public NetcodeLogAssert NetcodeLogAssert;
 
         /// <summary>
@@ -41,6 +53,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected static Dictionary<ulong, Dictionary<ulong, NetworkObject>> s_GlobalNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
+        /// <summary>
+        /// Registers a NetworkObject to the global list of spawned NetworkObjects.
+        /// </summary>
+        /// <param name="networkObject">The NetworkObject to register.</param>
         public static void RegisterNetworkObject(NetworkObject networkObject)
         {
             if (!s_GlobalNetworkObjects.ContainsKey(networkObject.NetworkManager.LocalClientId))
@@ -66,6 +82,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Deregisters a NetworkObject from the global list of spawned NetworkObjects.
+        /// </summary>
+        /// <param name="networkObject">The NetworkObject to deregister.</param>
         public static void DeregisterNetworkObject(NetworkObject networkObject)
         {
             if (networkObject.IsSpawned && networkObject.NetworkManager != null)
@@ -74,6 +94,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Deregisters a NetworkObject from the global list of spawned NetworkObjects using the clientId and NetworkObjectId.
+        /// </summary>
+        /// <param name="localClientId">clientId who owns the object.</param>
+        /// <param name="networkObjectId">The NetworkObjectId of the NetworkObject.</param>
         public static void DeregisterNetworkObject(ulong localClientId, ulong networkObjectId)
         {
             if (s_GlobalNetworkObjects.ContainsKey(localClientId) && s_GlobalNetworkObjects[localClientId].ContainsKey(networkObjectId))
@@ -86,11 +111,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Gets the total number of clients, including the host if applicable.
+        /// </summary>
         protected int TotalClients => m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
 
+        /// <summary>
+        /// The default tick rate used for the server's NetworkManager.
+        /// This value is used to calculate the default wait time for one tick interval during integration tests.
+        /// </summary>
         protected const uint k_DefaultTickRate = 30;
 
         private int m_NumberOfClients;
+
+        /// <summary>
+        /// Gets the number of clients to be created for the integration test.
+        /// </summary>
         protected abstract int NumberOfClients { get; }
 
         /// <summary>
@@ -102,21 +138,56 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected bool m_CreateServerFirst = true;
 
+        /// <summary>
+        /// Specifies the mode of NetworkManager instantiation and destruction for the integration test.
+        /// </summary>
         public enum NetworkManagerInstatiationMode
         {
-            PerTest, // This will create and destroy new NetworkManagers for each test within a child derived class
-            AllTests, // This will create one set of NetworkManagers used for all tests within a child derived class (destroyed once all tests are finished)
-            DoNotCreate // This will not create any NetworkManagers, it is up to the derived class to manage.
+            /// <summary>
+            /// Creates and destroys new NetworkManagers for each test within a child derived class.
+            /// </summary>
+            PerTest,
+
+            /// <summary>
+            /// Creates one set of NetworkManagers used for all tests within a child derived class, destroyed once all tests are finished.
+            /// </summary>
+            AllTests,
+
+            /// <summary>
+            /// Does not create any NetworkManagers; it is up to the derived class to manage.
+            /// </summary>
+            DoNotCreate
         }
 
+        /// <summary>
+        /// Specifies whether the test should run as a host or server.
+        /// </summary>
         public enum HostOrServer
         {
+            /// <summary>
+            /// Runs the test as a host.
+            /// </summary>
             Host,
+
+            /// <summary>
+            /// Runs the test as a server.
+            /// </summary>
             Server
         }
 
+        /// <summary>
+        /// The player prefab used in the integration test.
+        /// </summary>
         protected GameObject m_PlayerPrefab;
+
+        /// <summary>
+        /// The NetworkManager instance for the server.
+        /// </summary>
         protected NetworkManager m_ServerNetworkManager;
+
+        /// <summary>
+        /// The NetworkManager instances for the clients, one per client.
+        /// </summary>
         protected NetworkManager[] m_ClientNetworkManagers;
 
         /// <summary>
@@ -128,11 +199,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
+        /// <summary>
+        /// Indicates whether the test should run as a host.
+        /// If true, the test will run as a host; otherwise, it will run as a server.
+        /// </summary>
         protected bool m_UseHost = true;
+
+        /// <summary>
+        /// The target frame rate for the integration test.
+        /// This value is used to set the frame rate for the test environment.
+        /// </summary>
         protected int m_TargetFrameRate = 60;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
+        /// <summary>
+        /// Indicates whether verbose debug logging is enabled.
+        /// If true, detailed debug information will be logged during the integration test.
+        /// </summary>
         protected bool m_EnableVerboseDebug { get; set; }
 
         /// <summary>
@@ -221,7 +305,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">The message to log.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void VerboseDebug(string msg)
         {
@@ -236,6 +320,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// to troubleshoot a hard to track bug within an
         /// integration test.
         /// </summary>
+        /// <returns>True if verbose debug logging should be enabled; otherwise, false.</returns>
         protected virtual bool OnSetVerboseDebug()
         {
             return false;
@@ -248,15 +333,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Override this method to change the default mode:
         /// <see cref="NetworkManagerInstatiationMode.AllTests"/>
         /// </summary>
+        /// <returns>The NetworkManager instantiation mode to be used for the integration test.</returns>
         protected virtual NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
             return NetworkManagerInstatiationMode.PerTest;
         }
 
+        /// <summary>
+        /// Override this method to perform any setup that needs to be done once before any tests are run.
+        /// This method is called during the <see cref="OneTimeSetup"/> process.
+        /// </summary>
         protected virtual void OnOneTimeSetup()
         {
         }
 
+        /// <summary>
+        /// Called once before any tests are run to perform setup operations.
+        /// </summary>
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
@@ -284,6 +377,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
         /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected virtual IEnumerator OnSetup()
         {
             yield return null;
@@ -301,6 +395,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
         }
 
+        /// <summary>
+        /// Called before each test is run to perform setup operations.
+        /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         [UnitySetUp]
         public IEnumerator SetUp()
         {
@@ -419,9 +517,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// CreateAndStartNewClient Only
-        /// Invoked when the newly created client has been created
+        /// Invoked when a new client has been created during the integration test.
+        /// Override this method to perform any setup or configuration needed for the new client
+        /// before it is started.
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
         }
@@ -430,6 +530,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// CreateAndStartNewClient Only
         /// Invoked when the newly created client has been created and started
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStarted(NetworkManager networkManager)
         {
         }
@@ -439,6 +540,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked when the newly created client has been created, started, and connected
         /// to the server-host.
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
         {
         }
@@ -450,6 +552,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <remarks>
         /// Use this for testing connection and disconnection scenarios
         /// </remarks>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
+        /// <returns>True if the test should wait for the new client to connect; otherwise, false.</returns>
         protected virtual bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
         {
             return true;
@@ -459,6 +563,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will create, start, and connect a new client while in the middle of an
         /// integration test.
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
@@ -539,6 +644,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// This will stop a client while in the middle of an integration test
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client to stop.</param>
+        /// <param name="destroy">If true, the client's NetworkManager GameObject will be destroyed.</param>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -549,6 +657,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// This will stop a client while in the middle of an integration test
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client to stop.</param>
+        /// <param name="destroy">If true, the client's NetworkManager GameObject will be destroyed.</param>
         protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -556,6 +666,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => !networkManager.IsConnectedClient));
         }
 
+        /// <summary>
+        /// Sets the simulated network latency for time travel.
+        /// </summary>
+        /// <param name="latencySeconds">The amount of latency to simulate in seconds.</param>
         protected void SetTimeTravelSimulatedLatency(float latencySeconds)
         {
             ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
@@ -565,6 +679,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Sets the simulated packet drop rate for time travel.
+        /// </summary>
+        /// <param name="dropRatePercent">The percentage of packets to drop (0 to 100).</param>
         protected void SetTimeTravelSimulatedDropRate(float dropRatePercent)
         {
             ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
@@ -574,6 +692,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Sets the simulated network latency jitter for time travel.
+        /// </summary>
+        /// <param name="jitterSeconds">The amount of jitter to simulate in seconds.</param>
         protected void SetTimeTravelSimulatedLatencyJitter(float jitterSeconds)
         {
             ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
@@ -586,7 +708,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates the server and clients
         /// </summary>
-        /// <param name="numberOfClients"></param>
+        /// <param name="numberOfClients">The number of clients to create.</param>
         protected void CreateServerAndClients(int numberOfClients)
         {
             VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
@@ -632,6 +754,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Override this method and return false in order to be able
         /// to manually control when the server and clients are started.
         /// </summary>
+        /// <returns>True if the server and clients can be started automatically; otherwise, false.</returns>
         protected virtual bool CanStartServerAndClients()
         {
             return true;
@@ -641,6 +764,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked after the server and clients have started.
         /// Note: No connection verification has been done at this point
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected virtual IEnumerator OnStartedServerAndClients()
         {
             yield return null;
@@ -658,6 +782,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked after the server and clients have started and verified
         /// their connections with each other.
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected virtual IEnumerator OnServerAndClientsConnected()
         {
             yield return null;
@@ -719,6 +844,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Initializes the client network managers after they have been started.
+        /// This method creates a dictionary for all player instances relative to each client and server.
+        /// It provides a simpler way to get a specific player instance relative to a client instance.
+        /// </summary>
         protected void ClientNetworkManagerPostStartInit()
         {
             // Creates a dictionary for all player instances client and server relative
@@ -751,8 +881,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Indicates whether all network messages should be logged during the integration test.
+        /// If true, detailed information about all sent and received network messages will be logged.
+        /// </summary>
         protected virtual bool LogAllMessages => false;
 
+        /// <summary>
+        /// Determines whether the test should check for spawned player objects after the server and clients have started and connected.
+        /// Override this method to control whether player objects should be checked for existence after the server and clients are connected.
+        /// </summary>
+        /// <returns>True if the test should check for spawned player objects; otherwise, false.</returns>
         protected virtual bool ShouldCheckForSpawnedPlayers()
         {
             return true;
@@ -762,6 +901,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator StartServerAndClients()
         {
             if (CanStartServerAndClients())
@@ -777,7 +917,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
 
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
-                // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients 
+                // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
                 // to load their own scenes.
                 if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
                 {
@@ -918,6 +1058,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Override this method to control when clients
         /// can fake-load a scene.
         /// </summary>
+        /// <returns>True if clients are allowed to load a scene; otherwise, false.</returns>
         protected virtual bool CanClientsLoad()
         {
             return true;
@@ -927,6 +1068,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Override this method to control when clients
         /// can fake-unload a scene.
         /// </summary>
+        /// <returns>True if clients are allowed to unload a scene; otherwise, false.</returns>
         protected virtual bool CanClientsUnload()
         {
             return true;
@@ -964,6 +1106,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return CanClientsLoad();
         }
 
+        /// <summary>
+        /// Determines whether a scene can be unloaded during the cleanup process.
+        /// Override this method to specify custom logic for deciding if a scene should be unloaded.
+        /// </summary>
+        /// <param name="scene">The scene to check.</param>
+        /// <returns>True if the scene can be unloaded; otherwise, false.</returns>
         protected bool OnCanSceneCleanUpUnload(Scene scene)
         {
             return true;
@@ -1015,15 +1163,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> mode
         /// this is called before ShutdownAndCleanUp.
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected virtual IEnumerator OnTearDown()
         {
             yield return null;
         }
 
+        /// <summary>
+        /// Called during the tear down process if <see cref="m_TearDownIsACoroutine"/> is set to false.
+        /// Override this method to perform any tear down operations that do not require a coroutine.
+        /// </summary>
         protected virtual void OnInlineTearDown()
         {
         }
 
+        /// <summary>
+        /// Called during the tear down process after each test is run to perform cleanup operations.
+        /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -1074,6 +1231,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
         }
 
+        /// <summary>
+        /// Called once after all tests have run to perform cleanup operations.
+        /// </summary>
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
@@ -1103,6 +1263,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <see cref="ShutdownAndCleanUp"/>
         /// </summary>
         /// <param name="networkObject">the network object in question to be destroyed</param>
+        /// <returns>True if the NetworkObject can be destroyed; otherwise, false.</returns>
         protected virtual bool CanDestroyNetworkObject(NetworkObject networkObject)
         {
             return true;
@@ -1165,6 +1326,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded
         /// version of this method
         /// </summary>
+        /// <param name="checkForCondition">A function that checks for the condition to be met.</param>
+        /// <param name="timeOutHelper">An optional TimeoutHelper instance to manage the timeout. If null, the global timeout helper is used.</param>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the checkForCondition function is null.</exception>
         public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeoutHelper timeOutHelper = null)
         {
             if (checkForCondition == null)
@@ -1201,6 +1366,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits for the function condition to return true or it will time out. Uses time travel to simulate this
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
+        /// <param name="checkForCondition">A function that checks for the condition to be met.</param>
+        /// <param name="maxTries">The maximum number of frames to simulate while waiting for the condition to be met. Default is 60.</param>
+        /// <returns>True if the condition is met within the specified number of frames; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the checkForCondition function is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if time travel is not enabled.</exception>
         public bool WaitForConditionOrTimeOutWithTimeTravel(Func<bool> checkForCondition, int maxTries = 60)
         {
             if (checkForCondition == null)
@@ -1235,9 +1405,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This version accepts an IConditionalPredicate implementation to provide
+        /// This version accepts an <see cref="IConditionalPredicate" /> implementation to provide
         /// more flexibility for checking complex conditional cases.
         /// </summary>
+        /// <param name="conditionalPredicate">An implementation of <see cref="IConditionalPredicate" /> that checks for the condition to be met.</param>
+        /// <param name="timeOutHelper">An optional TimeoutHelper instance to manage the timeout. If null, the global timeout helper is used.</param>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the conditionalPredicate is null.</exception>
         public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeoutHelper timeOutHelper = null)
         {
             if (conditionalPredicate == null)
@@ -1257,10 +1431,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This version accepts an IConditionalPredicate implementation to provide
+        /// This version accepts an <see cref="IConditionalPredicate" /> implementation to provide
         /// more flexibility for checking complex conditional cases. Uses time travel to simulate this
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
+        /// <param name="conditionalPredicate">An implementation of <see cref="IConditionalPredicate" /> that checks for the condition to be met.</param>
+        /// <param name="maxTries">The maximum number of frames to simulate while waiting for the condition to be met. Default is 60.</param>
+        /// <returns>True if the condition is met within the specified number of frames; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the checkForCondition function is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if time travel is not enabled.</exception>
         public bool WaitForConditionOrTimeOutWithTimeTravel(IConditionalPredicate conditionalPredicate, int maxTries = 60)
         {
             if (conditionalPredicate == null)
@@ -1285,6 +1464,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// have connected or it will time out.
         /// </summary>
         /// <param name="clientsToCheck">An array of clients to be checked</param>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
         {
             var remoteClientCount = clientsToCheck.Length;
@@ -1301,6 +1481,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
         /// <param name="clientsToCheck">An array of clients to be checked</param>
+        /// <returns>True if all clients are connected within the specified number of frames; otherwise, false.</returns>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
         {
             var remoteClientCount = clientsToCheck.Length;
@@ -1309,11 +1490,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
                                                                  m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
         }
-
         /// <summary>
         /// Overloaded method that just passes in all clients to
         /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/>
         /// </summary>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator WaitForClientsConnectedOrTimeOut()
         {
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
@@ -1324,6 +1505,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/> Uses time travel to simulate this
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
+        /// <returns>True if all clients are connected within the specified number of frames; otherwise, false.</returns>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel()
         {
             return WaitForClientsConnectedOrTimeOutWithTimeTravel(m_ClientNetworkManagers);
@@ -1420,8 +1602,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Overloaded method <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
+        /// Spawns a GameObject prefab instance.
         /// </summary>
+        /// <param name="prefabGameObject">The prefab GameObject to spawn.</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">If true, the spawned object will be destroyed when the scene is unloaded. Default is false.</param>
+        /// <returns>GameObject instance spawned</returns>
         protected GameObject SpawnObject(GameObject prefabGameObject, NetworkManager owner, bool destroyWithScene = false)
         {
             var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
@@ -1462,8 +1648,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Overloaded method <see cref="SpawnObjects(NetworkObject, NetworkManager, int, bool)"/>
+        /// Will spawn (x) number of prefab GameObject
+        /// <see cref="SpawnObject(GameObject, NetworkManager, bool)"/>
         /// </summary>
+        /// <param name="prefabGameObject">the prefab GameObject to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="count">number of instances to create and spawn</param>
+        /// <param name="destroyWithScene">If true, the spawned objects will be destroyed when the scene is unloaded. Default is false.</param>
+        /// <returns>A list containing the spawned GameObject instances.</returns>
         protected List<GameObject> SpawnObjects(GameObject prefabGameObject, NetworkManager owner, int count, bool destroyWithScene = false)
         {
             var prefabNetworkObject = prefabGameObject.GetComponent<NetworkObject>();
@@ -1472,13 +1664,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Will spawn (x) number of prefab NetworkObjects
+        /// Will spawn (x) number of prefab NetworkObject
         /// <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
         /// </summary>
         /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="count">number of instances to create and spawn</param>
-        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="destroyWithScene">If true, the spawned objects will be destroyed when the scene is unloaded. Default is false.</param>
+        /// <returns>A list containing the spawned GameObject instances.</returns>
         private List<GameObject> SpawnObjects(NetworkObject prefabNetworkObject, NetworkManager owner, int count, bool destroyWithScene = false)
         {
             var gameObjectsSpawned = new List<GameObject>();
@@ -1498,21 +1691,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Optional Host or Server integration tests
-        /// Constructor that allows you To break tests up as a host
-        /// and a server.
-        /// Example: Decorate your child derived class with TestFixture
-        /// and then create a constructor at the child level.
-        /// Don't forget to set your constructor public, else Unity will
-        /// give you a hard to decipher error
+        /// Constructor that allows specifying whether the test should run as a host or server.
+        /// This can be used to break tests up as a host and a server.
+        /// </summary>
+        /// <example>
+        /// <para>Decorate your child derived class with TestFixture and then create a constructor at the child level.
+        /// Don't forget to set your constructor public, else Unity will give you a hard to decipher error.</para>
+        /// <code>
         /// [TestFixture(HostOrServer.Host)]
         /// [TestFixture(HostOrServer.Server)]
         /// public class MyChildClass : NetcodeIntegrationTest
         /// {
         ///     public MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
         /// }
-        /// </summary>
-        /// <param name="hostOrServer"></param>
+        /// </code>
+        /// </example>
+        /// <param name="hostOrServer">Specifies whether the test should run as a host or server.</param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
             m_UseHost = hostOrServer == HostOrServer.Host ? true : false;
@@ -1522,6 +1716,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Just a helper function to avoid having to write the entire assert just to check if you
         /// timed out.
         /// </summary>
+        /// <param name="timeOutErrorMessage">The error message to display if a timeout has occurred.</param>
+        /// <param name="assignedTimeoutHelper">An optional TimeoutHelper instance to check for a timeout. If null, the global timeout helper is used.</param>
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
@@ -1592,6 +1788,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Yields until specified amount of network ticks and the expected number of frames has been passed.
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance to wait for ticks on.</param>
+        /// <param name="count">The number of network ticks to wait for.</param>
+        /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {
             var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
@@ -1613,8 +1812,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will only simulate the netcode update loop, as well as update events on
         /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
         /// </summary>
-        /// <param name="amountOfTimeInSeconds"></param>
-        /// <param name="numFramesToSimulate"></param>
+        /// <param name="amountOfTimeInSeconds">The total amount of time to simulate in seconds.</param>
+        /// <param name="numFramesToSimulate">The number of frames to simulate. If less than 0, it will be calculated based on the target frame rate.</param>
         protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate = -1)
         {
             if (numFramesToSimulate < 0)
@@ -1634,11 +1833,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Gets the tick rate for the integration test.
+        /// Override this method to specify a custom tick rate for the test.
+        /// </summary>
+        /// <returns>The tick rate to be used for the integration test.</returns>
         protected virtual uint GetTickRate()
         {
             return k_DefaultTickRate;
         }
 
+        /// <summary>
+        /// Gets the frame rate for the integration test.
+        /// </summary>
+        /// <returns>The frame rate to be used for the integration test.</returns>
         protected virtual int GetFrameRate()
         {
             return Application.targetFrameRate == 0 ? 60 : Application.targetFrameRate;

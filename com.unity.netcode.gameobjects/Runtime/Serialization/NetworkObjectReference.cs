@@ -25,7 +25,7 @@ namespace Unity.Netcode
         /// Creates a new instance of the <see cref="NetworkObjectReference"/> struct.
         /// </summary>
         /// <param name="networkObject">The <see cref="NetworkObject"/> to reference.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown if the <see cref="NetworkObject"/> is not spawned.</exception>
         public NetworkObjectReference(NetworkObject networkObject)
         {
             if (networkObject == null)
@@ -46,7 +46,7 @@ namespace Unity.Netcode
         /// Creates a new instance of the <see cref="NetworkObjectReference"/> struct.
         /// </summary>
         /// <param name="gameObject">The GameObject from which the <see cref="NetworkObject"/> component will be referenced.</param>
-        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="ArgumentException">Thrown if the GameObject does not have a <see cref="NetworkObject"/> component or if the <see cref="NetworkObject"/> is not spawned.</exception>
         public NetworkObjectReference(GameObject gameObject)
         {
             if (gameObject == null)

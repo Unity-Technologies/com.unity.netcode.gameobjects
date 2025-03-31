@@ -9,6 +9,9 @@ namespace Unity.Netcode.Editor
     [CustomEditor(typeof(AnticipatedNetworkTransform), true)]
     public class AnticipatedNetworkTransformEditor : NetworkTransformEditor
     {
+        /// <summary>
+        /// Gets a value indicating whether the interpolate value should be hidden in the inspector.
+        /// </summary>
         public override bool HideInterpolateValue => true;
     }
 }

@@ -9,7 +9,7 @@ publish_dry_run_netcode_gameobjects:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-59_594aea2e5eb3a7468ad88458b5c5da2e5e72af0d2267db7b025602fb69e57bd7.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-60_641f75ebc79901fc7eb7880e924d4adc41d99ad42d02aa320814a9e1e75463c4.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -34,6 +34,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_ubuntu
     specific_options:
       UTR:
@@ -42,6 +44,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_windows
     specific_options:
       UTR:
@@ -50,6 +54,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_macos
     specific_options:
       UTR:
@@ -58,6 +64,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_ubuntu
     specific_options:
       UTR:
@@ -66,6 +74,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_windows
     specific_options:
       UTR:
@@ -74,6 +84,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_macos
     specific_options:
       UTR:
@@ -82,6 +94,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_ubuntu
     specific_options:
       UTR:
@@ -90,6 +104,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_windows
     specific_options:
       UTR:
@@ -98,6 +114,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_macos
     specific_options:
       UTR:
@@ -106,6 +124,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_ubuntu
     specific_options:
       UTR:
@@ -114,6 +134,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_windows
     specific_options:
       UTR:
@@ -122,6 +144,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_macos
     specific_options:
       UTR:
@@ -130,6 +154,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_ubuntu
     specific_options:
       UTR:
@@ -138,6 +164,8 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_windows
     specific_options:
       UTR:
@@ -146,12 +174,14 @@ publish_dry_run_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.44.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.45.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.44.0
+    Wrench: 0.10.45.0
 
 # Publish  for netcode.gameobjects to https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-npm
 publish_netcode_gameobjects:
@@ -161,7 +191,7 @@ publish_netcode_gameobjects:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-59_594aea2e5eb3a7468ad88458b5c5da2e5e72af0d2267db7b025602fb69e57bd7.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-60_641f75ebc79901fc7eb7880e924d4adc41d99ad42d02aa320814a9e1e75463c4.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -186,6 +216,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_ubuntu
     specific_options:
       UTR:
@@ -194,6 +226,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_windows
     specific_options:
       UTR:
@@ -202,6 +236,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_macos
     specific_options:
       UTR:
@@ -210,6 +246,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_ubuntu
     specific_options:
       UTR:
@@ -218,6 +256,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_windows
     specific_options:
       UTR:
@@ -226,6 +266,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2022.3-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_macos
     specific_options:
       UTR:
@@ -234,6 +276,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_ubuntu
     specific_options:
       UTR:
@@ -242,6 +286,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_0_-_windows
     specific_options:
       UTR:
@@ -250,6 +296,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.0-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_macos
     specific_options:
       UTR:
@@ -258,6 +306,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_ubuntu
     specific_options:
       UTR:
@@ -266,6 +316,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_1_-_windows
     specific_options:
       UTR:
@@ -274,6 +326,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.1-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_macos
     specific_options:
       UTR:
@@ -282,6 +336,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-macos
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_ubuntu
     specific_options:
       UTR:
@@ -290,6 +346,8 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-ubuntu
         unzip: true
+      packages:
+        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_6000_2_-_windows
     specific_options:
       UTR:
@@ -298,10 +356,12 @@ publish_netcode_gameobjects:
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-6000.2-windows
         unzip: true
+      packages:
+        ignore_artifact: true
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.44.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.45.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.44.0
+    Wrench: 0.10.45.0
 

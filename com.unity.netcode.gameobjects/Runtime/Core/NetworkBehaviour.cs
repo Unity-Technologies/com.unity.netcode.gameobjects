@@ -492,15 +492,15 @@ namespace Unity.Netcode
                 m_NetworkObject.NetworkManager.IsServer;
         }
 
-        ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
-        ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
-        ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
-        ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
-        ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
-        ///   how NetworkObject works but it was close to the release and too risky to change
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
+        //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
+        //   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
+        //   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
+        //   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
+        //   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
+        //   how NetworkObject works but it was close to the release and too risky to change
         public NetworkObject NetworkObject
         {
             get
@@ -620,11 +620,11 @@ namespace Unity.Netcode
         /// A reference to <see cref="NetworkManager"/> is passed in as a parameter to determine the context of execution (IsServer/IsClient)
         /// </summary>
         /// <remarks>
-        /// <param name="networkManager">a ref to the <see cref="NetworkManager"/> since this is not yet set on the <see cref="NetworkBehaviour"/></param>
         /// The <see cref="NetworkBehaviour"/> will not have anything assigned to it at this point in time.
         /// Settings like ownership, NetworkBehaviourId, NetworkManager, and most other spawn related properties will not be set.
         /// This can be used to handle things like initializing/instantiating a NetworkVariable or the like.
         /// </remarks>
+        /// <param name="networkManager">a ref to the <see cref="NetworkManager"/> since this is not yet set on the <see cref="NetworkBehaviour"/></param>
         protected virtual void OnNetworkPreSpawn(ref NetworkManager networkManager) { }
 
         /// <summary>
@@ -654,11 +654,11 @@ namespace Unity.Netcode
         protected virtual void OnNetworkSessionSynchronized() { }
 
         /// <summary>
-        /// [Client & Server Side]
+        /// [Client and Server Side]
         /// When a scene is loaded an in-scene placed NetworkObjects are all spawned, this method is invoked on all of the newly spawned in-scene placed NetworkObjects.
         /// </summary>
         /// <remarks>
-        /// This can be used to handle post scene loaded actions for in-scene placed NetworkObjcts where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
+        /// This can be used to handle post scene loaded actions for in-scene placed NetworkObjects where you might need to access a different NetworkObject and/or NetworkBehaviour not local to the current NetworkObject context.
         /// </remarks>
         protected virtual void OnInSceneObjectsSpawned() { }
 
@@ -772,7 +772,7 @@ namespace Unity.Netcode
         internal void InternalOnGainedOwnership()
         {
             UpdateNetworkProperties();
-            // New owners need to assure any NetworkVariables they have write permissions 
+            // New owners need to assure any NetworkVariables they have write permissions
             // to are updated so the previous and original values are aligned with the
             // current value (primarily for collections).
             if (OwnerClientId == NetworkManager.LocalClientId)
@@ -1220,10 +1220,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the local instance of a object with a given NetworkId
+        /// Gets the local instance of a <see cref="NetworkObject"/> with a given NetworkId.
         /// </summary>
-        /// <param name="networkId"></param>
-        /// <returns></returns>
+        /// <param name="networkId">The NetworkId of the <see cref="NetworkObject"/> to retrieve.</param>
+        /// <returns>Returns the <see cref="NetworkObject"/> with the specified NetworkId, or null if not found.</returns>
         protected NetworkObject GetNetworkObject(ulong networkId)
         {
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
@@ -1246,12 +1246,16 @@ namespace Unity.Netcode
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
         /// is in read mode or write mode.
         /// </typeparam>
-        /// <param name="targetClientId">the relative client identifier being synchronized</param>
         protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the network anticipates a change in the state of the object.
+        /// This method can be used to handle any logic that needs to occur when the network predicts a state change.
+        /// </summary>
+        /// <param name="lastRoundTripTime">The last round trip time in seconds.</param>
         public virtual void OnReanticipate(double lastRoundTripTime)
         {
 

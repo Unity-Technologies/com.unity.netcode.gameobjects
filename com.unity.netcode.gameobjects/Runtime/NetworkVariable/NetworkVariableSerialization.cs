@@ -1022,7 +1022,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Serializer for managed INetworkSerializable types, which differs from the unmanaged implementation in that it
     /// has to be null-aware
-    /// <typeparam name="T"></typeparam>
+    /// </summary>
     internal class ManagedNetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : class, INetworkSerializable, new()
     {
         public void Write(FastBufferWriter writer, ref T value)
@@ -1095,7 +1095,7 @@ namespace Unity.Netcode
     /// extension methods. Finding those methods isn't achievable efficiently at runtime, so this allows
     /// users to tell NetworkVariable about those extension methods (or simply pass in a lambda)
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type to be serialized.</typeparam>
     public class UserNetworkVariableSerialization<T>
     {
         /// <summary>
@@ -1110,6 +1110,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer">The <see cref="FastBufferWriter"/> to write the value of type `T`</param>
         /// <param name="value">The value of type `T` to be written</param>
+        /// <param name="previousValue">The previous value of type `T` to be compared.</param>
         public delegate void WriteDeltaDelegate(FastBufferWriter writer, in T value, in T previousValue);
 
         /// <summary>
@@ -1129,8 +1130,8 @@ namespace Unity.Netcode
         /// <summary>
         /// The read value delegate handler definition
         /// </summary>
-        /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
-        /// <param name="value">The value of type `T` to be read</param>
+        /// <param name="value">The value of type `T` to be duplicated.</param>
+        /// <param name="duplicatedValue">The duplicated value of type `T`.</param>
         public delegate void DuplicateValueDelegate(in T value, ref T duplicatedValue);
 
         /// <summary>
@@ -1273,18 +1274,18 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
+        /// Registers an unmanaged type that will be serialized by a direct memcpy into a buffer
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type to be serialized</typeparam>
         public static void InitializeSerializer_UnmanagedByMemcpy<T>() where T : unmanaged
         {
             NetworkVariableSerialization<T>.Serializer = new UnmanagedTypeSerializer<T>();
         }
 
         /// <summary>
-        /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
+        /// Registers an unmanaged array type that will be serialized by a direct memcpy into a buffer
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type to be serialized</typeparam>
         public static void InitializeSerializer_UnmanagedByMemcpyArray<T>() where T : unmanaged
         {
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new UnmanagedArraySerializer<T>();
@@ -1292,27 +1293,28 @@ namespace Unity.Netcode
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
-        /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
+        /// Registers an unmanaged list type that will be serialized by a direct memcpy into a buffer
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type to be serialized</typeparam>
         public static void InitializeSerializer_UnmanagedByMemcpyList<T>() where T : unmanaged
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new UnmanagedListSerializer<T>();
         }
 
         /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
+        /// Registers a native hash set (this generic implementation works with all types)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of elements in the hash set.</typeparam>
         public static void InitializeSerializer_NativeHashSet<T>() where T : unmanaged, IEquatable<T>
         {
             NetworkVariableSerialization<NativeHashSet<T>>.Serializer = new NativeHashSetSerializer<T>();
         }
 
         /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
+        /// Registers a native hash set (this generic implementation works with all types)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of keys in the hash map.</typeparam>
+        /// <typeparam name="TVal">The type of values in the hash map.</typeparam>
         public static void InitializeSerializer_NativeHashMap<TKey, TVal>()
             where TKey : unmanaged, IEquatable<TKey>
             where TVal : unmanaged
@@ -1322,27 +1324,28 @@ namespace Unity.Netcode
 #endif
 
         /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
+        /// Registers a native hash set (this generic implementation works with all types)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of elements in the list.</typeparam>
         public static void InitializeSerializer_List<T>()
         {
             NetworkVariableSerialization<List<T>>.Serializer = new ListSerializer<T>();
         }
 
         /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
+        /// Registers a native hash set (this generic implementation works with all types)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The type of elements in the hash set.</typeparam>
         public static void InitializeSerializer_HashSet<T>() where T : IEquatable<T>
         {
             NetworkVariableSerialization<HashSet<T>>.Serializer = new HashSetSerializer<T>();
         }
 
         /// <summary>
-        /// Registeres a native hash set (this generic implementation works with all types)
+        /// Registers a native hash set (this generic implementation works with all types)
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
+        /// <typeparam name="TVal">The type of values in the dictionary.</typeparam>
         public static void InitializeSerializer_Dictionary<TKey, TVal>() where TKey : IEquatable<TKey>
         {
             NetworkVariableSerialization<Dictionary<TKey, TVal>>.Serializer = new DictionarySerializer<TKey, TVal>();
@@ -1352,7 +1355,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
         /// NetworkSerialize
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type that implements INetworkSerializable.</typeparam>
         public static void InitializeSerializer_UnmanagedINetworkSerializable<T>() where T : unmanaged, INetworkSerializable
         {
             NetworkVariableSerialization<T>.Serializer = new UnmanagedNetworkSerializableSerializer<T>();
@@ -1362,7 +1365,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
         /// NetworkSerialize
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type that implements INetworkSerializable.</typeparam>
         public static void InitializeSerializer_UnmanagedINetworkSerializableArray<T>() where T : unmanaged, INetworkSerializable
         {
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new UnmanagedNetworkSerializableArraySerializer<T>();
@@ -1373,7 +1376,7 @@ namespace Unity.Netcode
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
         /// NetworkSerialize
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The unmanaged type that implements INetworkSerializable.</typeparam>
         public static void InitializeSerializer_UnmanagedINetworkSerializableList<T>() where T : unmanaged, INetworkSerializable
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new UnmanagedNetworkSerializableListSerializer<T>();
@@ -1384,7 +1387,7 @@ namespace Unity.Netcode
         /// Registers a managed type that implements INetworkSerializable and will be serialized through a call to
         /// NetworkSerialize
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The managed type that implements INetworkSerializable.</typeparam>
         public static void InitializeSerializer_ManagedINetworkSerializable<T>() where T : class, INetworkSerializable, new()
         {
             NetworkVariableSerialization<T>.Serializer = new ManagedNetworkSerializableSerializer<T>();
@@ -1394,7 +1397,7 @@ namespace Unity.Netcode
         /// Registers a FixedString type that will be serialized through FastBufferReader/FastBufferWriter's FixedString
         /// serializers
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The FixedString type to be serialized.</typeparam>
         public static void InitializeSerializer_FixedString<T>() where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             NetworkVariableSerialization<T>.Serializer = new FixedStringSerializer<T>();
@@ -1404,7 +1407,7 @@ namespace Unity.Netcode
         /// Registers a FixedString type that will be serialized through FastBufferReader/FastBufferWriter's FixedString
         /// serializers
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The FixedString type to be serialized.</typeparam>
         public static void InitializeSerializer_FixedStringArray<T>() where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new FixedStringArraySerializer<T>();
@@ -1415,7 +1418,7 @@ namespace Unity.Netcode
         /// Registers a FixedString type that will be serialized through FastBufferReader/FastBufferWriter's FixedString
         /// serializers
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">The FixedString type to be serialized.</typeparam>
         public static void InitializeSerializer_FixedStringList<T>() where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new FixedStringListSerializer<T>();
@@ -1467,7 +1470,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable<TKey>.</typeparam>
+        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable.</typeparam>
         /// <typeparam name="TVal">The type of dictionary values.</typeparam>
         public static void InitializeEqualityChecker_Dictionary<TKey, TVal>()
             where TKey : IEquatable<TKey>
@@ -1495,7 +1498,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
-        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable<TKey>.</typeparam>
+        /// <typeparam name="TKey">The type of dictionary keys that implements IEquatable.</typeparam>
         /// <typeparam name="TVal">The type of dictionary values.</typeparam>
         public static void InitializeEqualityChecker_NativeHashMap<TKey, TVal>()
             where TKey : unmanaged, IEquatable<TKey>
@@ -1562,6 +1565,9 @@ namespace Unity.Netcode
         /// <summary>
         /// A callback to check if two values are equal.
         /// </summary>
+        /// <param name="a">The first value to compare.</param>
+        /// <param name="b">The second value to compare.</param>
+        /// <returns>True if the values are equal; otherwise, false.</returns>
         public delegate bool EqualsDelegate(ref T a, ref T b);
 
         /// <summary>
@@ -1642,6 +1648,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer">The FastBufferWriter to write the serialized data to.</param>
         /// <param name="value">The value to serialize</param>
+        /// <param name="previousValue">The previous value of type `T` to be compared.</param>
         public static void WriteDelta(FastBufferWriter writer, ref T value, ref T previousValue)
         {
             Serializer.WriteDelta(writer, ref value, ref previousValue);

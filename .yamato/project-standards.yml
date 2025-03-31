@@ -1,9 +1,32 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Project standards are being checked for package (in project context).
-# It should be enough to perform the test on default project (testproject) but to make sure that all projects conform to our standards job for each of them will be available.
-# Tests are executed for default editor (trunk) on default platform (ubuntu) as in project.metafile declaration since results would be the same across editors and platforms.
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for validating project compliance with NGO coding standards and conventions
+  # Standards validation includes:
+    # Code formatting compliance
+    # Project structure validation
+    # Coding convention adherence
+    # Solution file synchronization
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs configurations are generated using nested loops through:
+    # 1. For all NGO projects (testproject, testproject-tools-interation, minimalproject)
+    # 2. For default platform only (Ubuntu) since standards would not vary between platforms (no need for checks on more platforms)
+    # 3. For default editor version (trunk) since standards would not vary between editors (no need for checks on more editors)
+  
+# TECHNICAL CONSTRAINTS---------------------------------------------------------------
+  # Requires .NET SDK installed (should be preinstalled on the image so we just check for version)
+  # Needs Unity Editor for solution synchronization
+  # Uses custom standards validation tool (netcode.standards)
+  # Generates no test artifacts (pass/fail only). Eventual failure will be visible in the logs
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # While testproject validation would be sufficient, since it validates both project and package (where package is our main concern) jobs for all projects are being generated to ensure that we conform to quality standards in all projects.
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#------------------------------------------------------------------------------------
+  
 {% for project in projects.all -%}
 {% for platform in test_platforms.default -%}
 {% for editor in validation_editors.all -%}
@@ -13,18 +36,18 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    # .NET environment setup
+    # .NET environment setup. Ensures required .NET SDK and formatting tools are available
     - dotnet --version
     - dotnet format --version
-    
-    # Unity setup
-    - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u {{ editor }} -c editor --wait --fast
-    - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit
-    
-    # Standards check
-    - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --check
+
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloads basic editor
+
+    - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
+    - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --check # Runs standards check
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -37,9 +37,14 @@ namespace Unity.Netcode.Editor
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
+        /// <summary>
+        /// Gets a value indicating whether the interpolate value should be hidden in the inspector.
+        /// </summary>
         public virtual bool HideInterpolateValue => false;
 
-        /// <inheritdoc cref="UnityEditor.Editor.OnEnable"/>
+        /// <summary>
+        /// Called when the editor is enabled.
+        /// </summary>
         public void OnEnable()
         {
             m_UseUnreliableDeltas = serializedObject.FindProperty(nameof(NetworkTransform.UseUnreliableDeltas));
