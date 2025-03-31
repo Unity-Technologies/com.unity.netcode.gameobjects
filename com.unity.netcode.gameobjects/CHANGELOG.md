@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
 - Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
 - Added a new smooth dampening interpolator type that provides a nice balance between precision and smoothing results. (#3337)
 - Added `NetworkTimeSystem.TickLatency` property that provides the average latency of a client. (#3337)
