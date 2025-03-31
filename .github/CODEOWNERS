@@ -2,10 +2,10 @@
 # Order is important; the last matching pattern takes the most precedence.
 
 * @Unity-Technologies/multiplayer-sdk
-*.asmdef @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-package.json @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-AssemblyInfo.cs @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-.editorconfig @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-.gitignore @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-.github/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
-.yamato/ @miniwolf @NoelStephensUnity @fluong6 @michalChrobot @EmandM
+*.asmdef @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+package.json @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+AssemblyInfo.cs @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+.editorconfig @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+.gitignore @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+.github/ @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
+.yamato/ @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
