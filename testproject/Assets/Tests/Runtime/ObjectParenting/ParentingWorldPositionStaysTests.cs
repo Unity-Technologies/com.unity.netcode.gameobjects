@@ -218,14 +218,6 @@ namespace TestProject.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
-        }
-
         private bool HaveAllClientsSpawnedObjects()
         {
             foreach (var client in m_ClientNetworkManagers)

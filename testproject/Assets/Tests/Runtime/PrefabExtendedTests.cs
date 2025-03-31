@@ -129,11 +129,10 @@ namespace TestProject.RuntimeTests
         {
             networkManager.NetworkConfig.EnableSceneManagement = m_SceneManagementEnabled;
             networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(PrefabTestConfig.Instance.TestPrefabs);
-            base.OnNewClientCreated(networkManager);
         }
 
         /// <summary>
-        /// Validates that all spawned NetworkObjects are present and their corresponding 
+        /// Validates that all spawned NetworkObjects are present and their corresponding
         /// GlobalObjectIdHash values match
         /// </summary>
         private bool ValidateAllClientsSpawnedObjects()
@@ -220,7 +219,7 @@ namespace TestProject.RuntimeTests
             yield return CreateAndStartNewClient();
 
             var spawnManager = m_ServerNetworkManager.SpawnManager;
-            // If scene management is enabled, then we want to verify against the editor 
+            // If scene management is enabled, then we want to verify against the editor
             // assigned in-scene placed NetworkObjects
             if (m_SceneManagementEnabled)
             {
@@ -287,7 +286,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator TestsInstantiateAndSpawnErrors([Values] InstantiateAndSpawnMethods instantiateAndSpawnType)
         {
-            // If scene management is enabled, then we want to verify against the editor 
+            // If scene management is enabled, then we want to verify against the editor
             // assigned in-scene placed NetworkObjects
             if (m_SceneManagementEnabled)
             {
@@ -328,7 +327,7 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.Shutdown();
             LogAssert.Expect(LogType.Warning, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
             InstantiateAndSpawn(m_ObjectsToSpawn[0], instantiateAndSpawnType);
-            // The not listening error can only happen when trying to instantiate and spawn on a Network Prefab 
+            // The not listening error can only happen when trying to instantiate and spawn on a Network Prefab
             if (instantiateAndSpawnType == InstantiateAndSpawnMethods.NetworkObject)
             {
                 LogAssert.Expect(LogType.Error, NetworkSpawnManager.InstantiateAndSpawnErrors[NetworkSpawnManager.InstantiateAndSpawnErrorTypes.NoActiveSession]);
