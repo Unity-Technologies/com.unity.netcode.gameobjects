@@ -983,11 +983,11 @@ namespace Unity.Netcode.Components
             /// </remarks>
             Lerp,
             /// <summary>
-            /// Lerp, Extrapolate, and Blend
-            /// Uses a 3 to 4 phase approach that lerps towards the target, extrapolate towards the target, blends the two results, and (optionally) smooth the final value.<br />
+            /// Lerp Ahead
+            /// Uses a 3 to 4 phase approach that lerps towards the target, lerps towards the next target (if one exists) ahead by 1 frame delta, blends the two results, and (optionally) smooth the final value.<br />
             /// <list type="bullet">
             /// <item><description>The first phase lerps towards the current tick state update being processed.</description></item>
-            /// <item><description>The second phase lerps unclamped (extrapolates) towards the current tick state update and will extrapolate this value up to a calculated maximum state update delta time.</description></item>
+            /// <item><description>The second phase lerps unclamped (extrapolates) towards the next tick state update. If there is no next target, then it lerps towards the current target unclamped with "t" being clamped to 1.0.</description></item>
             /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
             /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
@@ -1005,7 +1005,7 @@ namespace Unity.Netcode.Components
             /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
             /// </list>
             /// </remarks>
-            LerpExtrapolateBlend,
+            LerpAhead,
             /// <summary>
             /// Uses a 3 to 4 phase approach that smooth dampens towards the target, smooth dampens ahead of the target, blends the two results, and (optionally) smooth the final value.<br />
             /// <list type="bullet">
@@ -1016,7 +1016,7 @@ namespace Unity.Netcode.Components
             /// </list>
             /// </summary>
             /// <remarks>
-            /// Note: Smooth dampening is computationally more expensive than the <see cref="LerpExtrapolateBlend"/> and <see cref="Lerp"/> approaches.<br />
+            /// Note: Smooth dampening is computationally more expensive than the <see cref="LerpAhead"/> and <see cref="Lerp"/> approaches.<br />
             /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.
             /// For more information:<br />
             /// <list type="bullet">
@@ -1037,7 +1037,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// <list type="bullet">
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
@@ -1056,7 +1056,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// <list type="bullet">
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
@@ -1075,7 +1075,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// <list type="bullet">
         /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpExtrapolateBlend"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
         /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
@@ -4004,6 +4004,7 @@ namespace Unity.Netcode.Components
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
 #if DEBUG_LINEARBUFFER && UNITY_EDITOR
+#if UNITY_EDITOR
         // For debugging purposes
         public struct BufferEntry
         {
@@ -4044,16 +4045,29 @@ namespace Unity.Netcode.Components
         {
             PositionStats.Clear();
         }
-#endif
-        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
+
+        public BufferedLinearInterpolatorVector3 GetPositionInterpolator()
         {
             return m_PositionInterpolator;
         }
 
-        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
+        public BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
         {
             return m_RotationInterpolator;
         }
+#endif
+        public int GetPositionBufferCount()
+        {
+            return m_PositionInterpolator.m_BufferQueue.Count;
+        }
+
+        public double GetPositionCurrentStateTimeToTarget()
+        {
+            return m_PositionInterpolator.InterpolateState.TimeToTargetValue;
+        }
+#endif
+
+
 
         // Non-Authority
         private void UpdateInterpolation()
@@ -4134,7 +4148,7 @@ namespace Unity.Netcode.Components
                 else
                 {
                     m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        PositionInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
+                        PositionInterpolationType == InterpolationTypes.LerpAhead);
                 }
             }
 
@@ -4165,7 +4179,7 @@ namespace Unity.Netcode.Components
                 else
                 {
                     m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        RotationInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
+                        RotationInterpolationType == InterpolationTypes.LerpAhead);
                 }
             }
 
@@ -4193,7 +4207,7 @@ namespace Unity.Netcode.Components
                 else
                 {
                     m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        ScaleInterpolationType == InterpolationTypes.LerpExtrapolateBlend);
+                        ScaleInterpolationType == InterpolationTypes.LerpAhead);
                 }
             }
 

@@ -11,7 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     /// models for each operating mode.
     /// </summary>
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
@@ -20,11 +20,11 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
 
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
 
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
@@ -34,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
 
 #endif
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
@@ -43,11 +43,11 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
 
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
 
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
@@ -56,7 +56,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #endif
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
@@ -65,11 +65,11 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
 
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LerpAhead)]
 
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
@@ -511,7 +511,7 @@ namespace Unity.Netcode.RuntimeTests
             // consumed state updates from the buffer.
             // With the two new interpolation types, they will process until close to the final value before moving on to the next.
             // Lerp--> Will skip to next state before finishing the current state (i.e. loss of precision but arrives to the final value at the end of multiple updates faster)
-            // LerpExtrapolateBlend & SmoothDampening -->
+            // LerpAhead & SmoothDampening -->
             // Will not skip to the next state update until approximately at the end of the current state (higher precision longer time to final value)
             // How this impacts this test:
             // It was re-written to use TimeTravel which has a limit of 60 update iterations per "WaitforCondition" which if you are interpolating between two large values

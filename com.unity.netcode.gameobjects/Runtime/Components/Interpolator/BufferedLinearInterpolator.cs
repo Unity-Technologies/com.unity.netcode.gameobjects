@@ -14,7 +14,7 @@ namespace Unity.Netcode
         // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
         // that we don't have a very small buffer because of this.
         private const int k_BufferCountLimit = 100;
-        private const float k_AproximatePrecision = 0.0001f;
+        private const float k_AproximatePrecision = 0.00001f;
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
         #region Legacy notes
@@ -277,23 +277,21 @@ namespace Unity.Netcode
             }
         }
 
-        #region Smooth Dampening and Lerp Extrapolate Blend Interpolation Handling
+        #region Smooth Dampening and Lerp Ahead Interpolation Handling
         /// <summary>
-        /// TryConsumeFromBuffer: Smooth Dampening Version
+        /// TryConsumeFromBuffer: Smooth Dampening and Lerp Ahead Version
         /// </summary>
         /// <param name="renderTime">render time: the time in "ticks ago" relative to the current tick latency.</param>
         /// <param name="minDeltaTime">minimum time delta (defaults to tick frequency).</param>
         /// <param name="maxDeltaTime">maximum time delta which defines the maximum time duration when consuming more than one item from the buffer.</param>
-        /// <param name="extrapolateAhead">when true, the predicted target <see cref="CurrentState.Phase2Value"/> will lerp slightly ahead of the target.</param>
-        private void TryConsumeFromBuffer(double renderTime, double minDeltaTime, double maxDeltaTime, bool extrapolateAhead)
+        /// <param name="lerpAhead">when true, the predicted target <see cref="CurrentState.Phase2Value"/> will lerp towards the next target by the current delta.</param>
+        private void TryConsumeFromBuffer(double renderTime, double minDeltaTime, double maxDeltaTime, bool lerpAhead)
         {
             BufferedItem? previousItem = null;
             var startTime = 0.0;
             var alreadyHasBufferItem = false;
             var noStateSet = !InterpolateState.Target.HasValue;
             var potentialItemNeedsProcessing = false;
-            var currentTargetTimeReached = false;
-            var dequeuedCount = 0;
 
             // In the event there is nothing left in the queue (i.e. motion/change stopped), we still need to determine if the target has been reached.
             if (!noStateSet && m_BufferQueue.Count == 0)
@@ -317,24 +315,18 @@ namespace Unity.Netcode
 
                 if (!noStateSet)
                 {
-                    potentialItemNeedsProcessing = (potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent >= InterpolateState.Target.Value.TimeSent;
-                    currentTargetTimeReached = InterpolateState.TargetTimeAproximatelyReached(potentialItemNeedsProcessing) || InterpolateState.TargetReached;
+                    potentialItemNeedsProcessing = (potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent > InterpolateState.Target.Value.TimeSent;
                     if (!InterpolateState.TargetReached)
                     {
                         InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
                     }
                 }
 
-                // If we haven't set a target or the potential item's time sent is less that the current target's time sent
-                // then pull the BufferedItem from the queue. The second portion of this accounts for scenarios where there
-                // was bad latency and the buffer has more than one item in the queue that is less than the renderTime. Under
-                // this scenario, we just want to continue pulling items from the queue until the last item pulled from the
-                // queue is greater than the redner time or greater than the currently targeted item's sent time.
-                if (noStateSet || ((currentTargetTimeReached || InterpolateState.TargetReached) && potentialItemNeedsProcessing))
+                // If we haven't set a target or we have another item that needs processing.
+                if (noStateSet || potentialItemNeedsProcessing)
                 {
                     if (m_BufferQueue.TryDequeue(out BufferedItem target))
                     {
-                        dequeuedCount++;
                         if (!InterpolateState.Target.HasValue)
                         {
                             InterpolateState.Target = target;
@@ -359,15 +351,20 @@ namespace Unity.Netcode
                                 startTime = InterpolateState.Target.Value.TimeSent;
                                 InterpolateState.MaxDeltaTime = maxDeltaTime;
                                 InterpolateState.PredictingNext = m_BufferQueue.Count > 0;
-                                InterpolateState.Phase1Value = InterpolateState.PreviousValue;
-                                if (extrapolateAhead && InterpolateState.PredictingNext)
+                                if (lerpAhead)
                                 {
-                                    InterpolateState.Phase2Value = InterpolateState.PredictingNext ? Interpolate(InterpolateState.PredictValue, target.Item, InterpolateState.CurrentDeltaTime)
-                                        : InterpolateState.Phase2Value = InterpolateState.PredictValue;
+                                    InterpolateState.Phase1Value = InterpolateState.PreviousValue;
+                                    if (InterpolateState.PredictingNext && m_BufferQueue.TryPeek(out BufferedItem nextTarget))
+                                    {
+                                        InterpolateState.Phase2Value = Interpolate(InterpolateState.PredictValue, nextTarget.Item, InterpolateState.CurrentDeltaTime);
+                                    }
+                                    else
+                                    {
+                                        InterpolateState.Phase2Value = InterpolateState.PredictValue;
+                                    }
                                 }
                             }
-
-                            InterpolateState.SetTimeToTarget(Math.Max((float)(target.TimeSent - startTime), minDeltaTime));
+                            InterpolateState.SetTimeToTarget(Math.Max(target.TimeSent - startTime, minDeltaTime));
                             InterpolateState.Target = target;
                         }
                     }
@@ -406,11 +403,11 @@ namespace Unity.Netcode
         /// <param name="tickLatencyAsTime">The tick latency in relative local time.</param>
         /// <param name="minDeltaTime">The minimum time delta between the current and target value.</param>
         /// <param name="maxDeltaTime">The maximum time delta between the current and target value.</param>
-        /// <param name="isLerpAndExtrapolate">Determines whether to use smooth dampening or extrapolation.</param>
+        /// <param name="lerpAhead">Determines whether to use smooth dampening or lerp ahead interpolation type.</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool isLerpAndExtrapolate)
+        internal T Update(float deltaTime, double tickLatencyAsTime, double minDeltaTime, double maxDeltaTime, bool lerpAhead)
         {
-            TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime, isLerpAndExtrapolate);
+            TryConsumeFromBuffer(tickLatencyAsTime, minDeltaTime, maxDeltaTime, lerpAhead);
             // Only begin interpolation when there is a start and end point
             if (InterpolateState.Target.HasValue)
             {
@@ -421,20 +418,21 @@ namespace Unity.Netcode
                     // Also calculates the LerpT and LerpTPredicted values.
                     InterpolateState.AddDeltaTime(deltaTime);
                     var targetValue = InterpolateState.CurrentValue;
-                    // SmoothDampen or LerpExtrapolateBlend
-                    if (!isLerpAndExtrapolate)
+                    // SmoothDampen
+                    if (!lerpAhead)
                     {
                         InterpolateState.PreviousValue = SmoothDamp(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, ref m_RateOfChange, (float)InterpolateState.TimeToTargetValue, (float)InterpolateState.TimeToTargetValue * InterpolateState.LerpT);
                         InterpolateState.PredictValue = SmoothDamp(InterpolateState.PredictValue, InterpolateState.Target.Value.Item, ref m_PredictedRateOfChange, (float)InterpolateState.TimeToTargetValue, (float)(InterpolateState.TimeToTargetValue * InterpolateState.LerpTPredict));
                     }
-                    else
+                    else// Lerp Ahead
                     {
                         InterpolateState.PreviousValue = Interpolate(InterpolateState.Phase1Value, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
                         // Note: InterpolateState.LerpTPredict is clamped to LerpT if we have no next target
                         InterpolateState.PredictValue = InterpolateUnclamped(InterpolateState.Phase2Value, InterpolateState.Target.Value.Item, InterpolateState.LerpTPredict);
+                        
                     }
-
-                    // Lerp between the PreviousValue and PredictedValue using the calculated time delta
+                    
+                    // Lerp between the PreviousValue and PredictedValue using the current delta time
                     targetValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.PredictValue, deltaTime);
 
                     // If lerp smoothing is enabled, then smooth current value towards the target value
@@ -477,59 +475,58 @@ namespace Unity.Netcode
         /// This version of TryConsumeFromBuffer adheres to the original BufferedLinearInterpolator buffer consumption pattern.
         /// </remarks>
         /// <param name="renderTime"></param>
-        /// <param name="serverTime"></param>
-        private void TryConsumeFromBuffer(double renderTime, double serverTime)
+        private void TryConsumeFromBuffer(double renderTime)
         {
-            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime))
+            BufferedItem? previousItem = null;
+            var alreadyHasBufferItem = false;
+            while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
             {
-                BufferedItem? previousItem = null;
-                var alreadyHasBufferItem = false;
-                while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
+                // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
+                // to consume.
+                if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
                 {
-                    // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
-                    // to consume.
-                    if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
-                    {
-                        break;
-                    }
+                    break;
+                }
 
-                    if ((potentialItem.TimeSent <= serverTime) &&
-                        (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
+                if ((potentialItem.TimeSent <= renderTime) &&
+                    (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
+                {
+                    if (m_BufferQueue.TryDequeue(out BufferedItem target))
                     {
-                        if (m_BufferQueue.TryDequeue(out BufferedItem target))
+                        if (!InterpolateState.Target.HasValue)
                         {
-                            if (!InterpolateState.Target.HasValue)
+                            InterpolateState.Target = target;
+                            alreadyHasBufferItem = true;
+                            InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                            InterpolateState.StartTime = target.TimeSent;
+                            InterpolateState.EndTime = target.TimeSent;
+                            InterpolateState.TargetReached = false;
+                        }
+                        else
+                        {
+                            if (!alreadyHasBufferItem)
                             {
-                                InterpolateState.Target = target;
                                 alreadyHasBufferItem = true;
+                                InterpolateState.StartTime = InterpolateState.Target.Value.TimeSent;
                                 InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                                InterpolateState.StartTime = target.TimeSent;
-                                InterpolateState.EndTime = target.TimeSent;
+                                InterpolateState.TargetReached = false;
                             }
-                            else
-                            {
-                                if (!alreadyHasBufferItem)
-                                {
-                                    alreadyHasBufferItem = true;
-                                    InterpolateState.StartTime = InterpolateState.Target.Value.TimeSent;
-                                    InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                                }
-                                InterpolateState.EndTime = target.TimeSent;
-                                InterpolateState.Target = target;
-                            }
+                            InterpolateState.EndTime = target.TimeSent;
+                            InterpolateState.Target = target;
+                            InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
                         }
                     }
-                    else
-                    {
-                        break;
-                    }
-
-                    if (!InterpolateState.Target.HasValue)
-                    {
-                        break;
-                    }
-                    previousItem = potentialItem;
                 }
+                else
+                {
+                    break;
+                }
+
+                if (!InterpolateState.Target.HasValue)
+                {
+                    break;
+                }
+                previousItem = potentialItem;
             }
         }
 
@@ -542,31 +539,22 @@ namespace Unity.Netcode
         /// <param name="deltaTime">time since last call</param>
         /// <param name="renderTime">our current time</param>
         /// <param name="serverTime">current server time</param>
+        /// <remarks>
+        /// We no longer use serverTime.
+        /// </remarks>
         /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, double renderTime, double serverTime)
         {
-            TryConsumeFromBuffer(renderTime, serverTime);
+            TryConsumeFromBuffer(renderTime);
             // Only interpolate when there is a start and end point and we have not already reached the end value
-            if (InterpolateState.Target.HasValue)
+            if (InterpolateState.Target.HasValue && !InterpolateState.TargetReached)
             {
                 // The original BufferedLinearInterpolator lerping script to assure the Smooth Dampening updates do not impact
                 // this specific behavior.
                 float t = 1.0f;
-                InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
                 if (InterpolateState.TimeToTargetValue > k_SmallValue)
                 {
-                    t = (float)((renderTime - InterpolateState.StartTime) / InterpolateState.TimeToTargetValue);
-
-                    if (t < 0.0f)
-                    {
-                        t = 0.0f;
-                    }
-
-                    if (t > MaxInterpolationBound) // max extrapolation
-                    {
-                        // TODO this causes issues with teleport, investigate
-                        t = 1.0f;
-                    }
+                    t = Math.Clamp((float)((renderTime - InterpolateState.StartTime) / InterpolateState.TimeToTargetValue), 0.0f, 1.0f);
                 }
                 var target = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, t);
 
@@ -578,6 +566,22 @@ namespace Unity.Netcode
                 else
                 {
                     InterpolateState.CurrentValue = target;
+                }
+                // Determine if we have reached our target
+                InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+            }
+            else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
+            if (m_BufferQueue.Count == 0 && InterpolateState.TargetReached)
+            {
+                // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
+                // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
+                // we will want to reset the interpolator with the current known value. This prevents the next received state update's
+                // time to be calculated against the last calculated time which if there is an extended period of time between the two
+                // it would cause a large delta time period between the two states (i.e. it stops moving for a second or two and then
+                // starts moving again).
+                if ((renderTime - InterpolateState.Target.Value.TimeSent) > 0.3f) // If we haven't recevied anything within 300ms, assume we stopped motion.
+                {
+                    InterpolateState.Reset(InterpolateState.CurrentValue);
                 }
             }
             m_NbItemsReceivedThisFrame = 0;

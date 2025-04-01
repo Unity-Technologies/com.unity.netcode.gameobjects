@@ -808,26 +808,6 @@ namespace Unity.Netcode.RuntimeTests
             return GetVector3Values(ref vector3);
         }
 
-        public bool EnableVerboseDebug;
-
-        public void GetInterpolatorInfo()
-        {
-            if (!EnableVerboseDebug)
-            {
-                return;
-            }
-            var positionInterpolator = GetPositionInterpolator();
-            var rotationInterpolator = GetRotationInterpolator();
-            Debug.Log($"TT: {positionInterpolator.InterpolateState.TimeToTargetValue} BuffCnt: {positionInterpolator.m_BufferQueue.Count} Pos: {GetVector3Values(positionInterpolator.InterpolateState.CurrentValue)} " +
-                $"Rot: {GetVector3Values(rotationInterpolator.InterpolateState.CurrentValue.eulerAngles)}");
-        }
-
-        public override void OnUpdate()
-        {
-            base.OnUpdate();
-            GetInterpolatorInfo();
-        }
-
         protected override bool OnIsServerAuthoritative()
         {
             return ServerAuthority;

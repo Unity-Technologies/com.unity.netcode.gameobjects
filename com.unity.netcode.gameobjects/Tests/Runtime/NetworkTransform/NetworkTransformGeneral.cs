@@ -8,8 +8,8 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.Lerp)]
     [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
     [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.LerpExtrapolateBlend)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.LerpAhead)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.LerpAhead)]
     internal class NetworkTransformGeneral : NetworkTransformBase
     {
         public enum SmoothLerpSettings
