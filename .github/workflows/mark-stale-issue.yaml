@@ -4,7 +4,7 @@
 
 # This affects only Issues but at some point we may also consider rules for PRs
 
-name: Mark and Close Stale Issues
+name: Mark or Close Stale Issues
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/stale@v9
         with:
           # Only mark issues (not PRs) as stale
-          only-issue-labels: 'stat:awaiting-response'
+          any-of-labels: 'stat:awaiting-response'
           days-before-stale: 30
           days-before-close: 30
           stale-issue-label: 'Stale'
