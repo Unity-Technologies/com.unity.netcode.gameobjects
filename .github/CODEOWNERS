@@ -2,7 +2,7 @@
 # Order is important; the last matching pattern takes the most precedence.
 
 * @Unity-Technologies/multiplayer-sdk
-*.asmdef @NoelStephensUnity @EmandM @netcode-qa
+*.asmdef @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
 package.json @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
 AssemblyInfo.cs @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
 .editorconfig @NoelStephensUnity @EmandM @Unity-Technologies/netcode-qa
