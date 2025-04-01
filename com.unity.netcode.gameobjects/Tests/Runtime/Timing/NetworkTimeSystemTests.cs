@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator CorrectAmountTicksTest()
         {
             NetworkTickSystem tickSystem = NetworkManager.Singleton.NetworkTickSystem;
-            float delta = tickSystem.LocalTime.FixedDeltaTime;
+            double delta = tickSystem.LocalTime.FixedDeltaTimeAsDouble;
             int previous_localTickCalculated = 0;
             int previous_serverTickCalculated = 0;
 
@@ -70,27 +70,26 @@ namespace Unity.Netcode.RuntimeTests
             {
                 yield return null;
 
-                var tickCalculated = tickSystem.LocalTime.Time / delta;
-                previous_localTickCalculated = (int)tickCalculated;
+                var localTickCalculated = tickSystem.LocalTime.Time / delta;
+                previous_localTickCalculated = (int)localTickCalculated;
 
                 // This check is needed due to double division imprecision of large numbers
-                if ((tickCalculated - previous_localTickCalculated) >= 0.999999999999)
+                if ((localTickCalculated - previous_localTickCalculated) >= 0.999999999999)
                 {
                     previous_localTickCalculated++;
                 }
 
-
-                tickCalculated = NetworkManager.Singleton.ServerTime.Time / delta;
-                previous_serverTickCalculated = (int)tickCalculated;
+                var serverTickCalculated = tickSystem.ServerTime.Time / delta;
+                previous_serverTickCalculated = (int)serverTickCalculated;
 
                 // This check is needed due to double division imprecision of large numbers
-                if ((tickCalculated - previous_serverTickCalculated) >= 0.999999999999)
+                if ((serverTickCalculated - previous_serverTickCalculated) >= 0.999999999999)
                 {
                     previous_serverTickCalculated++;
                 }
 
-                Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!");
-                Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!");
+                Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!]n Local Tick-Calc: {localTickCalculated} LocalTime: {tickSystem.LocalTime.Time} | Server Tick-Calc: {serverTickCalculated} ServerTime: {tickSystem.ServerTime.Time} | TickDelta: {delta}");
+                Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!\n Local Tick-Calc: {localTickCalculated} LocalTime: {tickSystem.LocalTime.Time} | Server Tick-Calc: {serverTickCalculated} ServerTime: {tickSystem.ServerTime.Time} | TickDelta: {delta}");
                 Assert.AreEqual((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time, $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!", FloatComparer.s_ComparerWithDefaultTolerance);
             }
         }
