@@ -46,10 +46,24 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class AnticipatedNetworkTransform : NetworkTransform
     {
+        /// <summary>
+        /// Represents the state of a transform, including position, rotation, and scale.
+        /// </summary>
         public struct TransformState
         {
+            /// <summary>
+            /// The position of the transform.
+            /// </summary>
             public Vector3 Position;
+
+            /// <summary>
+            /// The rotation of the transform.
+            /// </summary>
             public Quaternion Rotation;
+
+            /// <summary>
+            /// The scale of the transform.
+            /// </summary>
             public Vector3 Scale;
         }
 
@@ -242,6 +256,9 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
+        /// <summary>
+        /// Updates the AnticipatedNetworkTransform each frame.
+        /// </summary>
         protected override void Update()
         {
             // If not spawned or this instance has authority, exit early
@@ -350,6 +367,13 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
+        /// <summary>
+        /// Invoked when a new client joins (server and client sides).
+        /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState).
+        /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well.
+        /// </summary>
+        /// <typeparam name="T">The type of the serializer.</typeparam>
+        /// <param name="serializer">The serializer used to serialize the state.</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             base.OnSynchronize(ref serializer);
@@ -361,6 +385,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Invoked when the NetworkObject is spawned.
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
@@ -373,6 +400,9 @@ namespace Unity.Netcode.Components
             NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
         }
 
+        /// <summary>
+        /// Invoked when the NetworkObject is despawned.
+        /// </summary>
         public override void OnNetworkDespawn()
         {
             if (m_AnticipatedObject != null)
@@ -387,6 +417,9 @@ namespace Unity.Netcode.Components
             base.OnNetworkDespawn();
         }
 
+        /// <summary>
+        /// Invoked when the NetworkObject is destroyed.
+        /// </summary>
         public override void OnDestroy()
         {
             if (m_AnticipatedObject != null)
@@ -438,6 +471,9 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
+        /// <summary>
+        /// Invoked just before the authoritative state is updated and pushed to non-authoritative instances.
+        /// </summary>
         protected override void OnBeforeUpdateTransformState()
         {
             // this is called when new data comes from the server
@@ -445,12 +481,20 @@ namespace Unity.Netcode.Components
             m_OutstandingAuthorityChange = true;
         }
 
+        /// <summary>
+        /// Invoked when the NetworkTransform state is updated.
+        /// </summary>
+        /// <param name="oldState">The previous state of the NetworkTransform.</param>
+        /// <param name="newState">The new state of the NetworkTransform.</param>
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
             ApplyAuthoritativeState();
         }
 
+        /// <summary>
+        /// Invoked whenever the transform has been updated.
+        /// </summary>
         protected override void OnTransformUpdated()
         {
             if (CanCommitToTransform || m_AnticipatedObject == null)

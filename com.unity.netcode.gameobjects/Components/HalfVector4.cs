@@ -61,6 +61,8 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>.
         /// </summary>
+        /// <typeparam name="T">The type of the serializer.</typeparam>
+        /// <param name="serializer">The serializer used to serialize or deserialize the state.</param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (serializer.IsReader)

@@ -256,8 +256,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 AddPrefabsToClient(networkManager);
             }
-
-            base.OnNewClientCreated(networkManager);
+            // Don't call base as this will synchronize the prefabs
         }
 
         private void SpawnClients(bool clearTestDeferredMessageManagerCallFlags = true)

@@ -66,7 +66,7 @@ namespace Unity.Netcode.Components
         /// - The teleporting state update.
         /// - When using half float precision and the `NetworkDeltaPosition` delta exceeds the maximum delta forcing the axis in
         /// question to be collapsed into the core base position, this state update will be sent as reliable fragmented sequenced.
-        /// 
+        ///
         /// In order to preserve a continual consistency of axial values when unreliable delta messaging is enabled (due to the
         /// possibility of dropping packets), NetworkTransform instances will send 1 axial frame synchronization update per
         /// second (only for the axis marked to synchronize are sent as reliable fragmented sequenced) as long as a delta state
@@ -104,7 +104,7 @@ namespace Unity.Netcode.Components
             private const int k_ReliableSequenced = 0x00080000;
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
-            private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier 
+            private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier
 
             // Stores persistent and state relative flags
             private uint m_Bitset;
@@ -459,10 +459,11 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Returns whether this state update was a frame synchronization when 
-            /// UseUnreliableDeltas is enabled. When set, the entire transform will 
+            /// Returns whether this state update was a frame synchronization when
+            /// UseUnreliableDeltas is enabled. When set, the entire transform will
             /// be or has been synchronized.
             /// </summary>
+            /// <returns><see cref="true"/> if this state update was a frame synchronization; otherwise, <see cref="false"/>.</returns>
             public bool IsUnreliableFrameSync()
             {
                 return UnreliableFrameSync;
@@ -475,6 +476,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// Unreliable delivery will only be used if <see cref="UseUnreliableDeltas"/> is set.
             /// </remarks>
+            /// <returns><see cref="true"/> if this state was sent with reliable delivery; otherwise, <see cref="false"/>.</returns>
             public bool IsReliableStateUpdate()
             {
                 return ReliableSequenced;
@@ -586,7 +588,7 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When there is no change in an updated state's position then there are no values to return.
             /// Checking for <see cref="HasPositionChange"/> is one way to detect this.
-            /// When used with half precision it returns the half precision delta position state update 
+            /// When used with half precision it returns the half precision delta position state update
             /// which will not be the full position.
             /// To get a NettworkTransform's full position, use <see cref="GetSpaceRelativePosition(bool)"/> and
             /// pass true as the parameter.
@@ -661,6 +663,8 @@ namespace Unity.Netcode.Components
             /// <summary>
             /// Serializes this <see cref="NetworkTransformState"/>
             /// </summary>
+            /// <typeparam name="T">The type of the serializer.</typeparam>
+            /// <param name="serializer">The serializer used for reading or writing the state.</param>
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 // Used to calculate the LastSerializedSize value
@@ -897,7 +901,7 @@ namespace Unity.Netcode.Components
                 if (HasScaleChange)
                 {
                     // If we are teleporting (which includes synchronizing) and the associated NetworkObject has a parent
-                    // then we want to serialize the LossyScale since NetworkObject spawn order is not  guaranteed 
+                    // then we want to serialize the LossyScale since NetworkObject spawn order is not  guaranteed
                     if (IsTeleportingNextFrame && IsParented)
                     {
                         serializer.SerializeValue(ref LossyScale);
@@ -1419,9 +1423,8 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If a derived class overrides this, then make sure to invoke this base method!
         /// </remarks>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serializer"></param>
-        /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
+        /// <typeparam name="T">The type of the serializer.</typeparam>
+        /// <param name="serializer">The serializer used for reading or writing the state.</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             m_CachedNetworkManager = NetworkManager;
@@ -1575,11 +1578,11 @@ namespace Unity.Netcode.Components
                     Debug.LogException(ex);
                 }
 
-                // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if 
+                // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if
                 // we have already sent at least one unreliable delta state update. At this point in the callstack,
                 // a delta state update has just been sent in the above UpdateTransformState() call and as long as
                 // we didn't send a frame synch and we are not synchronizing then we know at least one unreliable
-                // delta has been sent. Under this scenario, we should start checking for this instance's alloted 
+                // delta has been sent. Under this scenario, we should start checking for this instance's alloted
                 // frame synch "tick slot". Once we send a frame synch, if no other deltas occur after that
                 // (i.e. the object is at rest) then we will stop sending frame synch's until the object begins
                 // moving, rotating, or scaling again.
@@ -1862,7 +1865,7 @@ namespace Unity.Netcode.Components
 
                         networkState.NetworkDeltaPosition = m_HalfPositionState;
 
-                        // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position 
+                        // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position
                         if ((m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick || isAxisSync) && !networkState.IsTeleportingNextFrame)
                         {
                             networkState.SynchronizeBaseHalfFloat = true;
@@ -2056,6 +2059,10 @@ namespace Unity.Netcode.Components
             return isDirty;
         }
 
+        /// <summary>
+        /// Invoked whenever the transform has been updated.
+        /// This method can be overridden to handle any custom logic that needs to occur after the transform has been updated.
+        /// </summary>
         protected virtual void OnTransformUpdated()
         {
 
@@ -2602,6 +2609,10 @@ namespace Unity.Netcode.Components
 
         }
 
+        /// <summary>
+        /// Invoked just before the transform state is updated.
+        /// This method can be overridden to handle any custom logic that needs to occur before the transform state is updated.
+        /// </summary>
         protected virtual void OnBeforeUpdateTransformState()
         {
 
@@ -2774,7 +2785,7 @@ namespace Unity.Netcode.Components
 
             Initialize();
 
-            if (CanCommitToTransform && UseHalfFloatPrecision)
+            if (CanCommitToTransform)
             {
                 SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
             }
@@ -2816,6 +2827,12 @@ namespace Unity.Netcode.Components
             base.OnGainedOwnership();
         }
 
+        /// <summary>
+        /// Invoked when the ownership of the <see cref="NetworkObject"/> changes.
+        /// This method handles reinitialization when the local client gains or loses ownership of the <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="previous">The client ID of the previous owner.</param>
+        /// <param name="current">The client ID of the new owner.</param>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             // If we were the previous owner or the newly assigned owner then reinitialize
@@ -2842,7 +2859,7 @@ namespace Unity.Netcode.Components
         /// This method is only invoked by the owner
         /// Use: OnInitialize(ref NetworkTransformState replicatedState) to be notified on all instances
         /// </summary>
-        /// <param name="replicatedState"></param>
+        /// <param name="replicatedState">The current <see cref="NetworkVariable{NetworkTransformState}"/> after initializing.</param>
         protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
 
@@ -2851,9 +2868,9 @@ namespace Unity.Netcode.Components
         private int m_HalfFloatTargetTickOwnership;
 
         /// <summary>
-        /// The internal initialzation method to allow for internal API adjustments
+        /// The internal initialization method to allow for internal API adjustments
         /// </summary>
-        /// <param name="isOwnershipChange"></param>
+        /// <param name="isOwnershipChange">Indicates whether the initialization is due to an ownership change.</param>
         private void InternalInitialization(bool isOwnershipChange = false)
         {
             if (!IsSpawned)
@@ -2956,11 +2973,11 @@ namespace Unity.Netcode.Components
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
         ///  just the desired one(s)
         /// </summary>
-        /// <param name="posIn"></param> new position to move to.  Can be null
-        /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
+        /// <param name="posIn">new position to move to. Can be null.</param>
+        /// <param name="rotIn">new rotation to rotate to. Can be null.</param>
         /// <param name="scaleIn">new scale to scale to. Can be null</param>
         /// <param name="teleportDisabled">When true (the default) the <see cref="NetworkObject"/> will not be teleported and, if enabled, will interpolate. When false the <see cref="NetworkObject"/> will teleport/apply the parameters provided immediately.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown when the function is called on non-spawned object or, when it's called without proper authority</exception>
         public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool teleportDisabled = true)
         {
             if (!IsSpawned)
@@ -3023,7 +3040,7 @@ namespace Unity.Netcode.Components
 
             var transformToCommit = transform;
 
-            // Explicit set states are cumulative during a fractional tick period of time (i.e. each SetState invocation will 
+            // Explicit set states are cumulative during a fractional tick period of time (i.e. each SetState invocation will
             // update the axial deltas to whatever changes are applied). As such, we need to preserve the dirty and explicit
             // state flags.
             var stateWasDirty = m_LocalAuthoritativeNetworkState.IsDirty;
@@ -3111,7 +3128,9 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// This method is called once per frame.
+        /// </summary>
         /// <remarks>
         /// If you override this method, be sure that:
         /// - Non-authority always invokes this base class method.
@@ -3134,10 +3153,10 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Teleport the transform to the given values without interpolating
         /// </summary>
-        /// <param name="newPosition"></param> new position to move to.
-        /// <param name="newRotation"></param> new rotation to rotate to.
+        /// <param name="newPosition">new position to move to.</param>
+        /// <param name="newRotation">new rotation to rotate to.</param>
         /// <param name="newScale">new scale to scale to.</param>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="Exception">Thrown if teleporting is attempted on a non-authoritative side.</exception>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)

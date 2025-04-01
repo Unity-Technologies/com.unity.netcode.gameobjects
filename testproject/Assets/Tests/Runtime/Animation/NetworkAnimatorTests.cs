@@ -626,19 +626,6 @@ namespace TestProject.RuntimeTests
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationCheerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationCheerOwnerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-        }
-
         /// <summary>
         /// Verifies that triggers are synchronized with currently connected clients
         /// </summary>

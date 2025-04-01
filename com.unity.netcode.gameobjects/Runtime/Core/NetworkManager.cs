@@ -478,6 +478,12 @@ namespace Unity.Netcode
         public event Action OnClientStarted = null;
 
         /// <summary>
+        /// Subscribe to this event to get notifications before a <see cref="NetworkManager"/> instance is being destroyed.
+        /// This is useful if you want to use the state of anything the NetworkManager cleans up during its shutdown.
+        /// </summary>
+        public event Action OnPreShutdown = null;
+
+        /// <summary>
         /// This callback is invoked once the local server is stopped.
         /// </summary>
         /// <remarks>
@@ -1197,6 +1203,8 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
+
+            OnPreShutdown?.Invoke();
 
             this.UnregisterAllNetworkUpdates();
 

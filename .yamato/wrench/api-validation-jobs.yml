@@ -13,7 +13,7 @@ api_validation_-_netcode_gameobjects_-_2021_3_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-59_594aea2e5eb3a7468ad88458b5c5da2e5e72af0d2267db7b025602fb69e57bd7.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-60_641f75ebc79901fc7eb7880e924d4adc41d99ad42d02aa320814a9e1e75463c4.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
@@ -51,8 +51,8 @@ api_validation_-_netcode_gameobjects_-_2021_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.44.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.45.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.44.0
+    Wrench: 0.10.45.0
 

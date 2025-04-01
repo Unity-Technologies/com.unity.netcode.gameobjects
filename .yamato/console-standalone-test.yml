@@ -1,37 +1,57 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Builds a player on console standalone platform and executes RuntimeTests (equivalent to PlayMode tests) of the NGO package in the Standalone build.
-# Default project (testptoject) in this case is used as a context.
-# Builds/Tests are made on each console platform (PS4, PS5, Switch, XboxOne, XboxSeriesX) as in project.metafile declaration
-# Builds/Tests are made on each supported editor as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job is responsible for Console platform test validation.
+  # Those tests cover both PlayMode and EditMode tests from package test assemblies.
   
-# For SOME of the console devices it's necessary to split build and run phases so it was split for all
-# For all consoles we need to use il2cpp scripting backend (so no testing with mono)
-# Switch works only with ARM64 and the rest with x64 architectures
-# For now all platforms used for building are windows based
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs are generated using nested loops (separate build phase and run phase). Worth noting that run phase uses the build as dependency:
+    # 1. For all console platform (Switch, ps4, ps5, xbox360, xboxOne)
+    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
+    # 3. For the default project.
   
-# Builds are made with x64 architecture machines since those are compatible to run on ARM64 devices
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # For console devices a split is required into two phases:
+    # 1. Build Phase: Creates standalone players for console platforms
+    # 2. Run Phase: Executes runtime tests on actual console devices
+  # The Run phase uses build job as dependency
+  
+  # Note: More of a Unity specific but test assemblies need to be included in the build phase command
+  # Note: All builds can be made on x64 machines since those are compatible with ARM64 target devices
+  
+# PLATFORM SPECIFICS-----------------------------------------------------------------
+  # Common Requirements:
+    # All consoles require IL2CPP scripting backend
+    # Platform-specific SDK environment variables
+
+  # Platform-Specific:
+    # Switch: ARM64 architecture only
+    # Other Consoles: x64 architecture
+    # Each console requires specific SDK paths and tools
+  
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # TODO: consider adding all projects that have tests
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+  
+  
+# BUILD PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_build -%}
 {% for editor in validation_editors.all -%}
-# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
-{% if editor != "2023.3" %}
-build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
+console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: Build {{ project.name }} - [{{ platform.name }}, {{ editor }}, il2cpp{% if platform.name == "switch" %}, arm64{% endif %}]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    # Installing tools. unity-downloader-cli and utr should be already preinstalled on the image
-    - sudo pip install unity-downloader-cli
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --fast --wait
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-    
-    # Platform specific Build
-    - utr --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
-
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
+    - UnifiedTestRunner --testproject={{ project.path }} --architecture={% if platform.name == "switch" %}arm64{% else %}x64{% endif %} --scripting-backend=il2cpp --suite=playmode --platform={{ platform.standalone }} --editor-location=.Editor --artifacts-path=artifacts --player-save-path=build/players --testfilter="Unity.Netcode.RuntimeTests.*" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -49,37 +69,28 @@ build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     logs:
       paths:
         - "artifacts/**/*"
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
   
   
   
-# Executes RuntimeTests of the NGO package in the Standalone build for consoles
+# RUN PHASE CONFIGURATION------------------------------------------------------------------------------------
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
 {% for editor in validation_editors.all -%}
-# When building consoles with 2023 editor there are errors related to SDK version or uninstalled components. I will disable those for now and will add to my investigation list 
-{% if editor != "2023.3" %}
-run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
+console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: Run {{ project.name }} Tests - [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
 {% if platform.model %}
-    model: {{ platform.model }}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    # Installing tools.
-    - sudo pip install unity-downloader-cli
-    - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }} --fast --wait
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
-
-    # Platform specific Execution
-    - utr --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
-
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp -c {{ platform.name }}
+    - UnifiedTestRunner --suite=playmode --testproject={{ project.path }} --editor-location=.Editor --artifacts-path=test-results --player-load-path=build/players --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=1800
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
@@ -95,8 +106,7 @@ run_{{ project.name }}_tests_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/console-standalone-test.yml#build_{{ project.name }}_{{ platform.name }}_{{ editor }}
-{% endif -%}
+    - .yamato/console-standalone-test.yml#console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

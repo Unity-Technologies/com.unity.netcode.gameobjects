@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
@@ -38,6 +39,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Tracked in MTT-11608
         [TestCase(53.55d, 53.5d, 10u)]
         [TestCase(1013553.55d, 1013553.5d, 10u)]
         [TestCase(0d, 0d, 10u)]
@@ -52,6 +54,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.OSXPlayer, RuntimePlatform.OSXEditor })] // Tracked in MTT-11608
         [TestCase(34d, 0)]
         [TestCase(17.32d, 0.2d / 60d)]
         [TestCase(-42.44d, 1d / 60d - 0.4d / 60d)]

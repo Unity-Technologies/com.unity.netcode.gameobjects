@@ -1,10 +1,29 @@
-{% metadata_file .yamato/project.metafile %}
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
 ---
 
-# Executes PlayMode and EditMode tests of the given project (ones that have tests) in the Editor context
-# Those tests don't include NGO package tests since they are handled on their respective jobs.
-# Those tests run in the editor so we don't need to consider different scripting backends or architectures
-# Tests are executed for all supported editors on each desktop platform as in project.metafile declaration
+# DESCRIPTION--------------------------------------------------------------------------
+  # This job executes project-specific tests in Unity Editor context
+  # Those tests cover both PlayMode and EditMode tests from project test assemblies
+  # NGO package tests are NOT being executed within this job (those are handled in separate package test jobs)
+  
+# CONFIGURATION STRUCTURE--------------------------------------------------------------
+  # Jobs configurations are generated using nested loops through:
+    # 1. For all projects WITH TESTS (filtered by has_tests flag) (testproject, testproject-tools-interation) [For more info look into project.metafile configuration]
+    # 2. For all desktop platforms (Windows, Ubuntu, macOS)
+    # 3. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
+  
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # This job runs in Editor context only (no player builds is required)
+  # No scripting backend variations needed (Editor context)
+  # Architecture variations not applicable (Editor context)
+  # Requires project packaging as prerequisite (dependency job)
+  
+# QUALITY CONSIDERATIONS--------------------------------------------------------------------
+  # TODO: Currently upm-ci is being used but in the future it will be replaced by upm-pvp
+  # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  
+#------------------------------------------------------------------------------------
+  
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
@@ -15,10 +34,13 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
+{% if platform.model %}
+    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
+{% endif %}
   commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - unity-downloader-cli -u {{ editor }} -c Editor --fast --wait
-    - {% if platform.name == "ubuntu" %}DISPLAY=:0 && {% endif %}upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests --extra-utr-arg="--extra-editor-arg=-testCategory --extra-editor-arg=!Performance --reruncount=1 --clean-library-on-rerun"
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
+    - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Installing basic editor for tests execution
+    - upm-ci project test -u {{ editor }} --project-path {{ project.path }} --type project-tests --extra-utr-arg="--reruncount=1 --clean-library-on-rerun" # project tests execution via upm-ci
   artifacts:
     logs:
       paths:
