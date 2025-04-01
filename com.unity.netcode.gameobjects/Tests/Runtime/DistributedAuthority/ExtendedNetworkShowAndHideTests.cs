@@ -97,7 +97,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_LateJoinClient = networkManager;
             networkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
-            networkManager.NetworkConfig.Prefabs = m_SpawnOwner.NetworkConfig.Prefabs;
             base.OnNewClientCreated(networkManager);
         }
 
