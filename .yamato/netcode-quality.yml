@@ -1,0 +1,7 @@
+netcode-quality:
+  name: "Netcode - Quality verification"
+  agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
+  commands:
+    - python Tools/CI/quality.py
+  triggers:
+    expression: pull_request.changes.any match "com.unity.netcode.gameobjects/**"
