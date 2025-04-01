@@ -539,9 +539,6 @@ namespace Unity.Netcode
         /// <param name="deltaTime">time since last call</param>
         /// <param name="renderTime">our current time</param>
         /// <param name="serverTime">current server time</param>
-        /// <remarks>
-        /// We no longer use serverTime.
-        /// </remarks>
         /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, double renderTime, double serverTime)
         {

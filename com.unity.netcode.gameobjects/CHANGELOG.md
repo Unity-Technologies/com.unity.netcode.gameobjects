@@ -11,7 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
-- Added `LerpExtrapolateBlend` interpolation type that provides users with something between standard lerp and smooth dampening. (#3355)
+- Added `LerpAhead` interpolation type that provides users with something between standard lerp and smooth dampening. (#3355)
 - Added property to enable or disable lerp smoothing for position, rotation, and scale interpolators. (#3355)
 - Added `NetworkTransform.InterpolationBufferTickOffset` static property to provide users with a way to increase or decrease the time marker where interpolators will pull state update from the queue. (#3355)
 - Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
