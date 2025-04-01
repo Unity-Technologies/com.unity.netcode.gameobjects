@@ -524,6 +524,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
+            // Ensure any late joining client has all NetworkPrefabs required to connect.
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
+                {
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                }
+            }
         }
 
         /// <summary>
