@@ -32,7 +32,7 @@ jobs:
           EXISTING_LABELS: ${{ toJson(github.event.issue.labels.*.name) }}
 
       - name: Remove labels
-        if: env.HAS_LABELS == 'true'
+        if: ${{ env.REMOVE_LABELS != '' }}
         run: gh issue edit "$NUMBER" --remove-label "$REMOVE_LABELS"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
