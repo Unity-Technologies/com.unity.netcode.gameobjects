@@ -4003,7 +4003,7 @@ namespace Unity.Netcode.Components
         #region UPDATES AND AUTHORITY CHECKS
         private NetworkTransformTickRegistration m_NetworkTransformTickRegistration;
 
-#if DEBUG_LINEARBUFFER && UNITY_EDITOR
+#if DEBUG_LINEARBUFFER
 #if UNITY_EDITOR
         // For debugging purposes
         public struct BufferEntry

@@ -477,55 +477,58 @@ namespace Unity.Netcode
         /// <param name="renderTime"></param>
         private void TryConsumeFromBuffer(double renderTime, double serverTime)
         {
-            BufferedItem? previousItem = null;
-            var alreadyHasBufferItem = false;
-            while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
+            if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime))
             {
-                // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
-                // to consume.
-                if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
+                BufferedItem? previousItem = null;
+                var alreadyHasBufferItem = false;
+                while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
                 {
-                    break;
-                }
-
-                if ((potentialItem.TimeSent <= serverTime) &&
-                    (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
-                {
-                    if (m_BufferQueue.TryDequeue(out BufferedItem target))
+                    // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
+                    // to consume.
+                    if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
                     {
-                        if (!InterpolateState.Target.HasValue)
+                        break;
+                    }
+
+                    if ((potentialItem.TimeSent <= serverTime) &&
+                        (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
+                    {
+                        if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
-                            InterpolateState.Target = target;
-                            alreadyHasBufferItem = true;
-                            InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                            InterpolateState.StartTime = target.TimeSent;
-                            InterpolateState.EndTime = target.TimeSent;
-                        }
-                        else
-                        {
-                            if (!alreadyHasBufferItem)
+                            if (!InterpolateState.Target.HasValue)
                             {
+                                InterpolateState.Target = target;
                                 alreadyHasBufferItem = true;
-                                InterpolateState.StartTime = InterpolateState.Target.Value.TimeSent;
                                 InterpolateState.PreviousValue = InterpolateState.CurrentValue;
-                                InterpolateState.TargetReached = false;
+                                InterpolateState.StartTime = target.TimeSent;
+                                InterpolateState.EndTime = target.TimeSent;
                             }
-                            InterpolateState.EndTime = target.TimeSent;
-                            InterpolateState.Target = target;
-                            InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
+                            else
+                            {
+                                if (!alreadyHasBufferItem)
+                                {
+                                    alreadyHasBufferItem = true;
+                                    InterpolateState.StartTime = InterpolateState.Target.Value.TimeSent;
+                                    InterpolateState.PreviousValue = InterpolateState.CurrentValue;
+                                    InterpolateState.TargetReached = false;
+                                }
+                                InterpolateState.EndTime = target.TimeSent;
+                                InterpolateState.Target = target;
+                                InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    break;
-                }
+                    else
+                    {
+                        break;
+                    }
 
-                if (!InterpolateState.Target.HasValue)
-                {
-                    break;
+                    if (!InterpolateState.Target.HasValue)
+                    {
+                        break;
+                    }
+                    previousItem = potentialItem;
                 }
-                previousItem = potentialItem;
             }
         }
 
