@@ -1,0 +1,70 @@
+﻿# This workflow manages issue assignments and related label changes:
+# 1. When someone is assigned to an issue:
+#    - Removes "stat:awaiting-triage" label
+#    - Adds "stat:Investigating" label
+# 2. When all assignees are removed from an issue:
+#    - Adds "stat:awaiting-triage" label
+#    - Removes "stat:Investigating" label
+# 3. When "stat:Investigating" label is added:
+#    - Automatically assigns the issue to the person who added the label
+
+name: Handle Issue Assignment and Labels
+
+on:
+  issues:
+    types: [assigned, unassigned, labeled]
+
+env:
+  AWAITING-TRIAGE_LABEL: stat:awaiting-triage
+  INVESTIGATING_LABEL: stat:Investigating
+
+jobs:
+  handle_assignment:
+    name: Handle Issue Assignment Changes
+    if: ${{ !github.event.issue.pull_request  }} && ${{ github.event.issue.state == 'open' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Handle Assignment Changes
+        run: |
+          if [[ "${{ github.event.action }}" == "assigned" ]]; then
+            # Someone was assigned - remove awaiting-triage, add investigating
+            echo "ADD=${{ env.INVESTIGATING_LABEL }}" >> $GITHUB_ENV
+            echo "REMOVE=${{ env.AWAITING-TRIAGE_LABEL }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event.action }}" == "unassigned" ]]; then
+            # Check if there are any remaining assignees
+            ASSIGNEES=$(echo '${{ toJson(github.event.issue.assignees) }}' | jq length)
+            if [[ "$ASSIGNEES" == "0" ]]; then
+              # No assignees left - add awaiting-triage, remove investigating
+              echo "ADD=${{ env.AWAITING-TRIAGE_LABEL }}" >> $GITHUB_ENV
+              echo "REMOVE=${{ env.INVESTIGATING_LABEL }}" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Update Labels
+        if: env.ADD != '' || env.REMOVE != ''
+        run: gh issue edit "$NUMBER" --add-label "$ADD" --remove-label "$REMOVE"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+
+  handle_investigating_label:
+    name: Handle Investigating Label Addition
+    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'stat:Investigating' && !github.event.issue.pull_request && github.event.issue.state == 'open' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Assign Issue to person that added Investigating Label
+        run: |
+          # Assign the issue to the person who added the label
+          gh issue edit "$NUMBER" --add-assignee "$ACTOR"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          ACTOR: ${{ github.actor }}
