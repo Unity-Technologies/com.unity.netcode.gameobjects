@@ -368,14 +368,14 @@ namespace Unity.Netcode.Transports.UTP
         internal static event Action<int> TransportDisposed;
 
         /// <summary>
-        /// Provides access to the <see cref="Networking.Transport.NetworkDriver"/> for this <see cref="UnityTransport"/> instance.
+        /// Provides access to the <see cref="NetworkDriver"/> for this instance.
         /// </summary>
         protected NetworkDriver m_Driver;
 
         /// <summary>
-        /// Gets a reference to the <see cref="Networking.Transport.NetworkDriver"/>.
+        /// Gets a reference to the <see cref="NetworkDriver"/>.
         /// </summary>
-        /// <returns>ref <see cref="Networking.Transport.NetworkDriver"/></returns>
+        /// <returns>ref <see cref="NetworkDriver"/></returns>
         public ref NetworkDriver GetNetworkDriver()
         {
             return ref m_Driver;
