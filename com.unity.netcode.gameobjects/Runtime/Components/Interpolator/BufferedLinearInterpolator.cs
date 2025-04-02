@@ -429,9 +429,9 @@ namespace Unity.Netcode
                         InterpolateState.PreviousValue = Interpolate(InterpolateState.Phase1Value, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
                         // Note: InterpolateState.LerpTPredict is clamped to LerpT if we have no next target
                         InterpolateState.PredictValue = InterpolateUnclamped(InterpolateState.Phase2Value, InterpolateState.Target.Value.Item, InterpolateState.LerpTPredict);
-                        
+
                     }
-                    
+
                     // Lerp between the PreviousValue and PredictedValue using the current delta time
                     targetValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.PredictValue, deltaTime);
 
