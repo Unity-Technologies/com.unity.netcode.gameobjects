@@ -475,7 +475,7 @@ namespace Unity.Netcode
         /// This version of TryConsumeFromBuffer adheres to the original BufferedLinearInterpolator buffer consumption pattern.
         /// </remarks>
         /// <param name="renderTime"></param>
-        private void TryConsumeFromBuffer(double renderTime)
+        private void TryConsumeFromBuffer(double renderTime, double serverTime)
         {
             BufferedItem? previousItem = null;
             var alreadyHasBufferItem = false;
@@ -488,7 +488,7 @@ namespace Unity.Netcode
                     break;
                 }
 
-                if ((potentialItem.TimeSent <= renderTime) &&
+                if ((potentialItem.TimeSent <= serverTime) &&
                     (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
                 {
                     if (m_BufferQueue.TryDequeue(out BufferedItem target))
@@ -500,7 +500,6 @@ namespace Unity.Netcode
                             InterpolateState.PreviousValue = InterpolateState.CurrentValue;
                             InterpolateState.StartTime = target.TimeSent;
                             InterpolateState.EndTime = target.TimeSent;
-                            InterpolateState.TargetReached = false;
                         }
                         else
                         {
@@ -542,7 +541,7 @@ namespace Unity.Netcode
         /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, double renderTime, double serverTime)
         {
-            TryConsumeFromBuffer(renderTime);
+            TryConsumeFromBuffer(renderTime, serverTime);
             // Only interpolate when there is a start and end point and we have not already reached the end value
             if (InterpolateState.Target.HasValue && !InterpolateState.TargetReached)
             {
@@ -603,9 +602,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Used for internal testing
         /// </summary>
-        internal T UpdateInternal(float deltaTime, NetworkTime serverTime)
+        internal T UpdateInternal(float deltaTime, NetworkTime serverTime, int ticksAgo = 1)
         {
-            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
+            return Update(deltaTime, serverTime.TimeTicksAgo(ticksAgo).Time, serverTime.Time);
         }
 
         /// <summary>
