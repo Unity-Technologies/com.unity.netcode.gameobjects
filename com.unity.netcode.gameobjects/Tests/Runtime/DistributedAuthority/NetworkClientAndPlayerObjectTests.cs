@@ -45,7 +45,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
             if (m_DistributedAuthority)
             {
                 networkManager.OnFetchLocalPlayerPrefabToSpawn = FetchPlayerPrefabToSpawn;

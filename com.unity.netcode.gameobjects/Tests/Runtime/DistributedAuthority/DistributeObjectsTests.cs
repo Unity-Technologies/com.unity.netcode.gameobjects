@@ -235,12 +235,6 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            base.OnNewClientCreated(networkManager);
-        }
-
         private bool SpawnCountsMatch()
         {
             var passed = true;
