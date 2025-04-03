@@ -528,10 +528,10 @@ namespace Unity.Netcode.Transports.UTP
             switch (delivery)
             {
                 case NetworkDelivery.Unreliable:
-                    return m_UnreliableFragmentedPipeline;
+                    //return m_UnreliableFragmentedPipeline;
 
                 case NetworkDelivery.UnreliableSequenced:
-                    return m_UnreliableSequencedFragmentedPipeline;
+                    //return m_UnreliableSequencedFragmentedPipeline;
 
                 case NetworkDelivery.Reliable:
                 case NetworkDelivery.ReliableSequenced:
@@ -1735,15 +1735,20 @@ namespace Unity.Netcode.Transports.UTP
 #endif
             );
 
-            reliableSequencedPipeline = driver.CreatePipeline(
-                typeof(ReliableSequencedPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-                , typeof(SimulatorPipelineStage)
-#endif
+//             reliableSequencedPipeline = driver.CreatePipeline(
+//                 typeof(ReliableSequencedPipelineStage)
+// #if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+//                 , typeof(SimulatorPipelineStage)
+// #endif
+// #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+//                 , typeof(NetworkMetricsPipelineStage)
+// #endif
+//             );
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
+            reliableSequencedPipeline = driver.CreatePipeline(typeof(NetworkMetricsPipelineStage));
+#else
+            reliableSequencedPipeline = NetworkPipeline.Null;
 #endif
-            );
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
