@@ -962,15 +962,34 @@ namespace Unity.Netcode.Components
         public enum InterpolationTypes
         {
             /// <summary>
-            /// Lerp (original NGO lerping model)<br />
-            /// Uses a 1 to 2 phase interpolation approach where:<br />
+            /// Legacy Lerp (original NGO lerping model)<br />
+            /// Uses a 1 to 2 phase lerp approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase lerps from the previous state update value to the next state update value.</description></item>
             /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
-            /// Lowest computation cost of the three options.<br />
+            /// For more information:<br />
+            /// <list type="bullet">
+            /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="PositionLerpSmoothing"/></term></item>
+            /// <item><term><see cref="RotationMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="RotationLerpSmoothing"/></term></item>
+            /// <item><term><see cref="ScaleMaxInterpolationTime"/></term></item>
+            /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
+            /// </list>
+            /// </remarks>
+            LegacyLerp,
+            /// <summary>
+            /// Lerp (maintains time to target when <see cref="InterpolationBufferTickOffset"/> under higher <see cref="NetworkTimeSystem.TickLatency"/> conditions) <br />
+            /// Uses a 1 to 2 phase interpolation approach where:<br />
+            /// <list type="bullet">
+            /// <item><description>The first phase lerps from the previous state update value to the next state update value.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of 1.0 minus the respective maximum interpolation time.</description></item>
+            /// </list>
+            /// </summary>
+            /// <remarks>
             /// For more information:<br />
             /// <list type="bullet">
             /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
@@ -983,41 +1002,16 @@ namespace Unity.Netcode.Components
             /// </remarks>
             Lerp,
             /// <summary>
-            /// Lerp Ahead
-            /// Uses a 3 to 4 phase approach that lerps towards the target, lerps towards the next target (if one exists) ahead by 1 frame delta, blends the two results, and (optionally) smooth the final value.<br />
-            /// <list type="bullet">
-            /// <item><description>The first phase lerps towards the current tick state update being processed.</description></item>
-            /// <item><description>The second phase lerps unclamped (extrapolates) towards the next tick state update. If there is no next target, then it lerps towards the current target unclamped with "t" being clamped to 1.0.</description></item>
-            /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
-            /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
-            /// </list>
-            /// </summary>
-            /// <remarks>
-            /// Note: This is slightly more computationally expensive than the <see cref="Lerp"/> approach.<br />
-            /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.<br />
-            /// For more information:<br />
-            /// <list type="bullet">
-            /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
-            /// <item><term><see cref="PositionLerpSmoothing"/></term></item>
-            /// <item><term><see cref="RotationMaxInterpolationTime"/></term></item>
-            /// <item><term><see cref="RotationLerpSmoothing"/></term></item>
-            /// <item><term><see cref="ScaleMaxInterpolationTime"/></term></item>
-            /// <item><term><see cref="ScaleLerpSmoothing"/></term></item>
-            /// </list>
-            /// </remarks>
-            LerpAhead,
-            /// <summary>
-            /// Uses a 3 to 4 phase approach that smooth dampens towards the target, smooth dampens ahead of the target, blends the two results, and (optionally) smooth the final value.<br />
+            /// Smooth Dampening (maintains time to target when <see cref="InterpolationBufferTickOffset"/> under higher <see cref="NetworkTimeSystem.TickLatency"/> conditions) <br />
+            /// Uses a 1 to 2 phase smooth dampening approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase smooth dampens towards the current tick state update being processed by the accumulated delta time relative to the time to target.</description></item>
-            /// <item><description>The second phase smooth dampens ahead of the previous phase by the accumulated delta time, relative to the time to target, plus the current delta time for the current update.</description></item>
-            /// <item><description>The third phase lerps between the results of the first and second phases by the current delta time.</description></item>
-            /// <item><description>The fourth phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
-            /// Note: Smooth dampening is computationally more expensive than the <see cref="LerpAhead"/> and <see cref="Lerp"/> approaches.<br />
-            /// It is recommended to turn lerp smoothing off or adjust the interpolation time to a lower value if you want a more precise end result.
+            /// Note: Smooth dampening is computationally more expensive than the <see cref="Lerp"/> and <see cref="LegacyLerp"/> approaches.<br />
+            /// It is recommended to turn lerp smoothing off or adjust the maximum interpolation time to a lower value if you want a more precise end result.
             /// For more information:<br />
             /// <list type="bullet">
             /// <item><term><see cref="PositionMaxInterpolationTime"/></term></item>
@@ -1036,9 +1030,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
-        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LegacyLerp"/></term><description>Yields the original Netcode for GameObjects lerp result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Uses the newer linear buffer queue consumption approach that maintains a consistent time to the next target.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Uses the newer linear buffer queue consumption approach and adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
@@ -1055,9 +1049,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
-        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LegacyLerp"/></term><description>Yields the original Netcode for GameObjects lerp result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Uses the newer linear buffer queue consumption approach that maintains a consistent time to the next target.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Uses the newer linear buffer queue consumption approach and adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
@@ -1074,9 +1068,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// <list type="bullet">
-        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Yields a traditional linear result.</description></item>
-        /// <item><term><see cref="InterpolationTypes.LerpAhead"/></term><description>Lerps, extrapolates, and blends the results.</description></item>
-        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Adjusts based on the rate of change.</description></item>
+        /// <item><term><see cref="InterpolationTypes.LegacyLerp"/></term><description>Yields the original Netcode for GameObjects lerp result.</description></item>
+        /// <item><term><see cref="InterpolationTypes.Lerp"/></term><description>Uses the newer linear buffer queue consumption approach that maintains a consistent time to the next target.</description></item>
+        /// <item><term><see cref="InterpolationTypes.SmoothDampening"/></term><description>Uses the newer linear buffer queue consumption approach and adjusts based on the rate of change.</description></item>
         /// </list>
         /// Things to consider:<br />
         /// <list type="bullet">
@@ -1098,19 +1092,13 @@ namespace Unity.Netcode.Components
         private bool m_PreviousPositionLerpSmoothing;
 
         /// <summary>
-        /// The position interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.<br />
+        /// The position interoplation maximum interpolation time.<br />
         /// <list type="bullet">
         /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
         /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
         /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. linear velocity or the like).</description></item>
         /// </list>
         /// </summary>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
-        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
-        /// </list>
-        /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float PositionMaxInterpolationTime = 0.1f;
@@ -1125,19 +1113,13 @@ namespace Unity.Netcode.Components
         private bool m_PreviousRotationLerpSmoothing;
 
         /// <summary>
-        /// The rotation interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
+        /// The rotation interoplation maximum interpolation time.<br />
         /// <list type="bullet">
         /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
         /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
         /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value (i.e. angular velocity).</description></item>
         /// </list>
         /// </summary>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
-        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
-        /// </list>
-        /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float RotationMaxInterpolationTime = 0.1f;
@@ -1152,19 +1134,13 @@ namespace Unity.Netcode.Components
         private bool m_PreviousScaleLerpSmoothing;
 
         /// <summary>
-        /// The scale interoplation time divisor applied to the current delta time (dividend) where the quotient yields the time used for the second smoothing lerp.
+        /// The scale interoplation maximum interpolation time.<br />
         /// <list type="bullet">
         /// <item><description>The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct).</description></item>
         /// <item><description>The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).</description></item>
         /// <item><description>This value can be adjusted during runtime in the event you want to dynamically adjust it based on some other value.</description></item>
         /// </list>
         /// </summary>
-        /// <remarks>
-        /// <list type="bullet">
-        /// <item><description>Only used When <see cref="Interpolate"/> is enabled.</description></item>
-        /// <item><description>The quotient will be clamped to a value that ranges from 1.0f to the current delta time (i.e. <see cref="Time.deltaTime"/> or <see cref="Time.fixedDeltaTime"/>)</description></item>
-        /// </list>
-        /// </remarks>
         [Tooltip("The higher the value the smoother, but can result in lost data points (i.e. quick changes in direct). The lower the value the more accurate/precise, but can result in slight stutter (i.e. due to jitter, latency, or a high threshold value).")]
         [Range(0.01f, 1.0f)]
         public float ScaleMaxInterpolationTime = 0.1f;
@@ -4023,14 +3999,12 @@ namespace Unity.Netcode.Components
             public int BufferCount;
             public int TickMeasured;
             public float LerpT;
-            public float LerpTPredict;
             public double DeltaTime;
-            public double DeltaTimePredict;
             public double MaxDeltaTime;
             public double TimeSent;
             public double TimeToTargetValue;
             public Vector3 PreviousValue;
-            public Vector3 PredictValue;
+            public Vector3 NextValue;
             public Vector3 CurrentValue;
             public Vector3 TargetValue;
 
@@ -4064,6 +4038,16 @@ namespace Unity.Netcode.Components
         public double GetPositionCurrentStateTimeToTarget()
         {
             return m_PositionInterpolator.InterpolateState.TimeToTargetValue;
+        }
+
+        public double GetPositionLerpT()
+        {
+            return m_PositionInterpolator.InterpolateState.LerpT;
+        }
+
+        public double GetPositionLastRemainingTime()
+        {
+            return m_PositionInterpolator.InterpolateState.LastRemainingTime;
         }
 #endif
 
@@ -4141,14 +4125,14 @@ namespace Unity.Netcode.Components
                     m_PositionInterpolator.ResetCurrentState();
                 }
 
-                if (PositionInterpolationType == InterpolationTypes.Lerp)
+                if (PositionInterpolationType == InterpolationTypes.LegacyLerp)
                 {
                     m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        PositionInterpolationType == InterpolationTypes.LerpAhead);
+                        PositionInterpolationType == InterpolationTypes.Lerp);
                 }
             }
 
@@ -4172,14 +4156,14 @@ namespace Unity.Netcode.Components
                 // When using full precision Slerp towards the target rotation.
                 /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
                 m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
-                if (RotationInterpolationType == InterpolationTypes.Lerp)
+                if (RotationInterpolationType == InterpolationTypes.LegacyLerp)
                 {
                     m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        RotationInterpolationType == InterpolationTypes.LerpAhead);
+                        RotationInterpolationType == InterpolationTypes.Lerp);
                 }
             }
 
@@ -4200,14 +4184,14 @@ namespace Unity.Netcode.Components
                     m_ScaleInterpolator.ResetCurrentState();
                 }
 
-                if (ScaleInterpolationType == InterpolationTypes.Lerp)
+                if (ScaleInterpolationType == InterpolationTypes.LegacyLerp)
                 {
                     m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
                 }
                 else
                 {
                     m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, minDeltaTime, maxDeltaTime,
-                        ScaleInterpolationType == InterpolationTypes.LerpAhead);
+                        ScaleInterpolationType == InterpolationTypes.Lerp);
                 }
             }
 
@@ -4231,14 +4215,12 @@ namespace Unity.Netcode.Components
                     BufferCount = m_PositionInterpolator.m_BufferQueue.Count,
                     TickMeasured = (int)Math.Round(m_PositionInterpolator.InterpolateState.Target.Value.TimeSent / timeSystem.FixedDeltaTimeAsDouble, MidpointRounding.AwayFromZero),
                     LerpT = m_PositionInterpolator.InterpolateState.LerpT,
-                    LerpTPredict = m_PositionInterpolator.InterpolateState.LerpTPredict,
                     DeltaTime = m_PositionInterpolator.InterpolateState.DeltaTime,
-                    DeltaTimePredict = m_PositionInterpolator.InterpolateState.DeltaTimePredict,
                     MaxDeltaTime = m_PositionInterpolator.InterpolateState.MaxDeltaTime,
                     TimeSent = m_PositionInterpolator.InterpolateState.Target.Value.TimeSent,
                     TimeToTargetValue = m_PositionInterpolator.InterpolateState.TimeToTargetValue,
                     PreviousValue = m_PositionInterpolator.InterpolateState.PreviousValue,
-                    PredictValue = m_PositionInterpolator.InterpolateState.PredictValue,
+                    NextValue = m_PositionInterpolator.InterpolateState.NextValue,
                     CurrentValue = m_PositionInterpolator.InterpolateState.CurrentValue,
                     TargetValue = m_PositionInterpolator.InterpolateState.Target.Value.Item,
                     Buffer = new List<BufferEntry>(),
