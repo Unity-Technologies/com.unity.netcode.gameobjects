@@ -776,7 +776,8 @@ namespace Unity.Netcode.Transports.UTP
                 while (!Queue.IsEmpty)
                 {
                     var result = Driver.BeginSend(pipeline, connection, out var writer);
-                    if (result != (int)Networking.Transport.Error.StatusCode.Success)
+                    if (result != (int)Networking.Transport.Error.StatusCode.Success &&
+                        result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
                     {
                         Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
                         return;
