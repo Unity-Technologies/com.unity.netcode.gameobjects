@@ -25,6 +25,7 @@ jobs:
           days-before-stale: 30
           days-before-close: 30
           stale-issue-label: 'Stale'
+          exempt-issue-labels: 'stat:import', 'stat:imported'
           stale-issue-message: >
             This issue has been automatically marked as stale because it has been awaiting 
             response for over 30 days without any activity.
