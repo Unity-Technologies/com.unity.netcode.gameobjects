@@ -443,7 +443,6 @@ namespace Unity.Netcode
             {
                 BufferedItem? previousItem = null;
                 var alreadyHasBufferItem = false;
-                var count = 0;
                 while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
