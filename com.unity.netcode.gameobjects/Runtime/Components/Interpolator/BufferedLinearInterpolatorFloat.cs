@@ -25,7 +25,7 @@ namespace Unity.Netcode
 
         /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected override bool IsAproximately(float first, float second, float precision = 1E-07F)
+        private protected override bool IsApproximately(float first, float second, float precision = 1E-06F)
         {
             return Mathf.Approximately(first, second);
         }

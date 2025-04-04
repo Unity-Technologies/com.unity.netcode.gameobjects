@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -14,8 +15,15 @@ namespace Unity.Netcode
         // Constant absolute value for max buffer count instead of dynamic time based value. This is in case we have very low tick rates, so
         // that we don't have a very small buffer because of this.
         private const int k_BufferCountLimit = 100;
-        private const float k_AproximatePrecision = 0.0001f;
+        private const float k_ApproximateLowPrecision = 0.000001f;
+        private const float k_ApproximateHighPrecision = 1E-10f;
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetPrecision()
+        {
+            return m_BufferQueue.Count == 0 ? k_ApproximateHighPrecision : k_ApproximateLowPrecision;
+        }
 
         #region Legacy notes
         // Buffer consumption scenarios
@@ -132,6 +140,7 @@ namespace Unity.Netcode
             public float CurrentDeltaTime => m_CurrentDeltaTime;
             public double FinalTimeToTarget => Math.Max(0.0, TimeToTargetValue - DeltaTime);
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void AddDeltaTime(float deltaTime)
             {
                 m_CurrentDeltaTime = deltaTime;
@@ -139,6 +148,7 @@ namespace Unity.Netcode
                 LerpT = (float)(TimeToTargetValue == 0.0 ? 1.0 : DeltaTime / TimeToTargetValue);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void SetTimeToTarget(double timeToTarget)
             {
                 LerpT = 0.0f;
@@ -146,6 +156,7 @@ namespace Unity.Netcode
                 TimeToTargetValue = timeToTarget;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool TargetTimeAproximatelyReached()
             {
                 if (!Target.HasValue)
@@ -237,6 +248,7 @@ namespace Unity.Netcode
             InternalReset(targetValue, serverTime);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void InternalReset(T targetValue, double serverTime, bool addMeasurement = true)
         {
             m_RateOfChange = default;
@@ -271,7 +283,7 @@ namespace Unity.Netcode
             {
                 if (!InterpolateState.TargetReached)
                 {
-                    InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+                    InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
                 }
                 return;
             }
@@ -291,7 +303,7 @@ namespace Unity.Netcode
                     potentialItemNeedsProcessing = ((potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent > InterpolateState.Target.Value.TimeSent);
                     if (!InterpolateState.TargetReached)
                     {
-                        InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+                        InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
                     }
                 }
 
@@ -424,6 +436,7 @@ namespace Unity.Netcode
         /// This version of TryConsumeFromBuffer adheres to the original BufferedLinearInterpolator buffer consumption pattern.
         /// </remarks>
         /// <param name="renderTime"></param>
+        /// <param name="serverTime"></param>
         private void TryConsumeFromBuffer(double renderTime, double serverTime)
         {
             if (!InterpolateState.Target.HasValue || (InterpolateState.Target.Value.TimeSent <= renderTime))
@@ -433,14 +446,16 @@ namespace Unity.Netcode
                 while (m_BufferQueue.TryPeek(out BufferedItem potentialItem))
                 {
                     // If we are still on the same buffered item (FIFO Queue), then exit early as there is nothing
-                    // to consume.
+                    // to consume. (just a safety check but this scenario should never happen based on the below legacy approach of
+                    // consuming until the most current state)
                     if (previousItem.HasValue && previousItem.Value.TimeSent == potentialItem.TimeSent)
                     {
                         break;
                     }
 
-                    if ((potentialItem.TimeSent <= serverTime) &&
-                        (!InterpolateState.Target.HasValue || InterpolateState.Target.Value.TimeSent < potentialItem.TimeSent))
+                    // Continue to processing until we reach the most current state
+                    if ((potentialItem.TimeSent <= serverTime) && // Inverted logic (below) from original since we have to go from past to present
+                        (!InterpolateState.Target.HasValue || potentialItem.TimeSent > InterpolateState.Target.Value.TimeSent))
                     {
                         if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
@@ -449,6 +464,7 @@ namespace Unity.Netcode
                                 InterpolateState.Target = target;
                                 alreadyHasBufferItem = true;
                                 InterpolateState.NextValue = InterpolateState.CurrentValue;
+                                InterpolateState.PreviousValue = InterpolateState.CurrentValue;
                                 InterpolateState.StartTime = target.TimeSent;
                                 InterpolateState.EndTime = target.TimeSent;
                             }
@@ -458,18 +474,14 @@ namespace Unity.Netcode
                                 {
                                     alreadyHasBufferItem = true;
                                     InterpolateState.StartTime = InterpolateState.Target.Value.TimeSent;
-                                    InterpolateState.NextValue = InterpolateState.CurrentValue;
+                                    InterpolateState.PreviousValue = InterpolateState.NextValue;
                                     InterpolateState.TargetReached = false;
                                 }
                                 InterpolateState.EndTime = target.TimeSent;
-                                InterpolateState.Target = target;
                                 InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
+                                InterpolateState.Target = target;
                             }
                         }
-                    }
-                    else
-                    {
-                        break;
                     }
 
                     if (!InterpolateState.Target.HasValue)
@@ -505,19 +517,20 @@ namespace Unity.Netcode
                     InterpolateState.LerpT = Math.Clamp((float)((renderTime - InterpolateState.StartTime) / InterpolateState.TimeToTargetValue), 0.0f, 1.0f);
                 }
 
-                var target = Interpolate(InterpolateState.NextValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
+                InterpolateState.NextValue = Interpolate(InterpolateState.PreviousValue, InterpolateState.Target.Value.Item, InterpolateState.LerpT);
 
                 if (LerpSmoothEnabled)
                 {
                     // Assure our MaximumInterpolationTime is valid and that the second lerp time ranges between deltaTime and 1.0f.
-                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, target, deltaTime / MaximumInterpolationTime);
+                    InterpolateState.CurrentValue = Interpolate(InterpolateState.CurrentValue, InterpolateState.NextValue, deltaTime / MaximumInterpolationTime);
                 }
                 else
                 {
-                    InterpolateState.CurrentValue = target;
+                    InterpolateState.CurrentValue = InterpolateState.NextValue;
                 }
+
                 // Determine if we have reached our target
-                InterpolateState.TargetReached = IsAproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item);
+                InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
             }
             else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
             if (m_BufferQueue.Count == 0 && InterpolateState.TargetReached)
@@ -601,6 +614,7 @@ namespace Unity.Netcode
         /// Gets latest value from the interpolator. This is updated every update as time goes by.
         /// </summary>
         /// <returns>The current interpolated value of type 'T'</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetInterpolatedValue()
         {
             return InterpolateState.CurrentValue;
@@ -638,6 +652,7 @@ namespace Unity.Netcode
         /// <param name="deltaTime">The increasing delta time from when start to finish.</param>
         /// <param name="maxSpeed">Maximum rate of change per pass.</param>
         /// <returns>The smoothed <see cref="T"/> value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected virtual T SmoothDamp(T current, T target, ref T rateOfChange, float duration, float deltaTime, float maxSpeed = Mathf.Infinity)
         {
             return target;
@@ -653,7 +668,8 @@ namespace Unity.Netcode
         /// <param name="second">Second value of type <see cref="T"/>.</param>
         /// <param name="precision">The precision of the aproximation.</param>
         /// <returns>true if the two values are aproximately the same and false if they are not</returns>
-        private protected virtual bool IsAproximately(T first, T second, float precision = k_AproximatePrecision)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected virtual bool IsApproximately(T first, T second, float precision = k_ApproximateLowPrecision)
         {
             return false;
         }
@@ -665,6 +681,7 @@ namespace Unity.Netcode
         /// <param name="item">The item to convert.</param>
         /// <param name="inLocalSpace">local or world space (true or false).</param>
         /// <returns>The converted value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal virtual T OnConvertTransformSpace(Transform transform, T item, bool inLocalSpace)
         {
             return default;
@@ -675,6 +692,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="transform">The transform that the <see cref="Components.NetworkTransform"/> is associated with.</param>
         /// <param name="inLocalSpace">Whether the <see cref="Components.NetworkTransform"/> is now being tracked in local or world spaced.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ConvertTransformSpace(Transform transform, bool inLocalSpace)
         {
             var count = m_BufferQueue.Count;

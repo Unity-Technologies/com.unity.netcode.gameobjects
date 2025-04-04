@@ -66,7 +66,7 @@ namespace Unity.Netcode
 
         /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected override bool IsAproximately(Quaternion first, Quaternion second, float precision)
+        private protected override bool IsApproximately(Quaternion first, Quaternion second, float precision = 1E-06F)
         {
             return Mathf.Abs(first.x - second.x) <= precision &&
                 Mathf.Abs(first.y - second.y) <= precision &&
