@@ -199,7 +199,6 @@ namespace Unity.Netcode
         /// The current buffered items received by the authority.
         /// </summary>
         protected internal readonly Queue<BufferedItem> m_BufferQueue = new Queue<BufferedItem>(k_BufferCountLimit);
-        protected internal readonly List<BufferedItem> m_BufferList = new List<BufferedItem>(k_BufferCountLimit);
 
         /// <summary>
         /// The current interpolation state
