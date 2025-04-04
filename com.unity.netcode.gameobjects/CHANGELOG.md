@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message.
 - Fixed issue where the time delta that interpolators used would not be properly updated during multiple fixed update invocations within the same player loop frame. (#3355)
 - Fixed issue when using a distributed authority network topology and many clients attempt to connect simultaneously the session owner could max-out the maximum in-flight reliable messages allowed, start dropping packets, and some of the connecting clients would fail to fully synchronize. (#3350)
 - Fixed issue when using a distributed authority network topology and scene management was disabled clients would not be able to spawn any new network prefab instances until synchronization was complete. (#3350)
