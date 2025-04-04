@@ -968,6 +968,8 @@ namespace Unity.Netcode.Components
             /// <item><description>The first phase lerps from the previous state update value to the next state update value.</description></item>
             /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
+            /// !!! NOTE !!!<br />
+            /// The legacy lerp interpolation type does not use <see cref="NetworkTimeSystem.TickLatency"/> to determine the buffer depth. This is to preserve the same interpolation results when lerp smoothing is enabled.<br />
             /// </summary>
             /// <remarks>
             /// For more information:<br />
@@ -4085,6 +4087,17 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // Note: This is for the legacy lerp type in order to maintain the same end result for any games under development that have tuned their
+            // project's to match the legacy lerp's end result. This will not allow changes
+            var cachedRenderTime = 0.0;
+            if (PositionInterpolationType == InterpolationTypes.LegacyLerp || RotationInterpolationType == InterpolationTypes.LegacyLerp || ScaleInterpolationType == InterpolationTypes.LegacyLerp)
+            {
+                // Since InterpolationBufferTickOffset defaults to zero, this should not impact exist projects but still provides users with the ability to tweak
+                // their ticks ago time. 
+                var ticksAgo = (!IsServerAuthoritative() && !IsServer ? 2 : 1) + InterpolationBufferTickOffset;
+                cachedRenderTime = timeSystem.TimeTicksAgo(ticksAgo).Time;
+            }
+
             // Get the tick latency (ticks ago) as time (in the past) to process state updates in the queue.
             var tickLatencyAsTime = timeSystem.TimeTicksAgo(tickLatency).Time;
 
@@ -4127,7 +4140,7 @@ namespace Unity.Netcode.Components
 
                 if (PositionInterpolationType == InterpolationTypes.LegacyLerp)
                 {
-                    m_PositionInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
+                    m_PositionInterpolator.Update(cachedDeltaTime, cachedRenderTime, currentTime);
                 }
                 else
                 {
@@ -4158,7 +4171,7 @@ namespace Unity.Netcode.Components
                 m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
                 if (RotationInterpolationType == InterpolationTypes.LegacyLerp)
                 {
-                    m_RotationInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
+                    m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, currentTime);
                 }
                 else
                 {
@@ -4186,7 +4199,7 @@ namespace Unity.Netcode.Components
 
                 if (ScaleInterpolationType == InterpolationTypes.LegacyLerp)
                 {
-                    m_ScaleInterpolator.Update(cachedDeltaTime, tickLatencyAsTime, currentTime);
+                    m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, currentTime);
                 }
                 else
                 {

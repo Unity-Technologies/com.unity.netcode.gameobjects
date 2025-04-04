@@ -59,7 +59,7 @@ namespace Unity.Netcode
 
         /// <inheritdoc />
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
+        private protected override bool IsApproximately(Vector3 first, Vector3 second, float precision = 1E-06F)
         {
             return Math.Round(Mathf.Abs(first.x - second.x), 2) <= precision &&
                 Math.Round(Mathf.Abs(first.y - second.y), 2) <= precision &&
