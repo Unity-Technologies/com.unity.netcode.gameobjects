@@ -31,6 +31,9 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_PositionInterpolationTypeProperty;
         private SerializedProperty m_RotationInterpolationTypeProperty;
         private SerializedProperty m_ScaleInterpolationTypeProperty;
+        private SerializedProperty m_PositionLerpSmoothing;
+        private SerializedProperty m_RotationLerpSmoothing;
+        private SerializedProperty m_ScaleLerpSmoothing;
 
         private SerializedProperty m_PositionMaximumInterpolationTimeProperty;
         private SerializedProperty m_RotationMaximumInterpolationTimeProperty;
@@ -76,6 +79,11 @@ namespace Unity.Netcode.Editor
             m_RotationMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.RotationMaxInterpolationTime));
             m_ScaleInterpolationTypeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleInterpolationType));
             m_ScaleMaximumInterpolationTimeProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleMaxInterpolationTime));
+
+            m_PositionLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.PositionLerpSmoothing));
+            m_RotationLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.RotationLerpSmoothing));
+            m_ScaleLerpSmoothing = serializedObject.FindProperty(nameof(NetworkTransform.ScaleLerpSmoothing));
+
 
 
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
@@ -198,36 +206,42 @@ namespace Unity.Netcode.Editor
                     if (networkTransform.SynchronizePosition)
                     {
                         DrawPropertyField(m_PositionInterpolationTypeProperty);
-                        // Only display when using Lerp.
-                        if (networkTransform.PositionInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+
+                        BeginIndent();
+                        if (networkTransform.PositionInterpolationType != NetworkTransform.InterpolationTypes.SmoothDampening)
                         {
-                            BeginIndent();
                             DrawPropertyField(m_SlerpPosition);
-                            DrawPropertyField(m_PositionMaximumInterpolationTimeProperty);
-                            EndIndent();
                         }
+                        DrawPropertyField(m_PositionLerpSmoothing);
+                        if (networkTransform.PositionLerpSmoothing)
+                        {
+                            DrawPropertyField(m_PositionMaximumInterpolationTimeProperty);
+                        }
+                        EndIndent();
                     }
                     if (networkTransform.SynchronizeRotation)
                     {
                         DrawPropertyField(m_RotationInterpolationTypeProperty);
-                        // Only display when using Lerp.
-                        if (networkTransform.RotationInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+
+                        BeginIndent();
+                        DrawPropertyField(m_RotationLerpSmoothing);
+                        if (networkTransform.RotationLerpSmoothing)
                         {
-                            BeginIndent();
                             DrawPropertyField(m_RotationMaximumInterpolationTimeProperty);
-                            EndIndent();
                         }
+                        EndIndent();
                     }
                     if (networkTransform.SynchronizeScale)
                     {
                         DrawPropertyField(m_ScaleInterpolationTypeProperty);
-                        // Only display when using Lerp.
-                        if (networkTransform.ScaleInterpolationType == NetworkTransform.InterpolationTypes.Lerp)
+
+                        BeginIndent();
+                        DrawPropertyField(m_ScaleLerpSmoothing);
+                        if (networkTransform.ScaleLerpSmoothing)
                         {
-                            BeginIndent();
                             DrawPropertyField(m_ScaleMaximumInterpolationTimeProperty);
-                            EndIndent();
                         }
+                        EndIndent();
                     }
                     EndIndent();
                     EditorGUILayout.Space();

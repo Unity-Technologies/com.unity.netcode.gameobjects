@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -13,6 +15,7 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsSlerp;
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
         {
             if (IsSlerp)
@@ -26,6 +29,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
         {
             if (IsSlerp)
@@ -39,6 +43,7 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected internal override Vector3 OnConvertTransformSpace(Transform transform, Vector3 position, bool inLocalSpace)
         {
             if (inLocalSpace)
@@ -53,25 +58,19 @@ namespace Unity.Netcode
         }
 
         /// <inheritdoc />
-        private protected override bool IsAproximately(Vector3 first, Vector3 second, float precision = 0.0001F)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private protected override bool IsApproximately(Vector3 first, Vector3 second, float precision = 1E-06F)
         {
-            return Vector3.Distance(first, second) <= precision;
+            return Math.Round(Mathf.Abs(first.x - second.x), 2) <= precision &&
+                Math.Round(Mathf.Abs(first.y - second.y), 2) <= precision &&
+                Math.Round(Mathf.Abs(first.z - second.z), 2) <= precision;
         }
 
         /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected override Vector3 SmoothDamp(Vector3 current, Vector3 target, ref Vector3 rateOfChange, float duration, float deltaTime, float maxSpeed)
         {
-            if (m_IsAngularValue)
-            {
-                current.x = Mathf.SmoothDampAngle(current.x, target.x, ref rateOfChange.x, duration, maxSpeed, deltaTime);
-                current.y = Mathf.SmoothDampAngle(current.y, target.y, ref rateOfChange.y, duration, maxSpeed, deltaTime);
-                current.z = Mathf.SmoothDampAngle(current.z, target.z, ref rateOfChange.z, duration, maxSpeed, deltaTime);
-                return current;
-            }
-            else
-            {
-                return Vector3.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
-            }
+            return Vector3.SmoothDamp(current, target, ref rateOfChange, duration, maxSpeed, deltaTime);
         }
     }
 }
