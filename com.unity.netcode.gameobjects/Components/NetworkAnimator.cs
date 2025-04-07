@@ -1226,10 +1226,11 @@ namespace Unity.Netcode.Components
                         NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) sub-table does not contain destination state ({animationState.DestinationStateHash})!");
                     }
                 }
-                else if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
-                }
+                // For reference, it is valid to have no transition information
+                //else if (NetworkManager.LogLevel == LogLevel.Developer)
+                //{
+                //    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
+                //}
             }
             else if (animationState.Transition && animationState.CrossFade)
             {
