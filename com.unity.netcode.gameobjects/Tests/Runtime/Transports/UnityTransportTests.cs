@@ -496,7 +496,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
             var data = new ArraySegment<byte>(new byte[42]);
-            m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+            m_Server.Send(0, data, NetworkDelivery.Reliable);
 
             yield return EnsureNoNetworkEvent(m_Client1Events);
         }
