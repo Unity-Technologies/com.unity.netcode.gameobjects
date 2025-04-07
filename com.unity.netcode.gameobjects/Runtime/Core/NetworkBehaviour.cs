@@ -694,6 +694,9 @@ namespace Unity.Netcode
         /// </remarks>
         protected virtual void OnNetworkPostSpawn() { }
 
+        /// <summary>
+        /// Internal implementation of post-spawn functionality. Called after OnNetworkSpawn to handle internal post-spawn operations.
+        /// </summary>
         protected internal virtual void InternalOnNetworkPostSpawn() { }
 
         /// <summary>
@@ -708,6 +711,9 @@ namespace Unity.Netcode
         /// </remarks>
         protected virtual void OnNetworkSessionSynchronized() { }
 
+        /// <summary>
+        /// Internal implementation of network session synchronization. Handles the internal processing of session synchronization events.
+        /// </summary>
         protected internal virtual void InternalOnNetworkSessionSynchronized() { }
 
         /// <summary>
@@ -1386,6 +1392,11 @@ namespace Unity.Netcode
 
         }
 
+        /// <summary>
+        /// Called when network conditions require reanticipation of game state.
+        /// Override this method to handle adjustments needed when network latency changes.
+        /// </summary>
+        /// <param name="lastRoundTripTime">The most recent round trip time measurement in seconds</param>
         public virtual void OnReanticipate(double lastRoundTripTime)
         {
 
