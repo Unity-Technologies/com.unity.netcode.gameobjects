@@ -4,17 +4,38 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, NetworkTransform.InterpolationTypes.Lerp)]
     internal class NetworkTransformGeneral : NetworkTransformBase
     {
-        public NetworkTransformGeneral(HostOrServer testWithHost, Authority authority) :
+        public enum SmoothLerpSettings
+        {
+            SmoothLerp,
+            NormalLerp
+        }
+
+        public NetworkTransformGeneral(HostOrServer testWithHost, Authority authority, NetworkTransform.InterpolationTypes interpolationType) :
             base(testWithHost, authority, RotationCompression.None, Rotation.Euler, Precision.Full)
-        { }
+        {
+            NetworkTransform.AssignDefaultInterpolationType = true;
+            NetworkTransform.DefaultInterpolationType = interpolationType;
+        }
 
         protected override bool m_EnableTimeTravel => true;
         protected override bool m_SetupIsACoroutine => false;
         protected override bool m_TearDownIsACoroutine => false;
+
+        protected override void OnOneTimeTearDown()
+        {
+            m_EnableVerboseDebug = false;
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
+            base.OnOneTimeTearDown();
+        }
 
         /// <summary>
         /// Test to verify nonAuthority cannot change the transform directly
@@ -266,49 +287,57 @@ namespace Unity.Netcode.RuntimeTests
         /// This also tests that the original server authoritative model with client-owner driven NetworkTransforms is preserved.
         /// </remarks>
         [Test]
-        public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
+        public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation, [Values] SmoothLerpSettings smoothLerp)
         {
-            var interpolate = interpolation != Interpolation.EnableInterpolate;
+            var interpolate = interpolation == Interpolation.EnableInterpolate;
+            var usingSmoothLerp = (smoothLerp == SmoothLerpSettings.SmoothLerp) && interpolate;
+            var waitForDelay = usingSmoothLerp ? 1000 : 500;
+            m_NonAuthoritativeTransform.PositionLerpSmoothing = usingSmoothLerp;
+            m_NonAuthoritativeTransform.RotationLerpSmoothing = usingSmoothLerp;
+            m_NonAuthoritativeTransform.ScaleLerpSmoothing = usingSmoothLerp;
+
             m_AuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
 
+            m_EnableVerboseDebug = true;
+            VerboseDebug($"Target Frame Rate: {Application.targetFrameRate}");
             // Test one parameter at a time first
-            var newPosition = new Vector3(125f, 35f, 65f);
+            var newPosition = usingSmoothLerp ? new Vector3(15f, -12f, 10f) : new Vector3(55f, -24f, 20f);
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition));
-            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition), waitForDelay);
+            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!\n {VerboseDebugLog}");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
-
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles));
-            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles), waitForDelay);
+            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
 
             m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale));
-            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale), waitForDelay);
+            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {VerboseDebugLog}");
 
             // Test all parameters at once
-            newPosition = new Vector3(55f, 95f, -25f);
+            newPosition = new Vector3(-10f, 95f, -25f);
             newRotation = Quaternion.Euler(20, 5, 322);
             newScale = new Vector3(0.5f, 0.5f, 0.5f);
 
             m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale));
-            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!");
-            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
-            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
-            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
-            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
-            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale), waitForDelay);
+            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), $"Authoritative position does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), $"Non-Authoritative position does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), $"Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), $"Non-Authoritative rotation does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), $"Authoritative scale does not match!\n {VerboseDebugLog}");
+            Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), $"Non-Authoritative scale does not match!\n {VerboseDebugLog}");
         }
     }
 }

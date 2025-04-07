@@ -27,9 +27,7 @@ namespace Unity.Netcode.Components
 
         internal bool CollapsedDeltaIntoBase;
 
-        /// <summary>
-        /// The serialization implementation of <see cref="INetworkSerializable"/>
-        /// </summary>
+        /// <inheritdoc />
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (!SynchronizeBase)
@@ -105,6 +103,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only applies to the authoritative side for <see cref="NetworkTransform"/> instances.
         /// </remarks>
+        /// <returns>Returns the half float <see cref="Vector3"/> version of the current delta position.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetConvertedDelta()
         {
@@ -120,6 +119,7 @@ namespace Unity.Netcode.Components
         /// Precision loss adjustments are one network tick behind on the
         /// non-authoritative side.
         /// </remarks>
+        /// <returns>The full precision delta position value as a <see cref="Vector3"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetDeltaPosition()
         {

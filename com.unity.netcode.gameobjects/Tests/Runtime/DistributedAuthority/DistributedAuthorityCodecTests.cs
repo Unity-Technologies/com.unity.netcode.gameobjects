@@ -7,15 +7,27 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
-#if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Networking.Transport;
-#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// This class tests the NGO message codec between the C# SDK and the Rust runtime.
+    /// </summary>
+    /// <remarks>
+    /// These tests are run against a rust echo-server.
+    /// This server decodes incoming messages, and then re-encodes them before sending them back to the client.
+    /// Any errors in decoding or encoding messages will not echo the messages back, causing the tests to fail
+    /// No message handling logic is tested in these tests. They are only testing the codec.
+    /// The tests check if they can bind to a rust echo-server at the given address and port, if all tests are ignored.
+    /// The rust echo-server is run using `cargo run --example ngo_echo_server -- --port {port}`
+    /// The C# port can be configured using the environment variable "ECHO_SERVER_PORT"
+    /// The default behaviour when unity fails to connect to the echo-server is to ignore all tests in this class.
+    /// This can be overridden by setting the environment variable "ENSURE_CODEC_TESTS" to any value - then the tests will fail.
+    /// </remarks>
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -30,8 +42,18 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager Client => m_ClientNetworkManagers[0];
 
         private string m_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
-        private const int k_TransportPort = 7777;
+        private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
+
+        /// <summary>
+        /// Configures the port to look for the rust echo-server.
+        /// </summary>
+        /// <returns>The port from the environment variable "ECHO_SERVER_PORT" if it is set and valid; otherwise uses port 7777</returns>
+        private static ushort GetPortToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("ECHO_SERVER_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7777;
+        }
 
         private GameObject m_SpawnObject;
 
@@ -49,14 +71,18 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnOneTimeSetup()
         {
             // Prevents the tests from running if no CMB Service is detected
-#if !UTP_TRANSPORT_2_0_ABOVE
-            Assert.Ignore("ignoring DA codec tests because UTP transport must be 2.0");
-#else
             if (!CanConnectToServer(m_TransportHost, k_TransportPort))
             {
-                Assert.Ignore("ignoring DA codec tests because UTP transport cannot connect to the runtime");
+                var shouldFail = Environment.GetEnvironmentVariable("ENSURE_CODEC_TESTS");
+                if (string.IsNullOrEmpty(shouldFail) || shouldFail.ToLower() == "false")
+                {
+                    Assert.Ignore($"ignoring DA codec tests because UTP transport cannot connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
+                else
+                {
+                    Assert.Fail($"Failed to connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
             }
-#endif
             base.OnOneTimeSetup();
         }
 
@@ -579,7 +605,6 @@ namespace Unity.Netcode.RuntimeTests
             return m_ClientCodecHook.WaitForMessageReceived(message);
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
         private static bool CanConnectToServer(string host, ushort port, double timeoutMs = 100)
         {
             var address = Dns.GetHostAddresses(host).First();
@@ -604,7 +629,6 @@ namespace Unity.Netcode.RuntimeTests
             driver.Disconnect(connection);
             return true;
         }
-#endif
     }
 
     internal class CodecTestHooks : INetworkHooks

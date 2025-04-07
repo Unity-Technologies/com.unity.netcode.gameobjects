@@ -22,12 +22,6 @@ namespace TestProject.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            base.OnNewClientCreated(networkManager);
-        }
-
         private ulong m_SpawnedNetworkObjectId;
         private StringBuilder m_ErrorLog = new StringBuilder();
 
