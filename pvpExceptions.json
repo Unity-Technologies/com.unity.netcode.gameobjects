@@ -34,8 +34,6 @@
           "Unity.Netcode.NetworkPrefabs: bool Add(NetworkPrefab): missing <returns>",
           "Unity.Netcode.NetworkPrefabs: void Remove(NetworkPrefab): missing <param name=\"prefab\">",
           "Unity.Netcode.NetworkPrefabs: void Remove(GameObject): missing <param name=\"prefab\">",
-          "Unity.Netcode.NetworkClient: NetworkTopologyType: undocumented",
-          "Unity.Netcode.NetworkClient: DAHost: undocumented",
           "Unity.Netcode.ConnectionEventData: EventType: undocumented",
           "Unity.Netcode.RpcException: undocumented",
           "Unity.Netcode.RpcException: .ctor(string): undocumented",
