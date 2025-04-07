@@ -1342,8 +1342,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            var pipeline = SelectSendPipeline(networkDelivery);
+            var connection = ParseClientId(clientId);
+            if (!m_Driver.IsCreated || m_Driver.GetConnectionState(connection) != NetworkConnection.State.Connected)
+            {
+                return;
+            }
 
+            var pipeline = SelectSendPipeline(networkDelivery);
             if (pipeline != m_ReliableSequencedPipeline && payload.Count > m_MaxPayloadSize)
             {
                 Debug.LogError($"Unreliable payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
