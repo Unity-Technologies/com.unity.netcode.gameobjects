@@ -619,6 +619,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">Array of clients to wait for</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
+        /// <returns>An IEnumerator that yields until all clients are connected or timeout is reached</returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
