@@ -884,7 +884,6 @@ namespace Unity.Netcode
             var scale = sceneObject.HasTransform ? sceneObject.Transform.Scale : default;
             var parentNetworkId = sceneObject.HasParent ? sceneObject.ParentObjectId : default;
             var worldPositionStays = (!sceneObject.HasParent) || sceneObject.WorldPositionStays;
-            var isSpawnedByPrefabHandler = false;
 
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
@@ -917,7 +916,6 @@ namespace Unity.Netcode
                 networkObject.DontDestroyWithOwner = sceneObject.DontDestroyWithOwner;
                 networkObject.Ownership = (NetworkObject.OwnershipStatus)sceneObject.OwnershipFlags;
 
-
                 var nonNetworkObjectParent = false;
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
@@ -929,31 +927,34 @@ namespace Unity.Netcode
                 if (sceneObject.IsSceneObject && networkObject.transform.parent != null)
                 {
                     var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
+
+                    // special case to handle being parented under a GameObject with no NetworkObject
+                    nonNetworkObjectParent = !parentNetworkObject && !sceneObject.HasParent;
+
                     // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
                     // include parenting, then we need to force the removal of that parent (i.e. it is at the root)
-                    if (!sceneObject.HasParent && parentNetworkObject)
+                    if (parentNetworkObject)
                     {
-                        // remove the parent
-                        networkObject.ApplyNetworkParenting(true, true);
-                    }
-                    else // If we are parented and our latest parent known is not the parent =or= we are keeping world space values when parenting.
-                    if (parentNetworkObject && sceneObject.HasParent && sceneObject.LatestParent.HasValue
-                        && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays))
-                    {
-                        // remove the parent silently so we can re-parent an in-scene placed NetworkObject
-                        networkObject.ApplyNetworkParenting(true, true, silentParenting: true);
-                    }
-                    else // special case to handle being parented under a GameObject with no NetworkObject
-                    if (sceneObject.HasParent && !parentNetworkObject)
-                    {
-                        nonNetworkObjectParent = true;
+                        // Remove the parent if:
+                        // - The authority says we don't have a parent (but locally we do).
+                        // - The auhtority says we have a parent but either of the two are true:
+                        // -- It isn't the same parent.
+                        // -- It was parented using world position stays.
+                        var removeParent = !sceneObject.HasParent || (sceneObject.IsLatestParentSet
+                            && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays));
+                        if (removeParent)
+                        {
+                            // If parenting without notifications then we are temporarily removing the parent to set the transform
+                            // values before reparenting under the current parent.
+                            networkObject.ApplyNetworkParenting(true, true, enableNotification: !sceneObject.HasParent);
+                        }
                     }
                 }
 
                 // Set the transform unless we were spawned by a prefab handler
                 // Note: prefab handlers are provided the position and rotation
                 // but it is up to the user to set those values
-                if (sceneObject.HasTransform && !isSpawnedByPrefabHandler)
+                if (sceneObject.HasTransform)
                 {
                     // If world position stays is true or we have auto object parent synchronization disabled
                     // then we want to apply the position and rotation values world space relative
@@ -995,7 +996,6 @@ namespace Unity.Netcode
                     }
                     networkObject.SetNetworkParenting(parentId, worldPositionStays);
                 }
-
 
                 // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
                 // until the scene is loaded. They are then migrated back into the newly loaded and currently active scene.

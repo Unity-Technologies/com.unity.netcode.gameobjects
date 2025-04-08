@@ -695,7 +695,7 @@ namespace Unity.Netcode
             SortObjectsToSync();
 
             // Serialize the sorted objects to sync.
-            foreach(var objectToSycn in m_NetworkObjectsSync)
+            foreach (var objectToSycn in m_NetworkObjectsSync)
             {
                 // Serialize the NetworkObject
                 var sceneObject = objectToSycn.GetMessageSceneObject(TargetClientId, distributedAuthority);

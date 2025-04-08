@@ -2316,7 +2316,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false, bool silentParenting = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false, bool enableNotification = true)
         {
             if (!AutoObjectParentSync)
             {
@@ -2389,7 +2389,7 @@ namespace Unity.Netcode
                 // to WorldPositionStays which can cause scaling issues if the parent's
                 // scale is not the default (Vetctor3.one) value.
                 transform.SetParent(null, m_CachedWorldPositionStays);
-                if (!silentParenting)
+                if (enableNotification)
                 {
                     InvokeBehaviourOnNetworkObjectParentChanged(null);
                 }
@@ -2417,7 +2417,7 @@ namespace Unity.Netcode
             }
             SetCachedParent(parentObject.transform);
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-            if (!silentParenting)
+            if (enableNotification)
             {
                 InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             }
@@ -3057,6 +3057,8 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
+                HasParent = transform.parent != null,
+                WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 IsPlayerObject = IsPlayerObject,
@@ -3073,31 +3075,16 @@ namespace Unity.Netcode
                 TargetClientId = targetClientId
             };
 
-            NetworkObject parentNetworkObject = null;
-
-            if (!AlwaysReplicateAsRoot && transform.parent != null)
+            // Handle Parenting
+            if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
-                parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
-                // In-scene placed NetworkObjects parented under GameObjects with no NetworkObject
-                // should set the has parent flag and preserve the world position stays value
-                if (parentNetworkObject == null && obj.IsSceneObject)
-                {
-                    obj.HasParent = true;
-                    obj.WorldPositionStays = m_CachedWorldPositionStays;
-                }
-            }
+                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
-            if (parentNetworkObject != null)
-            {
-                obj.HasParent = true;
-                obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
-                obj.WorldPositionStays = m_CachedWorldPositionStays;
-                var latestParent = GetNetworkParenting();
-                var isLatestParentSet = latestParent != null && latestParent.HasValue;
-                obj.IsLatestParentSet = isLatestParentSet;
-                if (isLatestParentSet)
+                if (parentNetworkObject)
                 {
-                    obj.LatestParent = latestParent.Value;
+                    obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
+                    obj.LatestParent = GetNetworkParenting();
+                    obj.IsLatestParentSet = obj.LatestParent != null && obj.LatestParent.HasValue;
                 }
             }
 
@@ -3186,7 +3173,6 @@ namespace Unity.Netcode
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
-            Debug.Log($"Spawning {networkObject.name}");
 
             // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
             // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
