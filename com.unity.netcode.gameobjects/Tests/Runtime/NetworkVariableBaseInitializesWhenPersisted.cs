@@ -335,6 +335,8 @@ namespace Unity.Netcode.RuntimeTests
             /// This validates that the instances persisted to the next test set and persisted
             /// between network sessions
             /// </summary>
+            /// <param name="minCount">The minimum number of times each instance should have been spawned</param>
+            /// <returns>True if all instances meet the minimum spawn count requirement, false otherwise</returns>
             public bool ValidateInstanceSpawnCount(int minCount)
             {
                 // First pass we should have no instances

@@ -615,10 +615,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Similar to WaitForClientConnected, this waits for multiple clients to be connected.
         /// </summary>
-        /// <param name="clients">The clients to be connected</param>
+        /// <param name="clients">Array of clients to wait for</param>
         /// <param name="result">The result. If null, it will automatically assert<</param>
         /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
-        /// <returns></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
