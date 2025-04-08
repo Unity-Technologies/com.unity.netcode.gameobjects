@@ -47,10 +47,6 @@
           "Unity.Netcode.NetworkVariableBase: NetworkBehaviour GetBehaviour(): undocumented",
           "Unity.Netcode.NetworkVariableBase: void MarkNetworkBehaviourDirty(): undocumented",
           "Unity.Netcode.NetworkSceneManager: void SetClientSynchronizationMode(LoadSceneMode): XML is not well-formed: Expected an end tag for element 'summary'",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"eventType\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"clientId\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"payload\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"receiveTime\">",
           "Unity.Netcode.Transports.UTP.UnityTransport.ConnectionAddressData: IsIpv6: undocumented",
           
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: undocumented",
