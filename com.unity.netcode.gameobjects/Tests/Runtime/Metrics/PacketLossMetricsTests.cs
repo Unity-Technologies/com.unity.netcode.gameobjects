@@ -64,9 +64,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var clientNetworkManager = m_ClientNetworkManagers[0];
 
             var clientTransport = (UnityTransport)clientNetworkManager.NetworkConfig.NetworkTransport;
-            clientTransport.NetworkDriver.CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var parameters);
+            clientTransport.GetNetworkDriver().CurrentSettings.TryGet<SimulatorUtility.Parameters>(out var parameters);
             parameters.PacketDropPercentage = m_PacketLossRate;
-            clientTransport.NetworkDriver.ModifySimulatorStageParameters(parameters);
+            clientTransport.GetNetworkDriver().ModifySimulatorStageParameters(parameters);
 
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
                 NetworkMetricTypes.PacketLoss,

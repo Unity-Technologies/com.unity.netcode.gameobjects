@@ -16,8 +16,10 @@ using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 using UnityEngine;
-using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
-using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+
+using NetcodeEvent = Unity.Netcode.NetworkEvent;
+using TransportError = Unity.Networking.Transport.Error.StatusCode;
+using TransportEvent = Unity.Networking.Transport.NetworkEvent.Type;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -43,56 +45,6 @@ namespace Unity.Netcode.Transports.UTP
     }
 
     /// <summary>
-    /// Helper utility class to convert <see cref="Networking.Transport"/> error codes to human readable error messages.
-    /// </summary>
-    public static class ErrorUtilities
-    {
-        private static readonly FixedString128Bytes k_NetworkSuccess = "Success";
-        private static readonly FixedString128Bytes k_NetworkIdMismatch = "Invalid connection ID {0}.";
-        private static readonly FixedString128Bytes k_NetworkVersionMismatch = "Connection ID is invalid. Likely caused by sending on stale connection {0}.";
-        private static readonly FixedString128Bytes k_NetworkStateMismatch = "Connection state is invalid. Likely caused by sending on connection {0} which is stale or still connecting.";
-        private static readonly FixedString128Bytes k_NetworkPacketOverflow = "Packet is too large to be allocated by the transport.";
-        private static readonly FixedString128Bytes k_NetworkSendQueueFull = "Unable to queue packet in the transport. Likely caused by send queue size ('Max Send Queue Size') being too small.";
-
-        /// <summary>
-        /// Convert a UTP error code to human-readable error message.
-        /// </summary>
-        /// <param name="error">UTP error code.</param>
-        /// <param name="connectionId">ID of the connection on which the error occurred.</param>
-        /// <returns>Human-readable error message.</returns>
-        public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
-        {
-            return ErrorToString((int)error, connectionId);
-        }
-
-        internal static string ErrorToString(int error, ulong connectionId)
-        {
-            return ErrorToFixedString(error, connectionId).ToString();
-        }
-
-        internal static FixedString128Bytes ErrorToFixedString(int error, ulong connectionId)
-        {
-            switch ((Networking.Transport.Error.StatusCode)error)
-            {
-                case Networking.Transport.Error.StatusCode.Success:
-                    return k_NetworkSuccess;
-                case Networking.Transport.Error.StatusCode.NetworkIdMismatch:
-                    return FixedString.Format(k_NetworkIdMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkVersionMismatch:
-                    return FixedString.Format(k_NetworkVersionMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkStateMismatch:
-                    return FixedString.Format(k_NetworkStateMismatch, connectionId);
-                case Networking.Transport.Error.StatusCode.NetworkPacketOverflow:
-                    return k_NetworkPacketOverflow;
-                case Networking.Transport.Error.StatusCode.NetworkSendQueueFull:
-                    return k_NetworkSendQueueFull;
-                default:
-                    return FixedString.Format("Unknown error code {0}.", error);
-            }
-        }
-    }
-
-    /// <summary>
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
@@ -112,13 +64,6 @@ namespace Unity.Netcode.Transports.UTP
             /// Unity Transport Protocol over Relay
             /// </summary>
             RelayUnityTransport,
-        }
-
-        private enum State
-        {
-            Disconnected,
-            Listening,
-            Connected,
         }
 
         /// <summary>
@@ -421,17 +366,16 @@ namespace Unity.Netcode.Transports.UTP
 
         internal static event Action<int, NetworkDriver> TransportInitialized;
         internal static event Action<int> TransportDisposed;
-        internal NetworkDriver NetworkDriver => m_Driver;
 
         /// <summary>
-        /// Provides access to the <see cref="Networking.Transport.NetworkDriver"/> for this <see cref="UnityTransport"/> instance.
+        /// Provides access to the <see cref="NetworkDriver"/> for this instance.
         /// </summary>
         protected NetworkDriver m_Driver;
 
         /// <summary>
-        /// Gets a reference to the <see cref="Networking.Transport.NetworkDriver"/>.
+        /// Gets a reference to the <see cref="NetworkDriver"/>.
         /// </summary>
-        /// <returns>ref <see cref="Networking.Transport.NetworkDriver"/></returns>
+        /// <returns>ref <see cref="NetworkDriver"/></returns>
         public ref NetworkDriver GetNetworkDriver()
         {
             return ref m_Driver;
@@ -455,7 +399,6 @@ namespace Unity.Netcode.Transports.UTP
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
-        private State m_State = State.Disconnected;
         private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
@@ -501,7 +444,7 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
 
-            TransportInitialized?.Invoke(GetInstanceID(), NetworkDriver);
+            TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
         }
 
         private void DisposeInternals()
@@ -583,8 +526,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var serverConnection = Connect(serverEndpoint);
-            m_ServerClientId = ParseClientId(serverConnection);
+            Connect(serverEndpoint);
 
             return true;
         }
@@ -624,7 +566,6 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            m_State = State.Listening;
             return true;
         }
 
@@ -776,9 +717,9 @@ namespace Unity.Netcode.Transports.UTP
                 while (!Queue.IsEmpty)
                 {
                     var result = Driver.BeginSend(pipeline, connection, out var writer);
-                    if (result != (int)Networking.Transport.Error.StatusCode.Success)
+                    if (result != (int)TransportError.Success)
                     {
-                        Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                        Debug.LogError($"Send error on connection {clientId}: {ErrorUtilities.ErrorToFixedString(result)}");
                         return;
                     }
 
@@ -803,9 +744,9 @@ namespace Unity.Netcode.Transports.UTP
                         // and we'll retry sending them later). Otherwise log the error and remove the
                         // message from the queue (we don't want to resend it again since we'll likely
                         // just get the same error again).
-                        if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
+                        if (result != (int)TransportError.NetworkSendQueueFull)
                         {
-                            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                            Debug.LogError($"Send error on connection {clientId}: {ErrorUtilities.ErrorToFixedString(result)}");
                             Queue.Consume(written);
                         }
 
@@ -849,7 +790,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
+            InvokeOnTransportEvent(NetcodeEvent.Connect,
                 ParseClientId(connection),
                 default,
                 m_RealTimeProvider.RealTimeSinceStartup);
@@ -887,7 +828,7 @@ namespace Unity.Netcode.Transports.UTP
                     break;
                 }
 
-                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, m_RealTimeProvider.RealTimeSinceStartup);
+                InvokeOnTransportEvent(NetcodeEvent.Data, clientId, message, m_RealTimeProvider.RealTimeSinceStartup);
             }
         }
 
@@ -898,44 +839,38 @@ namespace Unity.Netcode.Transports.UTP
 
             switch (eventType)
             {
-                case TransportNetworkEvent.Type.Connect:
+                case TransportEvent.Connect:
                     {
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
+                        InvokeOnTransportEvent(NetcodeEvent.Connect,
                             clientId,
                             default,
                             m_RealTimeProvider.RealTimeSinceStartup);
 
-                        m_State = State.Connected;
+                        m_ServerClientId = clientId;
                         return true;
                     }
-                case TransportNetworkEvent.Type.Disconnect:
+                case TransportEvent.Disconnect:
                     {
-                        // Handle cases where we're a client receiving a Disconnect event. The
-                        // meaning of the event depends on our current state. If we were connected
-                        // then it means we got disconnected. If we were disconnected means that our
-                        // connection attempt has failed.
-                        if (m_State == State.Connected)
-                        {
-                            m_State = State.Disconnected;
-                            m_ServerClientId = default;
-                        }
-                        else if (m_State == State.Disconnected)
+                        // If we're a client and had not yet set the server client ID, it means
+                        // our connection to the server failed to be established. Any other case
+                        // means a clean disconnect that doesn't require logging.
+                        if (!m_Driver.Listening && m_ServerClientId == default)
                         {
                             Debug.LogError("Failed to connect to server.");
-                            m_ServerClientId = default;
                         }
 
+                        m_ServerClientId = default;
                         m_ReliableReceiveQueues.Remove(clientId);
                         ClearSendQueuesForClientId(clientId);
 
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                             clientId,
                             default,
                             m_RealTimeProvider.RealTimeSinceStartup);
 
                         return true;
                     }
-                case TransportNetworkEvent.Type.Data:
+                case TransportEvent.Data:
                     {
                         ReceiveMessages(clientId, pipeline, reader);
                         return true;
@@ -957,7 +892,7 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
                         "Use NetworkManager.OnTransportFailure to be notified of such events programmatically.");
 
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
+                    InvokeOnTransportEvent(NetcodeEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
                     return;
                 }
 
@@ -1180,13 +1115,13 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void DisconnectLocalClient()
         {
-            if (m_State == State.Connected)
+            if (m_ServerClientId != default)
             {
                 FlushSendQueuesForClientId(m_ServerClientId);
 
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
                 {
-                    m_State = State.Disconnected;
+                    m_ServerClientId = default;
 
                     m_ReliableReceiveQueues.Remove(m_ServerClientId);
                     ClearSendQueuesForClientId(m_ServerClientId);
@@ -1194,7 +1129,7 @@ namespace Unity.Netcode.Transports.UTP
                     // If we successfully disconnect we dispatch a local disconnect message
                     // this how uNET and other transports worked and so this is just keeping with the old behavior
                     // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                    InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                         m_ServerClientId,
                         default,
                         m_RealTimeProvider.RealTimeSinceStartup);
@@ -1209,14 +1144,14 @@ namespace Unity.Netcode.Transports.UTP
         public override void DisconnectRemoteClient(ulong clientId)
         {
 #if DEBUG
-            if (m_State != State.Listening)
+            if (!m_Driver.IsCreated)
             {
                 Debug.LogWarning($"{nameof(DisconnectRemoteClient)} should only be called on a listening server!");
                 return;
             }
 #endif
 
-            if (m_State == State.Listening)
+            if (m_Driver.IsCreated)
             {
                 FlushSendQueuesForClientId(clientId);
 
@@ -1331,12 +1266,12 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by m_RealTimeProvider.RealTimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetcodeEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
             payload = default;
             receiveTime = default;
-            return NetcodeNetworkEvent.Nothing;
+            return NetcodeEvent.Nothing;
         }
 
         /// <summary>
@@ -1404,7 +1339,7 @@ namespace Unity.Netcode.Transports.UTP
                         DisconnectRemoteClient(clientId);
 
                         // DisconnectRemoteClient doesn't notify SDK of disconnection.
-                        InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
+                        InvokeOnTransportEvent(NetcodeEvent.Disconnect,
                             clientId,
                             default(ArraySegment<byte>),
                             m_RealTimeProvider.RealTimeSinceStartup);
@@ -1520,10 +1455,9 @@ namespace Unity.Netcode.Transports.UTP
             DisposeInternals();
 
             m_ReliableReceiveQueues.Clear();
-            m_State = State.Disconnected;
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
-            m_ServerClientId = 0;
+            m_ServerClientId = default;
         }
 
         private void ConfigureSimulator()
@@ -1783,6 +1717,39 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     return (ClientId.GetHashCode() * 397) ^ NetworkPipeline.GetHashCode();
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Utility class to convert Unity Transport error codes to human-readable error messages.
+    /// </summary>
+    public static class ErrorUtilities
+    {
+        /// <summary>
+        /// Convert a Unity Transport error code to human-readable error message.
+        /// </summary>
+        /// <param name="error">Unity Transport error code.</param>
+        /// <param name="connectionId">ID of connection on which error occurred (unused).</param>
+        /// <returns>Human-readable error message.</returns>
+        public static string ErrorToString(TransportError error, ulong connectionId)
+        {
+            return ErrorToFixedString((int)error).ToString();
+        }
+
+        internal static FixedString128Bytes ErrorToFixedString(int error)
+        {
+            switch ((TransportError)error)
+            {
+                case TransportError.NetworkVersionMismatch:
+                case TransportError.NetworkStateMismatch:
+                    return "invalid connection state (likely stale/closed connection)";
+                case TransportError.NetworkPacketOverflow:
+                    return "packet is too large for the transport (likely need to increase MTU)";
+                case TransportError.NetworkSendQueueFull:
+                    return "send queue full (need to increase 'Max Send Queue Size' parameter)";
+                default:
+                    return FixedString.Format("unexpected error code {0}", error);
             }
         }
     }
