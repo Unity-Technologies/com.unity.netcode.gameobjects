@@ -949,9 +949,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                // Set the transform unless we were spawned by a prefab handler
-                // Note: prefab handlers are provided the position and rotation
-                // but it is up to the user to set those values
+                // Set the transform only if the sceneObject includes transform information.
                 if (sceneObject.HasTransform)
                 {
                     // If world position stays is true or we have auto object parent synchronization disabled
