@@ -385,6 +385,7 @@ namespace Unity.Netcode
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>
+        /// <returns>True if the object should be visible to the specified client, false otherwise</returns>
         public delegate bool VisibilityDelegate(ulong clientId);
 
         /// <summary>
@@ -396,6 +397,7 @@ namespace Unity.Netcode
         /// Delegate type for checking spawn options
         /// </summary>
         /// <param name="clientId">The clientId to check spawn options for</param>
+        /// <returns>True if the object should be spawned for the specified client, false otherwise</returns>
         public delegate bool SpawnDelegate(ulong clientId);
 
         /// <summary>
@@ -1556,6 +1558,11 @@ namespace Unity.Netcode
             return 0;
         }
 
+        /// <summary>
+        /// Gets a NetworkBehaviour component at the specified index in this object's NetworkBehaviour list
+        /// </summary>
+        /// <param name="index">The zero-based index of the NetworkBehaviour to retrieve</param>
+        /// <returns>The NetworkBehaviour at the specified index, or null if the index is out of bounds</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
             if (index >= ChildNetworkBehaviours.Count)

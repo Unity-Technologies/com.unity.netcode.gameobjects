@@ -12,26 +12,6 @@
       },
       "PVP-151-1": {
         "errors": [
-          "Unity.Netcode.NetworkConfig: Prefabs: undocumented",      
-          
-          "Unity.Netcode.ConnectionEventData: EventType: undocumented",
-          
-          "Unity.Netcode.RpcException: undocumented",
-          "Unity.Netcode.RpcException: .ctor(string): undocumented",
-          
-          "Unity.Netcode.NetworkManager: void NetworkUpdate(NetworkUpdateStage): undocumented",
-          "Unity.Netcode.NetworkManager.ReanticipateDelegate: undocumented",
-          
-          "Unity.Netcode.NetworkObject: NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort): undocumented",
-          "Unity.Netcode.NetworkObject.VisibilityDelegate: missing <returns>",
-          "Unity.Netcode.NetworkObject.SpawnDelegate: missing <returns>",
-          
-          "Unity.Netcode.GenerateSerializationForGenericParameterAttribute: .ctor(int): undocumented",
-          
-          "Unity.Netcode.GenerateSerializationForTypeAttribute: .ctor(Type): undocumented",
-          
-          "Unity.Netcode.NetworkList<T>: void Finalize(): undocumented",
-          
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void OnNetworkSpawn(): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void RegisterAndLabelNetworkObject(): undocumented",

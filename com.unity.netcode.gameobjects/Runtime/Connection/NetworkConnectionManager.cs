@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// The connection event type set within <see cref="ConnectionEventData"/> to signify the type of connection event notification received.   
+    /// The connection event type set within <see cref="ConnectionEventData"/> to signify the type of connection event notification received.
     /// </summary>
     /// <remarks>
     /// <see cref="ConnectionEventData"/> is returned as a parameter of the <see cref="NetworkManager.OnConnectionEvent"/> event notification.
@@ -60,6 +60,9 @@ namespace Unity.Netcode
     /// </remarks>
     public struct ConnectionEventData
     {
+        /// <summary>
+        /// The type of connection event that occurred
+        /// </summary>
         public ConnectionEvent EventType;
 
         /// <summary>

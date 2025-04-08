@@ -44,6 +44,10 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+        /// <summary>
+        /// Processes network-related updates for a specific update stage in the frame
+        /// </summary>
+        /// <param name="updateStage">The current network update stage being processed</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -294,6 +298,10 @@ namespace Unity.Netcode
             remove => ConnectionManager.OnTransportFailure -= value;
         }
 
+        /// <summary>
+        /// Delegate for handling network state reanticipation events
+        /// </summary>
+        /// <param name="lastRoundTripTime">The most recent round-trip time measurement in seconds between client and server</param>
         public delegate void ReanticipateDelegate(double lastRoundTripTime);
 
         /// <summary>
