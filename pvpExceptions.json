@@ -7,40 +7,6 @@
       },
       "PVP-151-1": {
         "errors": [
-          "Unity.Netcode.ConnectionEventData: EventType: undocumented",
-          
-          "Unity.Netcode.RpcException: undocumented",
-          "Unity.Netcode.RpcException: .ctor(string): undocumented",
-          
-          "Unity.Netcode.NetworkManager: CurrentSessionOwner: undocumented",
-          "Unity.Netcode.NetworkManager: void NetworkUpdate(NetworkUpdateStage): undocumented",
-          "Unity.Netcode.NetworkManager.ReanticipateDelegate: undocumented",
-          
-          "Unity.Netcode.NetworkObject: void SetSceneObjectStatus(bool): undocumented",
-          
-          "Unity.Netcode.CustomMessagingManager.HandleNamedMessageDelegate: missing <param name=\"senderClientId\">",
-          "Unity.Netcode.CustomMessagingManager.HandleNamedMessageDelegate: missing <param name=\"messagePayload\">",
-          
-          "Unity.Netcode.GenerateSerializationForGenericParameterAttribute: .ctor(int): undocumented",
-          
-          "Unity.Netcode.GenerateSerializationForTypeAttribute: .ctor(Type): undocumented",
-          
-          "Unity.Netcode.NetworkList<T>: void Finalize(): undocumented",
-          
-          "Unity.Netcode.NetworkVariableUpdateTraits: undocumented",
-          "Unity.Netcode.NetworkVariableUpdateTraits: MinSecondsBetweenUpdates: undocumented",
-          "Unity.Netcode.NetworkVariableUpdateTraits: MaxSecondsBetweenUpdates: undocumented",
-          
-          "Unity.Netcode.NetworkVariableBase: NetworkBehaviour GetBehaviour(): undocumented",
-          "Unity.Netcode.NetworkVariableBase: void MarkNetworkBehaviourDirty(): undocumented",
-          
-          "Unity.Netcode.NetworkVariableSerialization<T>.EqualsDelegate: missing <param name=\"a\">",
-          "Unity.Netcode.NetworkVariableSerialization<T>.EqualsDelegate: missing <param name=\"b\">",
-          "Unity.Netcode.NetworkVariableSerialization<T>.EqualsDelegate: missing <returns>",
-          
-          "Unity.Netcode.UserNetworkVariableSerialization<T>.WriteDeltaDelegate: missing <param name=\"previousValue\">",
-          "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: missing <param name=\"duplicatedValue\">",
-          
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void OnNetworkSpawn(): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void RegisterAndLabelNetworkObject(): undocumented",

@@ -201,6 +201,9 @@ namespace Unity.Netcode
 
         internal List<NetworkObject> DeferredDespawnObjects = new List<NetworkObject>();
 
+        /// <summary>
+        /// Gets the client identifier of the current session owner in distributed authority mode
+        /// </summary>
         public ulong CurrentSessionOwner { get; internal set; }
 
         /// <summary>
@@ -312,6 +315,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Processes network-related updates for a specific update stage in the frame
+        /// </summary>
+        /// <param name="updateStage">The current network update stage being processed</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -643,6 +650,10 @@ namespace Unity.Netcode
             remove => ConnectionManager.OnTransportFailure -= value;
         }
 
+        /// <summary>
+        /// Delegate for handling network state reanticipation events
+        /// </summary>
+        /// <param name="lastRoundTripTime">The most recent round-trip time measurement in seconds between client and server</param>
         public delegate void ReanticipateDelegate(double lastRoundTripTime);
 
         /// <summary>

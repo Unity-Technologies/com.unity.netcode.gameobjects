@@ -1165,6 +1165,10 @@ namespace Unity.Netcode
         public bool? IsSceneObject { get; internal set; }
 
         //DANGOEXP TODO: Determine if we want to keep this
+        /// <summary>
+        /// Sets whether this NetworkObject was instantiated as part of a scene
+        /// </summary>
+        /// <param name="isSceneObject">When true, marks this as a scene-instantiated object; when false, marks it as runtime-instantiated</param>
         public void SetSceneObjectStatus(bool isSceneObject = false)
         {
             IsSceneObject = isSceneObject;
