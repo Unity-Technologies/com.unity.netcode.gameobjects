@@ -699,7 +699,7 @@ namespace Unity.Netcode
 
             /// <summary>
             /// The current owner has locked ownership which means requests are not available at this time
-            /// </summary
+            /// </summary>
             Locked,
 
             /// <summary>
