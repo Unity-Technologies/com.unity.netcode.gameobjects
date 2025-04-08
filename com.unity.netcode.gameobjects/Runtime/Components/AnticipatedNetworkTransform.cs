@@ -286,6 +286,9 @@ namespace Unity.Netcode.Components
         // TODO: This does not handle OnFixedUpdate
         // This requires a complete overhaul in this class to switch between using
         // NetworkRigidbody's position and rotation values.
+        /// <summary>
+        /// Processes updates for the network transform, including smoothing interpolation
+        /// </summary>
         public override void OnUpdate()
         {
             ProcessSmoothing();
@@ -422,6 +425,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Called when the NetworkObject is spawned to initialize network transform functionality
+        /// </summary>
         public override void OnNetworkSpawn()
         {
             if (NetworkManager.DistributedAuthorityMode)
@@ -445,6 +451,9 @@ namespace Unity.Netcode.Components
             NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
         }
 
+        /// <summary>
+        /// Called when the NetworkObject is despawned to cleanup network transform resources
+        /// </summary>
         public override void OnNetworkDespawn()
         {
             if (m_AnticipatedObject != null)
@@ -459,6 +468,9 @@ namespace Unity.Netcode.Components
             base.OnNetworkDespawn();
         }
 
+        /// <summary>
+        /// Called when the component is being destroyed to perform final cleanup
+        /// </summary>
         public override void OnDestroy()
         {
             if (m_AnticipatedObject != null)
@@ -510,6 +522,9 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
+        /// <summary>
+        /// Called before the transform state is updated with new network data
+        /// </summary>
         protected override void OnBeforeUpdateTransformState()
         {
             // this is called when new data comes from the server
@@ -517,12 +532,20 @@ namespace Unity.Netcode.Components
             m_OutstandingAuthorityChange = true;
         }
 
+        /// <summary>
+        /// Called when new transform state data is received from the network
+        /// </summary>
+        /// <param name="oldState">The previous network transform state</param>
+        /// <param name="newState">The new network transform state to apply</param>
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
             ApplyAuthoritativeState();
         }
 
+        /// <summary>
+        /// Called after the transform has been updated with new values
+        /// </summary>
         protected override void OnTransformUpdated()
         {
             if (CanCommitToTransform || m_AnticipatedObject == null)
