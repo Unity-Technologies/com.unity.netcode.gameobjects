@@ -27,14 +27,6 @@
           
           "Unity.Netcode.NetworkList<T>: void Finalize(): undocumented",
           
-          "Unity.Netcode.NetworkVariable<T>: CheckExceedsDirtinessThreshold: undocumented",
-          "Unity.Netcode.NetworkVariable<T>: bool ExceedsDirtinessThreshold(): undocumented",
-          "Unity.Netcode.NetworkVariable<T>: void OnInitialize(): undocumented",
-          "Unity.Netcode.NetworkVariable<T>: bool CheckDirtyState(bool): missing <returns>",
-          "Unity.Netcode.NetworkVariable<T>: void Dispose(): undocumented",
-          "Unity.Netcode.NetworkVariable<T>: void Finalize(): undocumented",
-          "Unity.Netcode.NetworkVariable<T>.CheckExceedsDirtinessThresholdDelegate: undocumented",
-          
           "Unity.Netcode.NetworkVariableUpdateTraits: undocumented",
           "Unity.Netcode.NetworkVariableUpdateTraits: MinSecondsBetweenUpdates: undocumented",
           "Unity.Netcode.NetworkVariableUpdateTraits: MaxSecondsBetweenUpdates: undocumented",
@@ -48,8 +40,6 @@
           
           "Unity.Netcode.UserNetworkVariableSerialization<T>.WriteDeltaDelegate: missing <param name=\"previousValue\">",
           "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: missing <param name=\"duplicatedValue\">",
-          
-          "Unity.Netcode.NetworkSpawnManager: void Finalize(): undocumented",
           
           "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"eventType\">",
           "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"clientId\">",
