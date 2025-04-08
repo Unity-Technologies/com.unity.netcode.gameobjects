@@ -41,11 +41,6 @@
           "Unity.Netcode.UserNetworkVariableSerialization<T>.WriteDeltaDelegate: missing <param name=\"previousValue\">",
           "Unity.Netcode.UserNetworkVariableSerialization<T>.DuplicateValueDelegate: missing <param name=\"duplicatedValue\">",
           
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"eventType\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"clientId\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"payload\">",
-          "Unity.Netcode.NetworkTransport.TransportEventDelegate: missing <param name=\"receiveTime\">",
-          
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void OnNetworkSpawn(): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void RegisterAndLabelNetworkObject(): undocumented",
