@@ -284,9 +284,7 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
-        /// Releases all resources used by this network variable
-        /// </summary>
+        /// <inheritdoc/>
         public override void Dispose()
         {
             if (m_IsDisposed)
@@ -391,45 +389,31 @@ namespace Unity.Netcode
             m_HasSmoothValues = true;
         }
 
-        /// <summary>
-        /// Checks if the variable has been modified since the last network synchronization
-        /// </summary>
-        /// <returns>True if the variable needs to be synchronized, false otherwise</returns>
+        /// <inheritdoc/>
         public override bool IsDirty()
         {
             return m_AuthoritativeValue.IsDirty();
         }
 
-        /// <summary>
-        /// Resets the dirty state after network synchronization
-        /// </summary>
+        /// <inheritdoc/>
         public override void ResetDirty()
         {
             m_AuthoritativeValue.ResetDirty();
         }
 
-        /// <summary>
-        /// Writes only the changes in the variable's value to the network stream
-        /// </summary>
-        /// <param name="writer">Buffer to write the delta to</param>
+        /// <inheritdoc/>
         public override void WriteDelta(FastBufferWriter writer)
         {
             m_AuthoritativeValue.WriteDelta(writer);
         }
 
-        /// <summary>
-        /// Writes the complete state of the variable to the network stream
-        /// </summary>
-        /// <param name="writer">Buffer to write the field to</param>
+        /// <inheritdoc/>
         public override void WriteField(FastBufferWriter writer)
         {
             m_AuthoritativeValue.WriteField(writer);
         }
 
-        /// <summary>
-        /// Reads the complete state of the variable from the network stream
-        /// </summary>
-        /// <param name="reader">Buffer to read the field from</param>
+        /// <inheritdoc/>
         public override void ReadField(FastBufferReader reader)
         {
             m_AuthoritativeValue.ReadField(reader);
@@ -437,11 +421,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
         }
 
-        /// <summary>
-        /// Reads changes in the variable's value from the network stream
-        /// </summary>
-        /// <param name="reader">Buffer to read the delta from</param>
-        /// <param name="keepDirtyDelta">Whether to maintain the dirty state after reading</param>
+        /// <inheritdoc/>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             m_AuthoritativeValue.ReadDelta(reader, keepDirtyDelta);

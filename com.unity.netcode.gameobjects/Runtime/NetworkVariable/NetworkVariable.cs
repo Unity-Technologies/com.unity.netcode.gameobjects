@@ -22,10 +22,23 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
+        /// <summary>
+        /// Delegate that determines if the difference between two values exceeds a threshold for network synchronization
+        /// </summary>
+        /// <param name="previousValue">The previous value to compare against</param>
+        /// <param name="newValue">The new value to compare</param>
+        /// <returns>True if the difference exceeds the threshold and should be synchronized, false otherwise</returns>
         public delegate bool CheckExceedsDirtinessThresholdDelegate(in T previousValue, in T newValue);
 
+        /// <summary>
+        /// Delegate instance for checking if value changes exceed the dirtiness threshold
+        /// </summary>
         public CheckExceedsDirtinessThresholdDelegate CheckExceedsDirtinessThreshold;
 
+        /// <summary>
+        /// Determines if the current value has changed enough from its previous value to warrant network synchronization
+        /// </summary>
+        /// <returns>True if the value should be synchronized, false otherwise</returns>
         public override bool ExceedsDirtinessThreshold()
         {
             if (CheckExceedsDirtinessThreshold != null && m_HasPreviousValue)
@@ -36,6 +49,9 @@ namespace Unity.Netcode
             return true;
         }
 
+        /// <summary>
+        /// Initializes the NetworkVariable by setting up initial and previous values
+        /// </summary>
         public override void OnInitialize()
         {
             base.OnInitialize();
@@ -171,6 +187,7 @@ namespace Unity.Netcode
             return ref m_InternalValue;
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             if (m_IsDisposed)
@@ -201,6 +218,9 @@ namespace Unity.Netcode
             m_PreviousValue = default;
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of resources
+        /// </summary>
         ~NetworkVariable()
         {
             Dispose();
