@@ -922,19 +922,29 @@ namespace Unity.Netcode
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
                 // more scenes that contain nested in-scene placed NetworkObject children yet the server's
-                // synchronization information does not indicate the NetworkObject in question has a parent.
-                // Under this scenario, we want to remove the parent before spawning and setting the transform values.
+                // synchronization information does not indicate the NetworkObject in question has a parent =or=
+                // the parent has changed.
+                // For this we will want to remove the parent before spawning and setting the transform values based
+                // on several possible scenarios.
                 if (sceneObject.IsSceneObject && networkObject.transform.parent != null)
                 {
                     var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
                     // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
-                    // include parenting, then we need to force the removal of that parent
+                    // include parenting, then we need to force the removal of that parent (i.e. it is at the root)
                     if (!sceneObject.HasParent && parentNetworkObject)
                     {
                         // remove the parent
                         networkObject.ApplyNetworkParenting(true, true);
                     }
-                    else if (sceneObject.HasParent && !parentNetworkObject)
+                    else // If we are parented and our latest parent known is not the parent =or= we are keeping world space values when parenting.
+                    if (parentNetworkObject && sceneObject.HasParent && sceneObject.LatestParent.HasValue
+                        && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays))
+                    {
+                        // remove the parent silently so we can re-parent an in-scene placed NetworkObject
+                        networkObject.ApplyNetworkParenting(true, true, silentParenting: true);
+                    }
+                    else // special case to handle being parented under a GameObject with no NetworkObject
+                    if (sceneObject.HasParent && !parentNetworkObject)
                     {
                         nonNetworkObjectParent = true;
                     }

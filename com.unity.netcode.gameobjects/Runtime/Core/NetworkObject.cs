@@ -308,15 +308,18 @@ namespace Unity.Netcode
         /// </remarks>
         private void CheckForInScenePlaced()
         {
-            if (PrefabUtility.IsPartOfAnyPrefab(this) && gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            if (gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
             {
-                var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
-                var assetPath = AssetDatabase.GetAssetPath(prefab);
-                var sourceAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(assetPath);
-                if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectIdHash != sourceAsset.GlobalObjectIdHash)
+                if (PrefabUtility.IsPartOfAnyPrefab(this))
                 {
-                    InScenePlacedSourceGlobalObjectIdHash = sourceAsset.GlobalObjectIdHash;
-                    EditorUtility.SetDirty(this);
+                    var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+                    var assetPath = AssetDatabase.GetAssetPath(prefab);
+                    var sourceAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(assetPath);
+                    if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectIdHash != sourceAsset.GlobalObjectIdHash)
+                    {
+                        InScenePlacedSourceGlobalObjectIdHash = sourceAsset.GlobalObjectIdHash;
+                        EditorUtility.SetDirty(this);
+                    }
                 }
                 IsSceneObject = true;
 
@@ -334,6 +337,24 @@ namespace Unity.Netcode
             }
         }
 #endif // UNITY_EDITOR
+
+        internal bool HasParentNetworkObject(Transform transform)
+        {
+            if (transform.parent != null)
+            {
+                var networkObject = transform.parent.GetComponent<NetworkObject>();
+                if (networkObject != null && networkObject != this)
+                {
+                    return true;
+                }
+
+                if (transform.parent.parent != null)
+                {
+                    return HasParentNetworkObject(transform.parent);
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -2295,7 +2316,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false, bool silentParenting = false)
         {
             if (!AutoObjectParentSync)
             {
@@ -2368,7 +2389,10 @@ namespace Unity.Netcode
                 // to WorldPositionStays which can cause scaling issues if the parent's
                 // scale is not the default (Vetctor3.one) value.
                 transform.SetParent(null, m_CachedWorldPositionStays);
-                InvokeBehaviourOnNetworkObjectParentChanged(null);
+                if (!silentParenting)
+                {
+                    InvokeBehaviourOnNetworkObjectParentChanged(null);
+                }
                 return true;
             }
 
@@ -2393,7 +2417,10 @@ namespace Unity.Netcode
             }
             SetCachedParent(parentObject.transform);
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-            InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
+            if (!silentParenting)
+            {
+                InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
+            }
             return true;
         }
 
@@ -3083,12 +3110,6 @@ namespace Unity.Netcode
                 var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
                 var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
 
-                // Always synchronize in-scene placed object's scale using local space
-                if (obj.IsSceneObject)
-                {
-                    syncScaleLocalSpaceRelative = obj.HasParent;
-                }
-
                 // If auto object synchronization is turned off
                 if (!AutoObjectParentSync)
                 {
@@ -3165,6 +3186,16 @@ namespace Unity.Netcode
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+            Debug.Log($"Spawning {networkObject.name}");
+
+            // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
+            // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
+            // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
+            // the in-scene placed Networkobject changes several times over different sessions.
+            if (sceneObject.IsSceneObject && !sceneObject.HasParent && networkObject.m_LatestParent.HasValue)
+            {
+                networkObject.m_LatestParent = null;
+            }
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);

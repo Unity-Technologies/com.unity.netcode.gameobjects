@@ -3543,7 +3543,10 @@ namespace Unity.Netcode.Components
             {
                 if (CanCommitToTransform)
                 {
-                    InLocalSpace = transform.parent != null;
+                    if (NetworkObject.HasParentNetworkObject(transform))
+                    {
+                        InLocalSpace = true;
+                    }
                 }
                 // Always apply this if SwitchTransformSpaceWhenParented is set.
                 TickSyncChildren = true;
