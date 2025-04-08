@@ -425,6 +425,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
+        /// <returns>True if the network instances were started successfully, throws InvalidOperationException if already started</returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
         {
             if (s_IsStarted)
@@ -616,7 +617,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Similar to WaitForClientConnected, this waits for multiple clients to be connected.
         /// </summary>
         /// <param name="clients">Array of clients to wait for</param>
-        /// <param name="result">The result. If null, it will automatically assert<</param>
+        /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
