@@ -25,7 +25,7 @@
 - [ ] The users can understand why this API was removed and what they should use instead.
 -->
 
-## Backports
+## Backport
 
 Link to the backport to develop branch (NGOv1.X) if applicable. If this is a backport, please add the following to the PR title: "\[Backport\] ..." .
 If the backport is not needed please provide the reason why.
