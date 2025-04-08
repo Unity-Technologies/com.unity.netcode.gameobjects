@@ -929,20 +929,18 @@ namespace Unity.Netcode
                     var parentNetworkObject = networkObject.transform.parent.GetComponent<NetworkObject>();
 
                     // special case to handle being parented under a GameObject with no NetworkObject
-                    nonNetworkObjectParent = !parentNetworkObject && !sceneObject.HasParent;
+                    nonNetworkObjectParent = !parentNetworkObject && sceneObject.HasParent;
 
-                    // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
-                    // include parenting, then we need to force the removal of that parent (i.e. it is at the root)
+                    // If the in-scene placed NetworkObject has a parent NetworkObject...
                     if (parentNetworkObject)
                     {
-                        // Remove the parent if:
+                        // Then remove the parent only if:
                         // - The authority says we don't have a parent (but locally we do).
                         // - The auhtority says we have a parent but either of the two are true:
                         // -- It isn't the same parent.
                         // -- It was parented using world position stays.
-                        var removeParent = !sceneObject.HasParent || (sceneObject.IsLatestParentSet
-                            && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays));
-                        if (removeParent)
+                        if (!sceneObject.HasParent || (sceneObject.IsLatestParentSet
+                            && (sceneObject.LatestParent.Value != parentNetworkObject.NetworkObjectId || sceneObject.WorldPositionStays)))
                         {
                             // If parenting without notifications then we are temporarily removing the parent to set the transform
                             // values before reparenting under the current parent.
