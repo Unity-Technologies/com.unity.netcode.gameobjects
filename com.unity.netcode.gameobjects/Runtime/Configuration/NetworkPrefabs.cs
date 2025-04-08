@@ -65,6 +65,9 @@ namespace Unity.Netcode
             m_Prefabs.Remove(networkPrefab);
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network prefab resources
+        /// </summary>
         ~NetworkPrefabs()
         {
             Shutdown();
@@ -87,7 +90,7 @@ namespace Unity.Netcode
         /// Processes the <see cref="NetworkPrefabsList"/> if one is present for use during runtime execution,
         /// else processes <see cref="Prefabs"/>.
         /// </summary>
-        /// /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization</param>
+        /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization</param>
         public void Initialize(bool warnInvalid = true)
         {
             m_Prefabs.Clear();
