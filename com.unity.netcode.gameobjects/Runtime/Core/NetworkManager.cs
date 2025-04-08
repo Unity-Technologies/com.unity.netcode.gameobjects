@@ -333,6 +333,25 @@ namespace Unity.Netcode
 
                         MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
+#if COM_UNITY_MODULES_PHYSICS
+                        foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
+                        {
+                            // if not active or not spawned then skip
+                            if (!networkObjectEntry.Value.gameObject.activeInHierarchy || !networkObjectEntry.Value.IsSpawned)
+                            {
+                                continue;
+                            }
+
+                            foreach (var networkTransformEntry in networkObjectEntry.Value.NetworkTransforms)
+                            {
+                                // only update if enabled
+                                if (networkTransformEntry.enabled)
+                                {
+                                    networkTransformEntry.ResetFixedTimeDelta();
+                                }
+                            }
+                        }
+#endif
                     }
                     break;
 #if COM_UNITY_MODULES_PHYSICS
@@ -806,6 +825,12 @@ namespace Unity.Netcode
         /// The callback to invoke once the local client is ready
         /// </summary>
         public event Action OnClientStarted = null;
+
+        /// <summary>
+        /// Subscribe to this event to get notifications before a <see cref="NetworkManager"/> instance is being destroyed.
+        /// This is useful if you want to use the state of anything the NetworkManager cleans up during its shutdown.
+        /// </summary>
+        public event Action OnPreShutdown = null;
 
         /// <summary>
         /// This callback is invoked once the local server is stopped.
@@ -1480,6 +1505,8 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
+
+            OnPreShutdown?.Invoke();
 
             this.UnregisterAllNetworkUpdates();
 

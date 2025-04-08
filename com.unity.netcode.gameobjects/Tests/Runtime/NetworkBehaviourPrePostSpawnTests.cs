@@ -93,12 +93,6 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            base.OnNewClientCreated(networkManager);
-        }
-
         /// <summary>
         /// This validates that pre spawn can be used to instantiate and assign a NetworkVariable (or other prespawn tasks)
         /// which can be useful for assigning a NetworkVariable value on the server side when the NetworkVariable has owner write permissions.

@@ -10,6 +10,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
+- Added `Lerp` interpolation type that still uses a lerp approach but uses the new buffer consumption logic. (#3355)
+- Added property to enable or disable lerp smoothing for position, rotation, and scale interpolators. (#3355)
+- Added `NetworkTransform.InterpolationBufferTickOffset` static property to provide users with a way to increase or decrease the time marker where interpolators will pull state update from the queue. (#3355)
 - Added interpolator types as an inspector view selection for position, rotation, and scale. (#3337)
 - Added a new smooth dampening interpolator type that provides a nice balance between precision and smoothing results. (#3337)
 - Added `NetworkTimeSystem.TickLatency` property that provides the average latency of a client. (#3337)
@@ -18,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the time delta that interpolators used would not be properly updated during multiple fixed update invocations within the same player loop frame. (#3355)
 - Fixed issue when using a distributed authority network topology and many clients attempt to connect simultaneously the session owner could max-out the maximum in-flight reliable messages allowed, start dropping packets, and some of the connecting clients would fail to fully synchronize. (#3350)
 - Fixed issue when using a distributed authority network topology and scene management was disabled clients would not be able to spawn any new network prefab instances until synchronization was complete. (#3350)
 - Fixed issue where an owner that changes ownership, when using a distributed authority network topology, could yield identical previous and current owner identifiers. This could also cause `NetworkTransform` to fail to change ownership which would leave the previous owner still subscribed to network tick events. (#3347)
@@ -38,8 +43,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed the original `Lerp` interpolation type to `LegacyLerp`. (#3355)
 - Changed `BufferedLinearInterpolator<T>.Update(float deltaTime, NetworkTime serverTime)` as being deprecated since this method is only used for internal testing purposes. (#3337)
-- Ensured that a useful error is thrown when attempting to build a dedicated server with Unity Transport that uses websockets. (#3336)
+- Changed error thrown when attempting to build a dedicated server with Unity Transport that uses websockets to provide more useful information to the user. (#3336)
 - Changed root in-scene placed `NetworkObject` instances now will always have either the `Distributable` permission set unless the `SessionOwner` permission is set. (#3305)
 - Changed the `DestroyObject` message to reduce the serialized message size and remove the unnecessary message field. (#3304)
 - Changed the `NetworkTimeSystem.Sync` method to use half RTT to calculate the desired local time offset as opposed to the full RTT. (#3212)

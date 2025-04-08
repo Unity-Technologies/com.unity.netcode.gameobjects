@@ -38,6 +38,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         private StringBuilder m_InternalErrorLog = new StringBuilder();
+        internal StringBuilder VerboseDebugLog = new StringBuilder();
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -257,6 +258,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_EnableVerboseDebug)
             {
+                VerboseDebugLog.AppendLine(msg);
                 Debug.Log(msg);
             }
         }
@@ -345,6 +347,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
@@ -466,14 +469,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// CreateAndStartNewClient Only
         /// Invoked when the newly created client has been created
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
+            // Ensure any late joining client has all NetworkPrefabs required to connect.
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
+                {
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                }
+            }
         }
 
         /// <summary>
         /// CreateAndStartNewClient Only
         /// Invoked when the newly created client has been created and started
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStarted(NetworkManager networkManager)
         {
         }
@@ -483,6 +496,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked when the newly created client has been created, started, and connected
         /// to the server-host.
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
         {
         }
@@ -494,6 +508,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <remarks>
         /// Use this for testing connection and disconnection scenarios
         /// </remarks>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
+        /// <returns>True if the test should wait for the client to connect; otherwise, false.</returns>
         protected virtual bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
         {
             return true;
@@ -503,6 +519,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will create, start, and connect a new client while in the middle of an
         /// integration test.
         /// </summary>
+        /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
