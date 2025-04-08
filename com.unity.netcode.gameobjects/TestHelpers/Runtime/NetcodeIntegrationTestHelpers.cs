@@ -425,7 +425,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
-        /// <returns></returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
         {
             if (s_IsStarted)
