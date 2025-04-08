@@ -12,42 +12,25 @@
       },
       "PVP-151-1": {
         "errors": [
-          "Unity.Netcode.NetworkConfig: Prefabs: undocumented",          
+          "Unity.Netcode.NetworkConfig: Prefabs: undocumented",      
+          
           "Unity.Netcode.ConnectionEventData: EventType: undocumented",
+          
           "Unity.Netcode.RpcException: undocumented",
           "Unity.Netcode.RpcException: .ctor(string): undocumented",
+          
           "Unity.Netcode.NetworkManager: void NetworkUpdate(NetworkUpdateStage): undocumented",
           "Unity.Netcode.NetworkManager.ReanticipateDelegate: undocumented",
+          
           "Unity.Netcode.NetworkObject: NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort): undocumented",
           "Unity.Netcode.NetworkObject.VisibilityDelegate: missing <returns>",
           "Unity.Netcode.NetworkObject.SpawnDelegate: missing <returns>",
-          "Unity.Netcode.CustomMessagingManager.HandleNamedMessageDelegate: missing <param name=\"senderClientId\">",
-          "Unity.Netcode.CustomMessagingManager.HandleNamedMessageDelegate: missing <param name=\"messagePayload\">",
+          
           "Unity.Netcode.GenerateSerializationForGenericParameterAttribute: .ctor(int): undocumented",
+          
           "Unity.Netcode.GenerateSerializationForTypeAttribute: .ctor(Type): undocumented",
-          "Unity.Netcode.RpcAttribute: RequireOwnership: undocumented",
-          "Unity.Netcode.RpcAttribute: DeferLocal: undocumented",
-          "Unity.Netcode.RpcAttribute: AllowTargetOverride: undocumented",
-          "Unity.Netcode.RpcAttribute: .ctor(SendTo): undocumented",
-          "Unity.Netcode.RpcAttribute.RpcAttributeParams: undocumented",
-          "Unity.Netcode.RpcAttribute.RpcAttributeParams: Delivery: undocumented",
-          "Unity.Netcode.RpcAttribute.RpcAttributeParams: RequireOwnership: undocumented",
-          "Unity.Netcode.RpcAttribute.RpcAttributeParams: DeferLocal: undocumented",
-          "Unity.Netcode.RpcAttribute.RpcAttributeParams: AllowTargetOverride: undocumented",
-          "Unity.Netcode.ServerRpcAttribute: RequireOwnership: undocumented",
-          "Unity.Netcode.ServerRpcAttribute: .ctor(): undocumented",
-          "Unity.Netcode.ClientRpcAttribute: .ctor(): undocumented",
-          "Unity.Netcode.StaleDataHandling: undocumented",
-          "Unity.Netcode.StaleDataHandling: Ignore: undocumented",
-          "Unity.Netcode.StaleDataHandling: Reanticipate: undocumented",
+          
           "Unity.Netcode.NetworkList<T>: void Finalize(): undocumented",
-          "Unity.Netcode.NetworkVariableUpdateTraits: undocumented",
-          "Unity.Netcode.NetworkVariableUpdateTraits: MinSecondsBetweenUpdates: undocumented",
-          "Unity.Netcode.NetworkVariableUpdateTraits: MaxSecondsBetweenUpdates: undocumented",
-          "Unity.Netcode.NetworkVariableBase: NetworkBehaviour GetBehaviour(): undocumented",
-          "Unity.Netcode.NetworkVariableBase: void MarkNetworkBehaviourDirty(): undocumented",
-          "Unity.Netcode.NetworkSceneManager: void SetClientSynchronizationMode(LoadSceneMode): XML is not well-formed: Expected an end tag for element 'summary'",
-          "Unity.Netcode.Transports.UTP.UnityTransport.ConnectionAddressData: IsIpv6: undocumented",
           
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: undocumented",
           "Unity.Netcode.TestHelpers.Runtime.ObjectNameIdentifier: void OnNetworkSpawn(): undocumented",

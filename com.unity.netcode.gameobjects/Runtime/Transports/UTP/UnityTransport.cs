@@ -358,6 +358,12 @@ namespace Unity.Netcode.Transports.UTP
                 }
             }
 
+            /// <summary>
+            /// Gets whether the configured server address is an IPv6 address
+            /// </summary>
+            /// <value>
+            /// True if the Address property contains a valid IPv6 address, false if it's empty or an IPv4 address
+            /// </value>
             public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
         }
 
