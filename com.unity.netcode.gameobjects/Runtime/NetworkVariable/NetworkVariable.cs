@@ -106,7 +106,7 @@ namespace Unity.Netcode
         // The introduction of standard .NET collections caused an issue with permissions since there is no way to detect changes in the
         // collection without doing a full comparison. While this approach does consume more memory per collection instance, it is the
         // lowest risk approach to resolving the issue where a client with no write permissions could make changes to a collection locally
-        // which can cause a myriad of issues. 
+        // which can cause a myriad of issues.
         private protected T m_InternalOriginalValue;
 
         private protected T m_PreviousValue;
@@ -151,11 +151,12 @@ namespace Unity.Netcode
         /// Invoke this method to check if a collection's items are dirty.
         /// The default behavior is to exit early if the <see cref="NetworkVariable{T}"/> is already dirty.
         /// </summary>
+        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
+        /// <returns>True if the variable is dirty and needs synchronization, false if clean or client lacks write permissions</returns>
         /// <remarks>
         /// This is to be used as a way to check if a <see cref="NetworkVariable{T}"/> containing a managed collection has any changees to the collection items.<br />
         /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set forceCheck param to true. <br />
         /// </remarks>
-        /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
         public bool CheckDirtyState(bool forceCheck = false)
         {
             var isDirty = base.IsDirty();
@@ -333,7 +334,7 @@ namespace Unity.Netcode
         /// This should be always invoked (client & server) to assure the previous values are set
         /// !! IMPORTANT !!
         /// When a server forwards delta updates to connected clients, it needs to preserve the previous dirty value(s)
-        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked 
+        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked
         /// after it is done forwarding the deltas at the end of the <see cref="NetworkVariableDeltaMessage.Handle(ref NetworkContext)"/> method.
         /// </summary>
         internal override void PostDeltaRead()

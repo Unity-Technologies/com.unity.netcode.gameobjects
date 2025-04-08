@@ -259,6 +259,11 @@ namespace Unity.Netcode
 
         private SmoothDelegate m_SmoothDelegate = null;
 
+        /// <summary>
+        /// Initializes a new instance of the AnticipatedNetworkVariable class
+        /// </summary>
+        /// <param name="value">The initial value for the network variable. Defaults to the type's default value if not specified.</param>
+        /// <param name="staleDataHandling">Determines how the variable handles authoritative updates that are older than the current anticipated state. Defaults to StaleDataHandling.Ignore.</param>
         public AnticipatedNetworkVariable(T value = default,
             StaleDataHandling staleDataHandling = StaleDataHandling.Ignore)
             : base()
@@ -334,6 +339,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network variable resources
+        /// </summary>
         ~AnticipatedNetworkVariable()
         {
             Dispose();
