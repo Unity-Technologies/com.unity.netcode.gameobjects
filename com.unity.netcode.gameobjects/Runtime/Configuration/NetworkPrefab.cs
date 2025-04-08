@@ -74,7 +74,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the GlobalObjectIdHash of the source prefab based on the current override settings
         /// </summary>
-        /// <returns>The hash value identifying the source prefab</returns>
+        /// <value>The hash value identifying the source prefab</value>
         /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value</exception>
         public uint SourcePrefabGlobalObjectIdHash
@@ -112,7 +112,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the GlobalObjectIdHash of the target prefab when using prefab overrides
         /// </summary>
-        /// <returns>The hash value identifying the target prefab, or 0 if no override is set</returns>
+        /// <value>The hash value identifying the target prefab, or 0 if no override is set</value>
         /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value</exception>
         public uint TargetPrefabGlobalObjectIdHash

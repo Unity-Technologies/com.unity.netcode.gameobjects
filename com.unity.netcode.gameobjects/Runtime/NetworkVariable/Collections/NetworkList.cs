@@ -49,6 +49,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network list resources
+        /// </summary>
         ~NetworkList()
         {
             Dispose();

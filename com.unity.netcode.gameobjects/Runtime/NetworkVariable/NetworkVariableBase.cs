@@ -65,6 +65,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the NetworkBehaviour instance associated with this network variable
         /// </summary>
+        /// <returns>The NetworkBehaviour that owns this network variable</returns>
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;

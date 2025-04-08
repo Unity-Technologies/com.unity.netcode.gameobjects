@@ -1800,6 +1800,9 @@ namespace Unity.Netcode
             NetworkManager = networkManager;
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of spawn manager resources
+        /// </summary>
         ~NetworkSpawnManager()
         {
             Shutdown();

@@ -156,6 +156,7 @@ namespace Unity.Netcode
         /// If you invoked this when a collection is dirty, it will not trigger the <see cref="OnValueChanged"/> unless you set forceCheck param to true. <br />
         /// </remarks>
         /// <param name="forceCheck"> when true, this check will force a full item collection check even if the NetworkVariable is already dirty</param>
+        /// <returns>True if the variable is dirty and needs synchronization, false otherwise</returns>
         public bool CheckDirtyState(bool forceCheck = false)
         {
             var isDirty = base.IsDirty();

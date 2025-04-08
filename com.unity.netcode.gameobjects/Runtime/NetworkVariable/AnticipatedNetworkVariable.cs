@@ -94,6 +94,10 @@ namespace Unity.Netcode
         /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
 #pragma warning restore IDE0001
+
+        /// <summary>
+        /// Controls how this network variable handles authoritative updates that are older than the current anticipated state
+        /// </summary>
         public StaleDataHandling StaleDataHandling;
 
         /// <summary>
@@ -334,6 +338,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network variable resources
+        /// </summary>
         ~AnticipatedNetworkVariable()
         {
             Dispose();
