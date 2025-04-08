@@ -9,6 +9,7 @@ namespace Unity.Netcode
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
         public bool ServerRedistribution;
+        public ulong SessionStateToken;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -21,6 +22,11 @@ namespace Unity.Netcode
                 if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
                 {
                     serializer.SerializeValue(ref ServerRedistribution);
+                }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
                 }
             }
             else
@@ -36,6 +42,15 @@ namespace Unity.Netcode
                 else
                 {
                     ServerRedistribution = false;
+                }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
+                }
+                else
+                {
+                    SessionStateToken = 0;
                 }
             }
         }
