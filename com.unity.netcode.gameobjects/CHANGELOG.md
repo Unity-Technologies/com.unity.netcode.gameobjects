@@ -45,7 +45,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed the serialization order for scene loading events so they it now orders any instantiated and spawned in-scene placed `NetworkObject`s by their parent-child hierarchy like it does when synchronizing a client. (#3387)
+- Changed the serialization order for scene loading events so they now order any instantiated and spawned in-scene placed `NetworkObject`s by their parent-child hierarchy like it does when synchronizing a client. (#3387)
 - Changed the original `Lerp` interpolation type to `LegacyLerp`. (#3355)
 - Changed `BufferedLinearInterpolator<T>.Update(float deltaTime, NetworkTime serverTime)` as being deprecated since this method is only used for internal testing purposes. (#3337)
 - Changed error thrown when attempting to build a dedicated server with Unity Transport that uses websockets to provide more useful information to the user. (#3336)
