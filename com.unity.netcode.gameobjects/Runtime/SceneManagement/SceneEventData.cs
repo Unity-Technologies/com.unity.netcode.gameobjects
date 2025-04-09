@@ -322,7 +322,14 @@ namespace Unity.Netcode
                     m_NetworkObjectsSync.Add(sobj);
                 }
             }
+            SortObjectsToSync();
+        }
 
+        /// <summary>
+        /// Used to order the object serialization for both synchronization and scene loading
+        /// </summary>
+        private void SortObjectsToSync()
+        {
             // Sort by INetworkPrefabInstanceHandler implementation before the
             // NetworkObjects spawned by the implementation
             m_NetworkObjectsSync.Sort(SortNetworkObjects);
@@ -568,18 +575,29 @@ namespace Unity.Netcode
             // Write our count place holder (must not be packed!)
             writer.WriteValueSafe((ushort)0);
 
+            // Clear our objects to sync and build a list of the in-scene placed NetworkObjects instantiated and spawned locally
+            m_NetworkObjectsSync.Clear();
             foreach (var keyValuePairByGlobalObjectIdHash in m_NetworkManager.SceneManager.ScenePlacedObjects)
             {
                 foreach (var keyValuePairBySceneHandle in keyValuePairByGlobalObjectIdHash.Value)
                 {
                     if (keyValuePairBySceneHandle.Value.Observers.Contains(TargetClientId))
                     {
-                        // Serialize the NetworkObject
-                        var sceneObject = keyValuePairBySceneHandle.Value.GetMessageSceneObject(TargetClientId);
-                        sceneObject.Serialize(writer);
-                        numberOfObjects++;
+                        m_NetworkObjectsSync.Add(keyValuePairBySceneHandle.Value);
                     }
                 }
+            }
+
+            // Sort the objects to sync based on parenting hierarchy
+            SortObjectsToSync();
+
+            // Serialize the sorted objects to sync.
+            foreach (var objectToSycn in m_NetworkObjectsSync)
+            {
+                // Serialize the NetworkObject
+                var sceneObject = objectToSycn.GetMessageSceneObject(TargetClientId);
+                sceneObject.Serialize(writer);
+                numberOfObjects++;
             }
 
             // Write the number of despawned in-scene placed NetworkObjects
