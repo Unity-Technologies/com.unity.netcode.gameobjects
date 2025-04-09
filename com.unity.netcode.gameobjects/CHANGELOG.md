@@ -17,6 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3383)
+- Fixed issue where `NetworkAnimator` would log an error if there was no destination transition information. (#3384)
 - Fixed initial `NetworkTransform` spawn, ensure it uses world space. (#3361)
 - Fixed issue where `AnticipatedNetworkVariable` previous value returned by `AnticipatedNetworkVariable.OnAuthoritativeValueChanged` is updated correctly on the non-authoritative side. (#3322)
 
