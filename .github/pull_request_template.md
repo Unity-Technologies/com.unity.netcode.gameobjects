@@ -27,6 +27,10 @@
 
 ## Backport
 
-Link to the backport to develop branch (NGOv1.X) if applicable. If this is a backport, please add the following to the PR title: "\[Backport\] ..." .
-If the backport is not needed please provide the reason why.
-If "Backports" section will not be present it will lead to CI test failure
+<!-- If this is a backport:
+ - Add the following to the PR title: "\[Backport\] ..." .
+ - Link to the original PR.
+If this needs a backport - state this here
+If a backport is not needed please provide the reason why.
+If the "Backports" section is not present it will lead to a CI test failure. 
+-->
