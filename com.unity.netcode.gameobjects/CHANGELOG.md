@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where in-scene placed `NetworkObjects` could fail to synchronize its transform properly (especially without a `NetworkTransform`) if their parenting changes from the default when the scene is loaded and if the same scene remains loaded between network sessions while the parenting is completely different from the original hierarchy. (#3388)
 - Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3383)
 - Fixed issue where `NetworkAnimator` would log an error if there was no destination transition information. (#3384)
 - Fixed initial `NetworkTransform` spawn, ensure it uses world space. (#3361)
@@ -23,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed the scene loading event serialization order for in-scene placed `NetworkObject`s to be based on their parent-child hierarchy. (#3388)
 
 ## [1.12.2] - 2025-01-17
 
