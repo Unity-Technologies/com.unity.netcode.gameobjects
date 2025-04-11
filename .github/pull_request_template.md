@@ -2,12 +2,10 @@
 
 <!-- Add short version of the JIRA ticket to the PR title (e.g. "feat: new shiny feature [MTT-123]") -->
 
-<!-- Add RFC link here if applicable. -->
-
 ## Changelog
 
 - Added: The package whose Changelog should be added to should be in the header. Delete the changelog section entirely if it's not needed.
-- Fixed: If you update multiple packages, create a new section with a new header for the other package. 
+- Fixed: If you update multiple packages, create a new section with a new header for the other package.
 - Removed/Deprecated/Changed: Each bullet should be prefixed with Added, Fixed, Removed, Deprecated, or Changed to indicate where the entry should go.
 
 ## Testing and Documentation
@@ -25,4 +23,14 @@
 - [ ] An [api updater] was added.
 - [ ] Deprecation of the API is explained in the CHANGELOG.
 - [ ] The users can understand why this API was removed and what they should use instead.
+-->
+
+## Backport
+
+<!-- If this is a backport:
+ - Add the following to the PR title: "\[Backport\] ..." .
+ - Link to the original PR.
+If this needs a backport - state this here
+If a backport is not needed please provide the reason why.
+If the "Backports" section is not present it will lead to a CI test failure. 
 -->
