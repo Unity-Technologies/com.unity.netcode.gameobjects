@@ -8,7 +8,7 @@ name: "NGO - Backport Verification"
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened, edited, synchronize, reopened]
     branches:
       - develop
       - develop-2.0.0
