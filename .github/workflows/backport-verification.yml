@@ -1,0 +1,32 @@
+﻿# This workflow is designed to verify that the pull request description contains a "## Backport" section, which is important as a reminder to account for backports for anyone that works with NGO repository.
+# We have 2 development branches (develop and develop-2.0.0) and we need to ensure that relevant changes are landing in only one or both of them
+# If the "##Backport" section is missing, the workflow will fail and block the PR from merging, prompting the developer to add this section.
+
+# The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
+
+name: "NGO - Backport Verification"
+
+on:
+  pull_request:
+    types: [opened, edited]
+    branches:
+      - develop
+      - develop-2.0.0
+
+jobs:
+  backport-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check PR description
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            if (!body.includes('## Backport')) {
+              core.setFailed('PR description must include a "## Backport" section. Please add this section and provide information about this PR backport to develop or develop-2.0.0 branch respectively or explain why backport is not needed.');
+            }

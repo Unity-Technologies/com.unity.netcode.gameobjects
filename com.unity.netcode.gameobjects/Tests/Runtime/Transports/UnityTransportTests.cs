@@ -554,5 +554,22 @@ namespace Unity.Netcode.RuntimeTests
                 m_Server.DisconnectLocalClient();
             }
         }
+
+        [UnityTest]
+        public IEnumerator DoesNotAttemptToSendOnInvalidConnections()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[42]);
+            m_Server.Send(0, data, NetworkDelivery.Reliable);
+
+            yield return EnsureNoNetworkEvent(m_Client1Events);
+        }
     }
 }
