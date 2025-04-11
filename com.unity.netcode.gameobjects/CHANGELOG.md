@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where in-scene placed `NetworkObjects` could fail to synchronize its transform properly (especially without a `NetworkTransform`) if their parenting changes from the default when the scene is loaded and if the same scene remains loaded between network sessions while the parenting is completely different from the original hierarchy. (#3387)
 - Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3382)
 - Fixed issue where the time delta that interpolators used would not be properly updated during multiple fixed update invocations within the same player loop frame. (#3355)
 - Fixed issue when using a distributed authority network topology and many clients attempt to connect simultaneously the session owner could max-out the maximum in-flight reliable messages allowed, start dropping packets, and some of the connecting clients would fail to fully synchronize. (#3350)
@@ -44,6 +45,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed the scene loading event serialization order for in-scene placed `NetworkObject`s to be based on their parent-child hierarchy. (#3387)
 - Changed the original `Lerp` interpolation type to `LegacyLerp`. (#3355)
 - Changed `BufferedLinearInterpolator<T>.Update(float deltaTime, NetworkTime serverTime)` as being deprecated since this method is only used for internal testing purposes. (#3337)
 - Changed error thrown when attempting to build a dedicated server with Unity Transport that uses websockets to provide more useful information to the user. (#3336)

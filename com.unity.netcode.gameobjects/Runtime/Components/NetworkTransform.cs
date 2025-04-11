@@ -2074,13 +2074,6 @@ namespace Unity.Netcode.Components
                 // buffered values to the correct world or local space values.
                 forceState = SwitchTransformSpaceWhenParented;
             }
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            else if (InLocalSpace && m_UseRigidbodyForMotion)
-            {
-                // TODO: Provide more options than just FixedJoint
-                Debug.LogError($"[Rigidbody] WHen using a Rigidbody for motion, you cannot use {nameof(InLocalSpace)}! If parenting, use the integrated FixedJoint or use a Joint on Authority side.");
-            }
-#endif
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
@@ -3543,7 +3536,10 @@ namespace Unity.Netcode.Components
             {
                 if (CanCommitToTransform)
                 {
-                    InLocalSpace = transform.parent != null;
+                    if (NetworkObject.HasParentNetworkObject(transform))
+                    {
+                        InLocalSpace = true;
+                    }
                 }
                 // Always apply this if SwitchTransformSpaceWhenParented is set.
                 TickSyncChildren = true;
