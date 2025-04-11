@@ -21,7 +21,7 @@ env:
 jobs:
   handle_assignment:
     name: Handle Issue Assignment Changes
-    if: ${{ !github.event.issue.pull_request  }} && ${{ github.event.issue.state == 'open' }}
+    if: ${{ !github.event.issue.pull_request && github.event.issue.state == 'open' }}
     runs-on: ubuntu-latest
     permissions:
       issues: write
