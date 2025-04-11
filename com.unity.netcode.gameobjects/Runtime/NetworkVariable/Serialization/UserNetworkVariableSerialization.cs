@@ -21,6 +21,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="writer">The <see cref="FastBufferWriter"/> to write the value of type `T`</param>
         /// <param name="value">The value of type `T` to be written</param>
+        /// <param name="previousValue">The previous value to compute the delta against</param>
         public delegate void WriteDeltaDelegate(FastBufferWriter writer, in T value, in T previousValue);
 
         /// <summary>
@@ -41,6 +42,7 @@ namespace Unity.Netcode
         /// The read value delegate handler definition
         /// </summary>
         /// <param name="value">The value of type `T` to be read</param>
+        /// <param name="duplicatedValue">The reference to store the duplicated value in</param>
         public delegate void DuplicateValueDelegate(in T value, ref T duplicatedValue);
 
         /// <summary>

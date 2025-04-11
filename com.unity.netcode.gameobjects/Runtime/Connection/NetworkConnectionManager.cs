@@ -60,6 +60,9 @@ namespace Unity.Netcode
     /// </remarks>
     public struct ConnectionEventData
     {
+        /// <summary>
+        /// The type of connection event that occurred
+        /// </summary>
         public ConnectionEvent EventType;
 
         /// <summary>

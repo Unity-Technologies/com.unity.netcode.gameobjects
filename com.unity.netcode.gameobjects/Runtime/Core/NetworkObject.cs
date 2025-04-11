@@ -533,22 +533,27 @@ namespace Unity.Netcode
             ///  When set, this instance will have no permissions (i.e. cannot distribute, transfer, etc).
             /// </summary>
             None = 0,
+
             /// <summary>
             ///  When set, this instance will be automatically redistributed when a client joins (if not locked or no request is pending) or leaves.
             /// </summary>
             Distributable = 1 << 0,
+
             /// <summary>
             /// When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
             /// </summary>
             Transferable = 1 << 1,
+
             /// <summary>
             /// When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
             /// </summary>
             RequestRequired = 1 << 2,
+
             /// <summary>
             /// When set, only the current session owner may have ownership over this object.
             /// </summary>
             SessionOwner = 1 << 3,
+
             /// <summary>
             /// Used within the inspector view only. When selected it will set the Distributable, Transferable, and RequestRequired flags or if those flags are already set it will select the SessionOwner flag by itself.
             /// </summary>
@@ -648,10 +653,29 @@ namespace Unity.Netcode
         /// </summary>
         public enum OwnershipPermissionsFailureStatus
         {
+            /// <summary>
+            /// The NetworkObject is locked and ownership cannot be acquired
+            /// </summary>
             Locked,
+
+            /// <summary>
+            /// The NetworkObject requires an ownership request via RequestOwnership
+            /// </summary>
             RequestRequired,
+
+            /// <summary>
+            /// The NetworkObject is already processing an ownership request and ownership cannot be acquired at this time
+            /// </summary>
             RequestInProgress,
+
+            /// <summary>
+            /// The NetworkObject does not have the OwnershipStatus.Transferable flag set and ownership cannot be acquired
+            /// </summary>
             NotTransferrable,
+
+            /// <summary>
+            /// The NetworkObject has the OwnershipStatus.SessionOwner flag set and ownership cannot be acquired
+            /// </summary>
             SessionOwnerOnly
         }
 
@@ -679,11 +703,35 @@ namespace Unity.Netcode
         /// </summary>
         public enum OwnershipRequestStatus
         {
+            /// <summary>
+            /// The request for ownership was sent (does not mean it will be granted, but the request was sent)
+            /// </summary>
             RequestSent,
+
+            /// <summary>
+            /// The current client is already the owner (no need to request ownership)
+            /// </summary>
             AlreadyOwner,
+
+            /// <summary>
+            /// The OwnershipStatus.RequestRequired flag is not set on this NetworkObject
+            /// </summary>
             RequestRequiredNotSet,
+
+            /// <summary>
+            /// The current owner has locked ownership which means requests are not available at this time
+            /// </summary>
             Locked,
+
+            /// <summary>
+            /// There is already a known request in progress. You can scan for ownership changes and try again
+            /// after a specific period of time or no longer attempt to request ownership
+            /// </summary>
             RequestInProgress,
+
+            /// <summary>
+            /// This object is marked as SessionOwnerOnly and therefore cannot be requested
+            /// </summary>
             SessionOwnerOnly,
         }
 
@@ -841,19 +889,31 @@ namespace Unity.Netcode
         /// <summary>
         /// What is returned via <see cref="OnOwnershipRequestResponse"/> after an ownership request has been sent via <see cref="RequestOwnership"/>
         /// </summary>
-        /// <remarks>
-        /// Approved: Granted ownership, and returned after the requesting client has gained ownership on the local instance.
-        /// Locked: Was locked after request was sent.
-        /// RequestInProgress: A request started before this request was received.
-        /// CannotRequest: The RequestRequired status changed while the request was in flight.
-        /// Denied: General denied message that is only set if <see cref="OnOwnershipRequested"/> returns false by the authority instance.
-        /// </remarks>
         public enum OwnershipRequestResponseStatus
         {
+            /// <summary>
+            /// The ownership request was approved and the requesting client has gained ownership on the local instance
+            /// </summary>
             Approved,
+
+            /// <summary>
+            /// The ownership request was denied because the object became locked after the request was sent
+            /// </summary>
             Locked,
+
+            /// <summary>
+            /// The ownership request was denied because another request was already in progress when this request was received
+            /// </summary>
             RequestInProgress,
+
+            /// <summary>
+            /// The ownership request was denied because the RequestRequired status changed while the request was in flight
+            /// </summary>
             CannotRequest,
+
+            /// <summary>
+            /// The ownership request was denied by the authority instance (<see cref="OnOwnershipRequested"/> returned false)
+            /// </summary>
             Denied,
         }
 
@@ -888,8 +948,19 @@ namespace Unity.Netcode
         /// </summary>
         public enum OwnershipLockActions
         {
+            /// <summary>
+            /// No additional locking action will be performed
+            /// </summary>
             None,
+
+            /// <summary>
+            /// Sets the specified ownership flags and then locks the NetworkObject
+            /// </summary>
             SetAndLock,
+
+            /// <summary>
+            /// Sets the specified ownership flags and then unlocks the NetworkObject
+            /// </summary>
             SetAndUnlock
         }
 
@@ -1115,6 +1186,10 @@ namespace Unity.Netcode
         public bool? IsSceneObject { get; internal set; }
 
         //DANGOEXP TODO: Determine if we want to keep this
+        /// <summary>
+        /// Sets whether this NetworkObject was instantiated as part of a scene
+        /// </summary>
+        /// <param name="isSceneObject">When true, marks this as a scene-instantiated object; when false, marks it as runtime-instantiated</param>
         public void SetSceneObjectStatus(bool isSceneObject = false)
         {
             IsSceneObject = isSceneObject;
@@ -1186,6 +1261,7 @@ namespace Unity.Netcode
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>
+        /// <returns>True if the object should be visible to the specified client, false otherwise</returns>
         public delegate bool VisibilityDelegate(ulong clientId);
 
         /// <summary>
@@ -1197,6 +1273,7 @@ namespace Unity.Netcode
         /// Delegate type for checking spawn options
         /// </summary>
         /// <param name="clientId">The clientId to check spawn options for</param>
+        /// <returns>True if the object should be spawned for the specified client, false otherwise</returns>
         public delegate bool SpawnDelegate(ulong clientId);
 
         /// <summary>
@@ -2676,6 +2753,14 @@ namespace Unity.Netcode
             return true;
         }
 
+        /// <summary>
+        /// Gets the order index of a NetworkBehaviour instance within the ChildNetworkBehaviours collection
+        /// </summary>
+        /// <param name="instance">The NetworkBehaviour instance to find the index for</param>
+        /// <returns>
+        /// The index of the NetworkBehaviour in the ChildNetworkBehaviours collection.
+        /// Returns 0 if the instance is not found.
+        /// </returns>
         public ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
             // read the cached index, and verify it first
