@@ -3,22 +3,54 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Specifies how RPC messages should be handled in terms of local execution timing
+    /// </summary>
     public enum LocalDeferMode
     {
+        /// <summary>
+        /// Uses the default behavior for RPC message handling
+        /// </summary>
         Default,
+
+        /// <summary>
+        /// Defers the local execution of the RPC until the next network tick
+        /// </summary>
         Defer,
+
+        /// <summary>
+        /// Executes the RPC immediately on the local client without waiting for network synchronization
+        /// </summary>
         SendImmediate
     }
+
     /// <summary>
-    /// Generic RPC
+    /// Generic RPC. Defines parameters for sending Remote Procedure Calls (RPCs) in the network system
     /// </summary>
     public struct RpcSendParams
     {
+        /// <summary>
+        /// Specifies the target that will receive this RPC
+        /// </summary>
         public BaseRpcTarget Target;
 
+        /// <summary>
+        /// Controls how the RPC is handled for local execution timing
+        /// </summary>
         public LocalDeferMode LocalDeferMode;
 
+        /// <summary>
+        /// Implicitly converts a BaseRpcTarget to RpcSendParams
+        /// </summary>
+        /// <param name="target">The RPC target to convert</param>
+        /// <returns>A new RpcSendParams instance with the specified target</returns>
         public static implicit operator RpcSendParams(BaseRpcTarget target) => new RpcSendParams { Target = target };
+
+        /// <summary>
+        /// Implicitly converts a LocalDeferMode to RpcSendParams
+        /// </summary>
+        /// <param name="deferMode">The defer mode to convert</param>
+        /// <returns>A new RpcSendParams instance with the specified defer mode</returns>
         public static implicit operator RpcSendParams(LocalDeferMode deferMode) => new RpcSendParams { LocalDeferMode = deferMode };
     }
 
@@ -51,9 +83,32 @@ namespace Unity.Netcode
         /// </summary>
         public RpcReceiveParams Receive;
 
+        /// <summary>
+        /// Implicitly converts RpcSendParams to RpcParams
+        /// </summary>
+        /// <param name="send">The send parameters to convert</param>
+        /// <returns>A new RpcParams instance with the specified send parameters</returns>
         public static implicit operator RpcParams(RpcSendParams send) => new RpcParams { Send = send };
+
+        /// <summary>
+        /// Implicitly converts a BaseRpcTarget to RpcParams
+        /// </summary>
+        /// <param name="target">The RPC target to convert</param>
+        /// <returns>A new RpcParams instance with the specified target in its send parameters</returns>
         public static implicit operator RpcParams(BaseRpcTarget target) => new RpcParams { Send = new RpcSendParams { Target = target } };
+
+        /// <summary>
+        /// Implicitly converts a LocalDeferMode to RpcParams
+        /// </summary>
+        /// <param name="deferMode">The defer mode to convert</param>
+        /// <returns>A new RpcParams instance with the specified defer mode in its send parameters</returns>
         public static implicit operator RpcParams(LocalDeferMode deferMode) => new RpcParams { Send = new RpcSendParams { LocalDeferMode = deferMode } };
+
+        /// <summary>
+        /// Implicitly converts RpcReceiveParams to RpcParams
+        /// </summary>
+        /// <param name="receive">The receive parameters to convert</param>
+        /// <returns>A new RpcParams instance with the specified receive parameters</returns>
         public static implicit operator RpcParams(RpcReceiveParams receive) => new RpcParams { Receive = receive };
     }
 

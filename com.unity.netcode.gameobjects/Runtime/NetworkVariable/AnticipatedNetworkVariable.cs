@@ -4,10 +4,21 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-
+    /// <summary>
+    /// Defines how anticipated network variables handle authoritative updates that are older than the current anticipated state
+    /// </summary>
     public enum StaleDataHandling
     {
+        /// <summary>
+        /// Ignores authoritative updates that are older than the current anticipated state.
+        /// The anticipated value will not be replaced until a newer authoritative update is received.
+        /// </summary>
         Ignore,
+
+        /// <summary>
+        /// Applies authoritative updates even if they are older than the current anticipated state.
+        /// This triggers reanticipation to calculate a new anticipated value based on the authoritative state.
+        /// </summary>
         Reanticipate
     }
 
@@ -83,8 +94,18 @@ namespace Unity.Netcode
         /// the anticipationTime value, and that callback can be used to calculate a new anticipated value.
         /// </summary>
 #pragma warning restore IDE0001
+
+        /// <summary>
+        /// Controls how this network variable handles authoritative updates that are older than the current anticipated state
+        /// </summary>
         public StaleDataHandling StaleDataHandling;
 
+        /// <summary>
+        /// Delegate for handling changes in the authoritative value
+        /// </summary>
+        /// <param name="variable">The network variable that changed</param>
+        /// <param name="previousValue">The previous value before the change</param>
+        /// <param name="newValue">The new value after the change</param>
         public delegate void OnAuthoritativeValueChangedDelegate(AnticipatedNetworkVariable<T> variable, in T previousValue, in T newValue);
 
         /// <summary>
@@ -121,6 +142,9 @@ namespace Unity.Netcode
 
         private AnticipatedObject m_AnticipatedObject;
 
+        /// <summary>
+        /// Initializes the network variable, setting up initial values and registering with the anticipation system
+        /// </summary>
         public override void OnInitialize()
         {
             m_AuthoritativeValue.Initialize(m_NetworkBehaviour);
@@ -133,6 +157,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Checks if the current value has changed enough from its last synchronized value to warrant a new network update
+        /// </summary>
+        /// <returns>True if the value should be synchronized, false otherwise</returns>
         public override bool ExceedsDirtinessThreshold()
         {
             return m_AuthoritativeValue.ExceedsDirtinessThreshold();
@@ -227,10 +255,19 @@ namespace Unity.Netcode
         /// See <see cref="Mathf.Lerp"/>, <see cref="Vector3.Lerp"/>, <see cref="Vector3.Slerp"/>, and so on
         /// for examples.
         /// </summary>
+        /// <param name="authoritativeValue">The authoritative value to interpolate from</param>
+        /// <param name="anticipatedValue">The anticipated value to interpolate to</param>
+        /// <param name="amount">The interpolation factor between 0 and 1</param>
+        /// <returns>The interpolated value</returns>
         public delegate T SmoothDelegate(T authoritativeValue, T anticipatedValue, float amount);
 
         private SmoothDelegate m_SmoothDelegate = null;
 
+        /// <summary>
+        /// Initializes a new instance of the AnticipatedNetworkVariable class
+        /// </summary>
+        /// <param name="value">The initial value for the network variable. Defaults to the type's default value if not specified.</param>
+        /// <param name="staleDataHandling">Determines how the variable handles authoritative updates that are older than the current anticipated state. Defaults to StaleDataHandling.Ignore.</param>
         public AnticipatedNetworkVariable(T value = default,
             StaleDataHandling staleDataHandling = StaleDataHandling.Ignore)
             : base()
@@ -242,6 +279,9 @@ namespace Unity.Netcode
             };
         }
 
+        /// <summary>
+        /// Updates the smooth interpolation state if active
+        /// </summary>
         public void Update()
         {
             if (m_CurrentSmoothTime < m_SmoothDuration)
@@ -253,6 +293,7 @@ namespace Unity.Netcode
             }
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             if (m_IsDisposed)
@@ -302,6 +343,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Finalizer that ensures proper cleanup of network variable resources
+        /// </summary>
         ~AnticipatedNetworkVariable()
         {
             Dispose();
@@ -357,26 +401,31 @@ namespace Unity.Netcode
             m_HasSmoothValues = true;
         }
 
+        /// <inheritdoc/>
         public override bool IsDirty()
         {
             return m_AuthoritativeValue.IsDirty();
         }
 
+        /// <inheritdoc/>
         public override void ResetDirty()
         {
             m_AuthoritativeValue.ResetDirty();
         }
 
+        /// <inheritdoc/>
         public override void WriteDelta(FastBufferWriter writer)
         {
             m_AuthoritativeValue.WriteDelta(writer);
         }
 
+        /// <inheritdoc/>
         public override void WriteField(FastBufferWriter writer)
         {
             m_AuthoritativeValue.WriteField(writer);
         }
 
+        /// <inheritdoc/>
         public override void ReadField(FastBufferReader reader)
         {
             m_AuthoritativeValue.ReadField(reader);
@@ -384,6 +433,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
         }
 
+        /// <inheritdoc/>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
             m_AuthoritativeValue.ReadDelta(reader, keepDirtyDelta);

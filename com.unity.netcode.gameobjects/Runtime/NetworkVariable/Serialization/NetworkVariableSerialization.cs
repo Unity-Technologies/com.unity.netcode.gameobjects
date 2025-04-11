@@ -15,8 +15,11 @@ namespace Unity.Netcode
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
         /// <summary>
-        /// A callback to check if two values are equal.
+        /// Delegate for comparing two values of type T for equality
         /// </summary>
+        /// <param name="a">First value to compare</param>
+        /// <param name="b">Second value to compare</param>
+        /// <returns>True if the values are equal, false otherwise</returns>
         public delegate bool EqualsDelegate(ref T a, ref T b);
 
         /// <summary>

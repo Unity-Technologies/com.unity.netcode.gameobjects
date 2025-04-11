@@ -39,6 +39,9 @@ namespace Unity.Netcode
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
         public GameObject PlayerPrefab;
 
+        /// <summary>
+        /// The collection of network prefabs that can be spawned across the network
+        /// </summary>
         [SerializeField]
         public NetworkPrefabs Prefabs = new NetworkPrefabs();
 
@@ -159,12 +162,21 @@ namespace Unity.Netcode
         /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
 
+        /// <summary>
+        /// Determines whether to use the client-server or distributed authority network topology
+        /// </summary>
         [Tooltip("Determines whether to use the client-server or distributed authority network topology.")]
         public NetworkTopologyTypes NetworkTopology;
 
+        /// <summary>
+        /// Internal flag for Cloud Multiplayer Build service integration
+        /// </summary>
         [HideInInspector]
         public bool UseCMBService;
 
+        /// <summary>
+        /// When enabled (default), the player prefab will automatically be spawned client-side upon the client being approved and synchronized
+        /// </summary>
         [Tooltip("When enabled (default), the player prefab will automatically be spawned (client-side) upon the client being approved and synchronized.")]
         public bool AutoSpawnPlayerPrefabClientSide = true;
 
@@ -205,7 +217,7 @@ namespace Unity.Netcode
             return networkConfig;
         }
 
-#endif 
+#endif
 
 
 #if MULTIPLAYER_TOOLS

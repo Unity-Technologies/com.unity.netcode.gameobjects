@@ -161,6 +161,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
+        /// <param name="senderClientId">The client identifier of the message sender</param>
+        /// <param name="messagePayload">The buffer containing the message data to be read</param>
         public delegate void HandleNamedMessageDelegate(ulong senderClientId, FastBufferReader messagePayload);
 
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();

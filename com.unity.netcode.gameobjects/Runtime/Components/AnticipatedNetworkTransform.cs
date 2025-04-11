@@ -286,6 +286,7 @@ namespace Unity.Netcode.Components
         // TODO: This does not handle OnFixedUpdate
         // This requires a complete overhaul in this class to switch between using
         // NetworkRigidbody's position and rotation values.
+        /// <inheritdoc/>
         public override void OnUpdate()
         {
             ProcessSmoothing();
@@ -422,6 +423,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             if (NetworkManager.DistributedAuthorityMode)
@@ -445,6 +447,7 @@ namespace Unity.Netcode.Components
             NetworkManager.AnticipationSystem.AllAnticipatedObjects.Add(m_AnticipatedObject);
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             if (m_AnticipatedObject != null)
@@ -459,6 +462,7 @@ namespace Unity.Netcode.Components
             base.OnNetworkDespawn();
         }
 
+        /// <inheritdoc/>
         public override void OnDestroy()
         {
             if (m_AnticipatedObject != null)
@@ -510,6 +514,7 @@ namespace Unity.Netcode.Components
             m_CurrentSmoothTime = 0;
         }
 
+        /// <inheritdoc/>
         protected override void OnBeforeUpdateTransformState()
         {
             // this is called when new data comes from the server
@@ -517,12 +522,14 @@ namespace Unity.Netcode.Components
             m_OutstandingAuthorityChange = true;
         }
 
+        /// <inheritdoc/>
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
             ApplyAuthoritativeState();
         }
 
+        /// <inheritdoc/>
         protected override void OnTransformUpdated()
         {
             if (CanCommitToTransform || m_AnticipatedObject == null)
