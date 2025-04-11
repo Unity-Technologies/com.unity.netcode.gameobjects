@@ -5,7 +5,7 @@
 # The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
 
 name: "NGO - Backport Verification"
-  
+
 on:
   pull_request:
     types: [opened, edited]
