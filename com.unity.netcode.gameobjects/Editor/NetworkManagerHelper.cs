@@ -27,6 +27,7 @@ namespace Unity.Netcode.Editor
         private static void InitializeOnload()
         {
             Singleton = new NetworkManagerHelper();
+
             NetworkManager.NetworkManagerHelper = Singleton;
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
@@ -259,6 +260,17 @@ namespace Unity.Netcode.Editor
                 }
             }
             return isParented;
+        }
+
+        internal NetcodeAnalytics NetcodeAnalytics = new NetcodeAnalytics();
+
+        /// <summary>
+        /// Directly define the interface method to keep this internal
+        /// </summary>
+        /// <returns>The <see cref="NetcodeAnalytics"/> instance which is derived from the <see cref="NetworkManager.NetcodeAnalytics"/> abstract class.</returns>
+        NetworkManager.NetcodeAnalytics NetworkManager.INetworkManagerHelper.Analytics()
+        {
+            return NetcodeAnalytics;
         }
     }
 #endif

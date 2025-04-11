@@ -86,13 +86,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
-                {
-                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-                }
-            }
             networkManager.NetworkConfig.EnableSceneManagement = m_ServerNetworkManager.NetworkConfig.EnableSceneManagement;
             base.OnNewClientCreated(networkManager);
         }

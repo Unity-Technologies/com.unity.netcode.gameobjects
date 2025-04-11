@@ -58,7 +58,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// All <see cref="NetworkTransform"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
+        /// All <see cref="NetworkTransform"/> component instances associated with a <see cref="NetworkObject"/> component instance.
         /// </summary>
         /// <remarks>
         /// When parented, all child <see cref="NetworkTransform"/> component instances under a <see cref="NetworkObject"/> component instance that do not have
@@ -308,20 +308,53 @@ namespace Unity.Netcode
         /// </remarks>
         private void CheckForInScenePlaced()
         {
-            if (PrefabUtility.IsPartOfAnyPrefab(this) && gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
+            if (gameObject.scene.IsValid() && gameObject.scene.isLoaded && gameObject.scene.buildIndex >= 0)
             {
-                var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
-                var assetPath = AssetDatabase.GetAssetPath(prefab);
-                var sourceAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(assetPath);
-                if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectIdHash != sourceAsset.GlobalObjectIdHash)
+                if (PrefabUtility.IsPartOfAnyPrefab(this))
                 {
-                    InScenePlacedSourceGlobalObjectIdHash = sourceAsset.GlobalObjectIdHash;
-                    EditorUtility.SetDirty(this);
+                    var prefab = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+                    var assetPath = AssetDatabase.GetAssetPath(prefab);
+                    var sourceAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(assetPath);
+                    if (sourceAsset != null && sourceAsset.GlobalObjectIdHash != 0 && InScenePlacedSourceGlobalObjectIdHash != sourceAsset.GlobalObjectIdHash)
+                    {
+                        InScenePlacedSourceGlobalObjectIdHash = sourceAsset.GlobalObjectIdHash;
+                        EditorUtility.SetDirty(this);
+                    }
                 }
                 IsSceneObject = true;
+
+                // Default scene migration synchronization to false for in-scene placed NetworkObjects
+                SceneMigrationSynchronization = false;
+
+                // Root In-scene placed NetworkObjects have to either have the SessionOwner or Distributable permission flag set.
+                if (transform.parent == null)
+                {
+                    if (!Ownership.HasFlag(OwnershipStatus.SessionOwner) && !Ownership.HasFlag(OwnershipStatus.Distributable))
+                    {
+                        Ownership |= OwnershipStatus.Distributable;
+                    }
+                }
             }
         }
 #endif // UNITY_EDITOR
+
+        internal bool HasParentNetworkObject(Transform transform)
+        {
+            if (transform.parent != null)
+            {
+                var networkObject = transform.parent.GetComponent<NetworkObject>();
+                if (networkObject != null && networkObject != this)
+                {
+                    return true;
+                }
+
+                if (transform.parent.parent != null)
+                {
+                    return HasParentNetworkObject(transform.parent);
+                }
+            }
+            return false;
+        }
 
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
@@ -490,16 +523,36 @@ namespace Unity.Netcode
         /// <see cref="Transferable"/>: When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
         /// <see cref="RequestRequired"/>: When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
         /// <see cref="SessionOwner"/>: When set, only the current session owner may have ownership over this object.
+        /// <see cref="All"/>: Used within the inspector view only. When selected it will set the Distributable, Transferable, and RequestRequired flags or if those flags are already set it will select the SessionOwner flag by itself.
         /// </summary>
         // Ranges from 1 to 8 bits
         [Flags]
         public enum OwnershipStatus
         {
+            /// <summary>
+            ///  When set, this instance will have no permissions (i.e. cannot distribute, transfer, etc).
+            /// </summary>
             None = 0,
+            /// <summary>
+            ///  When set, this instance will be automatically redistributed when a client joins (if not locked or no request is pending) or leaves.
+            /// </summary>
             Distributable = 1 << 0,
+            /// <summary>
+            /// When set, a non-owner can obtain ownership immediately (without requesting and as long as it is not locked).
+            /// </summary>
             Transferable = 1 << 1,
+            /// <summary>
+            /// When set, a non-owner must request ownership from the owner (will always get locked once ownership is transferred).
+            /// </summary>
             RequestRequired = 1 << 2,
+            /// <summary>
+            /// When set, only the current session owner may have ownership over this object.
+            /// </summary>
             SessionOwner = 1 << 3,
+            /// <summary>
+            /// Used within the inspector view only. When selected it will set the Distributable, Transferable, and RequestRequired flags or if those flags are already set it will select the SessionOwner flag by itself.
+            /// </summary>
+            All = ~0,
         }
 
         /// <summary>
@@ -605,7 +658,7 @@ namespace Unity.Netcode
         /// <summary>
         /// <see cref="OnOwnershipPermissionsFailure"/>
         /// </summary>
-        /// <param name="changeOwnershipFailure"></param>
+        /// <param name="changeOwnershipFailure">The status indicating why the ownership change failed</param>
         public delegate void OnOwnershipPermissionsFailureDelegateHandler(OwnershipPermissionsFailureStatus changeOwnershipFailure);
 
         /// <summary>
@@ -702,8 +755,8 @@ namespace Unity.Netcode
         /// <summary>
         /// The delegate handler declaration used by <see cref="OnOwnershipRequested"/>.
         /// </summary>
-        /// <param name="clientRequesting"></param>
-        /// <returns></returns>
+        /// <param name="clientRequesting">The ClientId of the client requesting ownership</param>
+        /// <returns>True to approve the ownership request, false to deny the request and prevent ownership transfer</returns>
         public delegate bool OnOwnershipRequestedDelegateHandler(ulong clientRequesting);
 
         /// <summary>
@@ -719,7 +772,6 @@ namespace Unity.Netcode
         /// Invoked by ChangeOwnershipMessage
         /// </summary>
         /// <param name="clientRequestingOwnership">the client requesting ownership</param>
-        /// <returns></returns>
         internal void OwnershipRequest(ulong clientRequestingOwnership)
         {
             var response = OwnershipRequestResponseStatus.Approved;
@@ -808,7 +860,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The delegate handler declaration used by <see cref="OnOwnershipRequestResponse"/>.
         /// </summary>
-        /// <param name="ownershipRequestResponse"></param>
+        /// <param name="ownershipRequestResponse">The status indicating whether the ownership request was approved or the reason for denial</param>
         public delegate void OnOwnershipRequestResponseDelegateHandler(OwnershipRequestResponseStatus ownershipRequestResponse);
 
         /// <summary>
@@ -1596,6 +1648,9 @@ namespace Unity.Netcode
             if (NetworkManager.IsListening && !isAuthority && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
+                // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
+                NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
+
                 // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
                 // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
                 if (!NetworkManager.ShutdownInProgress)
@@ -1616,6 +1671,9 @@ namespace Unity.Netcode
                 }
                 // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
             }
+
+            // Always attempt to remove from scene changed updates
+            NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
@@ -1659,7 +1717,20 @@ namespace Unity.Netcode
                 }
                 if (NetworkManager.NetworkConfig.EnableSceneManagement)
                 {
-                    NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
+                    if (!NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(gameObject.scene.handle))
+                    {
+                        // Most likely this issue is due to an integration test
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogWarning($"Failed to find scene handle {gameObject.scene.handle} for {gameObject.name}!");
+                        }
+                        // Just use the existing handle
+                        NetworkSceneHandle = gameObject.scene.handle;
+                    }
+                    else
+                    {
+                        NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
+                    }
                 }
                 if (DontDestroyWithOwner && !IsOwnershipDistributable)
                 {
@@ -2005,7 +2076,7 @@ namespace Unity.Netcode
         /// This is a more convenient way to remove the parent without  having to cast the null value to either <see cref="GameObject"/> or <see cref="NetworkObject"/>
         /// </remarks>
         /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
-        /// <returns></returns>
+        /// <returns>True if the parent was successfully removed, false if the operation failed or the object was already parentless</returns>
         public bool TryRemoveParent(bool worldPositionStays = true)
         {
             return TrySetParent((NetworkObject)null, worldPositionStays);
@@ -2245,7 +2316,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false, bool orphanedChildPass = false, bool enableNotification = true)
         {
             if (!AutoObjectParentSync)
             {
@@ -2318,7 +2389,10 @@ namespace Unity.Netcode
                 // to WorldPositionStays which can cause scaling issues if the parent's
                 // scale is not the default (Vetctor3.one) value.
                 transform.SetParent(null, m_CachedWorldPositionStays);
-                InvokeBehaviourOnNetworkObjectParentChanged(null);
+                if (enableNotification)
+                {
+                    InvokeBehaviourOnNetworkObjectParentChanged(null);
+                }
                 return true;
             }
 
@@ -2343,7 +2417,10 @@ namespace Unity.Netcode
             }
             SetCachedParent(parentObject.transform);
             transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
-            InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
+            if (enableNotification)
+            {
+                InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
+            }
             return true;
         }
 
@@ -2378,11 +2455,6 @@ namespace Unity.Netcode
         internal void InvokeBehaviourNetworkSpawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
-
-            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
-            {
-                AddNetworkObjectToSceneChangedUpdates(this);
-            }
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
@@ -2438,20 +2510,14 @@ namespace Unity.Netcode
             }
         }
 
-
-
         internal void InvokeBehaviourNetworkDespawn()
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            NetworkManager.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
-            }
-
-            if (SceneMigrationSynchronization && NetworkManager.NetworkConfig.EnableSceneManagement)
-            {
-                RemoveNetworkObjectFromSceneChangedUpdates(this);
             }
         }
 
@@ -2528,12 +2594,39 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// Used when changing ownership, this will mark any owner read permission base NetworkVariables as dirty
+        /// and will check if any owner write permission NetworkVariables are dirty (primarily for collections) so
+        /// the new owner will get a full state update prior to changing ownership.
+        /// </summary>
+        /// <remarks>
+        /// We have to pass in the original owner and previous owner to "reset" back to the current state of this
+        /// NetworkObject in order to preserve the same ownership change flow. By the time this is invoked, the
+        /// new and previous owner ids have already been set.
+        /// </remarks>
+        /// <param name="originalOwnerId">the owner prior to beginning the change in ownership change.</param>
+        /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
+        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
+            var currentOwnerId = OwnerClientId;
+            OwnerClientId = originalOwnerId;
+            PreviousOwnerId = originalPreviousOwnerId;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].MarkOwnerReadVariablesDirty();
+                ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
+
+            // Now set the new owner and previous owner identifiers back to their original new values
+            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
+            // operations is **particularly important** as we need to first (above) mark things as dirty
+            // from the context of the original owner and then second (below) we need to send the messages
+            // which requires the new owner to be set for owner read permission NetworkVariables.
+            OwnerClientId = currentOwnerId;
+            PreviousOwnerId = originalOwnerId;
+
+            // Force send a state update for all owner read NetworkVariables  and any currently dirty
+            // owner write NetworkVariables.
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
@@ -2964,6 +3057,8 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
+                HasParent = transform.parent != null,
+                WorldPositionStays = m_CachedWorldPositionStays,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 IsPlayerObject = IsPlayerObject,
@@ -2980,31 +3075,16 @@ namespace Unity.Netcode
                 TargetClientId = targetClientId
             };
 
-            NetworkObject parentNetworkObject = null;
-
-            if (!AlwaysReplicateAsRoot && transform.parent != null)
+            // Handle Parenting
+            if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
-                parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
-                // In-scene placed NetworkObjects parented under GameObjects with no NetworkObject
-                // should set the has parent flag and preserve the world position stays value
-                if (parentNetworkObject == null && obj.IsSceneObject)
-                {
-                    obj.HasParent = true;
-                    obj.WorldPositionStays = m_CachedWorldPositionStays;
-                }
-            }
+                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
-            if (parentNetworkObject != null)
-            {
-                obj.HasParent = true;
-                obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
-                obj.WorldPositionStays = m_CachedWorldPositionStays;
-                var latestParent = GetNetworkParenting();
-                var isLatestParentSet = latestParent != null && latestParent.HasValue;
-                obj.IsLatestParentSet = isLatestParentSet;
-                if (isLatestParentSet)
+                if (parentNetworkObject)
                 {
-                    obj.LatestParent = latestParent.Value;
+                    obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
+                    obj.LatestParent = GetNetworkParenting();
+                    obj.IsLatestParentSet = obj.LatestParent != null && obj.LatestParent.HasValue;
                 }
             }
 
@@ -3016,12 +3096,6 @@ namespace Unity.Netcode
                 // be synchronizing clients with.
                 var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
                 var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
-
-                // Always synchronize in-scene placed object's scale using local space
-                if (obj.IsSceneObject)
-                {
-                    syncScaleLocalSpaceRelative = obj.HasParent;
-                }
 
                 // If auto object synchronization is turned off
                 if (!AutoObjectParentSync)
@@ -3099,6 +3173,15 @@ namespace Unity.Netcode
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+
+            // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
+            // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
+            // "re-parented" to the original parent. This can happen if not unloading the scene and the parenting of
+            // the in-scene placed Networkobject changes several times over different sessions.
+            if (sceneObject.IsSceneObject && !sceneObject.HasParent && networkObject.m_LatestParent.HasValue)
+            {
+                networkObject.m_LatestParent = null;
+            }
 
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
@@ -3263,31 +3346,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal static Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
-
-        internal static void AddNetworkObjectToSceneChangedUpdates(NetworkObject networkObject)
-        {
-            if (!NetworkObjectsToSynchronizeSceneChanges.ContainsKey(networkObject.NetworkObjectId))
-            {
-                NetworkObjectsToSynchronizeSceneChanges.Add(networkObject.NetworkObjectId, networkObject);
-            }
-
-            networkObject.UpdateForSceneChanges();
-        }
-
-        internal static void RemoveNetworkObjectFromSceneChangedUpdates(NetworkObject networkObject)
-        {
-            NetworkObjectsToSynchronizeSceneChanges.Remove(networkObject.NetworkObjectId);
-        }
-
-        internal static void UpdateNetworkObjectSceneChanges()
-        {
-            foreach (var entry in NetworkObjectsToSynchronizeSceneChanges)
-            {
-                entry.Value.UpdateForSceneChanges();
-            }
-        }
-
         private void Awake()
         {
             m_ChildNetworkBehaviours = null;
@@ -3310,20 +3368,25 @@ namespace Unity.Netcode
         /// to add this same functionality to in-scene placed NetworkObjects until we have a way to generate
         /// per-NetworkObject-instance unique GlobalObjectIdHash values for in-scene placed NetworkObjects.
         /// </remarks>
-        internal void UpdateForSceneChanges()
+        internal bool UpdateForSceneChanges()
         {
             // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
             if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
-                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || gameObject.scene.handle == SceneOriginHandle)
+                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
             {
-                return;
+                // Stop checking for a scene migration
+                return false;
+            }
+            else if (gameObject.scene.handle != SceneOriginHandle)
+            {
+                // If the scene handle has changed, then update and send notification
+                SceneChangedUpdate(gameObject.scene, true);
             }
 
-            // Otherwise, this has to be a dynamically spawned NetworkObject that has been
-            // migrated to a new scene.
-            SceneChangedUpdate(gameObject.scene, true);
+            // Return true (continue checking for scene migration)
+            return true;
         }
 
         /// <summary>

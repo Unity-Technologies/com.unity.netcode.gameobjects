@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using Unity.Netcode.Components;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -9,29 +10,72 @@ namespace Unity.Netcode.RuntimeTests
     /// server and host operating modes and will test both authoritative
     /// models for each operating mode.
     /// </summary>
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.DAHost, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+
 #endif
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.Host, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #endif
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #if !MULTIPLAYER_TOOLS
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full)]
-    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.LegacyLerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.LegacyLerp)]
+
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.Lerp)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.Lerp)]
+
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Euler, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.None, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Full, NetworkTransform.InterpolationTypes.SmoothDampening)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority, RotationCompression.QuaternionCompress, Rotation.Quaternion, Precision.Half, NetworkTransform.InterpolationTypes.SmoothDampening)]
 #endif
     internal class NetworkTransformTests : NetworkTransformBase
     {
@@ -41,9 +85,19 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="hostOrServer">Determines if we are running as a server or host</param>
         /// <param name="authority">Determines if we are using server or owner authority</param>
-        public NetworkTransformTests(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision) :
+        public NetworkTransformTests(HostOrServer testWithHost, Authority authority, RotationCompression rotationCompression, Rotation rotation, Precision precision, NetworkTransform.InterpolationTypes interpolation) :
             base(testWithHost, authority, rotationCompression, rotation, precision)
-        { }
+        {
+            NetworkTransform.AssignDefaultInterpolationType = true;
+            NetworkTransform.DefaultInterpolationType = interpolation;
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            NetworkTransform.AssignDefaultInterpolationType = false;
+            NetworkTransform.DefaultInterpolationType = NetworkTransform.InterpolationTypes.Lerp;
+            base.OnOneTimeTearDown();
+        }
 
         protected override bool m_EnableTimeTravel => true;
         protected override bool m_SetupIsACoroutine => false;
@@ -102,7 +156,7 @@ namespace Unity.Netcode.RuntimeTests
 
 #if !MULTIPLAYER_TOOLS
 
-        private void UpdateTransformLocal(Components.NetworkTransform networkTransformTestComponent)
+        private void UpdateTransformLocal(NetworkTransform networkTransformTestComponent)
         {
             networkTransformTestComponent.transform.localPosition += GetRandomVector3(0.5f, 2.0f);
             var rotation = networkTransformTestComponent.transform.localRotation;
@@ -112,7 +166,7 @@ namespace Unity.Netcode.RuntimeTests
             networkTransformTestComponent.transform.localRotation = rotation;
         }
 
-        private void UpdateTransformWorld(Components.NetworkTransform networkTransformTestComponent)
+        private void UpdateTransformWorld(NetworkTransform networkTransformTestComponent)
         {
             networkTransformTestComponent.transform.position += GetRandomVector3(0.5f, 2.0f);
             var rotation = networkTransformTestComponent.transform.rotation;
@@ -438,7 +492,7 @@ namespace Unity.Netcode.RuntimeTests
         /// delta update, and it runs through 8 delta updates per unique test.
         /// </remarks>
         [Test]
-        public void NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState, [Values] Axis axis)
+        public void MultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState, [Values] Axis axis)
         {
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
             bool axisX = axis == Axis.X || axis == Axis.XY || axis == Axis.XZ || axis == Axis.XYZ;
@@ -452,6 +506,30 @@ namespace Unity.Netcode.RuntimeTests
             // Enable interpolation when all 3 axis are selected to make sure we are synchronizing properly
             // when interpolation is enabled.
             m_AuthoritativeTransform.Interpolate = axisCount == 3 ? true : false;
+
+            // Lerp smoothing skews values based on our tests and how we had to originally adjust for the way we handled the original Lerp approach and how that
+            // consumed state updates from the buffer.
+            // With the two new interpolation types, they will process until close to the final value before moving on to the next.
+            // Lerp--> Will skip to next state before finishing the current state (i.e. loss of precision but arrives to the final value at the end of multiple updates faster)
+            // LerpAhead & SmoothDampening -->
+            // Will not skip to the next state update until approximately at the end of the current state (higher precision longer time to final value)
+            // How this impacts this test:
+            // It was re-written to use TimeTravel which has a limit of 60 update iterations per "WaitforCondition" which if you are interpolating between two large values
+            // it can take a few more iterations with lerp smoothing enabled. Lerp smoothing is purely a visual thing and will eventually end up at its final destination
+            // upon processing the last state update. However, this test should be only to verify the functionality of the actual lerping between values without the added
+            // delay of smoothing the final result. So, instead of having one timeout value for the two new interpolation types and the default for the original I am opting
+            // for the disabling of lerp smoothing while this particular test runs as it really is only validating that each interpolator type will interpolate to the right
+            // value within a given period of time which is simulated using the time travel approach.
+            // With smooth lerping enabled, the two new interpolation types will come very close to the correct value but will not reach the 2nd or 3rd pass values set because
+            // this test uses the adjusted approximation checks that prematurely determines the target values (position, rotation, and scale) have been reached and as such
+            // sends a new state update that will sit in the buffer for 3-4 frames before the two new interpolation types are done with the current state update. This will
+            // eventually lead to a time deficit that will offset the processing of the next state update such that the default time travel timeout (60 updates) will timeout
+            // and the test will fail. This only happens with 3 axis since that is the only time interpolation was enabled for this particular test.
+            // As such, just disabling smooth lerping for all 3 seemed like the better approach as the maximum interpolation time out period for smooth lerping is now
+            // adjustable by users (i.e. they can adjust how much lerp smoothing is applied based on their project's needs).
+            m_NonAuthoritativeTransform.PositionLerpSmoothing = false;
+            m_NonAuthoritativeTransform.RotationLerpSmoothing = false;
+            m_NonAuthoritativeTransform.ScaleLerpSmoothing = false;
 
             m_CurrentAxis = axis;
 
@@ -487,12 +565,18 @@ namespace Unity.Netcode.RuntimeTests
             var scale = scaleStart;
             var success = false;
 
-            m_AuthoritativeTransform.StatePushed = false;
-            // Wait for the deltas to be pushed
-            WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
-            // Allow the precision settings to propagate first as changing precision
-            // causes a teleport event to occur
-            TimeTravelAdvanceTick();
+            // The default is interpolate, so we only need to check for the updated state when
+            // we turn off interpolation.
+            if (!m_AuthoritativeTransform.Interpolate)
+            {
+                // Reset our state updated and state pushed
+                m_NonAuthoritativeTransform.StateUpdated = false;
+                m_AuthoritativeTransform.StatePushed = false;
+                // Wait for both authority and non-authority to update their respective flags so we know the change to interpolation has been received.
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                Assert.True(success, "Failed to wait for interpolation changed state update!");
+            }
+
             var iterations = axisCount == 3 ? k_PositionRotationScaleIterations3Axis : k_PositionRotationScaleIterations;
 
             // Move and rotate within the same tick, validate the non-authoritative instance updates
@@ -541,6 +625,7 @@ namespace Unity.Netcode.RuntimeTests
                     if (!success)
                     {
                         m_EnableVerboseDebug = true;
+                        VerboseDebug($"Failed on iteration: {i}");
                         success = PositionRotationScaleMatches();
                         m_EnableVerboseDebug = false;
                     }

@@ -53,6 +53,12 @@ namespace TestProject.RuntimeTests
             return m_CanStartServerAndClients;
         }
 
+        public enum DespawnMode
+        {
+            Despawn,
+            DeferDespawn,
+        }
+
         /// <summary>
         /// This verifies that in-scene placed NetworkObjects will be properly
         /// synchronized if:
@@ -61,9 +67,14 @@ namespace TestProject.RuntimeTests
         /// NetworkObject as a NetworkPrefab
         /// </summary>
         [UnityTest]
-        public IEnumerator InSceneNetworkObjectSynchAndSpawn()
+        public IEnumerator InSceneNetworkObjectSynchAndSpawn([Values] DespawnMode despawnMode)
         {
-            NetworkObjectTestComponent.VerboseDebug = true;
+            if (!m_DistributedAuthority && despawnMode == DespawnMode.DeferDespawn)
+            {
+                Assert.Ignore($"Test ignored as DeferDespawn is only valid with Distributed Authority mode.");
+            }
+
+            NetworkObjectTestComponent.VerboseDebug = false;
             // Because despawning a client will cause it to shutdown and clean everything in the
             // scene hierarchy, we have to prevent one of the clients from spawning initially before
             // we test synchronizing late joining clients with despawned in-scene placed NetworkObjects.
@@ -99,7 +110,16 @@ namespace TestProject.RuntimeTests
 
             // Despawn the in-scene placed NetworkObject
             Debug.Log("Despawning In-Scene placed NetworkObject");
-            serverObject.Despawn(false);
+
+            if (despawnMode == DespawnMode.Despawn)
+            {
+                serverObject.Despawn(false);
+            }
+            else
+            {
+                serverObject.DeferDespawn(1, false);
+            }
+
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
             AssertOnTimeout($"Timed out waiting for all in-scene instances to be despawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()}");
 

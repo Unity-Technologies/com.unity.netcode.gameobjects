@@ -338,7 +338,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
             networkManager.NetworkConfig.TickRate = GetTickRate();
             if (m_EnableVerboseDebug)
             {
@@ -632,14 +631,13 @@ namespace Unity.Netcode.RuntimeTests
             var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
             var auhtorityIsEqual = Approximately(authorityPosition, positionToMatch);
             var nonauthorityIsEqual = Approximately(nonAuthorityPosition, positionToMatch);
-
             if (!auhtorityIsEqual)
             {
-                VerboseDebug($"Authority position {authorityPosition} != position to match: {positionToMatch}!");
+                VerboseDebug($"Authority ({m_AuthoritativeTransform.name}) position {authorityPosition} != position to match: {positionToMatch}!");
             }
             if (!nonauthorityIsEqual)
             {
-                VerboseDebug($"NonAuthority position {nonAuthorityPosition} != position to match: {positionToMatch}!");
+                VerboseDebug($"NonAuthority ({m_NonAuthoritativeTransform.name}) position {nonAuthorityPosition} != position to match: {positionToMatch}!");
             }
             return auhtorityIsEqual && nonauthorityIsEqual;
         }
@@ -783,6 +781,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
+            Debug.Log($"[Auth]{name} State Pushed.");
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
             AuthorityPushedTransformState?.Invoke(ref networkTransformState);
@@ -793,8 +792,19 @@ namespace Unity.Netcode.RuntimeTests
         public bool StateUpdated { get; internal set; }
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
+            Debug.Log($"[Non-Auth]{name} State Updated.");
             StateUpdated = true;
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
+        }
+
+        protected string GetVector3Values(ref Vector3 vector3)
+        {
+            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
+        }
+
+        protected string GetVector3Values(Vector3 vector3)
+        {
+            return GetVector3Values(ref vector3);
         }
 
         protected override bool OnIsServerAuthoritative()

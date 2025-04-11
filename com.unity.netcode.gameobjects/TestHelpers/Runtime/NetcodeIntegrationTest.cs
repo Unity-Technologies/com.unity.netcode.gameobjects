@@ -38,6 +38,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         private StringBuilder m_InternalErrorLog = new StringBuilder();
+        internal StringBuilder VerboseDebugLog = new StringBuilder();
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -251,12 +252,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">The debug message to be logged when verbose debugging is enabled</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void VerboseDebug(string msg)
         {
             if (m_EnableVerboseDebug)
             {
+                VerboseDebugLog.AppendLine(msg);
                 Debug.Log(msg);
             }
         }
@@ -301,6 +303,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Enable NetcodeIntegrationTest auto-label feature
             NetcodeIntegrationTestHelpers.RegisterNetcodeIntegrationTest(true);
+
+#if UNITY_INCLUDE_TESTS
+            // Provide an external hook to be able to make adjustments to netcode classes prior to running any tests
+            NetworkManager.OnOneTimeSetup();
+#endif
+
             OnOneTimeSetup();
 
             VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
@@ -339,6 +347,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
@@ -460,14 +469,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// CreateAndStartNewClient Only
         /// Invoked when the newly created client has been created
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
+            // Ensure any late joining client has all NetworkPrefabs required to connect.
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
+                {
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                }
+            }
         }
 
         /// <summary>
         /// CreateAndStartNewClient Only
         /// Invoked when the newly created client has been created and started
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStarted(NetworkManager networkManager)
         {
         }
@@ -477,6 +496,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Invoked when the newly created client has been created, started, and connected
         /// to the server-host.
         /// </summary>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
         protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
         {
         }
@@ -488,6 +508,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <remarks>
         /// Use this for testing connection and disconnection scenarios
         /// </remarks>
+        /// <param name="networkManager">The NetworkManager instance of the client.</param>
+        /// <returns>True if the test should wait for the client to connect; otherwise, false.</returns>
         protected virtual bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
         {
             return true;
@@ -497,6 +519,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will create, start, and connect a new client while in the middle of an
         /// integration test.
         /// </summary>
+        /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
@@ -686,7 +709,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates the server and clients
         /// </summary>
-        /// <param name="numberOfClients"></param>
+        /// <param name="numberOfClients">The number of client instances to create</param>
         protected void CreateServerAndClients(int numberOfClients)
         {
             VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
@@ -1156,6 +1179,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         protected IEnumerator CoroutineShutdownAndCleanUp()
@@ -1195,6 +1221,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
+
+            // Assure any remaining NetworkManagers are destroyed
+            DestroyNetworkManagers();
         }
 
         /// <summary>
@@ -1244,6 +1273,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
+
+        }
+
+        /// <summary>
+        /// Destroys any remaining NetworkManager instances
+        /// </summary>
+        private void DestroyNetworkManagers()
+        {
+            var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+            foreach (var networkManager in networkManagers)
+            {
+                Object.DestroyImmediate(networkManager.gameObject);
+            }
         }
 
         /// <summary>
@@ -1274,6 +1316,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             UnloadRemainingScenes();
 
             VerboseDebug($"Exiting {nameof(OneTimeTearDown)}");
+#if UNITY_INCLUDE_TESTS
+            // Provide an external hook to be able to make adjustments to netcode classes after running tests
+            NetworkManager.OnOneTimeTearDown();
+#endif
 
             IsRunning = false;
         }
@@ -1781,7 +1827,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         ///     public MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
         /// }
         /// </summary>
-        /// <param name="hostOrServer"></param>
+        /// <param name="hostOrServer">Specifies whether to run the test as a Host or Server configuration</param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
@@ -1821,8 +1867,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private void LogWaitForMessages()
         {
-            VerboseDebug(m_WaitForLog.ToString());
-            m_WaitForLog.Clear();
+            // If there is nothing to log, then don't log anything
+            if (m_WaitForLog.Length > 0)
+            {
+                VerboseDebug(m_WaitForLog.ToString());
+                m_WaitForLog.Clear();
+            }
         }
 
         private IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
@@ -1880,8 +1930,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This will only simulate the netcode update loop, as well as update events on
         /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
         /// </summary>
-        /// <param name="amountOfTimeInSeconds"></param>
-        /// <param name="numFramesToSimulate"></param>
+        /// <param name="amountOfTimeInSeconds">The total amount of time to simulate, in seconds</param>
+        /// <param name="numFramesToSimulate">The number of frames to distribute the time across</param>
         protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate)
         {
             var interval = amountOfTimeInSeconds / numFramesToSimulate;

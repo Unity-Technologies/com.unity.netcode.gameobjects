@@ -13,24 +13,24 @@ namespace Unity.Netcode.Components
     ///
     /// <list type="bullet">
     ///
-    /// <item><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Snap:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="StaleDataHandling.Ignore"/> and no <see cref="NetworkBehaviour.OnReanticipate"/> callback),
     /// the moment a more up-to-date value is received from the authority, it will simply replace the anticipated value,
-    /// resulting in a "snap" to the new value if it is different from the anticipated value.</item>
+    /// resulting in a "snap" to the new value if it is different from the anticipated value.</description></item>
     ///
-    /// <item><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Smooth:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="Netcode.StaleDataHandling.Ignore"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> callback that calls
     /// <see cref="Smooth"/> from the anticipated value to the authority value with an appropriate
     /// <see cref="Mathf.Lerp"/>-style smooth function), when a more up-to-date value is received from the authority,
-    /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</item>
+    /// it will interpolate over time from an incorrect anticipated value to the correct authoritative value.</description></item>
     ///
-    /// <item><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
+    /// <item><description><b>Constant Reanticipation:</b> In this mode (with <see cref="StaleDataHandling"/> set to
     /// <see cref="Netcode.StaleDataHandling.Reanticipate"/> and an <see cref="NetworkBehaviour.OnReanticipate"/> that calculates a
     /// new anticipated value based on the current authoritative value), when a more up-to-date value is received from
     /// the authority, user code calculates a new anticipated value, possibly calling <see cref="Smooth"/> to interpolate
     /// between the previous anticipation and the new anticipation. This is useful for values that change frequently and
     /// need to constantly be re-evaluated, as opposed to values that change only in response to user action and simply
-    /// need a one-time anticipation when the user performs that action.</item>
+    /// need a one-time anticipation when the user performs that action.</description></item>
     ///
     /// </list>
     ///
@@ -50,10 +50,24 @@ namespace Unity.Netcode.Components
         internal override bool HideInterpolateValue => true;
 #endif
 
+        /// <summary>
+        /// Represents a complete transform state for network synchronization and anticipation
+        /// </summary>
         public struct TransformState
         {
+            /// <summary>
+            /// The position component of the transform state in world space coordinates.
+            /// </summary>
             public Vector3 Position;
+
+            /// <summary>
+            /// The rotation component of the transform state as a quaternion.
+            /// </summary>
             public Quaternion Rotation;
+
+            /// <summary>
+            /// The scale component of the transform state in local space.
+            /// </summary>
             public Vector3 Scale;
         }
 
@@ -138,7 +152,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will be in the given
         /// <see cref="newPosition"/>
         /// </summary>
-        /// <param name="newPosition"></param>
+        /// <param name="newPosition">The anticipated position</param>
         public void AnticipateMove(Vector3 newPosition)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -164,7 +178,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will have the given
         /// <see cref="newRotation"/>
         /// </summary>
-        /// <param name="newRotation"></param>
+        /// <param name="newRotation">The anticipated rotation</param>
         public void AnticipateRotate(Quaternion newRotation)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -190,7 +204,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, this transform will have the given
         /// <see cref="newScale"/>
         /// </summary>
-        /// <param name="newScale"></param>
+        /// <param name="newScale">The anticipated scale</param>
         public void AnticipateScale(Vector3 newScale)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -216,7 +230,7 @@ namespace Unity.Netcode.Components
         /// Anticipate that, at the end of one round trip to the server, the transform will have the given
         /// <see cref="newState"/>
         /// </summary>
-        /// <param name="newState"></param>
+        /// <param name="newState">The anticipated transform state</param>
         public void AnticipateState(TransformState newState)
         {
             if (NetworkManager.ShutdownInProgress || !NetworkManager.IsListening)
@@ -463,9 +477,9 @@ namespace Unity.Netcode.Components
         /// <see cref="to"/> over <see cref="durationSeconds"/> of real time. The duration uses
         /// <see cref="Time.deltaTime"/>, so it is affected by <see cref="Time.timeScale"/>.
         /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="durationSeconds"></param>
+        /// <param name="from">Starting transform state</param>
+        /// <param name="to">Target transform state</param>
+        /// <param name="durationSeconds">Interpolation time in seconds</param>
         public void Smooth(TransformState from, TransformState to, float durationSeconds)
         {
             var transform_ = transform;

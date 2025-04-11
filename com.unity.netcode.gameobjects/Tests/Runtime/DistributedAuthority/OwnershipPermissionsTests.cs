@@ -400,6 +400,46 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"[Remove][Permissions Mismatch] {daHostInstance.name}: \n {m_ErrorLog}");
         }
 
+
+        [UnityTest]
+        public IEnumerator ChangeOwnershipWithoutObservers()
+        {
+            var initialLogLevel = m_ServerNetworkManager.LogLevel;
+            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
+            var firstInstance = SpawnObject(m_PermissionsObject, m_ServerNetworkManager).GetComponent<NetworkObject>();
+            OwnershipPermissionsTestHelper.CurrentOwnedInstance = firstInstance;
+            var firstInstanceHelper = firstInstance.GetComponent<OwnershipPermissionsTestHelper>();
+            var networkObjectId = firstInstance.NetworkObjectId;
+            m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
+            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients);
+            AssertOnTimeout($"[Failed To Spawn] {firstInstance.name}: \n {m_ErrorLog}");
+
+            firstInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable, true);
+            // Validate the base non-assigned permissions value for all instances are the same.
+            yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
+            AssertOnTimeout($"[Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+
+            var secondInstance = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[networkObjectId];
+
+            // Remove the client from the observers list
+            firstInstance.Observers.Remove(m_ClientNetworkManagers[0].LocalClientId);
+
+            // ChangeOwnership should fail
+            firstInstance.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+            LogAssert.Expect(LogType.Warning, "[Session-Owner Sender=0] [Invalid Owner] Cannot send Ownership change as client-1 cannot see PermObject{2}-OnServer{0}! Use NetworkShow first.");
+            Assert.True(firstInstance.IsOwner, $"[Ownership Check] Client-{m_ServerNetworkManager.LocalClientId} should still own this object!");
+
+            // Now re-add the client to the Observers list and try to change ownership
+            firstInstance.Observers.Add(m_ClientNetworkManagers[0].LocalClientId);
+            firstInstance.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Validate the second client now owns the object
+            yield return WaitForConditionOrTimeOut(() => secondInstance.IsOwner);
+            AssertOnTimeout($"[Acquire Ownership Failed] Client-{m_ClientNetworkManagers[0].LocalClientId} failed to get ownership!");
+
+            m_ServerNetworkManager.LogLevel = initialLogLevel;
+        }
+
         internal class OwnershipPermissionsTestHelper : NetworkBehaviour
         {
             public static NetworkObject CurrentOwnedInstance;

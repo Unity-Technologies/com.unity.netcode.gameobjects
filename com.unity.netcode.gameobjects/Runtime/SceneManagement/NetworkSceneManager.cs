@@ -15,7 +15,7 @@ namespace Unity.Netcode
     /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br />
     /// <em>*** Do not start new scene events within scene event notification callbacks.</em><br />
     /// See also: <br />
-    /// <seealso cref="SceneEventType"/>
+    /// <see cref="SceneEventType"/>
     /// </summary>
     public class SceneEvent
     {
@@ -146,10 +146,10 @@ namespace Unity.Netcode
         /// <summary>
         /// The delegate callback definition for scene event notifications.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEvent"/><br />
-        /// <seealso cref="SceneEventData"/>
+        /// <see cref="SceneEvent"/><br />
+        /// <see cref="SceneEventData"/>
         /// </summary>
-        /// <param name="sceneEvent"></param>
+        /// <param name="sceneEvent">SceneEvent which contains information about the scene event, including type, progress, and scene details</param>
         public delegate void SceneEventDelegate(SceneEvent sceneEvent);
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoad event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Load"/>for more information
+        /// <see cref="SceneEventType.Load"/>for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -186,7 +186,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnUnload event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Unload"/> for more information
+        /// <see cref="SceneEventType.Unload"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">name of the scene being processed</param>
@@ -196,7 +196,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnSynchronize event.<br />
         /// See also: <br />
-        /// <seealso cref="SceneEventType.Synchronize"/> for more information
+        /// <see cref="SceneEventType.Synchronize"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         public delegate void OnSynchronizeDelegateHandler(ulong clientId);
@@ -204,8 +204,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoadEventCompleted and OnUnloadEventCompleted events.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.LoadEventCompleted"/><br />
-        /// <seealso cref="SceneEventType.UnloadEventCompleted"/>
+        /// <see cref="SceneEventType.LoadEventCompleted"/><br />
+        /// <see cref="SceneEventType.UnloadEventCompleted"/>
         /// </summary>
         /// <param name="sceneName">scene pertaining to this event</param>
         /// <param name="loadSceneMode"><see cref="LoadSceneMode"/> of the associated event completed</param>
@@ -216,7 +216,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnLoadComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.LoadComplete"/> for more information
+        /// <see cref="SceneEventType.LoadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
@@ -226,7 +226,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnUnloadComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.UnloadComplete"/> for more information
+        /// <see cref="SceneEventType.UnloadComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that is processing this event (the server will receive all of these events for every client and itself)</param>
         /// <param name="sceneName">the scene name pertaining to this event</param>
@@ -235,7 +235,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate declaration for the OnSynchronizeComplete event.<br />
         /// See also:<br />
-        /// <seealso cref="SceneEventType.SynchronizeComplete"/> for more information
+        /// <see cref="SceneEventType.SynchronizeComplete"/> for more information
         /// </summary>
         /// <param name="clientId">the client that completed this event</param>
         public delegate void OnSynchronizeCompleteDelegateHandler(ulong clientId);
@@ -1261,7 +1261,7 @@ namespace Unity.Netcode
         /// Unloads an additively loaded scene.  If you want to unload a <see cref="LoadSceneMode.Single"/> mode loaded scene load another <see cref="LoadSceneMode.Single"/> scene.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
-        /// <param name="scene"></param>
+        /// <param name="scene">The Unity Scene to be unloaded</param>
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus UnloadScene(Scene scene)
         {
@@ -1987,6 +1987,14 @@ namespace Unity.Netcode
         internal Func<Scene, bool> ExcludeSceneFromSychronization;
 
         /// <summary>
+        /// This is used for distributed authority sessions only and assures that
+        /// when many clients attempt to connect at the same time they will be
+        /// handled sequentially so as to not saturate the session owner's maximum
+        /// reliable messages.
+        /// </summary>
+        internal List<ulong> ClientConnectionQueue = new List<ulong>();
+
+        /// <summary>
         /// Server Side:
         /// This is used for players that have just had their connection approved and will assure they are synchronized
         /// properly if they are late joining
@@ -1994,8 +2002,30 @@ namespace Unity.Netcode
         /// synchronized.
         /// </summary>
         /// <param name="clientId">newly joined client identifier</param>
-        internal void SynchronizeNetworkObjects(ulong clientId)
+        /// <param name="synchronizingService">true only when invoked on a newly connected and approved client.</param>
+        internal void SynchronizeNetworkObjects(ulong clientId, bool synchronizingService = false)
         {
+            // If we are connected to a live service hosted session and we are not doing the initial synchronization for the service...
+            if (NetworkManager.CMBServiceConnection && !synchronizingService)
+            {
+                // then as long as this is a newly connecting client add it to the connecting client queue.
+                // Otherwise, if this is not a newly connecting client (i.e. it is already in the queue), then go ahead and synchronize
+                // that client.
+                if (!ClientConnectionQueue.Contains(clientId))
+                {
+                    ClientConnectionQueue.Add(clientId);
+                    // If we are already synchronizing one or more clients, exit early. This client will be synchronized later.
+                    if (ClientConnectionQueue.Count > 1)
+                    {
+                        if (NetworkManager.LogLevel <= LogLevel.Developer)
+                        {
+                            Debug.Log($"Deferring Client-{clientId} synchrnization.");
+                        }
+                        return;
+                    }
+                }
+            }
+
             // Update the clients
             NetworkManager.SpawnManager.UpdateObservedNetworkObjects(clientId);
 
@@ -2623,6 +2653,44 @@ namespace Unity.Netcode
                         // DANGO-EXP TODO: Remove this once service distributes objects
                         NetworkManager.SpawnManager.DistributeNetworkObjects(clientId);
                         EndSceneEvent(sceneEventId);
+
+                        // Exit early if not a distributed authority session or this is a DAHost
+                        // (DAHost has a unique connection per client, so no need to queue synchronization)
+                        if (!NetworkManager.DistributedAuthorityMode || NetworkManager.DAHost)
+                        {
+                            return;
+                        }
+
+                        // Otherwise, this is a session owner that could have pending clients to synchronize
+                        if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
+                        {
+                            // Remove the client that just synchronized
+                            ClientConnectionQueue.Remove(clientId);
+
+                            // If we have pending clients to synchronize, then make sure they are still connected
+                            while (ClientConnectionQueue.Count > 0)
+                            {
+                                // If the next client is no longer connected then remove it from the list
+                                if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
+                                {
+                                    ClientConnectionQueue.RemoveAt(0);
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+
+                            // If we still have any pending clients waiting, then synchronize the next one
+                            if (ClientConnectionQueue.Count > 0)
+                            {
+                                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                                {
+                                    Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
+                                }
+                                SynchronizeNetworkObjects(ClientConnectionQueue[0]);
+                            }
+                        }
                         break;
                     }
                 default:
@@ -3131,21 +3199,56 @@ namespace Unity.Netcode
             DeferredObjectCreationList.Clear();
         }
 
+        /// <summary>
+        /// The scene map type <see cref="SceneMap"/>.
+        /// </summary>
         public enum MapTypes
         {
+            /// <summary>
+            /// Denotes the server to client scene map type.
+            /// </summary>
             ServerToClient,
+            /// <summary>
+            /// Denotes the client to server scene map type.
+            /// </summary>
             ClientToServer
         }
+
+        /// <summary>
+        /// Provides the status of a loaded scene
+        /// </summary>
         public struct SceneMap : INetworkSerializable
         {
+            /// <summary>
+            /// The scene mapping type <see cref="MapTypes"/>.
+            /// </summary>
             public MapTypes MapType;
+            /// <summary>
+            /// The <see cref="UnityEngine.SceneManagement.Scene"/> struct of the scene mapped.
+            /// </summary>
             public Scene Scene;
+            /// <summary>
+            /// When true, the scene is present.
+            /// </summary>
             public bool ScenePresent;
+            /// <summary>
+            /// The name of the scene
+            /// </summary>
             public string SceneName;
+            /// <summary>
+            /// The scene's server handle (a.k.a network scene handle)
+            /// </summary>
             public int ServerHandle;
+            /// <summary>
+            /// The mapped handled. This could be the ServerHandle or LocalHandle depending upon context (client or server).
+            /// </summary>
             public int MappedLocalHandle;
+            /// <summary>
+            /// The local handle of the scene.
+            /// </summary>
             public int LocalHandle;
 
+            /// <inheritdoc cref="INetworkSerializable.NetworkSerialize{T}(BufferSerializer{T})"/>
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref MapType);
@@ -3165,6 +3268,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Returns the list of all scene mappings when scene management is enabled.
+        /// </summary>
+        /// <param name="mapType">The map type to return <see cref="MapTypes"/></param>
+        /// <returns>A list of <see cref="SceneMap"/> objects representing the scene mappings.</returns>
         public List<SceneMap> GetSceneMapping(MapTypes mapType)
         {
             var mapping = new List<SceneMap>();

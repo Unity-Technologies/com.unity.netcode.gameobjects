@@ -91,20 +91,6 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        /// <summary>
-        /// Clients created during a test need to have their prefabs list updated to
-        /// match the server's prefab list.
-        /// </summary>
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
-
-            base.OnNewClientCreated(networkManager);
-        }
-
         private bool ClientIsOwner()
         {
             var clientId = m_ClientNetworkManagers[0].LocalClientId;

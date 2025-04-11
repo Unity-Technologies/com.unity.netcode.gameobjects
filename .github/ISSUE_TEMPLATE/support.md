@@ -7,6 +7,7 @@ assignees: ''
 
 ---
 
-Post your questions or problems here.
+For support related questions we HIGHLY recommend to post a message either on the [Unity Discussions](https://discussions.unity.com/tag/netcode-for-gameobjects) or on our [Discord Community](https://discord.gg/TqNeJTtC) where you can get help from the community and the developers.
+Those forums will get you the fastest response and are the best place to ask for help.
 
-For general questions, networking advice or discussions about the Netcode for GameObjects, you can also reach us on our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
+If you still feel like you want to open a support issue as an GitHub Issue, please make sure to include as much information as possible (also including any relevant code/project) to help us understand your problem.

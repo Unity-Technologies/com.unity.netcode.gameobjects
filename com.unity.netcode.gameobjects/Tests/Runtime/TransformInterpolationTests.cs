@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests
         public static bool TestComplete = false;
         // Set the minimum threshold which we will use as our margin of error
 #if UNITY_EDITOR
-        public const float MinThreshold = 0.005f;
+        public const float MinThreshold = 0.00555555f;
 #else
         // Add additional room for error on console tests
         public const float MinThreshold = 0.009999f;

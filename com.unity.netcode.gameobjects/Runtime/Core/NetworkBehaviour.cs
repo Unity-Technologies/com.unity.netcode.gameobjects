@@ -529,12 +529,12 @@ namespace Unity.Netcode
                 m_NetworkObject.NetworkManager.IsServer;
         }
 
-        ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
-        ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
-        ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
-        ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
-        ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
-        ///   how NetworkObject works but it was close to the release and too risky to change
+        //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
+        //  its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
+        //  (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
+        //  need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
+        //  the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
+        //  how NetworkObject works but it was close to the release and too risky to change
         /// <summary>
         /// Gets the NetworkObject that owns this NetworkBehaviour instance.
         /// </summary>
@@ -815,11 +815,18 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
+
+            // Deinitialize all NetworkVariables in the event the associated
+            // NetworkObject is recylced (in-scene placed or pooled).
+            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            {
+                NetworkVariableFields[i].Deinitialize();
+            }
         }
 
         /// <summary>
         /// In client-server contexts, this method is invoked on both the server and the local client of the owner when <see cref="Netcode.NetworkObject"/> ownership is assigned.
-        /// <para>In distributed authority contexts, this method is only invoked on the local client that has been assigned ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
+        /// In distributed authority contexts, this method is invoked on all clients connected to the session.
         /// </summary>
         public virtual void OnGainedOwnership() { }
 
@@ -856,7 +863,7 @@ namespace Unity.Netcode
         /// <summary>
         /// In client-server contexts, this method is invoked on the local client when it loses ownership of the associated <see cref="Netcode.NetworkObject"/>
         /// and on the server when any client loses ownership.
-        /// <para>In distributed authority contexts, this method is only invoked on the local client that has lost ownership of the associated <see cref="Netcode.NetworkObject"/>.</para>
+        /// In distributed authority contexts, this method is invoked on all clients connected to the session.
         /// </summary>
         public virtual void OnLostOwnership() { }
 
@@ -918,10 +925,30 @@ namespace Unity.Netcode
             variable.Name = varName;
         }
 
+        /// <summary>
+        /// Does a first pass initialization for RPCs and NetworkVariables
+        /// If already initialized, then it just re-initializes the NetworkVariables.
+        /// </summary>
         internal void InitializeVariables()
         {
             if (m_VarInit)
             {
+                // If the primary initialization has already been done, then go ahead
+                // and re-initialize each NetworkVariable in the event it is an in-scene
+                // placed NetworkObject in an already loaded scene that has already been
+                // used within a network session =or= if this is a pooled NetworkObject
+                // that is being repurposed.
+                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                {
+                    // If already initialized, then skip
+                    if (NetworkVariableFields[i].HasBeenInitialized)
+                    {
+                        continue;
+                    }
+                    NetworkVariableFields[i].Initialize(this);
+                }
+                // Exit early as we don't need to run through the rest of this initialization
+                // process
                 return;
             }
 
@@ -1158,13 +1185,22 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// For owner read permissions, when changing ownership we need to do a full synchronization
+        /// of all NetworkVariables that are owner read permission based since the owner is the only
+        /// instance that knows what the most current values are.
+        /// </summary>
+        internal void MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty()
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
                 {
                     NetworkVariableFields[j].SetDirty(true);
+                }
+                if (NetworkVariableFields[j].WritePerm == NetworkVariableWritePermission.Owner)
+                {
+                    NetworkVariableFields[j].OnCheckIsDirtyState();
                 }
             }
         }
@@ -1321,8 +1357,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the local instance of a NetworkObject with a given NetworkId.
         /// </summary>
-        /// <param name="networkId"></param>
-        /// <returns></returns>
+        /// <param name="networkId">The unique network identifier of the NetworkObject to retrieve</param>
+        /// <returns>The NetworkObject instance if found, null if no object exists with the specified networkId</returns>
         protected NetworkObject GetNetworkObject(ulong networkId)
         {
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
@@ -1345,7 +1381,6 @@ namespace Unity.Netcode
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
         /// is in read mode or write mode.
         /// </typeparam>
-        /// <param name="targetClientId">the relative client identifier being synchronized</param>
         protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 
