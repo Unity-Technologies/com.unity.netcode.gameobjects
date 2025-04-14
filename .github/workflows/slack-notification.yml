@@ -1,0 +1,93 @@
+﻿name: Issue Status Notification
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Runs at 9 AM CET (8 AM UTC) on Mondays
+  workflow_dispatch:
+
+jobs:
+  check-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Issues Status
+        id: get-issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get current date and date 2 weeks ago
+            const now = new Date();
+            const twoWeeksAgo = new Date();
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+            
+            // Get awaiting-triage issues
+            const triageIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              labels: 'stat:awaiting-triage',
+              state: 'open'
+            });
+            
+            // Get reply-needed issues
+            const replyNeededIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              labels: 'stat:reply-needed',
+              state: 'open'
+            });
+            
+            // Filter reply-needed issues older than 2 weeks
+            const staleReplyNeeded = replyNeededIssues.data.filter(issue => {
+              const labelDate = new Date(issue.labels.find(l => l.name === 'stat:reply-needed').created_at);
+              return labelDate < twoWeeksAgo;
+            });
+            
+            // Format messages
+            const triageList = triageIssues.data.map(issue => 
+              `• ${issue.title} (${issue.html_url})`
+            ).join('\n');
+            
+            const replyNeededList = staleReplyNeeded.map(issue => 
+              `• ${issue.title} - Label added on ${new Date(issue.labels.find(l => l.name === 'stat:reply-needed').created_at).toLocaleDateString()} (${issue.html_url})`
+            ).join('\n');
+            
+            core.setOutput('triageCount', triageIssues.data.length);
+            core.setOutput('replyNeededCount', staleReplyNeeded.length);
+            core.setOutput('triageList', triageList);
+            core.setOutput('replyNeededList', replyNeededList);
+
+      - name: Send Slack Notification
+        if: steps.get-issues.outputs.triageCount > 0 || steps.get-issues.outputs.replyNeededCount > 0
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C083Y0FUWBF'
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "📊 NGO GitHub Issue Status Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Awaiting Triage Issues (${{ steps.get-issues.outputs.triageCount }}):*\n${{ steps.get-issues.outputs.triageList }}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Stale Reply Needed Issues (${{ steps.get-issues.outputs.replyNeededCount }}):*\n${{ steps.get-issues.outputs.replyNeededList }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
