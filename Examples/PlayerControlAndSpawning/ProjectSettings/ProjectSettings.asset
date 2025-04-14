@@ -575,7 +575,8 @@ PlayerSettings:
   webGLWebAssemblyBigInt: 0
   webGLCloseOnQuit: 0
   webWasm2023: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Standalone: DEBUG_LINEARBUFFER;UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE;MULTIPLAYER_TOOLS
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
