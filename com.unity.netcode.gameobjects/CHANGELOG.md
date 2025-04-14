@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3403)
 - Fixed issue where in-scene placed `NetworkObjects` could fail to synchronize its transform properly (especially without a `NetworkTransform`) if their parenting changes from the default when the scene is loaded and if the same scene remains loaded between network sessions while the parenting is completely different from the original hierarchy. (#3388)
 - Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3383)
 - Fixed issue where `NetworkAnimator` would log an error if there was no destination transition information. (#3384)
