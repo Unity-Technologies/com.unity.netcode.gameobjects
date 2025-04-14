@@ -8,6 +8,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
     {
         private const float k_AproximateDeltaVariance = 0.01f;
 
+        protected string GetVector3Values(ref Vector3 vector3)
+        {
+            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
+        }
+
+        protected string GetVector3Values(Vector3 vector3)
+        {
+            return GetVector3Values(ref vector3);
+        }
+
         protected virtual float GetDeltaVarianceThreshold()
         {
             return k_AproximateDeltaVariance;
