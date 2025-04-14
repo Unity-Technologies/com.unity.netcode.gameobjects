@@ -1555,11 +1555,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clientsToCheck">An array of clients to be checked</param>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                                 m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+            return WaitForConditionOrTimeOutWithTimeTravel(() => CheckClientsConnected(clientsToCheck));
         }
 
         /// <summary>

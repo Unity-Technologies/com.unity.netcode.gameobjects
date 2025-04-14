@@ -14,6 +14,12 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    internal enum NetworkConfigOptions
+    {
+        EnsureVariableLengthSafety,
+        Default,
+    }
+
     /// <summary>
     /// This class tests the NGO message codec between the C# SDK and the Rust runtime.
     /// </summary>
@@ -28,6 +34,8 @@ namespace Unity.Netcode.RuntimeTests
     /// The default behaviour when unity fails to connect to the echo-server is to ignore all tests in this class.
     /// This can be overridden by setting the environment variable "ENSURE_CODEC_TESTS" to any value - then the tests will fail.
     /// </remarks>
+    [TestFixture(NetworkConfigOptions.EnsureVariableLengthSafety)]
+    [TestFixture(NetworkConfigOptions.Default)]
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -44,6 +52,13 @@ namespace Unity.Netcode.RuntimeTests
         private string m_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
         private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
+
+        private bool m_EnsureVariableLengthSafety;
+
+        public DistributedAuthorityCodecTests(NetworkConfigOptions configOptions)
+        {
+            m_EnsureVariableLengthSafety = configOptions == NetworkConfigOptions.EnsureVariableLengthSafety;
+        }
 
         /// <summary>
         /// Configures the port to look for the rust echo-server.
@@ -104,6 +119,7 @@ namespace Unity.Netcode.RuntimeTests
             Client.NetworkConfig.NetworkTransport = utpTransport;
             Client.NetworkConfig.EnableSceneManagement = false;
             Client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = true;
+            Client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureVariableLengthSafety;
             utpTransport.ConnectionData.Address = Dns.GetHostAddresses(m_TransportHost).First().ToString();
             utpTransport.ConnectionData.Port = k_TransportPort;
             Client.LogLevel = LogLevel.Developer;
