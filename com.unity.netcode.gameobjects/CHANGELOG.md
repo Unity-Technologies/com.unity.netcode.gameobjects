@@ -6,17 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
-
-### Added 
-
+## [2.3.1] - 2025-04-14
 
 ### Fixed
 
 - Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3401)
-
-### Changed
-
 
 
 ## [2.3.0] - 2025-04-09
