@@ -20,6 +20,7 @@
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # In the future we could try to implement an infrastructure to run test in webgl context but this could be quite complicated and would need to be evaluated if it's worth it
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # WebGL jobs were timing up more often in develop-2.0.0 branch (especially on trunk) so we increased the timeout from 1800 to 3600. We should investigate why it times more often in develop-2.0.0/ubuntu/trunk
   
 #-------------------------------------------------------------------------------------- 
   
@@ -45,7 +46,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       # Engine is initialized in ‘nographics’ mode since we don't need any graphics for this case (--extra-editor-arg=-nographics)
       # In case of failure the job will be rerunned once (--reruncount=1) with clean library (--clean-library-on-rerun) 
       # This will perform only building phase (--build-only) with a timeout of 3m (--timeout=1800)
-    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=2400
+    - UnifiedTestRunner --suite=playmode --platform=WebGL --scripting-backend=il2cpp --testproject={{ project.path }} --editor-location=.Editor --artifacts_path=artifacts --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=3600
   artifacts:
     logs:
       paths:
