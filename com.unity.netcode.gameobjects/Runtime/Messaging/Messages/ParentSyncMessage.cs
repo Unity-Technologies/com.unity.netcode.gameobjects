@@ -88,6 +88,14 @@ namespace Unity.Netcode
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
                 return false;
             }
+
+            // If the target parent does not exist, then defer this message until it does.
+            if (LatestParent.HasValue && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(LatestParent.Value))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, LatestParent.Value, reader, ref context);
+                return false;
+            }
+
             return true;
         }
 
