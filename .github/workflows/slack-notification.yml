@@ -1,4 +1,11 @@
-﻿name: Issue Status Notification
+﻿# GitHub Action that aims to collect information and notifies our Slack channel about:
+#     1) Any new issue (with stat:awaiting-triage label) 
+#     2) Issues we should reply to that are not addressed for 1+ weeks (stat:reply-needed label) 
+
+# Some useful information about implementation are placed under https://github.com/integrations/slack
+# Notification will be sent at 9 AM CET on Mondays as part of our Bug Triage process
+
+name: Issue Status Notification
 
 on:
   schedule:
