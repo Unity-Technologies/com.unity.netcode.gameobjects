@@ -101,7 +101,7 @@ namespace Unity.Netcode
             public double TimeSent;
 
             /// <summary>
-            /// The constructor.
+            /// Constructor that accepts an item identifier.
             /// </summary>
             /// <param name="item">The item value.</param>
             /// <param name="timeSent">The time the item was sent.</param>
@@ -111,6 +111,19 @@ namespace Unity.Netcode
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
+            }
+
+            /// <summary>
+            /// The original constructor.
+            /// </summary>
+            /// <param name="item">The item value.</param>
+            /// <param name="timeSent">The time the item was sent.</param>
+            public BufferedItem(T item, double timeSent)
+            {
+                Item = item;
+                TimeSent = timeSent;
+                // Generate a unique item id based on the time to the 2nd decimal place
+                ItemId = (int)(timeSent * 100);
             }
         }
 

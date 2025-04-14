@@ -87,8 +87,9 @@ namespace Unity.Netcode.RuntimeTests
             sessionOwnerNetworkObject.NetworkShow(m_ClientNetworkManagers[clientIndex].LocalClientId);
             sessionOwnerNetworkObject.Despawn(true);
 
-            // Expect no exceptions
-            yield return s_DefaultWaitForTick;
+            // Expect no exceptions while waiting to show the object and wait for the client id to be removed
+            yield return WaitForConditionOrTimeOut(() => !m_SessionOwner.SpawnManager.ObjectsToShowToClient.ContainsKey(m_ClientNetworkManagers[clientIndex].LocalClientId));
+            AssertOnTimeout($"Timed out waiting for client-{m_ClientNetworkManagers[clientIndex].LocalClientId} to be removed from the {nameof(NetworkSpawnManager.ObjectsToShowToClient)} table!");
 
             // Now force a scenario where it normally would have caused an exception
             m_SessionOwner.SpawnManager.ObjectsToShowToClient.Add(m_ClientNetworkManagers[clientIndex].LocalClientId, new System.Collections.Generic.List<NetworkObject>());

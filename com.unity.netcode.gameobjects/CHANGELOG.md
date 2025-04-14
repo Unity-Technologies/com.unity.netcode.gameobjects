@@ -8,6 +8,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Added 
+
+
+### Fixed
+
+
+### Changed
+
+
+
+## [2.3.0] - 2025-04-09
+
 ### Added
 
 - Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3366)
