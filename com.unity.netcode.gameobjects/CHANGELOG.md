@@ -8,11 +8,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
-### Added 
+### Added
 
 
 ### Fixed
 
+- Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
 
 ### Changed
 
