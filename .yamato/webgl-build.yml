@@ -20,6 +20,7 @@
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
   # In the future we could try to implement an infrastructure to run test in webgl context but this could be quite complicated and would need to be evaluated if it's worth it
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
+  # WebGL jobs were timing up more often in develop-2.0.0 branch (especially on trunk) so we increased the timeout from 1800 to 3600. We should investigate why it times more often in develop-2.0.0/ubuntu/trunk
   
 #-------------------------------------------------------------------------------------- 
   
