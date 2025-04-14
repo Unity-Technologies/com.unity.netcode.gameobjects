@@ -133,6 +133,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 1
+  GatherStats: 0
   TrackAuthorityInstances: 1
   ExpandPlayerBallMotion: 1
   ExpandNetworkTransform: 1
@@ -274,6 +275,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 1
+  GatherStats: 0
   TrackAuthorityInstances: 1
   ExpandPlayerBallMotion: 1
   ExpandNetworkTransform: 1
@@ -512,6 +514,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 1
+  GatherStats: 0
   TrackAuthorityInstances: 1
   ExpandPlayerBallMotion: 1
   ExpandNetworkTransform: 1
@@ -650,6 +653,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 1
+  GatherStats: 0
   TrackAuthorityInstances: 1
   ExpandPlayerBallMotion: 0
   ExpandNetworkTransform: 1
@@ -963,14 +967,14 @@ MonoBehaviour:
   NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 2
-  RotationInterpolationType: 0
-  ScaleInterpolationType: 0
+  RotationInterpolationType: 1
+  ScaleInterpolationType: 1
   PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.05
+  PositionMaxInterpolationTime: 0.9
   RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.07
+  RotationMaxInterpolationTime: 0.9
   ScaleLerpSmoothing: 1
-  ScaleMaxInterpolationTime: 0.07
+  ScaleMaxInterpolationTime: 0.9
   AuthorityMode: 1
   TickSyncChildren: 1
   UseUnreliableDeltas: 0
@@ -993,6 +997,7 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 1
   Interpolate: 1
   SlerpPosition: 0
+  GatherStats: 0
   TrackAuthorityInstances: 1
   MoverScriptNoRigidbodyExpanded: 1
   SpawnAsPlayer: 1
@@ -1004,7 +1009,7 @@ MonoBehaviour:
   AirSpeedFactor: 0.35
   Gravity: -9.8
   ContinualChildMotion: 1
-  ManualSpawn: 0
+  ManualSpawn: 1
 --- !u!65 &2509722539211228765
 BoxCollider:
   m_ObjectHideFlags: 0
