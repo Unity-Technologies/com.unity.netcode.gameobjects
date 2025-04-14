@@ -144,6 +144,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ParentDuringSpawn()
         {
+            m_NetworkManagers.Clear();
             var authorityNetworkManager = m_DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
 
             m_NetworkManagers.AddRange(m_ClientNetworkManagers);
