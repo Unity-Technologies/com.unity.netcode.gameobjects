@@ -1195,16 +1195,13 @@ namespace Unity.Netcode
                         }
                         else if (!NetworkManager.ShutdownInProgress)
                         {
-                            // DANGO-TODO: We will want to match how the CMB service handles this. For now, we just try to evenly distribute
-                            // ownership.
-                            // NOTE: All of the below code only handles ownership transfer.
+                            // NOTE: All of the below code only handles ownership transfer
                             // For client-server, we just remove the ownership.
-                            // For distributed authority, we need to change ownership based on parenting
+                            // For distributed authority (DAHost only), we only transfer objects that are not parented or belong to the session owner.
+                            // Rust server handles the object redistribution on its end.
                             if (NetworkManager.DistributedAuthorityMode)
                             {
-                                // Only NetworkObjects that have the OwnershipStatus.Distributable flag set and are not OwnershipSessionOwner are distributed.
-                                // If the object has a parent - skip it for now, it will be distributed when its root parent is distributed.
-                                if (!ownedObject.IsOwnershipDistributable || ownedObject.IsOwnershipSessionOwner || ownedObject.GetCachedParent())
+                                if (ownedObject.IsOwnershipSessionOwner || ownedObject.GetCachedParent())
                                 {
                                     continue;
                                 }
