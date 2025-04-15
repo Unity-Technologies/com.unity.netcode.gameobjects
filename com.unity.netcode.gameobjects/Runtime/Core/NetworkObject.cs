@@ -2909,6 +2909,7 @@ namespace Unity.Netcode
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
+                Debug.Log($"writeSize: {writeSize}");
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
@@ -2934,6 +2935,7 @@ namespace Unity.Netcode
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
+                Debug.Log("synchronized network behaviours");
             }
 
             public void Deserialize(FastBufferReader reader)
@@ -2974,6 +2976,7 @@ namespace Unity.Netcode
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
+                Debug.Log($"readSize: {readSize}");
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
@@ -3186,7 +3189,7 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.ReadValueSafe(out int networkBehaviourSynchronizationDataLength);
                     reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
                 }
                 catch (Exception ex)
