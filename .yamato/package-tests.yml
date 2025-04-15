@@ -47,7 +47,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
 
     # Run UTR to test packages.
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --filter "com.unity.netcode.gameobjects" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --testfilter=WhenManyObjectsAreSpawnedAtOnce_AllAreReceived --clean-library-on-rerun
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --artifacts-path=test-results "--ff={ops.upmpvpevidence.enable=true}" --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun
   artifacts:
     logs:
       paths:
