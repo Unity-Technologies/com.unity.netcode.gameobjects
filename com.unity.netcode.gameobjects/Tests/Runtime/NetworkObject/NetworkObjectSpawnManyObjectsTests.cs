@@ -1,5 +1,4 @@
 using System.Collections;
-using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -47,19 +46,23 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        // When this test fails it does so without an exception and will wait the default ~6 minutes
-        [Timeout(360000)] // Tracked in MTT-11360
         public IEnumerator WhenManyObjectsAreSpawnedAtOnce_AllAreReceived()
         {
+            var timeStarted = Time.realtimeSinceStartup;
             for (int x = 0; x < k_SpawnedObjects; x++)
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
                 serverObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverObject.Spawn();
             }
+
+            var timeSpawned = Time.realtimeSinceStartup - timeStarted;
+            // Provide plenty of time to spawn all 1500 objects in case the CI VM is running slow
+            var timeoutHelper = new TimeoutHelper(30);
             // ensure all objects are replicated
-            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects);
-            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects!");
+            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
+
+            AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
         }
     }
 }

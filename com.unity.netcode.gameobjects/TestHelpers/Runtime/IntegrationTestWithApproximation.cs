@@ -8,6 +8,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
     {
         private const float k_AproximateDeltaVariance = 0.01f;
 
+        /// <summary>
+        /// Returns a <see cref="Vector3"/> as a formatted string.
+        /// </summary>
+        /// <param name="vector3">reference of <see cref="Vector3"/> to return as a formatted string.</param>
+        /// <returns><see cref="string"/></returns>
+        protected string GetVector3Values(ref Vector3 vector3)
+        {
+            return $"({vector3.x:F6},{vector3.y:F6},{vector3.z:F6})";
+        }
+
+        /// <summary>
+        /// Returns a <see cref="Vector3"/> as a formatted string.
+        /// </summary>
+        /// <param name="vector3"><see cref="Vector3"/> to return as a formatted string.</param>
+        /// <returns><see cref="string"/></returns>
+        protected string GetVector3Values(Vector3 vector3)
+        {
+            return GetVector3Values(ref vector3);
+        }
+
         protected virtual float GetDeltaVarianceThreshold()
         {
             return k_AproximateDeltaVariance;
