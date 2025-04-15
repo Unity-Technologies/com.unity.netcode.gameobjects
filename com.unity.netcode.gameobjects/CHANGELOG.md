@@ -8,15 +8,20 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
-### Added 
+### Added
 
 
 ### Fixed
 
-- Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3401)
 
 ### Changed
 
+
+## [2.3.1] - 2025-04-14
+
+### Fixed
+
+- Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3401)
 
 
 ## [2.3.0] - 2025-04-09
