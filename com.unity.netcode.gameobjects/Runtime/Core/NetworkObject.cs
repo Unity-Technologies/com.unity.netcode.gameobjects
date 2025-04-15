@@ -2909,7 +2909,6 @@ namespace Unity.Netcode
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
-                Debug.Log($"writeSize: {writeSize}");
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
@@ -2935,7 +2934,6 @@ namespace Unity.Netcode
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
-                Debug.Log("synchronized network behaviours");
             }
 
             public void Deserialize(FastBufferReader reader)
@@ -2976,7 +2974,6 @@ namespace Unity.Netcode
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
-                Debug.Log($"readSize: {readSize}");
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
