@@ -43,6 +43,10 @@ initial_pull_request_trigger:
   dependencies:
     # Run fast checks that allow for detection of the simplest issues
     - .yamato/_run-all.yml#run_quick_checks
+    - expression: dependencies.run_quick_checks.status == "success"
+      dependencies:
+        # Run all PR trigger tests. This will be executed ONLY IF the run_quick_checks dependency passes.
+        - .yamato/_triggers.yml#extended_pull_request_trigger
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -59,8 +63,10 @@ initial_pull_request_trigger:
 # This optimization allows to speed up feedback look for any "obvious" errors and save resources.
 # THIS JOB WILL NOT RUN IF THE INITIAL JOB FAILS (the one above. For example if the code standards fail)
 extended_pull_request_trigger:
-  name: (EXTENDED) Pull Request Trigger (develop, develop-2.0.0, & release branches)
+  name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
+    # Run fast checks that allow for detection of the simplest issues (Needs to be included as dependency to make the expression at the bottom of this job possible)
+    - .yamato/_triggers.yml#initial_pull_request_trigger
     # Run project standards to verify package/default project. This is fine to just run for trunk
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run package EditMode and Playmode package tests on trunk
@@ -74,9 +80,6 @@ extended_pull_request_trigger:
     # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
-  triggers:
-    expression: dependencies.initial_pull_request_trigger.status == "success"
-    cancel_old_ci: true
 
 
 # Run all tests on trunk on nightly basis.
