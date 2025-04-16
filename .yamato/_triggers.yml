@@ -38,29 +38,11 @@
 
 #-----------------------------------------------------------------------------------
 
-# Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
-# In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
-# This job will FIRST run "run_quick_checks" jobs (defined in _run-all.yml) which runs the fastest checks (like PVP or code standards) and ONLY IF those pass it will run the rest of the tests.
-# This optimization allows to speed up feedback look for any "obvious" errors and save resources.
-pull_request_trigger:
-  name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
+initial_pull_request_trigger:
+  name: (INITIAL) Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
+    # Run fast checks that allow for detection of the simplest issues
     - .yamato/_run-all.yml#run_quick_checks
-    - expression: dependencies.run_quick_checks.status == "success"
-      dependencies:
-        # Run project standards to verify package/default project. This is fine to just run for trunk
-        - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-        # Run package EditMode and Playmode package tests on trunk
-        - .yamato/_run-all.yml#run_all_package_tests_trunk
-        # Run package EditMode and Playmode package tests on minimum supported editor (6000.0 in case of NGOv2.X)
-        - .yamato/_run-all.yml#run_all_package_tests_6000
-        # Run project EditMode and PLaymode project tests on trunk 
-        - .yamato/_run-all.yml#run_all_project_tests_trunk
-        # Run project EditMode and PLaymode project tests on minimum supported editor (6000.0 in case of NGOv2.X)
-        - .yamato/_run-all.yml#run_all_project_tests_6000
-        # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
-        - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
-        - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -70,6 +52,31 @@ pull_request_trigger:
             - "develop-2.0.0"
             - "/release\/.*/"
       - drafts: false
+
+# Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
+# In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
+# This job will FIRST run "run_quick_checks" jobs (defined in _run-all.yml) which runs the fastest checks (like PVP or code standards) and ONLY IF those pass it will run the rest of the tests.
+# This optimization allows to speed up feedback look for any "obvious" errors and save resources.
+# THIS JOB WILL NOT RUN IF THE INITIAL JOB FAILS (the one above. For example if the code standards fail)
+extended_pull_request_trigger:
+  name: (EXTENDED) Pull Request Trigger (develop, develop-2.0.0, & release branches)
+  dependencies:
+    # Run project standards to verify package/default project. This is fine to just run for trunk
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    # Run package EditMode and Playmode package tests on trunk
+    - .yamato/_run-all.yml#run_all_package_tests_trunk
+    # Run package EditMode and Playmode package tests on minimum supported editor (6000.0 in case of NGOv2.X)
+    - .yamato/_run-all.yml#run_all_package_tests_6000
+    # Run project EditMode and PLaymode project tests on trunk 
+    - .yamato/_run-all.yml#run_all_project_tests_trunk
+    # Run project EditMode and PLaymode project tests on minimum supported editor (6000.0 in case of NGOv2.X)
+    - .yamato/_run-all.yml#run_all_project_tests_6000
+    # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
+  triggers:
+    expression: dependencies.initial_pull_request_trigger.status == "success"
+    cancel_old_ci: true
 
 
 # Run all tests on trunk on nightly basis.
