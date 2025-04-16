@@ -78,7 +78,7 @@ extended_pull_request_trigger:
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
   triggers:
     cancel_old_ci: true
-    expression: dependencies.initial_pull_request_trigger.status == "success"
+    expression: pull_request.dependencies.initial_pull_request_trigger.status == "success"
 
 
 # Run all tests on trunk on nightly basis.
