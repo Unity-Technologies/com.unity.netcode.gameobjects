@@ -28,7 +28,7 @@
 #------------------------------------------------------------------------------------
   
 {% for project in projects.all -%}
-{% for platform in test_platforms.default -%}
+{% for platform in test_platforms.all -%}
 {% for editor in validation_editors.all -%}
 standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
   name: Standards Check - NGO {{ project.name }} [{{ platform.name }}, {{ editor }}]
