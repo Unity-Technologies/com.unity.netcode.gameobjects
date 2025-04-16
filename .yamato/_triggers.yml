@@ -43,7 +43,7 @@ initial_pull_request_trigger:
   dependencies:
     # Run fast checks that allow for detection of the simplest issues
     - .yamato/_run-all.yml#run_quick_checks
-    - expression: dependencies.run_quick_checks.status == "success"
+    - expression: dependencies..yamato/_run-all.yml#run_quick_checks.status == "success"
       dependencies:
         # Run all PR trigger tests. This will be executed ONLY IF the run_quick_checks dependency passes.
         - .yamato/_triggers.yml#extended_pull_request_trigger
