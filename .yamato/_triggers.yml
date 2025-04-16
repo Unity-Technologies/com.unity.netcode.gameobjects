@@ -40,11 +40,10 @@
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
 # In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
+# Since standards job is a part of initial checks it's not present as direct dependency here
 pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
-    # Run project standards to verify package/default project. This is fine to just run for trunk
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run package EditMode and Playmode package tests on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     # Run package EditMode and Playmode package tests on minimum supported editor (2021.3 in case of NGOv1.X)
