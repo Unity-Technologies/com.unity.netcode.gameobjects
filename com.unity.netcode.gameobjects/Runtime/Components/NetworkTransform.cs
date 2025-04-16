@@ -4049,13 +4049,12 @@ namespace Unity.Netcode.Components
         }
 #endif
 
-
-
         // Non-Authority
         private void UpdateInterpolation()
         {
             AdjustForChangeInTransformSpace();
-            var timeSystem = m_CachedNetworkManager.ServerTime;
+            // Select the time system relative to the type of NetworkManager instance.
+            var timeSystem = m_CachedNetworkManager.IsServer ? m_CachedNetworkManager.ServerTime : m_CachedNetworkManager.LocalTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
