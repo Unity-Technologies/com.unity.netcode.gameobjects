@@ -35,6 +35,8 @@ project_pack_-_{{ project.name }}_{{ platform.name }}:
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm # upm-ci is not preinstalled on the image so we need to download it
     - upm-ci project pack --project-path {{ project.path }}
+  dependencies:
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
   artifacts:
     packages:
       paths:
