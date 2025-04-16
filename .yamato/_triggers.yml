@@ -43,10 +43,6 @@ initial_pull_request_trigger:
   dependencies:
     # Run fast checks that allow for detection of the simplest issues
     - .yamato/_run-all.yml#run_quick_checks
-    - expression: dependencies..yamato/_run-all.yml#run_quick_checks.status == "success"
-      dependencies:
-        # Run all PR trigger tests. This will be executed ONLY IF the run_quick_checks dependency passes.
-        - .yamato/_triggers.yml#extended_pull_request_trigger
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -80,6 +76,9 @@ extended_pull_request_trigger:
     # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
+  triggers:
+    cancel_old_ci: true
+    expression: dependencies.initial_pull_request_trigger.status == "success"
 
 
 # Run all tests on trunk on nightly basis.
