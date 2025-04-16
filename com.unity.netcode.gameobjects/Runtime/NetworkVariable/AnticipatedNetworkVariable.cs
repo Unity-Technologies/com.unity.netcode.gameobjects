@@ -249,16 +249,8 @@ namespace Unity.Netcode
                 }
             }
         }
+        
 
-        /// <summary>
-        /// A function to interpolate between two values based on a percentage.
-        /// See <see cref="Mathf.Lerp"/>, <see cref="Vector3.Lerp"/>, <see cref="Vector3.Slerp"/>, and so on
-        /// for examples.
-        /// </summary>
-        /// <param name="authoritativeValue">The authoritative value to interpolate from</param>
-        /// <param name="anticipatedValue">The anticipated value to interpolate to</param>
-        /// <param name="amount">The interpolation factor between 0 and 1</param>
-        /// <returns>The interpolated value</returns>
         public delegate T SmoothDelegate(T authoritativeValue, T anticipatedValue, float amount);
 
         private SmoothDelegate m_SmoothDelegate = null;
