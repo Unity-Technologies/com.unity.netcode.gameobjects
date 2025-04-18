@@ -10,6 +10,13 @@
 
 #-----------------------------------------------------------------------------------
 
+# This job runs the fastest checks (PVP and code standards)
+# This is mainly used to quickly validate the easy mistakes before for example running PR trigger jobs (see _triggers.yml)
+run_quick_checks:
+  name: Run Quick Initial Checks
+  dependencies:
+    - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
 
 # Runs all package tests
 run_all_package_tests:

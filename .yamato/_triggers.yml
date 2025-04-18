@@ -39,11 +39,11 @@
 #-----------------------------------------------------------------------------------
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
+# In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
+# Since standards job is a part of initial checks it's not present as direct dependency here
 pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
-    # Run project standards to verify package/default project. This is fine to just run for trunk
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run package EditMode and Playmode package tests on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     # Run package EditMode and Playmode package tests on minimum supported editor (2021.3 in case of NGOv1.X)
@@ -52,8 +52,8 @@ pull_request_trigger:
     - .yamato/_run-all.yml#run_all_project_tests_trunk
     # Run project EditMode and PLaymode project tests on minimum supported editor (2021.3 in case of NGOv1.X)
     - .yamato/_run-all.yml#run_all_project_tests_2021
-    # Run one standalone test to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations (platform/editor)
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_trunk
+    # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_2021.3
   triggers:
     cancel_old_ci: true
@@ -103,9 +103,6 @@ develop_nightly:
     # Build player for webgl platform on trunk and 2021 editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_2021.3
-    # Clean import test
-    - .yamato/clean-import-job.yml#clean_import_testproject_trunk
-    - .yamato/clean-import-job.yml#clean_import_testproject_2021.3
 
 
 # Run all tests on weekly bases

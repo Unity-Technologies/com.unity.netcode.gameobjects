@@ -54,6 +54,7 @@ package_test_-_ngo_{{ editor }}_{{ platform.name }}:
         - "upm-ci~/test-results/**/*"
         - "pvp-results/*"
   dependencies:
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
     - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
