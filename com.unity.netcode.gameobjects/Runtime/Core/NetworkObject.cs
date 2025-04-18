@@ -325,15 +325,6 @@ namespace Unity.Netcode
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
-
-                // Root In-scene placed NetworkObjects have to either have the SessionOwner or Distributable permission flag set.
-                if (transform.parent == null)
-                {
-                    if (!Ownership.HasFlag(OwnershipStatus.SessionOwner) && !Ownership.HasFlag(OwnershipStatus.Distributable))
-                    {
-                        Ownership |= OwnershipStatus.Distributable;
-                    }
-                }
             }
         }
 #endif // UNITY_EDITOR
