@@ -97,7 +97,7 @@ namespace Unity.Netcode
             if (!m_NetworkBehaviour.NetworkObject.NetworkManagerOwner)
             {
                 // Exit early if there has yet to be a NetworkManagerOwner assigned
-                // to the NetworkObject. This is ok because Initialize is invoked 
+                // to the NetworkObject. This is ok because Initialize is invoked
                 // multiple times until it is considered "initialized".
                 return;
             }
@@ -374,7 +374,7 @@ namespace Unity.Netcode
         /// This should be always invoked (client & server) to assure the previous values are set
         /// !! IMPORTANT !!
         /// When a server forwards delta updates to connected clients, it needs to preserve the previous dirty value(s)
-        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked 
+        /// until it is done serializing all valid NetworkVariable field deltas (relative to each client). This is invoked
         /// after it is done forwarding the deltas at the end of the <see cref="NetworkVariableDeltaMessage.Handle(ref NetworkContext)"/> method.
         /// </summary>
         internal virtual void PostDeltaRead()
@@ -382,12 +382,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// WriteFieldSynchronization will write the current value only if there are no pending changes.
+        /// Otherwise, it will write the previous value if there are pending changes since the pending
+        /// changes will be sent shortly after the client's synchronization.
+        /// <br/><br/>
         /// There are scenarios, specifically with collections, where a client could be synchronizing and
         /// some NetworkVariables have pending updates. To avoid duplicating entries, this is invoked only
         /// when sending the full synchronization information.
         /// </summary>
         /// <remarks>
-        /// Derrived classes should send the previous value for synchronization so when the updated value
+        /// Derived classes should send the previous value for synchronization so when the updated value
         /// is sent (after synchronizing the client) it will apply the updates.
         /// </remarks>
         /// <param name="writer"></param>

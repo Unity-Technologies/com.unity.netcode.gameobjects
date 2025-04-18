@@ -1112,49 +1112,33 @@ namespace Unity.Netcode
         /// </remarks>
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
-            if (NetworkVariableFields.Count == 0)
+            foreach (var field in NetworkVariableFields)
             {
-                return;
-            }
-
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
-            {
-
-                if (NetworkVariableFields[j].CanClientRead(targetClientId))
+                if (field.CanClientRead(targetClientId))
                 {
                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var writePos = writer.Position;
                         // Note: This value can't be packed because we don't know how large it will be in advance
-                        // we reserve space for it, then write the data, then come back and fill in the space
-                        // to pack here, we'd have to write data to a temporary buffer and copy it in - which
-                        // isn't worth possibly saving one byte if and only if the data is less than 63 bytes long...
-                        // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
-                        writer.WriteValueSafe((ushort)0);
+                        writer.WriteValueSafe(0);
                         var startPos = writer.Position;
                         // Write the NetworkVariable field value
-                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
-                        // Otherwise, it will write the previous value if there are pending changes since the pending
-                        // changes will be sent shortly after the client's synchronization.
-                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
+                        field.WriteFieldSynchronization(writer);
                         var size = writer.Position - startPos;
                         writer.Seek(writePos);
-                        writer.WriteValueSafe((ushort)size);
+                        writer.WriteValueSafe(size);
                         writer.Seek(startPos + size);
                     }
                     else
                     {
                         // Write the NetworkVariable field value
-                        // WriteFieldSynchronization will write the current value only if there are no pending changes.
-                        // Otherwise, it will write the previous value if there are pending changes since the pending
-                        // changes will be sent shortly after the client's synchronization.
-                        NetworkVariableFields[j].WriteFieldSynchronization(writer);
+                        field.WriteFieldSynchronization(writer);
                     }
                 }
                 else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
-                    writer.WriteValueSafe((ushort)0);
+                    writer.WriteValueSafe(0);
                 }
             }
         }
@@ -1169,51 +1153,37 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
-            if (NetworkVariableFields.Count == 0)
+            foreach (var field in NetworkVariableFields)
             {
-                return;
-            }
-
-            for (int j = 0; j < NetworkVariableFields.Count; j++)
-            {
-                var varSize = (ushort)0;
+                int expectedBytesToRead = 0;
                 var readStartPos = 0;
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
-                    reader.ReadValueSafe(out varSize);
-                    if (varSize == 0)
+                    reader.ReadValueSafe(out expectedBytesToRead);
+                    if (expectedBytesToRead == 0)
                     {
                         continue;
                     }
                     readStartPos = reader.Position;
                 }
                 else // If the client cannot read this field, then skip it
-                if (!NetworkVariableFields[j].CanClientRead(clientId))
+                if (!field.CanClientRead(clientId))
                 {
                     continue;
                 }
 
-                NetworkVariableFields[j].ReadField(reader);
+                field.ReadField(reader);
 
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
-                    if (reader.Position > (readStartPos + varSize))
+                    var totalBytesRead = reader.Position - readStartPos;
+                    if (totalBytesRead != expectedBytesToRead)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        if (NetworkManager.LogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogWarning($"Var data read too far. {reader.Position - (readStartPos + varSize)} bytes.");
+                            NetworkLog.LogWarning($"[{name}][NetworkObjectId: {NetworkObjectId}][NetworkBehaviourId: {NetworkBehaviourId}][{field.Name}] NetworkVariable read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes during synchronization deserialization!");
                         }
-
-                        reader.Seek(readStartPos + varSize);
-                    }
-                    else if (reader.Position < (readStartPos + varSize))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"Var data read too little. {(readStartPos + varSize) - reader.Position} bytes.");
-                        }
-
-                        reader.Seek(readStartPos + varSize);
+                        reader.Seek(readStartPos + expectedBytesToRead);
                     }
                 }
             }
@@ -1295,7 +1265,7 @@ namespace Unity.Netcode
                 // Save our position where we will write the final size being written so we can skip over it in the
                 // event an exception occurs when deserializing.
                 var sizePosition = writer.Position;
-                writer.WriteValueSafe((ushort)0);
+                writer.WriteValueSafe(0);
 
                 // Save our position before synchronizing to determine how much was written
                 var positionBeforeSynchronize = writer.Position;
@@ -1333,7 +1303,7 @@ namespace Unity.Netcode
                     // Write the number of bytes serialized to handle exceptions on the deserialization side
                     var bytesWritten = finalPosition - positionBeforeSynchronize;
                     writer.Seek(sizePosition);
-                    writer.WriteValueSafe((ushort)bytesWritten);
+                    writer.WriteValueSafe(bytesWritten);
                     writer.Seek(finalPosition);
                 }
                 return true;
@@ -1342,7 +1312,7 @@ namespace Unity.Netcode
             {
                 var reader = serializer.GetFastBufferReader();
                 // We will always read the expected byte count
-                reader.ReadValueSafe(out ushort expectedBytesToRead);
+                reader.ReadValueSafe(out int expectedBytesToRead);
 
                 // Save our position before we begin synchronization deserialization
                 var positionBeforeSynchronize = reader.Position;
