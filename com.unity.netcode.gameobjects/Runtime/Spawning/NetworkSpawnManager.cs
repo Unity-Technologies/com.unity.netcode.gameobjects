@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using TrollKing.Core;
 
 namespace Unity.Netcode
 {
@@ -12,6 +13,7 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSpawnManager
     {
+        private static readonly NetworkLogScope Log = new NetworkLogScope(nameof(NetworkSpawnManager));
         // Stores the objects that need to be shown at end-of-frame
         internal Dictionary<ulong, List<NetworkObject>> ObjectsToShowToClient = new Dictionary<ulong, List<NetworkObject>>();
 
