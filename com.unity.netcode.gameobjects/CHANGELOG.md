@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3358)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3320)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3320)
+- Added serializer for `Pose` (#2675)
 
 ### Fixed
 

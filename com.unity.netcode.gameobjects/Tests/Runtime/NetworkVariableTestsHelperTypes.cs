@@ -802,6 +802,23 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Dictionary<Vector2, Quaternion>> Vector2QuaternionDictionaryVar;
         public NetworkVariable<Dictionary<HashMapKeyClass, Quaternion>> HashMapKeyClassQuaternionDictionaryVar;
 
+        public NetworkVariable<Pose> PoseVar;
+        public NetworkVariable<NativeArray<Pose>> PoseArrayVar;
+        public NetworkVariable<List<Pose>> PoseManagedListVar;
+        public NetworkVariable<HashSet<Pose>> PoseManagedHashSetVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        public NetworkVariable<NativeList<Pose>> PoseListVar;
+        public NetworkVariable<NativeHashSet<Pose>> PoseHashSetVar;
+        public NetworkVariable<NativeHashMap<byte, Pose>> BytePoseHashMapVar;
+        public NetworkVariable<NativeHashMap<ulong, Pose>> ULongPoseHashMapVar;
+        public NetworkVariable<NativeHashMap<Vector2, Pose>> Vector2PoseHashMapVar;
+        public NetworkVariable<NativeHashMap<HashMapKeyStruct, Pose>> HashMapKeyStructPoseHashMapVar;
+#endif
+        public NetworkVariable<Dictionary<byte, Pose>> BytePoseDictionaryVar;
+        public NetworkVariable<Dictionary<ulong, Pose>> ULongPoseDictionaryVar;
+        public NetworkVariable<Dictionary<Vector2, Pose>> Vector2PoseDictionaryVar;
+        public NetworkVariable<Dictionary<HashMapKeyClass, Pose>> HashMapKeyClassPoseDictionaryVar;
+
         public NetworkVariable<Color> ColorVar;
         public NetworkVariable<NativeArray<Color>> ColorArrayVar;
         public NetworkVariable<List<Color>> ColorManagedListVar;
