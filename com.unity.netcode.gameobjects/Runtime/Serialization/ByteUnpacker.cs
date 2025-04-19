@@ -279,6 +279,24 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Reads the pose from the stream.
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="pose">Pose to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ReadValuePacked(FastBufferReader reader, out Pose pose)
+        {
+            pose = new Pose();
+            ReadValuePacked(reader, out pose.position.x);
+            ReadValuePacked(reader, out pose.position.y);
+            ReadValuePacked(reader, out pose.position.z);
+            ReadValuePacked(reader, out pose.rotation.x);
+            ReadValuePacked(reader, out pose.rotation.y);
+            ReadValuePacked(reader, out pose.rotation.z);
+            ReadValuePacked(reader, out pose.rotation.w);
+        }
+
+        /// <summary>
         /// Reads a string in a packed format
         /// </summary>
         /// <param name="reader">The reader to read from</param>
