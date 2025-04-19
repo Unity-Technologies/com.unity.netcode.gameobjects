@@ -1875,6 +1875,8 @@ namespace Unity.Netcode
                 }
             }
 
+			Log.Info(() => "<color=orange>OnSceneLoaded</color>");
+
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
 
@@ -2300,6 +2302,8 @@ namespace Unity.Netcode
                 throw new Exception($"Server Scene Handle ({sceneEventData.SceneHandle}) already exist!  Happened during scene load of {nextScene.name} with Client Handle ({nextScene.handle})");
             }
 
+			Log.Info(() => $"<color=orange>ClientLoadedSynchronization</color> sceneName={sceneName}");
+
             // Apply all in-scene placed NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene, false);
 
@@ -2427,6 +2431,8 @@ namespace Unity.Netcode
                         }
                         else
                         {
+							Log.Info(() => $"<color=orange>SceneEventType.Synchronize</color> sceneName={sceneEventData.ClientSceneName}");
+
                             // Include anything in the DDOL scene
                             PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
 
@@ -2930,7 +2936,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
-            Log.Info(() => "PopulateScenePlacedObjects");
+            Log.Info(() => "<color=orange>PopulateScenePlacedObjects</color>");
             if (clearScenePlacedObjects)
             {
                 ScenePlacedObjects.Clear();

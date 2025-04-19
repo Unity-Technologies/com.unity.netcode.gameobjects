@@ -1512,6 +1512,8 @@ namespace Unity.Netcode
                 }
             }
 
+            Log.Info(() => "<color=orange>ServerSpawnSceneObjectsOnStartSweep</color>");
+
             // Since we are spawing in-scene placed NetworkObjects for already loaded scenes,
             // we need to add any in-scene placed NetworkObject to our tracking table
             var clearFirst = true;
