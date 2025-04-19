@@ -3348,7 +3348,7 @@ namespace Unity.Netcode
             {
                 foreach (var entry in ServerSceneHandleToClientSceneHandle)
                 {
-                    var scene = ScenesLoaded[entry.Value];
+                    var scene = ScenesLoaded[entry.Value].SceneReference;
                     var sceneIsPresent = scene.IsValid() && scene.isLoaded;
                     var sceneMap = new SceneMap()
                     {
@@ -3367,7 +3367,7 @@ namespace Unity.Netcode
             {
                 foreach (var entry in ClientSceneHandleToServerSceneHandle)
                 {
-                    var scene = ScenesLoaded[entry.Key];
+                    var scene = ScenesLoaded[entry.Key].SceneReference;
                     var sceneIsPresent = scene.IsValid() && scene.isLoaded;
                     var sceneMap = new SceneMap()
                     {

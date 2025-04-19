@@ -1090,7 +1090,7 @@ namespace Unity.Netcode
             get => MessageManager.FragmentedMessageMaxSize;
         }
 
-        internal void Initialize(bool server)
+        public virtual void Initialize(bool server)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (!DisableNotOptimizedSerializedType)

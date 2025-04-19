@@ -1517,7 +1517,7 @@ namespace Unity.Netcode
             var clearFirst = true;
             foreach (var sceneLoaded in NetworkManager.SceneManager.ScenesLoaded)
             {
-                NetworkManager.SceneManager.PopulateScenePlacedObjects(sceneLoaded.Value, clearFirst);
+                NetworkManager.SceneManager.PopulateScenePlacedObjects(sceneLoaded.Value.SceneReference, clearFirst);
                 clearFirst = false;
             }
 
