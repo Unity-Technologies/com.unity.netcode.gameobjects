@@ -381,11 +381,8 @@ namespace Unity.Netcode
 
             if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
             {
-                // Mark any owner read variables as dirty
-                networkObject.MarkOwnerReadVariablesDirty();
-                // Immediately queue any pending deltas and order the message before the
-                // change in ownership message.
-                networkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+                // Fully synchronize NetworkVariables with either read or write ownership permissions. 
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId);
             }
 
             // Always invoke ownership change notifications

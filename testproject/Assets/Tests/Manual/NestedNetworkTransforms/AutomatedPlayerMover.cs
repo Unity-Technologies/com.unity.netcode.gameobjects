@@ -83,10 +83,6 @@ namespace TestProject.RuntimeTests
                     }
                 }
             }
-            else
-            {
-                base.OnUpdate();
-            }
         }
     }
 }

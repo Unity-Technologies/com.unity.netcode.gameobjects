@@ -267,7 +267,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Used to add a client to the already existing list of clients
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
-        /// <param name="clients"></param>
+        /// <param name="clients">Output array containing the created NetworkManager instances</param>
+        /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
         {
             clients = new NetworkManager[clientCount];
@@ -284,7 +285,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Stops one single client and makes sure to cleanup any static variables in this helper
         /// </summary>
-        /// <param name="clientToStop"></param>
+        /// <param name="clientToStop">The NetworkManager instance to stop</param>
+        /// <param name="destroy">When true, destroys the GameObject, when false, only shuts down the network connection. Default value is true</param>
         public static void StopOneClient(NetworkManager clientToStop, bool destroy = true)
         {
             clientToStop.Shutdown();
@@ -299,7 +301,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts one single client and makes sure to register the required hooks and handlers
         /// </summary>
-        /// <param name="clientToStart"></param>
+        /// <param name="clientToStart">The NetworkManager instance to start</param>
         public static void StartOneClient(NetworkManager clientToStart)
         {
             clientToStart.StartClient();
@@ -453,7 +455,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
-        /// <returns></returns>
+        /// <returns>True if all instances started successfully, false otherwise</returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
         {
             if (s_IsStarted)
@@ -637,7 +639,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator WaitForClientConnected(NetworkManager client, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, timeout);
@@ -648,8 +650,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clients">The clients to be connected</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
-        /// <returns></returns>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
@@ -704,7 +705,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, timeout);
@@ -715,7 +716,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             if (!server.IsServer)
@@ -750,7 +751,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -781,7 +782,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -817,7 +818,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="representation">The representation to get the object from</param>
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
+        /// <param name="maxTries">The max frames to wait for</param>
         public static void GetNetworkObjectByRepresentationWithTimeTravel(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxTries = 60)
         {
             if (result == null)
@@ -849,8 +850,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         /// <param name="minFrames">The min frames to wait for</param>
-        /// <param name="maxFrames">The max frames to wait for</param>
         public static IEnumerator WaitForCondition(Func<bool> predicate, ResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
