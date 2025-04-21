@@ -4035,16 +4035,6 @@ namespace Unity.Netcode.Components
         {
             return m_RotationInterpolator;
         }
-#else
-        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
-        {
-            return m_PositionInterpolator;
-        }
-
-        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
-        {
-            return m_RotationInterpolator;
-        }
 #endif
         public int GetPositionBufferCount()
         {
@@ -4064,6 +4054,16 @@ namespace Unity.Netcode.Components
         public double GetPositionLastRemainingTime()
         {
             return m_PositionInterpolator.InterpolateState.LastRemainingTime;
+        }
+#else
+        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
+        {
+            return m_PositionInterpolator;
+        }
+
+        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
+        {
+            return m_RotationInterpolator;
         }
 #endif
 
