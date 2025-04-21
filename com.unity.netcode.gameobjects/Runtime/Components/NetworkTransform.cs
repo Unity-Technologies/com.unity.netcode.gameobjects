@@ -4035,6 +4035,16 @@ namespace Unity.Netcode.Components
         {
             return m_RotationInterpolator;
         }
+#else
+        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
+        {
+            return m_PositionInterpolator;
+        }
+
+        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
+        {
+            return m_RotationInterpolator;
+        }
 #endif
         public int GetPositionBufferCount()
         {
