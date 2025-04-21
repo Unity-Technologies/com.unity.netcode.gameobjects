@@ -9,6 +9,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Unity.Netcode.Components;
 
 namespace Unity.Netcode
 {
@@ -386,7 +387,19 @@ namespace Unity.Netcode
 #endif
                 case NetworkUpdateStage.PreUpdate:
                     {
+                        var currentTick = ServerTime.Tick;
                         NetworkTimeSystem.UpdateTime();
+                        if (ServerTime.Tick != currentTick)
+                        {
+                            // If we have a lower than expected frame rate and our number of ticks that have passed since the last
+                            // frame is greater than 1, then use the first next tick as opposed to the last tick when checking for
+                            // changes in transform state.
+                            // Note: This is an adjustment from using the NetworkTick event as that can be invoked more than once in
+                            // a single frame under the above condition and since any changes to the transform are frame driven there
+                            // is no need to check for changes to the transform more than once per frame.
+                            NetworkTransform.CurrentTick = (ServerTime.Tick - currentTick) > 1 ? currentTick + 1 : ServerTime.Tick;
+                            NetworkTransform.UpdateNetworkTick(this);
+                        }
                         AnticipationSystem.Update();
                     }
                     break;
