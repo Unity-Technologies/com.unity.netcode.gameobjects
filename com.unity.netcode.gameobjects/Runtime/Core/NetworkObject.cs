@@ -1735,7 +1735,7 @@ namespace Unity.Netcode
             {
                 var writer = serializer.GetFastBufferWriter();
                 var positionBeforeSynchronizing = writer.Position;
-                writer.WriteValueSafe((ushort)0);
+                writer.WriteValueSafe(0);
                 var sizeToSkipCalculationPosition = writer.Position;
 
                 // Synchronize NetworkVariables
@@ -1766,7 +1766,7 @@ namespace Unity.Netcode
                 // synchronization.
                 writer.Seek(positionBeforeSynchronizing);
                 // We want the size of everything after our size to skip calculation position
-                var size = (ushort)(currentPosition - sizeToSkipCalculationPosition);
+                var size = currentPosition - sizeToSkipCalculationPosition;
                 writer.WriteValueSafe(size);
                 // Write the number of NetworkBehaviours synchronized
                 writer.Seek(networkBehaviourCountPosition);
@@ -1778,7 +1778,7 @@ namespace Unity.Netcode
             else
             {
                 var reader = serializer.GetFastBufferReader();
-                reader.ReadValueSafe(out ushort sizeOfSynchronizationData);
+                reader.ReadValueSafe(out int sizeOfSynchronizationData);
                 var seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
 
                 try
@@ -1792,14 +1792,13 @@ namespace Unity.Netcode
 
                     // Read the number of NetworkBehaviours to synchronize
                     reader.ReadValueSafe(out byte numberSynchronized);
-                    var networkBehaviourId = (ushort)0;
 
                     // If a NetworkBehaviour writes synchronization data, it will first
                     // write its NetworkBehaviourId so when deserializing the client-side
                     // can find the right NetworkBehaviour to deserialize the synchronization data.
                     for (int i = 0; i < numberSynchronized; i++)
                     {
-                        serializer.SerializeValue(ref networkBehaviourId);
+                        reader.ReadValueSafe(out ushort networkBehaviourId);
                         var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
                         networkBehaviour.Synchronize(ref serializer, targetClientId);
                     }
