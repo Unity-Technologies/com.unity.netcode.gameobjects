@@ -13,6 +13,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where the authority instance of NetworkTransform could check for state updates more than one time in a frame if the frame rate is greater than the tick frequency. (#3413)
+- Fixed issue where the new interpolator types were blocking after the first consumption of a sequence of buffered state updates. (#3413)
 - Fixed issue where root level in-scene placed `NetworkObject`s would only allow the ownership permission to be no less than distributable or sessionowner. (#3407)
 
 ### Changed
