@@ -942,7 +942,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Client-Side Spawning in distributed authority mode uses this to spawn the player.
         /// </summary>
-        internal void CreateAndSpawnPlayer(ulong ownerId)
+        internal void CreateAndSpawnPlayer(ulong ownerId, byte[] customSpawnData = null)
         {
             if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
             {
@@ -950,7 +950,7 @@ namespace Unity.Netcode
                 if (playerPrefab != null)
                 {
                     var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
+                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation, customSpawnData:customSpawnData);
                     networkObject.IsSceneObject = false;
                     networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
                 }

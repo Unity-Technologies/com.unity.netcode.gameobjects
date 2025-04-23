@@ -3154,6 +3154,7 @@ namespace Unity.Netcode
             // When we transfer session owner and we are using a DAHost, this will be pertinent (otherwise it is not when connected to a DA service)
             internal ulong[] ObserverIds;
             internal ulong[] NewObserverIds;
+            internal byte[] CustomSpawnData;
             internal NetworkObject.SceneObject SceneObject;
             internal FastBufferReader FastBufferReader;
         }
@@ -3162,7 +3163,7 @@ namespace Unity.Netcode
         internal int DeferredObjectCreationCount;
 
         // The added clientIds is specific to DAHost when session ownership changes and a normal client is controlling scene loading
-        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader, ulong[] observerIds, ulong[] newObserverIds)
+        internal void DeferCreateObject(ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader fastBufferReader, ulong[] observerIds, ulong[] newObserverIds, byte[] customSpawnData)
         {
             var deferredObjectCreationEntry = new DeferredObjectCreation()
             {
@@ -3171,7 +3172,8 @@ namespace Unity.Netcode
                 ObserverIds = observerIds,
                 NewObserverIds = newObserverIds,
                 SceneObject = sceneObject,
-            };
+			    CustomSpawnData = customSpawnData,
+		};
 
             unsafe
             {
