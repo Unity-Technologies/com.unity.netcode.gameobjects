@@ -284,13 +284,15 @@ namespace Unity.Netcode.RuntimeTests
         public void NamedMessageHandlerIsUnregisteredWithoutException()
         {
             var messageName = Guid.NewGuid().ToString();
+            const int numMessagesToSend = 3;
+            const int expectedMessageHandlerCallCount = 1;
 
-            var receivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
+            var messageHandlerCalled = 0;
             m_ServerNetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(
                 messageName,
-                (_, reader) =>
+                (_, _) =>
                 {
-                    reader.ReadValueSafe(out receivedMessageContent);
+                    messageHandlerCalled++;
                     m_ServerNetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(messageName);
                 });
 
@@ -299,13 +301,16 @@ namespace Unity.Netcode.RuntimeTests
             using (writer)
             {
                 writer.WriteValueSafe(messageContent);
-                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
-                    messageName,
-                    m_ServerNetworkManager.LocalClientId,
-                    writer);
+                for (var i = 0; i < numMessagesToSend; i++)
+                {
+                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                        messageName,
+                        m_ServerNetworkManager.LocalClientId,
+                        writer);
+                }
             }
 
-            Assert.AreEqual(messageContent.Value, receivedMessageContent.Value);
+            Assert.AreEqual(expectedMessageHandlerCallCount, messageHandlerCalled);
         }
     }
 }
