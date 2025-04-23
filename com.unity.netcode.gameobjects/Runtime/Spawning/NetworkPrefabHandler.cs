@@ -276,30 +276,6 @@ namespace Unity.Netcode
 
             return null;
         }
-		
-
-        internal NetworkObject HandleNetworkPrefabSpawnExtended(int handlerId, ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] customSpawnData)
-		{
-			if (NetworkSpawnManager.customHandlers.TryGetValue(handlerId, out var prefabInstanceHandler))
-			{
-				if (customSpawnData != null && prefabInstanceHandler is INetworkCustomSpawnDataReceiver receiver)
-					receiver.OnCustomSpawnDataReceived(customSpawnData);
-				var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-
-				//Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
-				//is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-				if (networkObjectInstance != null && !NetworkSpawnManager.customPrefabInstanceToHandlers.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
-				{
-					NetworkSpawnManager.customPrefabInstanceToHandlers.Add(networkObjectInstance.GlobalObjectIdHash, handlerId);
-				}
-
-				return networkObjectInstance;
-			}
-
-			return null;
-		}
-
-
 
 		/// <summary>
 		/// Will invoke the <see cref="INetworkPrefabInstanceHandler"/> implementation's Destroy method

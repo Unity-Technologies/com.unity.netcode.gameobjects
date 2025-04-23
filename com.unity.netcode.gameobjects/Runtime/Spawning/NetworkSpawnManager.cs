@@ -734,25 +734,7 @@ namespace Unity.Netcode
 
 			return InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation, customSpawnData);
 		}
-		//public NetworkObject InstantiateAndSpawnExtended(int handlerId, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
-		//{
-		//	ownerClientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : ownerClientId;
-		//	// We only need to check for authority when running in client-server mode
-		//	if (!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode)
-		//	{
-		//		Debug.LogError(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.NotAuthority]);
-		//		return null;
-		//	}
-
-		//	if (NetworkManager.ShutdownInProgress)
-		//	{
-		//		Debug.LogWarning(InstantiateAndSpawnErrors[InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown]);
-		//		return null;
-		//	}
-
-		//	return InstantiateAndSpawnNoParameterChecksExtended(handlerId, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
-		//}
-
+		
 		/// <summary>
 		/// !!! Does not perform any parameter checks prior to attempting to instantiate and spawn the NetworkObject !!!
 		/// </summary>
@@ -792,30 +774,7 @@ namespace Unity.Netcode
 			}
 			return networkObject;
 		}
-		//internal NetworkObject InstantiateAndSpawnNoParameterChecksExtended(int handlerId, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
-		//{
-		//	var networkObject = InstantiateNetworkPrefabExtended(handlerId, position, rotation);
-		//	// - Host and clients always instantiate the override if one exists.
-		//	// - Server instantiates the original prefab unless:
-		//	// -- forceOverride is set to true =or=
-		//	// -- The prefab has a registered prefab handler, then we let user code determine what to spawn.
-		//	// - Distributed authority mode always spawns the override if one exists.
-		//	networkObject = GetNetworkObjectToSpawnExtended(handlerId, ownerClientId, position, rotation);
-
-		//	if (networkObject == null)
-		//	{
-		//		Debug.LogError($"Failed to instantiate and spawn Extended for Handler with id: {handlerId}!");
-		//		return null;
-		//	}
-		//	networkObject.IsPlayerObject = isPlayerObject;
-		//	networkObject.transform.position = position;
-		//	networkObject.transform.rotation = rotation;
-
-		//	networkObject.SpawnWithOwnership(ownerClientId, destroyWithScene);
-
-		//	return networkObject;
-		//}
-
+		
 		/// <summary>
 		/// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
 		/// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
@@ -884,23 +843,6 @@ namespace Unity.Netcode
 			return networkObject;
 		}
 
-		//internal NetworkObject GetNetworkObjectToSpawnExtended(int handlerId, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
-		//{
-		//	NetworkObject networkObject = null;
-		//	// If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
-		//	if (customHandlers.ContainsKey(handlerId))
-		//	{
-		//		// Let the handler spawn the NetworkObject
-		//		networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawnExtended(handlerId, ownerId, position ?? default, rotation ?? default);
-		//		networkObject.NetworkManagerOwner = NetworkManager;
-		//	}
-		//	else
-		//	{
-		//		throw new Exception($"No handler registered with id: {handlerId}");
-		//	}
-		//	return networkObject;
-		//}
-
 		/// <summary>
 		/// Instantiates a network prefab instance, assigns the base prefab <see cref="NetworkObject.GlobalObjectIdHash"/>, positions, and orients
 		/// the instance.
@@ -925,21 +867,7 @@ namespace Unity.Netcode
 			networkObject.PrefabGlobalObjectIdHash = prefabGlobalObjectIdHash;
 			return networkObject;
 		}
-		public static Dictionary<int, INetworkPrefabInstanceHandler> customHandlers = new();
-		public static Dictionary<uint, int> customPrefabInstanceToHandlers = new();
-		//internal NetworkObject InstantiateNetworkPrefabExtended(int handlerId, Vector3? position, Quaternion? rotation)
-		//{
-
-		//	//TODO: ACCESS NETWORK PREFAB HANDLER
-
-		//	var networkObject = customHandlers[handlerId].Instantiate(0, Vector3.zero, Quaternion.identity);
-		//	networkObject.transform.position = position ?? networkObject.transform.position;
-		//	networkObject.transform.rotation = rotation ?? networkObject.transform.rotation;
-		//	networkObject.NetworkManagerOwner = NetworkManager;
-		//	//networkObject.PrefabGlobalObjectIdHash = 0;
-		//	return networkObject;
-		//}
-
+		
 		/// <summary>
 		/// Creates a local NetowrkObject to be spawned.
 		/// </summary>
@@ -1155,74 +1083,7 @@ namespace Unity.Netcode
 			// Invoke NetworkBehaviour.OnPostSpawn methods
 			networkObject.InvokeBehaviourNetworkPostSpawn();
 		}
-		//internal void SpawnNetworkObjectLocallyExtended(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
-		//{
-		//	if (networkObject == null)
-		//	{
-		//		throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
-		//	}
-
-		//	if (networkObject.IsSpawned)
-		//	{
-		//		Debug.LogError($"{networkObject.name} is already spawned!");
-		//		return;
-		//	}
-
-		//	if (!sceneObject)
-		//	{
-		//		var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
-		//		if (networkObjectChildren.Length > 1)
-		//		{
-		//			Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
-		//		}
-		//	}
-		//	// Invoke NetworkBehaviour.OnPreSpawn methods
-		//	networkObject.InvokeBehaviourNetworkPreSpawn();
-
-		//	// DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
-		//	// For now, this is the best place I could find to add all connected clients as observers for newly
-		//	// instantiated and spawned NetworkObjects on the authoritative side.
-		//	if (NetworkManager.DistributedAuthorityMode)
-		//	{
-		//		if (NetworkManager.NetworkConfig.EnableSceneManagement && sceneObject)
-		//		{
-		//			networkObject.SceneOriginHandle = networkObject.gameObject.scene.handle;
-		//			networkObject.NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[networkObject.gameObject.scene.handle];
-		//		}
-
-		//		// Always add the owner/authority even if SpawnWithObservers is false
-		//		// (authority should not take into consideration networkObject.CheckObjectVisibility when SpawnWithObservers is false)
-		//		if (!networkObject.SpawnWithObservers)
-		//		{
-		//			networkObject.Observers.Add(ownerClientId);
-		//		}
-		//		else
-		//		{
-		//			foreach (var clientId in NetworkManager.ConnectedClientsIds)
-		//			{
-		//				// If SpawnWithObservers is enabled, then authority does take networkObject.CheckObjectVisibility into consideration
-		//				if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility.Invoke(clientId))
-		//				{
-		//					continue;
-		//				}
-		//				networkObject.Observers.Add(clientId);
-		//			}
-
-		//			// Sanity check to make sure the owner is always included
-		//			// Itentionally checking as opposed to just assigning in order to generate notification.
-		//			if (!networkObject.Observers.Contains(ownerClientId))
-		//			{
-		//				Debug.LogError($"Client-{ownerClientId} is the owner of {networkObject.name} but is not an observer! Adding owner, but there is a bug in observer synchronization!");
-		//				networkObject.Observers.Add(ownerClientId);
-		//			}
-		//		}
-		//	}
-		//	SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
-
-		//	// Invoke NetworkBehaviour.OnPostSpawn methods
-		//	networkObject.InvokeBehaviourNetworkPostSpawn();
-		//}
-
+		
 		/// <summary>
 		/// This is only invoked to instantiate a serialized NetworkObject via
 		/// <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>

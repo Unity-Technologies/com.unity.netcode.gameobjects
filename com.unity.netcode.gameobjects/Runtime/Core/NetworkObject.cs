@@ -1843,94 +1843,6 @@ namespace Unity.Netcode
                 NetworkLog.LogWarningServer($"Ran into unknown conditional check during spawn when determining distributed authority mode or not");
             }
         }
-		//internal void SpawnInternalExtended(bool destroyWithScene, ulong ownerClientId, bool playerObject, byte[] customSpawnData)
-		//{
-		//	if (NetworkManagerOwner == null)
-		//	{
-		//		NetworkManagerOwner = NetworkManager.Singleton;
-		//	}
-		//	if (!NetworkManager.IsListening)
-		//	{
-		//		throw new NotListeningException($"{nameof(NetworkManager)} is not listening, start a server or host before spawning objects");
-		//	}
-
-		//	if ((!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode) || (NetworkManager.DistributedAuthorityMode && !NetworkManager.LocalClient.IsSessionOwner && NetworkManager.LocalClientId != ownerClientId))
-		//	{
-		//		if (NetworkManager.DistributedAuthorityMode)
-		//		{
-		//			throw new NotServerException($"When distributed authority mode is enabled, you can only spawn NetworkObjects that belong to the local instance! Local instance id {NetworkManager.LocalClientId} is not the same as the assigned owner id: {ownerClientId}!");
-		//		}
-		//		else
-		//		{
-		//			throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
-		//		}
-		//	}
-
-		//	if (NetworkManager.DistributedAuthorityMode)
-		//	{
-		//		if (NetworkManager.LocalClient == null || !NetworkManager.IsConnectedClient || !NetworkManager.ConnectionManager.LocalClient.IsApproved)
-		//		{
-		//			Debug.LogError($"Cannot spawn {name} until the client is fully connected to the session!");
-		//			return;
-		//		}
-		//		if (NetworkManager.NetworkConfig.EnableSceneManagement)
-		//		{
-		//			if (!NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(gameObject.scene.handle))
-		//			{
-		//				// Most likely this issue is due to an integration test
-		//				if (NetworkManager.LogLevel <= LogLevel.Developer)
-		//				{
-		//					NetworkLog.LogWarning($"Failed to find scene handle {gameObject.scene.handle} for {gameObject.name}!");
-		//				}
-		//				// Just use the existing handle
-		//				NetworkSceneHandle = gameObject.scene.handle;
-		//			}
-		//			else
-		//			{
-		//				NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[gameObject.scene.handle];
-		//			}
-		//		}
-		//		if (DontDestroyWithOwner && !IsOwnershipDistributable)
-		//		{
-		//			//Ownership |= OwnershipStatus.Distributable;
-		//			// DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set
-		//			if (NetworkManager.LogLevel == LogLevel.Developer)
-		//			{
-		//				NetworkLog.LogWarning("DANGO-TODO: Review over don't destroy with owner being set but DistributeOwnership not being set. For now, if the NetworkObject does not destroy with the owner it will set ownership to SessionOwner.");
-		//			}
-		//		}
-		//	}
-
-		//	NetworkManager.SpawnManager.SpawnNetworkObjectLocallyExtended(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
-
-		//	if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
-		//	{
-		//		for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
-		//		{
-		//			if (NetworkManager.ConnectedClientsList[i].ClientId == NetworkManager.ServerClientId)
-		//			{
-		//				continue;
-		//			}
-		//			if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
-		//			{
-		//				NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, customSpawnData);
-		//			}
-		//		}
-		//	}
-		//	else if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
-		//	{
-		//		// If spawning with observers or if not spawning with observers but the observer count is greater than 1 (i.e. owner/authority creating),
-		//		// then we want to send a spawn notification.
-		//		if (SpawnWithObservers || !SpawnWithObservers && Observers.Count > 1)
-		//		{
-		//			NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this, customSpawnData);
-		//		}
-		//	}
-		//	else
-		//	{
-		//		NetworkLog.LogWarningServer($"Ran into unknown conditional check during spawn when determining distributed authority mode or not");
-		//	}
-		//}
 
 		/// <summary>
 		/// This invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
@@ -2025,10 +1937,6 @@ namespace Unity.Netcode
         {
             SpawnInternal(destroyWithScene, clientId, false, customSpawnData);
         }
-		//public void SpawnWithOwnershipExtended(ulong clientId, bool destroyWithScene = false, byte[] customSpawnData = null)
-		//{
-		//	SpawnInternalExtended(destroyWithScene, clientId, false, customSpawnData);
-		//}
 
 		/// <summary>
 		/// Spawns a <see cref="NetworkObject"/> across the network and makes it the player object for the given client
