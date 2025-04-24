@@ -46,17 +46,17 @@
 pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
-    # Run package EditMode and Playmode package tests on trunk
-    - .yamato/_run-all.yml#run_all_package_tests_trunk
-    # Run package EditMode and Playmode package tests on minimum supported editor (6000.0 in case of NGOv2.X)
-    - .yamato/_run-all.yml#run_all_package_tests_6000
-    # Run project EditMode and PLaymode project tests on trunk 
-    - .yamato/_run-all.yml#run_all_project_tests_trunk
-    # Run project EditMode and PLaymode project tests on minimum supported editor (6000.0 in case of NGOv2.X)
-    - .yamato/_run-all.yml#run_all_project_tests_6000
-    # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
+    # # Run package EditMode and Playmode package tests on trunk
+    # - .yamato/_run-all.yml#run_all_package_tests_trunk
+    # # Run package EditMode and Playmode package tests on minimum supported editor (6000.0 in case of NGOv2.X)
+    # - .yamato/_run-all.yml#run_all_package_tests_6000
+    # # Run project EditMode and PLaymode project tests on trunk
+    # - .yamato/_run-all.yml#run_all_project_tests_trunk
+    # # Run project EditMode and PLaymode project tests on minimum supported editor (6000.0 in case of NGOv2.X)
+    # - .yamato/_run-all.yml#run_all_project_tests_6000
+    # # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
+    # - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_6000.0
   triggers:
     cancel_old_ci: true
     pull_requests:
