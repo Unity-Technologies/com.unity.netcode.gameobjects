@@ -215,7 +215,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.NetworkTransport = mockTransport;
         }
 
-        public static NetworkManager CreateServer(bool mockTransport = false, bool useCmbService = false)
+        /// <summary>
+        /// Creates and configures a new server instance for integration testing.
+        /// </summary>
+        /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
+        /// <returns>The created server <see cref="NetworkManager"/> instance.</returns>
+        public static NetworkManager CreateServer(bool mockTransport = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
@@ -229,7 +234,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-                AddUnityTransport(server, useCmbService);
+                AddUnityTransport(server);
             }
             return server;
         }
@@ -242,7 +247,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
-        /// <param name="useCmbService">If true, the server transport will use a mock transport, and the clients will be created with a connection to a locally hosted da service</param>
+        /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
+        /// <param name="useCmbService">If true, all clients will be created with a connection to a locally hosted da service. The server transport will use a mock transport as it is not needed.</param>
+        /// <returns> Returns `true` if the server and client instances were successfully created and configured, otherwise `false`</returns>
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false, bool useCmbService = false)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
@@ -290,6 +297,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
+        /// <returns> Returns `true` if the clients were successfully created and configured, otherwise `false`</returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
