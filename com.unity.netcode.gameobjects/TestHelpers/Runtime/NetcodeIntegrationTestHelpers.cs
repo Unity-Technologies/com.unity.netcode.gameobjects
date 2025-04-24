@@ -170,7 +170,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private static void AddUnityTransport(NetworkManager networkManager)
+        private static readonly string k_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
+        private static readonly ushort k_TransportPort = GetPortToBind();
+
+        /// <summary>
+        /// Configures the port to look for the rust service.
+        /// </summary>
+        /// <returns>The port from the environment variable "ECHO_SERVER_PORT" if it is set and valid; otherwise uses port 7777</returns>
+        private static ushort GetPortToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("CMB_SERVICE_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7789;
+        }
+
+        private static void AddUnityTransport(NetworkManager networkManager, bool useCmbService = false)
         {
             // Create transport
             var unityTransport = networkManager.gameObject.AddComponent<UnityTransport>();
@@ -181,6 +194,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Allow 4 connection attempts that each will time out after 500ms
             unityTransport.MaxConnectAttempts = 4;
             unityTransport.ConnectTimeoutMS = 500;
+            if (useCmbService)
+            {
+                unityTransport.ConnectionData.Address = Dns.GetHostAddresses(k_TransportHost).First().ToString();
+                unityTransport.ConnectionData.Port = k_TransportPort;
+                Debug.Log($"Using CmbService: {k_TransportHost}:{k_TransportPort}");
+            }
 
             // Set the NetworkConfig
             networkManager.NetworkConfig ??= new NetworkConfig();
@@ -196,7 +215,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.NetworkTransport = mockTransport;
         }
 
-        public static NetworkManager CreateServer(bool mockTransport = false)
+        public static NetworkManager CreateServer(bool mockTransport = false, bool useCmbService = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
@@ -210,7 +229,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-                AddUnityTransport(server);
+                AddUnityTransport(server, useCmbService);
             }
             return server;
         }
@@ -223,20 +242,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false)
+        /// <param name="useCmbService">If true, the server transport will use a mock transport, and the clients will be created with a connection to a locally hosted da service</param>
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false, bool useCmbService = false)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
             if (serverFirst)
             {
-                server = CreateServer(useMockTransport);
+                server = CreateServer(useMockTransport || useCmbService);
             }
 
-            CreateNewClients(clientCount, out clients, useMockTransport);
+            CreateNewClients(clientCount, out clients, useMockTransport, useCmbService);
 
             if (!serverFirst)
             {
-                server = CreateServer(useMockTransport);
+                server = CreateServer(useMockTransport || useCmbService);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -245,7 +265,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false)
+        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
@@ -257,7 +277,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-                AddUnityTransport(networkManager);
+                AddUnityTransport(networkManager, useCmbService);
             }
             return networkManager;
         }
@@ -269,13 +289,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
+        /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i, useMockTransport);
+                clients[i] = CreateNewClient(i, useMockTransport, useCmbService);
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -486,15 +507,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 callback?.Invoke();
             }
 
-            for (int i = 0; i < clients.Length; i++)
+            foreach (var client in clients)
             {
-                clients[i].StartClient();
+                client.StartClient();
                 hooks = new MultiInstanceHooks();
-                clients[i].ConnectionManager.MessageManager.Hook(hooks);
-                s_Hooks[clients[i]] = hooks;
+                client.ConnectionManager.MessageManager.Hook(hooks);
+                s_Hooks[client] = hooks;
 
                 // if set, then invoke this for the client
-                RegisterHandlers(clients[i]);
+                RegisterHandlers(client);
             }
 
             return true;

@@ -522,7 +522,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            bool useCmbService = UseCMBService() && m_DistributedAuthority;
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel, useCmbService);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             SetDistributedAuthorityProperties(networkManager);
 
@@ -576,14 +577,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Continue to populate the PlayerObjects list until all player object (local and clone) are found
             ClientNetworkManagerPostStart(joinedClient);
-            var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
-            if (playerObjectRelative == null)
+            if (!(UseCMBService() && m_DistributedAuthority))
             {
-                m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
-                return false;
-            }
-            else
-            {
+                var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+                if (playerObjectRelative == null)
+                {
+                    m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
+                    return false;
+                }
+
                 // Go ahead and create an entry for this new client
                 if (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
@@ -598,19 +600,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     continue;
                 }
 
-                playerObjectRelative = clientNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+                var playerObjectRelative = clientNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
                 if (playerObjectRelative == null)
                 {
                     m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Client-{clientNetworkManager.LocalClientId}] Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
                     return false;
                 }
-                else
+
+                // Go ahead and create an entry for this new client
+                if (!m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
-                    // Go ahead and create an entry for this new client
-                    if (!m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
-                    {
-                        m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
-                    }
+                    m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
                 }
             }
             return true;
@@ -722,7 +722,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel))
+            var useCmbService = UseCMBService() && m_DistributedAuthority;
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel, useCmbService))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -939,8 +940,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
 #if UNITY_2023_1_OR_NEWER
+                        var manager = startServer ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == manager.LocalClientId);
 #else
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
                         var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
@@ -952,7 +954,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                                 m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                             }
 
-                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                            if (startServer)
+                            {
+                                m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                            }
                         }
                     }
                     if (m_DistributedAuthority)
@@ -967,7 +972,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                                 AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                             }
                         }
-                        if (m_ServerNetworkManager != null)
+                        if (m_ServerNetworkManager != null && startServer)
                         {
                             yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
@@ -1534,8 +1539,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_InternalErrorLog.AppendLine($"[Client-{i + 1}] Client is not connected!");
                 }
             }
-            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
-            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
+
+            var manager = UseCMBService() ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            var expectedCount = manager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
+            var currentCount = manager.ConnectedClients.Count;
 
             if (currentCount != expectedCount)
             {
