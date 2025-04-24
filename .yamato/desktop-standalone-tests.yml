@@ -81,14 +81,15 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 {% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
   variables:
     ECHO_SERVER_PORT: "7788"
-    COMB_SERVER_PORT: "7789"
+    COMB_SERVER_PORT: "7799"
     # Set this to ensure the DA codec tests will fail if they cannot connect to the echo-server
     # The default is to ignore the codec tests if the echo-server fails to connect
     ENSURE_CODEC_TESTS: "true"
+    USE_CMB_SERVICE: "true"
 {% endif %}
 
   commands:
-# If not windows, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
+# If ubuntu, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
     - ./Tools/CI/rust.sh
 {% endif %}
