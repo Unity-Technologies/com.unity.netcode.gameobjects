@@ -218,7 +218,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates and configures a new server instance for integration testing.
         /// </summary>
-        /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
+        /// <param name="mockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         /// <returns>The created server <see cref="NetworkManager"/> instance.</returns>
         public static NetworkManager CreateServer(bool mockTransport = false)
         {
