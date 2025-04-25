@@ -55,7 +55,9 @@ namespace Unity.Netcode.Components
         // Used to cache the authority state of this Rigidbody during the last frame
         private bool m_IsAuthority;
 
+#if COM_UNITY_MODULES_PHYSICS
         protected internal Rigidbody m_InternalRigidbody { get; private set; }
+#endif
 
 #if COM_UNITY_MODULES_PHYSICS2D
         protected internal Rigidbody2D m_InternalRigidbody2D { get; private set; }
@@ -79,7 +81,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         public enum RigidbodyTypes
         {
+#if COM_UNITY_MODULES_PHYSICS
             Rigidbody,
+#endif
 #if COM_UNITY_MODULES_PHYSICS2D
             Rigidbody2D,
 #endif
