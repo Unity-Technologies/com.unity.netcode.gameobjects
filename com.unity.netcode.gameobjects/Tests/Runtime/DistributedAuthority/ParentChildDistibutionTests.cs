@@ -169,7 +169,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_NetworkManagers.Remove(m_ClientNetworkManagers[3]);
             }
 
-            // When testing connect redistribution, 
+            // When testing connect redistribution
             var instances = distributionType == DistributionTypes.UponDisconnect ? 1 : 2;
             var rootObject = (GameObject)null;
             var childOne = (GameObject)null;
