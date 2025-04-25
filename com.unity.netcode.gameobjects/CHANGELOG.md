@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
 
 ### Changed
 
