@@ -1,22 +1,22 @@
 {
-    "name": "TestProject.RuntimeTests",
-    "rootNamespace": "TestProject.RuntimeTests",
+    "name": "Unity.Netcode.Editor.Tests",
+    "rootNamespace": "Unity.Netcode.EditorTests",
     "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Netcode.RuntimeTests",
-        "Unity.Netcode.Editor",
-        "TestProject.ManualTests",
-        "TestProject",
-        "Unity.Addressables",
-        "Unity.ResourceManager",
-        "Unity.Netcode.TestHelpers.Runtime",
-        "Unity.Netcode.Components",
         "Unity.Collections",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Networking.Transport",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
@@ -29,14 +29,14 @@
     ],
     "versionDefines": [
         {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
-        },
-        {
-            "name": "com.unity.addressables",
-            "expression": "",
-            "define": "TESTPROJECT_USE_ADDRESSABLES"
         }
     ],
     "noEngineReferences": false
