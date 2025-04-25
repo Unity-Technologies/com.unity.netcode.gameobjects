@@ -860,6 +860,7 @@
           "Unity.Netcode.RuntimeTests.NamedMessageTests: IEnumerator WhenSendingNamedMessageToAll_AllClientsReceiveIt(): undocumented",
           "Unity.Netcode.RuntimeTests.NamedMessageTests: void WhenSendingNamedMessageToNullClientList_ArgumentNullExceptionIsThrown(): undocumented",
           "Unity.Netcode.RuntimeTests.NamedMessageTests: void ErrorMessageIsPrintedWhenAttemptingToSendNamedMessageWithTooBigBuffer(): undocumented",
+          "Unity.Netcode.RuntimeTests.NamedMessageTests: void NamedMessageHandlerIsUnregisteredWithoutException(): undocumented",
           "Unity.Netcode.RuntimeTests.UnnamedMessageTests: undocumented",
           "Unity.Netcode.RuntimeTests.UnnamedMessageTests: NumberOfClients: undocumented",
           "Unity.Netcode.RuntimeTests.UnnamedMessageTests: IEnumerator UnnamedMessageIsReceivedOnClientWithContent(): undocumented",
