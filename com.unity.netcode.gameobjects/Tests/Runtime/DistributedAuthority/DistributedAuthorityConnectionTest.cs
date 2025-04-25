@@ -21,6 +21,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private GameObject m_SpawnObject;
 
+        protected override bool UseCMBService()
+        {
+            return true;
+        }
+
+
         /// <summary>
         /// Modify NetworkManager instances for settings specific to tests
         /// </summary>
@@ -33,7 +39,6 @@ namespace Unity.Netcode.RuntimeTests
                 // Validate we are in distributed authority mode with client side spawning and using CMB Service
                 Assert.True(client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
                 Assert.True(client.CMBServiceConnection, "CMBServiceConnection is not set!");
-
             }
 
             // Create a prefab for creating and destroying tests (auto-registers with NetworkManagers)
