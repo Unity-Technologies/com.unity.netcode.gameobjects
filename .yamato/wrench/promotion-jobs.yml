@@ -178,10 +178,10 @@ publish_dry_run_netcode_gameobjects:
         ignore_artifact: true
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.46.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.46.0
+    Wrench: 0.10.47.0
 
 # Publish  for netcode.gameobjects to https://artifactory-slo.bf.unity3d.com/artifactory/api/npm/upm-npm
 publish_netcode_gameobjects:
@@ -360,8 +360,8 @@ publish_netcode_gameobjects:
         ignore_artifact: true
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.46.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.46.0
+    Wrench: 0.10.47.0
 
