@@ -1303,6 +1303,9 @@ namespace Unity.Netcode
             {
                 Singleton = null;
             }
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged -= ModeChanged;
+#endif            
         }
 
         // Command line options
