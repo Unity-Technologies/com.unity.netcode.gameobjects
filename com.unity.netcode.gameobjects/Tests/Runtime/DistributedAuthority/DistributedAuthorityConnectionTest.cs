@@ -14,17 +14,10 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-        private NetworkManager SessionOwner => m_ClientNetworkManagers[0];
-
-        // Use the CMB Service for all tests
-        protected override bool UseCMBService() => true;
-
         // Set the network topology to distributed authority for all tests
         protected override NetworkTopologyTypes OnGetNetworkTopologyType() => NetworkTopologyTypes.DistributedAuthority;
 
-
-        public DistributedAuthorityConnectionTest() : base(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost) { }
-
+        public DistributedAuthorityConnectionTest() : base(HostOrServer.DAHost) { }
 
         private GameObject m_SpawnObject;
 
@@ -36,7 +29,6 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.EnableSceneManagement = false;
-                client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = true;
 
                 // Validate we are in distributed authority mode with client side spawning and using CMB Service
                 Assert.True(client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
@@ -47,11 +39,10 @@ namespace Unity.Netcode.RuntimeTests
             // Create a prefab for creating and destroying tests (auto-registers with NetworkManagers)
             m_SpawnObject = CreateNetworkObjectPrefab("TestObject");
         }
-
         [UnityTest]
         public IEnumerator CreateObjectNew()
         {
-            SpawnObject(m_SpawnObject, SessionOwner);
+            SpawnObject(m_SpawnObject, m_ClientNetworkManagers[0]);
 
             yield return WaitForConditionOrTimeOut(CheckObjectExists);
             AssertOnTimeout("failed to spawn object!");
@@ -80,8 +71,8 @@ namespace Unity.Netcode.RuntimeTests
             return Dns.GetHostAddresses(value).First().ToString();
         }
 
-        [UnityTest]
-        public IEnumerator CanConnectToServer()
+        [Test]
+        public void CanConnectToServer()
         {
             var address = Dns.GetHostAddresses(k_TransportHost).First();
             var endpoint = NetworkEndpoint.Parse(address.ToString(), k_TransportPort);
@@ -103,9 +94,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             driver.Disconnect(connection);
-
-            // Ensure the rust server fully times out and disconnects
-            yield return new WaitForSeconds(2f);
         }
 
 
