@@ -1,6 +1,10 @@
+using System;
 using System.Collections;
+using System.Linq;
+using System.Net;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -65,6 +69,54 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(CheckObjectExists);
             AssertOnTimeout("failed to spawn object!");
+        }
+
+        private static readonly string k_TransportHost = GetAddressToBind();
+        private static readonly ushort k_TransportPort = GetPortToBind();
+
+        /// <summary>
+        /// Configures the port to look for the rust service.
+        /// </summary>
+        /// <returns>The port from the environment variable "CMB_SERVICE_PORT" if it is set and valid; otherwise uses port 7789</returns>
+        private static ushort GetPortToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("CMB_SERVICE_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7789;
+        }
+
+        /// <summary>
+        /// Configures the address to look for the rust service.
+        /// </summary>
+        /// <returns>The address from the environment variable "NGO_HOST" if it is set and valid; otherwise uses "127.0.0.1"</returns>
+        private static string GetAddressToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
+            return Dns.GetHostAddresses(value).First().ToString();
+        }
+
+        [Test]
+        public void CanConnectToServer()
+        {
+            var address = Dns.GetHostAddresses(k_TransportHost).First();
+            var endpoint = NetworkEndpoint.Parse(address.ToString(), k_TransportPort);
+
+            var driver = NetworkDriver.Create();
+            var connection = driver.Connect(endpoint);
+
+            var start = DateTime.Now;
+            var ev = Networking.Transport.NetworkEvent.Type.Empty;
+            while (ev != Networking.Transport.NetworkEvent.Type.Connect)
+            {
+                driver.ScheduleUpdate().Complete();
+                ev = driver.PopEventForConnection(connection, out _, out _);
+
+                if (DateTime.Now - start > TimeSpan.FromMilliseconds(100))
+                {
+                    Assert.Fail("Failed to connect to comb service within time!");
+                }
+            }
+
+            driver.Disconnect(connection);
         }
 
 
