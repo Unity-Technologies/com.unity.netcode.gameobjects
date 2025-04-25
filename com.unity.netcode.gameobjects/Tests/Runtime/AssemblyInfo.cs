@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 #if UNITY_INCLUDE_TESTS
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
 #if UNITY_EDITOR
-[assembly: InternalsVisibleTo("TestProject.EditorTests")]
+[assembly: InternalsVisibleTo("TestProject.Editor.Tests")]
 #endif // UNITY_EDITOR
 #if MULTIPLAYER_TOOLS
 [assembly: InternalsVisibleTo("TestProject.ToolsIntegration.RuntimeTests")]

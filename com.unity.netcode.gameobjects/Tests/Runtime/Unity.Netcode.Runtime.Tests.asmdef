@@ -1,9 +1,8 @@
 {
-    "name": "Unity.Netcode.RuntimeTests",
+    "name": "Unity.Netcode.Runtime.Tests",
     "rootNamespace": "Unity.Netcode.RuntimeTests",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components",
         "Unity.Collections",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
