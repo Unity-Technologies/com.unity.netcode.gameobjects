@@ -1467,6 +1467,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Validation for clients connected.
+        /// </summary>
+        private bool CheckClientsConnected(NetworkManager[] clientsToCheck)
+        {
+            if (clientsToCheck.Any(client => !client.IsConnectedClient))
+            {
+                return false;
+            }
+            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
+            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
+
+            return currentCount == expectedCount;
+        }
+
+        /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
         /// have connected or it will time out.
@@ -1475,11 +1490,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                         m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+            yield return WaitForConditionOrTimeOut(() => CheckClientsConnected(clientsToCheck));
         }
 
         /// <summary>
@@ -1492,11 +1503,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>True if all clients are connected within the specified number of frames; otherwise, false.</returns>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                                 m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+            return WaitForConditionOrTimeOutWithTimeTravel(() => CheckClientsConnected(clientsToCheck));
         }
         /// <summary>
         /// Overloaded method that just passes in all clients to

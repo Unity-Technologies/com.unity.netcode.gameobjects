@@ -108,11 +108,15 @@ namespace Unity.Netcode
                 }
 
                 // Now, reset all the no-longer-dirty variables
-                foreach (var dirtyobj in m_DirtyNetworkObjects)
+                foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    dirtyobj.PostNetworkVariableWrite(forceSend);
+                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
+                    {
+                        behaviour.PostNetworkVariableWrite(forceSend);
+                    }
+
                     // Once done processing, we set the previous owner id to the current owner id
-                    dirtyobj.PreviousOwnerId = dirtyobj.OwnerClientId;
+                    dirtyObj.PreviousOwnerId = dirtyObj.OwnerClientId;
                 }
                 m_DirtyNetworkObjects.Clear();
             }

@@ -1476,16 +1476,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behavior = ChildNetworkBehaviours[i];
-                behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(writer, targetClientId);
-            }
-        }
-
         internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -1525,18 +1515,6 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
-        /// Only invoked during first synchronization of a NetworkObject (late join or newly spawned)
-        /// </summary>
-        internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behaviour = ChildNetworkBehaviours[i];
-                behaviour.InitializeVariables();
-                behaviour.SetNetworkVariableData(reader, clientId);
-            }
-        }
 
         internal ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
@@ -1744,14 +1722,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void PostNetworkVariableWrite(bool forceSend)
-        {
-            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
-            {
-                ChildNetworkBehaviours[k].PostNetworkVariableWrite(forceSend);
-            }
-        }
-
         /// <summary>
         /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBehaviours.
         /// </summary>
@@ -1765,11 +1735,16 @@ namespace Unity.Netcode
             {
                 var writer = serializer.GetFastBufferWriter();
                 var positionBeforeSynchronizing = writer.Position;
-                writer.WriteValueSafe((ushort)0);
+                writer.WriteValueSafe(0);
                 var sizeToSkipCalculationPosition = writer.Position;
 
                 // Synchronize NetworkVariables
-                WriteNetworkVariableData(writer, targetClientId);
+                foreach (var behavior in ChildNetworkBehaviours)
+                {
+                    behavior.InitializeVariables();
+                    behavior.WriteNetworkVariableData(writer, targetClientId);
+                }
+
                 // Reserve the NetworkBehaviour synchronization count position
                 var networkBehaviourCountPosition = writer.Position;
                 writer.WriteValueSafe((byte)0);
@@ -1791,7 +1766,7 @@ namespace Unity.Netcode
                 // synchronization.
                 writer.Seek(positionBeforeSynchronizing);
                 // We want the size of everything after our size to skip calculation position
-                var size = (ushort)(currentPosition - sizeToSkipCalculationPosition);
+                var size = currentPosition - sizeToSkipCalculationPosition;
                 writer.WriteValueSafe(size);
                 // Write the number of NetworkBehaviours synchronized
                 writer.Seek(networkBehaviourCountPosition);
@@ -1803,23 +1778,34 @@ namespace Unity.Netcode
             else
             {
                 var reader = serializer.GetFastBufferReader();
-
-                reader.ReadValueSafe(out ushort sizeOfSynchronizationData);
+                reader.ReadValueSafe(out int sizeOfSynchronizationData);
                 var seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
-                // Apply the network variable synchronization data
-                SetNetworkVariableData(reader, targetClientId);
-                // Read the number of NetworkBehaviours to synchronize
-                reader.ReadValueSafe(out byte numberSynchronized);
-                var networkBehaviourId = (ushort)0;
 
-                // If a NetworkBehaviour writes synchronization data, it will first
-                // write its NetworkBehaviourId so when deserializing the client-side
-                // can find the right NetworkBehaviour to deserialize the synchronization data.
-                for (int i = 0; i < numberSynchronized; i++)
+                try
                 {
-                    serializer.SerializeValue(ref networkBehaviourId);
-                    var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    // Apply the network variable synchronization data
+                    foreach (var behaviour in ChildNetworkBehaviours)
+                    {
+                        behaviour.InitializeVariables();
+                        behaviour.SetNetworkVariableData(reader, targetClientId);
+                    }
+
+                    // Read the number of NetworkBehaviours to synchronize
+                    reader.ReadValueSafe(out byte numberSynchronized);
+
+                    // If a NetworkBehaviour writes synchronization data, it will first
+                    // write its NetworkBehaviourId so when deserializing the client-side
+                    // can find the right NetworkBehaviour to deserialize the synchronization data.
+                    for (int i = 0; i < numberSynchronized; i++)
+                    {
+                        reader.ReadValueSafe(out ushort networkBehaviourId);
+                        var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                        networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    }
+                }
+                catch
+                {
+                    reader.Seek(seekToEndOfSynchData);
                 }
             }
         }
@@ -1916,7 +1902,7 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.ReadValueSafe(out int networkBehaviourSynchronizationDataLength);
                     reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
                 }
                 catch (Exception ex)
