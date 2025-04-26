@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -130,6 +131,7 @@ namespace Unity.Netcode
 				}
 			}
 
+			Debug.Log($"[{k_Name}][Serialize] {nameof(IncludesSerializedObject)}: {IncludesSerializedObject}, {nameof(UpdateObservers)}: {UpdateObservers}, {nameof(UpdateNewObservers)}: {UpdateNewObservers} preinstance data initialized? {ObjectInfo.preInstanceData.IsInitialized}");
 			if (IncludesSerializedObject)
 			{
 				ObjectInfo.Serialize(writer);
@@ -189,6 +191,7 @@ namespace Unity.Netcode
 				}
 			}
 
+			Debug.Log($"[{k_Name}][Deserialize] {nameof(IncludesSerializedObject)}: {IncludesSerializedObject}, {nameof(UpdateObservers)}: {UpdateObservers}, {nameof(UpdateNewObservers)}: {UpdateNewObservers}");
 			if (IncludesSerializedObject)
 			{
 				ObjectInfo.Deserialize(reader);
@@ -214,7 +217,8 @@ namespace Unity.Netcode
 			// If a client receives a create object message and it is still synchronizing, then defer the object creation until it has finished synchronizing
 			if (networkManager.SceneManager.ShouldDeferCreateObject())
 			{
-				networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds, CustomSpawnData);
+				Debug.Log($"[{k_Name}][Defer] Deferring object creation for {NetworkObjectId} until scene synchronization is complete.");
+				networkManager.SceneManager.DeferCreateObject(context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
 			}
 			else
 			{
@@ -225,7 +229,8 @@ namespace Unity.Netcode
 						NetworkObjectId = NetworkObjectId,
 					};
 				}
-				CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds, CustomSpawnData);
+				Debug.Log($"[{k_Name}][Handle] Creating object {ObjectInfo.NetworkObjectId} for {context.SenderId} preinstance data initialized? {ObjectInfo.preInstanceData.IsInitialized}");
+				CreateObject(ref networkManager, context.SenderId, context.MessageSize, ObjectInfo, m_ReceivedNetworkVariableData, ObserverIds, NewObserverIds);
 			}
 		}
 
@@ -239,18 +244,18 @@ namespace Unity.Netcode
 			var sceneObject = deferredObjectCreation.SceneObject;
 			var networkVariableData = deferredObjectCreation.FastBufferReader;
 			var customSpawnData = deferredObjectCreation.CustomSpawnData;
-			CreateObject(ref networkManager, senderId, messageSize, sceneObject, networkVariableData, observerIds, newObserverIds, customSpawnData);
+			CreateObject(ref networkManager, senderId, messageSize, sceneObject, networkVariableData, observerIds, newObserverIds);
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData, ulong[] observerIds, ulong[] newObserverIds, byte[] customSpawnData)
+		internal static void CreateObject(ref NetworkManager networkManager, ulong senderId, uint messageSize, NetworkObject.SceneObject sceneObject, FastBufferReader networkVariableData, ulong[] observerIds, ulong[] newObserverIds)
 		{
 			var networkObject = (NetworkObject)null;
 			try
 			{
 				if (!networkManager.DistributedAuthorityMode)
 				{
-					networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager, customSpawnData: customSpawnData); //TODO: Metadata could go into sceneObject structure, as its used more widely
+					networkObject = NetworkObject.AddSceneObject(sceneObject, networkVariableData, networkManager); //TODO: Metadata could go into sceneObject structure, as its used more widely
 				}
 				else
 				{
@@ -313,8 +318,6 @@ namespace Unity.Netcode
 							ObserverIds = hasObserverIdList ? observerIds : null,
 							NetworkObjectId = networkObject.NetworkObjectId,
 							IncludesSerializedObject = true,
-							CustomSpawnData = customSpawnData,
-							HasCustomSpawnData = customSpawnData != null && customSpawnData.Length > 0,
 						};
 						foreach (var clientId in clientList)
 						{
@@ -333,7 +336,7 @@ namespace Unity.Netcode
 							// observers list to that client's instance.
 							createObjectMessage.IncludesSerializedObject = hasNewObserverIdList && newObserverIds.Contains(clientId);
 
-							networkManager.SpawnManager.SendSpawnCallForObject(clientId, networkObject, customSpawnData);
+							networkManager.SpawnManager.SendSpawnCallForObject(clientId, networkObject);
 						}
 					}
 				}

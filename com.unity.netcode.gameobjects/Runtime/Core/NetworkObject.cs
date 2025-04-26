@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -35,6 +36,8 @@ namespace Unity.Netcode
         /// will be different. The PrefabGlobalObjectIdHash value is what is used when sending a <see cref="CreateObjectMessage"/>.
         /// </summary>
         internal uint PrefabGlobalObjectIdHash;
+
+        internal FastBufferReader preInstanceData;
 
         /// <summary>
         /// This is the source prefab of an in-scene placed NetworkObject. This is not set for in-scene
@@ -1753,7 +1756,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject, byte[] customSpawnData)
+        internal void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (NetworkManagerOwner == null)
             {
@@ -1823,8 +1826,8 @@ namespace Unity.Netcode
                     }
                     if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
                     {
-                                    Debug.Log("customSpawnData: " + (customSpawnData?.Length ?? 0).ToString());
-						NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this, customSpawnData);
+						Debug.Log("Spawn internal 1, object name " + gameObject.name);
+						NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ConnectedClientsList[i].ClientId, this);
                     }
                 }
             }
@@ -1834,8 +1837,8 @@ namespace Unity.Netcode
                 // then we want to send a spawn notification.
                 if (SpawnWithObservers || !SpawnWithObservers && Observers.Count > 1)
                 {
-					Debug.Log("customSpawnData: " + customSpawnData.Length);
-					NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this, customSpawnData);
+					Debug.Log("Spawn internal 2, object name " + gameObject.name);
+					NetworkManager.SpawnManager.SendSpawnCallForObject(NetworkManager.ServerClientId, this);
                 }
             }
             else
@@ -1922,10 +1925,10 @@ namespace Unity.Netcode
         /// Spawns this <see cref="NetworkObject"/> across the network. Can only be called from the Server
         /// </summary>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
-        public void Spawn(bool destroyWithScene = false, byte[] customSpawnData = null)
+        public void Spawn(bool destroyWithScene = false)
         {
             var clientId = NetworkManager.DistributedAuthorityMode ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
-            SpawnInternal(destroyWithScene, clientId, false, customSpawnData);
+            SpawnInternal(destroyWithScene, clientId, false);
         }
 
         /// <summary>
@@ -1933,9 +1936,9 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
-        public void SpawnWithOwnership(ulong clientId, bool destroyWithScene = false, byte[] customSpawnData = null)
+        public void SpawnWithOwnership(ulong clientId, bool destroyWithScene = false)
         {
-            SpawnInternal(destroyWithScene, clientId, false, customSpawnData);
+            SpawnInternal(destroyWithScene, clientId, false);
         }
 
 		/// <summary>
@@ -1943,9 +1946,9 @@ namespace Unity.Netcode
 		/// </summary>
 		/// <param name="clientId">The clientId who's player object this is</param>
 		/// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
-		public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false, byte[] customSpawnData = null)
+		public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
-            SpawnInternal(destroyWithScene, clientId, true, customSpawnData);
+            SpawnInternal(destroyWithScene, clientId, true);
         }
 
         /// <summary>
@@ -2814,6 +2817,7 @@ namespace Unity.Netcode
             public ulong NetworkObjectId;
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
+           public FastBufferReader preInstanceData;
 
             public bool IsPlayerObject
             {
@@ -2884,6 +2888,13 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 10, value);
             }
 
+                  public bool HasPreInstantiateData
+			{
+				get => ByteUtility.GetBit(m_BitField, 11);
+				set => ByteUtility.SetBit(ref m_BitField, 11, value);
+			}
+
+
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.
             public ulong[] Observers;
@@ -2924,6 +2935,8 @@ namespace Unity.Netcode
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
                 BytePacker.WriteValueBitPacked(writer, OwnerClientId);
 
+
+
                 if (HasParent)
                 {
                     BytePacker.WriteValueBitPacked(writer, ParentObjectId);
@@ -2950,16 +2963,33 @@ namespace Unity.Netcode
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
+                        if (HasPreInstantiateData)
+                        {
+                            writeSize += FastBufferWriter.GetWriteSize<int>();
+                            writeSize += preInstanceData.Length;
+                        }
+
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
+                  
+                   if (HasPreInstantiateData)
+                  {
+                              writer.WriteValueSafe(preInstanceData.Length);
+                              Debug.Log($"PreInstanceData Length Serialize: {preInstanceData.Length}");
+					unsafe
+                              {
+                                    writer.WriteBytes(preInstanceData.GetUnsafePtr(), preInstanceData.Length);
+                              }
+                  }
 
                 if (HasTransform)
                 {
                     writer.WriteValue(Transform);
                 }
+
 
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
@@ -2972,6 +3002,8 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
+         
+
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
@@ -2983,6 +3015,8 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out Hash);
                 ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
                 ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+
+
 
                 if (HasParent)
                 {
@@ -3016,21 +3050,49 @@ namespace Unity.Netcode
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
 
+                        int preInstanceDataSize = 0;
+                        if (HasPreInstantiateData)
+                        {
+                            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize<int>()))
+                            {
+                                throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer (preInstanceData size)");
+                            }
+
+                            reader.ReadValueSafe(out preInstanceDataSize);
+                            readSize += FastBufferWriter.GetWriteSize<int>();
+                            readSize += preInstanceDataSize;
+                        }
+
+
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
+                  if (HasPreInstantiateData)
+                  {
+                      Debug.Log($"PreInstanceData Length des: {preInstanceDataSize}");
+                      unsafe
+                      {
+                          preInstanceData = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, preInstanceDataSize);
+                          reader.Seek(reader.Position + preInstanceDataSize);
+                      }
+                  }
+
 
                 if (HasTransform)
                 {
                     reader.ReadValue(out Transform);
                 }
 
+                     
+
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
-            }
+
+			
+			}
         }
 
         internal void PostNetworkVariableWrite(bool forced = false)
@@ -3150,8 +3212,10 @@ namespace Unity.Netcode
                 NetworkSceneHandle = NetworkSceneHandle,
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
-                TargetClientId = targetClientId
-            };
+                TargetClientId = targetClientId,
+                HasPreInstantiateData = preInstanceData.IsInitialized,
+			preInstanceData = preInstanceData
+		};
 
             // Handle Parenting
             if (!AlwaysReplicateAsRoot && obj.HasParent)
@@ -3215,6 +3279,7 @@ namespace Unity.Netcode
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false, byte[] customSpawnData = null)
         {
+            Debug.Log($"AddSceneObjects, it comes with a NetworkVariable reader, maybe i can send the data over there?. (also called for SceneObjects)");
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, customSpawnData);
 
@@ -3245,8 +3310,9 @@ namespace Unity.Netcode
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
             networkObject.OwnerClientId = sceneObject.OwnerClientId;
 
-            // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
-            networkObject.InvokeBehaviourNetworkPreSpawn();
+            networkObject.preInstanceData = sceneObject.preInstanceData;
+			// Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
+			networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));

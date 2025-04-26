@@ -703,7 +703,7 @@ namespace Unity.Netcode
 		/// <param name="position">The starting poisiton of the <see cref="NetworkObject"/> instance.</param>
 		/// <param name="rotation">The starting rotation of the <see cref="NetworkObject"/> instance.</param>
 		/// <returns>The newly instantiated and spawned <see cref="NetworkObject"/> prefab instance.</returns>
-		public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default, byte[] customSpawnData = null)
+		public NetworkObject InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
 		{
 			if (networkPrefab == null)
 			{
@@ -732,13 +732,13 @@ namespace Unity.Netcode
 				return null;
 			}
 
-			return InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation, customSpawnData);
+			return InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
 		}
-		
+
 		/// <summary>
 		/// !!! Does not perform any parameter checks prior to attempting to instantiate and spawn the NetworkObject !!!
 		/// </summary>
-		internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default, byte[] customSpanData = null)
+		internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
 		{
 			var networkObject = networkPrefab;
 			// - Host and clients always instantiate the override if one exists.
@@ -748,7 +748,11 @@ namespace Unity.Netcode
 			// - Distributed authority mode always spawns the override if one exists.
 			if (forceOverride || NetworkManager.IsClient || NetworkManager.DistributedAuthorityMode || NetworkManager.PrefabHandler.ContainsHandler(networkPrefab.GlobalObjectIdHash))
 			{
-				networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, position, rotation, customSpawnData: customSpanData);
+				Debug.Assert(networkPrefab.GlobalObjectIdHash != 0, $"The {nameof(NetworkObject)} prefab passed in does not have a valid {nameof(NetworkObject.GlobalObjectIdHash)} value!");
+				Debug.Log("SENDING WRITERR, EN TEORIA AQUI SE PASA EL WRITTER PARA ESCRIBIERLO Y LUEGO HAY QUE SACARLE EL READER Y PASARLO POR UN MENSAJE");
+				var bufferWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(20,Collections.Allocator.Temp)));
+				networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, ref bufferWriter, position, rotation);
+				
 			}
 			else // Under this case, server instantiate the prefab passed in.
 			{
@@ -766,11 +770,11 @@ namespace Unity.Netcode
 			// If spawning as a player, then invoke SpawnAsPlayerObject
 			if (isPlayerObject)
 			{
-				networkObject.SpawnAsPlayerObject(ownerClientId, destroyWithScene, customSpanData);
+				networkObject.SpawnAsPlayerObject(ownerClientId, destroyWithScene);
 			}
 			else // Otherwise just spawn with ownership
 			{
-				networkObject.SpawnWithOwnership(ownerClientId, destroyWithScene, customSpanData);
+				networkObject.SpawnWithOwnership(ownerClientId, destroyWithScene);
 			}
 			return networkObject;
 		}
@@ -779,14 +783,15 @@ namespace Unity.Netcode
 		/// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
 		/// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
 		/// </summary>
-		internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false, byte[] customSpawnData = null)
+		internal NetworkObject GetNetworkObjectToSpawn<T>(uint globalObjectIdHash, ulong ownerId, ref BufferSerializer<T> preInstanceDataSerializer, Vector3? position, Quaternion? rotation, bool isScenePlaced = false) where T : IReaderWriter
 		{
+
 			NetworkObject networkObject = null;
 			// If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
 			if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
 			{
 				// Let the handler spawn the NetworkObject
-				networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, customSpawnData);
+				networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, ref preInstanceDataSerializer, position ?? default, rotation ?? default);
 				networkObject.NetworkManagerOwner = NetworkManager;
 			}
 			else
@@ -888,10 +893,15 @@ namespace Unity.Netcode
 			// If scene management is disabled or the NetworkObject was dynamically spawned
 			if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
 			{
-				networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, customSpawnData);
+				Debug.Log("Here is needed to check the handler has or not that custom data (DYNAMIC SPAWN)");
+				Debug.Log("SENDING READER");
+				Debug.Log($"SceneObject preInstanceData: {sceneObject.preInstanceData.IsInitialized.ToString()}");
+				var bufferWriter = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(sceneObject.preInstanceData));
+				networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, ref bufferWriter, position, rotation, sceneObject.IsSceneObject);
 			}
 			else // Get the in-scene placed NetworkObject
 			{
+				Debug.Log("Here is needed to check the handler has or not that custom data (SCENE PLACED)");
 				networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
 				if (networkObject == null)
 				{
@@ -1260,7 +1270,8 @@ namespace Unity.Netcode
 			}
 		}
 
-		internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject, byte[] customSpawnData)
+		///AAA
+		internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
 		{
 			// If we are a host and sending to the host's client id, then we can skip sending ourselves the spawn message.
 			var updateObservers = NetworkManager.DistributedAuthorityMode && networkObject.SpawnWithObservers;
@@ -1277,12 +1288,9 @@ namespace Unity.Netcode
 				IncludesSerializedObject = true,
 				UpdateObservers = NetworkManager.DistributedAuthorityMode,
 				ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
-				CustomSpawnData = customSpawnData,
-				HasCustomSpawnData = customSpawnData != null && customSpawnData.Length > 0,
 			};
-			Debug.Log("customSpawnData:2 " + (customSpawnData?.Length ?? 0).ToString());
+			Debug.Log($"Sending spawn call for object, parameters: ClientID {clientId} networkObject{networkObject} object has preInstanceData {networkObject.preInstanceData.IsInitialized.ToString()}");
 			var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
-			Debug.Log("s: " + size);
 			NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
 		}
 
@@ -1791,7 +1799,7 @@ namespace Unity.Netcode
 					{
 						try
 						{
-							SendSpawnCallForObject(clientId, networkObject, null);
+							SendSpawnCallForObject(clientId, networkObject);
 						}
 						catch (Exception ex)
 						{

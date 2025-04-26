@@ -797,8 +797,10 @@ namespace Unity.Netcode
                 // Server-side spawning (only if there is a prefab hash or player prefab provided)
                 if (!NetworkManager.DistributedAuthorityMode && response.CreatePlayerObject && (response.PlayerPrefabHash.HasValue || NetworkManager.NetworkConfig.PlayerPrefab != null))
                 {
-                    var playerObject = response.PlayerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(response.PlayerPrefabHash.Value, ownerClientId, response.Position ?? null, response.Rotation ?? null)
-                    : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, response.Position ?? null, response.Rotation ?? null);
+                              var bufferReaderSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0,Allocator.Temp)));
+                              Debug.Log("SENDING BUFFFER WRITERRR FOR PLAYER SPAWN");
+					var playerObject = response.PlayerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(response.PlayerPrefabHash.Value, ownerClientId, ref bufferReaderSerializer, response.Position ?? null, response.Rotation ?? null)
+                    : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, ref bufferReaderSerializer, response.Position ?? null, response.Rotation ?? null);
 
                     // Spawn the player NetworkObject locally
                     NetworkManager.SpawnManager.SpawnNetworkObjectLocally(
@@ -942,7 +944,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Client-Side Spawning in distributed authority mode uses this to spawn the player.
         /// </summary>
-        internal void CreateAndSpawnPlayer(ulong ownerId, byte[] customSpawnData = null)
+        internal void CreateAndSpawnPlayer(ulong ownerId)
         {
             if (NetworkManager.DistributedAuthorityMode && NetworkManager.AutoSpawnPlayerPrefabClientSide)
             {
@@ -950,7 +952,9 @@ namespace Unity.Netcode
                 if (playerPrefab != null)
                 {
                     var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-                    var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation, customSpawnData:customSpawnData);
+					var bufferReaderSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Allocator.Temp)));
+					Debug.Log("SENDING BUFFFER WRITERRR FOR PLAYER SPAWN 2");
+					var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, ref bufferReaderSerializer, playerPrefab.transform.position, playerPrefab.transform.rotation);
                     networkObject.IsSceneObject = false;
                     networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
                 }

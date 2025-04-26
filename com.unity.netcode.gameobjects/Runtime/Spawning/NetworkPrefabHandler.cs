@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -256,17 +257,37 @@ namespace Unity.Netcode
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
-        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] customSpawnData)
-        {
+        internal NetworkObject HandleNetworkPrefabSpawn<T>(uint networkPrefabAssetHash, ulong ownerClientId, ref BufferSerializer<T> preInstanceDataSerializer, Vector3 position, Quaternion rotation) where T : IReaderWriter
+		{
             if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
             {
-                if(customSpawnData != null && prefabInstanceHandler is INetworkCustomSpawnDataReceiver receiver)
-					receiver.OnCustomSpawnDataReceived(customSpawnData);
-				var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-
-                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
-                //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-                if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+                  if(prefabInstanceHandler is INetworkCustomSpawnDataSynchronizer synchronizer)
+                  {
+                              Debug.Log($"The sinchronizer will instantiate, check custom spawn data being called from {(NetworkManager.Singleton.IsServer ? "Server" : "client")}");
+					synchronizer.OnSynchronize(ref preInstanceDataSerializer);
+                  }
+			var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
+				if (networkObjectInstance != null)
+				{
+					if (preInstanceDataSerializer.IsReader)
+					{
+                                    Debug.Log($"The reader will instantiate, check custom spawn data being called from {(NetworkManager.Singleton.IsServer ? "Server" : "client")}");
+						networkObjectInstance.preInstanceData = preInstanceDataSerializer.GetFastBufferReader();
+					}
+					else
+					{
+                                    Debug.Log($"The writer will instantiate, check custom spawn data being called from {(NetworkManager.Singleton.IsServer ? "Server" : "client")}");
+						// Si es writer, creamos un Reader desde el Writer
+						unsafe
+						{
+							var writer = preInstanceDataSerializer.GetFastBufferWriter();
+							networkObjectInstance.preInstanceData = new FastBufferReader(writer.GetUnsafePtr(), Allocator.Persistent, writer.Length);
+						}
+					}
+				}
+				//Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
+				//is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
+				if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
                 {
                     m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
                 }
