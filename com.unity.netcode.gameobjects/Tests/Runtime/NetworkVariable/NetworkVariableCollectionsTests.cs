@@ -1257,15 +1257,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool AllInstancesSpawned()
         {
-            if (!UseCMBService())
-            {
-                if (!m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
                 {
@@ -1275,25 +1267,25 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-        private Dictionary<ulong, NetworkManager> m_NetworkManagers = new Dictionary<ulong, NetworkManager>();
+        private Dictionary<ulong, NetworkManager> m_Managers = new Dictionary<ulong, NetworkManager>();
 
         private bool ValidateAllInstances()
         {
-            if (!m_NetworkManagers.ContainsKey(m_Instance.OwnerClientId))
+            if (!m_Managers.ContainsKey(m_Instance.OwnerClientId))
             {
                 return false;
             }
 
-            if (!m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
+            if (!m_Managers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
             {
                 return false;
             }
 
-            var ownerNetworkManager = m_NetworkManagers[m_Instance.OwnerClientId];
+            var ownerNetworkManager = m_Managers[m_Instance.OwnerClientId];
 
-            var ownerClientInstance = m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
+            var ownerClientInstance = m_Managers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
 
-            foreach (var client in m_NetworkManagers)
+            foreach (var client in m_Managers)
             {
                 if (client.Value == ownerNetworkManager)
                 {
@@ -1312,7 +1304,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool OwnershipChangedOnAllClients(ulong expectedOwner)
         {
             m_ErrorLog.Clear();
-            foreach (var client in m_NetworkManagers)
+            foreach (var client in m_Managers)
             {
                 var otherInstance = client.Value.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
                 if (otherInstance.OwnerClientId != expectedOwner)
@@ -1326,8 +1318,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private BaseCollectionUpdateHelper GetOwnerInstance()
         {
-            var ownerNetworkManager = m_NetworkManagers[m_Instance.OwnerClientId];
-            return m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
+            var ownerNetworkManager = m_Managers[m_Instance.OwnerClientId];
+            return m_Managers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
         }
 
         /// <summary>
@@ -1353,17 +1345,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             BaseCollectionUpdateHelper.VerboseMode = m_EnableVerboseDebug;
             var runWaitPeriod = new WaitForSeconds(0.5f);
-            m_NetworkManagers.Clear();
-            if (!UseCMBService() && m_UseHost)
+            m_Managers.Clear();
+            foreach (var manager in m_NetworkManagers)
             {
-                m_NetworkManagers.Add(m_ServerNetworkManager.LocalClientId, m_ServerNetworkManager);
-            }
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                m_NetworkManagers.Add(client.LocalClientId, client);
+                m_Managers.Add(manager.LocalClientId, manager);
             }
 
-            var authorityNetworkManager = UseCMBService() || !m_UseHost ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            var authorityNetworkManager = GetAuthorityNetworkManager();
 
             var instance = SpawnObject(m_TestPrefab, authorityNetworkManager);
             m_Instance = instance.GetComponent<NetworkObject>();

@@ -217,12 +217,7 @@ namespace Unity.Netcode.RuntimeTests
             var prefabNetworkObject = (NetworkObject)null;
             var spawnedGlobalObjectId = (uint)0;
 
-            var networkManagers = m_ClientNetworkManagers.ToList();
-            if (m_UseHost)
-            {
-                networkManagers.Insert(0, m_ServerNetworkManager);
-            }
-            else
+            if (!m_UseHost)
             {
                 // If running as just a server, validate that all player prefab clone instances are the server side version
                 prefabNetworkObject = GetPlayerNetworkPrefabObject(m_ServerNetworkManager).GetComponent<NetworkObject>();
@@ -235,7 +230,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validates prefab overrides via the NetworkPrefabHandler.
             // Validate the player prefab instance clones relative to all NetworkManagers.
-            foreach (var networkManager in networkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 // Get the expected player prefab to be spawned based on the NetworkManager
                 prefabNetworkObject = GetPlayerNetworkPrefabObject(networkManager).GetComponent<NetworkObject>();
@@ -263,11 +258,11 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_DistributedAuthority)
             {
-                networkManagerOwner = m_ClientNetworkManagers[0];
+                networkManagerOwner = m_ClientNetworkManagers[1];
             }
 
             // Clients and Host will spawn the OverridingTargetPrefab while a dedicated server will spawn the SourcePrefabToOverride
-            var expectedServerGlobalObjectIdHash = networkManagerOwner.IsClient ? m_PrefabOverride.OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash : m_PrefabOverride.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
+            var expectedServerGlobalObjectIdHash = m_PrefabOverride.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
             var expectedClientGlobalObjectIdHash = m_PrefabOverride.OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
 
             spawnedInstance = NetworkObject.InstantiateAndSpawn(m_PrefabOverride.SourcePrefabToOverride, networkManagerOwner, networkManagerOwner.LocalClientId);
@@ -275,29 +270,18 @@ namespace Unity.Netcode.RuntimeTests
             bool ObjectSpawnedOnAllNetworkMangers()
             {
                 builder.Clear();
-                if (!m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(spawnedInstance.NetworkObjectId))
-                {
-                    builder.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} failed to spawn {spawnedInstance.name}-{spawnedInstance.NetworkObjectId}!");
-                    return false;
-                }
-                var instanceGID = m_ServerNetworkManager.SpawnManager.SpawnedObjects[spawnedInstance.NetworkObjectId].GlobalObjectIdHash;
-                if (instanceGID != expectedServerGlobalObjectIdHash)
-                {
-                    builder.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} instance {spawnedInstance.name}-{spawnedInstance.NetworkObjectId} GID is {instanceGID} but was expected to be {expectedServerGlobalObjectIdHash}!");
-                    return false;
-                }
-
-                foreach (var networkManger in m_ClientNetworkManagers)
+                foreach (var networkManger in m_NetworkManagers)
                 {
                     if (!networkManger.SpawnManager.SpawnedObjects.ContainsKey(spawnedInstance.NetworkObjectId))
                     {
                         builder.AppendLine($"Client-{networkManger.LocalClientId} failed to spawn {spawnedInstance.name}-{spawnedInstance.NetworkObjectId}!");
                         return false;
                     }
-                    instanceGID = networkManger.SpawnManager.SpawnedObjects[spawnedInstance.NetworkObjectId].GlobalObjectIdHash;
-                    if (instanceGID != expectedClientGlobalObjectIdHash)
+                    var instanceGlobalId = networkManger.SpawnManager.SpawnedObjects[spawnedInstance.NetworkObjectId].GlobalObjectIdHash;
+                    var expectedHash = networkManger.IsClient ? expectedClientGlobalObjectIdHash : expectedServerGlobalObjectIdHash;
+                    if (instanceGlobalId != expectedHash)
                     {
-                        builder.AppendLine($"Client-{networkManger.LocalClientId} instance {spawnedInstance.name}-{spawnedInstance.NetworkObjectId} GID is {instanceGID} but was expected to be {expectedClientGlobalObjectIdHash}!");
+                        builder.AppendLine($"Client-{networkManger.LocalClientId} instance {spawnedInstance.name}-{spawnedInstance.NetworkObjectId} GID is {instanceGlobalId} but was expected to be {expectedHash}!");
                         return false;
                     }
                 }
@@ -308,33 +292,34 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"The spawned prefab override validation failed!\n {builder}");
 
             // Verify that the despawn and destroy order of operations is correct for client owned NetworkObjects and the nunmber of times each is invoked is correct
-            expectedServerGlobalObjectIdHash = networkManagerOwner.IsClient ? m_PrefabOverride.OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash : m_PrefabOverride.SourcePrefabToOverride.GetComponent<NetworkObject>().GlobalObjectIdHash;
-            expectedClientGlobalObjectIdHash = m_PrefabOverride.OverridingTargetPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-
             spawnedInstance = NetworkObject.InstantiateAndSpawn(m_PrefabOverride.SourcePrefabToOverride, networkManagerOwner, m_ClientNetworkManagers[0].LocalClientId);
 
 
             yield return WaitForConditionOrTimeOut(ObjectSpawnedOnAllNetworkMangers);
             AssertOnTimeout($"The spawned prefab override validation failed!\n {builder}");
+
             var clientId = m_ClientNetworkManagers[0].LocalClientId;
             m_ClientNetworkManagers[0].Shutdown();
 
             // Wait until all of the client's owned objects are destroyed
             // If no asserts occur, then the despawn & destroy order of operations and invocation count is correct
-            /// For more information look at: <see cref="SpawnDespawnDestroyNotifications"/>
+            // For more information look at: <see cref="SpawnDespawnDestroyNotifications"/>
             bool ClientDisconnected(ulong clientId)
             {
-                var clientOwnedObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjects.Where((c) => c.Value.OwnerClientId == clientId).ToList();
-                if (clientOwnedObjects.Count > 0)
+                foreach (var manager in m_NetworkManagers)
                 {
-                    return false;
+                    if (manager.LocalClientId == clientId)
+                    {
+                        continue;
+                    }
+
+                    var clientOwnedObjects = manager.SpawnManager.SpawnedObjects.Where((c) => c.Value.OwnerClientId == clientId).ToList();
+                    if (clientOwnedObjects.Count > 0)
+                    {
+                        return false;
+                    }
                 }
 
-                clientOwnedObjects = m_ClientNetworkManagers[1].SpawnManager.SpawnedObjects.Where((c) => c.Value.OwnerClientId == clientId).ToList();
-                if (clientOwnedObjects.Count > 0)
-                {
-                    return false;
-                }
                 return true;
             }
 

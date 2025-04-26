@@ -111,7 +111,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
-            var serverTestObject = SpawnObject(m_TestObjectPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
+            var authority = GetAuthorityNetworkManager();
+            var serverTestObject = SpawnObject(m_TestObjectPrefab, authority).GetComponent<NetworkObject>();
             m_TestObjectId = serverTestObject.NetworkObjectId;
 
             var serverTestComponentA = serverTestObject.GetComponent<ComponentA>();
@@ -125,12 +126,13 @@ namespace Unity.Netcode.RuntimeTests
             serverTestComponentC.ChangeValuesB(1100, 2200, 3300);
             serverTestComponentC.ChangeValuesC(1110, 2220, 3330);
 
-            yield return WaitForTicks(m_ServerNetworkManager, 2);
+            yield return WaitForTicks(authority, 2);
         }
 
         private bool CheckTestObjectComponentValuesOnAll()
         {
-            var serverTestObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjectId];
+            var authority = GetAuthorityNetworkManager();
+            var serverTestObject = authority.SpawnManager.SpawnedObjects[m_TestObjectId];
             var serverTestComponentA = serverTestObject.GetComponent<ComponentA>();
             var serverTestComponentB = serverTestObject.GetComponent<ComponentB>();
             var serverTestComponentC = serverTestObject.GetComponent<ComponentC>();

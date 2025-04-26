@@ -17,13 +17,18 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Update the Lerp test to work with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private GameObject m_TestPrefab;
 
         private TestStartStopTransform m_AuthorityInstance;
         private List<TestStartStopTransform> m_NonAuthorityInstances = new List<TestStartStopTransform>();
 
         private NetworkTransform.InterpolationTypes m_InterpolationType;
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private NetworkManager m_AuthorityNetworkManager;
 
         private int m_NumberOfUpdates;
@@ -97,12 +102,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator StopAndStartMotion()
         {
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (!UseCMBService())
-            {
-                m_NetworkManagers.Insert(0, m_ServerNetworkManager);
-            }
-            m_AuthorityNetworkManager = m_NetworkManagers[0];
+            m_AuthorityNetworkManager = GetAuthorityNetworkManager();
 
             m_AuthorityInstance = SpawnObject(m_TestPrefab, m_AuthorityNetworkManager).GetComponent<TestStartStopTransform>();
             // Wait for all clients to spawn the instance

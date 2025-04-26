@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -16,7 +15,6 @@ namespace Unity.Netcode.RuntimeTests
         protected override int NumberOfClients => 2;
 
         private StringBuilder m_ErrorMsg = new StringBuilder();
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -89,9 +87,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator MixedAuthorityTest()
         {
-            m_NetworkManagers.Add(m_ServerNetworkManager);
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-
             for (int i = 0; i < k_Iterations; i++)
             {
                 MovePlayers();

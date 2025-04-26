@@ -21,6 +21,12 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 1;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkObjectSpawning(NetworkTopologyTypes networkTopology) : base(networkTopology) { }
 
 

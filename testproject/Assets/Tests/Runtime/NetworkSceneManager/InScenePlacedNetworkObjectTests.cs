@@ -27,6 +27,12 @@ namespace TestProject.RuntimeTests
         private bool m_CanStartServerAndClients;
         private string m_SceneLoading = k_SceneToLoad;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public InScenePlacedNetworkObjectTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         protected override IEnumerator OnSetup()

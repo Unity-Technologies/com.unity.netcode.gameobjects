@@ -53,6 +53,11 @@ namespace TestProject.RuntimeTests
         private OwnerShipMode m_OwnerShipMode;
         private AuthoritativeMode m_AuthoritativeMode;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         public NetworkAnimatorTests(HostOrServer hostOrServer, OwnerShipMode ownerShipMode, AuthoritativeMode authoritative)
         {
@@ -851,7 +856,7 @@ namespace TestProject.RuntimeTests
 
             // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
             var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
-            Assert.True(calculatedClients == TotalClients, $"Number of client");
+            Assert.True(calculatedClients == TotalClients, $"Incorrect number of clients: expected {calculatedClients}, actual {TotalClients}. network managers: {m_NetworkManagers.Length}, client side: {AnimatorTestHelper.ClientSideInstances.Count}");
 
             var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));

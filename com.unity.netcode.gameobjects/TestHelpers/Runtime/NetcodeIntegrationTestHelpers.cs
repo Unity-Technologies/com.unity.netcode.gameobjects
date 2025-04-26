@@ -171,18 +171,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private static readonly string k_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
+        private static readonly string k_TransportHost = GetAddressToBind();
         private static readonly ushort k_TransportPort = GetPortToBind();
 
         /// <summary>
         /// Configures the port to look for the rust service.
         /// </summary>
-        /// <returns>The port from the environment variable "ECHO_SERVER_PORT" if it is set and valid; otherwise uses port 7777</returns>
+        /// <returns>The port from the environment variable "CMB_SERVICE_PORT" if it is set and valid; otherwise uses port 7789</returns>
         private static ushort GetPortToBind()
         {
             var value = Environment.GetEnvironmentVariable("CMB_SERVICE_PORT");
             return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7789;
         }
+
+        /// <summary>
+        /// Configures the address to look for the rust service.
+        /// </summary>
+        /// <returns>The address from the environment variable "NGO_HOST" if it is set and valid; otherwise uses "127.0.0.1"</returns>
+        private static string GetAddressToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
+            return Dns.GetHostAddresses(value).First().ToString();
+        }
+
 
         private static void AddUnityTransport(NetworkManager networkManager, bool useCmbService = false)
         {
@@ -197,7 +208,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             unityTransport.ConnectTimeoutMS = 500;
             if (useCmbService)
             {
-                unityTransport.ConnectionData.Address = Dns.GetHostAddresses(k_TransportHost).First().ToString();
+                unityTransport.ConnectionData.Address = k_TransportHost;
                 unityTransport.ConnectionData.Port = k_TransportPort;
                 Debug.Log($"Using CmbService: {k_TransportHost}:{k_TransportPort}");
             }
@@ -1005,9 +1016,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
             result.Result = res;
         }
 
-        public static uint GetGlobalObjectIdHash(NetworkObject networkObject)
+
+        private static bool s_PreviousWasCmbServiceTest;
+
+        /// <summary>
+        /// Waits for a second if the previous and current tests are using the hosted CMB Service.
+        /// This is necessary as the CMB Service does not restart fast enough when running multiple tests.
+        /// </summary>
+        /// <param name="isCmbServiceTest"></param>
+        /// <returns>An <see cref="IEnumerator"/> that will wait for a second</returns>
+        public static IEnumerator WaitBetweenCmbServiceTests(bool isCmbServiceTest)
         {
-            return networkObject.GlobalObjectIdHash;
+            if (isCmbServiceTest && s_PreviousWasCmbServiceTest)
+            {
+                Debug.Log("Waiting for CMB service to be shut down during test setup.");
+                yield return new WaitForSeconds(1f);
+            }
+
+            s_PreviousWasCmbServiceTest = isCmbServiceTest;
         }
 
 #if UNITY_EDITOR

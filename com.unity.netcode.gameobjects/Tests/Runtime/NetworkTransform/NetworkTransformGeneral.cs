@@ -300,7 +300,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NonAuthoritativeTransform.Interpolate = interpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
 
-            m_EnableVerboseDebug = true;
             VerboseDebug($"Target Frame Rate: {Application.targetFrameRate}");
             // Test one parameter at a time first
             var newPosition = usingSmoothLerp ? new Vector3(15f, -12f, 10f) : new Vector3(55f, -24f, 20f);

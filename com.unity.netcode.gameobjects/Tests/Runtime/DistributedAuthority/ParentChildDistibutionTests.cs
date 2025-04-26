@@ -8,6 +8,8 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(DistributionTypes.UponConnect)]
+    [TestFixture(DistributionTypes.UponDisconnect)]
     internal class ParentChildDistibutionTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 4;
@@ -17,16 +19,22 @@ namespace Unity.Netcode.RuntimeTests
         private List<NetworkObject> m_TargetSpawnedObjects = new List<NetworkObject>();
         private List<NetworkObject> m_AltTargetSpawnedObjects = new List<NetworkObject>();
         private Dictionary<ulong, List<NetworkObject>> m_AncillarySpawnedObjects = new Dictionary<ulong, List<NetworkObject>>();
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private StringBuilder m_ErrorMsg = new StringBuilder();
+        private DistributionTypes m_DistributionType;
 
-        public ParentChildDistibutionTests() : base(HostOrServer.DAHost)
+        // TODO: [CmbServiceTesting] Update UponDisconnect tests to work with the rust service
+        protected override bool UseCMBService()
         {
+            return false;
+        }
+
+        public ParentChildDistibutionTests(DistributionTypes distributionType) : base(HostOrServer.DAHost)
+        {
+            m_DistributionType = distributionType;
         }
 
         protected override IEnumerator OnTearDown()
         {
-            m_NetworkManagers.Clear();
             m_TargetSpawnedObjects.Clear();
             m_AncillarySpawnedObjects.Clear();
             m_AltTargetSpawnedObjects.Clear();
@@ -46,6 +54,10 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorMsg.Clear();
             foreach (var client in m_NetworkManagers)
             {
+                if (!client.IsConnectedClient)
+                {
+                    continue;
+                }
                 foreach (var spawnedObject in m_TargetSpawnedObjects)
                 {
                     if (!client.SpawnManager.SpawnedObjects.ContainsKey(spawnedObject.NetworkObjectId))
@@ -63,6 +75,10 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorMsg.Clear();
             foreach (var client in m_NetworkManagers)
             {
+                if (!client.IsConnectedClient)
+                {
+                    continue;
+                }
                 foreach (var clientObjects in m_AncillarySpawnedObjects)
                 {
                     foreach (var spawnedObject in clientObjects.Value)
@@ -147,30 +163,19 @@ namespace Unity.Netcode.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator DistributeOwnerHierarchy([Values] DistributionTypes distributionType, [Values] OwnershipLocking ownershipLock)
+        public IEnumerator DistributeOwnerHierarchy([Values] OwnershipLocking ownershipLock)
         {
-            m_NetworkManagers.Clear();
             m_TargetSpawnedObjects.Clear();
             m_AncillarySpawnedObjects.Clear();
             m_AltTargetSpawnedObjects.Clear();
 
-            if (distributionType == DistributionTypes.UponConnect)
+            if (m_DistributionType == DistributionTypes.UponConnect)
             {
                 m_ClientNetworkManagers[3].Shutdown();
             }
 
-            if (!UseCMBService())
-            {
-                m_NetworkManagers.Add(m_ServerNetworkManager);
-            }
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (distributionType == DistributionTypes.UponConnect)
-            {
-                m_NetworkManagers.Remove(m_ClientNetworkManagers[3]);
-            }
-
-            // When testing connect redistribution, 
-            var instances = distributionType == DistributionTypes.UponDisconnect ? 1 : 2;
+            // When testing connect redistribution,
+            var instances = m_DistributionType == DistributionTypes.UponDisconnect ? 1 : 2;
             var rootObject = (GameObject)null;
             var childOne = (GameObject)null;
             var childTwo = (GameObject)null;
@@ -181,7 +186,7 @@ namespace Unity.Netcode.RuntimeTests
                 rootObject = SpawnObject(m_GenericPrefab, m_ClientNetworkManagers[0]);
                 networkObject = rootObject.GetComponent<NetworkObject>();
                 networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
-                if (ownershipLock == OwnershipLocking.LockRootParent && distributionType == DistributionTypes.UponConnect)
+                if (ownershipLock == OwnershipLocking.LockRootParent && m_DistributionType == DistributionTypes.UponConnect)
                 {
                     networkObject.SetOwnershipLock(true);
                 }
@@ -197,7 +202,7 @@ namespace Unity.Netcode.RuntimeTests
                 childTwo = SpawnObject(m_GenericPrefab, m_ClientNetworkManagers[0]);
                 networkObject = childTwo.GetComponent<NetworkObject>();
                 networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
-                if (ownershipLock == OwnershipLocking.LockTargetChild && distributionType == DistributionTypes.UponConnect)
+                if (ownershipLock == OwnershipLocking.LockTargetChild && m_DistributionType == DistributionTypes.UponConnect)
                 {
                     networkObject.SetOwnershipLock(true);
                 }
@@ -244,7 +249,7 @@ namespace Unity.Netcode.RuntimeTests
             // Get the original clientId
             m_OriginalOwnerId = m_ClientNetworkManagers[0].LocalClientId;
 
-            if (distributionType == DistributionTypes.UponDisconnect)
+            if (m_DistributionType == DistributionTypes.UponDisconnect)
             {
                 // Swap out the original owner's NetworkObject with one of the other client's since those instances will
                 // be destroyed when the client disconnects.
@@ -268,7 +273,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // When enabled, you should see one of the two root instances that have children get distributed to
             // the reconnected client.
-            if (m_EnableVerboseDebug && distributionType == DistributionTypes.UponConnect)
+            if (m_EnableVerboseDebug && m_DistributionType == DistributionTypes.UponConnect)
             {
                 m_ErrorMsg.Clear();
                 m_ErrorMsg.AppendLine($"Original targeted objects owner: {m_OriginalOwnerId}");
@@ -280,7 +285,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // We only want to make sure no other children owned by still connected clients change ownership
-            if (distributionType == DistributionTypes.UponDisconnect)
+            if (m_DistributionType == DistributionTypes.UponDisconnect)
             {
                 // Verify the ancillary objects kept the same ownership
                 yield return WaitForConditionOrTimeOut(AncillaryObjectsKeptOwnership);

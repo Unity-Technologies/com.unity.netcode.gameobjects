@@ -92,6 +92,12 @@ namespace Unity.Netcode.RuntimeTests
             NetworkTransform.DefaultInterpolationType = interpolation;
         }
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override void OnOneTimeTearDown()
         {
             NetworkTransform.AssignDefaultInterpolationType = false;

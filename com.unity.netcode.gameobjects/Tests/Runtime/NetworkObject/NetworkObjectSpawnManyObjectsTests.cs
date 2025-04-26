@@ -42,8 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };
 
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 client.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
             }
@@ -53,10 +52,11 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenManyObjectsAreSpawnedAtOnce_AllAreReceived()
         {
             var timeStarted = Time.realtimeSinceStartup;
+            var authority = GetAuthorityNetworkManager();
             for (int x = 0; x < k_SpawnedObjects; x++)
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
-                serverObject.NetworkManagerOwner = m_ServerNetworkManager;
+                serverObject.NetworkManagerOwner = authority;
                 serverObject.Spawn();
             }
 
