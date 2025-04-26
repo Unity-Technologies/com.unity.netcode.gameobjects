@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -246,7 +245,6 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-                  Debug.Log("Handling");
             var networkManager = (NetworkManager)context.SystemOwner;
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {

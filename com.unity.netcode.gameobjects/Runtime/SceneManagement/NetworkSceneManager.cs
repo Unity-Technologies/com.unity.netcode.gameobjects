@@ -3154,7 +3154,6 @@ namespace Unity.Netcode
             // When we transfer session owner and we are using a DAHost, this will be pertinent (otherwise it is not when connected to a DA service)
             internal ulong[] ObserverIds;
             internal ulong[] NewObserverIds;
-            internal byte[] CustomSpawnData;
             internal NetworkObject.SceneObject SceneObject;
             internal FastBufferReader FastBufferReader;
         }
@@ -3172,7 +3171,7 @@ namespace Unity.Netcode
                 ObserverIds = observerIds,
                 NewObserverIds = newObserverIds,
                 SceneObject = sceneObject,
-		};
+            };
 
             unsafe
             {

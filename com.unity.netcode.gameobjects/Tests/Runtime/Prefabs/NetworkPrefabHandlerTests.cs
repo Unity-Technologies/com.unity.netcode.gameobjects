@@ -110,9 +110,8 @@ namespace Unity.Netcode.RuntimeTests
             //Test result of registering via GameObject reference
             Assert.True(gameObjectRegistered);
 
-			var bufferReaderSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
-                  Debug.Log("SENDING Writter BUFFFER Tests");
-			var spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, ref bufferReaderSerializer, prefabPosition, prefabRotation);
+			var instantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
+			var spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, ref instantiationPayloadWriter, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
@@ -137,9 +136,8 @@ namespace Unity.Netcode.RuntimeTests
             prefabPosition = new Vector3(2.0f, 1.0f, 5.0f);
             prefabRotation = new Quaternion(4.0f, 1.5f, 5.4f, 5.1f);
 
-			bufferReaderSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
-                  Debug.Log("SENDING Writter BUFFFER Tests");
-			spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0,ref bufferReaderSerializer, prefabPosition, prefabRotation);
+			instantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
+			spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0,ref instantiationPayloadWriter, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
@@ -164,9 +162,8 @@ namespace Unity.Netcode.RuntimeTests
             prefabPosition = new Vector3(6.0f, 4.0f, 1.0f);
             prefabRotation = new Quaternion(3f, 2f, 4f, 1f);
 
-			bufferReaderSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
-			Debug.Log("SENDING Writter BUFFFER Tests");
-			spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, ref bufferReaderSerializer, prefabPosition, prefabRotation);
+			instantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(0, Collections.Allocator.Temp)));
+			spawnedObject = networkPrefabHandler.HandleNetworkPrefabSpawn(baseObject.GlobalObjectIdHash, 0, ref instantiationPayloadWriter, prefabPosition, prefabRotation);
 
             //Test that something was instantiated
             Assert.NotNull(spawnedObject);
