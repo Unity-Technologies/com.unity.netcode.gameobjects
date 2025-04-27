@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -44,6 +45,13 @@ namespace Unity.Netcode
         [HideInInspector]
         [SerializeField]
         internal uint InScenePlacedSourceGlobalObjectIdHash;
+
+        /// <summary>
+        /// Metadata sent during the instantiation process.
+        /// Retrieved in INetworkCustomSpawnDataSynchronizer before instantiation,
+        /// and available to INetworkPrefabInstanceHandler.Instantiate() for custom handling by user code.
+        /// </summary>
+        internal FastBufferReader InstantiationPayload;
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
@@ -2812,6 +2820,7 @@ namespace Unity.Netcode
             public ulong NetworkObjectId;
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
+            public FastBufferReader InstantiationPayload;
 
             public bool IsPlayerObject
             {
@@ -2882,6 +2891,12 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 10, value);
             }
 
+            public bool HasInstantiationPayload
+            {
+                get => ByteUtility.GetBit(m_BitField, 11);
+                set => ByteUtility.SetBit(ref m_BitField, 11, value);
+            }
+
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.
             public ulong[] Observers;
@@ -2948,10 +2963,24 @@ namespace Unity.Netcode
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
+                if (HasInstantiationPayload)
+                {
+                    writeSize += FastBufferWriter.GetWriteSize<int>();
+                    writeSize += InstantiationPayload.Length;
+                }
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
+                }
+
+                if (HasInstantiationPayload)
+                {
+                    writer.WriteValueSafe(InstantiationPayload.Length);
+                    unsafe
+                    {
+                        writer.WriteBytes(InstantiationPayload.GetUnsafePtr(), InstantiationPayload.Length);
+                    }
                 }
 
                 if (HasTransform)
@@ -3014,10 +3043,32 @@ namespace Unity.Netcode
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
 
+                int preInstanceDataSize = 0;
+                if (HasInstantiationPayload)
+                {
+                    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize<int>()))
+                    {
+                        throw new OverflowException($"Could not deserialize SceneObject: Reading past the end of the buffer ({nameof(InstantiationPayload)} size)");
+                    }
+
+                    reader.ReadValueSafe(out preInstanceDataSize);
+                    readSize += FastBufferWriter.GetWriteSize<int>();
+                    readSize += preInstanceDataSize;
+                }
+
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
+                }
+
+                if (HasInstantiationPayload)
+                {
+                    unsafe
+                    {
+                        InstantiationPayload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, preInstanceDataSize);
+                        reader.Seek(reader.Position + preInstanceDataSize);
+                    }
                 }
 
                 if (HasTransform)
@@ -3148,7 +3199,9 @@ namespace Unity.Netcode
                 NetworkSceneHandle = NetworkSceneHandle,
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
-                TargetClientId = targetClientId
+                TargetClientId = targetClientId,
+                HasInstantiationPayload = InstantiationPayload.IsInitialized,
+                InstantiationPayload = InstantiationPayload
             };
 
             // Handle Parenting
@@ -3242,6 +3295,11 @@ namespace Unity.Netcode
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
             networkObject.OwnerClientId = sceneObject.OwnerClientId;
+
+            // Even though the Instantiation Payload is typically consumed during the spawn message handling phase,
+            // we still assign it here to preserve the original spawn metadata for potential inspection, diagnostics,
+            // or in case future systems want to access it directly without relying on synchronization messages.
+            networkObject.InstantiationPayload = sceneObject.InstantiationPayload;
 
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
             networkObject.InvokeBehaviourNetworkPreSpawn();
