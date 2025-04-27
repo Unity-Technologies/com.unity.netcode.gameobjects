@@ -678,12 +678,12 @@ namespace Unity.Netcode
 
         internal static readonly Dictionary<InstantiateAndSpawnErrorTypes, string> InstantiateAndSpawnErrors = new Dictionary<InstantiateAndSpawnErrorTypes, string>(
             new KeyValuePair<InstantiateAndSpawnErrorTypes, string>[]{
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkPrefabNull, $"The {nameof(NetworkObject)} prefab parameter was null!"),
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotAuthority, $"Only the server has authority to {nameof(InstantiateAndSpawn)}!"),
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown, $"Invoking {nameof(InstantiateAndSpawn)} while shutting down! Calls to {nameof(InstantiateAndSpawn)} will be ignored."),
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab, $"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab?"),
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkManagerNull, $"The {nameof(NetworkManager)} parameter was null!"),
-            new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NoActiveSession, "You can only invoke this method when you are connected to an existing/in-progress network session!")
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkPrefabNull, $"The {nameof(NetworkObject)} prefab parameter was null!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotAuthority, $"Only the server has authority to {nameof(InstantiateAndSpawn)}!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.InvokedWhenShuttingDown, $"Invoking {nameof(InstantiateAndSpawn)} while shutting down! Calls to {nameof(InstantiateAndSpawn)} will be ignored."),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NotRegisteredNetworkPrefab, $"The {nameof(NetworkObject)} parameter is not a registered network prefab. Did you forget to register it or are you trying to instantiate and spawn an instance of a network prefab?"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NetworkManagerNull, $"The {nameof(NetworkManager)} parameter was null!"),
+                new KeyValuePair<InstantiateAndSpawnErrorTypes, string>(InstantiateAndSpawnErrorTypes.NoActiveSession, "You can only invoke this method when you are connected to an existing/in-progress network session!")
             });
 
         /// <summary>
