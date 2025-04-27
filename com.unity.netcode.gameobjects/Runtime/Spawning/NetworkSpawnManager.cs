@@ -748,7 +748,7 @@ namespace Unity.Netcode
             // - Distributed authority mode always spawns the override if one exists.
             if (forceOverride || NetworkManager.IsClient || NetworkManager.DistributedAuthorityMode || NetworkManager.PrefabHandler.ContainsHandler(networkPrefab.GlobalObjectIdHash))
             {
-                var intantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(20, Collections.Allocator.Temp)));
+                var intantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(16, Collections.Allocator.Temp, int.MaxValue)));
                 networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, ref intantiationPayloadWriter, position, rotation);
             }
             else // Under this case, server instantiate the prefab passed in.

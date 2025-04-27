@@ -227,6 +227,30 @@ namespace Unity.Netcode
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
 
         /// <summary>
+        /// Injects instantiation payload on the networkObject
+        /// </summary>
+        /// <param name="networkObject">Injection target</param>
+        internal void InjectInstantiationPayload(NetworkObject networkObject)
+        {
+            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkObject.GlobalObjectIdHash, out var prefabInstanceHandler))
+            {
+                if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
+                {
+                    var fastBufferWriter = new FastBufferWriter(16, Collections.Allocator.Temp, int.MaxValue);
+                    var instantiationPayloadBufferWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(fastBufferWriter));
+                    synchronizer.OnSynchronize(ref instantiationPayloadBufferWriter);
+                    if (fastBufferWriter.Length > 0)
+                    {
+                        unsafe
+                        {
+                            networkObject.InstantiationPayload = new FastBufferReader(fastBufferWriter.GetUnsafePtr(), Collections.Allocator.Persistent, fastBufferWriter.Length);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
         /// </summary>
         /// <param name="networkPrefabHash"></param>
@@ -255,35 +279,22 @@ namespace Unity.Netcode
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
-        internal NetworkObject HandleNetworkPrefabSpawn<T>(uint networkPrefabAssetHash, ulong ownerClientId, ref BufferSerializer<T> preInstanceDataSerializer, Vector3 position, Quaternion rotation) where T : IReaderWriter
+        internal NetworkObject HandleNetworkPrefabSpawn<T>(uint networkPrefabAssetHash, ulong ownerClientId, ref BufferSerializer<T> InstantiationPayloadSerializer, Vector3 position, Quaternion rotation) where T : IReaderWriter
         {
             if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
             {
-                if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
+                if (InstantiationPayloadSerializer.IsReader)
                 {
-                    synchronizer.OnSynchronize(ref preInstanceDataSerializer);
+                    FastBufferReader instantiationPayloadReader = InstantiationPayloadSerializer.GetFastBufferReader();
+                    bool ShouldSychronize = instantiationPayloadReader.IsInitialized && instantiationPayloadReader.Length > 0;
+                    if (ShouldSychronize && prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
+                    {
+                        synchronizer.OnSynchronize(ref InstantiationPayloadSerializer);
+                    }
                 }
 
                 var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-                
-                if (networkObjectInstance != null)
-                {
-                    if (preInstanceDataSerializer.IsReader)
-                    {
-                        networkObjectInstance.InstantiationPayload = preInstanceDataSerializer.GetFastBufferReader();
-                    }
-                    else
-                    {
-                        var writer = preInstanceDataSerializer.GetFastBufferWriter();
-                        if (writer.Length > 0)
-                        {
-                            unsafe
-                            {
-                                networkObjectInstance.InstantiationPayload = new FastBufferReader(writer.GetUnsafePtr(), Collections.Allocator.Persistent, writer.Length);
-                            }
-                        }
-                    }
-                }
+
                 //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
                 //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
                 if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))

@@ -1819,6 +1819,8 @@ namespace Unity.Netcode
                 }
             }
 
+            NetworkManager.PrefabHandler.InjectInstantiationPayload(this);
+
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
