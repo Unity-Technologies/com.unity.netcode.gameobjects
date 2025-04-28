@@ -138,11 +138,11 @@ run_all_webgl_builds_6000:
   name: Run All WebGl Build [6000.0]
   dependencies:
 {% for project in projects.default -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for platform in test_platforms.desktop -%}
+{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_6000.0
-{% endfor -%}
 {% endif -%}
+{% endfor -%}
 {% endfor -%}
 
 
