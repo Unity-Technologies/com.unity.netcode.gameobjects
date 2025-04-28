@@ -38,6 +38,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             NetworkObjectTestComponent.Reset();
+            m_EnableVerboseDebug = true;
             NetworkObjectTestComponent.VerboseDebug = m_EnableVerboseDebug;
             m_CanStartServerAndClients = false;
             return base.OnSetup();
@@ -104,9 +105,13 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(status == SceneEventProgressStatus.Started, $"When attempting to load scene {k_SceneToLoad} was returned the following progress status: {status}");
             // We removed a client from the initial spawn and server should spawn too
             var clientCount = TotalClients - (m_UseHost ? 1 : 0);
+
             // This verifies the scene loaded and the in-scene placed NetworkObjects spawned.
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
             AssertOnTimeout($"Timed out waiting for total spawned in-scene placed NetworkObjects to reach a count of {clientCount} and is currently {NetworkObjectTestComponent.SpawnedInstances.Count}");
+
+            yield return WaitForConditionOrTimeOut(() => m_ServerSideSceneLoaded.IsValid() && m_ServerSideSceneLoaded.isLoaded);
+            AssertOnTimeout($"Timed out waiting for server to finish loading scene {k_SceneToLoad}!");
 
             // Get the server-side instance of the in-scene NetworkObject
             Assert.True(s_GlobalNetworkObjects.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Could not find server instance of the test in-scene NetworkObject!");

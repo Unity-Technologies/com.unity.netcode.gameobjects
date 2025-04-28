@@ -210,7 +210,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 unityTransport.ConnectionData.Address = k_TransportHost;
                 unityTransport.ConnectionData.Port = k_TransportPort;
-                Debug.Log($"Using CmbService: {k_TransportHost}:{k_TransportPort}");
             }
 
             // Set the NetworkConfig
@@ -1023,13 +1022,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits for a second if the previous and current tests are using the hosted CMB Service.
         /// This is necessary as the CMB Service does not restart fast enough when running multiple tests.
         /// </summary>
-        /// <param name="isCmbServiceTest"></param>
+        /// <param name="isCmbServiceTest">Whether the currently running test is running against a hosted CMB service instance</param>
         /// <returns>An <see cref="IEnumerator"/> that will wait for a second</returns>
         public static IEnumerator WaitBetweenCmbServiceTests(bool isCmbServiceTest)
         {
             if (isCmbServiceTest && s_PreviousWasCmbServiceTest)
             {
-                Debug.Log("Waiting for CMB service to be shut down during test setup.");
+                // TODO: [CmbServiceTests] investigate whether we can reduce this timeout
                 yield return new WaitForSeconds(1f);
             }
 

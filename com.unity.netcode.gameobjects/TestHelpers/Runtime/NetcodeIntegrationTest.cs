@@ -180,6 +180,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_DistributedAuthority;
         protected NetworkTopologyTypes m_NetworkTopologyType = NetworkTopologyTypes.ClientServer;
 
+        /// <summary>
+        /// Indicates whether the currently running tests are targeting the hosted CMB Service
+        /// </summary>
+        /// <remarks>Can only be true if <see cref="UseCMBService"/> returns true.</remarks>
         protected bool m_UseCmbService;
 
         /// <summary>
@@ -193,7 +197,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
 #else
             var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "unset";
-            Debug.Log($"Using CMB service: {useCmbService}");
             return useCmbService.ToLower() == "true";
 #endif
         }
@@ -398,6 +401,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
+            m_NumberOfClients = NumberOfClients;
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
             {
@@ -417,7 +421,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (m_SetupIsACoroutine)
             {
                 yield return NetcodeIntegrationTestHelpers.WaitBetweenCmbServiceTests(m_UseCmbService);
-
                 yield return OnSetup();
             }
             else
@@ -514,6 +517,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             m_ClientNetworkManagers = clientNetworkManagersList.ToArray();
+            m_NumberOfClients = clientNetworkManagersList.Count;
 
             if (!m_UseCmbService)
             {
@@ -948,6 +952,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // When using the CMBService, we don't have a server, so get the appropriate authority network manager
                 var authorityManager = GetAuthorityNetworkManager();
 
+                VerboseDebug($"Starting with useCmbService: {m_UseCmbService}");
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
                 {
                     Debug.LogError("Failed to start instances");
@@ -1005,7 +1010,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                     if (m_DistributedAuthority)
                     {
-                        foreach (var networkManager in m_ClientNetworkManagers)
+                        foreach (var networkManager in m_NetworkManagers)
                         {
                             yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
@@ -1099,11 +1104,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                         foreach (var networkManager in m_NetworkManagers)
                         {
-                            if (networkManager.DistributedAuthorityMode)
-                            {
-                                WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
-                                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
-                            }
+                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
+                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
                         }
                     }
 

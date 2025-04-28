@@ -19,6 +19,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager m_SpawnOwner;
 
         // TODO: [CmbServiceTests] Adapt to run with the service (can't control who becomes the session owner, needs a logic rework)
+        /// <inheritdoc/>
         protected override bool UseCMBService()
         {
             return false;
