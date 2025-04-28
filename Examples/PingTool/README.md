@@ -1,5 +1,5 @@
 # Netcode for GameObjects Ping Tool
-This project is only for example purposes and provides one example of how to one can acquire ping times between clients during a network session. It also includes integration with the Realtime Network Stats Monitor tool that provides additional relative (and useful) network stats.
+This project is only for example purposes and provides one example of how one can acquire ping times between clients during a network session. It also includes integration with the Realtime Network Stats Monitor tool that provides additional relative (and useful) network stats.
 
 ## Ping Tool
 The ping tool lives in its own assembly for convenience purposes:
