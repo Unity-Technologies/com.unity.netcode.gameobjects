@@ -91,7 +91,7 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
   commands:
 # If ubuntu, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
-    - ./Tools/CI/rust.sh
+    - ./Tools/CI/run_cmb_service.sh
 {% endif %}
 
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models

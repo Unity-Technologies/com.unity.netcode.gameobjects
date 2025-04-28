@@ -96,9 +96,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        protected int TotalClients => m_UseHost ? NumberOfClients + 1 : NumberOfClients;
+        /// <summary>
+        /// Total number of clients that should be connected at any point during a test
+        /// </summary>
+        protected int TotalClients => m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
 
         protected const uint k_DefaultTickRate = 30;
+
+        private int m_NumberOfClients;
         protected abstract int NumberOfClients { get; }
 
         /// <summary>
@@ -420,7 +425,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_SetupIsACoroutine)
             {
-                yield return NetcodeIntegrationTestHelpers.WaitBetweenCmbServiceTests(m_UseCmbService);
+                // yield return NetcodeIntegrationTestHelpers.WaitBetweenCmbServiceTests(m_UseCmbService);
                 yield return OnSetup();
             }
             else

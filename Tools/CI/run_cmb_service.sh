@@ -12,8 +12,8 @@ cargo build --example ngo_echo_server
 # Run the echo server in the background - this will reuse the artifacts from the build
 cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
 
-# Build the standalone server
-cargo build
+# Build a release version of the standalone server
+cargo build --release --locked
 
 # Run the standalone server on an infinite loop in the background
-while :; do cargo run -- --metrics-port 5000 standalone --port $COMB_SERVER_PORT -t 60m; done &
+while :; do ./target/release/comb-server --metrics-port 5000 standalone --port $COMB_SERVER_PORT -t 60m; done &

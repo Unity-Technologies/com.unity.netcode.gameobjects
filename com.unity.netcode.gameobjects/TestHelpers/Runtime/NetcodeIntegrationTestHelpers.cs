@@ -1015,26 +1015,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             result.Result = res;
         }
 
-
-        private static bool s_PreviousWasCmbServiceTest;
-
-        /// <summary>
-        /// Waits for a second if the previous and current tests are using the hosted CMB Service.
-        /// This is necessary as the CMB Service does not restart fast enough when running multiple tests.
-        /// </summary>
-        /// <param name="isCmbServiceTest">Whether the currently running test is running against a hosted CMB service instance</param>
-        /// <returns>An <see cref="IEnumerator"/> that will wait for a second</returns>
-        public static IEnumerator WaitBetweenCmbServiceTests(bool isCmbServiceTest)
-        {
-            if (isCmbServiceTest && s_PreviousWasCmbServiceTest)
-            {
-                // TODO: [CmbServiceTests] investigate whether we can reduce this timeout
-                yield return new WaitForSeconds(1f);
-            }
-
-            s_PreviousWasCmbServiceTest = isCmbServiceTest;
-        }
-
 #if UNITY_EDITOR
         public static void SetRefreshAllPrefabsCallback(Action scenesProcessed)
         {

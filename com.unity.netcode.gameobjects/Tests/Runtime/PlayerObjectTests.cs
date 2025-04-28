@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
         // TODO: [CmbServiceTests] Clients are disconnecting in a way that makes the cmb service slow to close and restart
         protected override bool UseCMBService()
         {
-            return false;
+            return true;
         }
         public PlayerObjectTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -78,7 +78,7 @@ namespace Unity.Netcode.RuntimeTests
         // TODO: [CmbServiceTests] Clients are disconnecting in a way that makes the cmb service slow to close and restart
         protected override bool UseCMBService()
         {
-            return false;
+            return true;
         }
         public PlayerSpawnNoObserversTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -144,7 +144,7 @@ namespace Unity.Netcode.RuntimeTests
         // TODO: [CmbServiceTests] Clients are disconnecting in a way that makes the cmb service slow to close and restart
         protected override bool UseCMBService()
         {
-            return false;
+            return true;
         }
         public PlayerSpawnPositionTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -218,7 +218,7 @@ namespace Unity.Netcode.RuntimeTests
         // TODO: [CmbServiceTests] Clients are disconnecting in a way that makes the cmb service slow to close and restart
         protected override bool UseCMBService()
         {
-            return false;
+            return true;
         }
 
         public PlayerSpawnAndDespawnTests(HostOrServer hostOrServer) : base(hostOrServer) { }
