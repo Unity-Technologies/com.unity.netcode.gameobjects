@@ -1,5 +1,5 @@
 # Netcode for GameObjects Ping Tool
-This project is only for example purposes and provides one example of how one can acquire ping times between clients during a network session. It also includes integration with the Realtime Network Stats Monitor tool that provides additional relative (and useful) network stats.
+This project is only for example purposes and provides an example of how one can acquire ping times between clients during a network session. It also includes integration with the Realtime Network Stats Monitor tool that provides additional relative (and useful) network stats.
 
 ## Ping Tool
 The ping tool lives in its own assembly for convenience purposes:
@@ -17,8 +17,8 @@ The ping tool includes a runtime "Ping Rate" slider that provides you with the a
 
 ## Ping Tool RNSM Integration
 Depending upon the network topology selected in the **NetworkManager** depends upon how information is displayed.
-The RTT values represnt the UnitTransport's Round Trip Time calculated values.
-The Ping values represent the time it takes to send a message from client-a to client-b which includes the time it takes to be serialized, added to the outbound queue, sent via UTP, received by UTP, deserialized and processed on the client-b side. The delta time is based off of the delta network server time on client-a and client-b.
+The RTT values represnt the UnityTransport's Round Trip Time calculated values.
+The Ping values represent the time it takes to send a message from Client-A to Client-B which includes the time it takes to be serialized, added to the outbound queue, sent via UTP, received by UTP, deserialized and processed on the Client-B side. The delta time is based off of the delta network server time on Client-A and Client-B.
 
 ### Client-Server Network Topology
 When using a client-server network topology, upon first starting a host with no other connected clients you should see no stats other than the frame frate:
