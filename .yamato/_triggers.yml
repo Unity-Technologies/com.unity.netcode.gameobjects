@@ -58,7 +58,7 @@ pull_request_trigger:
     - .yamato/_run-all.yml#run_all_project_tests_6000
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_trunk
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_6000.0
   triggers:
     cancel_old_ci: true
     pull_requests:
