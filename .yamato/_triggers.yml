@@ -47,7 +47,7 @@ pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.0
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # Run package EditMode and Playmode package tests on trunk
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     # Run package EditMode and Playmode package tests on minimum supported editor (6000.0 in case of NGOv2.X)
@@ -83,7 +83,6 @@ develop_nightly:
   dependencies:
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.0
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 6000.0
