@@ -52,9 +52,9 @@ pull_request_trigger:
     - .yamato/_run-all.yml#run_all_project_tests_trunk
     # Run project EditMode and PLaymode project tests on minimum supported editor (2021.3 in case of NGOv1.X)
     - .yamato/_run-all.yml#run_all_project_tests_2021
-    # Run standalone test with mixture of parameters to make sure there are no obvious issues with most common platform (for example --fail-on-assert option is not present with package/project tests). We run 2 different combinations with different platform/editor/scripting backend.
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_mac_il2cpp_trunk
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_mono_2021.3
+    # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
+    # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_2021.3
   triggers:
     cancel_old_ci: true
     pull_requests:
