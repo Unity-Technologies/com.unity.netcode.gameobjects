@@ -649,11 +649,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     continue;
                 }
 
-                // if (networkManager.SpawnManager == null)
-                // {
-                //     return false;
-                // }
-
                 var playerObjectRelative = networkManager.SpawnManager.PlayerObjects.FirstOrDefault(c => c.OwnerClientId == joinedClient.LocalClientId);
                 if (playerObjectRelative == null)
                 {
@@ -967,7 +962,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
-                Debug.Log($"Server has SpawnManager after start : {m_ServerNetworkManager.SpawnManager != null}");
 
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
                 // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
@@ -995,7 +989,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     yield return WaitForClientsConnectedOrTimeOut();
 
                     AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
-                    Debug.Log($"all clients should be connected. SpawnManger exists: {m_ServerNetworkManager.SpawnManager != null}");
 
                     if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
@@ -1023,7 +1016,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         foreach (var networkManager in m_NetworkManagers)
                         {
-                            Debug.Log($"Attempting to check spawn manager of client: {networkManager.LocalClientId}. Has spawned manager: {networkManager.SpawnManager != null}");
                             yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                         }
