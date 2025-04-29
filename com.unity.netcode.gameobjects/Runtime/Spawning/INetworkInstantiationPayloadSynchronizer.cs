@@ -16,5 +16,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="serializer">The buffer serializer used to read or write custom instantiation data.</param>
         void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter;
-	}
+        //void Serialize(FastBufferWriter writer);
+        //void Deserialize(FastBufferReader reader);
+    }
 }

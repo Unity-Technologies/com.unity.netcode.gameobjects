@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -226,29 +227,33 @@ namespace Unity.Netcode
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
 
-        /// <summary>
-        /// Injects instantiation payload on the networkObject
-        /// </summary>
-        /// <param name="networkObject">Injection target</param>
-        internal void InjectInstantiationPayload(NetworkObject networkObject)
+        internal bool HasPayloadSynchronizer(uint objectHash) => TryGetPayloadSynchronizer(objectHash, out _);
+        internal bool TryGetPayloadSynchronizer(uint objectHash, out INetworkInstantiationPayloadSynchronizer synchronizer)
         {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkObject.GlobalObjectIdHash, out var prefabInstanceHandler))
+            if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
+            {
+                if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer payloadSynchronizer)
+                {
+                    synchronizer = payloadSynchronizer;
+                    return true;
+                }
+            }
+            synchronizer = null;
+            return false;
+        }
+
+        internal void ReadInstantiationPayload(uint objectHash, FastBufferReader reader)
+        {
+            if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
             {
                 if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
                 {
-                    var fastBufferWriter = new FastBufferWriter(16, Collections.Allocator.Temp, int.MaxValue);
-                    var instantiationPayloadBufferWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(fastBufferWriter));
-                    synchronizer.OnSynchronize(ref instantiationPayloadBufferWriter);
-                    if (fastBufferWriter.Length > 0)
-                    {
-                        unsafe
-                        {
-                            networkObject.InstantiationPayload = new FastBufferReader(fastBufferWriter.GetUnsafePtr(), Collections.Allocator.Persistent, fastBufferWriter.Length);
-                        }
-                    }
+                    var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                    synchronizer.OnSynchronize(ref instantiationPayloadBufferReader);
                 }
             }
         }
+     
 
         /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
@@ -279,20 +284,10 @@ namespace Unity.Netcode
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
-        internal NetworkObject HandleNetworkPrefabSpawn<T>(uint networkPrefabAssetHash, ulong ownerClientId, ref BufferSerializer<T> InstantiationPayloadSerializer, Vector3 position, Quaternion rotation) where T : IReaderWriter
+        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
             {
-                if (InstantiationPayloadSerializer.IsReader)
-                {
-                    FastBufferReader instantiationPayloadReader = InstantiationPayloadSerializer.GetFastBufferReader();
-                    bool ShouldSychronize = instantiationPayloadReader.IsInitialized && instantiationPayloadReader.Length > 0;
-                    if (ShouldSychronize && prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
-                    {
-                        synchronizer.OnSynchronize(ref InstantiationPayloadSerializer);
-                    }
-                }
-
                 var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
 
                 //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)

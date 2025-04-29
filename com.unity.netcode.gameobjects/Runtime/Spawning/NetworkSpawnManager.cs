@@ -749,7 +749,7 @@ namespace Unity.Netcode
             if (forceOverride || NetworkManager.IsClient || NetworkManager.DistributedAuthorityMode || NetworkManager.PrefabHandler.ContainsHandler(networkPrefab.GlobalObjectIdHash))
             {
                 var intantiationPayloadWriter = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(16, Collections.Allocator.Temp, int.MaxValue)));
-                networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, ref intantiationPayloadWriter, position, rotation);
+                networkObject = GetNetworkObjectToSpawn(networkPrefab.GlobalObjectIdHash, ownerClientId, position, rotation);
             }
             else // Under this case, server instantiate the prefab passed in.
             {
@@ -780,14 +780,14 @@ namespace Unity.Netcode
         /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
-        internal NetworkObject GetNetworkObjectToSpawn<T>(uint globalObjectIdHash, ulong ownerId, ref BufferSerializer<T> instantiationPayloadSerializer, Vector3? position, Quaternion? rotation, bool isScenePlaced = false) where T : IReaderWriter
+        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
         {
             NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
             if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
             {
                 // Let the handler spawn the NetworkObject
-                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, ref instantiationPayloadSerializer, position ?? default, rotation ?? default);
+                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default);
                 networkObject.NetworkManagerOwner = NetworkManager;
             }
             else
@@ -889,8 +889,7 @@ namespace Unity.Netcode
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
             {
-                var instantiationPayloadReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(sceneObject.InstantiationPayload));
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, ref instantiationPayloadReader, position, rotation, sceneObject.IsSceneObject);
+                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject);
             }
             else // Get the in-scene placed NetworkObject
             {
