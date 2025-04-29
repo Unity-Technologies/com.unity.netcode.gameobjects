@@ -25,15 +25,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;
         }
 
-        protected override IEnumerator OnSetup()
-        {
-            // TODO: [CmbServiceTests] remove this wait once the delay in service restart is fixed
-            if (m_UseCmbService)
-            {
-                yield return new WaitForSeconds(0.5f);
-            }
-        }
-
         protected override void OnServerAndClientsCreated()
         {
             m_TestNetworkPrefab = CreateNetworkObjectPrefab("Object");

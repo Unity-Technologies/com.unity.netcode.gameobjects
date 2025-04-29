@@ -103,8 +103,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected const uint k_DefaultTickRate = 30;
 
-        private int m_NumberOfClients;
+        /// <summary>
+        /// Specifies the number of client instances to be created for the integration test.
+        /// </summary>
+        /// <remarks>
+        /// When running with a hosted CMB Service, NumberOfClients + 1 clients are created.
+        /// This holds assumptions throughout the test suite that when running with a host, there is an extra client.
+        /// For example, see the calculation for <see cref="TotalClients"/>.
+        /// </remarks>
         protected abstract int NumberOfClients { get; }
+        private int m_NumberOfClients;
 
         /// <summary>
         /// Set this to false to create the clients first.
@@ -131,11 +139,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected GameObject m_PlayerPrefab;
 
-        /// <summary>The Server <see cref="NetworkManager"/> instance</summary>
+        /// <summary>The Server <see cref="NetworkManager"/> instance instantiated and tracked within the current test</summary>
         protected NetworkManager m_ServerNetworkManager;
-        /// <summary>All the client <see cref="NetworkManager"/> instances</summary>
+        /// <summary>All the client <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
         protected NetworkManager[] m_ClientNetworkManagers;
-        /// <summary>All the <see cref="NetworkManager"/> instances</summary>
+        /// <summary>All the <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
         protected NetworkManager[] m_NetworkManagers;
 
         /// <summary>
@@ -595,6 +603,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // in the event any modifications need to be made before starting the client
             OnNewClientCreated(networkManager);
 
+            yield return StartClient(networkManager);
+        }
+
+        /// <summary>
+        /// Starts and connects the given networkManager as a client while in the middle of an
+        /// integration test.
+        /// </summary>
+        /// <param name="networkManager">The network manager to start and connect</param>
+        /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
+        protected IEnumerator StartClient(NetworkManager networkManager)
+        {
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
 
             if (LogAllMessages)
@@ -706,21 +725,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This will stop a client while in the middle of an integration test
+        /// This will stop the given <see cref="NetworkManager"/> instance while in the middle of an integration test.
+        /// The instance is then removed from the lists of managed instances (<see cref="m_NetworkManagers"/>, <see cref="m_ClientNetworkManagers"/>).
         /// </summary>
+        /// <remarks>
+        /// If there are no other references to the managed instance, it will be destroyed regardless of the destroy parameter.
+        /// To avoid this, save a reference to the <see cref="NetworkManager"/> instance before calling this method.
+        /// </remarks>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> instance of the client to stop.</param>
+        /// <param name="destroy">Whether the <see cref="NetworkManager"/> instance should be destroyed after stopping. Defaults to false.</param>
+        /// <returns>An <see cref="IEnumerator"/> to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
-            if (destroy)
-            {
-                AddRemoveNetworkManager(networkManager, false);
-            }
+            AddRemoveNetworkManager(networkManager, false);
             yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
         }
 
         /// <summary>
-        /// This will stop a client while in the middle of an integration test
+        /// This will stop the given <see cref="NetworkManager"/> instance while in the middle of a time travel integration test.
+        /// The instance is then removed from the lists of managed instances (<see cref="m_NetworkManagers"/>, <see cref="m_ClientNetworkManagers"/>).
         /// </summary>
+        /// <remarks>
+        /// If there are no other references to the managed instance, it will be destroyed regardless of the destroy parameter.
+        /// To avoid this, save a reference to the <see cref="NetworkManager"/> instance before calling this method.
+        /// </remarks>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> instance of the client to stop.</param>
+        /// <param name="destroy">Whether the <see cref="NetworkManager"/> instance should be destroyed after stopping. Defaults to false.</param>
         protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);

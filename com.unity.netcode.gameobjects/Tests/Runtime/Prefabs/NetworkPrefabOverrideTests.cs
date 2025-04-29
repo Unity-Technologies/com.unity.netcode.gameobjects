@@ -258,7 +258,7 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_DistributedAuthority)
             {
-                networkManagerOwner = m_ClientNetworkManagers[1];
+                networkManagerOwner = GetNonAuthorityNetworkManager();
             }
 
             // Clients and Host will spawn the OverridingTargetPrefab while a dedicated server will spawn the SourcePrefabToOverride

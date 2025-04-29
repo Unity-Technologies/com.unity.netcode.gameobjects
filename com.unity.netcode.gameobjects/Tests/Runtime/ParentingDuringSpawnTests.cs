@@ -71,14 +71,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkSpawnType = networkSpawnType;
         }
 
-        protected override IEnumerator OnSetup()
-        {
-            if (m_UseCmbService)
-            {
-                yield return new WaitForSeconds(0.5f);
-            }
-        }
-
         protected override void OnServerAndClientsCreated()
         {
             m_ParentPrefab = CreateNetworkObjectPrefab("Parent");

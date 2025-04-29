@@ -26,7 +26,6 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_LateJoinClientCount = 4;
         protected override int NumberOfClients => 0;
 
-
         public DistributeObjectsTests() : base(HostOrServer.DAHost)
         {
         }

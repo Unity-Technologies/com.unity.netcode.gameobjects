@@ -856,7 +856,7 @@ namespace TestProject.RuntimeTests
 
             // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
             var calculatedClients = AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0);
-            Assert.True(calculatedClients == TotalClients, $"Incorrect number of clients: actual {calculatedClients}, expected {TotalClients}. network managers: {m_NetworkManagers.Length}, client side: {AnimatorTestHelper.ClientSideInstances.Count}");
+            Assert.True(calculatedClients == TotalClients, $"Incorrect number of clients: actual {calculatedClients}, expected {TotalClients}.");
 
             var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
