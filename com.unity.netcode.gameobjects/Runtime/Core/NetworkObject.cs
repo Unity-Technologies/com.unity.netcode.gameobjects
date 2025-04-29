@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Unity.Collections;
 using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -45,13 +44,6 @@ namespace Unity.Netcode
         [HideInInspector]
         [SerializeField]
         internal uint InScenePlacedSourceGlobalObjectIdHash;
-
-        /// <summary>
-        /// Metadata sent during the instantiation process.
-        /// Retrieved in INetworkCustomSpawnDataSynchronizer before instantiation,
-        /// and available to INetworkPrefabInstanceHandler.Instantiate() for custom handling by user code.
-        /// </summary>
-        internal FastBufferReader InstantiationPayload;
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
@@ -1819,8 +1811,6 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManager.PrefabHandler.InjectInstantiationPayload(this);
-
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
@@ -2822,7 +2812,6 @@ namespace Unity.Netcode
             public ulong NetworkObjectId;
             public ulong OwnerClientId;
             public ushort OwnershipFlags;
-            public FastBufferReader InstantiationPayload;
 
             public bool IsPlayerObject
             {
@@ -2965,24 +2954,10 @@ namespace Unity.Netcode
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
-                if (HasInstantiationPayload)
-                {
-                    writeSize += FastBufferWriter.GetWriteSize<int>();
-                    writeSize += InstantiationPayload.Length;
-                }
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
-                }
-
-                if (HasInstantiationPayload)
-                {
-                    writer.WriteValueSafe(InstantiationPayload.Length);
-                    unsafe
-                    {
-                        writer.WriteBytes(InstantiationPayload.GetUnsafePtr(), InstantiationPayload.Length);
-                    }
                 }
 
                 if (HasTransform)
@@ -3001,8 +2976,15 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
-                // Synchronize NetworkVariables and NetworkBehaviours
+                // Synchronize Payload, NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+
+                if (HasInstantiationPayload)
+                {
+                    if (NetworkManager.Singleton.PrefabHandler.TryGetPayloadSynchronizer(Hash, out INetworkInstantiationPayloadSynchronizer synchronizer))
+                        synchronizer.OnSynchronize(ref bufferSerializer);
+                }
+
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
             }
 
@@ -3045,32 +3027,10 @@ namespace Unity.Netcode
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
 
-                int preInstanceDataSize = 0;
-                if (HasInstantiationPayload)
-                {
-                    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize<int>()))
-                    {
-                        throw new OverflowException($"Could not deserialize SceneObject: Reading past the end of the buffer ({nameof(InstantiationPayload)} size)");
-                    }
-
-                    reader.ReadValueSafe(out preInstanceDataSize);
-                    readSize += FastBufferWriter.GetWriteSize<int>();
-                    readSize += preInstanceDataSize;
-                }
-
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
-                }
-
-                if (HasInstantiationPayload)
-                {
-                    unsafe
-                    {
-                        InstantiationPayload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.Persistent, preInstanceDataSize);
-                        reader.Seek(reader.Position + preInstanceDataSize);
-                    }
                 }
 
                 if (HasTransform)
@@ -3081,6 +3041,15 @@ namespace Unity.Netcode
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
+
+                if (HasInstantiationPayload)
+                {
+                    if (NetworkManager.Singleton.PrefabHandler.TryGetPayloadSynchronizer(Hash, out INetworkInstantiationPayloadSynchronizer synchronizer))
+                    {
+                        var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                        synchronizer.OnSynchronize(ref instantiationPayloadBufferReader);
+                    }
+                }
             }
         }
 
@@ -3202,8 +3171,7 @@ namespace Unity.Netcode
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId,
-                HasInstantiationPayload = InstantiationPayload.IsInitialized,
-                InstantiationPayload = InstantiationPayload
+                HasInstantiationPayload = NetworkManager.PrefabHandler.HasPayloadSynchronizer(GlobalObjectIdHash),
             };
 
             // Handle Parenting
@@ -3297,11 +3265,6 @@ namespace Unity.Netcode
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
             networkObject.OwnerClientId = sceneObject.OwnerClientId;
-
-            // Even though the Instantiation Payload is typically consumed during the spawn message handling phase,
-            // we still assign it here to preserve the original spawn metadata for potential inspection, diagnostics,
-            // or in case future systems want to access it directly without relying on synchronization messages.
-            networkObject.InstantiationPayload = sceneObject.InstantiationPayload;
 
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
             networkObject.InvokeBehaviourNetworkPreSpawn();
