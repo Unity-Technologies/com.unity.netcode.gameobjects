@@ -1105,10 +1105,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (m_DistributedAuthority)
                     {
-
                         foreach (var networkManager in m_NetworkManagers)
                         {
-                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
+                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(networkManager));
                             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
                         }
                     }
