@@ -27,7 +27,6 @@ namespace TestProject.RuntimeTests
 
         public AddressablesTests(HostOrServer hostOrServer)
         {
-            m_EnableVerboseDebug = true;
             m_UseHost = hostOrServer == HostOrServer.Host;
         }
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()

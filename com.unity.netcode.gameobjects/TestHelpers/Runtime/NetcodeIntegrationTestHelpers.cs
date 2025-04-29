@@ -341,6 +341,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts one single client and makes sure to register the required hooks and handlers
         /// </summary>
+        /// <remarks>
+        /// Do not call this function directly. Use <see cref="NetcodeIntegrationTest.CreateAndStartNewClient"/> instead.
+        /// </remarks>
         /// <param name="clientToStart">The NetworkManager instance to start</param>
         public static void StartOneClient(NetworkManager clientToStart)
         {
