@@ -16,4 +16,4 @@ cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
 cargo build --release --locked
 
 # Run the standalone server on an infinite loop in the background
-while :; do ./target/release/comb-server -l error --metrics-port 5000 standalone --port $COMB_SERVER_PORT -t 60m; done &
+while :; do ./target/release/comb-server -l error --metrics-port 5000 standalone --port $CMB_SERVICE_PORT -t 60m; done &
