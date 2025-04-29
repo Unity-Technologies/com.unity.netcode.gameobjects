@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -227,7 +226,19 @@ namespace Unity.Netcode
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
 
+        /// <summary>
+        /// Check to see if a <see cref="NetworkObject.GlobalObjectIdHash"/> is registered to an <see cref="INetworkInstantiationPayloadSynchronizer"/> implementation
+        /// </summary>
+        /// <param name="objectHash"></param>
+        /// <returns></returns>
         internal bool HasPayloadSynchronizer(uint objectHash) => TryGetPayloadSynchronizer(objectHash, out _);
+
+        /// <summary>
+        /// Returns the <see cref="INetworkInstantiationPayloadSynchronizer"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        /// <param name="objectHash"></param>
+        /// <param name="synchronizer"></param>
+        /// <returns></returns>
         internal bool TryGetPayloadSynchronizer(uint objectHash, out INetworkInstantiationPayloadSynchronizer synchronizer)
         {
             if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
@@ -241,19 +252,6 @@ namespace Unity.Netcode
             synchronizer = null;
             return false;
         }
-
-        internal void ReadInstantiationPayload(uint objectHash, FastBufferReader reader)
-        {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
-            {
-                if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer synchronizer)
-                {
-                    var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-                    synchronizer.OnSynchronize(ref instantiationPayloadBufferReader);
-                }
-            }
-        }
-     
 
         /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
