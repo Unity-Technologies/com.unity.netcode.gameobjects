@@ -231,7 +231,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="objectHash"></param>
         /// <returns></returns>
-        internal bool HasPayloadSynchronizer(uint objectHash) => TryGetPrefabInstanceHandlerWithData(objectHash, out _);
+        internal bool ContainsHandlerWithData(uint objectHash) => TryGetHandlerWithData(objectHash, out _);
 
         /// <summary>
         /// Returns the <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
@@ -239,7 +239,7 @@ namespace Unity.Netcode
         /// <param name="objectHash"></param>
         /// <param name="handler"></param>
         /// <returns></returns>
-        internal bool TryGetPrefabInstanceHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
+        internal bool TryGetHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
         {
             if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
             {
