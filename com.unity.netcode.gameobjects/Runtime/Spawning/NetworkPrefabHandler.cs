@@ -22,7 +22,7 @@ namespace Unity.Netcode
         /// via the  <see cref="GameObject.SetActive(bool)"/> method.
         /// 
         /// If you need to pass custom data at instantiation time (e.g., selecting a variant, setting initialization parameters, or choosing a pre-instantiated object),
-        /// implement <see cref="INetworkInstantiationPayloadSynchronizer"/> alongside this interface to receive the data before instantiation.
+        /// implement <see cref="INetworkPrefabInstanceHandlerWithData"/> alongside this interface to receive the data before instantiation.
         /// </summary>
         /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
@@ -227,29 +227,29 @@ namespace Unity.Netcode
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
 
         /// <summary>
-        /// Check to see if a <see cref="NetworkObject.GlobalObjectIdHash"/> is registered to an <see cref="INetworkInstantiationPayloadSynchronizer"/> implementation
+        /// Check to see if a <see cref="NetworkObject.GlobalObjectIdHash"/> is registered to an <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation
         /// </summary>
         /// <param name="objectHash"></param>
         /// <returns></returns>
-        internal bool HasPayloadSynchronizer(uint objectHash) => TryGetPayloadSynchronizer(objectHash, out _);
+        internal bool HasPayloadSynchronizer(uint objectHash) => TryGetPrefabInstanceHandlerWithData(objectHash, out _);
 
         /// <summary>
-        /// Returns the <see cref="INetworkInstantiationPayloadSynchronizer"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// Returns the <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
         /// </summary>
         /// <param name="objectHash"></param>
-        /// <param name="synchronizer"></param>
+        /// <param name="handler"></param>
         /// <returns></returns>
-        internal bool TryGetPayloadSynchronizer(uint objectHash, out INetworkInstantiationPayloadSynchronizer synchronizer)
+        internal bool TryGetPrefabInstanceHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
         {
             if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
             {
-                if (prefabInstanceHandler is INetworkInstantiationPayloadSynchronizer payloadSynchronizer)
+                if (prefabInstanceHandler is INetworkPrefabInstanceHandlerWithData payloadSynchronizer)
                 {
-                    synchronizer = payloadSynchronizer;
+                    handler = payloadSynchronizer;
                     return true;
                 }
             }
-            synchronizer = null;
+            handler = null;
             return false;
         }
 

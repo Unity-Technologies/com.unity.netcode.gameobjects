@@ -2981,8 +2981,8 @@ namespace Unity.Netcode
 
                 if (HasInstantiationPayload)
                 {
-                    if (NetworkManager.Singleton.PrefabHandler.TryGetPayloadSynchronizer(Hash, out INetworkInstantiationPayloadSynchronizer synchronizer))
-                        synchronizer.OnSynchronize(ref bufferSerializer);
+                    if (NetworkManager.Singleton.PrefabHandler.TryGetPrefabInstanceHandlerWithData(Hash, out INetworkPrefabInstanceHandlerWithData synchronizer))
+                        synchronizer.OnSynchronizeInstantiationData(ref bufferSerializer);
                 }
 
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
@@ -3041,15 +3041,6 @@ namespace Unity.Netcode
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
-
-                if (HasInstantiationPayload)
-                {
-                    if (NetworkManager.Singleton.PrefabHandler.TryGetPayloadSynchronizer(Hash, out INetworkInstantiationPayloadSynchronizer synchronizer))
-                    {
-                        var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-                        synchronizer.OnSynchronize(ref instantiationPayloadBufferReader);
-                    }
-                }
             }
         }
 
@@ -3236,6 +3227,18 @@ namespace Unity.Netcode
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+
+            //Synchronize the instantiation payload if needed
+            if (sceneObject.HasInstantiationPayload)
+            {
+                if (NetworkManager.Singleton.PrefabHandler.TryGetPrefabInstanceHandlerWithData(sceneObject.Hash, out INetworkPrefabInstanceHandlerWithData handler))
+                {
+                    var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                    handler.OnSynchronizeInstantiationData(ref instantiationPayloadBufferReader);
+                }
+            }
+
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
 
@@ -3270,7 +3273,6 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // Synchronize NetworkBehaviours
-            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
             // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
