@@ -219,7 +219,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 8-
+    timeout: 80
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
