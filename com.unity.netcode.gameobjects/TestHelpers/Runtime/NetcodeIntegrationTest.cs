@@ -147,7 +147,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected NetworkManager[] m_NetworkManagers;
 
         /// <summary>
-        /// Gets the current authority.
+        /// Gets the current authority of the network session.
         /// When using the hosted CMB service this will be the client who is the session owner.
         /// Otherwise, returns the server <see cref="NetworkManager"/>
         /// </summary>
@@ -359,6 +359,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public void OneTimeSetup()
         {
             Application.runInBackground = true;
+            m_NumberOfClients = NumberOfClients;
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
@@ -414,7 +415,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
-            m_NumberOfClients = NumberOfClients;
             NetcodeLogAssert = new NetcodeLogAssert();
             if (m_EnableTimeTravel)
             {
