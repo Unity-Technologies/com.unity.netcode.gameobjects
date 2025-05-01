@@ -1,19 +1,92 @@
-# clone the latest rust repo
+#!/bin/bash
+
+# DESCRIPTION--------------------------------------------------------------------------
+  # This bash file is used to build and run CMB service resources.
+  # These are resources relating to the distributed authority feature. The CMB service is built and maintained by the services team.
+
+# CONTENTS-----------------------------------------------------------------------------
+  # There are two resources that are built and run:
+    # 1. The echo server - this is a "mock" server that simply echoes back the messages it receives. It is used to test message serialization.
+      #  The echo server is used inside the DistributedAuthorityCodecTests. These are tests that are built and maintained by the CMB service team.
+    # 2. The standalone server - this is a release build of the full CMB service.
+
+# USAGE---------------------------------------------------------------------------------
+  # The script requires ports to be defined. This works via the following command:
+    # ./<path-to-script>/run_cmb_service.sh -e <echo-server-port> -s <cmb-service-port>
+
+  # Example usage:
+    # ./<path-to-script>/run_cmb_service.sh -e 7788 -s 7799
+
+  # This script is currently used in the desktop-standalone-tests yamato job.
+
+# TECHNICAL CONSIDERATIONS---------------------------------------------------------------
+  # This is a bash script and so needs to be run on a Unix based system.
+    # - It runs on mac and ubuntu bokken machines. It will not run on windows bokken machines.
+
+  # This script starts processes running in the background. All logs are still written to stdout and will be seen in the logs of the job.
+  # Running in the background means that the processes will continue to run after the script exits.
+    # This is not a concern for bokken machines as all processes are killed when the machine is shut down.
+
+# QUALITY THOUGHTS--------------------------------------------------------------------
+  # Currently this script simply uses the head of the cmb service repo.
+  # We might want to consider using the latest released version in the future.
+
+#-------------------------------------------------------------------------------------
+
+# Define error message if ports are not defined
+ERROR="Error: Expected ports to be defined! Example script usage:"
+EXAMPLE="run_cmb_service.sh -e <echo-server-port> -s <cmb-service-port>"
+
+# get arguments passed to the script
+while getopts 'e:s:' flag; do
+case "${flag}" in
+  e) echo_port="${OPTARG}" ;;
+  s) service_port="${OPTARG}" ;;
+  *) printf "%s\n" "$ERROR" "$EXAMPLE"
+      exit 1 ;;
+  esac
+done
+
+# ensure arguments were passed and the ports are defined
+if [ -z "$echo_port" ] || [ -z "$service_port" ]; then
+  printf "%s\n" "$ERROR" "$EXAMPLE";
+  exit 1;
+elif [[ "$echo_port" == "$service_port" ]]; then
+  printf "Ports cannot be the same! Please use different ports.\n";
+  exit 1;
+fi
+
+echo "Starting with echo server on port: $echo_port and the cmb service on port: $service_port"
+
+# Setup -------------------------------------------------------------------------
+
+# clone the cmb service repo
 git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+# navigate to the cmb service directory
 cd ./mps-common-multiplayer-backend/runtime
 
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Add the cargo bin directory to the PATH
 export PATH="$HOME/.cargo/bin:$PATH"
+
+
+# Echo server -------------------------------------------------------------------
 
 # Build the echo server
 cargo build --example ngo_echo_server
+# Run the echo server in the background
+cargo run --example ngo_echo_server -- --port $echo_port &
 
-# Run the echo server in the background - this will reuse the artifacts from the build
-cargo run --example ngo_echo_server -- --port $ECHO_SERVER_PORT &
 
-# Build a release version of the standalone server
+# CMB Service -------------------------------------------------------------------
+
+# Build a release version of the standalone cmb service
 cargo build --release --locked
 
-# Run the standalone server on an infinite loop in the background
-while :; do ./target/release/comb-server -l error --metrics-port 5000 standalone --port $CMB_SERVICE_PORT -t 60m; done &
+# Run the standalone service on an infinite loop in the background.
+# The infinite loop is required as the service will exit each time all connected clients disconnect.
+# This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
+while :; do
+  ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m;
+done & # <- use & to run the entire loop in the background

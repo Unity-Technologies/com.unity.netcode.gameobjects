@@ -80,18 +80,25 @@ desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ 
 # Set additional variables for running the echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
   variables:
+    # The echo server is a "mock" server that is only used to test encoding/decoding of messages.
+    # It is used by the DistributedAuthorityCodecTests. These are tests that are built and maintained by the CMB service team.
     ECHO_SERVER_PORT: "7788"
-    CMB_SERVICE_PORT: "7799"
-    # Set this to ensure the DA codec tests will fail if they cannot connect to the echo-server
-    # The default is to ignore the codec tests if the echo-server fails to connect
+    # Set this to ensure the DistributedAuthorityCodecTests will fail if they cannot connect to the echo server.
+    # The default is to ignore the codec tests if the echo server fails to connect
     ENSURE_CODEC_TESTS: "true"
+
+    # When USE_CMB_SERVICE is set to true, any C# tests configured to use the DA host will instead use the CMB service.
     USE_CMB_SERVICE: "true"
+    # This is the port on which to run the full standalone CMB service.
+    # The port needs to be different from the echo server port as two processes cannot bind to same port.
+    CMB_SERVICE_PORT: "7799"
 {% endif %}
 
   commands:
 # If ubuntu, run rust echo server (This is needed ONLY for NGOv2.X because relates to Distributed Authority)
 {% if platform.name != "win" %} # Issues with win and mac are tracked in MTT-11606
-    - ./Tools/CI/run_cmb_service.sh
+    # run_cmb_service.sh builds and starts a release version of the full CMB service (along with the limited echo server)
+    - ./Tools/CI/run_cmb_service.sh -e $ECHO_SERVER_PORT -s $CMB_SERVICE_PORT
 {% endif %}
 
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if backend == "il2cpp" %} -c il2cpp {% endif %} {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
