@@ -1091,13 +1091,22 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// For owner read permissions, when changing ownership we need to do a full synchronization
+        /// of all NetworkVariables that are owner read permission based since the owner is the only
+        /// instance that knows what the most current values are.
+        /// </summary>
+        internal void MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty()
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
                 if (NetworkVariableFields[j].ReadPerm == NetworkVariableReadPermission.Owner)
                 {
                     NetworkVariableFields[j].SetDirty(true);
+                }
+                if (NetworkVariableFields[j].WritePerm == NetworkVariableWritePermission.Owner)
+                {
+                    NetworkVariableFields[j].OnCheckIsDirtyState();
                 }
             }
         }

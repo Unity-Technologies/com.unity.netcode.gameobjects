@@ -346,6 +346,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Primarily to check for collections dirty states when doing
+        /// a fully owner read/write NetworkVariable update.
+        /// </summary>
+        internal virtual void OnCheckIsDirtyState()
+        {
+
+        }
+
+        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="writer">The stream to write the dirty changes to</param>

@@ -1485,12 +1485,39 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// Used when changing ownership, this will mark any owner read permission base NetworkVariables as dirty
+        /// and will check if any owner write permission NetworkVariables are dirty (primarily for collections) so
+        /// the new owner will get a full state update prior to changing ownership.
+        /// </summary>
+        /// <remarks>
+        /// We have to pass in the original owner and previous owner to "reset" back to the current state of this
+        /// NetworkObject in order to preserve the same ownership change flow. By the time this is invoked, the
+        /// new and previous owner ids have already been set.
+        /// </remarks>
+        /// <param name="originalOwnerId">the owner prior to beginning the change in ownership change.</param>
+        /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
+        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
+            var currentOwnerId = OwnerClientId;
+            OwnerClientId = originalOwnerId;
+            PreviousOwnerId = originalPreviousOwnerId;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].MarkOwnerReadVariablesDirty();
+                ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
+
+            // Now set the new owner and previous owner identifiers back to their original new values
+            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
+            // operations is **particularly important** as we need to first (above) mark things as dirty
+            // from the context of the original owner and then second (below) we need to send the messages
+            // which requires the new owner to be set for owner read permission NetworkVariables.
+            OwnerClientId = currentOwnerId;
+            PreviousOwnerId = originalOwnerId;
+
+            // Force send a state update for all owner read NetworkVariables  and any currently dirty
+            // owner write NetworkVariables.
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.

@@ -114,9 +114,6 @@ namespace Unity.Netcode
                     {
                         behaviour.PostNetworkVariableWrite(forceSend);
                     }
-
-                    // Once done processing, we set the previous owner id to the current owner id
-                    dirtyObj.PreviousOwnerId = dirtyObj.OwnerClientId;
                 }
                 m_DirtyNetworkObjects.Clear();
             }
