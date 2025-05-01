@@ -385,6 +385,7 @@ namespace Unity.Netcode.RuntimeTests
         /// ends up always being the server, but for distributed authority the authority changes when
         /// ownership changes.
         /// </summary>
+        /// <returns><see cref="IEnumerator"/></returns>
         [UnityTest]
         public IEnumerator TestAuthorityChangingOwnership()
         {
