@@ -14,16 +14,22 @@ namespace Unity.Netcode.RuntimeTests
         public bool OnLostOwnershipFired = false;
         public bool OnGainedOwnershipFired = false;
 
+
+        /// <inheritdoc/>
         public override void OnLostOwnership()
         {
             OnLostOwnershipFired = true;
         }
 
+
+        /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
             OnGainedOwnershipFired = true;
         }
 
+
+        /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             Assert.True(previous != current, $"[{nameof(OnOwnershipChanged)}][Invalid Parameters] Invoked and the previous ({previous}) equals the current ({current})!");
@@ -37,7 +43,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Rpc(SendTo.Server)]
-        public void ChangeOwnershipRpc(RpcParams rpcParams = default)
+        internal void ChangeOwnershipRpc(RpcParams rpcParams = default)
         {
             NetworkObject.ChangeOwnership(rpcParams.Receive.SenderClientId);
         }
