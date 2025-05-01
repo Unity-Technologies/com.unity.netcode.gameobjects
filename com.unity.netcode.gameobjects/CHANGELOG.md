@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
+
 ### Changed
 
 ## [1.13.0] - 2025-04-29
