@@ -17,15 +17,22 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Update the Lerp test to work with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private GameObject m_TestPrefab;
 
         private TestStartStopTransform m_AuthorityInstance;
         private List<TestStartStopTransform> m_NonAuthorityInstances = new List<TestStartStopTransform>();
 
         private NetworkTransform.InterpolationTypes m_InterpolationType;
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private NetworkManager m_AuthorityNetworkManager;
 
+        private bool m_IsSecondPass;
+        private bool m_SecondPassClientsCheckingState;
         private int m_NumberOfUpdates;
         private Vector3 m_Direction;
 
@@ -97,13 +104,9 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator StopAndStartMotion()
         {
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (!UseCMBService())
-            {
-                m_NetworkManagers.Insert(0, m_ServerNetworkManager);
-            }
-            m_AuthorityNetworkManager = m_NetworkManagers[0];
-
+            m_IsSecondPass = false;
+            m_SecondPassClientsCheckingState = false;
+            m_AuthorityNetworkManager = GetAuthorityNetworkManager();
             m_AuthorityInstance = SpawnObject(m_TestPrefab, m_AuthorityNetworkManager).GetComponent<TestStartStopTransform>();
             // Wait for all clients to spawn the instance
             yield return WaitForConditionOrTimeOut(WaitForInstancesToSpawn);
@@ -123,16 +126,11 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForInstancesToFinishInterpolation);
             AssertOnTimeout($"Not all clients finished interpolating {m_AuthorityInstance.name}!");
 
-            // Start recording the state updates on the non-authority instances
-            foreach (var testTransform in m_NonAuthorityInstances)
-            {
-                testTransform.CheckStateUpdates = true;
-            }
-
             ////// Stop to Start motion begins here
             m_Direction = GetRandomVector3(-10, 10).normalized;
             m_NumberOfUpdates = 0;
             m_AuthorityNetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+            m_IsSecondPass = true;
 
             yield return WaitForConditionOrTimeOut(() => m_NumberOfUpdates >= 10);
             AssertOnTimeout($"Timed out waiting for all updates to be applied to the authority instance!");
@@ -155,17 +153,44 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private void NetworkTickSystem_Tick()
         {
+            // In the event a VM is running slower than expected, this counter is used to check
+            // that we are not invoking the network tick event more than once in a single frame.
+            // If we are, then exit early since we are just using this to assure that we only
+            // update the position enough per tick to generate a state update ==and== to prevent
+            // from incrementing the m_NumberOfUpdates more than once per tick for the frame that
+            // the tick event was invoked.
+            if (TestStartStopTransform.TickInvocationCounter >= 1)
+            {
+                return;
+            }
+
+            // Start tracking state on a network tick
+            if (m_IsSecondPass && !m_SecondPassClientsCheckingState)
+            {
+                // Start recording the state updates on the non-authority instances
+                foreach (var testTransform in m_NonAuthorityInstances)
+                {
+                    testTransform.CheckStateUpdates = true;
+                }
+                m_SecondPassClientsCheckingState = true;
+            }
+
             m_NumberOfUpdates++;
             m_AuthorityInstance.transform.position = m_AuthorityInstance.transform.position + m_Direction * 2;
             if (m_NumberOfUpdates >= 10)
             {
                 m_AuthorityNetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
             }
+            TestStartStopTransform.TickInvocationCounter++;
         }
 
-        internal class TestStartStopTransform : NetworkTransform
+        internal class TestStartStopTransform : NetworkTransform, INetworkUpdateSystem
         {
-
+            // In the event a VM is running slower than expected, this counter is used to check
+            // that we are not invoking the network tick event more than once in a single frame.
+            // If we are, then within the above integration test it will not continue to update
+            // and increment the counter prematurely.
+            public static int TickInvocationCounter = 0;
             public bool CheckStateUpdates;
 
             private BufferedLinearInterpolatorVector3 m_PosInterpolator;
@@ -182,6 +207,30 @@ namespace Unity.Netcode.RuntimeTests
             {
                 base.Awake();
                 m_PosInterpolator = GetPositionInterpolator();
+            }
+
+            protected override void OnNetworkPostSpawn()
+            {
+                if (CanCommitToTransform)
+                {
+                    NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.EarlyUpdate);
+                }
+                base.OnNetworkPostSpawn();
+            }
+
+            public void NetworkUpdate(NetworkUpdateStage updateStage)
+            {
+                if (updateStage == NetworkUpdateStage.EarlyUpdate)
+                {
+                    // Each new frame, we reset this counter.
+                    TickInvocationCounter = 0;
+                }
+            }
+
+            public override void OnNetworkDespawn()
+            {
+                NetworkUpdateLoop.UnregisterAllNetworkUpdates(this);
+                base.OnNetworkDespawn();
             }
 
             /// <summary>

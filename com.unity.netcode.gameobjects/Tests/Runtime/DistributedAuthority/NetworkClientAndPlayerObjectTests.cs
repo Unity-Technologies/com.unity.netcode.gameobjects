@@ -99,8 +99,8 @@ namespace Unity.Netcode.RuntimeTests
             var success = true;
             m_ErrorLogLevel2.Clear();
 
-            // Number of connected clients plus the DAHost
-            var expectedCount = m_ClientNetworkManagers.Length + (m_UseHost ? 1 : 0);
+            // Number of tracked network managers
+            var expectedCount = m_NetworkManagers.Length - (m_UseHost ? 0 : 1);
 
             if (networkManager.ConnectedClients.Count != expectedCount)
             {
@@ -138,21 +138,11 @@ namespace Unity.Netcode.RuntimeTests
             m_ErrorLogLevel1.Clear();
             var success = true;
 
-            if (!UseCMBService())
+            foreach (var networkManager in m_NetworkManagers)
             {
-                if (!ValidateNetworkManagerNetworkClients(m_ServerNetworkManager))
+                if (!ValidateNetworkManagerNetworkClients(networkManager))
                 {
-                    m_ErrorLogLevel1.AppendLine($"[Client-{m_ServerNetworkManager.LocalClientId}]{m_ErrorLogLevel2}");
-                    // Log error
-                    success = false;
-                }
-            }
-
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                if (!ValidateNetworkManagerNetworkClients(clientNetworkManager))
-                {
-                    m_ErrorLogLevel1.AppendLine($"[Client-{clientNetworkManager.LocalClientId}]{m_ErrorLogLevel2}");
+                    m_ErrorLogLevel1.AppendLine($"[Client-{networkManager.LocalClientId}]{m_ErrorLogLevel2}");
                     // Log error
                     success = false;
                 }
@@ -238,23 +228,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ErrorLogLevel1.Clear();
             var success = true;
-            if (m_UseHost && !UseCMBService())
+
+            foreach (var client in m_NetworkManagers)
             {
-                if (!ValidatePlayerObjectOnClients(m_ServerNetworkManager))
+                if (!m_UseHost && client == m_ServerNetworkManager)
                 {
-                    m_ErrorLogLevel1.AppendLine($"[Client-{m_ServerNetworkManager.LocalClientId}]{m_ErrorLogLevel2}");
-                    success = false;
+                    continue;
                 }
 
-                if (m_ServerNetworkManager.LocalClient.PlayerObject == null)
-                {
-                    m_ErrorLogLevel1.AppendLine($"[Client-{m_ServerNetworkManager.LocalClientId}] Local {nameof(NetworkClient.PlayerObject)} is null!");
-                    success = false;
-                }
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
                 if (!ValidatePlayerObjectOnClients(client))
                 {
                     m_ErrorLogLevel1.AppendLine($"[Client-{client.LocalClientId}]{m_ErrorLogLevel2}");
@@ -301,56 +282,35 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now, have each client spawn a new player object
             m_ChangedPlayerPrefabs.Clear();
-            var playerInstance = (GameObject)null;
-            var playerPrefabToSpawn = (NetworkObject)null;
-            if (m_UseHost)
+            foreach (var client in m_NetworkManagers)
             {
-                playerPrefabToSpawn = GetRandomPlayerPrefab();
-                switch (playerSpawnType)
+                if (!m_UseHost && client == m_ServerNetworkManager)
                 {
-                    case PlayerSpawnTypes.Normal:
-                        {
-                            playerInstance = SpawnPlayerObject(playerPrefabToSpawn.gameObject, m_ServerNetworkManager);
-                            break;
-                        }
-                    case PlayerSpawnTypes.NetworkObject:
-                        {
-                            playerInstance = NetworkObject.InstantiateAndSpawn(playerPrefabToSpawn.gameObject, m_ServerNetworkManager, isPlayerObject: true).gameObject;
-                            break;
-                        }
-                    case PlayerSpawnTypes.SpawnManager:
-                        {
-                            playerInstance = m_ServerNetworkManager.SpawnManager.InstantiateAndSpawn(playerPrefabToSpawn, isPlayerObject: true).gameObject;
-                            break;
-                        }
+                    continue;
                 }
 
-                m_ChangedPlayerPrefabs.Add(m_ServerNetworkManager.LocalClientId, playerPrefabToSpawn.GlobalObjectIdHash);
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                playerPrefabToSpawn = GetRandomPlayerPrefab();
+                var playerPrefabToSpawn = GetRandomPlayerPrefab();
                 var networkManager = m_DistributedAuthority ? client : m_ServerNetworkManager;
 
                 switch (playerSpawnType)
                 {
                     case PlayerSpawnTypes.Normal:
                         {
-                            playerInstance = SpawnPlayerObject(playerPrefabToSpawn.gameObject, client);
+                            SpawnPlayerObject(playerPrefabToSpawn.gameObject, client);
                             break;
                         }
                     case PlayerSpawnTypes.NetworkObject:
                         {
-                            playerInstance = NetworkObject.InstantiateAndSpawn(playerPrefabToSpawn.gameObject, networkManager, client.LocalClientId, isPlayerObject: true).gameObject;
+                            NetworkObject.InstantiateAndSpawn(playerPrefabToSpawn.gameObject, networkManager, client.LocalClientId, isPlayerObject: true);
                             break;
                         }
                     case PlayerSpawnTypes.SpawnManager:
                         {
-                            playerInstance = networkManager.SpawnManager.InstantiateAndSpawn(playerPrefabToSpawn, client.LocalClientId, isPlayerObject: true).gameObject;
+                            networkManager.SpawnManager.InstantiateAndSpawn(playerPrefabToSpawn, client.LocalClientId, isPlayerObject: true);
                             break;
                         }
                 }
+
                 m_ChangedPlayerPrefabs.Add(client.LocalClientId, playerPrefabToSpawn.GlobalObjectIdHash);
             }
 

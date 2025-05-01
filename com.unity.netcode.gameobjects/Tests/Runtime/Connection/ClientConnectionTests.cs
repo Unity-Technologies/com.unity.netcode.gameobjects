@@ -17,6 +17,12 @@ namespace Unity.Netcode.RuntimeTests
         private HashSet<ulong> m_ServerCallbackCalled = new HashSet<ulong>();
         private HashSet<ulong> m_ClientCallbackCalled = new HashSet<ulong>();
 
+        // TODO: [CmbServiceTests] Enable once the cmb service sceneManagementEnabled OnClientConnected flow is fixed
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public ClientConnectionTests(SceneManagementState sceneManagementState, NetworkTopologyTypes networkTopologyType) : base(networkTopologyType)
         {
             m_SceneManagementEnabled = sceneManagementState == SceneManagementState.SceneManagementEnabled;

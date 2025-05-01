@@ -16,6 +16,12 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_NumberObjectsToSpawn = 32;
         protected override int NumberOfClients => 1;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected GameObject m_PrefabToSpawn;
 
         public NetworkObjectDontDestroyWithOwnerTests(HostOrServer hostOrServer) : base(hostOrServer) { }

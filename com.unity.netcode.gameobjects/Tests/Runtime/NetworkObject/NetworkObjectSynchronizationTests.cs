@@ -27,6 +27,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private LogLevel m_CurrentLogLevel;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public enum VariableLengthSafety
         {
             DisableNetVarSafety,
