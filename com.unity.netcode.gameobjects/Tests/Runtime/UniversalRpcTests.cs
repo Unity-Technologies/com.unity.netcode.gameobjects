@@ -538,6 +538,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public UniversalRpcTestsBase(HostOrServer hostOrServer) : base(hostOrServer)
         {
         }

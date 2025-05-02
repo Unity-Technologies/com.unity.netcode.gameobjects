@@ -21,14 +21,14 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            NetcodeAnalytics.IsIntegrationTest = true;
+            NetcodeAnalytics.EnableIntegrationTestAnalytics = true;
             m_NetcodeAnalytics = Unity.Netcode.Editor.NetworkManagerHelper.Singleton.NetcodeAnalytics;
             yield return base.OnSetup();
         }
 
         protected override IEnumerator OnTearDown()
         {
-            NetcodeAnalytics.IsIntegrationTest = false;
+            NetcodeAnalytics.EnableIntegrationTestAnalytics = false;
             yield return base.OnTearDown();
         }
 

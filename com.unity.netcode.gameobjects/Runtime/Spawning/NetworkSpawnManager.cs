@@ -1118,7 +1118,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            networkObject.IsSpawned = true;
             networkObject.IsSceneObject = sceneObject;
 
             // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
@@ -1151,6 +1150,8 @@ namespace Unity.Netcode
             {
                 networkObject.SetOwnershipLock();
             }
+
+            networkObject.IsSpawned = true;
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
@@ -2228,14 +2229,7 @@ namespace Unity.Netcode
                 {
                     if (networkObject.Observers.Contains(newClientId))
                     {
-                        if (NetworkManager.LogLevel <= LogLevel.Developer)
-                        {
-                            // Temporary tracking to make sure we are not showing something already visibile (should never be the case for this)
-                            Debug.LogWarning($"[{nameof(SynchronizeObjectsToNewlyJoinedClient)}][{networkObject.name}] New client as already an observer!");
-                        }
-                        // For now, remove the client (impossible for the new client to have an instance since the session owner doesn't) to make sure newly added
-                        // code to handle this edge case works.
-                        networkObject.Observers.Remove(newClientId);
+                        continue;
                     }
                     networkObject.NetworkShow(newClientId);
                 }

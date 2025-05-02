@@ -12,6 +12,12 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 0;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private bool m_AllowServerToStart;
 
         private GameObject m_PrePostSpawnObject;

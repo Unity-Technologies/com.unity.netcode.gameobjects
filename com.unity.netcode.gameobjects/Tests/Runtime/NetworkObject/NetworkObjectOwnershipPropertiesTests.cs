@@ -31,6 +31,12 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_InitialOwnerOwnedBySever;
         private bool m_TargetOwnerOwnedBySever;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkObjectOwnershipPropertiesTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnTearDown()

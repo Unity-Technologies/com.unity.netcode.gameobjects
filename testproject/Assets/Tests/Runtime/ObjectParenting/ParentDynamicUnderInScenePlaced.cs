@@ -36,6 +36,12 @@ namespace TestProject.RuntimeTests
         private GameObject m_DynamicallySpawned;
         private bool m_SceneIsLoaded;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public ParentDynamicUnderInScenePlaced(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnSetup()

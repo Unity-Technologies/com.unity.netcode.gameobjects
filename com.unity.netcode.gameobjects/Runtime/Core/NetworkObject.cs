@@ -628,7 +628,10 @@ namespace Unity.Netcode
                 RemoveOwnershipExtended(OwnershipStatusExtended.Locked);
             }
 
-            SendOwnershipStatusUpdate();
+            if (IsSpawned)
+            {
+                SendOwnershipStatusUpdate();
+            }
 
             return true;
         }

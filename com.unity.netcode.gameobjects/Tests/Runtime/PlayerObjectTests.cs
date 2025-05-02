@@ -29,20 +29,23 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnAndReplaceExistingPlayerObject()
         {
-            yield return WaitForConditionOrTimeOut(() => m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
+            yield return WaitForConditionOrTimeOut(() => m_PlayerNetworkObjects[authority.LocalClientId].ContainsKey(nonAuthority.LocalClientId));
             AssertOnTimeout("Timed out waiting for client-side player object to spawn!");
             // Get the server-side player NetworkObject
-            var originalPlayer = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
+            var originalPlayer = m_PlayerNetworkObjects[authority.LocalClientId][nonAuthority.LocalClientId];
             // Get the client-side player NetworkObject
-            var playerLocalClient = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            var playerLocalClient = nonAuthority.LocalClient.PlayerObject;
 
             // Create a new player prefab instance
             var newPlayer = Object.Instantiate(m_NewPlayerToSpawn);
             var newPlayerNetworkObject = newPlayer.GetComponent<NetworkObject>();
             // In distributed authority mode, the client owner spawns its new player
-            newPlayerNetworkObject.NetworkManagerOwner = m_DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            newPlayerNetworkObject.NetworkManagerOwner = m_DistributedAuthority ? nonAuthority : authority;
             // Spawn this instance as a new player object for the client who already has an assigned player object
-            newPlayerNetworkObject.SpawnAsPlayerObject(m_ClientNetworkManagers[0].LocalClientId);
+            newPlayerNetworkObject.SpawnAsPlayerObject(nonAuthority.LocalClientId);
 
             // Make sure server-side changes are detected, the original player object should no longer be marked as a player
             // and the local new player object should.
@@ -50,8 +53,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for server-side player object to change!");
 
             // Make sure the client-side changes are the same
-            yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].LocalClient.PlayerObject != playerLocalClient && !playerLocalClient.IsPlayerObject
-            && m_ClientNetworkManagers[0].LocalClient.PlayerObject.IsPlayerObject);
+            yield return WaitForConditionOrTimeOut(() => nonAuthority.LocalClient.PlayerObject != playerLocalClient && !playerLocalClient.IsPlayerObject
+            && nonAuthority.LocalClient.PlayerObject.IsPlayerObject);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side player object to change!");
         }
     }
@@ -100,17 +103,10 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 // For distributed authority, we want to make sure the player object is only spawned on the authority side and all non-authority instances did not spawn it.
-                var playerObjectId = m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId;
-                foreach (var client in m_ClientNetworkManagers)
+                foreach (var clientPlayer in m_NetworkManagers)
                 {
-                    Assert.IsFalse(client.SpawnManager.SpawnedObjects.ContainsKey(playerObjectId), $"Client-{client.LocalClientId} spawned player object for Client-{m_ServerNetworkManager.LocalClientId}!");
-                }
-
-                foreach (var clientPlayer in m_ClientNetworkManagers)
-                {
-                    playerObjectId = clientPlayer.LocalClient.PlayerObject.NetworkObjectId;
-                    Assert.IsFalse(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(playerObjectId), $"Client-{m_ServerNetworkManager.LocalClientId} spawned player object for Client-{clientPlayer.LocalClientId}!");
-                    foreach (var client in m_ClientNetworkManagers)
+                    var playerObjectId = clientPlayer.LocalClient.PlayerObject.NetworkObjectId;
+                    foreach (var client in m_NetworkManagers)
                     {
                         if (clientPlayer == client)
                         {
@@ -161,23 +157,24 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator PlayerSpawnPosition()
         {
-            if (m_ServerNetworkManager.IsHost)
+            var authority = GetAuthorityNetworkManager();
+            if (authority.IsHost)
             {
-                PlayerTransformMatches(m_ServerNetworkManager.LocalClient.PlayerObject);
+                PlayerTransformMatches(authority.LocalClient.PlayerObject);
 
                 foreach (var client in m_ClientNetworkManagers)
                 {
-                    yield return WaitForConditionOrTimeOut(() => client.SpawnManager.SpawnedObjects.ContainsKey(m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId));
-                    AssertOnTimeout($"Client-{client.LocalClientId} does not contain a player prefab instance for client-{m_ServerNetworkManager.LocalClientId}!");
-                    PlayerTransformMatches(client.SpawnManager.SpawnedObjects[m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId]);
+                    yield return WaitForConditionOrTimeOut(() => client.SpawnManager.SpawnedObjects.ContainsKey(authority.LocalClient.PlayerObject.NetworkObjectId));
+                    AssertOnTimeout($"Client-{client.LocalClientId} does not contain a player prefab instance for client-{authority.LocalClientId}!");
+                    PlayerTransformMatches(client.SpawnManager.SpawnedObjects[authority.LocalClient.PlayerObject.NetworkObjectId]);
                 }
             }
 
             foreach (var client in m_ClientNetworkManagers)
             {
-                yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(client.LocalClient.PlayerObject.NetworkObjectId));
-                AssertOnTimeout($"Client-{m_ServerNetworkManager.LocalClientId} does not contain a player prefab instance for client-{client.LocalClientId}!");
-                PlayerTransformMatches(m_ServerNetworkManager.SpawnManager.SpawnedObjects[client.LocalClient.PlayerObject.NetworkObjectId]);
+                yield return WaitForConditionOrTimeOut(() => authority.SpawnManager.SpawnedObjects.ContainsKey(client.LocalClient.PlayerObject.NetworkObjectId));
+                AssertOnTimeout($"Client-{authority.LocalClientId} does not contain a player prefab instance for client-{client.LocalClientId}!");
+                PlayerTransformMatches(authority.SpawnManager.SpawnedObjects[client.LocalClient.PlayerObject.NetworkObjectId]);
                 foreach (var subClient in m_ClientNetworkManagers)
                 {
                     yield return WaitForConditionOrTimeOut(() => subClient.SpawnManager.SpawnedObjects.ContainsKey(client.LocalClient.PlayerObject.NetworkObjectId));
@@ -264,19 +261,15 @@ namespace Unity.Netcode.RuntimeTests
         {
             var networkManagers = new List<NetworkManager>();
 
-            if (m_ServerNetworkManager.IsHost)
-            {
-                networkManagers.Add(m_ServerNetworkManager);
-            }
-            foreach (var networkManager in m_ClientNetworkManagers)
-            {
-                networkManagers.Add(networkManager);
-            }
-
             m_ErrorLog.Clear();
             var success = true;
-            foreach (var networkManager in networkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
+                if (networkManager.IsServer && !networkManager.IsHost)
+                {
+                    continue;
+                }
+
                 var spawnedOrNot = networkManager.LocalClient.PlayerObject == null ? "despawned" : "spawned";
                 m_ErrorLog.AppendLine($"Validating Client-{networkManager.LocalClientId} {spawnedOrNot} player.");
                 if (networkManager.LocalClient == null)

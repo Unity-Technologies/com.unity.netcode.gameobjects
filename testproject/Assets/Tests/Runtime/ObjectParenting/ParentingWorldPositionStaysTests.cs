@@ -21,6 +21,12 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         internal class TestComponentHelper : NetworkBehaviour
         {
             internal class ChildInfo
