@@ -237,8 +237,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
-                var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "unset";
-                m_UseCmbServiceEnv = bool.Parse(useCmbService.ToLower());
+                var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+                if (bool.TryParse(useCmbService.ToLower(), out bool isTrue))
+                {
+                    m_UseCmbService = isTrue;
+                }
+                else
+                {
+                    Debug.LogWarning($"USE_CMB_SERVICE value ({useCmbService}) is not a valid bool value. {m_UseCmbService} is being set to false.");
+                    m_UseCmbServiceEnv = false;
+                }
             }
             return m_UseCmbServiceEnv;
         }
