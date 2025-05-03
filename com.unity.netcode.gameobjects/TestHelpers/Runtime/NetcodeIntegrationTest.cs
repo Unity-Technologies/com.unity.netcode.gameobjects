@@ -218,6 +218,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <remarks>Can only be true if <see cref="UseCMBService"/> returns true.</remarks>
         protected bool m_UseCmbService { get; private set; }
 
+        private string m_UseCmbServiceEnvString = null;
+        private bool m_UseCmbServiceEnv;
+
+        /// <summary>
+        /// Will set itself once and if already set then return true
+        /// </summary>
+        /// <returns>true/false</returns>
+        internal bool UseCMBServiceEnviromentVariableSet()
+        {
+            if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
+            {
+                var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "unset";
+                m_UseCmbServiceEnv = useCmbService.ToLower() == "true";
+            }
+            return m_UseCmbServiceEnv;
+        }
+
         /// <summary>
         /// Indicates whether a hosted CMB service is available.
         /// </summary>
@@ -228,8 +245,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if USE_CMB_SERVICE
             return true;
 #else
-            var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "unset";
-            return useCmbService.ToLower() == "true";
+            return UseCMBServiceEnviromentVariableSet();
 #endif
         }
 
@@ -1438,6 +1454,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #endif
 
             IsRunning = false;
+            m_UseCmbServiceEnvString = null;
+            m_UseCmbServiceEnv = false;
         }
 
         /// <summary>

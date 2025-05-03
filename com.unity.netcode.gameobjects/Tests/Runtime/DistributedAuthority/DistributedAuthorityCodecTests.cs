@@ -45,6 +45,8 @@ namespace Unity.Netcode.RuntimeTests
         private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
 
+        private GameObject m_TestPrefab;
+
         /// <summary>
         /// Configures the port to look for the rust echo-server.
         /// </summary>
@@ -247,9 +249,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkVariableDelta_WithValueUpdate()
         {
-            var networkObj = CreateNetworkObjectPrefab("TestObject");
-            networkObj.AddComponent<TestNetworkComponent>();
-            var instance = SpawnObject(networkObj, Client);
+            var instance = SpawnObject(m_SpawnObject, Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
             var component = instance.GetComponent<TestNetworkComponent>();
 
@@ -262,9 +262,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListDelta_WithValueUpdate()
         {
-            var networkObj = CreateNetworkObjectPrefab("TestObject");
-            networkObj.AddComponent<TestNetworkComponent>();
-            var instance = SpawnObject(networkObj, Client);
+            var instance = SpawnObject(m_SpawnObject, Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
             var component = instance.GetComponent<TestNetworkComponent>();
 
