@@ -244,7 +244,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 else
                 {
-                    Debug.LogWarning($"USE_CMB_SERVICE value ({useCmbService}) is not a valid bool value. {m_UseCmbService} is being set to false.");
+                    Debug.LogWarning($"The USE_CMB_SERVICE ({useCmbService}) value is an invalid bool string. {m_UseCmbService} is being set to false.");
                     m_UseCmbServiceEnv = false;
                 }
             }
