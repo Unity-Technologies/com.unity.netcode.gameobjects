@@ -1700,10 +1700,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var remoteClientCount = clientsToCheck.Length;
             var authorityNetworkManager = GetAuthorityNetworkManager();
-            var serverClientCount = authorityNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
+            var authorityClientCount = authorityNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
 
             return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                                 authorityNetworkManager.ConnectedClients.Count == serverClientCount);
+                                                                 authorityNetworkManager.ConnectedClients.Count == authorityClientCount);
         }
 
         /// <summary>

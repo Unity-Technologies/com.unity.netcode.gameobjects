@@ -45,8 +45,6 @@ namespace Unity.Netcode.RuntimeTests
         private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
 
-        private GameObject m_TestPrefab;
-
         /// <summary>
         /// Configures the port to look for the rust echo-server.
         /// </summary>
