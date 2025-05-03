@@ -99,7 +99,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Total number of clients that should be connected at any point during a test.
         /// </summary>
-        protected int TotalClients => m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+        /// <remarks>
+        /// When using the CMB Service, we ignore if <see cref="m_UseHost"/> is true.
+        /// </remarks>
+        protected int TotalClients => m_UseHost && !UseCMBService() ? m_NumberOfClients + 1 : m_NumberOfClients;
 
         protected const uint k_DefaultTickRate = 30;
 
@@ -222,15 +225,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private bool m_UseCmbServiceEnv;
 
         /// <summary>
-        /// Will set itself once and if already set then return true
+        /// Will check the environment variable once and then always return the results
+        /// of the first check.
         /// </summary>
+        /// <remarks>
+        /// This resets its properties during <see cref="OnOneTimeTearDown"/>, so it will
+        /// check the environment variable once per test set.
+        /// </remarks>
         /// <returns>true/false</returns>
-        internal bool UseCMBServiceEnviromentVariableSet()
+        private bool UseCMBServiceEnviromentVariableSet()
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
                 var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "unset";
-                m_UseCmbServiceEnv = useCmbService.ToLower() == "true";
+                m_UseCmbServiceEnv = bool.Parse(useCmbService.ToLower());
             }
             return m_UseCmbServiceEnv;
         }

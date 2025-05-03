@@ -101,9 +101,16 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkSpawn();
             }
         }
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => m_ClientCount;
 
-        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer) { }
+        private const int k_ClientCount = 1;
+        private int m_ClientCount = k_ClientCount;
+
+        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+            // Adjust the client count if connecting to the CMB service.
+            m_ClientCount = UseCMBService() ? k_ClientCount + 1 : k_ClientCount;
+        }
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
@@ -126,7 +133,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
+            // This is the *SERVER/SESSION OWNER VERSION* of the *CLIENT PLAYER*
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
 

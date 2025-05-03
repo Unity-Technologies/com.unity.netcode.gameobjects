@@ -168,12 +168,7 @@ namespace Unity.Netcode.RuntimeTests
                 SecondType = second
             };
             // Adjust the client count if connecting to the service.
-            m_ClientCount = UseCMBServiceEnviromentVariableSet() ? numberOfClients + 1 : numberOfClients;
-        }
-
-        protected override bool UseCMBService()
-        {
-            return true;
+            m_ClientCount = UseCMBService() ? numberOfClients + 1 : numberOfClients;
         }
 
         protected override void OnOneTimeTearDown()
