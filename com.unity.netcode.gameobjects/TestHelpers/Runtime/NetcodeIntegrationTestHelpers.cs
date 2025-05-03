@@ -265,16 +265,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
-            if (serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (serverFirst && !useCmbService)
             {
-                server = CreateServer(useMockTransport || useCmbService);
+                server = CreateServer(useMockTransport);
             }
 
             CreateNewClients(clientCount, out clients, useMockTransport, useCmbService);
 
-            if (!serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (!serverFirst && !useCmbService)
             {
-                server = CreateServer(useMockTransport || useCmbService);
+                server = CreateServer(useMockTransport);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -627,7 +629,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return gameObject;
         }
 
-        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager server, params NetworkManager[] clients)
+        /// <summary>
+        /// This will create and register a <see cref="NetworkPrefab"/> instance for all <see cref="NetworkManager"/> instances.<br />
+        /// *** Invoke this method before starting any of the <see cref="NetworkManager"/> instances ***.
+        /// </summary>
+        /// <remarks>
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology, the authority <see cref="NetworkManager"/>
+        /// can be within the clients array of <see cref="NetworkManager"/> instances.
+        /// </remarks>
+        /// <param name="baseName">The base name of the network prefab. Keep it short as additional information will be added to this name.</param>
+        /// <param name="authorityNetworkManager">The authority <see cref="NetworkManager"/> (i.e. server, host, or session owner)</param>
+        /// <param name="clients">The clients that should also have this <see cref="NetworkPrefab"/> instance added to their network prefab list.</param>
+        /// <returns>The prefab's root <see cref="GameObject"/></returns>
+        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager authorityNetworkManager, params NetworkManager[] clients)
         {
             void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
             {
@@ -635,17 +649,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";
-            Assert.IsNotNull(server, prefabCreateAssertError);
-            Assert.IsFalse(server.IsListening, prefabCreateAssertError);
+            Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
+            Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = CreateNetworkObject(baseName, server);
+            var gameObject = CreateNetworkObject(baseName, authorityNetworkManager);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
             // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            AddNetworkPrefab(server.NetworkConfig, networkPrefab);
+            AddNetworkPrefab(authorityNetworkManager.NetworkConfig, networkPrefab);
             foreach (var clientNetworkManager in clients)
             {
+                if (clientNetworkManager == authorityNetworkManager)
+                {
+                    continue;
+                }
                 AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
             }
             return gameObject;
