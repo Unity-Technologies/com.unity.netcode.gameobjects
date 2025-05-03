@@ -171,11 +171,6 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientCount = UseCMBService() ? numberOfClients + 1 : numberOfClients;
         }
 
-        protected override void OnOneTimeTearDown()
-        {
-            base.OnOneTimeTearDown();
-        }
-
         protected override IEnumerator OnSetup()
         {
             m_SpawnedObjects.Clear();
