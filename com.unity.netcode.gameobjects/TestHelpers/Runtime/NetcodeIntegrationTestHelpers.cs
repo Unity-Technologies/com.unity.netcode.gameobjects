@@ -21,6 +21,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
+        internal static bool IsStarted => s_IsStarted;
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
@@ -643,11 +644,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>The prefab's root <see cref="GameObject"/></returns>
         public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager authorityNetworkManager, params NetworkManager[] clients)
         {
-            void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
-            {
-                config.Prefabs.Add(prefab);
-            }
-
             var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";
             Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
@@ -657,14 +653,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
             // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            AddNetworkPrefab(authorityNetworkManager.NetworkConfig, networkPrefab);
+            authorityNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             foreach (var clientNetworkManager in clients)
             {
                 if (clientNetworkManager == authorityNetworkManager)
                 {
                     continue;
                 }
-                AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = gameObject });
             }
             return gameObject;
         }

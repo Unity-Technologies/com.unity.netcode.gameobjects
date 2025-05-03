@@ -162,10 +162,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_UseCmbService)
             {
+                // TODO: Because we start the NetworkManagers back-to-back, the service can make a NetworkManager
+                // (other than the very first one) the session owner. This could lead to test instabilities and
+                // we need to add additional code during the start process that will start the very 1st instance
+                // and wait for it to be approved and assigned the session owner before we assume anything.
+                // Otherwise, any pick from the m_NetworkManagers could result in that specific instance not being
+                // the first session owner.
+                // If we haven't even started any NetworkManager, then just return the first
+                // instance until we resolve the above issue.
+                if (!NetcodeIntegrationTestHelpers.IsStarted)
+                {
+                    return m_NetworkManagers[0];
+                }
+
                 foreach (var client in m_NetworkManagers)
                 {
-                    // If client isn't approved we are still in setup and want to return the first client
-                    // otherwise look for the session owner
+                    // See above notes.
+                    // TODO: Once the above is resolved, just check for client.LocalClient.IsSessionOwner
                     if (!client.LocalClient.IsApproved || client.LocalClient.IsSessionOwner)
                     {
                         return client;
@@ -203,7 +216,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Indicates whether the currently running tests are targeting the hosted CMB Service
         /// </summary>
         /// <remarks>Can only be true if <see cref="UseCMBService"/> returns true.</remarks>
-        protected bool m_UseCmbService;
+        protected bool m_UseCmbService { get; private set; }
 
         /// <summary>
         /// Indicates whether a hosted CMB service is available.
@@ -419,6 +432,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            // In addition to setting the number of clients in the OneTimeSetup, we need to re-apply the number of clients for each unique test
+            // in the event that a previous test stopped a client.
+            m_NumberOfClients = NumberOfClients;
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
@@ -521,7 +537,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // If we are connecting to a CMB server and we have a zero client count,
             // then we must make m_NumberOfClients = 1 for the session owner.
-            if (UseCMBService() && NumberOfClients == 0 && m_NumberOfClients == 0)
+            if (m_UseCmbService && NumberOfClients == 0 && m_NumberOfClients == 0)
             {
                 m_NumberOfClients = 1;
             }
@@ -816,7 +832,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // In the event this is invoked within a derived integration test and
             // the number of clients is 0, then we need to have at least 1 client
             // to be the session owner.
-            if (UseCMBService() && numberOfClients == 0)
+            if (m_UseCmbService && numberOfClients == 0)
             {
                 numberOfClients = 1;
                 // If m_NumberOfCleints == 0, then we should increment it.
@@ -995,7 +1011,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
@@ -1009,15 +1024,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
 
-                // When using the CMBService, we don't have a server, so get the appropriate authority network manager
-                var authorityManager = GetAuthorityNetworkManager();
-
                 VerboseDebug($"Starting with useCmbService: {m_UseCmbService}");
                 if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
+
+                // When using the CMBService, we don't have a server, so get the appropriate authority network manager
+                var authorityManager = GetAuthorityNetworkManager();
 
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
                 // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
@@ -1382,9 +1397,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var networkManagers = Object.FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
             foreach (var networkManager in networkManagers)
             {
-
                 Object.DestroyImmediate(networkManager.gameObject);
             }
+            m_NetworkManagers = null;
+            m_ClientNetworkManagers = null;
+            m_ServerNetworkManager = null;
         }
 
         /// <summary>
@@ -1949,7 +1966,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (UseCMBService())
             {
                 m_UseCmbService = m_DistributedAuthority && hostOrServer == HostOrServer.DAHost;
-
             }
         }
 
