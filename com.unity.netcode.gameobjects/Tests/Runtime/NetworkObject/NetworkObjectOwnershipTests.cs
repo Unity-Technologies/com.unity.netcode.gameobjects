@@ -92,8 +92,8 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        [Test]
-        public void TestPlayerIsOwned()
+        [UnityTest]
+        public IEnumerator TestPlayerIsOwned()
         {
             var clientOwnedObjects = m_ClientNetworkManagers[0].SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId);
 
@@ -102,6 +102,7 @@ namespace Unity.Netcode.RuntimeTests
 
             clientPlayerObject = m_ClientNetworkManagers[0].LocalClient.OwnedObjects.Where((c) => c.IsLocalPlayer).FirstOrDefault();
             Assert.NotNull(clientPlayerObject, $"Client Id {m_ClientNetworkManagers[0].LocalClientId} does not have its local player marked as an owned object using local client!");
+            yield return null;
         }
 
         private bool AllObjectsSpawnedOnClients()

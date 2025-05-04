@@ -67,6 +67,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
 
             AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
+
+            yield return s_DefaultWaitForTick;
         }
     }
 }
