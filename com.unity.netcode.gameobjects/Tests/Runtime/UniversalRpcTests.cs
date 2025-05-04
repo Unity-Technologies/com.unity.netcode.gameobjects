@@ -1542,16 +1542,6 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
     }
 
-    [TestFixture(HostOrServer.Host)]
-    [TestFixture(HostOrServer.Server)]
-    internal class UniversalRpcTestDefaultSendToSpecifiedInParamsSendingToServerAndOwner : UniversalRpcTestsBase
-    {
-        public UniversalRpcTestDefaultSendToSpecifiedInParamsSendingToServerAndOwner(HostOrServer hostOrServer) : base(hostOrServer)
-        {
-
-        }
-    }
-
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]

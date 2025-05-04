@@ -172,6 +172,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
+        /// test is the USE_CMB_SERVICE is set. 
+        /// </summary>
+        internal static void IgnoreIfServiceEnviromentVariableSet()
+        {
+            if (bool.TryParse(Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false", out bool isTrue) ? isTrue : false)
+            {
+                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+            }
+        }
+
         private static readonly string k_TransportHost = GetAddressToBind();
         private static readonly ushort k_TransportPort = GetPortToBind();
 

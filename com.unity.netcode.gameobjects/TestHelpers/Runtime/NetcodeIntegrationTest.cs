@@ -96,13 +96,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        private int GetTotalClients()
+        {
+            if (m_DistributedAuthority)
+            {
+                // If not connecting to a CMB service then we are using a DAHost and we add 1 to this count.
+                return !UseCMBService() && m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+            }
+            else
+            {
+                // If using a host then we add one to this count.
+                return m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+            }
+        }
+
         /// <summary>
         /// Total number of clients that should be connected at any point during a test.
         /// </summary>
         /// <remarks>
         /// When using the CMB Service, we ignore if <see cref="m_UseHost"/> is true.
         /// </remarks>
-        protected int TotalClients => m_UseHost && !UseCMBService() ? m_NumberOfClients + 1 : m_NumberOfClients;
+        protected int TotalClients => GetTotalClients();
 
         protected const uint k_DefaultTickRate = 30;
 
@@ -212,7 +226,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
-        protected bool m_DistributedAuthority;
+        protected bool m_DistributedAuthority => m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
         protected NetworkTopologyTypes m_NetworkTopologyType = NetworkTopologyTypes.ClientServer;
 
         /// <summary>
@@ -233,14 +247,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// check the environment variable once per test set.
         /// </remarks>
         /// <returns>true/false</returns>
-        private bool UseCMBServiceEnviromentVariableSet()
+        private bool GetServiceEnviromentVariable()
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
                 var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
                 if (bool.TryParse(useCmbService.ToLower(), out bool isTrue))
                 {
-                    m_UseCmbService = isTrue;
+                    m_UseCmbServiceEnv = isTrue;
                 }
                 else
                 {
@@ -261,7 +275,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if USE_CMB_SERVICE
             return true;
 #else
-            return UseCMBServiceEnviromentVariableSet();
+            return m_UseCmbService;
 #endif
         }
 
@@ -409,6 +423,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            // Only For CMB Server Tests:
+            // If the environment variable is set (i.e. doing a CMB server run) but UseCMBservice returns false, then ignore the test.
+            // Note: This will prevent us from re-running all of the non-DA integration tests that have already run multiple times on
+            // multiple platforms
+            if (GetServiceEnviromentVariable() && !UseCMBService())
+            {
+                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+                return;
+            }
+            else
+            {
+                // Otherwise, continue with the test
+                InternalOnOneTimeSetup();
+            }
+        }
+
+        private void InternalOnOneTimeSetup()
+        {
             Application.runInBackground = true;
             m_NumberOfClients = NumberOfClients;
             IsRunning = true;
@@ -515,7 +547,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 }
             }
-
             VerboseDebug($"Exiting {nameof(SetUp)}");
         }
 
@@ -1983,23 +2014,45 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InitializeTestConfiguration(m_NetworkTopologyType, hostOrServer);
         }
 
+        /// <summary>
+        /// Override this virtual method to execute script that runs before the base class constructor has finished executing.<br />
+        /// </summary>
+        /// <remarks>
+        /// ***NOTE***
+        /// When this method is invoked there will have been no properties set (i.e. nothing is configured). <br />
+        /// Primarily this is to set things like environemnt variables or other more external configurations that could
+        /// determine how the <see cref="NetcodeIntegrationTest"/> is configured.
+        /// </remarks>
+        protected virtual void OnPreInitializeConfiguration()
+        {
+        }
+
         private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
         {
-            if (!hostOrServer.HasValue)
-            {
-                // Always default to hosting, set the type of host based on the topology type
-                hostOrServer = networkTopologyType == NetworkTopologyTypes.DistributedAuthority ? HostOrServer.DAHost : HostOrServer.Host;
-            }
+            OnPreInitializeConfiguration();
 
             NetworkMessageManager.EnableMessageOrderConsoleLog = false;
 
+            // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
             m_NetworkTopologyType = networkTopologyType;
-            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
+
+            if (!hostOrServer.HasValue)
+            {
+                // Always default to hosting, set the type of host based on the topology type.
+                // Note: For m_DistributedAuthority to be true, the m_NetworkTopologyType must be set to NetworkTopologyTypes.DistributedAuthority
+                hostOrServer = m_DistributedAuthority ? HostOrServer.DAHost : HostOrServer.Host;
+            }
             m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
 
-            if (UseCMBService())
+            // If we are using a distributed authority network topology and the environment variable
+            // to use the CMBService is set, then perform the m_UseCmbService check.
+            if (m_DistributedAuthority && GetServiceEnviromentVariable())
             {
-                m_UseCmbService = m_DistributedAuthority && hostOrServer == HostOrServer.DAHost;
+                m_UseCmbService = hostOrServer == HostOrServer.DAHost;
+                // In the event UseCMBService is overridden, we apply the value returned.
+                // If it is, then whatever UseCMBService returns is the setting for m_UseCmbService.
+                // If it is not, then it will return whatever m_UseCmbService's setting is from the above check.
+                m_UseCmbService = UseCMBService();
             }
         }
 

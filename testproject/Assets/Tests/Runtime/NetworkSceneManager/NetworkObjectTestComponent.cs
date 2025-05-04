@@ -56,7 +56,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            if (IsServer)
+            if (IsServer || IsSessionOwner)
             {
                 ServerNetworkObjectInstance = NetworkObject;
                 if (DisableOnSpawn && !ObjectWasDisabledUponSpawn)
