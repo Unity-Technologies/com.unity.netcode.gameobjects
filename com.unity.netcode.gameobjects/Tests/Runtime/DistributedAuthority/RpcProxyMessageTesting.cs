@@ -25,13 +25,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private StringBuilder m_ValidationLogger = new StringBuilder();
 
-        protected override void OnPreInitializeConfiguration()
-        {
-            System.Environment.SetEnvironmentVariable("USE_CMB_SERVICE", "true");
-            System.Environment.SetEnvironmentVariable("CMB_SERVICE_PORT", null);
-            base.OnPreInitializeConfiguration();
-        }
-
         public RpcProxyMessageTesting(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override IEnumerator OnSetup()
