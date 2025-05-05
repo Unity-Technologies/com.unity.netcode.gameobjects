@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `INetworkPrefabInstanceHandlerWithData`, a variant of `INetworkPrefabInstanceHandler` that supports synchronizing custom data prior to the `Instantiate()` method call. (#3430)
 
 ### Fixed
 
