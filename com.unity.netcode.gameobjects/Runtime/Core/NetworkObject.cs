@@ -2885,7 +2885,7 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 10, value);
             }
 
-            public bool HasInstantiationPayload
+            public bool HasInstantiationData
             {
                 get => ByteUtility.GetBit(m_BitField, 11);
                 set => ByteUtility.SetBit(ref m_BitField, 11, value);
@@ -2979,10 +2979,10 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
-                // Synchronize Payload, NetworkVariables and NetworkBehaviours
+                // Synchronize instantiation data, NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
 
-                if (HasInstantiationPayload)
+                if (HasInstantiationData)
                 {
                     OwnerObject.NetworkManager.PrefabHandler.SynchronizeInstantiationData(Hash, ref bufferSerializer);
                 }
@@ -3164,7 +3164,7 @@ namespace Unity.Netcode
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId,
-                HasInstantiationPayload = NetworkManager.PrefabHandler.ContainsHandlerWithData(GlobalObjectIdHash),
+                HasInstantiationData = NetworkManager.PrefabHandler.ContainsHandlerWithData(GlobalObjectIdHash),
             };
 
             // Handle Parenting
@@ -3231,8 +3231,8 @@ namespace Unity.Netcode
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
 
-            //Synchronize the instantiation payload if needed
-            if (sceneObject.HasInstantiationPayload)
+            //Synchronize the instantiation data if needed
+            if (sceneObject.HasInstantiationData)
             {
                 networkManager.PrefabHandler.SynchronizeInstantiationData(sceneObject.Hash, ref bufferSerializer);
             }

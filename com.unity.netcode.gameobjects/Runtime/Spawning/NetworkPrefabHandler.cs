@@ -268,12 +268,12 @@ namespace Unity.Netcode
 
             if (serializer.IsWriter)
             {
-                // Reserves space to write the size later
+                // Reserves space to write the instantiation data size later
                 FastBufferWriter fastBufferWriter = serializer.GetFastBufferWriter();
-                int sizePos = fastBufferWriter.Position;
+                int dataSizePos = fastBufferWriter.Position;
                 fastBufferWriter.WriteValueSafe(0); // placeholder for size, correctly writen at the end
 
-                int payloadStartPos = fastBufferWriter.Position;
+                int dataStartPos = fastBufferWriter.Position;
                 try
                 {
                     synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
@@ -281,26 +281,26 @@ namespace Unity.Netcode
                 catch (Exception ex)
                 {
                     // Resets to start position to avoid writing corrupted data
-                    fastBufferWriter.Seek(sizePos);
-                    NetworkLog.LogError($"[InstantiationPayload] Handler failed during synchronization (Write): {ex.Message}");
+                    fastBufferWriter.Seek(dataSizePos);
+                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization (Write): {ex.Message}");
                     return;
                 }
 
-                // Compute and write actual payload size
-                int payloadEndPos = fastBufferWriter.Position;
-                int payloadSize = payloadEndPos - payloadStartPos;
+                // Compute and write actual instantiation data size
+                int dataEndPos = fastBufferWriter.Position;
+                int dataSize = dataEndPos - dataStartPos;
                 // Goes back and write the real size
-                fastBufferWriter.Seek(sizePos);
-                fastBufferWriter.WriteValueSafe(payloadSize);
+                fastBufferWriter.Seek(dataSizePos);
+                fastBufferWriter.WriteValueSafe(dataSize);
                 // Restores to end
-                fastBufferWriter.Seek(payloadEndPos);
+                fastBufferWriter.Seek(dataEndPos);
             }
             else
             {
                 FastBufferReader fastBufferReader = serializer.GetFastBufferReader();
-                // Reads the expected size of the payload
-                fastBufferReader.ReadValueSafe(out int payloadSize);
-                int payloadStartPos = fastBufferReader.Position;
+                // Reads the expected size of the instantiation data
+                fastBufferReader.ReadValueSafe(out int dataSize);
+                int dataStartPos = fastBufferReader.Position;
 
                 try
                 {
@@ -308,18 +308,18 @@ namespace Unity.Netcode
                 }
                 catch (Exception ex)
                 {
-                    // Skips the unread payload bytes
-                    fastBufferReader.Seek(payloadStartPos + payloadSize);
-                    NetworkLog.LogError($"[InstantiationPayload] Handler failed during synchronization (Read): {ex.Message}");
+                    // Skips the unread instantiation data bytes
+                    fastBufferReader.Seek(dataStartPos + dataSize);
+                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization (Read): {ex.Message}");
                     return;
                 }
 
                 // Validates if expected number of bytes were read
-                int payloadEndPos = fastBufferReader.Position;
-                if (payloadEndPos != payloadStartPos + payloadSize)
+                int dataEndPos = fastBufferReader.Position;
+                if (dataEndPos != dataStartPos + dataSize)
                 {
-                    NetworkLog.LogWarning($"[InstantiationPayload] Read {payloadEndPos - payloadStartPos} bytes, expected {payloadSize}");
-                    fastBufferReader.Seek(payloadStartPos + payloadSize);
+                    NetworkLog.LogWarning($"[InstantiationData] Read {dataEndPos - dataStartPos} bytes, expected {dataSize}");
+                    fastBufferReader.Seek(dataStartPos + dataSize);
                 }
             }
         }
