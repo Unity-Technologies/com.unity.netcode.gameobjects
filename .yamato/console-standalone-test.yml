@@ -55,7 +55,7 @@ console_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
-# PS5 related
+# PS5 related --> THIS WAS DISABLED IN PROJECT.METAFILE. SEE MTT-12118
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\9.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\target\bins'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
@@ -94,7 +94,7 @@ console_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   variables:
 # PS4 related
     SCE_ORBIS_SDK_DIR: 'C:\Users\bokken\SCE\ps4_sdk_12_00'
-# PS5 related
+# PS5 related --> THIS WAS DISABLED IN PROJECT.METAFILE. SEE MTT-12118
     SCE_PROSPERO_SDK_DIR: 'C:\Program Files (x86)\SCE\Prospero SDKs\9.000'
     SHADER_COMPILER_PATH: '${SCE_PROSPERO_SDK_DIR}\target\bins'
     SCE_ROOT_DIR: 'C:\Program Files (x86)\SCE'
