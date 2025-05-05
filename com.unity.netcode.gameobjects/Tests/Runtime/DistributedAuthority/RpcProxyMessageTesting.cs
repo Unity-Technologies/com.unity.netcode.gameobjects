@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
-        private List<RpcProxyTest> m_ProxyTestInstances = new List<RpcProxyTest>();
+        private List<RpcProxyText> m_ProxyTestInstances = new List<RpcProxyText>();
 
         private StringBuilder m_ValidationLogger = new StringBuilder();
 
@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-            m_PlayerPrefab.AddComponent<RpcProxyTest>();
+            m_PlayerPrefab.AddComponent<RpcProxyText>();
             base.OnCreatePlayerPrefab();
         }
 
@@ -72,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         m_ValidationLogger.AppendLine($"Client-{networkManager.LocalClientId} does not have a cloned instance for Player-{proxy.OwnerClientId}!");
                     }
-                    var clonedPlayer = networkManager.SpawnManager.SpawnedObjects[proxy.NetworkObjectId].GetComponent<RpcProxyTest>();
+                    var clonedPlayer = networkManager.SpawnManager.SpawnedObjects[proxy.NetworkObjectId].GetComponent<RpcProxyText>();
                     // For each cloned player, each client should receive 1 RPC call per cloned player instance.
                     // Example (With 3 clients including session owner):
                     // Client-1 (SO): Sends to NotAuthority
@@ -98,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (var client in m_NetworkManagers)
             {
-                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
+                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyText>());
             }
 
             foreach (var clientProxyTest in m_ProxyTestInstances)
@@ -110,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout(m_ValidationLogger.ToString());
         }
 
-        public class RpcProxyTest : NetworkBehaviour
+        public class RpcProxyText : NetworkBehaviour
         {
             public List<ulong> ReceivedRpc = new List<ulong>();
 
