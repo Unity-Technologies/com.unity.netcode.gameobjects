@@ -174,7 +174,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
-        /// test is the USE_CMB_SERVICE is set. 
+        /// test if running against a CMB server.
         /// </summary>
         internal static void IgnoreIfServiceEnviromentVariableSet()
         {

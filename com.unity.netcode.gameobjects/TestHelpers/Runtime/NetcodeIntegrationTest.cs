@@ -247,7 +247,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// check the environment variable once per test set.
         /// </remarks>
         /// <returns>true/false</returns>
-        private bool GetServiceEnviromentVariable()
+        private bool GetServiceEnvironmentVariable()
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
@@ -427,7 +427,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // If the environment variable is set (i.e. doing a CMB server run) but UseCMBservice returns false, then ignore the test.
             // Note: This will prevent us from re-running all of the non-DA integration tests that have already run multiple times on
             // multiple platforms
-            if (GetServiceEnviromentVariable() && !UseCMBService())
+            if (GetServiceEnvironmentVariable() && !UseCMBService())
             {
                 Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
                 return;
