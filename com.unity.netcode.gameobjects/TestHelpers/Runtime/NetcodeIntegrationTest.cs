@@ -164,6 +164,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>The Server <see cref="NetworkManager"/> instance instantiated and tracked within the current test</summary>
         protected NetworkManager m_ServerNetworkManager;
+
         /// <summary>All the client <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
         protected NetworkManager[] m_ClientNetworkManagers;
         /// <summary>All the <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
@@ -251,14 +252,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
-                var useCmbService = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
-                if (bool.TryParse(useCmbService.ToLower(), out bool isTrue))
+                m_UseCmbServiceEnvString = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+                if (bool.TryParse(m_UseCmbServiceEnvString.ToLower(), out bool isTrue))
                 {
                     m_UseCmbServiceEnv = isTrue;
                 }
                 else
                 {
-                    Debug.LogWarning($"The USE_CMB_SERVICE ({useCmbService}) value is an invalid bool string. {m_UseCmbService} is being set to false.");
+                    Debug.LogWarning($"The USE_CMB_SERVICE ({m_UseCmbServiceEnvString}) value is an invalid bool string. {m_UseCmbService} is being set to false.");
                     m_UseCmbServiceEnv = false;
                 }
             }
@@ -592,21 +593,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
         }
 
-        /// <summary>
-        /// Will create <see cref="NumberOfClients"/> number of clients.
-        /// To create a specific number of clients <see cref="CreateServerAndClients(int)"/>
-        /// </summary>
-        protected void CreateServerAndClients()
-        {
-            // If we are connecting to a CMB server and we have a zero client count,
-            // then we must make m_NumberOfClients = 1 for the session owner.
-            if (m_UseCmbService && NumberOfClients == 0 && m_NumberOfClients == 0)
-            {
-                m_NumberOfClients = 1;
-            }
-            CreateServerAndClients(m_NumberOfClients);
-        }
-
         private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
         {
             var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
@@ -878,6 +864,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Will create <see cref="NumberOfClients"/> number of clients.
+        /// To create a specific number of clients <see cref="CreateServerAndClients(int)"/>
+        /// </summary>
+        protected void CreateServerAndClients()
+        {
+            CreateServerAndClients(NumberOfClients);
+        }
+
+        /// <summary>
         /// Creates the server and clients
         /// </summary>
         /// <param name="numberOfClients">The number of client instances to create</param>
@@ -892,23 +887,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_TargetFrameRate = -1;
             }
 
-            // In the event this is invoked within a derived integration test and
-            // the number of clients is 0, then we need to have at least 1 client
-            // to be the session owner.
-            if (m_UseCmbService && numberOfClients == 0)
+            // If we are connecting to a CMB server we add +1 for the session owner
+            if (m_UseCmbService)
             {
-                numberOfClients = 1;
-                // If m_NumberOfCleints == 0, then we should increment it.
-                if (m_NumberOfClients == 0)
-                {
-                    m_NumberOfClients = 1;
-                }
-                else
-                {
-                    // Otherwise, log a warning to the developer that they may be doing something bad.
-                    Debug.LogWarning($"[{nameof(CreateServerAndClients)}] Invoked with number of clients set to zero but m_NumberOfClients was {m_NumberOfClients}. " +
-                        $"Unless this was intended, this could cause issues with the {nameof(NetcodeIntegrationTest)}!");
-                }
+                numberOfClients++;
             }
 
             // Create multiple NetworkManager instances
@@ -917,7 +899,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
             }
-
+            m_NumberOfClients = numberOfClients;
             m_ClientNetworkManagers = clients;
             m_ServerNetworkManager = server;
 

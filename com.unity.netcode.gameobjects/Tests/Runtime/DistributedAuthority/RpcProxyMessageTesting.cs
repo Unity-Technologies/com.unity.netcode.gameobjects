@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -20,9 +21,16 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
-        private List<RpcProxyText> m_ProxyTestInstances = new List<RpcProxyText>();
+        private List<RpcProxyTest> m_ProxyTestInstances = new List<RpcProxyTest>();
 
         private StringBuilder m_ValidationLogger = new StringBuilder();
+
+        protected override void OnPreInitializeConfiguration()
+        {
+            System.Environment.SetEnvironmentVariable("USE_CMB_SERVICE", "true");
+            System.Environment.SetEnvironmentVariable("CMB_SERVICE_PORT", null);
+            base.OnPreInitializeConfiguration();
+        }
 
         public RpcProxyMessageTesting(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -34,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-            m_PlayerPrefab.AddComponent<RpcProxyText>();
+            m_PlayerPrefab.AddComponent<RpcProxyTest>();
             base.OnCreatePlayerPrefab();
         }
 
@@ -44,28 +52,53 @@ namespace Unity.Netcode.RuntimeTests
             m_ValidationLogger.Clear();
             foreach (var proxy in m_ProxyTestInstances)
             {
-                if (proxy.ReceivedRpc.Count < NumberOfClients)
+
+                // Since we are sending to everyone but the authority, the local instance of each client's player should have zero
+                // entries.
+                if (proxy.ReceivedRpc.Count != 0)
                 {
-                    m_ValidationLogger.AppendLine($"Not all clients received RPC from Client-{proxy.OwnerClientId}!");
+                    m_ValidationLogger.AppendLine($"Client-{proxy.OwnerClientId} sent itself an Rpc!");
                 }
-                foreach (var clientId in proxy.ReceivedRpc)
+                foreach (var networkManager in m_NetworkManagers)
                 {
-                    if (clientId == proxy.OwnerClientId)
+                    // Skip the local player instance
+                    if (networkManager.LocalClientId == proxy.OwnerClientId)
                     {
-                        m_ValidationLogger.AppendLine($"Client-{proxy.OwnerClientId} sent itself an Rpc!");
+                        continue;
+                    }
+
+                    // Get the cloned player instance of the player based on the player's NetworkObjectId
+                    if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(proxy.NetworkObjectId))
+                    {
+                        m_ValidationLogger.AppendLine($"Client-{networkManager.LocalClientId} does not have a cloned instance for Player-{proxy.OwnerClientId}!");
+                    }
+                    var clonedPlayer = networkManager.SpawnManager.SpawnedObjects[proxy.NetworkObjectId].GetComponent<RpcProxyTest>();
+                    // For each cloned player, each client should receive 1 RPC call per cloned player instance.
+                    // Example (With 3 clients including session owner):
+                    // Client-1 (SO): Sends to NotAuthority
+                    // Client-2: Should receive 1 RPC on its clone of Player-1
+                    // Client-3: Should receive 1 RPC on its clone of Player-1
+                    // Client-2: Sends to NotAuthority
+                    // Client-1: Should receive 1 RPC on its clone of Player-2
+                    // Client-3: Should receive 1 RPC on its clone of Player-2
+                    // Client-3: Sends to NotAuthority
+                    // Client-1: Should receive 1 RPC on its clone of Player-3
+                    // Client-2: Should receive 1 RPC on its clone of Player-3
+                    if (clonedPlayer.ReceivedRpc.Count != 1)
+                    {
+                        m_ValidationLogger.AppendLine($"[{clonedPlayer.name}] Received ({clonedPlayer.ReceivedRpc.Count}) RPCs when we were expected only 1!");
                     }
                 }
             }
             return m_ValidationLogger.Length == 0;
         }
 
-
+        [UnityTest]
         public IEnumerator ProxyDoesNotInvokeOnSender()
         {
-            m_ProxyTestInstances.Add(m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<RpcProxyText>());
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
-                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyText>());
+                m_ProxyTestInstances.Add(client.LocalClient.PlayerObject.GetComponent<RpcProxyTest>());
             }
 
             foreach (var clientProxyTest in m_ProxyTestInstances)
@@ -77,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout(m_ValidationLogger.ToString());
         }
 
-        public class RpcProxyText : NetworkBehaviour
+        public class RpcProxyTest : NetworkBehaviour
         {
             public List<ulong> ReceivedRpc = new List<ulong>();
 
