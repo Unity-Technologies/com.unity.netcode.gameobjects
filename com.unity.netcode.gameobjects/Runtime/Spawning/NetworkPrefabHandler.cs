@@ -254,6 +254,77 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Handles the instantiation data for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="objectHash"></param>
+        /// <param name="serializer"></param>
+        internal void SynchronizeInstantiationData<T>(uint objectHash, ref BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (!TryGetHandlerWithData(objectHash, out INetworkPrefabInstanceHandlerWithData synchronizableHandler))
+            {
+                return;
+            }
+
+            if (serializer.IsWriter)
+            {
+                // Reserves space to write the size later
+                FastBufferWriter fastBufferWriter = serializer.GetFastBufferWriter();
+                int sizePos = fastBufferWriter.Position;
+                fastBufferWriter.WriteValueSafe(0); // placeholder for size, correctly writen at the end
+
+                int payloadStartPos = fastBufferWriter.Position;
+                try
+                {
+                    synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
+                }
+                catch (Exception ex)
+                {
+                    // Resets to start position to avoid writing corrupted data
+                    fastBufferWriter.Seek(sizePos);
+                    NetworkLog.LogError($"[InstantiationPayload] Handler failed during synchronization (Write): {ex.Message}");
+                    return;
+                }
+
+                // Compute and write actual payload size
+                int payloadEndPos = fastBufferWriter.Position;
+                int payloadSize = payloadEndPos - payloadStartPos;
+                // Goes back and write the real size
+                fastBufferWriter.Seek(sizePos);
+                fastBufferWriter.WriteValueSafe(payloadSize);
+                // Restores to end
+                fastBufferWriter.Seek(payloadEndPos);
+            }
+            else
+            {
+                FastBufferReader fastBufferReader = serializer.GetFastBufferReader();
+                // Reads the expected size of the payload
+                fastBufferReader.ReadValueSafe(out int payloadSize);
+                int payloadStartPos = fastBufferReader.Position;
+
+                try
+                {
+                    synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
+                }
+                catch (Exception ex)
+                {
+                    // Skips the unread payload bytes
+                    fastBufferReader.Seek(payloadStartPos + payloadSize);
+                    NetworkLog.LogError($"[InstantiationPayload] Handler failed during synchronization (Read): {ex.Message}");
+                    return;
+                }
+
+                // Validates if expected number of bytes were read
+                int payloadEndPos = fastBufferReader.Position;
+                if (payloadEndPos != payloadStartPos + payloadSize)
+                {
+                    NetworkLog.LogWarning($"[Payload] Read {payloadEndPos - payloadStartPos} bytes, expected {payloadSize}");
+                    fastBufferReader.Seek(payloadStartPos + payloadSize);
+                }
+            }
+        }
+
+        /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
         /// </summary>
         /// <param name="networkPrefabHash"></param>

@@ -2981,8 +2981,7 @@ namespace Unity.Netcode
 
                 if (HasInstantiationPayload)
                 {
-                    if (NetworkManager.Singleton.PrefabHandler.TryGetHandlerWithData(Hash, out INetworkPrefabInstanceHandlerWithData synchronizer))
-                        synchronizer.OnSynchronizeInstantiationData(ref bufferSerializer);
+                    OwnerObject.NetworkManager.PrefabHandler.SynchronizeInstantiationData(Hash, ref bufferSerializer);
                 }
 
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
@@ -3232,11 +3231,7 @@ namespace Unity.Netcode
             //Synchronize the instantiation payload if needed
             if (sceneObject.HasInstantiationPayload)
             {
-                if (NetworkManager.Singleton.PrefabHandler.TryGetHandlerWithData(sceneObject.Hash, out INetworkPrefabInstanceHandlerWithData handler))
-                {
-                    var instantiationPayloadBufferReader = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-                    handler.OnSynchronizeInstantiationData(ref instantiationPayloadBufferReader);
-                }
+                networkManager.PrefabHandler.SynchronizeInstantiationData(sceneObject.Hash, ref bufferSerializer);
             }
 
             //Attempt to create a local NetworkObject
