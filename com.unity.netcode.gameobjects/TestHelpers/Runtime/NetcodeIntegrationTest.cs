@@ -2046,7 +2046,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // If we are using a distributed authority network topology and the environment variable
             // to use the CMBService is set, then perform the m_UseCmbService check.
-            if (m_DistributedAuthority && GetServiceEnviromentVariable())
+            if (m_DistributedAuthority && GetServiceEnvironmentVariable())
             {
                 m_UseCmbService = hostOrServer == HostOrServer.DAHost;
                 // In the event UseCMBService is overridden, we apply the value returned.
