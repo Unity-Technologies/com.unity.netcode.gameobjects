@@ -318,7 +318,7 @@ namespace Unity.Netcode
                 int payloadEndPos = fastBufferReader.Position;
                 if (payloadEndPos != payloadStartPos + payloadSize)
                 {
-                    NetworkLog.LogWarning($"[Payload] Read {payloadEndPos - payloadStartPos} bytes, expected {payloadSize}");
+                    NetworkLog.LogWarning($"[InstantiationPayload] Read {payloadEndPos - payloadStartPos} bytes, expected {payloadSize}");
                     fastBufferReader.Seek(payloadStartPos + payloadSize);
                 }
             }
