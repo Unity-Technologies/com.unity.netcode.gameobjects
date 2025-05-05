@@ -99,11 +99,11 @@ test_platforms:
           image: package-ci/win10-ps4:v4
           flavor: b1.large
           standalone: PS4
-        - name: ps5
-          type: Unity::VM
-          image: package-ci/win10-ps5:v4
-          flavor: b1.large
-          standalone: PS5
+        # - name: ps5 --> SEE MTT-12118
+        #  type: Unity::VM
+        #  image: package-ci/win10-ps5:v4
+        #  flavor: b1.large
+        #  standalone: PS5
         - name: switch
           type: Unity::VM
           image: package-ci/win10-switch:v4
@@ -125,11 +125,11 @@ test_platforms:
           image: package-ci/win10-ps4:v4
           flavor: b1.large
           standalone: PS4
-        - name: ps5
-          type:  Unity::console::ps5
-          image: package-ci/win10-ps5:v4
-          flavor: b1.large
-          standalone: PS5
+        #- name: ps5 --> SEE MTT-12118
+        #  type:  Unity::console::ps5
+        #  image: package-ci/win10-ps5:v4
+        #  flavor: b1.large
+        #  standalone: PS5
         - name: switch
           type: Unity::console::switch
           image: package-ci/win10-switch:v4
