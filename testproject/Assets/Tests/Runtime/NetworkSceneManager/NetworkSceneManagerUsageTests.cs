@@ -19,6 +19,13 @@ namespace TestProject.RuntimeTests
         private Scene m_CurrentScene;
 
         protected override int NumberOfClients => 1;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkSceneManagerUsageTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         /// <summary>

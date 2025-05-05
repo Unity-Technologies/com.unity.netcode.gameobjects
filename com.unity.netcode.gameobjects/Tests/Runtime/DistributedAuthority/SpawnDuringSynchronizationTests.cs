@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -18,7 +17,6 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
-        private List<NetworkManager> m_AllNetworkManagers = new List<NetworkManager>();
         private StringBuilder m_ErrorLog = new StringBuilder();
 
         private NetworkBehaviourSpawnTimes m_SpawnTime;
@@ -89,11 +87,7 @@ namespace Unity.Netcode.RuntimeTests
             var spawnTestComponent = m_PlayerPrefab.GetComponent<SpawnTestComponent>();
             spawnTestComponent.PrefabToSpawn = CreateNetworkObjectPrefab("ObjToSpawn");
             spawnTestComponent.PrefabToSpawn.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
-            if (!UseCMBService())
-            {
-                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
-            }
-            foreach (var networkManager in m_ClientNetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 networkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
             }
@@ -104,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ErrorLog.Clear();
             var spawnTestComponent = (SpawnTestComponent)null;
-            foreach (var networkManager in m_AllNetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 spawnTestComponent = networkManager.LocalClient.PlayerObject.GetComponent<SpawnTestComponent>();
                 if (spawnTestComponent.SpawnedObject == null || !spawnTestComponent.SpawnedObject.IsSpawned)
@@ -112,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
                     m_ErrorLog.AppendLine($"{networkManager.name}'s player failed to spawn the network prefab!");
                     break;
                 }
-                foreach (var networkManagerToCheck in m_AllNetworkManagers)
+                foreach (var networkManagerToCheck in m_NetworkManagers)
                 {
                     if (networkManagerToCheck == networkManager)
                     {
@@ -133,13 +127,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnDuringSynchronization()
         {
-            m_AllNetworkManagers.Clear();
-            m_AllNetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (!UseCMBService())
-            {
-                m_AllNetworkManagers.Add(m_ServerNetworkManager);
-            }
-
             yield return WaitForConditionOrTimeOut(AllClientsSpawnedObject);
             AssertOnTimeout(m_ErrorLog.ToString());
         }

@@ -18,6 +18,12 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerSceneVerification : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
         public NetworkSceneManagerSceneVerification(HostOrServer hostOrServer, LoadSceneMode loadSceneMode) : base(hostOrServer)
         {
             m_LoadSceneMode = loadSceneMode;

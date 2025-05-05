@@ -27,6 +27,12 @@ namespace TestProject.RuntimeTests
         private bool m_CanStartServerOrClients = false;
         private bool m_LoadEventCompleted = false;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         internal class SceneTestInfo
         {
             public bool ShouldWait;

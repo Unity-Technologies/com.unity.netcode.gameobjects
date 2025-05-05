@@ -17,6 +17,12 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service - daHostInstance will be firstInstance with cmbService
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
         }
@@ -44,13 +50,8 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var name = m_ObjectToValidate.name;
-            if (!UseCMBService() && !m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-            {
-                m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} has not spawned {name}!");
-                return false;
-            }
 
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
@@ -64,23 +65,13 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidatePermissionsOnAllClients()
         {
             var currentPermissions = (ushort)m_ObjectToValidate.Ownership;
-            var otherPermissions = (ushort)0;
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var objectName = m_ObjectToValidate.name;
             m_ErrorLog.Clear();
-            if (!UseCMBService())
-            {
-                otherPermissions = (ushort)m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
-                if (currentPermissions != otherPermissions)
-                {
-                    m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
-                    return false;
-                }
-            }
 
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
-                otherPermissions = (ushort)client.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
+                var otherPermissions = (ushort)client.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
                 if (currentPermissions != otherPermissions)
                 {
                     m_ErrorLog.Append($"Client-{client.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
@@ -92,22 +83,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool ValidateAllInstancesAreOwnedByClient(ulong clientId)
         {
-            var networkObjectId = m_ObjectToValidate.NetworkObjectId;
-            var otherNetworkObject = (NetworkObject)null;
             m_ErrorLog.Clear();
-            if (!UseCMBService())
-            {
-                otherNetworkObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
-                if (otherNetworkObject.OwnerClientId != clientId)
-                {
-                    m_ErrorLog.Append($"[Client-{m_ServerNetworkManager.LocalClientId}][{otherNetworkObject.name}] Expected owner to be {clientId} but it was {otherNetworkObject.OwnerClientId}!");
-                    return false;
-                }
-            }
 
-            foreach (var client in m_ClientNetworkManagers)
+            var networkObjectId = m_ObjectToValidate.NetworkObjectId;
+            foreach (var client in m_NetworkManagers)
             {
-                otherNetworkObject = client.SpawnManager.SpawnedObjects[networkObjectId];
+                var otherNetworkObject = client.SpawnManager.SpawnedObjects[networkObjectId];
                 if (otherNetworkObject.OwnerClientId != clientId)
                 {
                     m_ErrorLog.Append($"[Client-{client.LocalClientId}][{otherNetworkObject.name}] Expected owner to be {clientId} but it was {otherNetworkObject.OwnerClientId}!");
@@ -254,7 +235,7 @@ namespace Unity.Netcode.RuntimeTests
             requestStatus = thirdInstance.RequestOwnership();
 
             // We expect the 3rd client's request should be able to be sent at this time as well (i.e. creates the race condition between two clients)
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{m_ServerNetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // We expect the first requesting client to be given ownership
             yield return WaitForConditionOrTimeOut(() => firstInstance.IsOwner);
@@ -311,7 +292,8 @@ namespace Unity.Netcode.RuntimeTests
             ///////////////////////////////////////////////
 
             // Now get the DAHost's client's instance
-            var daHostInstance = m_ServerNetworkManager.SpawnManager.SpawnedObjects[networkObjectId];
+            var authority = GetAuthorityNetworkManager();
+            var daHostInstance = authority.SpawnManager.SpawnedObjects[networkObjectId];
             var daHostInstanceHelper = daHostInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
             secondInstanceHelper.AllowOwnershipRequest = true;

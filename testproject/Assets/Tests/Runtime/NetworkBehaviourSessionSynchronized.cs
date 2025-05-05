@@ -22,8 +22,9 @@ namespace TestProject.RuntimeTests
         public IEnumerator InScenePlacedSessionSynchronized()
         {
             m_SceneLoaded = false;
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
-            m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += OnSceneEvent;
+            authority.SceneManager.LoadScene(k_SceneToLoad, UnityEngine.SceneManagement.LoadSceneMode.Additive);
             yield return WaitForConditionOrTimeOut(() => m_SceneLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_SceneToLoad} to load!");
             yield return CreateAndStartNewClient();
@@ -41,10 +42,11 @@ namespace TestProject.RuntimeTests
 
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
-            if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
+            var authority = GetAuthorityNetworkManager();
+            if (sceneEvent.ClientId == authority.LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
             {
                 m_SceneLoaded = true;
-                m_ServerNetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
+                authority.SceneManager.OnSceneEvent -= OnSceneEvent;
             }
         }
     }
