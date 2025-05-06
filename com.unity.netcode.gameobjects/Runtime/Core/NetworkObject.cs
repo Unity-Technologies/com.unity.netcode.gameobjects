@@ -1861,10 +1861,18 @@ namespace Unity.Netcode
         {
             if (NetworkManager.PrefabHandler.TryGetHandlerWithData(this.GlobalObjectIdHash, out var prefabHandler))
             {
-                // Creates the instantiateData array for the newtwork object
                 var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue)));
-                prefabHandler.OnSynchronizeInstantiationData(ref serializer);
-                InstantiationData = serializer.GetFastBufferWriter().ToArray();
+                try
+                {
+                    prefabHandler.OnSynchronizeInstantiationData(ref serializer);
+                    InstantiationData = serializer.GetFastBufferWriter().ToArray();
+                }
+                catch (Exception ex)
+                {
+                    serializer.GetFastBufferWriter().Dispose();
+                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization for injection (Write): {ex.Message}");
+                    return;
+                }
             }
         }
 
