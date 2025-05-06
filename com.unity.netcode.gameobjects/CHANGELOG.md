@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3440)
+
 ### Fixed
 
 - Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
