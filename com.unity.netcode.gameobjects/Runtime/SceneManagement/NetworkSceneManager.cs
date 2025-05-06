@@ -2595,42 +2595,26 @@ namespace Unity.Netcode
                 case SceneEventType.SynchronizeComplete:
                     {
                         // At this point the client is considered fully "connected"
-                        if ((NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClient.IsSessionOwner) || !NetworkManager.DistributedAuthorityMode)
+                        // Make sure we have a NetworkClient for this synchronized client
+                        if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
                         {
-                            // Notify the local server that a client has finished synchronizing
-                            OnSceneEvent?.Invoke(new SceneEvent()
-                            {
-                                SceneEventType = sceneEventData.SceneEventType,
-                                SceneName = string.Empty,
-                                ClientId = clientId
-                            });
-
-                            // Make sure we have a NetworkClient for this synchronized client
-                            if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
-                            {
-                                NetworkManager.ConnectionManager.AddClient(clientId);
-                            }
-                            // Mark this client as being connected
-                            NetworkManager.ConnectedClients[clientId].IsConnected = true;
+                            NetworkManager.ConnectionManager.AddClient(clientId);
                         }
-                        else
+                        // Mark this client as being connected
+                        NetworkManager.ConnectedClients[clientId].IsConnected = true;
+
+                        // Notify the local server that a client has finished synchronizing
+                        OnSceneEvent?.Invoke(new SceneEvent()
                         {
-                            // Notify the local server that a client has finished synchronizing
-                            OnSceneEvent?.Invoke(new SceneEvent()
-                            {
-                                SceneEventType = sceneEventData.SceneEventType,
-                                SceneName = string.Empty,
-                                ClientId = clientId
-                            });
+                            SceneEventType = sceneEventData.SceneEventType,
+                            SceneName = string.Empty,
+                            ClientId = clientId
+                        });
 
-                            // Make sure we have a NetworkClient for this synchronized client
-                            if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
-                            {
-                                NetworkManager.ConnectionManager.AddClient(clientId);
-                            }
-                            // Mark this client as being connected
-                            NetworkManager.ConnectedClients[clientId].IsConnected = true;
-
+                        // For non-authority clients in a distributed authority session, we show hidden objects,
+                        // we distribute NetworkObjects, and then we end the scene event.
+                        if (NetworkManager.DistributedAuthorityMode && !NetworkManager.LocalClient.IsSessionOwner)
+                        {
                             // Show any NetworkObjects that are:
                             // - Hidden from the session owner
                             // - Owned by this client
