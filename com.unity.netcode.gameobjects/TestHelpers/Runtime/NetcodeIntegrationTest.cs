@@ -1058,6 +1058,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Determines whether the session owner will be auto-started prior to any other client
+        /// </summary>
+        internal virtual bool ShouldAutoStartSessionOwner()
+        {
+            return true;
+        }
+
+        /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
         /// </summary>
@@ -1067,7 +1075,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
-                if (m_UseCmbService)
+                if (m_UseCmbService && ShouldAutoStartSessionOwner())
                 {
                     VerboseDebug("Using a distributed authority CMB Server for connection.");
                     yield return StartSessionOwner();

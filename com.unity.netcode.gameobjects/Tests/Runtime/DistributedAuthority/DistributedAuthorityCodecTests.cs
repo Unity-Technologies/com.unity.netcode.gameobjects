@@ -68,6 +68,14 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Don't auto start the session owner for codec tests
+        /// </summary>
+        internal override bool ShouldAutoStartSessionOwner()
+        {
+            return false;
+        }
+
         protected override void OnOneTimeSetup()
         {
             // Prevents the tests from running if no CMB Service is detected
