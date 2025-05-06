@@ -2604,8 +2604,15 @@ namespace Unity.Netcode
                                 SceneName = string.Empty,
                                 ClientId = clientId
                             });
-                            if (NetworkManager.ConnectedClients.ContainsKey(clientId))
+
+                            if (NetworkManager.DistributedAuthorityMode)
                             {
+                                // Make sure we have a NetworkClient for this synchronized client
+                                if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
+                                {
+                                    NetworkManager.ConnectionManager.AddClient(clientId);
+                                }
+                                // Mark this client as being connected
                                 NetworkManager.ConnectedClients[clientId].IsConnected = true;
                             }
                         }
@@ -2618,6 +2625,14 @@ namespace Unity.Netcode
                                 SceneName = string.Empty,
                                 ClientId = clientId
                             });
+
+                            // Make sure we have a NetworkClient for this synchronized client
+                            if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
+                            {
+                                NetworkManager.ConnectionManager.AddClient(clientId);
+                            }
+                            // Mark this client as being connected
+                            NetworkManager.ConnectedClients[clientId].IsConnected = true;
 
                             // Show any NetworkObjects that are:
                             // - Hidden from the session owner

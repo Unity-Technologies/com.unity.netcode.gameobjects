@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Unity.Collections;
 
 namespace Unity.Netcode
@@ -273,10 +274,10 @@ namespace Unity.Netcode
             // Stop the client-side approval timeout coroutine since we are approved.
             networkManager.ConnectionManager.StopClientApprovalCoroutine();
 
-            networkManager.ConnectionManager.ConnectedClientIds.Clear();
             foreach (var clientId in ConnectedClientIds)
             {
-                if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(clientId))
+                // If there is any disconnect between the connection sequence of Ids vs ConnectedClients, then add the client.
+                if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(clientId) || !networkManager.ConnectionManager.ConnectedClients.ContainsKey(clientId))
                 {
                     networkManager.ConnectionManager.AddClient(clientId);
                 }

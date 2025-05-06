@@ -327,10 +327,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
+            // Pre-identify NetworkManager identifiers based on network topology type
+            var startCount = useCmbService ? 1 : 0;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i, useMockTransport, useCmbService);
+                clients[i] = CreateNewClient(startCount, useMockTransport, useCmbService);
+                startCount++;
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -546,6 +549,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             foreach (var client in clients)
             {
+                if (client.IsConnectedClient)
+                {
+                    // Skip starting the session owner
+                    if (client.DistributedAuthorityMode && client.CMBServiceConnection && client.LocalClient.IsSessionOwner)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        throw new Exception("Client NetworkManager is already connected when starting clients!");
+                    }
+                }
                 client.StartClient();
                 hooks = new MultiInstanceHooks();
                 client.ConnectionManager.MessageManager.Hook(hooks);
