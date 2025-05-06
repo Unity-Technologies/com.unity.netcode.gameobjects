@@ -61,6 +61,12 @@ namespace Unity.Netcode
         private readonly Dictionary<uint, INetworkPrefabInstanceHandler> m_PrefabAssetToPrefabHandler = new Dictionary<uint, INetworkPrefabInstanceHandler>();
 
         /// <summary>
+        /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandlerWithData interface,
+        /// used to keep a smaller lookup table than <see cref="m_PrefabAssetToPrefabHandler"/> for faster instantiation data injection into NetworkObject
+        /// </summary>
+        private readonly Dictionary<uint, INetworkPrefabInstanceHandlerWithData> m_PrefabAssetToPrefabHandlerWithData = new Dictionary<uint, INetworkPrefabInstanceHandlerWithData>();
+
+        /// <summary>
         /// Links the custom prefab instance's GlobalNetworkObjectId to the original prefab asset's GlobalNetworkObjectId.  (Needed for HandleNetworkPrefabDestroy)
         /// [PrefabInstance][PrefabAsset]
         /// </summary>
@@ -101,6 +107,10 @@ namespace Unity.Netcode
             if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
             {
                 m_PrefabAssetToPrefabHandler.Add(globalObjectIdHash, instanceHandler);
+                if (instanceHandler is INetworkPrefabInstanceHandlerWithData instanceHandlerWithData)
+                {
+                    m_PrefabAssetToPrefabHandlerWithData.Add(globalObjectIdHash, instanceHandlerWithData);
+                }
                 return true;
             }
 
@@ -202,6 +212,7 @@ namespace Unity.Netcode
                 m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
             }
 
+            m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
             return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
         }
 
@@ -234,16 +245,7 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal bool TryGetHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
         {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(objectHash, out var prefabInstanceHandler))
-            {
-                if (prefabInstanceHandler is INetworkPrefabInstanceHandlerWithData payloadSynchronizer)
-                {
-                    handler = payloadSynchronizer;
-                    return true;
-                }
-            }
-            handler = null;
-            return false;
+            return m_PrefabAssetToPrefabHandlerWithData.TryGetValue(objectHash, out handler);
         }
 
         /// <summary>
