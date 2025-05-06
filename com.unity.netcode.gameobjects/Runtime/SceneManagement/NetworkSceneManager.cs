@@ -2605,16 +2605,13 @@ namespace Unity.Netcode
                                 ClientId = clientId
                             });
 
-                            if (NetworkManager.DistributedAuthorityMode)
+                            // Make sure we have a NetworkClient for this synchronized client
+                            if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
                             {
-                                // Make sure we have a NetworkClient for this synchronized client
-                                if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
-                                {
-                                    NetworkManager.ConnectionManager.AddClient(clientId);
-                                }
-                                // Mark this client as being connected
-                                NetworkManager.ConnectedClients[clientId].IsConnected = true;
+                                NetworkManager.ConnectionManager.AddClient(clientId);
                             }
+                            // Mark this client as being connected
+                            NetworkManager.ConnectedClients[clientId].IsConnected = true;
                         }
                         else
                         {
