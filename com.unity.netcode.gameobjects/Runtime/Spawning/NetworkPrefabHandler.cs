@@ -247,7 +247,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles the instantiation data for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// Reads the instantiation data for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="objectHash"></param>
