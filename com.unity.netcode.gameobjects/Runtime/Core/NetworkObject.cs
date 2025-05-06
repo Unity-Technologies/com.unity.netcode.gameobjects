@@ -3190,6 +3190,7 @@ namespace Unity.Netcode
                 TargetClientId = targetClientId,
                 HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
             };
+
             // Handle Parenting
             if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
