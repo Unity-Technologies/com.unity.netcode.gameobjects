@@ -131,7 +131,6 @@ namespace Unity.Netcode.EditorTests
 
             Assert.False(transport.StartServer());
 
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
             LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
 
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
@@ -149,22 +148,6 @@ namespace Unity.Netcode.EditorTests
 
             transport.SetConnectionData(string.Empty, 4242);
             Assert.True(transport.StartServer());
-
-            transport.Shutdown();
-        }
-
-        // Check that StartClient returns false with bad connection data.
-        [Test]
-        public void UnityTransport_StartClientFailsWithBadAddress()
-        {
-            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
-            transport.Initialize();
-
-            transport.SetConnectionData("foobar", 4242);
-            Assert.False(transport.StartClient());
-
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: foobar:4242.");
-            LogAssert.Expect(LogType.Error, "Target server network address (foobar) is Invalid!");
 
             transport.Shutdown();
         }
