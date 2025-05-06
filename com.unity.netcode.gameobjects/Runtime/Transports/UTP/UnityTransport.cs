@@ -256,10 +256,7 @@ namespace Unity.Netcode.Transports.UTP
                 if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
                     !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
                 {
-                    if (!silent)
-                    {
-                        Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
-                    }
+                    return default;
                 }
 
                 return endpoint;
@@ -512,8 +509,15 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (serverEndpoint.Family == NetworkFamily.Invalid)
             {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+                // If it's not valid, try to treat it like a URL.
+                InitDriver();
+                m_Driver.Connect(ConnectionData.Address, ConnectionData.Port);
+                return true;
+#else
                 Debug.LogError($"Target server network address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
+#endif
             }
 
             InitDriver();
@@ -625,7 +629,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address)</param>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name)</param>
         /// <param name="port">The remote port</param>
         /// <param name="listenAddress">The local listen address</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
