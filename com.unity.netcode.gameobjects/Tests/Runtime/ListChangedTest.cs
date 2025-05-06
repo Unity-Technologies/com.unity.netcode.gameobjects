@@ -52,7 +52,6 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
-        private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_NetSpawnedObject1;
@@ -68,10 +67,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListChangedTest()
         {
-            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            var authority = GetAuthorityNetworkManager();
 
             // create 3 objects
-            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, authority);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
 
             m_NetSpawnedObject1.GetComponent<ListChangedObject>().MyNetworkList.Add(42);

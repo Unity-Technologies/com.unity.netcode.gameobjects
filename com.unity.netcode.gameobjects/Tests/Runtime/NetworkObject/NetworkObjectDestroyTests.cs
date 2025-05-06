@@ -21,6 +21,12 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkObjectDestroyTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override void OnCreatePlayerPrefab()

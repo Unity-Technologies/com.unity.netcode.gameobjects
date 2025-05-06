@@ -9,6 +9,12 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 0;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public SessionVersionConnectionRequest() : base(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost) { }
 
         private bool m_UseValidSessionVersion;
@@ -21,7 +27,8 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns><see cref="SessionConfig"/></returns>
         private SessionConfig GetInavlidSessionConfig()
         {
-            return new SessionConfig(m_ServerNetworkManager.SessionConfig.SessionVersion - 1);
+            var authority = GetAuthorityNetworkManager();
+            return new SessionConfig(authority.SessionConfig.SessionVersion - 1);
         }
 
         /// <summary>
@@ -63,6 +70,12 @@ namespace Unity.Netcode.RuntimeTests
             return m_UseValidSessionVersion;
         }
 
+        internal enum SessionVersionType
+        {
+            Valid,
+            Invalid,
+        }
+
         /// <summary>
         /// Validates that when the client's session config version is valid a client will be
         /// allowed to connect and when it is not valid the client will be disconnected.
@@ -73,10 +86,10 @@ namespace Unity.Netcode.RuntimeTests
         /// </remarks>
         /// <param name="useValidSessionVersion">true = use valid session version | false = use invalid session version</param>
         [UnityTest]
-        public IEnumerator ValidateSessionVersion([Values] bool useValidSessionVersion)
+        public IEnumerator ValidateSessionVersion([Values] SessionVersionType type)
         {
             // Test client being disconnected due to invalid session version
-            m_UseValidSessionVersion = useValidSessionVersion;
+            m_UseValidSessionVersion = type == SessionVersionType.Valid;
             yield return CreateAndStartNewClient();
             yield return s_DefaultWaitForTick;
             if (!m_UseValidSessionVersion)

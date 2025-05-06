@@ -18,6 +18,13 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkManager m_LateJoinClient;
         private NetworkManager m_SpawnOwner;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service (can't control who becomes the session owner, needs a logic rework)
+        /// <inheritdoc/>
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public ExtendedNetworkShowAndHideTests(HostOrServer hostOrServer, bool enableSceneManagement) : base(hostOrServer)
         {
             m_EnableSceneManagement = enableSceneManagement;
@@ -25,12 +32,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            if (!UseCMBService())
-            {
-                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 client.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
             }
@@ -43,19 +45,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool AllClientsSpawnedObject()
         {
-            if (!UseCMBService())
-            {
-                if (!s_GlobalNetworkObjects.ContainsKey(m_ServerNetworkManager.LocalClientId))
-                {
-                    return false;
-                }
-                if (!s_GlobalNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_SpawnedObject.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 if (!s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
                 {
@@ -71,15 +61,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool IsClientPromotedToSessionOwner()
         {
-            if (!UseCMBService())
-            {
-                if (m_ServerNetworkManager.CurrentSessionOwner != m_ClientToHideFrom.LocalClientId)
-                {
-                    return false;
-                }
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 if (!client.IsConnectedClient)
                 {
@@ -112,9 +94,9 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator HiddenObjectPromotedSessionOwnerNewClientSynchronizes()
         {
             // Get the test relative session owner
-            var sessionOwner = UseCMBService() ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-            m_SpawnOwner = UseCMBService() ? m_ClientNetworkManagers[1] : m_ClientNetworkManagers[0];
-            m_ClientToHideFrom = UseCMBService() ? m_ClientNetworkManagers[NumberOfClients - 1] : m_ClientNetworkManagers[1];
+            var sessionOwner = GetAuthorityNetworkManager();
+            m_SpawnOwner = m_UseCmbService ? m_ClientNetworkManagers[1] : m_ClientNetworkManagers[0];
+            m_ClientToHideFrom = m_UseCmbService ? m_ClientNetworkManagers[NumberOfClients - 1] : m_ClientNetworkManagers[1];
             m_ObjectToSpawn.SetActive(true);
 
             // Spawn the object with a non-session owner client
@@ -129,7 +111,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"{m_SpawnedObject.name} was not hidden from Client-{m_ClientToHideFrom.LocalClientId}!");
 
             // Promoted a new session owner (DAHost promotes while CMB Session we disconnect the current session owner)
-            if (!UseCMBService())
+            if (!m_UseCmbService)
             {
                 m_ServerNetworkManager.PromoteSessionOwner(m_ClientToHideFrom.LocalClientId);
             }

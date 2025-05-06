@@ -18,6 +18,12 @@ namespace Unity.Netcode.RuntimeTests
         private List<GameObject> m_DaisyChainedDespawnObjects = new List<GameObject>();
         private List<ulong> m_HasReachedEnd = new List<ulong>();
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public enum SetDestroyGameObject
         {
             DestroyGameObject,

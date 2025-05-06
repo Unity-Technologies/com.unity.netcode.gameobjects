@@ -27,6 +27,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private MotionModels m_MotionModel;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkTransformOwnershipTests(HostOrServer hostOrServer, MotionModels motionModel) : base(hostOrServer)
         {
             m_MotionModel = motionModel;
@@ -119,8 +125,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoinedNonOwnerClientCannotChangeTransform()
         {
+            var authority = GetAuthorityNetworkManager();
+
             // Spawn the m_ClientNetworkTransformPrefab with the host starting as the owner
-            var hostInstance = SpawnObject(m_ClientNetworkTransformPrefab, m_ServerNetworkManager);
+            var hostInstance = SpawnObject(m_ClientNetworkTransformPrefab, authority);
 
             // Wait for the client to spawn it
             yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientsThatSpawnedThisPrefab().Contains(m_ClientNetworkManagers[0].LocalClientId));
@@ -619,7 +627,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private StringBuilder m_ErrorLog = new StringBuilder();
 
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private List<GameObject> m_SpawnedObjects = new List<GameObject>();
 
         public NestedNetworkTransformTests(HostOrServer hostOrServer, NetworkTransform.AuthorityModes authorityMode) : base(hostOrServer)
@@ -702,14 +709,9 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_DistributedAuthority)
             {
-                if (!UseCMBService())
+                foreach (var manager in m_NetworkManagers)
                 {
-                    m_ServerNetworkManager.OnFetchLocalPlayerPrefabToSpawn = FetchLocalPlayerPrefabToSpawn;
-                }
-
-                foreach (var client in m_ClientNetworkManagers)
-                {
-                    client.OnFetchLocalPlayerPrefabToSpawn = FetchLocalPlayerPrefabToSpawn;
+                    manager.OnFetchLocalPlayerPrefabToSpawn = FetchLocalPlayerPrefabToSpawn;
                 }
             }
             else
@@ -844,12 +846,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NestedNetworkTransformSpawnPositionTest()
         {
-            if (!m_DistributedAuthority || (m_DistributedAuthority && !UseCMBService()))
-            {
-                m_NetworkManagers.Add(m_ServerNetworkManager);
-            }
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-
             yield return WaitForConditionOrTimeOut(AllClientInstancesSynchronized);
             AssertOnTimeout($"Failed to synchronize all client instances!\n{m_ErrorLog}");
 
@@ -867,14 +863,12 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(AllSpawnedObjectsSynchronized);
             AssertOnTimeout($"Failed to synchronize all spawned NetworkObject instances!\n{m_ErrorLog}");
             m_SpawnedObjects.Clear();
-            m_NetworkManagers.Clear();
         }
 
         protected override IEnumerator OnTearDown()
         {
             // In case there was a failure, go ahead and clear these lists out for any pending TextFixture passes
             m_SpawnedObjects.Clear();
-            m_NetworkManagers.Clear();
             return base.OnTearDown();
         }
     }
