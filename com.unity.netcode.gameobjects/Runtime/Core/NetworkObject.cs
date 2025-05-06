@@ -58,6 +58,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// InstantiationData sent during the instantiation process.
+        /// Retrieved in <see cref="INetworkPrefabInstanceHandlerWithData.OnSynchronizeInstantiationData{T}(ref BufferSerializer{T})"/>
+        /// and available to INetworkPrefabInstanceHandler.Instantiate() for custom handling by user code.
+        /// </summary>
+        internal byte[] InstantiationData;
+
+        /// <summary>
         /// All <see cref="NetworkTransform"/> component instances associated with a <see cref="NetworkObject"/> component instance.
         /// </summary>
         /// <remarks>
@@ -1814,6 +1821,8 @@ namespace Unity.Netcode
                 }
             }
 
+            InjectInstantiationData();
+
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
@@ -1842,6 +1851,20 @@ namespace Unity.Netcode
             else
             {
                 NetworkLog.LogWarningServer($"Ran into unknown conditional check during spawn when determining distributed authority mode or not");
+            }
+        }
+
+        /// <summary>
+        /// Injects the instantiation data into the <see cref="InstantiationData"/> if available. This is used to synchronize
+        /// </summary>
+        internal void InjectInstantiationData()
+        {
+            if (NetworkManager.PrefabHandler.TryGetHandlerWithData(this.GlobalObjectIdHash, out var prefabHandler))
+            {
+                // Creates the instantiateData array for the newtwork object
+                var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue)));
+                prefabHandler.OnSynchronizeInstantiationData(ref serializer);
+                InstantiationData = serializer.GetFastBufferWriter().ToArray();
             }
         }
 
@@ -2984,7 +3007,8 @@ namespace Unity.Netcode
 
                 if (HasInstantiationData)
                 {
-                    OwnerObject.NetworkManager.PrefabHandler.SynchronizeInstantiationData(Hash, ref bufferSerializer);
+                    writer.WriteValueSafe(OwnerObject.InstantiationData.Length);
+                    writer.WriteBytesSafe(OwnerObject.InstantiationData);
                 }
 
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
@@ -3164,9 +3188,8 @@ namespace Unity.Netcode
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId,
-                HasInstantiationData = NetworkManager.PrefabHandler.ContainsHandlerWithData(GlobalObjectIdHash),
+                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
             };
-
             // Handle Parenting
             if (!AlwaysReplicateAsRoot && obj.HasParent)
             {
@@ -3234,7 +3257,7 @@ namespace Unity.Netcode
             //Synchronize the instantiation data if needed
             if (sceneObject.HasInstantiationData)
             {
-                networkManager.PrefabHandler.SynchronizeInstantiationData(sceneObject.Hash, ref bufferSerializer);
+                networkManager.PrefabHandler.ReadInstantiationData(sceneObject.Hash, ref bufferSerializer);
             }
 
             //Attempt to create a local NetworkObject

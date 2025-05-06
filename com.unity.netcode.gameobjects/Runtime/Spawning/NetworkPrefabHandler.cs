@@ -227,13 +227,6 @@ namespace Unity.Netcode
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
 
         /// <summary>
-        /// Check to see if a <see cref="NetworkObject.GlobalObjectIdHash"/> is registered to an <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation
-        /// </summary>
-        /// <param name="objectHash"></param>
-        /// <returns></returns>
-        internal bool ContainsHandlerWithData(uint objectHash) => TryGetHandlerWithData(objectHash, out _);
-
-        /// <summary>
         /// Returns the <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
         /// </summary>
         /// <param name="objectHash"></param>
@@ -259,68 +252,36 @@ namespace Unity.Netcode
         /// <typeparam name="T"></typeparam>
         /// <param name="objectHash"></param>
         /// <param name="serializer"></param>
-        internal void SynchronizeInstantiationData<T>(uint objectHash, ref BufferSerializer<T> serializer) where T : IReaderWriter
+        internal void ReadInstantiationData<T>(uint objectHash, ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            if (!TryGetHandlerWithData(objectHash, out INetworkPrefabInstanceHandlerWithData synchronizableHandler))
+            if (!serializer.IsReader || !TryGetHandlerWithData(objectHash, out INetworkPrefabInstanceHandlerWithData synchronizableHandler))
             {
                 return;
             }
 
-            if (serializer.IsWriter)
+            FastBufferReader fastBufferReader = serializer.GetFastBufferReader();
+            // Reads the expected size of the instantiation data
+            fastBufferReader.ReadValueSafe(out int dataSize);
+            int dataStartPos = fastBufferReader.Position;
+
+            try
             {
-                // Reserves space to write the instantiation data size later
-                FastBufferWriter fastBufferWriter = serializer.GetFastBufferWriter();
-                int dataSizePos = fastBufferWriter.Position;
-                fastBufferWriter.WriteValueSafe(0); // placeholder for size, correctly writen at the end
-
-                int dataStartPos = fastBufferWriter.Position;
-                try
-                {
-                    synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
-                }
-                catch (Exception ex)
-                {
-                    // Resets to start position to avoid writing corrupted data
-                    fastBufferWriter.Seek(dataSizePos);
-                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization (Write): {ex.Message}");
-                    return;
-                }
-
-                // Compute and write actual instantiation data size
-                int dataEndPos = fastBufferWriter.Position;
-                int dataSize = dataEndPos - dataStartPos;
-                // Goes back and write the real size
-                fastBufferWriter.Seek(dataSizePos);
-                fastBufferWriter.WriteValueSafe(dataSize);
-                // Restores to end
-                fastBufferWriter.Seek(dataEndPos);
+                synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
             }
-            else
+            catch (Exception ex)
             {
-                FastBufferReader fastBufferReader = serializer.GetFastBufferReader();
-                // Reads the expected size of the instantiation data
-                fastBufferReader.ReadValueSafe(out int dataSize);
-                int dataStartPos = fastBufferReader.Position;
+                // Skips the unread instantiation data bytes
+                fastBufferReader.Seek(dataStartPos + dataSize);
+                NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization (Read): {ex.Message}");
+                return;
+            }
 
-                try
-                {
-                    synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
-                }
-                catch (Exception ex)
-                {
-                    // Skips the unread instantiation data bytes
-                    fastBufferReader.Seek(dataStartPos + dataSize);
-                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization (Read): {ex.Message}");
-                    return;
-                }
-
-                // Validates if expected number of bytes were read
-                int dataEndPos = fastBufferReader.Position;
-                if (dataEndPos != dataStartPos + dataSize)
-                {
-                    NetworkLog.LogWarning($"[InstantiationData] Read {dataEndPos - dataStartPos} bytes, expected {dataSize}");
-                    fastBufferReader.Seek(dataStartPos + dataSize);
-                }
+            // Validates if expected number of bytes were read
+            int dataEndPos = fastBufferReader.Position;
+            if (dataEndPos != dataStartPos + dataSize)
+            {
+                NetworkLog.LogWarning($"[InstantiationData] Read {dataEndPos - dataStartPos} bytes, expected {dataSize}");
+                fastBufferReader.Seek(dataStartPos + dataSize);
             }
         }
 
