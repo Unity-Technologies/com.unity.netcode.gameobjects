@@ -194,7 +194,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         return client;
                     }
                 }
-                Assert.Fail("No DA session owner found!");
+
+                // If we have not found a session owner and we are not
+                // auto-starting the session owner, then return the first 
+                // client NetworkManager.
+                if (!ShouldAutoStartSessionOwner())
+                {
+                    return m_NetworkManagers[0];
+                }
+                else
+                {
+                    Assert.Fail("No DA session owner found!");
+                }
             }
 
             return m_ServerNetworkManager;
