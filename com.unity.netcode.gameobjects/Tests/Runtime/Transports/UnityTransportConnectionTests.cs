@@ -22,6 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
+            LogEventsReceived = false;
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -198,26 +199,32 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectMultipleClients()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            m_Server.StartServer();
+            LogEventsReceived = true;
+            InitializeTransport(out m_Server, out m_ServerEvents, identifier: "Server");
+            Assert.True(m_Server.StartServer(), "Failed to start server!");
+
             for (int i = 0; i < k_NumClients; i++)
             {
-                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i]);
-                m_Clients[i].StartClient();
+                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i], identifier: $"Client-{i + 1}");
+                Assert.True(m_Clients[i].StartClient(), $"Failed to start client-{i + 1}");
+                // Assure all clients have connected before disconnecting them
+                yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[i], 5);
             }
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[k_NumClients - 1]);
 
             // Disconnect a single client.
+            VerboseLog($"Disconnecting Client-1");
             m_Clients[0].DisconnectLocalClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 1);
 
             // Disconnect all the other clients.
             for (int i = 1; i < k_NumClients; i++)
             {
+                VerboseLog($"Disconnecting Client-{i + 1}");
                 m_Clients[i].DisconnectLocalClient();
             }
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 5);
+
+            yield return WaitForMultipleNetworkEvents(NetworkEvent.Disconnect, m_ServerEvents, 4, 20);
 
             // Check that we got the correct number of Disconnect events on the server.
             Assert.AreEqual(k_NumClients * 2, m_ServerEvents.Count);
