@@ -98,14 +98,14 @@ namespace Unity.Netcode.RuntimeTests
         // Common code to initialize a UnityTransport that logs its events.
         public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
         {
-            InitializeTransport(out transport, out events, maxPayloadSize, maxSendQueueSize, family, string.Empty);
+            InitializeTransport(out transport, out events, string.Empty, maxPayloadSize, maxSendQueueSize, family);
         }
 
         /// <summary>
         /// Interanl version with identifier parameter
         /// </summary>
-        internal static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
-            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, string identifier = "")
+        internal static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, string identifier,
+            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
         {
             var logger = new TransportEventLogger()
             {
