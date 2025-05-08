@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public static IEnumerator WaitForMultipleNetworkEvents(NetworkEvent type, List<TransportEvent> events, int count, float timeout = MaxNetworkEventWaitTime)
+        internal static IEnumerator WaitForMultipleNetworkEvents(NetworkEvent type, List<TransportEvent> events, int count, float timeout = MaxNetworkEventWaitTime)
         {
             var initialCount = events.Count;
             var startTime = Time.realtimeSinceStartup + timeout;
