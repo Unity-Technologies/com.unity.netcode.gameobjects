@@ -1821,8 +1821,6 @@ namespace Unity.Netcode
                 }
             }
 
-            InjectInstantiationData();
-
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
@@ -1855,24 +1853,27 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Injects the instantiation data into the <see cref="InstantiationData"/> if available. This is used to synchronize
+        /// Serializes the given instantiation data and stores it to be used during the spawn process
+        /// by a compatible <see cref="INetworkPrefabInstanceHandlerWithData{T}"/>
         /// </summary>
-        internal void InjectInstantiationData()
+        public void InjectInstantiationData<T>(T data) where T : struct, INetworkSerializable
         {
-            if (NetworkManager.PrefabHandler.TryGetHandlerWithData(this.GlobalObjectIdHash, out var prefabHandler))
+            if (!NetworkManager.PrefabHandler.TryGetHandlerWithData(GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
             {
-                var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue)));
-                try
-                {
-                    prefabHandler.OnSynchronizeInstantiationData(ref serializer);
-                    InstantiationData = serializer.GetFastBufferWriter().ToArray();
-                }
-                catch (Exception ex)
-                {
-                    serializer.GetFastBufferWriter().Dispose();
-                    NetworkLog.LogError($"[InstantiationData] Handler failed during synchronization for injection (Write): {ex.Message}");
-                    return;
-                }
+                throw new Exception("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+            }
+
+            using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
+            var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+
+            try
+            {
+                data.NetworkSerialize(serializer);
+                InstantiationData = writer.ToArray();
+            }
+            catch (Exception ex)
+            {
+                NetworkLog.LogError($"[InstantiationData] Failed to serialize instantiation data for {nameof(NetworkObject)} '{gameObject.name}': {ex}");
             }
         }
 

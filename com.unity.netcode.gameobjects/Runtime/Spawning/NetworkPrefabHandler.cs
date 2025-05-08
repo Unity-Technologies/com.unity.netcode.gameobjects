@@ -22,7 +22,7 @@ namespace Unity.Netcode
         /// via the  <see cref="GameObject.SetActive(bool)"/> method.
         /// 
         /// If you need to pass custom data at instantiation time (e.g., selecting a variant, setting initialization parameters, or choosing a pre-instantiated object),
-        /// implement <see cref="INetworkPrefabInstanceHandlerWithData"/> alongside this interface to receive the data before instantiation.
+        /// implement <see cref="INetworkPrefabInstanceHandlerWithData{T}"/> instead.
         /// </summary>
         /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
@@ -212,7 +212,11 @@ namespace Unity.Netcode
                 m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
             }
 
-            m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
+            if(m_PrefabAssetToPrefabHandlerWithData.TryGetValue(globalObjectIdHash, out var handlerWithData))
+            {
+                handlerWithData.RemoveDataEntry(handlerWithData);
+                m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
+            }
             return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
         }
 
@@ -268,7 +272,7 @@ namespace Unity.Netcode
 
             try
             {
-                synchronizableHandler.OnSynchronizeInstantiationData(ref serializer);
+                synchronizableHandler.OnReadInstantiationData(ref serializer);
             }
             catch (Exception ex)
             {

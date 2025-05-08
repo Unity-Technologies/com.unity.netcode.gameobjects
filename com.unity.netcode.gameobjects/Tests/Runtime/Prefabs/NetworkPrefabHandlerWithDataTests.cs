@@ -86,7 +86,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             //Sets the values to synchronize
-            server_handler.ValueToSynchronize = 48;
             server_handler.networksSerializableToSynchronize = new NetworkSerializableTest() { Value = 12, Value2 = 3.14f };
 
             // Spawn the prefab on the server
@@ -95,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // wait for the clients to receive the instantiation payload
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client_handlers.All(handler => handler.ValueToSynchronize == server_handler.ValueToSynchronize));
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client_handlers.All(handler => (handler.networksSerializableToSynchronize.Value == server_handler.networksSerializableToSynchronize.Value)&& (handler.networksSerializableToSynchronize.Value2 == server_handler.networksSerializableToSynchronize.Value2)));
             Assert.False(timeoutHelper.TimedOut, "Did not successfully sync all handlers");
 
             // Check that the values are synchronized
@@ -105,25 +104,17 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        private class PrefabInstanceHandlerWithData : INetworkPrefabInstanceHandlerWithData
+        private class PrefabInstanceHandlerWithData : INetworkPrefabInstanceHandlerWithData<NetworkSerializableTest>
         {
             public GameObject Prefab;
-            public int ValueToSynchronize;
             public NetworkSerializableTest networksSerializableToSynchronize;
-
             public PrefabInstanceHandlerWithData(GameObject prefab)
             {
                 Prefab = prefab;
             }
-
-            public virtual void OnSynchronizeInstantiationData<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
+            public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
-                serializer.SerializeValue(ref ValueToSynchronize);
-                serializer.SerializeValue(ref networksSerializableToSynchronize);
-            }
-
-            public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
-            {
+                networksSerializableToSynchronize = data;
                 var instance = GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
                 return instance;
             }
@@ -139,7 +130,6 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
 
                 bool isSynchronized = true;
-                isSynchronized &= ValueToSynchronize == other.ValueToSynchronize;
                 isSynchronized &= networksSerializableToSynchronize.Value == other.networksSerializableToSynchronize.Value;
                 isSynchronized &= networksSerializableToSynchronize.Value2 == other.networksSerializableToSynchronize.Value2;
                 return isSynchronized;
