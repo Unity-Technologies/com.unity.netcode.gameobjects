@@ -3011,15 +3011,14 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
-                // Synchronize instantiation data, NetworkVariables and NetworkBehaviours
-                var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
-
                 if (HasInstantiationData)
                 {
                     writer.WriteValueSafe(OwnerObject.InstantiationData.Length);
                     writer.WriteBytesSafe(OwnerObject.InstantiationData);
                 }
 
+                // Synchronize NetworkVariables and NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
             }
 
