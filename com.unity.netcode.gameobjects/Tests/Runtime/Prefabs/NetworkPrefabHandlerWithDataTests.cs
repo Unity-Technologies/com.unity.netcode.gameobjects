@@ -10,56 +10,39 @@ namespace Unity.Netcode.RuntimeTests
 {
     internal class NetworkPrefabHandlerWithDataTests
     {
-        private GameObject _prefab;
-
-        private NetworkManager server;
-        private NetworkManager[] clients;
-        const int k_clientCount = 4;
-
-        private PrefabInstanceHandlerWithData server_handler;
-        private PrefabInstanceHandlerWithData[] client_handlers;
-
+        private const int k_ClientCount = 4;
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
         private uint m_ObjectId = 1;
-        private GameObject MakeValidNetworkPrefab()
-        {
-            Guid baseObjectID = NetworkManagerHelper.AddGameNetworkObject(k_TestPrefabObjectName + m_ObjectId.ToString());
-            NetworkObject validPrefab = NetworkManagerHelper.InstantiatedNetworkObjects[baseObjectID];
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(validPrefab);
-            m_ObjectId++;
-            return validPrefab.gameObject;
-        }
+
+        private GameObject _prefab;
+        private NetworkManager server;
+        private NetworkManager[] clients;
+
+        private PrefabInstanceHandlerWithData[] clientHandlers;
 
         [SetUp]
         public void Setup()
         {
-            NetcodeIntegrationTestHelpers.Create(k_clientCount, out server, out clients);
+            NetcodeIntegrationTestHelpers.Create(k_ClientCount, out server, out clients);
+            _prefab = CreateNetworkPrefab();
 
-            _prefab = MakeValidNetworkPrefab();
+            RegisterPrefab(server, out _);
 
-            NetworkPrefab networkPrefab = new NetworkPrefab() { Prefab = _prefab };
-
-            server.NetworkConfig.Prefabs.Add(networkPrefab);
-            server_handler = new PrefabInstanceHandlerWithData(_prefab);
-            server.PrefabHandler.AddHandler(_prefab, server_handler);
-
-            client_handlers = new PrefabInstanceHandlerWithData[clients.Length];
+            clientHandlers = new PrefabInstanceHandlerWithData[clients.Length];
             for (int i = 0; i < clients.Length; i++)
             {
-                client_handlers[i] = new PrefabInstanceHandlerWithData(_prefab);
-                clients[i].NetworkConfig.Prefabs.Add(networkPrefab);
-                clients[i].PrefabHandler.AddHandler(_prefab, client_handlers[i]);
+                RegisterPrefab(clients[i], out clientHandlers[i]);
             }
         }
 
         [TearDown]
         public void Teardown()
         {
-            for (int i = 0; i < clients.Length; i++)
+            foreach (var client in clients)
             {
-                clients[i].PrefabHandler.RemoveHandler(_prefab);
-                clients[i].NetworkConfig.Prefabs.Remove(_prefab);
-                clients[i].Shutdown();
+                client.PrefabHandler.RemoveHandler(_prefab);
+                client.NetworkConfig.Prefabs.Remove(_prefab);
+                client.Shutdown();
             }
 
             server.PrefabHandler.RemoveHandler(_prefab);
@@ -67,72 +50,111 @@ namespace Unity.Netcode.RuntimeTests
             server.Shutdown();
 
             UnityEngine.Object.DestroyImmediate(_prefab);
+            NetcodeIntegrationTestHelpers.Destroy();
         }
 
         [UnityTest]
         public IEnumerator InstantiationPayload_SyncsCorrectly()
         {
-            // Start the instances
-            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
+            yield return StartAndWaitForClients();
+            var data = new NetworkSerializableTest { Value = 12, Value2 = 3.14f };
+            SpawnPrefabWithData(data);
+            yield return WaitForAllClientsToSync(data);
+        }
 
-            // [Client-Side] Wait for a connection to the server
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
+        [UnityTest]
+        public IEnumerator InstantiationPayload_LateJoinersReceiveData()
+        {
+            yield return StartAndWaitForClients();
+            var data = new NetworkSerializableTest { Value = 42, Value2 = 2.71f };
+            SpawnPrefabWithData(data);
 
-            // [Host-Side] Check to make sure all clients are connected
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
+            // Disconnect and destroy one client to simulate late join
+            var lateJoiner = clients[0];
+            lateJoiner.Shutdown();
+            yield return null;
 
-            //Sets the values to synchronize
-            var instantiationData = new NetworkSerializableTest() { Value = 12, Value2 = 3.14f };
+            var lateJoinerIndex = 0;
+            clients[lateJoinerIndex] = NetcodeIntegrationTestHelpers.CreateNewClient(k_ClientCount);
+            RegisterPrefab(clients[lateJoinerIndex], out clientHandlers[lateJoinerIndex]);
 
-            // Spawn the prefab on the server
-            var instance = GameObject.Instantiate<NetworkObject>(_prefab.GetComponent<NetworkObject>());
-            instance.InjectInstantiationData(instantiationData);
-            instance.Spawn();
-            Assert.NotNull(instance);
+            NetcodeIntegrationTestHelpers.StartOneClient(clients[lateJoinerIndex]);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnected(clients[lateJoinerIndex]);
 
-            // wait for the clients to receive the instantiation payload
+            // Confirm late joiner got correct data
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client_handlers.All(handler => handler.networksSerializableToSynchronize.IsSynchronizedWith(instantiationData)));
-            Assert.False(timeoutHelper.TimedOut, "Did not successfully sync all handlers");
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => clientHandlers[lateJoinerIndex].instantiationData.IsSynchronizedWith(data));
+            Assert.False(timeoutHelper.TimedOut, "Late joiner did not synchronize properly with instantiation data.");
+        }
 
-            // Check that the values are synchronized
-            for (int i = 0; i < client_handlers.Length; i++)
-            {
-                Assert.IsTrue(client_handlers[i].networksSerializableToSynchronize.IsSynchronizedWith(instantiationData), "Client handler " + i + " is not synchronized with server handler");
-            }
+        private GameObject CreateNetworkPrefab()
+        {
+            var guid = NetworkManagerHelper.AddGameNetworkObject($"{k_TestPrefabObjectName}{m_ObjectId++}");
+            var networkObject = NetworkManagerHelper.InstantiatedNetworkObjects[guid];
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            return networkObject.gameObject;
+        }
+
+        private void RegisterPrefab(NetworkManager manager, out PrefabInstanceHandlerWithData handler)
+        {
+            var networkPrefab = new NetworkPrefab { Prefab = _prefab };
+            manager.NetworkConfig.Prefabs.Add(networkPrefab);
+
+            handler = new PrefabInstanceHandlerWithData(_prefab);
+            manager.PrefabHandler.AddHandler(_prefab, handler);
+        }
+
+        private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
+        {
+            var instance = GameObject.Instantiate(_prefab).GetComponent<NetworkObject>();
+            instance.InjectInstantiationData(data);
+            instance.Spawn();
+            return instance;
+        }
+
+        private IEnumerator StartAndWaitForClients()
+        {
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
+                Assert.Fail("Failed to start instances");
+
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
+        }
+
+        private IEnumerator WaitForAllClientsToSync(NetworkSerializableTest expectedData)
+        {
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => clientHandlers.All(h => h.instantiationData.IsSynchronizedWith(expectedData)));
+            Assert.False(timeoutHelper.TimedOut, "Data did not synchronize correctly to all clients.");
         }
 
         private class PrefabInstanceHandlerWithData : INetworkPrefabInstanceHandlerWithData<NetworkSerializableTest>
         {
             public GameObject Prefab;
-            public NetworkSerializableTest networksSerializableToSynchronize;
+            public NetworkSerializableTest instantiationData;
+
             public PrefabInstanceHandlerWithData(GameObject prefab)
             {
                 Prefab = prefab;
             }
+
             public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
-                Debug.Log($"Instantiating {Prefab.name} with data: {data.Value}, {data.Value2}");
-                networksSerializableToSynchronize = data;
-                var instance = GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
-                return instance;
+                instantiationData = data;
+                return GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
             }
 
             public void Destroy(NetworkObject networkObject)
             {
                 GameObject.DestroyImmediate(networkObject.gameObject);
             }
-
         }
 
-        struct NetworkSerializableTest : INetworkSerializable
+        private struct NetworkSerializableTest : INetworkSerializable
         {
             public int Value;
             public float Value2;
+
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref Value);
@@ -140,12 +162,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             public bool IsSynchronizedWith(NetworkSerializableTest other)
-            {
-                bool isSynchronized = true;
-                isSynchronized &= Value == other.Value;
-                isSynchronized &= Value2 == other.Value2;
-                return isSynchronized;
-            }
+                => Value == other.Value && Math.Abs(Value2 - other.Value2) < 0.0001f;
         }
     }
 }

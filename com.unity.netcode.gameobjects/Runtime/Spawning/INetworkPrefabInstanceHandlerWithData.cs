@@ -15,7 +15,7 @@ namespace Unity.Netcode
         NetworkObject INetworkPrefabInstanceHandler.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation) => Instantiate(ownerClientId, position, rotation, _table[this]);
         void INetworkPrefabInstanceHandlerWithData.RemoveDataEntry(INetworkPrefabInstanceHandlerWithData instance) => _table.Remove(instance);
         bool INetworkPrefabInstanceHandlerWithData.HandlesDataType<U>() => typeof(T) == typeof(U);
-        void INetworkPrefabInstanceHandlerWithData.OnReadInstantiationData<RW>(ref BufferSerializer<RW> serializer)
+        void INetworkPrefabInstanceHandlerWithData.ReadInstantiationData<RW>(ref BufferSerializer<RW> serializer)
         {
             _table.TryGetValue(this, out var value);
             serializer.SerializeValue(ref value);
@@ -33,7 +33,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Invoked during deserialization to read the instantiation data associated with this prefab instance.
         /// </summary>
-        void OnReadInstantiationData<Y>(ref BufferSerializer<Y> serializer) where Y : IReaderWriter;
+        void ReadInstantiationData<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter;
 
         /// <summary>
         /// Removes the data entry for the given instance.

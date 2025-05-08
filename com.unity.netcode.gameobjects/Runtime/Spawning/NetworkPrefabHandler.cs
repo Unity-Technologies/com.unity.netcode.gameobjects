@@ -272,7 +272,7 @@ namespace Unity.Netcode
 
             try
             {
-                synchronizableHandler.OnReadInstantiationData(ref serializer);
+                synchronizableHandler.ReadInstantiationData(ref serializer);
             }
             catch (Exception ex)
             {
