@@ -106,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         internal static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, string identifier,
             int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
-        {           
+        {
             var logger = new TransportEventLogger()
             {
                 Identifier = identifier,
