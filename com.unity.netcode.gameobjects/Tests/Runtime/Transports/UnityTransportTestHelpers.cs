@@ -127,9 +127,9 @@ namespace Unity.Netcode.RuntimeTests
             transport.Initialize();
         }
 
-        public static bool VerboseDebug = false;
+        internal static bool VerboseDebug = false;
 
-        public static void VerboseLog(string msg)
+        internal static void VerboseLog(string msg)
         {
             if (VerboseDebug)
             {
@@ -153,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             private readonly List<TransportEvent> m_Events = new List<TransportEvent>();
             public List<TransportEvent> Events => m_Events;
-            public string Identifier;
+            internal string Identifier;
             public void HandleEvent(NetworkEvent type, ulong clientID, ArraySegment<byte> data, float receiveTime)
             {
                 VerboseLog($"[{Identifier}]Tansport Event][{type}][{receiveTime}] Client-{clientID}");
