@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
-            LogEventsReceived = false;
+            VerboseDebug = false;
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -199,7 +199,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectMultipleClients()
         {
-            LogEventsReceived = true;
+            VerboseDebug = true;
             InitializeTransport(out m_Server, out m_ServerEvents, identifier: "Server");
             Assert.True(m_Server.StartServer(), "Failed to start server!");
 

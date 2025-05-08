@@ -119,11 +119,11 @@ namespace Unity.Netcode.RuntimeTests
             transport.Initialize();
         }
 
-        public static bool LogEventsReceived = false;
+        public static bool VerboseDebug = false;
 
         public static void VerboseLog(string msg)
         {
-            if (LogEventsReceived)
+            if (VerboseDebug)
             {
                 Debug.Log($"{msg}");
             }
@@ -149,7 +149,7 @@ namespace Unity.Netcode.RuntimeTests
             public string Identifier;
             public void HandleEvent(NetworkEvent type, ulong clientID, ArraySegment<byte> data, float receiveTime)
             {
-                if (LogEventsReceived)
+                if (VerboseDebug)
                 {
                     VerboseLog($"[{Identifier}]Tansport Event][{type}][{receiveTime}] Client-{clientID}");
                 }
