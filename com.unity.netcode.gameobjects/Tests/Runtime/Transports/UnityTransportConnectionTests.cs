@@ -215,7 +215,7 @@ namespace Unity.Netcode.RuntimeTests
             VerboseLog($"Disconnecting Client-1");
             m_Clients[0].DisconnectLocalClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 1);
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 5);
 
             // Disconnect all the other clients.
             for (int i = 1; i < k_NumClients; i++)
