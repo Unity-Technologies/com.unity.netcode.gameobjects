@@ -86,21 +86,23 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             //Sets the values to synchronize
-            server_handler.networksSerializableToSynchronize = new NetworkSerializableTest() { Value = 12, Value2 = 3.14f };
+            var instantiationData = new NetworkSerializableTest() { Value = 12, Value2 = 3.14f };
 
             // Spawn the prefab on the server
-            var spawned = server.SpawnManager.InstantiateAndSpawn(_prefab.GetComponent<NetworkObject>());
-            Assert.NotNull(spawned);
+            var instance = GameObject.Instantiate<NetworkObject>(_prefab.GetComponent<NetworkObject>());
+            instance.InjectInstantiationData(instantiationData);
+            instance.Spawn();
+            Assert.NotNull(instance);
 
             // wait for the clients to receive the instantiation payload
             var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client_handlers.All(handler => (handler.networksSerializableToSynchronize.Value == server_handler.networksSerializableToSynchronize.Value)&& (handler.networksSerializableToSynchronize.Value2 == server_handler.networksSerializableToSynchronize.Value2)));
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => client_handlers.All(handler => handler.networksSerializableToSynchronize.IsSynchronizedWith(instantiationData)));
             Assert.False(timeoutHelper.TimedOut, "Did not successfully sync all handlers");
 
             // Check that the values are synchronized
             for (int i = 0; i < client_handlers.Length; i++)
             {
-                Assert.IsTrue(client_handlers[i].IsSynchronizedWith(server_handler), "Client handler " + i + " is not synchronized with server handler");
+                Assert.IsTrue(client_handlers[i].networksSerializableToSynchronize.IsSynchronizedWith(instantiationData), "Client handler " + i + " is not synchronized with server handler");
             }
         }
 
@@ -114,6 +116,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
+                Debug.Log($"Instantiating {Prefab.name} with data: {data.Value}, {data.Value2}");
                 networksSerializableToSynchronize = data;
                 var instance = GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
                 return instance;
@@ -124,16 +127,6 @@ namespace Unity.Netcode.RuntimeTests
                 GameObject.DestroyImmediate(networkObject.gameObject);
             }
 
-            public bool IsSynchronizedWith(PrefabInstanceHandlerWithData other)
-            {
-                if (other == null)
-                    return false;
-
-                bool isSynchronized = true;
-                isSynchronized &= networksSerializableToSynchronize.Value == other.networksSerializableToSynchronize.Value;
-                isSynchronized &= networksSerializableToSynchronize.Value2 == other.networksSerializableToSynchronize.Value2;
-                return isSynchronized;
-            }
         }
 
         struct NetworkSerializableTest : INetworkSerializable
@@ -144,6 +137,14 @@ namespace Unity.Netcode.RuntimeTests
             {
                 serializer.SerializeValue(ref Value);
                 serializer.SerializeValue(ref Value2);
+            }
+
+            public bool IsSynchronizedWith(NetworkSerializableTest other)
+            {
+                bool isSynchronized = true;
+                isSynchronized &= Value == other.Value;
+                isSynchronized &= Value2 == other.Value2;
+                return isSynchronized;
             }
         }
     }
