@@ -46,6 +46,35 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
+        // Check that invalid endpoint addresses are detected and return false if detected
+        [Test]
+        public void DetectInvalidEndpoint()
+        {
+            using var netcodeLogAssert = new NetcodeLogAssert(true);
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+            m_Server.ConnectionData.Address = "Fubar";
+            m_Server.ConnectionData.ServerListenAddress = "Fubar";
+            m_Clients[0].ConnectionData.Address = "MoreFubar";
+            Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
+            Assert.False(m_Clients[0].StartClient(), "Client failed to detect invalid endpoint!");
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+            LogAssert.Expect(LogType.Error, $"Listen network address ({m_Server.ConnectionData.Address}) is not a valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address!");
+            LogAssert.Expect(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is not a valid Fully Qualified Domain Name!");
+
+            m_Server.ConnectionData.Address = "my.fubar.com";
+            m_Server.ConnectionData.ServerListenAddress = "my.fubar.com";
+            Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
+            LogAssert.Expect(LogType.Error, $"While ({m_Server.ConnectionData.Address}) is a valid Fully Qualified Domain Name, you must use a " +
+                $"valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address when binding and listening for connections!");
+#else
+            netcodeLogAssert.LogWasReceived(LogType.Error, $"Network listen address ({m_Server.ConnectionData.Address}) is Invalid!");
+            netcodeLogAssert.LogWasReceived(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is Invalid!");
+#endif
+
+            UnityTransportTestComponent.CleanUp();
+        }
+
         // Check connection with a single client.
         [UnityTest]
         public IEnumerator ConnectSingleClient()

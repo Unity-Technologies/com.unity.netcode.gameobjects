@@ -7,6 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+using System.Text.RegularExpressions;
+#endif
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -256,7 +259,14 @@ namespace Unity.Netcode.Transports.UTP
                 if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
                     !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
                 {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
                     return default;
+#else // If the user does not have the most recent version of UnityTransport installed
+                    if (!silent)
+                    {
+                        Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
+                    }
+#endif
                 }
 
                 return endpoint;
@@ -483,6 +493,15 @@ namespace Unity.Netcode.Transports.UTP
                     return NetworkPipeline.Null;
             }
         }
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+        private bool IsValidFqdn(string fqdn)
+        {
+            // Regular expression to validate FQDN
+            string pattern = @"^(?=.{1,255}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?!-)(?:[A-Za-z0-9-]{1,63}\.?)+[A-Za-z]{2,6}$";
+            var regex = new Regex(pattern);
+            return regex.IsMatch(fqdn);
+        }
+#endif
 
         private bool ClientBindAndConnect()
         {
@@ -510,10 +529,21 @@ namespace Unity.Netcode.Transports.UTP
             if (serverEndpoint.Family == NetworkFamily.Invalid)
             {
 #if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-                // If it's not valid, try to treat it like a URL.
-                InitDriver();
-                m_Driver.Connect(ConnectionData.Address, ConnectionData.Port);
-                return true;
+
+                // If it's not valid, assure it meets FQDN standards
+                if (IsValidFqdn(ConnectionData.Address))
+                {
+                    // If so, then proceed with driver initialization and attempt to connect
+                    InitDriver();
+                    m_Driver.Connect(ConnectionData.Address, ConnectionData.Port);
+                    return true;
+                }
+                else
+                {
+                    // If not then log an error and return false
+                    Debug.LogError($"Target server network address ({ConnectionData.Address}) is not a valid Fully Qualified Domain Name!");
+                    return false;
+                }
 #else
                 Debug.LogError($"Target server network address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
@@ -550,8 +580,23 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (endPoint.Family == NetworkFamily.Invalid)
             {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+                // If it's not valid, assure it meets FQDN standards
+                if (!IsValidFqdn(ConnectionData.Address))
+                {
+                    // If not then log an error and return false
+                    Debug.LogError($"Listen network address ({ConnectionData.Address}) is not a valid {NetworkFamily.Ipv4} or {NetworkFamily.Ipv6} address!");
+                }
+                else
+                {
+                    Debug.LogError($"While ({ConnectionData.Address}) is a valid Fully Qualified Domain Name, you must use a valid {NetworkFamily.Ipv4} or {NetworkFamily.Ipv6} address when binding and listening for connections!");
+                }
+                return false;
+                // Otherwise, attempt to bind to the FQDN's IP resolution
+#else
                 Debug.LogError($"Network listen address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
+#endif
             }
 
             InitDriver();
