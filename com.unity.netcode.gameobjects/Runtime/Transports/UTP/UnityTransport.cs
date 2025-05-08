@@ -592,7 +592,6 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.LogError($"While ({ConnectionData.Address}) is a valid Fully Qualified Domain Name, you must use a valid {NetworkFamily.Ipv4} or {NetworkFamily.Ipv6} address when binding and listening for connections!");
                 }
                 return false;
-                // Otherwise, attempt to bind to the FQDN's IP resolution
 #else
                 Debug.LogError($"Network listen address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
