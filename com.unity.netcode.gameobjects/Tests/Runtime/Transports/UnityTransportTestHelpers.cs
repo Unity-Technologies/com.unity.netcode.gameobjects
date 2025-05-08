@@ -149,10 +149,7 @@ namespace Unity.Netcode.RuntimeTests
             public string Identifier;
             public void HandleEvent(NetworkEvent type, ulong clientID, ArraySegment<byte> data, float receiveTime)
             {
-                if (VerboseDebug)
-                {
-                    VerboseLog($"[{Identifier}]Tansport Event][{type}][{receiveTime}] Client-{clientID}");
-                }
+                VerboseLog($"[{Identifier}]Tansport Event][{type}][{receiveTime}] Client-{clientID}");
 
                 // Copy the data since the backing array will be reused for future messages.
                 if (data != default(ArraySegment<byte>))
