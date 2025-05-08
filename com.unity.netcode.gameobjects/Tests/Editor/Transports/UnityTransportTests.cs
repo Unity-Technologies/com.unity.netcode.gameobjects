@@ -130,11 +130,12 @@ namespace Unity.Netcode.EditorTests
             transport.SetConnectionData("127.0.0.", 4242, "127.0.0.");
 
             Assert.False(transport.StartServer());
-#if !HOSTNAME_RESOLUTION_AVAILABLE && !UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+            LogAssert.Expect(LogType.Error, $"Listen network address (127.0.0.) is not a valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address!");
+#else
             LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
-#endif
             LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
-
+#endif
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
             Assert.True(transport.StartServer());
 
