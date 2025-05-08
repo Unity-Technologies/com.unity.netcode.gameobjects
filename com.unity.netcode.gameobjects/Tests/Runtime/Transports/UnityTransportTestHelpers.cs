@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public static IEnumerator WaitForMultipleNetworkEvents(NetworkEvent type, List<TransportEvent> events, int count, float timeout = MaxNetworkEventWaitTime)
+        internal static IEnumerator WaitForMultipleNetworkEvents(NetworkEvent type, List<TransportEvent> events, int count, float timeout = MaxNetworkEventWaitTime)
         {
             var initialCount = events.Count;
             var startTime = Time.realtimeSinceStartup + timeout;
@@ -96,7 +96,15 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Common code to initialize a UnityTransport that logs its events.
-        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
+        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
+        {
+            InitializeTransport(out transport, out events, maxPayloadSize, maxSendQueueSize, family, string.Empty);
+        }
+
+        /// <summary>
+        /// Interanl version with identifier parameter
+        /// </summary>
+        internal static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
             int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4, string identifier = "")
         {
             var logger = new TransportEventLogger()
