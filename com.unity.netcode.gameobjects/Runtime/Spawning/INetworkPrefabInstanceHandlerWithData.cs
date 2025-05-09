@@ -12,7 +12,7 @@ namespace Unity.Netcode
     {
         // Propagating custom data through the entire spawn pipeline would add complexity and reduce modularity.
         // To work around this, deserialization injects the data into this static map, keyed by the handler instance.
-        // The handler then reads the data at instantiation time, keeping the interface clean and stateless from the user’s perspective.
+        // The handler then reads the data at instantiation time, keeping the interface clean and stateless from the user's perspective.
         // This avoids requiring implementers to store the data explicitly or declare additional fields.
         static readonly Dictionary<INetworkPrefabInstanceHandlerWithData, T> _handlerToData = new();
 
