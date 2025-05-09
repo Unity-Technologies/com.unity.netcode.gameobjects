@@ -10,16 +10,20 @@ namespace Unity.Netcode
     /// </summary>
     public interface INetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabInstanceHandlerWithData where T : struct, INetworkSerializable
     {
-        static readonly Dictionary<INetworkPrefabInstanceHandlerWithData, T> _table = new();
+        // Propagating custom data through the entire spawn pipeline would add complexity and reduce modularity.
+        // To work around this, deserialization injects the data into this static map, keyed by the handler instance.
+        // The handler then reads the data at instantiation time, keeping the interface clean and stateless from the user’s perspective.
+        // This avoids requiring implementers to store the data explicitly or declare additional fields.
+        static readonly Dictionary<INetworkPrefabInstanceHandlerWithData, T> _handlerToData = new();
 
-        NetworkObject INetworkPrefabInstanceHandler.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation) => Instantiate(ownerClientId, position, rotation, _table[this]);
-        void INetworkPrefabInstanceHandlerWithData.RemoveDataEntry(INetworkPrefabInstanceHandlerWithData instance) => _table.Remove(instance);
+        NetworkObject INetworkPrefabInstanceHandler.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation) => Instantiate(ownerClientId, position, rotation, _handlerToData[this]);
+        void INetworkPrefabInstanceHandlerWithData.RemoveDataEntry(INetworkPrefabInstanceHandlerWithData instance) => _handlerToData.Remove(instance);
         bool INetworkPrefabInstanceHandlerWithData.HandlesDataType<U>() => typeof(T) == typeof(U);
         void INetworkPrefabInstanceHandlerWithData.ReadInstantiationData<RW>(ref BufferSerializer<RW> serializer)
         {
-            _table.TryGetValue(this, out var value);
+            _handlerToData.TryGetValue(this, out var value);
             serializer.SerializeValue(ref value);
-            _table[this] = value;
+            _handlerToData[this] = value;
         }
 
         NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, T instantiationData);
