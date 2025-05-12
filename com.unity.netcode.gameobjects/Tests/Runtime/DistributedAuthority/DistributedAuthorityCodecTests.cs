@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </remarks>
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 0;
 
         // Use the CMB Service for all tests
         protected override bool UseCMBService() => true;
@@ -66,14 +66,6 @@ namespace Unity.Netcode.RuntimeTests
             public void TestAuthorityRpc(byte[] _)
             {
             }
-        }
-
-        /// <summary>
-        /// Don't auto start the session owner for codec tests
-        /// </summary>
-        internal override bool ShouldAutoStartSessionOwner()
-        {
-            return false;
         }
 
         protected override void OnOneTimeSetup()

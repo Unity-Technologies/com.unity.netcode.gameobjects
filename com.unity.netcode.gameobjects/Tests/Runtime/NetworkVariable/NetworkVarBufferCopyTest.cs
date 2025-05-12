@@ -101,15 +101,10 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkSpawn();
             }
         }
-        protected override int NumberOfClients => m_ClientCount;
-
-        private const int k_ClientCount = 1;
-        private int m_ClientCount = k_ClientCount;
+        protected override int NumberOfClients => 1;
 
         public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            // Adjust the client count if connecting to the CMB service.
-            m_ClientCount = UseCMBService() ? k_ClientCount + 1 : k_ClientCount;
         }
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();

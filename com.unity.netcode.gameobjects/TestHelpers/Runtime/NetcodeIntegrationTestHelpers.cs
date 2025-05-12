@@ -173,12 +173,25 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets the CMB_SERVICE environemnt variable or returns "false" if it does not exist
+        /// </summary>
+        /// <returns>string</returns>
+        internal static string GetCMBServiceEnvironentVariable()
+        {
+#if USE_CMB_SERVICE
+            return "true";
+#else
+            return Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+#endif
+        }
+
+        /// <summary>
         /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
         /// test if running against a CMB server.
         /// </summary>
         internal static void IgnoreIfServiceEnviromentVariableSet()
         {
-            if (bool.TryParse(Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false", out bool isTrue) ? isTrue : false)
+            if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool isTrue) ? isTrue : false)
             {
                 Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
             }
@@ -327,7 +340,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
-            // Pre-identify NetworkManager identifiers based on network topology type
+            // Pre-identify NetworkManager identifiers based on network topology type (Rust server starts at client identifier 1 and considers itself 0)
             var startCount = useCmbService ? 1 : 0;
             for (int i = 0; i < clientCount; i++)
             {
@@ -549,6 +562,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             foreach (var client in clients)
             {
+                // DANGO-TODO: Renove this entire check when the Rust server connection sequence is fixed and we don't have to pre-start
+                // the session owner.
                 if (client.IsConnectedClient)
                 {
                     // Skip starting the session owner

@@ -339,10 +339,8 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.DAHost, ContactEventTypes.WithInfo)]
     internal class RigidbodyContactEventManagerTests : IntegrationTestWithApproximation
     {
-        protected override int NumberOfClients => m_ClientCount;
+        protected override int NumberOfClients => 1;
 
-        private const int k_ClientCount = 1;
-        private int m_ClientCount = k_ClientCount;
         private GameObject m_RigidbodyContactEventManager;
 
         public enum ContactEventTypes
@@ -356,8 +354,6 @@ namespace Unity.Netcode.RuntimeTests
 
         public RigidbodyContactEventManagerTests(HostOrServer hostOrServer, ContactEventTypes contactEventType) : base(hostOrServer)
         {
-            // Adjust the client count if connecting to the CMB service.
-            m_ClientCount = UseCMBService() ? k_ClientCount + 1 : k_ClientCount;
             m_ContactEventType = contactEventType;
         }
 

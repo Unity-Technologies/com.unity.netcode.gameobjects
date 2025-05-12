@@ -275,6 +275,8 @@ namespace Unity.Netcode
 
             foreach (var clientId in ConnectedClientIds)
             {
+                // DANGO-TODO: Revisit the entire connection sequence and determine why we would need to check both cases as we shouldn't have to =or= we could
+                // try removing this after the Rust server connection sequence stuff is resolved. (Might be only needed if scene management is disabled)
                 // If there is any disconnect between the connection sequence of Ids vs ConnectedClients, then add the client.
                 if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(clientId) || !networkManager.ConnectionManager.ConnectedClients.ContainsKey(clientId))
                 {

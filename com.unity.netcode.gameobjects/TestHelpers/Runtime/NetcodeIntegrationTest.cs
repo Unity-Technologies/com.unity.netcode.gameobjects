@@ -194,18 +194,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         return client;
                     }
                 }
-
-                // If we have not found a session owner and we are not
-                // auto-starting the session owner, then return the first 
-                // client NetworkManager.
-                if (!ShouldAutoStartSessionOwner())
-                {
-                    return m_NetworkManagers[0];
-                }
-                else
-                {
-                    Assert.Fail("No DA session owner found!");
-                }
+                Assert.Fail("No DA session owner found!");
             }
 
             return m_ServerNetworkManager;
@@ -255,7 +244,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
             {
-                m_UseCmbServiceEnvString = Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+                m_UseCmbServiceEnvString = NetcodeIntegrationTestHelpers.GetCMBServiceEnvironentVariable();
                 if (bool.TryParse(m_UseCmbServiceEnvString.ToLower(), out bool isTrue))
                 {
                     m_UseCmbServiceEnv = isTrue;
@@ -276,11 +265,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>true if a DAHost test should run against a hosted CMB service instance; otherwise false</returns>
         protected virtual bool UseCMBService()
         {
-#if USE_CMB_SERVICE
-            return true;
-#else
             return m_UseCmbService;
-#endif
         }
 
         protected virtual NetworkTopologyTypes OnGetNetworkTopologyType()
@@ -983,13 +968,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_PlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
             }
 
-#if UNITY_2023_1_OR_NEWER
             // Get all player instances for the current client NetworkManager instance
             var clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#else
-            // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#endif
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -1004,13 +984,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
                 }
             }
-#if UNITY_2023_1_OR_NEWER
             // For late joining clients, add the remaining (if any) cloned versions of each client's player
             clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
-#else
-            // For late joining clients, add the remaining (if any) cloned versions of each client's player
-            clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
-#endif
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -1058,6 +1033,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts the session owner and awaits for it to connect before starting the remaining clients.
         /// </summary>
+        /// <remarks>
+        /// DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+        /// the session owner.
+        /// </remarks>
         private IEnumerator StartSessionOwner()
         {
             VerboseDebug("Starting session owner...");
@@ -1066,14 +1045,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             AssertOnTimeout($"Timed out waiting for the session owner to connect to CMB Server!");
             Assert.True(m_ClientNetworkManagers[0].LocalClient.IsSessionOwner, $"Client-{m_ClientNetworkManagers[0].LocalClientId} started session but was not set to be the session owner!");
             VerboseDebug("Session owner connected and approved.");
-        }
-
-        /// <summary>
-        /// Determines whether the session owner will be auto-started prior to any other client
-        /// </summary>
-        internal virtual bool ShouldAutoStartSessionOwner()
-        {
-            return true;
         }
 
         /// <summary>
@@ -1086,7 +1057,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
-                if (m_UseCmbService && ShouldAutoStartSessionOwner())
+                // DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+                // the session owner.
+                if (m_UseCmbService)
                 {
                     VerboseDebug("Using a distributed authority CMB Server for connection.");
                     yield return StartSessionOwner();
@@ -2018,23 +1991,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             InitializeTestConfiguration(m_NetworkTopologyType, hostOrServer);
         }
 
-        /// <summary>
-        /// Override this virtual method to execute script that runs before the base class constructor has finished executing.<br />
-        /// </summary>
-        /// <remarks>
-        /// ***NOTE***
-        /// When this method is invoked there will have been no properties set (i.e. nothing is configured). <br />
-        /// Primarily this is to set things like environemnt variables or other more external configurations that could
-        /// determine how the <see cref="NetcodeIntegrationTest"/> is configured.
-        /// </remarks>
-        protected virtual void OnPreInitializeConfiguration()
-        {
-        }
-
         private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
         {
-            OnPreInitializeConfiguration();
-
             NetworkMessageManager.EnableMessageOrderConsoleLog = false;
 
             // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
