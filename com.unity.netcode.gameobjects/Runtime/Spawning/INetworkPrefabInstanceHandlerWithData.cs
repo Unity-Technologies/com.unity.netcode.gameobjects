@@ -32,4 +32,20 @@ namespace Unity.Netcode
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation) => _impl.Instantiate(ownerClientId, position, rotation, _payload);
         public void Destroy(NetworkObject networkObject) => _impl.Destroy(networkObject);
     }
+
+
+    public static class INetworkPrefabInstanceHandlerWithDataExtensions
+    {
+        /// PLACEHOLDER: If this pattern is liked, i can move all the injection code to here instead of the PrefabHandler
+        public static void InjectInstantiationData<T>(this INetworkPrefabInstanceHandlerWithData<T> handler, NetworkObject networkObject, T data) where T : struct, INetworkSerializable
+        {
+            NetworkManager.Singleton.PrefabHandler.InjectInstantiationData(networkObject, data);
+        }
+
+        public static void SpawnWithData<T>(this INetworkPrefabInstanceHandlerWithData<T> handler, NetworkObject networkObject, T data) where T : struct, INetworkSerializable
+        {
+            InjectInstantiationData(handler, networkObject, data);
+            networkObject.Spawn();
+        }
+    }
 }
