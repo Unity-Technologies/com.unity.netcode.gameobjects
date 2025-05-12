@@ -84,6 +84,10 @@ namespace Unity.Netcode
         {
             return AddHandler(networkPrefabAsset.GetComponent<NetworkObject>().GlobalObjectIdHash, instanceHandler);
         }
+        public bool AddHandler<T>(GameObject networkPrefabAsset, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
+        {
+            return AddHandler(networkPrefabAsset.GetComponent<NetworkObject>().GlobalObjectIdHash, instanceHandler);
+        }
 
         /// <summary>
         /// Use a  <see cref="NetworkObject"/> to register a class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface with the <see cref="NetworkPrefabHandler"/>
@@ -92,6 +96,10 @@ namespace Unity.Netcode
         /// <param name="instanceHandler">the class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface to be registered</param>
         /// <returns>true (registered) false (failed to register)</returns>
         public bool AddHandler(NetworkObject prefabAssetNetworkObject, INetworkPrefabInstanceHandler instanceHandler)
+        {
+            return AddHandler(prefabAssetNetworkObject.GlobalObjectIdHash, instanceHandler);
+        }
+        public bool AddHandler<T>(NetworkObject prefabAssetNetworkObject, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
         {
             return AddHandler(prefabAssetNetworkObject.GlobalObjectIdHash, instanceHandler);
         }
@@ -115,6 +123,38 @@ namespace Unity.Netcode
             }
 
             return false;
+        }
+        public bool AddHandler<T>(uint globalObjectIdHash, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
+        {
+            if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
+                return AddHandler(globalObjectIdHash, new HandlerWrapper<T>(instanceHandler));
+            return false;
+        }
+
+        public void InjectInstantiationData<T>(GameObject gameObject, T instantiationData) where T : struct, INetworkSerializable
+        {
+            if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
+                InjectInstantiationData(networkObject,instantiationData);
+        }
+        public void InjectInstantiationData<T>(NetworkObject networkObject, T data) where T : struct, INetworkSerializable
+        {
+            if (!TryGetHandlerWithData(networkObject.GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
+            {
+                throw new Exception("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+            }
+
+            using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
+            var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+
+            try
+            {
+                data.NetworkSerialize(serializer);
+                networkObject.InstantiationData = writer.ToArray();
+            }
+            catch (Exception ex)
+            {
+                NetworkLog.LogError($"[InstantiationData] Failed to serialize instantiation data for {nameof(NetworkObject)} '{networkObject.name}': {ex}");
+            }
         }
 
         /// <summary>
@@ -214,7 +254,6 @@ namespace Unity.Netcode
 
             if(m_PrefabAssetToPrefabHandlerWithData.TryGetValue(globalObjectIdHash, out var handlerWithData))
             {
-                handlerWithData.RemoveDataEntry(handlerWithData);
                 m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
             }
             return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);

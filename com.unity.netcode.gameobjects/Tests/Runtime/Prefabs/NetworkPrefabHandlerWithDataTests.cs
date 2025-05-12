@@ -107,7 +107,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
         {
             var instance = GameObject.Instantiate(_prefab).GetComponent<NetworkObject>();
-            instance.InjectInstantiationData(data);
+            server.PrefabHandler.InjectInstantiationData(instance, data);
             instance.Spawn();
             return instance;
         }

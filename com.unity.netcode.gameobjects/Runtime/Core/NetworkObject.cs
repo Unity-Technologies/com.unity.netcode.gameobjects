@@ -1853,31 +1853,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Serializes the given instantiation data and stores it to be used during the spawn process
-        /// by a compatible <see cref="INetworkPrefabInstanceHandlerWithData{T}"/>
-        /// </summary>
-        public void InjectInstantiationData<T>(T data) where T : struct, INetworkSerializable
-        {
-            if (!NetworkManager.PrefabHandler.TryGetHandlerWithData(GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
-            {
-                throw new Exception("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
-            }
-
-            using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
-            var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
-
-            try
-            {
-                data.NetworkSerialize(serializer);
-                InstantiationData = writer.ToArray();
-            }
-            catch (Exception ex)
-            {
-                NetworkLog.LogError($"[InstantiationData] Failed to serialize instantiation data for {nameof(NetworkObject)} '{gameObject.name}': {ex}");
-            }
-        }
-
-        /// <summary>
         /// This invokes <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
         /// </summary>
         /// <param name="networkPrefab">The NetworkPrefab to instantiate and spawn.</param>
