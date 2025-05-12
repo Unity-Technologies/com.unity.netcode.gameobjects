@@ -13,18 +13,6 @@ namespace Unity.Netcode
     {
         NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, T instantiationData);
         void Destroy(NetworkObject networkObject);
-
-        public static void InjectInstantiationDataForObject(GameObject prefab, T instantiationData)
-        {
-            if (prefab.TryGetComponent<NetworkObject>(out var networkObject))
-            {
-                networkObject.NetworkManager.PrefabHandler.InjectInstantiationData(prefab, instantiationData);
-            }
-            else
-            {
-                Debug.LogError($"Prefab {prefab.name} does not have a NetworkObject component.");
-            }
-        }
     }
 
     internal interface INetworkPrefabInstanceHandlerWithData : INetworkPrefabInstanceHandler
