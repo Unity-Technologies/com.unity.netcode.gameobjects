@@ -22,5 +22,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Multiplayer.Tools.GameObjects.Tests")]
 [assembly: InternalsVisibleTo("Unity.Multiplayer.Tools.Adapters.Ngo1WithUtp2")]
 [assembly: InternalsVisibleTo("TestProject.ToolsIntegration.RuntimeTests")]
+[assembly: InternalsVisibleTo("TestProject.Netcode.GameObjejct.Runtime.Tests")]
 #endif // MULTIPLAYER_TOOLS
 #endif // UNITY_INCLUDE_TESTS
