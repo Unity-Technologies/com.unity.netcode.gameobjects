@@ -163,16 +163,6 @@ namespace Unity.Netcode.RuntimeTests
                 yield return StopOneClient(clientToReconnect);
             }
 
-            if (!UseCMBService())
-            {
-                m_NetworkManagers.Add(m_ServerNetworkManager);
-            }
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (distributionType == DistributionTypes.UponConnect)
-            {
-                m_NetworkManagers.Remove(m_ClientNetworkManagers[3]);
-            }
-
             // When testing connect redistribution
             var instances = distributionType == DistributionTypes.UponDisconnect ? 1 : 2;
             var rootObject = (GameObject)null;
