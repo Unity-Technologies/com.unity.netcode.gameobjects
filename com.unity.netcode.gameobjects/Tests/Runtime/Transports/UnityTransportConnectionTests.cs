@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -18,6 +19,13 @@ namespace Unity.Netcode.RuntimeTests
         private UnityTransport[] m_Clients = new UnityTransport[k_NumClients];
         private List<TransportEvent> m_ServerEvents;
         private List<TransportEvent>[] m_ClientsEvents = new List<TransportEvent>[k_NumClients];
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         [UnityTearDown]
         public IEnumerator Cleanup()

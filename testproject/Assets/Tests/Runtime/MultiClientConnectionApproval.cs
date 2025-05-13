@@ -22,6 +22,13 @@ namespace TestProject.RuntimeTests
         private bool m_DelayedApproval;
         private List<NetworkManager.ConnectionApprovalResponse> m_ResponseToSet = new List<NetworkManager.ConnectionApprovalResponse>();
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         /// <summary>
         /// Tests connection approval and connection approval failure
         /// </summary>

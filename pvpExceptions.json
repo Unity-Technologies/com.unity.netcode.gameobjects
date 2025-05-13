@@ -173,7 +173,6 @@
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: uint GetNextGlobalIdHashValue(): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: IsNetcodeIntegrationTestRunning: undocumented",
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: void RegisterNetcodeIntegrationTest(bool): undocumented",
-          "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: GameObject CreateNetworkObjectPrefab(string, NetworkManager, params NetworkManager[]): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: void MarkAsSceneObjectRoot(GameObject, NetworkManager, NetworkManager[]): undocumented",
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: IEnumerator WaitForClientConnected(NetworkManager, ResultWrapper<bool>, float): missing <returns>",
           "Unity.Netcode.TestHelpers.Runtime.NetcodeIntegrationTestHelpers: IEnumerator WaitForClientsConnected(NetworkManager[], ResultWrapper<bool>, float): missing <returns>",

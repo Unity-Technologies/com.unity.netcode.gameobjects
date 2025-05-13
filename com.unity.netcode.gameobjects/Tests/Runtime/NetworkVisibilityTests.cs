@@ -49,35 +49,21 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator HiddenObjectsTest()
         {
-            var expectedCount = NumberOfClients + (m_UseHost ? 1 : 0);
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == expectedCount);
-#else
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == expectedCount);
-#endif
-
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the visible object count to equal 2!");
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == TotalClients);
+            AssertOnTimeout($"Timed out waiting for the visible object count to equal {TotalClients}!Actual count {Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned)}");
         }
 
         [UnityTest]
         public IEnumerator HideShowAndDeleteTest()
         {
-            var expectedCount = NumberOfClients + (m_UseHost ? 1 : 0);
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned) == expectedCount);
-#else
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == expectedCount);
-#endif
-            AssertOnTimeout($"Timed out waiting for the visible object count to equal 2! Actual count {Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned)}");
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned) == TotalClients);
+
+            AssertOnTimeout($"Timed out waiting for the visible object count to equal {TotalClients}! Actual count {Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Count(c => c.IsSpawned)}");
 
             var sessionOwnerNetworkObject = m_SpawnedObject.GetComponent<NetworkObject>();
             var nonAuthority = GetNonAuthorityNetworkManager();
             sessionOwnerNetworkObject.NetworkHide(nonAuthority.LocalClientId);
-#if UNITY_2023_1_OR_NEWER
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == expectedCount - 1);
-#else
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == expectedCount - 1);
-#endif
+            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsByType<NetworkVisibilityComponent>(FindObjectsSortMode.None).Where((c) => c.IsSpawned).Count() == TotalClients - 1);
             AssertOnTimeout($"Timed out waiting for {m_SpawnedObject.name} to be hidden from client!");
             var networkObjectId = sessionOwnerNetworkObject.NetworkObjectId;
             sessionOwnerNetworkObject.NetworkShow(nonAuthority.LocalClientId);

@@ -161,6 +161,11 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     foreach (var client in clients)
                     {
+                        if (!DistributeObjectsTestHelper.DistributedObjects.ContainsKey(client))
+                        {
+                            m_ErrorLog.AppendLine($"[Client-{client}] Does not have an entry in the root of the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
+                            return false;
+                        }
                         var clientOwnerTable = DistributeObjectsTestHelper.DistributedObjects[client];
                         if (!clientOwnerTable.ContainsKey(hostClientEntry.Key))
                         {

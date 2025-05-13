@@ -15,6 +15,13 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_WasDisconnected;
         private TimeoutHelper m_TimeoutHelper;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [SetUp]
         public void Setup()
         {

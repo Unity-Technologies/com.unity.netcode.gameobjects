@@ -16,6 +16,12 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class NetworkPrefabHandlerTests
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
         private uint m_ObjectId = 1;
@@ -27,6 +33,8 @@ namespace Unity.Netcode.RuntimeTests
             m_ObjectId++;
             return validPrefab.gameObject;
         }
+
+
 
         /// <summary>
         /// Tests the NetwokConfig NetworkPrefabsList initialization during NetworkManager's Init method to make sure that
