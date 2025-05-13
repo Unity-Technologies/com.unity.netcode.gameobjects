@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -8,6 +9,13 @@ namespace Unity.Netcode.RuntimeTests
 {
     internal class NestedNetworkManagerTests
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [Test]
         public void CheckNestedNetworkManager()
         {

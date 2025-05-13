@@ -16,6 +16,12 @@ namespace TestProject.RuntimeTests
         private NetworkManager m_ServerNetworkManager;
         private NetworkManager[] m_ClientNetworkManagers;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         [UnitySetUp]
         public IEnumerator SetUp()

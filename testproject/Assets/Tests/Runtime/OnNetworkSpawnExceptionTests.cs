@@ -94,6 +94,13 @@ namespace TestProject.RuntimeTests
         private GameObject m_DespawnWithAndWithoutExceptionPrefab;
 
         private const int k_NumObjects = 10;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         [UnityTest]
         public IEnumerator WhenOnNetworkSpawnThrowsException_FutureOnNetworkSpawnsAreNotPrevented()
         {

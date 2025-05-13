@@ -21,6 +21,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
+        internal static bool IsStarted => s_IsStarted;
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
@@ -171,6 +172,31 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Gets the CMB_SERVICE environemnt variable or returns "false" if it does not exist
+        /// </summary>
+        /// <returns>string</returns>
+        internal static string GetCMBServiceEnvironentVariable()
+        {
+#if USE_CMB_SERVICE
+            return "true";
+#else
+            return Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+#endif
+        }
+
+        /// <summary>
+        /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
+        /// test if running against a CMB server.
+        /// </summary>
+        internal static void IgnoreIfServiceEnviromentVariableSet()
+        {
+            if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool isTrue) ? isTrue : false)
+            {
+                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+            }
+        }
+
         private static readonly string k_TransportHost = GetAddressToBind();
         private static readonly ushort k_TransportPort = GetPortToBind();
 
@@ -265,16 +291,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
-            if (serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (serverFirst && !useCmbService)
             {
-                server = CreateServer(useMockTransport || useCmbService);
+                server = CreateServer(useMockTransport);
             }
 
             CreateNewClients(clientCount, out clients, useMockTransport, useCmbService);
 
-            if (!serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (!serverFirst && !useCmbService)
             {
-                server = CreateServer(useMockTransport || useCmbService);
+                server = CreateServer(useMockTransport);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -312,10 +340,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
+            // Pre-identify NetworkManager identifiers based on network topology type (Rust server starts at client identifier 1 and considers itself 0)
+            var startCount = useCmbService ? 1 : 0;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i, useMockTransport, useCmbService);
+                clients[i] = CreateNewClient(startCount, useMockTransport, useCmbService);
+                startCount++;
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -531,6 +562,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             foreach (var client in clients)
             {
+                // DANGO-TODO: Renove this entire check when the Rust server connection sequence is fixed and we don't have to pre-start
+                // the session owner.
+                if (client.IsConnectedClient)
+                {
+                    // Skip starting the session owner
+                    if (client.DistributedAuthorityMode && client.CMBServiceConnection && client.LocalClient.IsSessionOwner)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        throw new Exception("Client NetworkManager is already connected when starting clients!");
+                    }
+                }
                 client.StartClient();
                 hooks = new MultiInstanceHooks();
                 client.ConnectionManager.MessageManager.Hook(hooks);
@@ -627,26 +672,37 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return gameObject;
         }
 
-        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager server, params NetworkManager[] clients)
+        /// <summary>
+        /// This will create and register a <see cref="NetworkPrefab"/> instance for all <see cref="NetworkManager"/> instances.<br />
+        /// *** Invoke this method before starting any of the <see cref="NetworkManager"/> instances ***.
+        /// </summary>
+        /// <remarks>
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology, the authority <see cref="NetworkManager"/>
+        /// can be within the clients array of <see cref="NetworkManager"/> instances.
+        /// </remarks>
+        /// <param name="baseName">The base name of the network prefab. Keep it short as additional information will be added to this name.</param>
+        /// <param name="authorityNetworkManager">The authority <see cref="NetworkManager"/> (i.e. server, host, or session owner)</param>
+        /// <param name="clients">The clients that should also have this <see cref="NetworkPrefab"/> instance added to their network prefab list.</param>
+        /// <returns>The prefab's root <see cref="GameObject"/></returns>
+        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager authorityNetworkManager, params NetworkManager[] clients)
         {
-            void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
-            {
-                config.Prefabs.Add(prefab);
-            }
-
             var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";
-            Assert.IsNotNull(server, prefabCreateAssertError);
-            Assert.IsFalse(server.IsListening, prefabCreateAssertError);
+            Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
+            Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = CreateNetworkObject(baseName, server);
+            var gameObject = CreateNetworkObject(baseName, authorityNetworkManager);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
             // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            AddNetworkPrefab(server.NetworkConfig, networkPrefab);
+            authorityNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             foreach (var clientNetworkManager in clients)
             {
-                AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
+                if (clientNetworkManager == authorityNetworkManager)
+                {
+                    continue;
+                }
+                clientNetworkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = gameObject });
             }
             return gameObject;
         }

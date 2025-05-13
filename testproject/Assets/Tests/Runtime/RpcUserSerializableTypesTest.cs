@@ -48,10 +48,9 @@ namespace TestProject.RuntimeTests
         }
     }
 
-#if NGO_DAMODE
+
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
-#endif 
     public class RpcUserSerializableTypesTest : NetcodeIntegrationTest
     {
         private UserSerializableClass m_UserSerializableClass;
@@ -83,9 +82,13 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 1;
 
-#if NGO_DAMODE
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public RpcUserSerializableTypesTest(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
-#endif
 
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
@@ -114,7 +117,7 @@ namespace TestProject.RuntimeTests
             // [Client-Side] We only need to get the client side Player's NetworkObject so we can grab that instance of the TestSerializationComponent
             // Use the client's instance of the 
             var targetContext = m_ClientNetworkManagers[0];
-#if NGO_DAMODE
+
             // When in distributed authority mode:
             // Owner Instances
             // - Can send ClientRpcs
@@ -127,7 +130,7 @@ namespace TestProject.RuntimeTests
                 // Use the server instance of the client's player
                 targetContext = m_ServerNetworkManager;
             }
-#endif
+
             var clientContextPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), targetContext, clientContextPlayerResult);
 
@@ -339,7 +342,6 @@ namespace TestProject.RuntimeTests
                                  serverIntListCalled && serverStrListCalled;
             };
 
-#if NGO_DAMODE
             // When in distributed authority mode:
             // Owner Instances
             // - Can send ClientRpcs
@@ -356,7 +358,6 @@ namespace TestProject.RuntimeTests
                 serverSideNetworkBehaviourClass.SendStringListOwnerRpc(strList);
             }
             else
-#endif
             {
                 clientSideNetworkBehaviourClass.SendMyObjectServerRpc(obj);
                 clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(obj2);
@@ -533,7 +534,6 @@ namespace TestProject.RuntimeTests
                                  serverIntListCalled && serverStrListCalled;
             };
 
-#if NGO_DAMODE
             // When in distributed authority mode:
             // Owner Instances
             // - Can send ClientRpcs
@@ -550,7 +550,6 @@ namespace TestProject.RuntimeTests
                 serverSideNetworkBehaviourClass.SendStringListOwnerRpc(strList);
             }
             else
-#endif
             {
                 clientSideNetworkBehaviourClass.SendMyObjectServerRpc(objs);
                 clientSideNetworkBehaviourClass.SendMySharedObjectReferencedByIdServerRpc(objs2);
@@ -703,7 +702,6 @@ namespace TestProject.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestCustomTypesArrayComponent>();
 
-#if NGO_DAMODE
             // When in distributed authority mode:
             // Owner Instances
             // - Can send ClientRpcs
@@ -719,7 +717,6 @@ namespace TestProject.RuntimeTests
                 serverSideNetworkBehaviourClass.OnSerializableStructsUpdatedClientRpc = OnClientReceivedUserSerializableStructsUpdated;
             }
             else
-#endif
             {
                 serverSideNetworkBehaviourClass.OnSerializableClassesUpdatedServerRpc = OnServerReceivedUserSerializableClassesUpdated;
                 serverSideNetworkBehaviourClass.OnSerializableStructsUpdatedServerRpc = OnServerReceivedUserSerializableStructsUpdated;
@@ -749,7 +746,6 @@ namespace TestProject.RuntimeTests
                     };
                     m_UserSerializableStructArray.Add(userSerializableStruct);
                 }
-#if NGO_DAMODE
                 // When in distributed authority mode:
                 // Owner Instances
                 // - Can send ClientRpcs
@@ -763,7 +759,6 @@ namespace TestProject.RuntimeTests
                     serverSideNetworkBehaviourClass.ClientStartStructTest(m_UserSerializableStructArray.ToArray());
                 }
                 else
-#endif
                 {
                     clientSideNetworkBehaviourClass.ClientStartTest(m_UserSerializableClassArray.ToArray());
                     clientSideNetworkBehaviourClass.ClientStartStructTest(m_UserSerializableStructArray.ToArray());
@@ -771,7 +766,6 @@ namespace TestProject.RuntimeTests
             }
             else
             {
-#if NGO_DAMODE
                 // When in distributed authority mode:
                 // Owner Instances
                 // - Can send ClientRpcs
@@ -785,7 +779,6 @@ namespace TestProject.RuntimeTests
                     serverSideNetworkBehaviourClass.ClientStartStructTest(null);
                 }
                 else
-#endif
                 {
                     clientSideNetworkBehaviourClass.ClientStartTest(null);
                     clientSideNetworkBehaviourClass.ClientStartStructTest(null);
@@ -958,13 +951,11 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass userSerializableClass)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendOwnerSerializedDataClassRpc(userSerializableClass);
             }
             else
-#endif
             {
                 SendServerSerializedDataClassServerRpc(userSerializableClass);
             }
@@ -1024,13 +1015,11 @@ namespace TestProject.RuntimeTests
         #region ClientStartTest(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
         public void ClientStartTest(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendTemplateStructOwnerRpc(t1val, t2val, enumVal);
             }
             else
-#endif
             {
                 SendTemplateStructServerRpc(t1val, t2val, enumVal);
             }
@@ -1076,13 +1065,11 @@ namespace TestProject.RuntimeTests
         #region ClientStartTest(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
         public void ClientStartTest(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendNetworkSerializableTemplateStructOwnerRpc(t1val, t2val);
             }
             else
-#endif
             {
                 SendNetworkSerializableTemplateStructServerRpc(t1val, t2val);
             }
@@ -1128,13 +1115,11 @@ namespace TestProject.RuntimeTests
         #region ClientStartTest(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
         public void ClientStartTest(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendTemplateStructOwnerRpc(t1val, t2val, enumVal);
             }
             else
-#endif
             {
                 SendTemplateStructServerRpc(t1val, t2val, enumVal);
             }
@@ -1181,13 +1166,11 @@ namespace TestProject.RuntimeTests
         #region ClientStartTest(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
         public void ClientStartTest(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendNetworkSerializableTemplateStructOwnerRpc(t1val, t2val);
             }
             else
-#endif
             {
                 SendNetworkSerializableTemplateStructServerRpc(t1val, t2val);
             }
@@ -1237,13 +1220,11 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableStruct"></param>
         public void ClientStartTest(UserSerializableStruct userSerializableStruct)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendServerSerializedDataStructOwnerRpc(userSerializableStruct);
             }
             else
-#endif
             {
                 SendServerSerializedDataStructServerRpc(userSerializableStruct);
             }
@@ -1286,10 +1267,6 @@ namespace TestProject.RuntimeTests
             OnSerializableStructUpdated?.Invoke(userSerializableStruct);
         }
         #endregion
-
-
-
-
 
 
         #region SendMyObject
@@ -1469,13 +1446,11 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableClass"></param>
         public void ClientStartTest(UserSerializableClass[] userSerializableClasses)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendServerSerializedDataClassArryOwnerRpc(userSerializableClasses);
             }
             else
-#endif
             {
                 SendServerSerializedDataClassArryServerRpc(userSerializableClasses);
             }
@@ -1536,13 +1511,11 @@ namespace TestProject.RuntimeTests
         /// <param name="userSerializableStructs"></param>
         public void ClientStartStructTest(UserSerializableStruct[] userSerializableStructs)
         {
-#if NGO_DAMODE
             if (NetworkManager.DistributedAuthorityMode)
             {
                 SendServerSerializedDataStructArrayOwnerRpc(userSerializableStructs);
             }
             else
-#endif
             {
                 SendServerSerializedDataStructArrayServerRpc(userSerializableStructs);
             }
