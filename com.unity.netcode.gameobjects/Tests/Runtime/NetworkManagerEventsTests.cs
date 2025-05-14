@@ -17,6 +17,13 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_Instantiated;
         private bool m_Destroyed;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         /// <summary>
         /// Validates the <see cref="NetworkManager.OnInstantiated"/> and <see cref="NetworkManager.OnDestroying"/> event notifications
         /// </summary>

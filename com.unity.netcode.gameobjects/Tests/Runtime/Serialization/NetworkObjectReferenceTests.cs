@@ -17,6 +17,13 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class NetworkObjectReferenceTests : IDisposable
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         private class TestNetworkBehaviour : NetworkBehaviour
         {
             public static bool ReceivedRPC;

@@ -14,9 +14,8 @@ namespace TestProject.RuntimeTests
     /// Integration test to validate ClientRpcs will only
     /// send to observers of the NetworkObject
     /// </summary>
-#if NGO_DAMODE
+
     [TestFixture(HostOrServer.DAHost)]
-#endif
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class RpcObserverTests : NetcodeIntegrationTest
@@ -30,6 +29,12 @@ namespace TestProject.RuntimeTests
 
         private NativeArray<ulong> m_NonObserverArrayError;
         private bool m_ArrayAllocated;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         public RpcObserverTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
