@@ -103,7 +103,9 @@ namespace Unity.Netcode.RuntimeTests
         }
         protected override int NumberOfClients => 1;
 
-        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer) { }
+        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+        }
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
@@ -126,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
+            // This is the *SERVER/SESSION OWNER VERSION* of the *CLIENT PLAYER*
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
 

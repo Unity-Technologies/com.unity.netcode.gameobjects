@@ -1,10 +1,18 @@
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
     internal class NetworkManagerCustomMessageManagerTests
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [Test]
         public void CustomMessageManagerAssigned()
         {

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -92,8 +93,8 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        [Test]
-        public void TestPlayerIsOwned()
+        [UnityTest]
+        public IEnumerator TestPlayerIsOwned()
         {
             var clientOwnedObjects = m_ClientNetworkManagers[0].SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId);
 
@@ -102,6 +103,7 @@ namespace Unity.Netcode.RuntimeTests
 
             clientPlayerObject = m_ClientNetworkManagers[0].LocalClient.OwnedObjects.Where((c) => c.IsLocalPlayer).FirstOrDefault();
             Assert.NotNull(clientPlayerObject, $"Client Id {m_ClientNetworkManagers[0].LocalClientId} does not have its local player marked as an owned object using local client!");
+            yield return null;
         }
 
         private bool AllObjectsSpawnedOnClients()
@@ -442,15 +444,18 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private StringBuilder m_ErrorLog = new StringBuilder();
+
         private bool ServerHasCorrectClientOwnedObjectCount()
         {
+            m_ErrorLog.Clear();
             var authority = GetAuthorityNetworkManager();
-            // Only check when we are the host
-            if (authority.IsHost)
+            // Only check when we are the host or session owner
+            if (authority.IsHost || (!authority.IsServer && authority.LocalClient.IsSessionOwner))
             {
                 if (authority.LocalClient.OwnedObjects.Length < k_NumberOfSpawnedObjects)
                 {
-                    return false;
+                    m_ErrorLog.AppendLine($"[{authority.name}] Has only {authority.LocalClient.OwnedObjects.Length} spawned objects and expected is {k_NumberOfSpawnedObjects}");
                 }
             }
 
@@ -458,10 +463,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (connectedClient.Value.OwnedObjects.Length < k_NumberOfSpawnedObjects)
                 {
-                    return false;
+                    m_ErrorLog.AppendLine($"[Client-{connectedClient.Key}] Has only {connectedClient.Value.OwnedObjects.Length} spawned objects and expected is {k_NumberOfSpawnedObjects}");
                 }
             }
-            return true;
+            return m_ErrorLog.Length == 0;
         }
 
         [UnityTest]
@@ -469,7 +474,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (var manager in m_NetworkManagers)
             {
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < k_NumberOfSpawnedObjects; i++)
                 {
                     SpawnObject(m_OwnershipPrefab, manager);
                 }
@@ -479,7 +484,7 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Not all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
 
             yield return WaitForConditionOrTimeOut(ServerHasCorrectClientOwnedObjectCount);
-            AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+            AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!\n {m_ErrorLog}");
         }
 
         /// <summary>
@@ -495,7 +500,7 @@ namespace Unity.Netcode.RuntimeTests
 
             if (m_DistributedAuthority)
             {
-                var authorityId = Random.Range(1, NumberOfClients) - 1;
+                var authorityId = Random.Range(1, TotalClients) - 1;
                 authorityManager = m_ClientNetworkManagers[authorityId];
                 m_OwnershipObject = SpawnObject(m_OwnershipPrefab, authorityManager);
                 m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();

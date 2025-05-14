@@ -341,7 +341,6 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-
         private GameObject m_RigidbodyContactEventManager;
 
         public enum ContactEventTypes

@@ -11,6 +11,13 @@ namespace Unity.Netcode.RuntimeTests
 {
     internal class NetworkManagerTransportTests
     {
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [Test]
         public void ClientDoesNotStartWhenTransportFails()
         {
