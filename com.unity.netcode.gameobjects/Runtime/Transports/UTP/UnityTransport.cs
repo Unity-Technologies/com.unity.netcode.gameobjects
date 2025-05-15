@@ -7,6 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+using System.Text.RegularExpressions;
+#endif
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -249,26 +252,41 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port, bool silent = false)
+            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
             {
                 NetworkEndpoint endpoint = default;
-
-                if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
-                    !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
+                if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4))
                 {
-                    if (!silent)
-                    {
-                        Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
-                    }
+                    NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6);
                 }
-
                 return endpoint;
+            }
+
+            private void InvalidEndpointError()
+            {
+                Debug.LogError($"Invalid network endpoint: {Address}:{Port}.");
             }
 
             /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
-            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint
+            {
+                get
+                {
+                    var networkEndpoint = ParseNetworkEndpoint(Address, Port);
+                    if (networkEndpoint == default)
+                    {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+                        if (!IsValidFqdn(Address))
+#endif
+                        {
+                            InvalidEndpointError();
+                        }
+                    }
+                    return networkEndpoint;
+                }
+            }
 
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
@@ -277,30 +295,35 @@ namespace Unity.Netcode.Transports.UTP
             {
                 get
                 {
+                    NetworkEndpoint endpoint = default;
                     if (string.IsNullOrEmpty(ServerListenAddress))
                     {
-                        var ep = NetworkEndpoint.LoopbackIpv4;
+                        endpoint = NetworkEndpoint.LoopbackIpv4;
 
                         // If an address was entered and it's IPv6, switch to using ::1 as the
                         // default listen address. (Otherwise we always assume IPv4.)
                         if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
                         {
-                            ep = NetworkEndpoint.LoopbackIpv6;
+                            endpoint = NetworkEndpoint.LoopbackIpv6;
                         }
-
-                        return ep.WithPort(Port);
+                        endpoint = endpoint.WithPort(Port);
                     }
                     else
                     {
-                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                        endpoint = ParseNetworkEndpoint(ServerListenAddress, Port);
+                        if (endpoint == default)
+                        {
+                            InvalidEndpointError();
+                        }
                     }
+                    return endpoint;
                 }
             }
 
             /// <summary>
             /// Returns true if the end point address is of type <see cref="NetworkFamily.Ipv6"/>.
             /// </summary>
-            public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
+            public bool IsIpv6 => !string.IsNullOrEmpty(Address) && NetworkEndpoint.TryParse(Address, Port, out NetworkEndpoint _, NetworkFamily.Ipv6);
         }
 
 
@@ -486,6 +509,15 @@ namespace Unity.Netcode.Transports.UTP
                     return NetworkPipeline.Null;
             }
         }
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+        private static bool IsValidFqdn(string fqdn)
+        {
+            // Regular expression to validate FQDN
+            string pattern = @"^(?=.{1,255}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?!-)(?:[A-Za-z0-9-]{1,63}\.?)+[A-Za-z]{2,6}$";
+            var regex = new Regex(pattern);
+            return regex.IsMatch(fqdn);
+        }
+#endif
 
         private bool ClientBindAndConnect()
         {
@@ -512,8 +544,26 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (serverEndpoint.Family == NetworkFamily.Invalid)
             {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+
+                // If it's not valid, assure it meets FQDN standards
+                if (IsValidFqdn(ConnectionData.Address))
+                {
+                    // If so, then proceed with driver initialization and attempt to connect
+                    InitDriver();
+                    m_Driver.Connect(ConnectionData.Address, ConnectionData.Port);
+                    return true;
+                }
+                else
+                {
+                    // If not then log an error and return false
+                    Debug.LogError($"Target server network address ({ConnectionData.Address}) is not a valid Fully Qualified Domain Name!");
+                    return false;
+                }
+#else
                 Debug.LogError($"Target server network address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
+#endif
             }
 
             InitDriver();
@@ -546,8 +596,22 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (endPoint.Family == NetworkFamily.Invalid)
             {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+                // If it's not valid, assure it meets FQDN standards
+                if (!IsValidFqdn(ConnectionData.Address))
+                {
+                    // If not then log an error and return false
+                    Debug.LogError($"Listen network address ({ConnectionData.Address}) is not a valid {NetworkFamily.Ipv4} or {NetworkFamily.Ipv6} address!");
+                }
+                else
+                {
+                    Debug.LogError($"While ({ConnectionData.Address}) is a valid Fully Qualified Domain Name, you must use a valid {NetworkFamily.Ipv4} or {NetworkFamily.Ipv6} address when binding and listening for connections!");
+                }
+                return false;
+#else
                 Debug.LogError($"Network listen address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
                 return false;
+#endif
             }
 
             InitDriver();
@@ -625,7 +689,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address)</param>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address or a domain name)</param>
         /// <param name="port">The remote port</param>
         /// <param name="listenAddress">The local listen address</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
