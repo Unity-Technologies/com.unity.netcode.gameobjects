@@ -21,7 +21,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -30,7 +30,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -60,10 +60,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -87,7 +87,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -96,7 +96,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -126,10 +126,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -153,7 +153,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -162,7 +162,7 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -192,10 +192,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -219,7 +219,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -228,7 +228,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -258,10 +258,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -285,7 +285,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -294,7 +294,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -324,10 +324,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -351,7 +351,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -360,7 +360,7 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -390,10 +390,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -417,7 +417,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -426,7 +426,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -456,10 +456,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -483,7 +483,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -492,7 +492,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -522,10 +522,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -549,7 +549,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -558,7 +558,7 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -588,10 +588,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -615,7 +615,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -624,7 +624,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -654,10 +654,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -681,7 +681,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -690,7 +690,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -720,10 +720,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -747,7 +747,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -756,7 +756,7 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -786,10 +786,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -813,7 +813,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -822,7 +822,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -852,10 +852,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -879,7 +879,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -888,7 +888,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -918,10 +918,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
@@ -945,7 +945,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 180
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -954,7 +954,7 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
     timeout: 10
     retries: 0
   - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
-    timeout: 180
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -984,10 +984,208 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
     UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
-    UPMPVP_CONTEXT_WRENCH: 0.10.47.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.47.0
+    Wrench: 0.10.48.0
+  labels:
+  - Packages:netcode.gameobjects
+
+# PVP Editor and Playmode tests for Validate - netcode.gameobjects - 6000.3 - macos (6000.3 - MacOS).
+validate_-_netcode_gameobjects_-_6000_3_-_macos:
+  name: Validate - netcode.gameobjects - 6000.3 - macos
+  agent:
+    image: package-ci/macos-13:default
+    type: Unity::VM::osx
+    flavor: b1.xlarge
+  commands:
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: 7z x -aoa wrench-localapv.zip
+  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
+  - command: python PythonScripts/print_machine_info.py
+  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+    timeout: 10
+    retries: 3
+  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+    timeout: 10
+    retries: 1
+  - command: echo No internal packages to add.
+  - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
+    timeout: 40
+    retries: 0
+  - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 5
+    retries: 0
+  - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 10
+    retries: 0
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+    timeout: 40
+    retries: 1
+  after:
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
+  artifacts:
+    Crash Dumps:
+      paths:
+      - CrashDumps/**
+    packages:
+      paths:
+      - upm-ci~/packages/**/*
+    pvp-results:
+      paths:
+      - upm-ci~/pvp/**/*
+      browsable: onDemand
+    UTR:
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - test-netcode.gameobjects/Logs/**
+      - test-netcode.gameobjects/Library/*.log
+      - test-netcode.gameobjects/*.log
+      - test-netcode.gameobjects/Builds/*.log
+      - build/test-results/**
+      browsable: onDemand
+  dependencies:
+  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
+  variables:
+    UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+  metadata:
+    Job Maintainers: '#rm-packageworks'
+    Wrench: 0.10.48.0
+  labels:
+  - Packages:netcode.gameobjects
+
+# PVP Editor and Playmode tests for Validate - netcode.gameobjects - 6000.3 - ubuntu (6000.3 - Ubuntu).
+validate_-_netcode_gameobjects_-_6000_3_-_ubuntu:
+  name: Validate - netcode.gameobjects - 6000.3 - ubuntu
+  agent:
+    image: package-ci/ubuntu-20.04:default
+    type: Unity::VM
+    flavor: b1.large
+  commands:
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: 7z x -aoa wrench-localapv.zip
+  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
+  - command: python PythonScripts/print_machine_info.py
+  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+    timeout: 10
+    retries: 3
+  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+    timeout: 10
+    retries: 1
+  - command: echo No internal packages to add.
+  - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
+    timeout: 40
+    retries: 0
+  - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 5
+    retries: 0
+  - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 10
+    retries: 0
+  - command: UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+    timeout: 40
+    retries: 1
+  after:
+  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
+  artifacts:
+    Crash Dumps:
+      paths:
+      - CrashDumps/**
+    packages:
+      paths:
+      - upm-ci~/packages/**/*
+    pvp-results:
+      paths:
+      - upm-ci~/pvp/**/*
+      browsable: onDemand
+    UTR:
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - test-netcode.gameobjects/Logs/**
+      - test-netcode.gameobjects/Library/*.log
+      - test-netcode.gameobjects/*.log
+      - test-netcode.gameobjects/Builds/*.log
+      - build/test-results/**
+      browsable: onDemand
+  dependencies:
+  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
+  variables:
+    UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+  metadata:
+    Job Maintainers: '#rm-packageworks'
+    Wrench: 0.10.48.0
+  labels:
+  - Packages:netcode.gameobjects
+
+# PVP Editor and Playmode tests for Validate - netcode.gameobjects - 6000.3 - windows (6000.3 - Windows).
+validate_-_netcode_gameobjects_-_6000_3_-_windows:
+  name: Validate - netcode.gameobjects - 6000.3 - windows
+  agent:
+    image: package-ci/win10:default
+    type: Unity::VM
+    flavor: b1.large
+  commands:
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: 7z x -aoa wrench-localapv.zip
+  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
+  - command: python PythonScripts/print_machine_info.py
+  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+    timeout: 10
+    retries: 3
+  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+    timeout: 10
+    retries: 1
+  - command: echo No internal packages to add.
+  - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
+    timeout: 40
+    retries: 0
+  - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 5
+    retries: 0
+  - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
+    timeout: 10
+    retries: 0
+  - command: UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}"
+    timeout: 40
+    retries: 1
+  after:
+  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
+  artifacts:
+    Crash Dumps:
+      paths:
+      - CrashDumps/**
+    packages:
+      paths:
+      - upm-ci~/packages/**/*
+    pvp-results:
+      paths:
+      - upm-ci~/pvp/**/*
+      browsable: onDemand
+    UTR:
+      paths:
+      - '*.log'
+      - '*.xml'
+      - artifacts/**/*
+      - test-netcode.gameobjects/Logs/**
+      - test-netcode.gameobjects/Library/*.log
+      - test-netcode.gameobjects/*.log
+      - test-netcode.gameobjects/Builds/*.log
+      - build/test-results/**
+      browsable: onDemand
+  dependencies:
+  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
+  variables:
+    UPMPVP_ACK_UPMPVP_DOES_NO_API_VALIDATION: 1
+    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+  metadata:
+    Job Maintainers: '#rm-packageworks'
+    Wrench: 0.10.48.0
   labels:
   - Packages:netcode.gameobjects
 
