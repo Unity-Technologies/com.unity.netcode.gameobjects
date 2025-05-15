@@ -37,13 +37,13 @@ test_platforms:
     default:
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4
+          image: package-ci/ubuntu-22.04:v4.71.0
           flavor: b1.large
           standalone: StandaloneLinux64
     desktop:  
         - name: ubuntu
           type: Unity::VM
-          image: package-ci/ubuntu-22.04:v4
+          image: package-ci/ubuntu-22.04:v4.71.0
           flavor: b1.large
           standalone: StandaloneLinux64
           model: rtx2080
