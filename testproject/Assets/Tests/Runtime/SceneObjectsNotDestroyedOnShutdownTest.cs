@@ -19,6 +19,12 @@ namespace TestProject.RuntimeTests
         private Scene m_TestScene;
         private WaitForSeconds m_DefaultWaitForTick = new WaitForSeconds(1.0f / 30);
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         [UnityTest]
         public IEnumerator SceneObjectsNotDestroyedOnShutdown()
         {
@@ -27,30 +33,19 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
-#if UNITY_2023_1_OR_NEWER
             var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
-#else
-            var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
-#endif
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
 
             AssertOnTimeout($"Timed out waiting to find {k_SceneObjectName} after scene load and before starting client!\"");
 
             yield return CreateAndStartNewClient();
 
-#if UNITY_2023_1_OR_NEWER
             var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
-#else
-            var loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
-#endif
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
             m_ClientNetworkManagers[0].Shutdown();
             yield return m_DefaultWaitForTick;
-#if UNITY_2023_1_OR_NEWER
             loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
-#else
-            loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
-#endif
+
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client shutdown!");
         }
 
@@ -63,11 +58,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
 
-#if UNITY_2023_1_OR_NEWER
             var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
-#else
-            var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName)).FirstOrDefault();
-#endif
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
             yield return CreateAndStartNewClient();
 
@@ -77,11 +68,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => PlayerHasChildren(clientId));
             AssertOnTimeout($"Client-{clientId} player never parented {k_SceneObjectName}!");
 
-#if UNITY_2023_1_OR_NEWER
             var loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
-#else
-            var loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
-#endif
             Assert.IsTrue(loadedInSceneObjects.Count() > 1, $"Only found one instance of {k_SceneObjectName} after client connected!");
             m_ClientNetworkManagers[0].Shutdown();
             yield return m_DefaultWaitForTick;
@@ -89,11 +76,8 @@ namespace TestProject.RuntimeTests
             // Sanity check to make sure the client's player no longer has any children
             yield return WaitForConditionOrTimeOut(() => PlayerNoLongerExistsWithChildren(clientId));
             AssertOnTimeout($"Client-{clientId} player still exits with children after client shutdown!");
-#if UNITY_2023_1_OR_NEWER
+
             loadedInSceneObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name.Contains(k_SceneObjectName));
-#else
-            loadedInSceneObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name.Contains(k_SceneObjectName));
-#endif
             // Make sure any in-scene placed NetworkObject instantiated has no parent
             foreach (var insceneObject in loadedInSceneObjects)
             {

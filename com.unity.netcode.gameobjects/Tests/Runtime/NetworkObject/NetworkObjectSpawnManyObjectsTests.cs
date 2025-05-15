@@ -67,6 +67,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
 
             AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
+
+            // Provide one full tick for all messages to finish being processed.
+            // DANGO-TODO: Determine if this is only when testing against Rust server (i.e. messages still pending and clients shutting down before they are dequeued)
+            yield return s_DefaultWaitForTick;
         }
     }
 }

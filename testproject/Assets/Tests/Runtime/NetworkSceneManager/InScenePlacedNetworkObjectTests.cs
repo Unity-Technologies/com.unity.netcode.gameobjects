@@ -581,6 +581,13 @@ namespace TestProject.RuntimeTests
 
         private Scene m_Scene;
 
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override IEnumerator OnSetup()
         {
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
