@@ -10,13 +10,24 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
 
 ### Fixed
 
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
-- Fixed issue where root level in-scene placed `NetworkObject`s would only allow the ownership permission to be no less than distributable or sessionowner. (#3407)
+- Fixed memory leaks when domain reload is disabled. (#3427)
+- Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
 
 ### Changed
+
+
+## [2.3.2] - 2025-04-22
+
+### Fixed
+
+- Fixed issue where the authority instance of NetworkTransform could check for state updates more than one time in a frame if the frame rate is greater than the tick frequency. (#3413)
+- Fixed issue where the new interpolator types were blocking after the first consumption of a sequence of buffered state updates. (#3413)
+- Fixed issue where root level in-scene placed `NetworkObject`s would only allow the ownership permission to be no less than distributable or sessionowner. (#3407)
 
 
 ## [2.3.1] - 2025-04-14

@@ -192,6 +192,8 @@ namespace Unity.Netcode
                 TimeToTargetValue = 0.0f;
                 DeltaTime = 0.0f;
                 m_CurrentDeltaTime = 0.0f;
+                MaxDeltaTime = 0.0f;
+                LastRemainingTime = 0.0f;
             }
         }
 
@@ -292,13 +294,9 @@ namespace Unity.Netcode
             var potentialItemNeedsProcessing = false;
 
             // In the event there is nothing left in the queue (i.e. motion/change stopped), we still need to determine if the target has been reached.
-            if (!noStateSet && m_BufferQueue.Count == 0)
+            if (!noStateSet && !InterpolateState.TargetReached)
             {
-                if (!InterpolateState.TargetReached)
-                {
-                    InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
-                }
-                return;
+                InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
             }
 
             // Continue to process any remaining state updates in the queue (if any)
@@ -314,14 +312,10 @@ namespace Unity.Netcode
                 if (!noStateSet)
                 {
                     potentialItemNeedsProcessing = ((potentialItem.TimeSent <= renderTime) && potentialItem.TimeSent > InterpolateState.Target.Value.TimeSent);
-                    if (!InterpolateState.TargetReached)
-                    {
-                        InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
-                    }
                 }
 
                 // If we haven't set a target or we have another item that needs processing.
-                if (noStateSet || potentialItemNeedsProcessing)
+                if ((noStateSet && (potentialItem.TimeSent <= renderTime)) || potentialItemNeedsProcessing)
                 {
                     if (m_BufferQueue.TryDequeue(out BufferedItem target))
                     {

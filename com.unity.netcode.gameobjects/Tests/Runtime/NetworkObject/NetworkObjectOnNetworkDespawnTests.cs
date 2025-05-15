@@ -28,6 +28,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private HostOrServer m_HostOrServer;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkObjectOnNetworkDespawnTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
             m_HostOrServer = hostOrServer;

@@ -29,26 +29,21 @@ namespace Unity.Netcode.Editor
         /// Determines if we are running an integration test of the analytics integration
         /// </summary>
         internal static bool IsIntegrationTest = false;
+        internal static bool EnableIntegrationTestAnalytics = false;
 #if ENABLE_NGO_ANALYTICS_LOGGING
         internal static bool EnableLogging = true;
 #else
         internal static bool EnableLogging = false;
 #endif
 
-        // Preserves the analytics enabled flag
-        private bool m_OriginalAnalyticsEnabled;
-
         internal override void OnOneTimeSetup()
         {
-            m_OriginalAnalyticsEnabled = EditorAnalytics.enabled;
-            // By default, we always disable analytics during integration testing
-            EditorAnalytics.enabled = false;
+            IsIntegrationTest = true;
         }
 
         internal override void OnOneTimeTearDown()
         {
-            // Reset analytics to the original value
-            EditorAnalytics.enabled = m_OriginalAnalyticsEnabled;
+            IsIntegrationTest = false;
         }
 
         internal List<NetworkManagerAnalyticsHandler> AnalyticsTestResults = new List<NetworkManagerAnalyticsHandler>();
@@ -80,6 +75,11 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        private bool ShouldLogAnalytics()
+        {
+            return (IsIntegrationTest && EnableIntegrationTestAnalytics) || (!IsIntegrationTest && EditorAnalytics.enabled);
+        }
+
         /// <summary>
         /// Editor Only
         /// Invoked when the session is started.
@@ -87,8 +87,7 @@ namespace Unity.Netcode.Editor
         /// <param name="networkManager">The <see cref="NetworkManager"/> instance when the session is started.</param>
         internal override void SessionStarted(NetworkManager networkManager)
         {
-            // If analytics is disabled and we are not running an integration test, then exit early.
-            if (!EditorAnalytics.enabled && !IsIntegrationTest)
+            if (!ShouldLogAnalytics())
             {
                 return;
             }
@@ -112,7 +111,7 @@ namespace Unity.Netcode.Editor
         internal override void SessionStopped(NetworkManager networkManager)
         {
             // If analytics is disabled and we are not running an integration test or there are no sessions, then exit early.
-            if ((!EditorAnalytics.enabled && !IsIntegrationTest) || RecentSessions.Count == 0)
+            if (!ShouldLogAnalytics() || RecentSessions.Count == 0)
             {
                 return;
             }
@@ -135,7 +134,7 @@ namespace Unity.Netcode.Editor
         private void UpdateAnalytics(NetworkManager networkManager)
         {
             // If analytics is disabled and we are not running an integration test or there are no sessions to process, then exit early.
-            if ((!EditorAnalytics.enabled && !IsIntegrationTest) || RecentSessions.Count == 0)
+            if (!ShouldLogAnalytics() || RecentSessions.Count == 0)
             {
                 return;
             }

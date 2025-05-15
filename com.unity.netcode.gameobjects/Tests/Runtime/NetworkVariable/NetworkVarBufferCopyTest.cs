@@ -103,7 +103,9 @@ namespace Unity.Netcode.RuntimeTests
         }
         protected override int NumberOfClients => 1;
 
-        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer) { }
+        public NetworkVarBufferCopyTest(HostOrServer hostOrServer) : base(hostOrServer)
+        {
+        }
 
         private static List<DummyNetBehaviour> s_ClientDummyNetBehavioursSpawned = new List<DummyNetBehaviour>();
         public static void ClientDummyNetBehaviourSpawned(DummyNetBehaviour dummyNetBehaviour)
@@ -126,11 +128,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
+            // This is the *SERVER/SESSION OWNER VERSION* of the *CLIENT PLAYER*
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ServerNetworkManager, serverClientPlayerResult);
+                x => x.IsPlayerObject && x.OwnerClientId == nonAuthority.LocalClientId,
+                authority, serverClientPlayerResult);
 
             var serverSideClientPlayer = serverClientPlayerResult.Result;
             var serverComponent = serverSideClientPlayer.GetComponent<DummyNetBehaviour>();
@@ -138,8 +143,8 @@ namespace Unity.Netcode.RuntimeTests
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
-                m_ClientNetworkManagers[0], clientClientPlayerResult);
+                x => x.IsPlayerObject && x.OwnerClientId == nonAuthority.LocalClientId,
+                nonAuthority, clientClientPlayerResult);
 
             var clientSideClientPlayer = clientClientPlayerResult.Result;
             var clientComponent = clientSideClientPlayer.GetComponent<DummyNetBehaviour>();

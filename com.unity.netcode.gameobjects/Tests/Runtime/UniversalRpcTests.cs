@@ -538,6 +538,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
     {
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public UniversalRpcTestsBase(HostOrServer hostOrServer) : base(hostOrServer)
         {
         }
@@ -1534,16 +1540,6 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient.Contains(c)).ToArray());
         }
 
-    }
-
-    [TestFixture(HostOrServer.Host)]
-    [TestFixture(HostOrServer.Server)]
-    internal class UniversalRpcTestDefaultSendToSpecifiedInParamsSendingToServerAndOwner : UniversalRpcTestsBase
-    {
-        public UniversalRpcTestDefaultSendToSpecifiedInParamsSendingToServerAndOwner(HostOrServer hostOrServer) : base(hostOrServer)
-        {
-
-        }
     }
 
     [TestFixture(HostOrServer.DAHost)]

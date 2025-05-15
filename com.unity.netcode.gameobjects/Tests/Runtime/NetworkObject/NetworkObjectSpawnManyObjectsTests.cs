@@ -42,8 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };
 
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var client in m_NetworkManagers)
             {
                 client.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
             }
@@ -53,10 +52,11 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenManyObjectsAreSpawnedAtOnce_AllAreReceived()
         {
             var timeStarted = Time.realtimeSinceStartup;
+            var authority = GetAuthorityNetworkManager();
             for (int x = 0; x < k_SpawnedObjects; x++)
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
-                serverObject.NetworkManagerOwner = m_ServerNetworkManager;
+                serverObject.NetworkManagerOwner = authority;
                 serverObject.Spawn();
             }
 
@@ -67,6 +67,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
 
             AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
+
+            // Provide one full tick for all messages to finish being processed.
+            // DANGO-TODO: Determine if this is only when testing against Rust server (i.e. messages still pending and clients shutting down before they are dequeued)
+            yield return s_DefaultWaitForTick;
         }
     }
 }

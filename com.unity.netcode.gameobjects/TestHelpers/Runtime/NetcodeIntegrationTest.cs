@@ -96,15 +96,49 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        protected int TotalClients => m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+        private int GetTotalClients()
+        {
+            if (m_DistributedAuthority)
+            {
+                // If not connecting to a CMB service then we are using a DAHost and we add 1 to this count.
+                return !UseCMBService() && m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+            }
+            else
+            {
+                // If using a host then we add one to this count.
+                return m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
+            }
+        }
+
+        /// <summary>
+        /// Total number of clients that should be connected at any point during a test.
+        /// </summary>
+        /// <remarks>
+        /// When using the CMB Service, we ignore if <see cref="m_UseHost"/> is true.
+        /// </remarks>
+        protected int TotalClients => GetTotalClients();
 
         protected const uint k_DefaultTickRate = 30;
 
-        private int m_NumberOfClients;
+        /// <summary>
+        /// Specifies the number of client instances to be created for the integration test.
+        /// </summary>
+        /// <remarks>
+        /// Client-Server network topology:<br />
+        /// When running as a host the total number of clients will be NumberOfClients + 1.<br />
+        /// See the calculation for <see cref="TotalClients"/>.
+        /// Distributed Authority network topology:<br />
+        /// When connecting to a CMB server, if the <see cref="NumberOfClients"/> == 0 then a session owner client will
+        /// be automatically added in order to start the session and the private internal m_NumberOfClients value, which
+        /// is initialized as <see cref="NumberOfClients"/>, will be incremented by 1 making <see cref="TotalClients"/> yield the
+        /// same results as if we were running a Host where it will effectively be <see cref="NumberOfClients"/>
+        /// + 1.
+        /// </remarks>
         protected abstract int NumberOfClients { get; }
+        private int m_NumberOfClients;
 
         /// <summary>
-        /// Set this to false to create the clients first.
+        /// Set this to false to create the clients first.<br />
         /// Note: If you are using scene placed NetworkObjects or doing any form of scene testing and
         /// get prefab hash id "soft synchronization" errors, then set this to false and run your test
         /// again.  This is a work-around until we can resolve some issues with NetworkManagerOwner and
@@ -127,8 +161,53 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         protected GameObject m_PlayerPrefab;
+
+        /// <summary>The Server <see cref="NetworkManager"/> instance instantiated and tracked within the current test</summary>
         protected NetworkManager m_ServerNetworkManager;
+
+        /// <summary>All the client <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
         protected NetworkManager[] m_ClientNetworkManagers;
+        /// <summary>All the <see cref="NetworkManager"/> instances instantiated and tracked within the current test</summary>
+        protected NetworkManager[] m_NetworkManagers;
+
+        /// <summary>
+        /// Gets the current authority of the network session.
+        /// When using the hosted CMB service this will be the client who is the session owner.
+        /// Otherwise, returns the server <see cref="NetworkManager"/>
+        /// </summary>
+        /// <returns>The <see cref="NetworkManager"/> instance that is the current authority</returns>
+        protected NetworkManager GetAuthorityNetworkManager()
+        {
+            if (m_UseCmbService)
+            {
+                // If we haven't even started any NetworkManager, then return the first instance
+                // since it will be the session owner.
+                if (!NetcodeIntegrationTestHelpers.IsStarted)
+                {
+                    return m_NetworkManagers[0];
+                }
+
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (client.LocalClient.IsSessionOwner)
+                    {
+                        return client;
+                    }
+                }
+                Assert.Fail("No DA session owner found!");
+            }
+
+            return m_ServerNetworkManager;
+        }
+
+        /// <summary>
+        /// Gets a non-session owner <see cref="NetworkManager"/>.
+        /// </summary>
+        /// <returns>A <see cref="NetworkManager"/> instance that will not be the session owner</returns>
+        protected NetworkManager GetNonAuthorityNetworkManager()
+        {
+            return m_ClientNetworkManagers.First(client => !client.LocalClient.IsSessionOwner);
+        }
 
         /// <summary>
         /// Contains each client relative set of player NetworkObject instances
@@ -140,12 +219,53 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected Dictionary<ulong, Dictionary<ulong, NetworkObject>> m_PlayerNetworkObjects = new Dictionary<ulong, Dictionary<ulong, NetworkObject>>();
 
         protected bool m_UseHost = true;
-        protected bool m_DistributedAuthority;
+        protected bool m_DistributedAuthority => m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
         protected NetworkTopologyTypes m_NetworkTopologyType = NetworkTopologyTypes.ClientServer;
 
+        /// <summary>
+        /// Indicates whether the currently running tests are targeting the hosted CMB Service
+        /// </summary>
+        /// <remarks>Can only be true if <see cref="UseCMBService"/> returns true.</remarks>
+        protected bool m_UseCmbService { get; private set; }
+
+        private string m_UseCmbServiceEnvString = null;
+        private bool m_UseCmbServiceEnv;
+
+        /// <summary>
+        /// Will check the environment variable once and then always return the results
+        /// of the first check.
+        /// </summary>
+        /// <remarks>
+        /// This resets its properties during <see cref="OnOneTimeTearDown"/>, so it will
+        /// check the environment variable once per test set.
+        /// </remarks>
+        /// <returns>true/false</returns>
+        private bool GetServiceEnvironmentVariable()
+        {
+            if (!m_UseCmbServiceEnv && m_UseCmbServiceEnvString == null)
+            {
+                m_UseCmbServiceEnvString = NetcodeIntegrationTestHelpers.GetCMBServiceEnvironentVariable();
+                if (bool.TryParse(m_UseCmbServiceEnvString.ToLower(), out bool isTrue))
+                {
+                    m_UseCmbServiceEnv = isTrue;
+                }
+                else
+                {
+                    Debug.LogWarning($"The USE_CMB_SERVICE ({m_UseCmbServiceEnvString}) value is an invalid bool string. {m_UseCmbService} is being set to false.");
+                    m_UseCmbServiceEnv = false;
+                }
+            }
+            return m_UseCmbServiceEnv;
+        }
+
+        /// <summary>
+        /// Indicates whether a hosted CMB service is available.
+        /// </summary>
+        /// <remarks>Override to return false to ensure a set of tests never runs against the hosted service</remarks>
+        /// <returns>true if a DAHost test should run against a hosted CMB service instance; otherwise false</returns>
         protected virtual bool UseCMBService()
         {
-            return false;
+            return m_UseCmbService;
         }
 
         protected virtual NetworkTopologyTypes OnGetNetworkTopologyType()
@@ -157,7 +277,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             networkManager.NetworkConfig.NetworkTopology = m_NetworkTopologyType;
             networkManager.NetworkConfig.AutoSpawnPlayerPrefabClientSide = m_DistributedAuthority;
-            networkManager.NetworkConfig.UseCMBService = UseCMBService() && m_DistributedAuthority;
+            networkManager.NetworkConfig.UseCMBService = m_UseCmbService;
         }
 
         protected int m_TargetFrameRate = 60;
@@ -292,6 +412,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            // Only For CMB Server Tests:
+            // If the environment variable is set (i.e. doing a CMB server run) but UseCMBservice returns false, then ignore the test.
+            // Note: This will prevent us from re-running all of the non-DA integration tests that have already run multiple times on
+            // multiple platforms
+            if (GetServiceEnvironmentVariable() && !UseCMBService())
+            {
+                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+                return;
+            }
+            else
+            {
+                // Otherwise, continue with the test
+                InternalOnOneTimeSetup();
+            }
+        }
+
+        private void InternalOnOneTimeSetup()
+        {
             Application.runInBackground = true;
             m_NumberOfClients = NumberOfClients;
             IsRunning = true;
@@ -347,6 +485,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            // In addition to setting the number of clients in the OneTimeSetup, we need to re-apply the number of clients for each unique test
+            // in the event that a previous test stopped a client.
+            m_NumberOfClients = NumberOfClients;
             VerboseDebugLog.Clear();
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
@@ -364,6 +505,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Setup the frames per tick for time travel advance to next tick
                 ConfigureFramesPerTick();
             }
+
             if (m_SetupIsACoroutine)
             {
                 yield return OnSetup();
@@ -394,7 +536,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 }
             }
-
             VerboseDebug($"Exiting {nameof(SetUp)}");
         }
 
@@ -431,6 +572,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(CreatePlayerPrefab)}");
         }
 
+        private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
+        {
+            var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
+            if (addNetworkManager)
+            {
+                clientNetworkManagersList.Add(networkManager);
+            }
+            else
+            {
+                clientNetworkManagersList.Remove(networkManager);
+            }
+
+            m_ClientNetworkManagers = clientNetworkManagersList.ToArray();
+            m_NumberOfClients = clientNetworkManagersList.Count;
+
+            if (!m_UseCmbService)
+            {
+                clientNetworkManagersList.Insert(0, m_ServerNetworkManager);
+            }
+            m_NetworkManagers = clientNetworkManagersList.ToArray();
+        }
+
         /// <summary>
         /// This is invoked before the server and client(s) are started.
         /// Override this method if you want to make any adjustments to their
@@ -449,20 +612,58 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreateServerAndClients(NumberOfClients);
         }
 
-        private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
+        /// <summary>
+        /// Creates the server and clients
+        /// </summary>
+        /// <param name="numberOfClients">The number of client instances to create</param>
+        protected void CreateServerAndClients(int numberOfClients)
         {
-            var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
-            if (addNetworkManager)
+            VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
+
+            CreatePlayerPrefab();
+
+            if (m_EnableTimeTravel)
             {
-                clientNetworkManagersList.Add(networkManager);
-            }
-            else
-            {
-                clientNetworkManagersList.Remove(networkManager);
+                m_TargetFrameRate = -1;
             }
 
-            m_ClientNetworkManagers = clientNetworkManagersList.ToArray();
-            m_NumberOfClients = clientNetworkManagersList.Count;
+            // If we are connecting to a CMB server we add +1 for the session owner
+            if (m_UseCmbService)
+            {
+                numberOfClients++;
+            }
+
+            // Create multiple NetworkManager instances
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel, m_UseCmbService))
+            {
+                Debug.LogError("Failed to create instances");
+                Assert.Fail("Failed to create instances");
+            }
+            m_NumberOfClients = numberOfClients;
+            m_ClientNetworkManagers = clients;
+            m_ServerNetworkManager = server;
+
+            var managers = clients.ToList();
+            if (!m_UseCmbService)
+            {
+                managers.Insert(0, m_ServerNetworkManager);
+            }
+            m_NetworkManagers = managers.ToArray();
+
+            s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / GetAuthorityNetworkManager().NetworkConfig.TickRate);
+
+            // Set the player prefab for the server and clients
+            foreach (var manager in m_NetworkManagers)
+            {
+                manager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                SetDistributedAuthorityProperties(manager);
+            }
+
+            // Provides opportunity to allow child derived classes to
+            // modify the NetworkManager's configuration before starting.
+            OnServerAndClientsCreated();
+
+            VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
 
         /// <summary>
@@ -473,7 +674,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
             // Ensure any late joining client has all NetworkPrefabs required to connect.
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            foreach (var networkPrefab in GetAuthorityNetworkManager().NetworkConfig.Prefabs.Prefabs)
             {
                 if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
                 {
@@ -522,7 +723,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel, m_UseCmbService);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             SetDistributedAuthorityProperties(networkManager);
 
@@ -530,6 +731,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // in the event any modifications need to be made before starting the client
             OnNewClientCreated(networkManager);
 
+            yield return StartClient(networkManager);
+        }
+
+        /// <summary>
+        /// Starts and connects the given networkManager as a client while in the middle of an
+        /// integration test.
+        /// </summary>
+        /// <param name="networkManager">The network manager to start and connect</param>
+        /// <returns>An IEnumerator to be used in a coroutine for asynchronous execution.</returns>
+        protected IEnumerator StartClient(NetworkManager networkManager)
+        {
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
 
             if (LogAllMessages)
@@ -576,41 +788,25 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Continue to populate the PlayerObjects list until all player object (local and clone) are found
             ClientNetworkManagerPostStart(joinedClient);
-            var playerObjectRelative = m_ServerNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
-            if (playerObjectRelative == null)
-            {
-                m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Server-Side] Joining Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
-                return false;
-            }
-            else
-            {
-                // Go ahead and create an entry for this new client
-                if (!m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
-                {
-                    m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
-                }
-            }
 
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
-                if (clientNetworkManager.LocalClientId == joinedClient.LocalClientId)
+                if (networkManager.LocalClientId == joinedClient.LocalClientId)
                 {
                     continue;
                 }
 
-                playerObjectRelative = clientNetworkManager.SpawnManager.PlayerObjects.Where((c) => c.OwnerClientId == joinedClient.LocalClientId).FirstOrDefault();
+                var playerObjectRelative = networkManager.SpawnManager.PlayerObjects.FirstOrDefault(c => c.OwnerClientId == joinedClient.LocalClientId);
                 if (playerObjectRelative == null)
                 {
-                    m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Client-{clientNetworkManager.LocalClientId}] Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
+                    m_InternalErrorLog.Append($"[AllPlayerObjectClonesSpawned][Client-{networkManager.LocalClientId}] Client-{joinedClient.LocalClientId} was not populated in the {nameof(NetworkSpawnManager.PlayerObjects)} list!");
                     return false;
                 }
-                else
+
+                // Go ahead and create an entry for this new client
+                if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
                 {
-                    // Go ahead and create an entry for this new client
-                    if (!m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].ContainsKey(joinedClient.LocalClientId))
-                    {
-                        m_PlayerNetworkObjects[clientNetworkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
-                    }
+                    m_PlayerNetworkObjects[networkManager.LocalClientId].Add(joinedClient.LocalClientId, playerObjectRelative);
                 }
             }
             return true;
@@ -657,21 +853,33 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This will stop a client while in the middle of an integration test
+        /// This will stop the given <see cref="NetworkManager"/> instance while in the middle of an integration test.
+        /// The instance is then removed from the lists of managed instances (<see cref="m_NetworkManagers"/>, <see cref="m_ClientNetworkManagers"/>).
         /// </summary>
+        /// <remarks>
+        /// If there are no other references to the managed instance, it will be destroyed regardless of the destroy parameter.
+        /// To avoid this, save a reference to the <see cref="NetworkManager"/> instance before calling this method.
+        /// </remarks>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> instance of the client to stop.</param>
+        /// <param name="destroy">Whether the <see cref="NetworkManager"/> instance should be destroyed after stopping. Defaults to false.</param>
+        /// <returns>An <see cref="IEnumerator"/> to be used in a coroutine for asynchronous execution.</returns>
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
-            if (destroy)
-            {
-                AddRemoveNetworkManager(networkManager, false);
-            }
+            AddRemoveNetworkManager(networkManager, false);
             yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
         }
 
         /// <summary>
-        /// This will stop a client while in the middle of an integration test
+        /// This will stop the given <see cref="NetworkManager"/> instance while in the middle of a time travel integration test.
+        /// The instance is then removed from the lists of managed instances (<see cref="m_NetworkManagers"/>, <see cref="m_ClientNetworkManagers"/>).
         /// </summary>
+        /// <remarks>
+        /// If there are no other references to the managed instance, it will be destroyed regardless of the destroy parameter.
+        /// To avoid this, save a reference to the <see cref="NetworkManager"/> instance before calling this method.
+        /// </remarks>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> instance of the client to stop.</param>
+        /// <param name="destroy">Whether the <see cref="NetworkManager"/> instance should be destroyed after stopping. Defaults to false.</param>
         protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -681,7 +889,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void SetTimeTravelSimulatedLatency(float latencySeconds)
         {
-            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
+            ((MockTransport)GetAuthorityNetworkManager().NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
             foreach (var client in m_ClientNetworkManagers)
             {
                 ((MockTransport)client.NetworkConfig.NetworkTransport).SimulatedLatencySeconds = latencySeconds;
@@ -690,7 +898,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void SetTimeTravelSimulatedDropRate(float dropRatePercent)
         {
-            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
+            ((MockTransport)GetAuthorityNetworkManager().NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
             foreach (var client in m_ClientNetworkManagers)
             {
                 ((MockTransport)client.NetworkConfig.NetworkTransport).PacketDropRate = dropRatePercent;
@@ -699,59 +907,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected void SetTimeTravelSimulatedLatencyJitter(float jitterSeconds)
         {
-            ((MockTransport)m_ServerNetworkManager.NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
+            ((MockTransport)GetAuthorityNetworkManager().NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
             foreach (var client in m_ClientNetworkManagers)
             {
                 ((MockTransport)client.NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
             }
-        }
-
-        /// <summary>
-        /// Creates the server and clients
-        /// </summary>
-        /// <param name="numberOfClients">The number of client instances to create</param>
-        protected void CreateServerAndClients(int numberOfClients)
-        {
-            VerboseDebug($"Entering {nameof(CreateServerAndClients)}");
-
-            CreatePlayerPrefab();
-
-            if (m_EnableTimeTravel)
-            {
-                m_TargetFrameRate = -1;
-            }
-
-            // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel))
-            {
-                Debug.LogError("Failed to create instances");
-                Assert.Fail("Failed to create instances");
-            }
-
-            m_ClientNetworkManagers = clients;
-            m_ServerNetworkManager = server;
-
-            if (m_ServerNetworkManager != null)
-            {
-                s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
-            }
-
-            // Set the player prefab for the server and clients
-            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
-            SetDistributedAuthorityProperties(m_ServerNetworkManager);
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-                SetDistributedAuthorityProperties(client);
-            }
-
-            // Provides opportunity to allow child derived classes to
-            // modify the NetworkManager's configuration before starting.
-            OnServerAndClientsCreated();
-
-            VerboseDebug($"Exiting {nameof(CreateServerAndClients)}");
         }
 
         /// <summary>
@@ -808,13 +968,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_PlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
             }
 
-#if UNITY_2023_1_OR_NEWER
             // Get all player instances for the current client NetworkManager instance
             var clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#else
-            // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#endif
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -829,13 +984,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
                 }
             }
-#if UNITY_2023_1_OR_NEWER
             // For late joining clients, add the remaining (if any) cloned versions of each client's player
             clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
-#else
-            // For late joining clients, add the remaining (if any) cloned versions of each client's player
-            clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
-#endif
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -856,11 +1006,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_UseHost)
             {
-#if UNITY_2023_1_OR_NEWER
-                var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#else
-                var clientSideServerPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#endif
+                var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == NetworkManager.ServerClientId);
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
                 {
                     // When the server is not the host this needs to be done
@@ -869,9 +1015,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                     }
 
-                    if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(m_ServerNetworkManager.LocalClientId))
+                    if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(NetworkManager.ServerClientId))
                     {
-                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(NetworkManager.ServerClientId, playerNetworkObject);
                     }
                 }
             }
@@ -884,6 +1030,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        /// <summary>
+        /// Starts the session owner and awaits for it to connect before starting the remaining clients.
+        /// </summary>
+        /// <remarks>
+        /// DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+        /// the session owner.
+        /// </remarks>
+        private IEnumerator StartSessionOwner()
+        {
+            VerboseDebug("Starting session owner...");
+            NetcodeIntegrationTestHelpers.StartOneClient(m_ClientNetworkManagers[0]);
+            yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[0].IsConnectedClient);
+            AssertOnTimeout($"Timed out waiting for the session owner to connect to CMB Server!");
+            Assert.True(m_ClientNetworkManagers[0].LocalClient.IsSessionOwner, $"Client-{m_ClientNetworkManagers[0].LocalClientId} started session but was not set to be the session owner!");
+            VerboseDebug("Session owner connected and approved.");
+        }
 
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
@@ -895,27 +1057,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 VerboseDebug($"Entering {nameof(StartServerAndClients)}");
 
+                // DANGO-TODO: Renove this when the Rust server connection sequence is fixed and we don't have to pre-start
+                // the session owner.
+                if (m_UseCmbService)
+                {
+                    VerboseDebug("Using a distributed authority CMB Server for connection.");
+                    yield return StartSessionOwner();
+                }
+
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
-
-                // When using the CMBService, don't start the server.
-                bool startServer = !(UseCMBService() && m_DistributedAuthority);
-                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, startServer, m_ServerNetworkManager, m_ClientNetworkManagers))
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
 
+                // Get the authority NetworkMananger (Server, Host, or Session Owner)
+                var authorityManager = GetAuthorityNetworkManager();
+
                 // When scene management is enabled, we need to re-apply the scenes populated list since we have overriden the ISceneManagerHandler
                 // imeplementation at this point. This assures any pre-loaded scenes will be automatically assigned to the server and force clients
                 // to load their own scenes.
-                if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
+                if (authorityManager.NetworkConfig.EnableSceneManagement)
                 {
-                    if (startServer)
-                    {
-                        var scenesLoaded = m_ServerNetworkManager.SceneManager.ScenesLoaded;
-                        m_ServerNetworkManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, m_ServerNetworkManager);
-                    }
+                    var scenesLoaded = authorityManager.SceneManager.ScenesLoaded;
+                    authorityManager.SceneManager.SceneManagerHandler.PopulateLoadedScenes(ref scenesLoaded, authorityManager);
                 }
 
                 if (LogAllMessages)
@@ -936,15 +1103,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
-                    if (m_UseHost || m_ServerNetworkManager.IsHost)
+                    if (m_UseHost || authorityManager.IsHost)
                     {
-#if UNITY_2023_1_OR_NEWER
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#else
-                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#endif
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
                             if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
@@ -952,30 +1114,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
                                 m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                             }
 
-                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
-                        }
-                    }
-                    if (m_DistributedAuthority)
-                    {
-                        //yield return WaitForConditionOrTimeOut(AllClientPlayersSpawned);
-                        //AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn all player objects!");
-                        foreach (var networkManager in m_ClientNetworkManagers)
-                        {
-                            if (networkManager.DistributedAuthorityMode)
+                            if (!m_UseCmbService)
                             {
-                                yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
-                                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
+                                m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(authorityManager.LocalClientId, playerNetworkObject);
                             }
-                        }
-                        if (m_ServerNetworkManager != null)
-                        {
-                            yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
-                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
                         }
                     }
 
-                    if (ShouldCheckForSpawnedPlayers())
+                    // With distributed authority, we check that all players have spawned on all NetworkManager instances
+                    if (m_DistributedAuthority)
                     {
+                        foreach (var networkManager in m_NetworkManagers)
+                        {
+                            yield return WaitForConditionOrTimeOut(() => AllPlayerObjectClonesSpawned(networkManager));
+                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!\n {m_InternalErrorLog}");
+                        }
+                    }
+
+                    // Client-Server or DAHost
+                    if (ShouldCheckForSpawnedPlayers() && !m_UseCmbService)
+                    {
+                        // Check for players being spawned on server instance
                         ClientNetworkManagerPostStartInit();
                     }
 
@@ -1001,17 +1160,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
                 // is started and after each client is started.
                 // When using the CMBService, don't start the server.
-                var usingCMBService = UseCMBService() && m_DistributedAuthority;
-                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !usingCMBService, m_ServerNetworkManager, m_ClientNetworkManagers))
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, !m_UseCmbService, m_ServerNetworkManager, m_ClientNetworkManagers))
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
                 }
 
+                var authorityManager = GetAuthorityNetworkManager();
+
                 // Time travel does not play nice with scene loading, clear out server side pre-loaded scenes.
-                if (m_ServerNetworkManager.NetworkConfig.EnableSceneManagement)
+                if (authorityManager.NetworkConfig.EnableSceneManagement)
                 {
-                    m_ServerNetworkManager.SceneManager.ScenesLoaded.Clear();
+                    authorityManager.SceneManager.ScenesLoaded.Clear();
                 }
 
                 if (LogAllMessages)
@@ -1032,14 +1192,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
 
-                    if (m_UseHost || m_ServerNetworkManager.IsHost)
+                    if (m_UseHost || authorityManager.IsHost)
                     {
 #if UNITY_2023_1_OR_NEWER
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
 #else
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == authorityManager.LocalClientId);
 #endif
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
@@ -1048,25 +1208,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
                                 m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
                             }
 
-                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                            if (!m_UseCmbService)
+                            {
+                                m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(authorityManager.LocalClientId, playerNetworkObject);
+                            }
                         }
                     }
 
                     if (m_DistributedAuthority)
                     {
-
-                        foreach (var networkManager in m_ClientNetworkManagers)
+                        foreach (var networkManager in m_NetworkManagers)
                         {
-                            if (networkManager.DistributedAuthorityMode)
-                            {
-                                WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
-                                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
-                            }
-                        }
-                        if (m_ServerNetworkManager != null)
-                        {
-                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(m_ServerNetworkManager));
-                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{m_ServerNetworkManager.LocalClientId}'s player object!");
+                            WaitForConditionOrTimeOutWithTimeTravel(() => AllPlayerObjectClonesSpawned(networkManager));
+                            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for all sessions to spawn Client-{networkManager.LocalClientId}'s player object!");
                         }
                     }
 
@@ -1211,7 +1365,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Allow time for NetworkManagers to fully shutdown
-            yield return s_DefaultWaitForTick;
+            yield return k_DefaultTickRate;
 
             // Cleanup any remaining NetworkObjects
             DestroySceneNetworkObjects();
@@ -1286,6 +1440,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 Object.DestroyImmediate(networkManager.gameObject);
             }
+            m_NetworkManagers = null;
+            m_ClientNetworkManagers = null;
+            m_ServerNetworkManager = null;
         }
 
         /// <summary>
@@ -1322,6 +1479,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #endif
 
             IsRunning = false;
+            m_UseCmbServiceEnvString = null;
+            m_UseCmbServiceEnv = false;
         }
 
         /// <summary>
@@ -1375,10 +1534,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void EnableMessageLogging()
         {
-            m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
-                client.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
+                networkManager.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
             }
         }
 
@@ -1534,13 +1692,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_InternalErrorLog.AppendLine($"[Client-{i + 1}] Client is not connected!");
                 }
             }
-            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
-            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
 
-            if (currentCount != expectedCount)
+            var manager = GetAuthorityNetworkManager();
+            var currentCount = manager.ConnectedClients.Count;
+
+            if (currentCount != TotalClients)
             {
                 allClientsConnected = false;
-                m_InternalErrorLog.AppendLine($"[Server-Side] Expected {expectedCount} clients to connect but only {currentCount} connected!");
+                m_InternalErrorLog.AppendLine($"[Server-Side] Expected {TotalClients} clients to connect but only {currentCount} connected!");
             }
 
             return allClientsConnected;
@@ -1666,9 +1825,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var prefabCreateAssertError = $"You can only invoke this method during {nameof(OnServerAndClientsCreated)} " +
                                           $"but before {nameof(OnStartedServerAndClients)}!";
-            Assert.IsNotNull(m_ServerNetworkManager, prefabCreateAssertError);
-            Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
-            var prefabObject = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
+            var authorityNetworkManager = GetAuthorityNetworkManager();
+            Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
+            Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
+            var prefabObject = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, authorityNetworkManager, m_ClientNetworkManagers);
             // DANGO-TODO: Ownership flags could require us to change this
             // For testing purposes, we default to true for the distribute ownership property when in a distirbuted authority network topology.
             prefabObject.GetComponent<NetworkObject>().Ownership |= NetworkObject.OwnershipStatus.Distributable;
@@ -1790,22 +1950,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public NetcodeIntegrationTest()
         {
-            m_NetworkTopologyType = OnGetNetworkTopologyType();
-            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
-            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
+            var topologyType = OnGetNetworkTopologyType();
+            InitializeTestConfiguration(topologyType, null);
         }
 
         public NetcodeIntegrationTest(NetworkTopologyTypes networkTopologyType)
         {
-            m_NetworkTopologyType = networkTopologyType;
-            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
+            InitializeTestConfiguration(networkTopologyType, null);
         }
 
         public NetcodeIntegrationTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer)
         {
-            m_NetworkTopologyType = networkTopologyType;
-            m_DistributedAuthority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority;
-            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
+            InitializeTestConfiguration(networkTopologyType, hostOrServer);
         }
 
         /// <summary>
@@ -1826,9 +1982,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="hostOrServer">Specifies whether to run the test as a Host or Server configuration</param>
         public NetcodeIntegrationTest(HostOrServer hostOrServer)
         {
-            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
             m_NetworkTopologyType = hostOrServer == HostOrServer.DAHost ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
-            m_DistributedAuthority = OnGetNetworkTopologyType() == NetworkTopologyTypes.DistributedAuthority;
+            InitializeTestConfiguration(m_NetworkTopologyType, hostOrServer);
+        }
+
+        private void InitializeTestConfiguration(NetworkTopologyTypes networkTopologyType, HostOrServer? hostOrServer)
+        {
+            NetworkMessageManager.EnableMessageOrderConsoleLog = false;
+
+            // Set m_NetworkTopologyType first because m_DistributedAuthority is calculated from it.
+            m_NetworkTopologyType = networkTopologyType;
+
+            if (!hostOrServer.HasValue)
+            {
+                // Always default to hosting, set the type of host based on the topology type.
+                // Note: For m_DistributedAuthority to be true, the m_NetworkTopologyType must be set to NetworkTopologyTypes.DistributedAuthority
+                hostOrServer = m_DistributedAuthority ? HostOrServer.DAHost : HostOrServer.Host;
+            }
+            m_UseHost = hostOrServer == HostOrServer.Host || hostOrServer == HostOrServer.DAHost;
+
+            // If we are using a distributed authority network topology and the environment variable
+            // to use the CMBService is set, then perform the m_UseCmbService check.
+            if (m_DistributedAuthority && GetServiceEnvironmentVariable())
+            {
+                m_UseCmbService = hostOrServer == HostOrServer.DAHost;
+                // In the event UseCMBService is overridden, we apply the value returned.
+                // If it is, then whatever UseCMBService returns is the setting for m_UseCmbService.
+                // If it is not, then it will return whatever m_UseCmbService's setting is from the above check.
+                m_UseCmbService = UseCMBService();
+            }
         }
 
         /// <summary>
@@ -1840,6 +2022,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
             Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
         }
+
 
         private void UnloadRemainingScenes()
         {

@@ -129,6 +129,12 @@ namespace TestProject.RuntimeTests
 
         }
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override void OnOneTimeSetup()
         {
             m_OriginalVarianceThreshold = base.GetDeltaVarianceThreshold();
@@ -360,7 +366,6 @@ namespace TestProject.RuntimeTests
         {
             var timeStarted = Time.realtimeSinceStartup;
             var startFrameCount = Time.frameCount;
-            m_EnableVerboseDebug = true;
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
@@ -399,7 +404,6 @@ namespace TestProject.RuntimeTests
                     // If we have 5 precision failures in a row and fail to correct, then fail this test
                     if (precisionFailures > k_MaximumPrecisionFailures)
                     {
-                        m_EnableVerboseDebug = true;
                         DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
                         Assert.True(success, $"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
                             $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}");

@@ -18,14 +18,20 @@ namespace TestProject.RuntimeTests
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
     public class InScenePlacedNetworkObjectTests : IntegrationTestWithApproximation
     {
-        protected override int NumberOfClients => 3;
+        protected override int NumberOfClients => 2;
 
         private const string k_SceneToLoad = "InSceneNetworkObject";
         private const string k_InSceneUnder = "InSceneUnderGameObject";
         private const string k_InSceneUnderWithNT = "InSceneUnderGameObjectWithNT";
         private Scene m_ServerSideSceneLoaded;
-        private bool m_CanStartServerAndClients;
         private string m_SceneLoading = k_SceneToLoad;
+        private NetworkManager m_LateJoinClient;
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         public InScenePlacedNetworkObjectTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
@@ -33,7 +39,6 @@ namespace TestProject.RuntimeTests
         {
             NetworkObjectTestComponent.Reset();
             NetworkObjectTestComponent.VerboseDebug = m_EnableVerboseDebug;
-            m_CanStartServerAndClients = false;
             return base.OnSetup();
         }
 
@@ -45,12 +50,14 @@ namespace TestProject.RuntimeTests
         /// <returns></returns>
         protected override IEnumerator OnTearDown()
         {
+            m_LateJoinClient = null;
             yield return CleanUpLoadedScene();
         }
 
-        protected override bool CanStartServerAndClients()
+        protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            return m_CanStartServerAndClients;
+            m_LateJoinClient = networkManager;
+            base.OnNewClientCreated(networkManager);
         }
 
         public enum DespawnMode
@@ -74,33 +81,18 @@ namespace TestProject.RuntimeTests
                 Assert.Ignore($"Test ignored as DeferDespawn is only valid with Distributed Authority mode.");
             }
 
-            NetworkObjectTestComponent.VerboseDebug = false;
-            // Because despawning a client will cause it to shutdown and clean everything in the
-            // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients with despawned in-scene placed NetworkObjects.
-            // So, we prevent the automatic starting of the server and clients, remove the client we
-            // will be targeting to join late from the m_ClientNetworkManagers array, start the server
-            // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
-            // the clientToTest.
-            var clientToTest = m_ClientNetworkManagers[2];
-            var clients = m_ClientNetworkManagers.ToList();
-            clients.Remove(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-            m_CanStartServerAndClients = true;
-            NetworkObjectTestComponent.Reset();
-            yield return StartServerAndClients();
-            clients.Add(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-
-
             m_ServerNetworkManager.SceneManager.OnSceneEvent += Server_OnSceneEvent;
             var status = m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
             Assert.IsTrue(status == SceneEventProgressStatus.Started, $"When attempting to load scene {k_SceneToLoad} was returned the following progress status: {status}");
-            // We removed a client from the initial spawn and server should spawn too
-            var clientCount = TotalClients - (m_UseHost ? 1 : 0);
+
+            var clientCount = NumberOfClients + 1;
+
             // This verifies the scene loaded and the in-scene placed NetworkObjects spawned.
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
             AssertOnTimeout($"Timed out waiting for total spawned in-scene placed NetworkObjects to reach a count of {clientCount} and is currently {NetworkObjectTestComponent.SpawnedInstances.Count}");
+
+            yield return WaitForConditionOrTimeOut(() => m_ServerSideSceneLoaded.IsValid() && m_ServerSideSceneLoaded.isLoaded);
+            AssertOnTimeout($"Timed out waiting for server to finish loading scene {k_SceneToLoad}!");
 
             // Get the server-side instance of the in-scene NetworkObject
             Assert.True(s_GlobalNetworkObjects.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Could not find server instance of the test in-scene NetworkObject!");
@@ -125,24 +117,24 @@ namespace TestProject.RuntimeTests
 
             // Now late join a client
             NetworkObjectTestComponent.OnInSceneObjectDespawned += OnInSceneObjectDespawned;
-            NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
+            yield return CreateAndStartNewClient();
             // Spawned another client
             clientCount++;
 
-            yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
-            AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
+            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
+            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to connect!");
 
             yield return s_DefaultWaitForTick;
 
             // Make sure the late-joining client's in-scene placed NetworkObject received the despawn notification during synchronization
-            Assert.IsNotNull(m_JoinedClientDespawnedNetworkObject, $"{clientToTest.name} did not despawn the in-scene placed NetworkObject when connecting and synchronizing!");
+            Assert.IsNotNull(m_JoinedClientDespawnedNetworkObject, $"{m_LateJoinClient.name} did not despawn the in-scene placed NetworkObject when connecting and synchronizing!");
 
             // Update the newly joined client information
             ClientNetworkManagerPostStartInit();
 
             // We should still have no spawned in-scene placed NetworkObjects at this point
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
-            AssertOnTimeout($"{clientToTest.name} spawned in-scene placed NetworkObject!");
+            AssertOnTimeout($"{m_LateJoinClient.name} spawned in-scene placed NetworkObject!");
 
             // Now test that the despawned in-scene placed NetworkObject can be re-spawned (without having been registered as a NetworkPrefab)
             serverObject.Spawn();
@@ -174,22 +166,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ParentedInSceneObjectLateJoiningClient()
         {
-            // Because despawning a client will cause it to shutdown and clean everything in the
-            // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients.
-            // So, we prevent the automatic starting of the server and clients, remove the client we
-            // will be targeting to join late from the m_ClientNetworkManagers array, start the server
-            // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
-            // the clientToTest.
-            var clientToTest = m_ClientNetworkManagers[2];
-            var clients = m_ClientNetworkManagers.ToList();
-            clients.Remove(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-            m_CanStartServerAndClients = true;
-            yield return StartServerAndClients();
-            clients.Add(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
 
             m_ClientNetworkManagers[0].SceneManager.OnSceneEvent += OnSceneEvent;
@@ -221,9 +197,9 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => firstClientInSceneObjectInstance.transform.parent != null && firstClientInSceneObjectInstance.transform.parent == clientSidePlayer.transform);
             AssertOnTimeout($"Timed out waiting for the client-side id ({m_ClientNetworkManagers[0].LocalClientId}) server player transform to be set on the client-side in-scene object!");
             // Now late join a client
-            NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
-            yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
-            AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
+            yield return CreateAndStartNewClient();
+            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
+            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to reconnect!");
 
             yield return s_DefaultWaitForTick;
 
@@ -234,7 +210,7 @@ namespace TestProject.RuntimeTests
             Assert.IsNotNull(lateJoinClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)} for the late joining client!");
 
             // Now get the late-joining client's instance for the server player
-            clientSidePlayer = m_PlayerNetworkObjects[clientToTest.LocalClientId][clientSidePlayer.OwnerClientId];
+            clientSidePlayer = m_PlayerNetworkObjects[m_LateJoinClient.LocalClientId][clientSidePlayer.OwnerClientId];
 
             // Validate the late joined client's in-scene NetworkObject is parented to the server-side player
             yield return WaitForConditionOrTimeOut(() => lateJoinClientInSceneObjectInstance.transform.parent != null && lateJoinClientInSceneObjectInstance.transform.parent == clientSidePlayer.transform);
@@ -349,11 +325,8 @@ namespace TestProject.RuntimeTests
             // Enabled disabling the NetworkObject when it is despawned
             NetworkObjectTestComponent.DisableOnDespawn = true;
             // Set the number of instances to expect
-            m_NumberOfInstancesCheck = NumberOfClients + (m_UseHost ? 1 : 0);
+            m_NumberOfInstancesCheck = TotalClients;
 
-            // Start the host and clients and load the in-scene object scene additively
-            m_CanStartServerAndClients = true;
-            yield return StartServerAndClients();
             m_ServerNetworkManager.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
             m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
             yield return WaitForConditionOrTimeOut(() => m_AllClientsLoadedScene);
@@ -488,27 +461,11 @@ namespace TestProject.RuntimeTests
             var useNetworkTransform = m_SceneLoading == k_InSceneUnderWithNT;
 
             m_SceneLoading = inSceneUnderToLoad;
-            // Because despawning a client will cause it to shutdown and clean everything in the
-            // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients.
-            // So, we prevent the automatic starting of the server and clients, remove the client we
-            // will be targeting to join late from the m_ClientNetworkManagers array, start the server
-            // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
-            // the clientToTest.
-            var clientToTest = m_ClientNetworkManagers[1];
-            var clients = m_ClientNetworkManagers.ToList();
 
             // Note: This test is a modified copy of ParentedInSceneObjectLateJoiningClient.
             // The 1st client is being ignored in this test and the focus is primarily on the late joining
             // 2nd client after adjustments have been made to the child NetworkBehaviour and if applicable
             // NetworkTransform.
-
-            clients.Remove(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-            m_CanStartServerAndClients = true;
-            yield return StartServerAndClients();
-            clients.Add(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
 
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
 
@@ -534,9 +491,9 @@ namespace TestProject.RuntimeTests
             }
 
             // Now late join a client
-            NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
-            yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
-            AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
+            yield return CreateAndStartNewClient();
+            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
+            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to reconnect!");
 
             yield return s_DefaultWaitForTick;
 
@@ -623,6 +580,13 @@ namespace TestProject.RuntimeTests
         protected override int NumberOfClients => 0;
 
         private Scene m_Scene;
+
+
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         protected override IEnumerator OnSetup()
         {

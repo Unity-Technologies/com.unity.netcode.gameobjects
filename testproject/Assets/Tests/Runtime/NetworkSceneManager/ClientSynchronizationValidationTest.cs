@@ -22,6 +22,12 @@ namespace TestProject.RuntimeTests
         private bool m_IncludeSceneVerificationHandler;
         private bool m_RuntimeSceneWasExcludedFromSynch;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private List<ClientSceneVerificationHandler> m_ClientSceneVerifiers = new List<ClientSceneVerificationHandler>();
         public ClientSynchronizationValidationTest(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 

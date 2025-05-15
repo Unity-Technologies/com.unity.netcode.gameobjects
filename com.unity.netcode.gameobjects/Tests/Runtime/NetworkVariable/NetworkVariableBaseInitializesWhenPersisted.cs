@@ -37,23 +37,19 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            // Assign one of the precreated prefab instance handlers to the server
-            PrefabInstanceHandler.AssignHandler(m_ServerNetworkManager);
-            // Add the network prefab to the server networkmanager
-            m_ServerNetworkManager.AddNetworkPrefab(s_NetworkPrefab);
             // Repeat these steps for clients
-            foreach (var client in m_ClientNetworkManagers)
+            foreach (var manager in m_NetworkManagers)
             {
-                PrefabInstanceHandler.AssignHandler(client);
-                client.AddNetworkPrefab(s_NetworkPrefab);
+                PrefabInstanceHandler.AssignHandler(manager);
+                manager.AddNetworkPrefab(s_NetworkPrefab);
             }
+
             // !!! IMPORTANT !!!
             // Disable the persisted network prefab so it isn't spawned nor destroyed
             s_NetworkPrefab.SetActive(false);
             base.OnServerAndClientsCreated();
         }
 
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private List<NetworkObject> m_SpawnedObjects = new List<NetworkObject>();
 
         [UnityTest]
@@ -65,8 +61,6 @@ namespace Unity.Netcode.RuntimeTests
             // is being spawned.
             var baseWaitTime = 0.35f;
             var waitPeriod = baseWaitTime * iterationsLeft;
-            m_NetworkManagers.Add(m_ServerNetworkManager);
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
 
             foreach (var networkManager in m_NetworkManagers)
             {
@@ -163,7 +157,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            m_NetworkManagers.Clear();
             m_SpawnedObjects.Clear();
             PrefabInstanceHandler.ReleaseAll();
             yield return base.OnTearDown();

@@ -38,9 +38,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            var serverTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
-            // I hate having to add time to our tests, but in case a VM is running slow the disconnect timeout needs to be reasonably high
-            serverTransport.DisconnectTimeoutMS = 1000;
+            if (!m_UseCmbService)
+            {
+                var serverTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as UnityTransport;
+                // I hate having to add time to our tests, but in case a VM is running slow the disconnect timeout needs to be reasonably high
+                serverTransport.DisconnectTimeoutMS = 1000;
+            }
+
             m_DistributeObject = CreateNetworkObjectPrefab("DisObject");
             m_DistributeObject.AddComponent<DistributeObjectsTestHelper>();
             m_DistributeObject.AddComponent<DistributeTestTransform>();
@@ -52,13 +56,6 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        protected override IEnumerator OnServerAndClientsConnected()
-        {
-            m_ServerNetworkManager.SpawnManager.EnableDistributeLogging = m_EnableVerboseDebug;
-            m_ServerNetworkManager.ConnectionManager.EnableDistributeLogging = m_EnableVerboseDebug;
-            return base.OnServerAndClientsConnected();
-        }
-
         private NetworkObject m_ObjectToValidate;
 
         private bool ValidateObjectSpawnedOnAllClients()
@@ -67,17 +64,11 @@ namespace Unity.Netcode.RuntimeTests
 
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var name = m_ObjectToValidate.name;
-            if (!UseCMBService() && !m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+            foreach (var manager in m_NetworkManagers)
             {
-                m_ErrorLog.Append($"Client-{m_ServerNetworkManager.LocalClientId} has not spawned {name}!");
-                return false;
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                if (!manager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                 {
-                    m_ErrorLog.Append($"Client-{client.LocalClientId} has not spawned {name}!");
+                    m_ErrorLog.Append($"Client-{manager.LocalClientId} has not spawned {name}!");
                     return false;
                 }
             }
@@ -89,7 +80,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateDistributedObjectsSpawned(bool lateJoining)
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
+            var hostId = GetAuthorityNetworkManager().LocalClientId;
             if (!DistributeObjectsTestHelper.DistributedObjects.ContainsKey(hostId))
             {
                 m_ErrorLog.AppendLine($"[Client-{hostId}] Does not have an entry in the root of the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
@@ -106,11 +97,11 @@ namespace Unity.Netcode.RuntimeTests
             var expected = 0;
             if (lateJoining)
             {
-                expected = k_ObjectCount / (m_ClientNetworkManagers.Count() + 1);
+                expected = k_ObjectCount / m_NetworkManagers.Length;
             }
             else
             {
-                expected = k_ObjectCount / (m_ClientNetworkManagers.Where((c) => c.IsConnectedClient).Count() + 1);
+                expected = k_ObjectCount / m_NetworkManagers.Count(c => c.IsConnectedClient);
             }
 
             // It should theoretically be the expected or...
@@ -140,8 +131,8 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateOwnershipTablesMatch()
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
-            var expectedEntries = m_ClientNetworkManagers.Where((c) => c.IsListening && c.IsConnectedClient).Count() + 1;
+            var hostId = GetAuthorityNetworkManager().LocalClientId;
+            var expectedEntries = m_NetworkManagers.Count(c => c.IsListening && c.IsConnectedClient);
             // Make sure all clients have an table created
             if (DistributeObjectsTestHelper.DistributedObjects.Count < expectedEntries)
             {
@@ -160,7 +151,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ErrorLog.AppendLine($"[Client-{hostId}] Does not have a local an entry in the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
                 return false;
             }
-            var clients = m_ServerNetworkManager.ConnectedClientsIds.ToList();
+            var clients = GetAuthorityNetworkManager().ConnectedClientsIds.ToList();
             clients.Remove(0);
 
             // Cycle through each client's entry on the DAHost to run a comparison
@@ -170,6 +161,11 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     foreach (var client in clients)
                     {
+                        if (!DistributeObjectsTestHelper.DistributedObjects.ContainsKey(client))
+                        {
+                            m_ErrorLog.AppendLine($"[Client-{client}] Does not have an entry in the root of the {nameof(DistributeObjectsTestHelper.DistributedObjects)} table!");
+                            return false;
+                        }
                         var clientOwnerTable = DistributeObjectsTestHelper.DistributedObjects[client];
                         if (!clientOwnerTable.ContainsKey(hostClientEntry.Key))
                         {
@@ -206,9 +202,9 @@ namespace Unity.Netcode.RuntimeTests
         private bool ValidateTransformsMatch()
         {
             m_ErrorLog.Clear();
-            var hostId = m_ServerNetworkManager.LocalClientId;
+            var hostId = GetAuthorityNetworkManager().LocalClientId;
             var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[hostId];
-            var clients = m_ServerNetworkManager.ConnectedClientsIds.ToList();
+            var clients = GetAuthorityNetworkManager().ConnectedClientsIds.ToList();
             foreach (var clientOwner in daHostEntries.Keys)
             {
                 // Cycle through the owner's objects
@@ -238,16 +234,9 @@ namespace Unity.Netcode.RuntimeTests
         private bool SpawnCountsMatch()
         {
             var passed = true;
-            var spawnCount = 0;
             m_ErrorLog.Clear();
-            if (!UseCMBService())
-            {
-                spawnCount = m_ServerNetworkManager.SpawnManager.SpawnedObjects.Count;
-            }
-            else
-            {
-                spawnCount = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.Count;
-            }
+
+            var spawnCount = GetAuthorityNetworkManager().SpawnManager.SpawnedObjects.Count;
             foreach (var client in m_ClientNetworkManagers)
             {
                 var clientCount = client.SpawnManager.SpawnedObjects.Count;
@@ -272,7 +261,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             for (int i = 0; i < k_ObjectCount; i++)
             {
-                SpawnObject(m_DistributeObject, m_ServerNetworkManager);
+                SpawnObject(m_DistributeObject, GetAuthorityNetworkManager());
             }
 
             // Validate NetworkObjects get redistributed properly when a client joins
@@ -321,8 +310,10 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(ValidateTransformsMatch);
                 AssertOnTimeout($"[Client-{j + 1}][Transform Mismatch] {m_ErrorLog}");
 
-                // DANGO-TODO: Make this tied to verbose mode once we know the CMB Service integration works properly
-                DisplayOwnership();
+                if (m_EnableVerboseDebug)
+                {
+                    DisplayOwnership();
+                }
 
                 yield return WaitForConditionOrTimeOut(SpawnCountsMatch);
                 AssertOnTimeout($"[Spawn Count Mismatch] {m_ErrorLog}");
@@ -332,8 +323,9 @@ namespace Unity.Netcode.RuntimeTests
         private void DisplayOwnership()
         {
             m_ErrorLog.Clear();
-            var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[0];
 
+            var authorityId = GetAuthorityNetworkManager().LocalClientId;
+            var daHostEntries = DistributeObjectsTestHelper.DistributedObjects[authorityId];
             foreach (var entry in daHostEntries)
             {
                 m_ErrorLog.AppendLine($"[Client-{entry.Key}][Owned Objects: {entry.Value.Count}]");

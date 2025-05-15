@@ -15,6 +15,12 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service. Combine server and client tests
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public NetworkSpawnManagerTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         [Test]
@@ -44,7 +50,6 @@ namespace Unity.Netcode.RuntimeTests
             var serverSideOtherClientPlayerObject = m_ServerNetworkManager.SpawnManager.GetPlayerNetworkObject(otherClientSideClientId);
             Assert.NotNull(serverSideOtherClientPlayerObject);
             Assert.AreEqual(otherClientSideClientId, serverSideOtherClientPlayerObject.OwnerClientId);
-
         }
 
         [Test]

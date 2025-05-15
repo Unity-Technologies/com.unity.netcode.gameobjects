@@ -20,6 +20,12 @@ namespace TestProject.RuntimeTests
         private Scene m_CurrentScene;
         private bool m_CanStartServerOrClients = false;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private class SceneEventNotificationTestInfo
         {
             public ulong ClientId;

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -20,6 +21,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
+        internal static bool IsStarted => s_IsStarted;
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
@@ -170,7 +172,56 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private static void AddUnityTransport(NetworkManager networkManager)
+        /// <summary>
+        /// Gets the CMB_SERVICE environemnt variable or returns "false" if it does not exist
+        /// </summary>
+        /// <returns>string</returns>
+        internal static string GetCMBServiceEnvironentVariable()
+        {
+#if USE_CMB_SERVICE
+            return "true";
+#else
+            return Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
+#endif
+        }
+
+        /// <summary>
+        /// Use for non <see cref="NetcodeIntegrationTest"/> derived integration tests to automatically ignore the
+        /// test if running against a CMB server.
+        /// </summary>
+        internal static void IgnoreIfServiceEnviromentVariableSet()
+        {
+            if (bool.TryParse(GetCMBServiceEnvironentVariable(), out bool isTrue) ? isTrue : false)
+            {
+                Assert.Ignore("[CMB-Server Test Run] Skipping non-distributed authority test.");
+            }
+        }
+
+        private static readonly string k_TransportHost = GetAddressToBind();
+        private static readonly ushort k_TransportPort = GetPortToBind();
+
+        /// <summary>
+        /// Configures the port to look for the rust service.
+        /// </summary>
+        /// <returns>The port from the environment variable "CMB_SERVICE_PORT" if it is set and valid; otherwise uses port 7789</returns>
+        private static ushort GetPortToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("CMB_SERVICE_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7789;
+        }
+
+        /// <summary>
+        /// Configures the address to look for the rust service.
+        /// </summary>
+        /// <returns>The address from the environment variable "NGO_HOST" if it is set and valid; otherwise uses "127.0.0.1"</returns>
+        private static string GetAddressToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
+            return Dns.GetHostAddresses(value).First().ToString();
+        }
+
+
+        private static void AddUnityTransport(NetworkManager networkManager, bool useCmbService = false)
         {
             // Create transport
             var unityTransport = networkManager.gameObject.AddComponent<UnityTransport>();
@@ -181,6 +232,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Allow 4 connection attempts that each will time out after 500ms
             unityTransport.MaxConnectAttempts = 4;
             unityTransport.ConnectTimeoutMS = 500;
+            if (useCmbService)
+            {
+                unityTransport.ConnectionData.Address = k_TransportHost;
+                unityTransport.ConnectionData.Port = k_TransportPort;
+            }
 
             // Set the NetworkConfig
             networkManager.NetworkConfig ??= new NetworkConfig();
@@ -196,6 +252,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.NetworkTransport = mockTransport;
         }
 
+        /// <summary>
+        /// Creates and configures a new server instance for integration testing.
+        /// </summary>
+        /// <param name="mockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
+        /// <returns>The created server <see cref="NetworkManager"/> instance.</returns>
         public static NetworkManager CreateServer(bool mockTransport = false)
         {
             // Create gameObject
@@ -223,18 +284,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false)
+        /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
+        /// <param name="useCmbService">If true, all clients will be created with a connection to a locally hosted da service. The server transport will use a mock transport as it is not needed.</param>
+        /// <returns> Returns true if the server and client instances were successfully created and configured, otherwise false</returns>
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false, bool useCmbService = false)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
-            if (serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (serverFirst && !useCmbService)
             {
                 server = CreateServer(useMockTransport);
             }
 
-            CreateNewClients(clientCount, out clients, useMockTransport);
+            CreateNewClients(clientCount, out clients, useMockTransport, useCmbService);
 
-            if (!serverFirst)
+            // Only if we are not connecting to a CMB server
+            if (!serverFirst && !useCmbService)
             {
                 server = CreateServer(useMockTransport);
             }
@@ -245,7 +311,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false)
+        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
@@ -257,7 +323,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-                AddUnityTransport(networkManager);
+                AddUnityTransport(networkManager, useCmbService);
             }
             return networkManager;
         }
@@ -269,13 +335,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
+        /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
+        /// <returns> Returns true if the clients were successfully created and configured, otherwise false</returns>
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
+            // Pre-identify NetworkManager identifiers based on network topology type (Rust server starts at client identifier 1 and considers itself 0)
+            var startCount = useCmbService ? 1 : 0;
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i, useMockTransport);
+                clients[i] = CreateNewClient(startCount, useMockTransport, useCmbService);
+                startCount++;
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -301,6 +372,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts one single client and makes sure to register the required hooks and handlers
         /// </summary>
+        /// <remarks>
+        /// Do not call this function directly. Use <see cref="NetcodeIntegrationTest.CreateAndStartNewClient"/> instead.
+        /// </remarks>
         /// <param name="clientToStart">The NetworkManager instance to start</param>
         public static void StartOneClient(NetworkManager clientToStart)
         {
@@ -486,15 +560,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 callback?.Invoke();
             }
 
-            for (int i = 0; i < clients.Length; i++)
+            foreach (var client in clients)
             {
-                clients[i].StartClient();
+                // DANGO-TODO: Renove this entire check when the Rust server connection sequence is fixed and we don't have to pre-start
+                // the session owner.
+                if (client.IsConnectedClient)
+                {
+                    // Skip starting the session owner
+                    if (client.DistributedAuthorityMode && client.CMBServiceConnection && client.LocalClient.IsSessionOwner)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        throw new Exception("Client NetworkManager is already connected when starting clients!");
+                    }
+                }
+                client.StartClient();
                 hooks = new MultiInstanceHooks();
-                clients[i].ConnectionManager.MessageManager.Hook(hooks);
-                s_Hooks[clients[i]] = hooks;
+                client.ConnectionManager.MessageManager.Hook(hooks);
+                s_Hooks[client] = hooks;
 
                 // if set, then invoke this for the client
-                RegisterHandlers(clients[i]);
+                RegisterHandlers(client);
             }
 
             return true;
@@ -584,26 +672,37 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return gameObject;
         }
 
-        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager server, params NetworkManager[] clients)
+        /// <summary>
+        /// This will create and register a <see cref="NetworkPrefab"/> instance for all <see cref="NetworkManager"/> instances.<br />
+        /// *** Invoke this method before starting any of the <see cref="NetworkManager"/> instances ***.
+        /// </summary>
+        /// <remarks>
+        /// When using a <see cref="NetworkTopologyTypes.DistributedAuthority"/> network topology, the authority <see cref="NetworkManager"/>
+        /// can be within the clients array of <see cref="NetworkManager"/> instances.
+        /// </remarks>
+        /// <param name="baseName">The base name of the network prefab. Keep it short as additional information will be added to this name.</param>
+        /// <param name="authorityNetworkManager">The authority <see cref="NetworkManager"/> (i.e. server, host, or session owner)</param>
+        /// <param name="clients">The clients that should also have this <see cref="NetworkPrefab"/> instance added to their network prefab list.</param>
+        /// <returns>The prefab's root <see cref="GameObject"/></returns>
+        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager authorityNetworkManager, params NetworkManager[] clients)
         {
-            void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
-            {
-                config.Prefabs.Add(prefab);
-            }
-
             var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";
-            Assert.IsNotNull(server, prefabCreateAssertError);
-            Assert.IsFalse(server.IsListening, prefabCreateAssertError);
+            Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
+            Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = CreateNetworkObject(baseName, server);
+            var gameObject = CreateNetworkObject(baseName, authorityNetworkManager);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
             // probably more trouble than it's worth to verify these lists stay in sync across all tests...
-            AddNetworkPrefab(server.NetworkConfig, networkPrefab);
+            authorityNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             foreach (var clientNetworkManager in clients)
             {
-                AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
+                if (clientNetworkManager == authorityNetworkManager)
+                {
+                    continue;
+                }
+                clientNetworkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Prefab = gameObject });
             }
             return gameObject;
         }
@@ -973,11 +1072,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             var res = check.Result;
             result.Result = res;
-        }
-
-        public static uint GetGlobalObjectIdHash(NetworkObject networkObject)
-        {
-            return networkObject.GlobalObjectIdHash;
         }
 
 #if UNITY_EDITOR

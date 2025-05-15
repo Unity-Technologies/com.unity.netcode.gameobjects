@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    internal class ParentChildDistibutionTests : IntegrationTestWithApproximation
+    internal class ParentChildDistributionTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 4;
 
@@ -17,16 +17,20 @@ namespace Unity.Netcode.RuntimeTests
         private List<NetworkObject> m_TargetSpawnedObjects = new List<NetworkObject>();
         private List<NetworkObject> m_AltTargetSpawnedObjects = new List<NetworkObject>();
         private Dictionary<ulong, List<NetworkObject>> m_AncillarySpawnedObjects = new Dictionary<ulong, List<NetworkObject>>();
-        private List<NetworkManager> m_NetworkManagers = new List<NetworkManager>();
         private StringBuilder m_ErrorMsg = new StringBuilder();
 
-        public ParentChildDistibutionTests() : base(HostOrServer.DAHost)
+        // TODO: [CmbServiceTesting] Update UponDisconnect tests to work with the rust service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
+        public ParentChildDistributionTests() : base(HostOrServer.DAHost)
         {
         }
 
         protected override IEnumerator OnTearDown()
         {
-            m_NetworkManagers.Clear();
             m_TargetSpawnedObjects.Clear();
             m_AncillarySpawnedObjects.Clear();
             m_AltTargetSpawnedObjects.Clear();
@@ -149,27 +153,17 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DistributeOwnerHierarchy([Values] DistributionTypes distributionType, [Values] OwnershipLocking ownershipLock)
         {
-            m_NetworkManagers.Clear();
             m_TargetSpawnedObjects.Clear();
             m_AncillarySpawnedObjects.Clear();
             m_AltTargetSpawnedObjects.Clear();
 
+            var clientToReconnect = m_ClientNetworkManagers[3];
             if (distributionType == DistributionTypes.UponConnect)
             {
-                m_ClientNetworkManagers[3].Shutdown();
+                yield return StopOneClient(clientToReconnect);
             }
 
-            if (!UseCMBService())
-            {
-                m_NetworkManagers.Add(m_ServerNetworkManager);
-            }
-            m_NetworkManagers.AddRange(m_ClientNetworkManagers);
-            if (distributionType == DistributionTypes.UponConnect)
-            {
-                m_NetworkManagers.Remove(m_ClientNetworkManagers[3]);
-            }
-
-            // When testing connect redistribution, 
+            // When testing connect redistribution,
             var instances = distributionType == DistributionTypes.UponDisconnect ? 1 : 2;
             var rootObject = (GameObject)null;
             var childOne = (GameObject)null;
@@ -253,13 +247,13 @@ namespace Unity.Netcode.RuntimeTests
                     m_AltTargetSpawnedObjects.Add(m_ClientNetworkManagers[1].SpawnManager.SpawnedObjects[entry.NetworkObjectId]);
                 }
                 // Disconnect the client to trigger object redistribution
-                m_ClientNetworkManagers[0].Shutdown();
+                yield return StopOneClient(m_ClientNetworkManagers[0]);
             }
             else
             {
-                m_ClientNetworkManagers[3].StartClient();
-                yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers[3].IsConnectedClient);
-                AssertOnTimeout($"{m_ClientNetworkManagers[3].name} failed to reconnect!");
+                yield return StartClient(clientToReconnect);
+                yield return WaitForConditionOrTimeOut(() => clientToReconnect.IsConnectedClient);
+                AssertOnTimeout($"{clientToReconnect.name} failed to reconnect!");
             }
 
             // Verify all of the targeted objects changed ownership to the same client

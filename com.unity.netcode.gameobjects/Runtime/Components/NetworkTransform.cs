@@ -936,6 +936,12 @@ namespace Unity.Netcode.Components
         #region PROPERTIES AND GENERAL METHODS
 
         /// <summary>
+        /// Used on the authority side only.
+        /// This is the current network tick and is set within <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/>.
+        /// </summary>
+        internal static int CurrentTick;
+
+        /// <summary>
         /// Pertains to Owner Authority and Interpolation<br />
         /// When enabled (default), 1 additional tick is added to the total number of ticks used to calculate the tick latency ("ticks ago") as a time.
         /// This calculated time value is passed into the respective <see cref="BufferedLinearInterpolator{T}"/> and used to determine if any pending
@@ -1878,6 +1884,8 @@ namespace Unity.Netcode.Components
                 // If the state was explicitly set, then update the network tick to match the locally calculate tick
                 if (m_LocalAuthoritativeNetworkState.ExplicitSet)
                 {
+                    // For explicit set, we use the current ServerTime.Tick and not CurrentTick since this is a SetState specific flow
+                    // that is outside of the normal internal tick flow.
                     m_LocalAuthoritativeNetworkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
                 }
 
@@ -2011,7 +2019,7 @@ namespace Unity.Netcode.Components
             // send a full frame synch.
             var isAxisSync = false;
             // We compare against the NetworkTickSystem version since ServerTime is set when updating ticks
-            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick)
+            if (UseUnreliableDeltas && !isSynchronization && m_DeltaSynch && m_NextTickSync <= CurrentTick)
             {
                 // Increment to the next frame synch tick position for this instance
                 m_NextTickSync += (int)m_CachedNetworkManager.NetworkConfig.TickRate;
@@ -2179,7 +2187,7 @@ namespace Unity.Netcode.Components
             {
                 // If we are teleporting then we can skip the delta threshold check
                 isPositionDirty = networkState.IsTeleportingNextFrame || isAxisSync || forceState;
-                if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick)
+                if (m_HalfFloatTargetTickOwnership > CurrentTick)
                 {
                     isPositionDirty = true;
                 }
@@ -2225,7 +2233,7 @@ namespace Unity.Netcode.Components
                         networkState.NetworkDeltaPosition = m_HalfPositionState;
 
                         // If ownership offset is greater or we are doing an axial synchronization then synchronize the base position
-                        if ((m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick || isAxisSync) && !networkState.IsTeleportingNextFrame)
+                        if ((m_HalfFloatTargetTickOwnership > CurrentTick || isAxisSync) && !networkState.IsTeleportingNextFrame)
                         {
                             networkState.SynchronizeBaseHalfFloat = true;
                         }
@@ -2409,7 +2417,7 @@ namespace Unity.Netcode.Components
                 if (enabled)
                 {
                     // We use the NetworkTickSystem version since ServerTime is set when updating ticks
-                    networkState.NetworkTick = m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick;
+                    networkState.NetworkTick = CurrentTick;
                 }
             }
 
@@ -2440,7 +2448,7 @@ namespace Unity.Netcode.Components
                 }
 
                 // If we are nested and have already sent a state update this tick, then exit early (otherwise check for any changes in state)
-                if (IsNested && m_LocalAuthoritativeNetworkState.NetworkTick == m_CachedNetworkManager.ServerTime.Tick)
+                if (IsNested && m_LocalAuthoritativeNetworkState.NetworkTick == CurrentTick)
                 {
                     return;
                 }
@@ -4047,15 +4055,24 @@ namespace Unity.Netcode.Components
         {
             return m_PositionInterpolator.InterpolateState.LastRemainingTime;
         }
+#else
+        internal BufferedLinearInterpolatorVector3 GetPositionInterpolator()
+        {
+            return m_PositionInterpolator;
+        }
+
+        internal BufferedLinearInterpolatorQuaternion GetRotationInterpolator()
+        {
+            return m_RotationInterpolator;
+        }
 #endif
-
-
 
         // Non-Authority
         private void UpdateInterpolation()
         {
             AdjustForChangeInTransformSpace();
-            var timeSystem = m_CachedNetworkManager.ServerTime;
+            // Select the time system relative to the type of NetworkManager instance.
+            var timeSystem = m_CachedNetworkManager.IsServer ? m_CachedNetworkManager.ServerTime : m_CachedNetworkManager.LocalTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
@@ -4501,6 +4518,15 @@ namespace Unity.Netcode.Components
 
         #region NETWORK TICK REGISTRATOIN AND HANDLING
         private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+
+        internal static void UpdateNetworkTick(NetworkManager networkManager)
+        {
+            if (s_NetworkTickRegistration.ContainsKey(networkManager))
+            {
+                s_NetworkTickRegistration[networkManager].TickUpdate();
+            }
+        }
+
         /// <summary>
         /// Adjusts the over-all tick offset (i.e. how many ticks ago) and how wide of a maximum delta time will be used for the
         /// various <see cref="InterpolationTypes"/>.
@@ -4562,9 +4588,8 @@ namespace Unity.Netcode.Components
         /// Having the tick update once and cycling through registered instances to update is evidently less processor
         /// intensive than having each instance subscribe and update individually.
         /// </summary>
-        private class NetworkTransformTickRegistration
+        internal class NetworkTransformTickRegistration
         {
-            private Action m_NetworkTickUpdate;
             private NetworkManager m_NetworkManager;
             public HashSet<NetworkTransform> NetworkTransforms = new HashSet<NetworkTransform>();
 
@@ -4576,8 +4601,6 @@ namespace Unity.Netcode.Components
 
             public void Remove()
             {
-                m_NetworkManager.NetworkTickSystem.Tick -= m_NetworkTickUpdate;
-                m_NetworkTickUpdate = null;
                 NetworkTransforms.Clear();
                 RemoveTickUpdate(m_NetworkManager);
             }
@@ -4586,10 +4609,10 @@ namespace Unity.Netcode.Components
             /// Invoked once per network tick, this will update any registered
             /// authority instances.
             /// </summary>
-            private void TickUpdate()
+            internal void TickUpdate()
             {
                 // TODO FIX: The local NetworkTickSystem can invoke with the same network tick as before
-                if (m_NetworkManager.ServerTime.Tick <= m_LastTick)
+                if (CurrentTick <= m_LastTick)
                 {
                     return;
                 }
@@ -4600,13 +4623,11 @@ namespace Unity.Netcode.Components
                         networkTransform.OnNetworkTick();
                     }
                 }
-                m_LastTick = m_NetworkManager.ServerTime.Tick;
+                m_LastTick = CurrentTick;
             }
             public NetworkTransformTickRegistration(NetworkManager networkManager)
             {
                 m_NetworkManager = networkManager;
-                m_NetworkTickUpdate = new Action(TickUpdate);
-                networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
                 if (networkManager.IsServer)
                 {
                     networkManager.OnServerStopped += OnNetworkManagerStopped;

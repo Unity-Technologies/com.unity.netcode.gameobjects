@@ -2042,6 +2042,7 @@ namespace Unity.Netcode
             }
 
             // Organize how (and when) we serialize our NetworkObjects
+            var hasSynchronizedActive = false;
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
@@ -2067,6 +2068,10 @@ namespace Unity.Netcode
                         continue;
                     }
                     sceneEventData.SceneHash = SceneHashFromNameOrPath(scene.path);
+                    if (sceneEventData.SceneHash == sceneEventData.ActiveSceneHash)
+                    {
+                        hasSynchronizedActive = true;
+                    }
 
                     // If we are just a normal client, then always use the server scene handle
                     if (NetworkManager.DistributedAuthorityMode)
@@ -2085,7 +2090,7 @@ namespace Unity.Netcode
                 }
 
                 // If we are just a normal client and in distributed authority mode, then always use the known server scene handle
-                if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
+                if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection)
                 {
                     sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), ClientSceneHandleToServerSceneHandle[scene.handle]);
                 }
@@ -2093,6 +2098,11 @@ namespace Unity.Netcode
                 {
                     sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
                 }
+            }
+
+            if (!hasSynchronizedActive && NetworkManager.CMBServiceConnection && synchronizingService)
+            {
+                sceneEventData.AddSceneToSynchronize(BuildIndexToHash[activeScene.buildIndex], ClientSceneHandleToServerSceneHandle[activeScene.handle]);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();
@@ -2585,30 +2595,26 @@ namespace Unity.Netcode
                 case SceneEventType.SynchronizeComplete:
                     {
                         // At this point the client is considered fully "connected"
-                        if ((NetworkManager.DistributedAuthorityMode && NetworkManager.LocalClient.IsSessionOwner) || !NetworkManager.DistributedAuthorityMode)
+                        // Make sure we have a NetworkClient for this synchronized client
+                        if (!NetworkManager.ConnectedClients.ContainsKey(clientId))
                         {
-                            // Notify the local server that a client has finished synchronizing
-                            OnSceneEvent?.Invoke(new SceneEvent()
-                            {
-                                SceneEventType = sceneEventData.SceneEventType,
-                                SceneName = string.Empty,
-                                ClientId = clientId
-                            });
-                            if (NetworkManager.ConnectedClients.ContainsKey(clientId))
-                            {
-                                NetworkManager.ConnectedClients[clientId].IsConnected = true;
-                            }
+                            NetworkManager.ConnectionManager.AddClient(clientId);
                         }
-                        else
-                        {
-                            // Notify the local server that a client has finished synchronizing
-                            OnSceneEvent?.Invoke(new SceneEvent()
-                            {
-                                SceneEventType = sceneEventData.SceneEventType,
-                                SceneName = string.Empty,
-                                ClientId = clientId
-                            });
+                        // Mark this client as being connected
+                        NetworkManager.ConnectedClients[clientId].IsConnected = true;
 
+                        // Notify the local server that a client has finished synchronizing
+                        OnSceneEvent?.Invoke(new SceneEvent()
+                        {
+                            SceneEventType = sceneEventData.SceneEventType,
+                            SceneName = string.Empty,
+                            ClientId = clientId
+                        });
+
+                        // For non-authority clients in a distributed authority session, we show hidden objects,
+                        // we distribute NetworkObjects, and then we end the scene event.
+                        if (NetworkManager.DistributedAuthorityMode && !NetworkManager.LocalClient.IsSessionOwner)
+                        {
                             // Show any NetworkObjects that are:
                             // - Hidden from the session owner
                             // - Owned by this client
