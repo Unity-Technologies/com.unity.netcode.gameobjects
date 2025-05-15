@@ -313,30 +313,41 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port, bool silent = false)
+            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
             {
                 NetworkEndpoint endpoint = default;
-
-                if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
-                    !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
+                if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4))
                 {
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-                    return default;
-#else // If the user does not have the most recent version of UnityTransport installed
-                    if (!silent)
-                    {
-                        Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
-                    }
-#endif
+                    NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6);
                 }
-
                 return endpoint;
+            }
+
+            private void InvalidEndpointError()
+            {
+                Debug.LogError($"Invalid network endpoint: {Address}:{Port}.");
             }
 
             /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
-            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint
+            {
+                get
+                {
+                    var networkEndpoint = ParseNetworkEndpoint(Address, Port);
+                    if (networkEndpoint == default)
+                    {
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+                        if (!IsValidFqdn(Address))
+#endif
+                        {
+                            InvalidEndpointError();
+                        }
+                    }
+                    return networkEndpoint;
+                }
+            }
 
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
@@ -345,27 +356,35 @@ namespace Unity.Netcode.Transports.UTP
             {
                 get
                 {
+                    NetworkEndpoint endpoint = default;
                     if (string.IsNullOrEmpty(ServerListenAddress))
                     {
-                        var ep = NetworkEndpoint.LoopbackIpv4;
+                        endpoint = NetworkEndpoint.LoopbackIpv4;
 
                         // If an address was entered and it's IPv6, switch to using ::1 as the
                         // default listen address. (Otherwise we always assume IPv4.)
                         if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
                         {
-                            ep = NetworkEndpoint.LoopbackIpv6;
+                            endpoint = NetworkEndpoint.LoopbackIpv6;
                         }
-
-                        return ep.WithPort(Port);
+                        endpoint = endpoint.WithPort(Port);
                     }
                     else
                     {
-                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                        endpoint = ParseNetworkEndpoint(ServerListenAddress, Port);
+                        if (endpoint == default)
+                        {
+                            InvalidEndpointError();
+                        }
                     }
+                    return endpoint;
                 }
             }
 
-            public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
+            /// <summary>
+            /// Returns true if the end point address is of type <see cref="NetworkFamily.Ipv6"/>.
+            /// </summary>
+            public bool IsIpv6 => !string.IsNullOrEmpty(Address) && NetworkEndpoint.TryParse(Address, Port, out NetworkEndpoint _, NetworkFamily.Ipv6);
         }
 
 
@@ -525,7 +544,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
 #if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-        private bool IsValidFqdn(string fqdn)
+        private static IsValidFqdn(string fqdn)
         {
             // Regular expression to validate FQDN
             string pattern = @"^(?=.{1,255}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?!-)(?:[A-Za-z0-9-]{1,63}\.?)+[A-Za-z]{2,6}$";
