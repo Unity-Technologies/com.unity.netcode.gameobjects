@@ -544,7 +544,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
 #if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-        private static IsValidFqdn(string fqdn)
+        private static bool IsValidFqdn(string fqdn)
         {
             // Regular expression to validate FQDN
             string pattern = @"^(?=.{1,255}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.(?!-)(?:[A-Za-z0-9-]{1,63}\.?)+[A-Za-z]{2,6}$";
