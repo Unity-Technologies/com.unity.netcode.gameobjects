@@ -757,6 +757,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 // Wait for the new client to connect
                 yield return WaitForClientsConnectedOrTimeOut();
+                AssertOnTimeout($"{nameof(StartClient)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
                 OnNewClientStartedAndConnected(networkManager);
                 if (s_GlobalTimeoutHelper.TimedOut)
@@ -839,6 +840,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Wait for the new client to connect
             var connected = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+            AssertOnTimeout($"{nameof(CreateAndStartNewClientWithTimeTravel)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
             OnNewClientStartedAndConnected(networkManager);
             if (!connected)
@@ -1342,6 +1344,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebug($"Entering {nameof(ShutdownAndCleanUp)}");
             // Shutdown and clean up both of our NetworkManager instances
+
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                networkManager.Shutdown();
+            }
+            yield return k_DefaultTickRate;
+
             try
             {
                 DeRegisterSceneManagerHandler();

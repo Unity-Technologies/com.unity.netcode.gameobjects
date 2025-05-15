@@ -473,8 +473,8 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<ClassHavingNetworkBehaviour2>();
             m_PlayerPrefab.AddComponent<StructHavingNetworkBehaviour>();
 
-            m_DistributedAuthority = useHost == HostOrServer.DAHost;
-            m_NetworkTopologyType = m_DistributedAuthority ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
+            m_UseHost = useHost == HostOrServer.DAHost || useHost == HostOrServer.Host;
+            m_NetworkTopologyType = useHost == HostOrServer.DAHost ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
 
             m_ServerNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
