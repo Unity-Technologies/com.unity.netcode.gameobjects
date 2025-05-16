@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
 - Added `INetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
 
 ### Fixed
