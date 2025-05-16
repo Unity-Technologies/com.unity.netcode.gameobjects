@@ -3239,13 +3239,10 @@ namespace Unity.Netcode
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
 
             //Synchronize the instantiation data if needed
-            if (sceneObject.HasInstantiationData)
-            {
-                networkManager.PrefabHandler.ReadInstantiationData(sceneObject.Hash, ref bufferSerializer);
-            }
+            FastBufferReader instantiationDataReader = sceneObject.HasInstantiationData ? networkManager.PrefabHandler.GetInstantiationDataReader(sceneObject.Hash, ref bufferSerializer) : default;
 
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationDataReader);
 
             if (networkObject == null)
             {

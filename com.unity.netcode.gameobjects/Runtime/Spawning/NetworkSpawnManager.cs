@@ -779,14 +779,14 @@ namespace Unity.Netcode
         /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
-        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
+        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false, FastBufferReader instantiationDataReader = default)
         {
             NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
             if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
             {
                 // Let the handler spawn the NetworkObject
-                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default);
+                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationDataReader);
                 networkObject.NetworkManagerOwner = NetworkManager;
             }
             else
@@ -807,22 +807,22 @@ namespace Unity.Netcode
                             break;
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
+                        {
+                            // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
+                            // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
+                            // but might want to use the same source network prefab as an in-scene placed NetworkObject.
+                            // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
+                            // spawning them so the original prefab placed is preserved and this is not needed)
+                            if (inScenePlacedWithNoSceneManagement)
                             {
-                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
-                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
-                                // but might want to use the same source network prefab as an in-scene placed NetworkObject.
-                                // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
-                                // spawning them so the original prefab placed is preserved and this is not needed)
-                                if (inScenePlacedWithNoSceneManagement)
-                                {
-                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
-                                }
-                                else
-                                {
-                                    networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                                }
-                                break;
+                                networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
                             }
+                            else
+                            {
+                                networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                            }
+                            break;
+                        }
                     }
                 }
 
@@ -875,7 +875,7 @@ namespace Unity.Netcode
         /// For most cases this is client-side only, with the exception of when the server
         /// is spawning a player.
         /// </remarks>
-        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject)
+        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject, FastBufferReader instantiationDataReader = default)
         {
             NetworkObject networkObject = null;
             var globalObjectIdHash = sceneObject.Hash;
@@ -888,7 +888,7 @@ namespace Unity.Netcode
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
             {
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject);
+                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationDataReader);
             }
             else // Get the in-scene placed NetworkObject
             {
