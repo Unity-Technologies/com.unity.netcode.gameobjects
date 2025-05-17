@@ -757,16 +757,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 // Wait for the new client to connect
                 yield return WaitForClientsConnectedOrTimeOut();
-                AssertOnTimeout($"{nameof(StartClient)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
-
-                OnNewClientStartedAndConnected(networkManager);
                 if (s_GlobalTimeoutHelper.TimedOut)
                 {
                     AddRemoveNetworkManager(networkManager, false);
                     Object.DestroyImmediate(networkManager.gameObject);
+                    AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
+                    yield break;
+                }
+                else
+                {
+                    OnNewClientStartedAndConnected(networkManager);
                 }
 
-                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
                 ClientNetworkManagerPostStart(networkManager);
                 if (networkManager.DistributedAuthorityMode)
                 {
@@ -1344,13 +1346,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebug($"Entering {nameof(ShutdownAndCleanUp)}");
             // Shutdown and clean up both of our NetworkManager instances
-
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                networkManager.Shutdown();
-            }
-            yield return k_DefaultTickRate;
-
             try
             {
                 DeRegisterSceneManagerHandler();

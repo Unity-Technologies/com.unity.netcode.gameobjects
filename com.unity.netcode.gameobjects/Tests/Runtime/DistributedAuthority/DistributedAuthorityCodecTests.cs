@@ -55,7 +55,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_EnsureVariableLengthSafety;
 
-        public DistributedAuthorityCodecTests(NetworkConfigOptions configOptions)
+        public DistributedAuthorityCodecTests(NetworkConfigOptions configOptions) : base()
         {
             m_EnsureVariableLengthSafety = configOptions == NetworkConfigOptions.EnsureVariableLengthSafety;
         }
