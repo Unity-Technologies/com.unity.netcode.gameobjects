@@ -68,7 +68,7 @@ namespace Unity.Netcode
         public List<NetworkTransform> NetworkTransforms { get; private set; }
 
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         /// <summary>
         /// All <see cref="NetworkRigidbodyBase"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
         /// NOTE: This is only available if a physics package is included. If not, then this will not be available!
@@ -2621,7 +2621,7 @@ namespace Unity.Netcode
                             networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
                             NetworkTransforms.Add(networkTransform);
                         }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                         else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
                         {
                             if (NetworkRigidbodies == null)
@@ -3429,7 +3429,7 @@ namespace Unity.Netcode
         {
             m_ChildNetworkBehaviours = null;
             NetworkTransforms?.Clear();
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             NetworkRigidbodies?.Clear();
 #endif
             SetCachedParent(transform.parent);
