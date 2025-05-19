@@ -113,6 +113,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This test is based on the v2.x SwitchTransformSpaceWhenParented test but only validates the ability for an owner to
         /// apply parenting locally in order to help synchronizing when parenting.
         /// </summary>
+        /// <param name="scale">various scale values to be applied</param>
         [Test]
         public void OwnerParentingTest([Values(0.5f, 1.0f, 5.0f)] float scale)
         {

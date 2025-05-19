@@ -377,6 +377,10 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Conditional check that all child object instances also have a child
+        /// </summary>
+        /// <returns>true if they do and false if they do not</returns>
         protected bool AllFirstLevelChildObjectInstancesHaveChild()
         {
             foreach (var instance in ChildObjectComponent.ClientInstances.Values)
@@ -389,6 +393,10 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Conditional check that all child instances have a child.
+        /// </summary>
+        /// <returns>true if they do and false if they do not</returns>
         protected bool AllChildObjectInstancesHaveChild()
         {
             foreach (var instance in ChildObjectComponent.ClientInstances.Values)
@@ -411,6 +419,10 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Conditional check that all first level child objects have no parent.
+        /// </summary>
+        /// <returns>true if they do and false if they do not</returns>
         protected bool AllFirstLevelChildObjectInstancesHaveNoParent()
         {
             foreach (var instance in ChildObjectComponent.ClientInstances.Values)
@@ -423,6 +435,10 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Conditional check that all sub-child objects have no parent.
+        /// </summary>
+        /// <returns>true if they do and false if they do not</returns>
         protected bool AllSubChildObjectInstancesHaveNoParent()
         {
             if (ChildObjectComponent.HasSubChild)
