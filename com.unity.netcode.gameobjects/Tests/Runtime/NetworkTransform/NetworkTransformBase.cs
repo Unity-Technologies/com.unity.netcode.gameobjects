@@ -347,7 +347,6 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNewClientCreated(networkManager);
         }
 
-
         /// <summary>
         /// Returns true when the server-host and all clients have
         /// instantiated the child object to be used in <see cref="NetworkTransformParentingLocalSpaceOffsetTests"/>
@@ -378,6 +377,18 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        protected bool AllFirstLevelChildObjectInstancesHaveChild()
+        {
+            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
+            {
+                if (instance.transform.parent == null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         protected bool AllChildObjectInstancesHaveChild()
         {
             foreach (var instance in ChildObjectComponent.ClientInstances.Values)
@@ -392,6 +403,33 @@ namespace Unity.Netcode.RuntimeTests
                 foreach (var instance in ChildObjectComponent.ClientSubChildInstances.Values)
                 {
                     if (instance.transform.parent == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        protected bool AllFirstLevelChildObjectInstancesHaveNoParent()
+        {
+            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
+            {
+                if (instance.transform.parent != null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        protected bool AllSubChildObjectInstancesHaveNoParent()
+        {
+            if (ChildObjectComponent.HasSubChild)
+            {
+                foreach (var instance in ChildObjectComponent.ClientSubChildInstances.Values)
+                {
+                    if (instance.transform.parent != null)
                     {
                         return false;
                     }
