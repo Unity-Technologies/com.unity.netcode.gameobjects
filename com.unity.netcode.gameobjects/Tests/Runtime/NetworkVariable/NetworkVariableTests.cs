@@ -396,10 +396,16 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    internal enum Serialization
+    {
+        EnsureLengthSafety,
+        Default,
+    }
+
 #if !MULTIPLAYER_TOOLS
-    [TestFixture(true)]
+    [TestFixture(Serialization.EnsureLengthSafety)]
 #endif
-    [TestFixture(false)]
+    [TestFixture(Serialization.Default)]
     internal class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
@@ -432,9 +438,9 @@ namespace Unity.Netcode.RuntimeTests
 
         private readonly bool m_EnsureLengthSafety;
 
-        public NetworkVariableTests(bool ensureLengthSafety)
+        public NetworkVariableTests(Serialization serialization)
         {
-            m_EnsureLengthSafety = ensureLengthSafety;
+            m_EnsureLengthSafety = serialization == Serialization.EnsureLengthSafety;
         }
 
         protected override bool CanStartServerAndClients()
@@ -467,15 +473,21 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<ClassHavingNetworkBehaviour2>();
             m_PlayerPrefab.AddComponent<StructHavingNetworkBehaviour>();
 
+            m_UseHost = useHost == HostOrServer.DAHost || useHost == HostOrServer.Host;
+            m_NetworkTopologyType = useHost == HostOrServer.DAHost ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
+
             m_ServerNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            SetDistributedAuthorityProperties(m_ServerNetworkManager);
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                SetDistributedAuthorityProperties(client);
             }
 
-            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost == HostOrServer.Host, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            var useServer = useHost == HostOrServer.Server;
+            Assert.True(NetcodeIntegrationTestHelpers.Start(!useServer, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
@@ -491,7 +503,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager, result);
 
             // Assign server-side client's player
-            m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
+            var serverVersionOfPlayer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
             NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentationWithTimeTravel(
@@ -499,7 +511,14 @@ namespace Unity.Netcode.RuntimeTests
                 m_ClientNetworkManagers[0], result);
 
             // Assign client-side local player
-            m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
+            var clientVersionOfPlayer = result.Result.GetComponent<NetworkVariableTest>();
+
+            // In distributed authority mode, the client is the authority of itself, rather than the server.
+            var authority = m_DistributedAuthority ? clientVersionOfPlayer : serverVersionOfPlayer;
+            var nonAuthority = m_DistributedAuthority ? serverVersionOfPlayer : clientVersionOfPlayer;
+
+            m_Player1OnServer = authority;
+            m_Player1OnClient1 = nonAuthority;
 
             m_Player1OnServer.TheList.Clear();
 
@@ -512,7 +531,7 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost == HostOrServer.Host ? NumberOfClients * 3 : NumberOfClients * 2;
+            var instanceCount = useHost == HostOrServer.Server ? NumberOfClients * 2 : NumberOfClients * 3;
             // Wait for the client-side to notify it is finished initializing and spawning.
             success = WaitForConditionOrTimeOutWithTimeTravel(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 

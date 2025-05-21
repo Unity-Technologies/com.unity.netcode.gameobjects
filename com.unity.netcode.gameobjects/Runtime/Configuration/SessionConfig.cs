@@ -9,9 +9,10 @@ namespace Unity.Netcode
         public const uint BypassFeatureCompatible = 1;
         public const uint ServerDistributionCompatible = 2;
         public const uint SessionStateToken = 3;
+        public const uint NetworkBehaviourSerializationSafety = 4;
 
         // The most current session version (!!!!set this when you increment!!!!!)
-        public static uint PackageSessionVersion => SessionStateToken;
+        public static uint PackageSessionVersion => NetworkBehaviourSerializationSafety;
 
         internal uint SessionVersion;
 
