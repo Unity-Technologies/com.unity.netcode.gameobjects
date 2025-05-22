@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
             var managerToTest = clientType == ClientType.Authority ? authority : nonAuthority;
 
 
-            var expectedCompletedClients = new List<ulong>{nonAuthority.LocalClientId};
+            var expectedCompletedClients = new List<ulong> { nonAuthority.LocalClientId };
             // the authority ID is not inside ClientsThatCompleted when running as a server
             if (m_UseHost)
             {
