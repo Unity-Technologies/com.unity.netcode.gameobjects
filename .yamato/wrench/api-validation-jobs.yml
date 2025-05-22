@@ -13,14 +13,14 @@ api_validation_-_netcode_gameobjects_-_2021_3_-_windows:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-65_ac171f692eb27799bebcfb16c910f460486bef87e3068ae3a38793f908011de4.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 2021.3 -c Editor --fast
+  - command: unity-downloader-cli -u 2021.3/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/PackageJsonCondersor.py
@@ -51,8 +51,8 @@ api_validation_-_netcode_gameobjects_-_2021_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.10.49.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.10.49.0
 
