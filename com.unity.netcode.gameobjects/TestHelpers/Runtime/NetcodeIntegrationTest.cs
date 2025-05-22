@@ -1194,7 +1194,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     // Wait for all clients to connect
                     WaitForClientsConnectedOrTimeOutWithTimeTravel();
 
-                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
                     if (m_UseHost || authorityManager.IsHost)
                     {
