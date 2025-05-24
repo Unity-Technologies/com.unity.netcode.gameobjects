@@ -344,28 +344,22 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader instantiationDataReader = default)
         {
-            NetworkObject networkObjectInstance = instantiationDataReader.IsInitialized
-                ? InstantiateNetworkPrefabWithData(networkPrefabAssetHash, ownerClientId, position, rotation, instantiationDataReader)
-                : InstantiateNetworkPrefabDefault(networkPrefabAssetHash, ownerClientId, position, rotation);
+            NetworkObject networkObjectInstance = null;
+            if (instantiationDataReader.IsInitialized)
+            {
+                if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationDataReader);
+            }
+            else
+            {
+                if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+                    networkObjectInstance  = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
+            }
             //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
             //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
             if (networkObjectInstance != null)
                 RegisterPrefabInstance(networkObjectInstance, networkPrefabAssetHash);
             return networkObjectInstance;
-        }
-
-        private NetworkObject InstantiateNetworkPrefabDefault(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation)
-        {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
-                return prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-            return null;
-        }
-
-        private NetworkObject InstantiateNetworkPrefabWithData(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader instantiationDataReader)
-        {
-            if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
-                return prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationDataReader);
-            return null;
         }
 
         private void RegisterPrefabInstance(NetworkObject networkObjectInstance, uint networkPrefabAssetHash)
