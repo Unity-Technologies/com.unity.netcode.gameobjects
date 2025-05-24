@@ -84,10 +84,6 @@ namespace Unity.Netcode
         {
             return AddHandler(networkPrefabAsset.GetComponent<NetworkObject>().GlobalObjectIdHash, instanceHandler);
         }
-        public bool AddHandler<T>(GameObject networkPrefabAsset, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
-        {
-            return AddHandler(networkPrefabAsset.GetComponent<NetworkObject>().GlobalObjectIdHash, instanceHandler);
-        }
 
         /// <summary>
         /// Use a  <see cref="NetworkObject"/> to register a class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface with the <see cref="NetworkPrefabHandler"/>
@@ -96,10 +92,6 @@ namespace Unity.Netcode
         /// <param name="instanceHandler">the class that implements the <see cref="INetworkPrefabInstanceHandler"/> interface to be registered</param>
         /// <returns>true (registered) false (failed to register)</returns>
         public bool AddHandler(NetworkObject prefabAssetNetworkObject, INetworkPrefabInstanceHandler instanceHandler)
-        {
-            return AddHandler(prefabAssetNetworkObject.GlobalObjectIdHash, instanceHandler);
-        }
-        public bool AddHandler<T>(NetworkObject prefabAssetNetworkObject, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
         {
             return AddHandler(prefabAssetNetworkObject.GlobalObjectIdHash, instanceHandler);
         }
@@ -122,12 +114,6 @@ namespace Unity.Netcode
                 return true;
             }
 
-            return false;
-        }
-        public bool AddHandler<T>(uint globalObjectIdHash, INetworkPrefabInstanceHandlerWithData<T> instanceHandler) where T : struct, INetworkSerializable
-        {
-            if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
-                return AddHandler(globalObjectIdHash, new HandlerWrapper<T>(instanceHandler));
             return false;
         }
 

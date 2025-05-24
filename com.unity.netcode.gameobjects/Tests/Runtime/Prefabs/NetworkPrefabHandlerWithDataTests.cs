@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(timeoutHelper.TimedOut, "Data did not synchronize correctly to all clients.");
         }
 
-        private class PrefabInstanceHandlerWithData : INetworkPrefabInstanceHandlerWithData<NetworkSerializableTest>
+        private class PrefabInstanceHandlerWithData : NetworkPrefabInstanceHandlerWithData<NetworkSerializableTest>
         {
             public GameObject Prefab;
             public NetworkSerializableTest instantiationData;
@@ -138,13 +138,13 @@ namespace Unity.Netcode.RuntimeTests
                 Prefab = prefab;
             }
 
-            public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
+            public override NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
                 instantiationData = data;
                 return GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
             }
 
-            public void Destroy(NetworkObject networkObject)
+            public override void Destroy(NetworkObject networkObject)
             {
                 GameObject.DestroyImmediate(networkObject.gameObject);
             }
