@@ -28,7 +28,6 @@ namespace Unity.Netcode
         /// On the server side, the <see cref="ConnectionEventData.ClientId"/> will be the ID of the client that just connected.
         /// </remarks>
         ClientConnected,
-
         /// <summary>
         /// This event is set on clients that are already connected to the session.
         /// </summary>
@@ -36,7 +35,6 @@ namespace Unity.Netcode
         /// The <see cref="ConnectionEventData.ClientId"/> will be the ID of the client that just connected.
         /// </remarks>
         PeerConnected,
-
         /// <summary>
         /// This event is set on the client-side of the client that disconnected client and on the server-side.
         /// </summary>
@@ -45,7 +43,6 @@ namespace Unity.Netcode
         /// On the server side, this will be the ID of the client that disconnected.
         /// </remarks>
         ClientDisconnected,
-
         /// <summary>
         /// This event is set on clients that are already connected to the session.
         /// </summary>
@@ -150,7 +147,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Invoking connection event on NonAuthority client. Need to calculate PeerIds.
+            // Invoking connection event on non-authority local client. Need to calculate PeerIds.
             var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
             // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
             using var sentinel = peerClientIds;
@@ -857,7 +854,6 @@ namespace Unity.Netcode
                             };
                         }
                     }
-
                     if (!MockSkippingApproval)
                     {
                         SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
@@ -866,7 +862,6 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogInfo("Mocking server not responding with connection approved...");
                     }
-
                     message.MessageVersions.Dispose();
                     message.ConnectedClientIds.Dispose();
                     if (MockSkippingApproval)
@@ -883,8 +878,8 @@ namespace Unity.Netcode
                         {
                             InvokeOnPeerConnectedCallback(ownerClientId);
                         }
-
                         NetworkManager.SpawnManager.DistributeNetworkObjects(ownerClientId);
+
                     }
                     else // Otherwise, let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     {
@@ -927,7 +922,6 @@ namespace Unity.Netcode
                 {
                     return;
                 }
-
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
                 ApprovedPlayerSpawn(ownerClientId, response.PlayerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
@@ -942,7 +936,6 @@ namespace Unity.Netcode
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
                     MessageManager.ProcessSendQueues();
                 }
-
                 DisconnectRemoteClient(ownerClientId);
             }
         }
@@ -1017,14 +1010,12 @@ namespace Unity.Netcode
             {
                 networkClient = new NetworkClient();
             }
-
             networkClient.SetRole(clientId == NetworkManager.ServerClientId, isClient: true, NetworkManager);
             networkClient.ClientId = clientId;
             if (!ConnectedClients.ContainsKey(clientId))
             {
                 ConnectedClients.Add(clientId, networkClient);
             }
-
             if (!ConnectedClientsList.Contains(networkClient))
             {
                 ConnectedClientsList.Add(networkClient);
@@ -1048,7 +1039,6 @@ namespace Unity.Netcode
                     NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.CurrentSessionOwner);
                 }
             }
-
             if (!ConnectedClientIds.Contains(clientId))
             {
                 ConnectedClientIds.Add(clientId);
@@ -1074,7 +1064,6 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-
                     networkObject.Observers.Add(clientId);
                 }
             }
@@ -1092,7 +1081,6 @@ namespace Unity.Netcode
             {
                 ConnectedClientIds.Remove(clientId);
             }
-
             if (ConnectedClients.ContainsKey(clientId))
             {
                 ConnectedClientsList.Remove(ConnectedClients[clientId]);
@@ -1199,7 +1187,6 @@ namespace Unity.Netcode
                                     // Don't destroy (prefab handler will determine this, but always notify
                                     NetworkManager.SpawnManager.DespawnObject(ownedObject, false, true);
                                 }
-
                                 NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(ownedObject);
                             }
                             else
@@ -1239,7 +1226,6 @@ namespace Unity.Netcode
                                         break;
                                     }
                                 }
-
                                 if (EnableDistributeLogging)
                                 {
                                     Debug.Log($"[Disconnected][Client-{clientId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
@@ -1262,7 +1248,6 @@ namespace Unity.Netcode
                                     {
                                         continue;
                                     }
-
                                     // If the client owner disconnected, it is ok to unlock this at this point in time.
                                     if (childObject.IsOwnershipLocked)
                                     {

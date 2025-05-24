@@ -155,7 +155,7 @@ namespace TestProject.RuntimeTests
             var peerClientId = GetNonAuthorityNetworkManager().LocalClientId;
             var expectedClientId = peerClientId + 1;
 
-            var expectedPeerClientIds = m_UseHost ? new[] { authorityId, peerClientId } : new[]{peerClientId};
+            var expectedPeerClientIds = m_UseHost ? new[] { authorityId, peerClientId } : new[] { peerClientId };
 
             // Setup expected events
             m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
