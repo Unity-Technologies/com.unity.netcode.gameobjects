@@ -140,7 +140,7 @@ namespace Unity.Netcode
         {
             if (!TryGetHandlerWithData(networkObject.GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
             {
-                throw new Exception("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+                Debug.LogError("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
             }
 
             using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
