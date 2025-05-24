@@ -283,15 +283,17 @@ namespace Unity.Netcode
         /// <typeparam name="T"></typeparam>
         /// <param name="objectHash"></param>
         /// <param name="serializer"></param>
-        internal FastBufferReader GetInstantiationDataReader<T>(uint objectHash, ref BufferSerializer<T> serializer) where T : IReaderWriter
+        internal FastBufferReader GetInstantiationDataReader(uint objectHash, FastBufferReader fastBufferReader)
         {
-            if (!serializer.IsReader || !TryGetHandlerWithData(objectHash, out INetworkPrefabInstanceHandlerWithData synchronizableHandler))
+            if (!TryGetHandlerWithData(objectHash, out var _))
             {
+                if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"No handler with data found for object hash {objectHash}.");
+                }
                 return default;
             }
 
-            FastBufferReader fastBufferReader = serializer.GetFastBufferReader();
-            // Reads the expected size of the instantiation data
             fastBufferReader.ReadValueSafe(out int dataSize);
             int dataStartPos = fastBufferReader.Position;
             var result = new FastBufferReader(fastBufferReader, Collections.Allocator.Temp, dataSize, dataStartPos);
