@@ -1635,6 +1635,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 throw new ArgumentNullException($"checkForCondition cannot be null!");
             }
 
+            // If none is provided we use the default global time out helper
+            if (timeOutHelper == null)
+            {
+                timeOutHelper = s_GlobalTimeoutHelper;
+            }
+
             conditionalPredicate.Started();
             yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
@@ -1670,7 +1676,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="timeoutErrorMessage">The error message to include in the assertion if the timeout is reached.</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        public IEnumerator WaitForConditionOrAssert(Func<bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForConditionOrAssert(Func<bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
         {
             yield return WaitForConditionOrTimeOut(checkForCondition, timeOutHelper);
             AssertOnTimeout(timeoutErrorMessage, timeOutHelper);
@@ -1684,11 +1690,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="timeoutErrorMessage">The error message to include in the assertion if the timeout is reached. The information on the StringBuilder will be appended on a new line</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        public IEnumerator WaitForConditionOrAssert(Func<StringBuilder, bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForConditionOrAssert(Func<StringBuilder, bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
         {
             var errorBuilder = new StringBuilder();
             yield return WaitForConditionOrTimeOut(() => checkForCondition(errorBuilder), timeOutHelper);
-            AssertOnTimeout($"{timeoutErrorMessage}\n{errorBuilder.ToString()}", timeOutHelper);
+            AssertOnTimeout($"{timeoutErrorMessage}\n{errorBuilder}", timeOutHelper);
         }
 
         /// <summary>
