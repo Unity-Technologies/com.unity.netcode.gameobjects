@@ -1693,7 +1693,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator WaitForConditionOrAssert(Func<StringBuilder, bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
         {
             var errorBuilder = new StringBuilder();
-            yield return WaitForConditionOrTimeOut(() => checkForCondition(errorBuilder), timeOutHelper);
+            yield return WaitForConditionOrTimeOut(() =>
+            {
+                // Clear errorBuilder before each check to ensure the errorBuilder only contains information from the lastest run
+                errorBuilder.Clear();
+                return checkForCondition(errorBuilder);
+            }, timeOutHelper);
             AssertOnTimeout($"{timeoutErrorMessage}\n{errorBuilder}", timeOutHelper);
         }
 
