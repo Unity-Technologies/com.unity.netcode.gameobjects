@@ -3220,7 +3220,7 @@ namespace Unity.Netcode
                     OnUnload?.Invoke(clientId, sceneName, asyncOperation);
                     break;
                 case SceneEventType.LoadComplete:
-                    OnLoadComplete?.Invoke(NetworkManager.LocalClientId, sceneName, eventData.LoadSceneMode);
+                    OnLoadComplete?.Invoke(clientId, sceneName, eventData.LoadSceneMode);
                     break;
                 case SceneEventType.UnloadComplete:
                     OnUnloadComplete?.Invoke(clientId, sceneName);
