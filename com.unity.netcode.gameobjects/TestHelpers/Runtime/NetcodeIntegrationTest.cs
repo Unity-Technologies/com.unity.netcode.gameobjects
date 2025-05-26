@@ -1663,12 +1663,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return success;
         }
 
+        /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that returns true when the desired condition is met.</param>
+        /// <param name="timeoutErrorMessage">The error message to include in the assertion if the timeout is reached.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         public IEnumerator WaitForConditionOrAssert(Func<bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
         {
             yield return WaitForConditionOrTimeOut(checkForCondition, timeOutHelper);
             AssertOnTimeout(timeoutErrorMessage, timeOutHelper);
         }
 
+        /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
+        /// <param name="timeoutErrorMessage">The error message to include in the assertion if the timeout is reached. The information on the StringBuilder will be appended on a new line</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         public IEnumerator WaitForConditionOrAssert(Func<StringBuilder, bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
         {
             var errorBuilder = new StringBuilder();
