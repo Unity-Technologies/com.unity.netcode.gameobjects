@@ -1635,12 +1635,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 throw new ArgumentNullException($"checkForCondition cannot be null!");
             }
 
-            // If none is provided we use the default global time out helper
-            if (timeOutHelper == null)
-            {
-                timeOutHelper = s_GlobalTimeoutHelper;
-            }
-
             conditionalPredicate.Started();
             yield return WaitForConditionOrTimeOut(conditionalPredicate.HasConditionBeenReached, timeOutHelper);
             conditionalPredicate.Finished(timeOutHelper.TimedOut);
@@ -1667,6 +1661,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var success = WaitForConditionOrTimeOutWithTimeTravel(conditionalPredicate.HasConditionBeenReached, maxTries);
             conditionalPredicate.Finished(!success);
             return success;
+        }
+
+        public IEnumerator WaitForConditionOrAssert(Func<bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
+        {
+            yield return WaitForConditionOrTimeOut(checkForCondition, timeOutHelper);
+            AssertOnTimeout(timeoutErrorMessage, timeOutHelper);
+        }
+
+        public IEnumerator WaitForConditionOrAssert(Func<StringBuilder, bool> checkForCondition, string timeoutErrorMessage, TimeoutHelper timeOutHelper = null)
+        {
+            var errorBuilder = new StringBuilder();
+            yield return WaitForConditionOrTimeOut(() => checkForCondition(errorBuilder), timeOutHelper);
+            AssertOnTimeout($"{timeoutErrorMessage}\n{errorBuilder.ToString()}", timeOutHelper);
         }
 
         /// <summary>
