@@ -137,6 +137,11 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(0.15f, testComponent.TheVariable.Value);
         }
 
+        /// <summary>
+        /// Integration test to validate that a <see cref="NetworkVariable{T}"/> with <see cref="NetworkVariableUpdateTraits"/>
+        /// does not cause other <see cref="NetworkVariable{T}"/>s to miss an update when they are dirty but the one with
+        /// traits is not ready to send an update.
+        /// </summary>
         [Test]
         public void WhenNonTraitsIsDirtyButTraitsIsNotReadyToSend()
         {
