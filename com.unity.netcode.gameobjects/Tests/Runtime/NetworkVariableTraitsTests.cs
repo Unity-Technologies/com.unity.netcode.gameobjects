@@ -8,7 +8,7 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkVariableTraitsComponent : NetworkBehaviour
     {
         public NetworkVariable<float> TheVariable = new NetworkVariable<float>();
-        public NetworkVariable<float> AnotherVariable = new NetworkVariable<float>();
+        internal NetworkVariable<float> AnotherVariable = new NetworkVariable<float>();
     }
 
     public class NetworkVariableTraitsTests : NetcodeIntegrationTest
