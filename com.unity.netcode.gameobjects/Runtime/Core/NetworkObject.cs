@@ -417,6 +417,24 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
+        /// <summary>
+        /// Determines if the owner will apply transform values sent by the parenting message.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the resultant parenting transform changes sent by the authority will be applied on all instances. <br />
+        /// When disabled, the resultant parenting transform changes sent by the authority will not be applied on the owner's instance. <br />
+        /// When disabled, all non-owner instances will still be synchronized by the authority's transform values when parented.
+        /// </remarks>
+        [Tooltip("When disabled (default enabled), the owner will not apply a server or host's transform properties when parenting changes. Primarily useful for client-server network topology configurations.")]
+        public bool SyncOwnerTransformWhenParented = true;
+
+        /// <summary>
+        /// Client-Server specific, when enabled an owner of a NetworkObject can parent locally as opposed to requiring the owner to notify the server it would like to be parented.
+        /// This behavior is always true when using a distributed authority network topology and does not require it to be set.
+        /// </summary>
+        [Tooltip("When enabled (default disabled), owner's can parent a NetworkObject locally without having to send an RPC to the server or host. Only pertinent when using client-server network topology configurations.")]
+        public bool AllowOwnerToParent;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
@@ -1086,8 +1104,9 @@ namespace Unity.Netcode
             {
                 return false;
             }
-
-            if (!NetworkManager.IsServer && !NetworkManager.ShutdownInProgress)
+            // If we don't have authority and we are not shutting down, then don't allow any parenting.
+            // If we are shutting down and don't have authority then allow it.
+            if (!(NetworkManager.IsServer || (AllowOwnerToParent && IsOwner)) && !NetworkManager.ShutdownInProgress)
             {
                 return false;
             }
@@ -1101,6 +1120,8 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+
 
             m_CachedWorldPositionStays = worldPositionStays;
 
@@ -1135,7 +1156,9 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!NetworkManager.IsServer)
+            var hasAuthority = NetworkManager.IsServer || (AllowOwnerToParent && IsOwner);
+
+            if (!hasAuthority)
             {
                 // Log exception if we are a client and not shutting down.
                 if (!NetworkManager.ShutdownInProgress)

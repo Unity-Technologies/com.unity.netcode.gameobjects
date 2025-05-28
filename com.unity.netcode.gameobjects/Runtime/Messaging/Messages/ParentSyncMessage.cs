@@ -106,19 +106,42 @@ namespace Unity.Netcode
             networkObject.SetNetworkParenting(LatestParent, WorldPositionStays);
             networkObject.ApplyNetworkParenting(RemoveParent);
 
-            // We set all of the transform values after parenting as they are
-            // the values of the server-side post-parenting transform values
-            if (!WorldPositionStays)
+
+            // This check is primarily for client-server network topologies when the motion model is owner authoritative:
+            // When SyncOwnerTransformWhenParented is enabled, then always apply the transform values.
+            // When SyncOwnerTransformWhenParented is disabled, then only synchronize the transform on non-owner instances.
+            if (networkObject.SyncOwnerTransformWhenParented || (!networkObject.SyncOwnerTransformWhenParented && !networkObject.IsOwner))
             {
-                networkObject.transform.localPosition = Position;
-                networkObject.transform.localRotation = Rotation;
-            }
-            else
-            {
-                networkObject.transform.position = Position;
-                networkObject.transform.rotation = Rotation;
+                // We set all of the transform values after parenting as they are
+                // the values of the server-side post-parenting transform values
+                if (!WorldPositionStays)
+                {
+                    networkObject.transform.localPosition = Position;
+                    networkObject.transform.localRotation = Rotation;
+                }
+                else
+                {
+                    networkObject.transform.position = Position;
+                    networkObject.transform.rotation = Rotation;
+                }
             }
             networkObject.transform.localScale = Scale;
+
+            // If client side parenting is enabled and this is the server instance, then notify the rest of the connected clients that parenting has taken place.
+            if (networkObject.AllowOwnerToParent && context.SenderId == networkObject.OwnerClientId && networkManager.IsServer)
+            {
+                var size = 0;
+                var message = this;
+                foreach (var client in networkManager.ConnectedClients)
+                {
+                    if (client.Value.ClientId == networkObject.OwnerClientId || client.Value.ClientId == networkManager.LocalClientId || !networkObject.IsNetworkVisibleTo(client.Value.ClientId))
+                    {
+                        continue;
+                    }
+                    size = networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
+                    networkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
+                }
+            }
         }
     }
 }
