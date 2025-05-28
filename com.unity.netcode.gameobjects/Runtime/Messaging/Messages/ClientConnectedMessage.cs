@@ -31,10 +31,10 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            // if (ShouldSynchronize && networkManager.NetworkConfig.EnableSceneManagement && networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
-            // {
-            //     networkManager.SceneManager.SynchronizeNetworkObjects(ClientId);
-            // }
+            if (ShouldSynchronize && networkManager.NetworkConfig.EnableSceneManagement && networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
+            {
+                // networkManager.SceneManager.SynchronizeNetworkObjects(ClientId);
+            }
             else
             {
                 // All modes support adding NetworkClients
