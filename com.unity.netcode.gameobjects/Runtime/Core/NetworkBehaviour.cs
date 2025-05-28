@@ -1002,8 +1002,8 @@ namespace Unity.Netcode
                         if (networkVariable.CanSend())
                         {
                             shouldSend = true;
+                            break;
                         }
-                        break;
                     }
                 }
 
