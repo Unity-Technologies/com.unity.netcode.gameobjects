@@ -2614,7 +2614,7 @@ namespace Unity.Netcode
                         // notification that the client is connected.
                         NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
 
-                        if (NetworkManager.IsHost || NetworkManager.LocalClient.IsSessionOwner)
+                        if (NetworkManager.IsHost)
                         {
                             NetworkManager.ConnectionManager.InvokeOnPeerConnectedCallback(clientId);
                         }
