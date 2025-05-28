@@ -1,14 +1,50 @@
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Handles parenting the <see cref="GameObject"/> that is a child under a root network prefab
-    /// without having to use the same <see cref="NetworkObject"/> parenting rules.
+    /// Handles parenting of the <see cref="GameObject"/> this component is attached to and is a nested <see cref="NetworkBehaviour"/>.<br />
+    /// The <see cref="GameObject"/> can reside under a parent <see cref="NetworkObject"/> or some higher generational parent.
     /// </summary>
     public class AttachableBehaviour : NetworkBehaviour
     {
+#if UNITY_EDITOR
+        /// <inheritdoc/>
+        /// <remarks>
+        /// In the event an <see cref="AttachableBehaviour"/> is placed on the same <see cref="GameObject"/>
+        /// as the <see cref="NetworkObject"/>, this will automatically create a child and add an
+        /// <see cref="AttachableBehaviour"/> to that.
+        /// </remarks>
+        protected virtual void OnValidate()
+        {
+            var networkObject = gameObject.GetComponentInParent<NetworkObject>();
+            if (!networkObject)
+            {
+                networkObject = gameObject.GetComponent<NetworkObject>();
+            }
+            if (networkObject && networkObject.gameObject == gameObject)
+            {
+                Debug.LogWarning($"[{name}][{nameof(AttachableBehaviour)}] Cannot be placed on the same {nameof(GameObject)} as the {nameof(NetworkObject)}!");
+                // Wait for the next editor update to create a nested child and add the AttachableBehaviour
+                EditorApplication.update += CreatedNestedChild;
+            }
+        }
+
+        private void CreatedNestedChild()
+        {
+            EditorApplication.update -= CreatedNestedChild;
+            var childGameObject = new GameObject($"{name}-Child");
+            childGameObject.transform.parent = transform;
+            childGameObject.AddComponent<AttachableBehaviour>();
+            Debug.Log($"[{name}][Created Child] Adding {nameof(AttachableBehaviour)} to newly created child {childGameObject.name}.");
+            DestroyImmediate(this);
+        }
+#endif
+
         /// <summary>
         /// Invoked just prior to the parent being applied.
         /// </summary>
@@ -133,6 +169,7 @@ namespace Unity.Netcode.Components
                 Debug.LogError($"[{name}][Not Authority] Client-{NetworkManager.LocalClientId} is not the authority!");
                 return;
             }
+
             // Notify any subscriptions
             ParentIsBeingApplied?.Invoke(parent);
 
