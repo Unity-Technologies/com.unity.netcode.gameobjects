@@ -296,9 +296,11 @@ namespace Unity.Netcode
 
             fastBufferReader.ReadValueSafe(out int dataSize);
             int dataStartPos = fastBufferReader.Position;
-            var result = new FastBufferReader(fastBufferReader, Collections.Allocator.Temp, dataSize, dataStartPos);
-            fastBufferReader.Seek(dataStartPos + dataSize);
-            return result;
+            unsafe
+            {
+                byte* ptr = fastBufferReader.GetUnsafePtr() + dataStartPos;
+                return new FastBufferReader(ptr, Collections.Allocator.None, dataSize);
+            }
         }
 
         /// <summary>
