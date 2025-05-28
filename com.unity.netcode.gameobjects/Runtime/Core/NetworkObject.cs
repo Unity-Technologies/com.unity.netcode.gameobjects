@@ -3244,6 +3244,8 @@ namespace Unity.Netcode
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationDataReader);
 
+            instantiationDataReader.Dispose();
+
             if (networkObject == null)
             {
                 // Log the error that the NetworkObject failed to construct

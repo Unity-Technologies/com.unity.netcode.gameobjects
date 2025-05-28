@@ -19,8 +19,18 @@ namespace Unity.Netcode
        
         NetworkObject INetworkPrefabInstanceHandlerWithData.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader reader)
         {
+            var startPosition = reader.Position;
             reader.ReadValueSafe(out T _payload);
-            return Instantiate(ownerClientId, position, rotation, _payload);
+            var length = reader.Position - startPosition;
+           
+            NetworkObject networkObject = Instantiate(ownerClientId, position, rotation, _payload);
+            reader.Seek(startPosition);
+            if (networkObject.InstantiationData == null || networkObject.InstantiationData.Length != length)
+            {
+                networkObject.InstantiationData = new byte[length];
+            }
+            reader.ReadBytesSafe(ref networkObject.InstantiationData, length);
+            return networkObject;
         }
 
         NetworkObject INetworkPrefabInstanceHandler.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation) => Instantiate(ownerClientId, position, rotation, default);
