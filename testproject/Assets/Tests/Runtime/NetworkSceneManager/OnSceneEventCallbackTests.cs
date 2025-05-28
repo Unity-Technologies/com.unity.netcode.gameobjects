@@ -106,7 +106,8 @@ namespace TestProject.RuntimeTests
                 // Load the scene initially
                 authority.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
 
-                yield return WaitForConditionOrAssert(ValidateSceneIsLoaded, $"[Setup] Timed out waiting for client to load the scene {k_SceneToLoad}!");
+                yield return WaitForConditionOrTimeOut(ValidateSceneIsLoaded);
+                AssertOnTimeout($"[Setup] Timed out waiting for client to load the scene {k_SceneToLoad}!");
 
                 // Wait for any pending messages to be processed
                 yield return null;
@@ -179,14 +180,16 @@ namespace TestProject.RuntimeTests
             {
                 Assert.That(authority.SceneManager.LoadScene(loadCall, LoadSceneMode.Additive) == SceneEventProgressStatus.Started);
 
-                yield return WaitForConditionOrAssert(ValidateSceneIsLoaded, $"[Test] Timed out waiting for client to load the scene {k_SceneToLoad}!");
+                yield return WaitForConditionOrTimeOut(ValidateSceneIsLoaded);
+                AssertOnTimeout($"[Test] Timed out waiting for client to load the scene {k_SceneToLoad}!");
             }
             else
             {
                 Assert.That(loadedScene.name, Is.EqualTo(k_SceneToLoad), "scene was not loaded!");
                 Assert.That(authority.SceneManager.UnloadScene(loadedScene) == SceneEventProgressStatus.Started);
 
-                yield return WaitForConditionOrAssert(ValidateSceneIsUnloaded, $"[Test] Timed out waiting for client to unload the scene {k_SceneToLoad}!");
+                yield return WaitForConditionOrTimeOut(ValidateSceneIsUnloaded);
+                AssertOnTimeout($"[Test] Timed out waiting for client to unload the scene {k_SceneToLoad}!");
             }
 
             // Wait for all messages to process
@@ -219,7 +222,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            return true;
+            return false;
         }
 
         private bool ValidateSceneIsUnloaded()
