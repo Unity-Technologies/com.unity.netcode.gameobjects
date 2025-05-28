@@ -250,6 +250,13 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo($"[Client-{OwnerClientId}] Connection approved! Synchronizing...");
             }
+
+            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner)
+            {
+                networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
+                return;
+            }
+
             networkManager.LocalClientId = OwnerClientId;
             networkManager.MessageManager.SetLocalClientId(networkManager.LocalClientId);
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
