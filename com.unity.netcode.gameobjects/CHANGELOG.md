@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one is dirty but not ready to send. (#3466)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
 - Fixed memory leaks when domain reload is disabled. (#3427)
 - Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
