@@ -2406,15 +2406,15 @@ namespace Unity.Netcode
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             if (NetworkManager.DistributedAuthorityMode)
                             {
-                                    sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
-                                    sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                                    var message = new SceneEventMessage
-                                    {
-                                        EventData = sceneEventData,
-                                    };
-                                    var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
-                                    NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
+                                sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
+                                sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                                var message = new SceneEventMessage
+                                {
+                                    EventData = sceneEventData,
+                                };
+                                var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                                NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
                             }
                             else
                             {
