@@ -2046,6 +2046,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}\n{m_InternalErrorLog}");
                 m_InternalErrorLog.Clear();
+                return;
             }
 
             Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}");

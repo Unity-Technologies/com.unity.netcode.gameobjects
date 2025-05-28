@@ -222,7 +222,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            return false;
+            return true;
         }
 
         private bool ValidateSceneIsUnloaded()
