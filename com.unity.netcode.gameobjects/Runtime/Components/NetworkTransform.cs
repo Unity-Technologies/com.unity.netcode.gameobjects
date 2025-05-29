@@ -2524,10 +2524,25 @@ namespace Unity.Netcode.Components
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
             var adjustedPosition = m_InternalCurrentPosition;
-            var adjustedRotation = m_InternalCurrentRotation;
+            var currentPosistion = GetSpaceRelativePosition();
+            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosistion.x;
+            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosistion.y;
+            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosistion.z;
 
+            var adjustedRotation = m_InternalCurrentRotation;
             var adjustedRotAngles = adjustedRotation.eulerAngles;
+            var currentRotation = GetSpaceRelativeRotation().eulerAngles;
+            adjustedRotAngles.x = SyncRotAngleX ? adjustedRotAngles.x : currentRotation.x;
+            adjustedRotAngles.y = SyncRotAngleY ? adjustedRotAngles.y : currentRotation.y;
+            adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
+            adjustedRotation.eulerAngles = adjustedRotAngles;
+
+            
             var adjustedScale = m_InternalCurrentScale;
+            var currentScale = GetScale();
+            adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
+            adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
+            adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
 
             // Non-Authority Preservers the authority's transform state update modes
             InLocalSpace = networkState.InLocalSpace;
