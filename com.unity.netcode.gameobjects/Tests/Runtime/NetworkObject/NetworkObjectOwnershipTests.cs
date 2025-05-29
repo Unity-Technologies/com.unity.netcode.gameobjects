@@ -494,7 +494,7 @@ namespace Unity.Netcode.RuntimeTests
         /// ownership changes.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestAuthorityChangingOwnership()
+        public IEnumerator NetworkShowAndChangeOwnership()
         {
             var authorityManager = (NetworkManager)null;
 
