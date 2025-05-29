@@ -124,7 +124,7 @@ namespace Unity.Netcode
             {
                 // If we are the host, then add the host-client to the list
                 // of clients that completed if the AsyncOperation is done.
-                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
+                if ((m_NetworkManager.IsHost || m_NetworkManager.LocalClient.IsSessionOwner) && m_AsyncOperation.isDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
