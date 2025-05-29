@@ -10,10 +10,9 @@ namespace Unity.Netcode
         public const uint ServerDistributionCompatible = 2;
         public const uint SessionStateToken = 3;
         public const uint NetworkBehaviourSerializationSafety = 4;
-        public const uint FixConnectionFlow = 5;
 
         // The most current session version (!!!!set this when you increment!!!!!)
-        public static uint PackageSessionVersion => FixConnectionFlow;
+        public static uint PackageSessionVersion => NetworkBehaviourSerializationSafety;
 
         internal uint SessionVersion;
 

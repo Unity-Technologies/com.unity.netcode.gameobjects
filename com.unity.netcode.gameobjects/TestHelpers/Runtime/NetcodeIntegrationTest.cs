@@ -206,12 +206,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>A <see cref="NetworkManager"/> instance that will not be the session owner</returns>
         protected NetworkManager GetNonAuthorityNetworkManager()
         {
-            // If we haven't even started any NetworkManager, then return the assumed first non-authority NetworkManager
-            if (!NetcodeIntegrationTestHelpers.IsStarted)
-            {
-                return m_UseCmbService ? m_ClientNetworkManagers[1] : m_ClientNetworkManagers[0];
-            }
-
             return m_ClientNetworkManagers.First(client => !client.LocalClient.IsSessionOwner);
         }
 
