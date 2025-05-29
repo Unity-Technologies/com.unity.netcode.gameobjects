@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
 - Fixed memory leaks when domain reload is disabled. (#3427)
+- Fixed issue where disabling the physics or physics2D package modules could result in a compilation error. (#3422)
 - Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
 
 ### Changed
