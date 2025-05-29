@@ -787,7 +787,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             return true;
         }
-        
+
         private bool OwnershipHasChanged()
         {
             if (!m_NewOwner.SpawnManager.SpawnedObjects.ContainsKey(m_ObjectId))
