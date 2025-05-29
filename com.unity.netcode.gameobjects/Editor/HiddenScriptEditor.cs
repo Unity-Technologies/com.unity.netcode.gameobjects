@@ -43,7 +43,7 @@ namespace Unity.Netcode.Editor
     /// <summary>
     /// Internal use. Hides the script field for UnityTransport.
     /// </summary>
-    [CustomEditor(typeof(UnityTransport), true)]
+    [CustomEditor(typeof(UnityTransport), true, isFallback = true)]
     public class UnityTransportEditor : HiddenScriptEditor
     {
         private static readonly string[] k_HiddenFields = { "m_Script", "ConnectionData" };
