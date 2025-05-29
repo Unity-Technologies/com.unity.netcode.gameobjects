@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -150,7 +150,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             NetworkTransformTestComponent.AuthorityInstance = null;
             m_Precision = Precision.Full;
-            ChildObjectComponent.Reset();
         }
 
         protected virtual void Teardown()
@@ -769,6 +768,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class NetworkTransformTestComponent : NetworkTransform
     {
+        public static bool VerboseDebug;
         public bool ServerAuthority;
         public bool ReadyToReceivePositionUpdate = false;
 
@@ -779,9 +779,27 @@ namespace Unity.Netcode.RuntimeTests
 
         public event AuthorityPushedTransformStateDelegateHandler AuthorityPushedTransformState;
 
+        /// <summary>
+        /// - Consolidating previous debug logs to a more generic format.
+        /// - Adding VerboseDebug control (i.e. default is off)
+        /// </summary>
+        /// <param name="msg"></param>
+        private void Log(string msg)
+        {
+            if (!VerboseDebug)
+            {
+                return;
+            }
+            var authority = HasAuthority ? "Auth" : "[Non-Auth]";
+            NetworkLog.LogInfo($"[{Time.realtimeSinceStartup}][Tick: {NetworkManager.LocalTime.Tick}][{NetworkManager.name}][{name}][{authority}][State]{msg}");
+        }
+
+        private const string k_PushUpdate = "[Push Update]";
         protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
-            Debug.Log($"[Auth]{name} State Pushed.");
+            // NOTE:
+            // Additional troubleshooting information regarding the pushed states
+            Log($"{k_PushUpdate}");
             StatePushed = true;
             AuthorityLastSentState = networkTransformState;
             AuthorityPushedTransformState?.Invoke(ref networkTransformState);
@@ -790,9 +808,12 @@ namespace Unity.Netcode.RuntimeTests
 
 
         public bool StateUpdated { get; internal set; }
+        private const string k_ApplyUpdate = "[Apply Update]";
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
-            Debug.Log($"[Non-Auth]{name} State Updated.");
+            // NOTE:
+            // Additional troubleshooting information regarding the updated states
+            Log($"{k_ApplyUpdate}");
             StateUpdated = true;
             base.OnNetworkTransformStateUpdated(ref oldState, ref newState);
         }
@@ -850,36 +871,167 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    internal class ChildObjectComponentGroup<T> : ChildObjectComponentGroupBase
+    {
+        public static T CurrentGroupKey { get; private set; }
+        public static Dictionary<T, ChildObjectComponentGroup<T>> ChildObjectComponentGroups = new Dictionary<T, ChildObjectComponentGroup<T>>();
+
+        public NetworkTransformTestComponent AuthorityTransformTestComponent;
+        public NetworkObject Parent;
+        public NetworkObject Child;
+        public NetworkObject SubChild;
+
+        public static void CreateOrSetGroup(T groupKey)
+        {
+            CurrentGroupKey = groupKey;
+            if (ChildObjectComponentGroups.ContainsKey(groupKey))
+            {
+                
+                CurrentGroup = ChildObjectComponentGroups[groupKey];
+            }
+            else
+            {
+                CurrentGroup = new ChildObjectComponentGroup<T>(groupKey);
+            }
+
+            if (CurrentGroup != null)
+            {
+                //Update the authority NetworkTransformTestComponent when we switch groups
+                if (CurrentGroup.AuthorityInstance != null)
+                {
+                    ((ChildObjectComponentGroup<T>)CurrentGroup).AuthorityTransformTestComponent = CurrentGroup.AuthorityInstance.GetComponent<NetworkTransformTestComponent>();
+                }
+            }
+        }
+
+        public T GroupKey { get; private set; }
+        public int GroupKeyIndex { get; private set; }
+
+        protected override void OnReset()
+        {
+            ChildObjectComponentGroups.Clear();
+            base.OnReset();
+        }
+
+        public ChildObjectComponentGroup(T groupKey)
+        {
+            GroupKey = groupKey;
+            ChildObjectComponentGroups.Add(GroupKey, this);
+            GroupKeyIndex = ChildObjectComponentGroups.Keys.ToList().IndexOf(GroupKey);
+            CurrentGroup = this;
+        }
+    }
+
+    internal class ChildObjectComponentGroupBase
+    {
+        public static ChildObjectComponentGroupBase CurrentGroup;
+
+        public static void Reset()
+        {
+            CurrentGroup.ClientInstances.Clear();
+            CurrentGroup.ClientSubChildInstances.Clear();
+            CurrentGroup.Instances.Clear();
+            CurrentGroup.SubInstances.Clear();
+            CurrentGroup.InstancesWithLogging.Clear();
+
+            if (CurrentGroup.AuthorityInstance)
+            {
+                var spawnedObjects = new List<NetworkObject>();
+                foreach(var spawned in CurrentGroup.AuthorityInstance.NetworkManager.SpawnManager.SpawnedObjects)
+                {
+                    if (spawned.Value.IsLocalPlayer)
+                    {
+                        continue;
+                    }
+                    if (spawned.Value.HasAuthority)
+                    {
+                        spawnedObjects.Add(spawned.Value);
+                    }
+                }
+                //CurrentGroup.AuthorityInstance.NetworkObject.Despawn();
+                foreach(var spawned in spawnedObjects)
+                {
+                    spawned.Despawn();
+                }
+                spawnedObjects.Clear();
+            }
+            //if (CurrentGroup.AuthoritySubInstance)
+            //{
+            //    CurrentGroup.AuthoritySubInstance.NetworkObject.Despawn();
+            //}
+            CurrentGroup.AuthoritySubInstance = null;
+
+
+            CurrentGroup.AuthorityInstance = null;
+            NetworkTransformTestComponent.AuthorityInstance = null;
+            CurrentGroup = null;
+        }
+
+        public bool HasSubChild;
+        public bool EnableChildLog;
+        public int TestCount;
+
+        public ChildObjectComponent AuthorityInstance;
+        public ChildObjectComponent AuthoritySubInstance;
+
+        public List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
+        public List<ChildObjectComponent> SubInstances = new List<ChildObjectComponent>();
+
+        public Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
+        public Dictionary<ulong, NetworkObject> ClientSubChildInstances = new Dictionary<ulong, NetworkObject>();
+
+        public List<ChildObjectComponent> InstancesWithLogging = new List<ChildObjectComponent>();
+
+        protected virtual void OnReset()
+        {
+            HasSubChild = false;
+            EnableChildLog = false;
+            TestCount = 0;
+            AuthoritySubInstance = null;
+            AuthoritySubInstance = null;
+            Instances.Clear();
+            SubInstances.Clear();
+            ClientInstances.Clear();
+            ClientSubChildInstances.Clear();
+            InstancesWithLogging.Clear();
+            ChildObjectComponent.Reset();
+        }
+    }
+
     /// <summary>
     /// Helper component for NetworkTransform parenting tests
     /// </summary>
     internal class ChildObjectComponent : NetworkTransform
     {
+
         public static int TestCount;
         public static bool EnableChildLog;
-        public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
-        public static readonly List<ChildObjectComponent> SubInstances = new List<ChildObjectComponent>();
-        public static ChildObjectComponent AuthorityInstance { get; internal set; }
-        public static ChildObjectComponent AuthoritySubInstance { get; internal set; }
-        public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
-        public static readonly Dictionary<ulong, NetworkObject> ClientSubChildInstances = new Dictionary<ulong, NetworkObject>();
 
-        public static readonly List<ChildObjectComponent> InstancesWithLogging = new List<ChildObjectComponent>();
 
-        public static bool HasSubChild;
+
+
+        public static List<ChildObjectComponent> Instances => ChildObjectComponentGroupBase.CurrentGroup?.Instances;
+        public static List<ChildObjectComponent> SubInstances => ChildObjectComponentGroupBase.CurrentGroup?.SubInstances;
+        public static ChildObjectComponent AuthorityInstance => ChildObjectComponentGroupBase.CurrentGroup?.AuthorityInstance;
+        public static ChildObjectComponent AuthoritySubInstance => ChildObjectComponentGroupBase.CurrentGroup?.AuthoritySubInstance;
+        public static Dictionary<ulong, NetworkObject> ClientInstances => ChildObjectComponentGroupBase.CurrentGroup?.ClientInstances;
+        public static Dictionary<ulong, NetworkObject> ClientSubChildInstances => ChildObjectComponentGroupBase.CurrentGroup?.ClientSubChildInstances;
+
+        public static List<ChildObjectComponent> InstancesWithLogging => ChildObjectComponentGroupBase.CurrentGroup?.InstancesWithLogging;
+
+        public static bool HasSubChild => ChildObjectComponentGroupBase.CurrentGroup.HasSubChild;
 
         private StringBuilder m_ChildTransformLog = new StringBuilder();
         private StringBuilder m_ChildStateLog = new StringBuilder();
 
         public static void Reset()
         {
-            AuthorityInstance = null;
-            AuthoritySubInstance = null;
-            HasSubChild = false;
-            ClientInstances.Clear();
-            ClientSubChildInstances.Clear();
-            Instances.Clear();
-            SubInstances.Clear();
+            if (ChildObjectComponentGroupBase.CurrentGroup == null)
+            {
+                return;
+            }
+
+            ChildObjectComponentGroupBase.Reset();
         }
 
         public bool ServerAuthority;
@@ -905,11 +1057,11 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (!IsSubChild())
                 {
-                    AuthorityInstance = this;
+                    ChildObjectComponentGroupBase.CurrentGroup.AuthorityInstance = this;
                 }
                 else
                 {
-                    AuthoritySubInstance = this;
+                    ChildObjectComponentGroupBase.CurrentGroup.AuthoritySubInstance = this;
                 }
             }
             else
@@ -925,11 +1077,25 @@ namespace Unity.Netcode.RuntimeTests
             }
             if (HasSubChild && IsSubChild())
             {
-                ClientSubChildInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+                if (!ClientSubChildInstances.ContainsKey(NetworkManager.LocalClientId))
+                {
+                    ClientSubChildInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+                }
+                else
+                {
+                    ClientSubChildInstances[NetworkManager.LocalClientId] = NetworkObject;
+                }
             }
             else
             {
-                ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+                if (!ClientInstances.ContainsKey(NetworkManager.LocalClientId))
+                {
+                    ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+                }
+                else
+                {
+                    ClientInstances[NetworkManager.LocalClientId] = NetworkObject;
+                }
             }
         }
 
