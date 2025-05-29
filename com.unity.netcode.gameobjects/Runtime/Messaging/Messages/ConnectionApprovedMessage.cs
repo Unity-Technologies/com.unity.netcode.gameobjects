@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -333,7 +332,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogInfo($"[Client-{OwnerClientId}][Scene Management Disabled] Synchronization complete!");
                 }
-
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(OwnerClientId);
 
@@ -376,7 +374,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-
             ConnectedClientIds.Dispose();
         }
     }
