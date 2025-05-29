@@ -1094,8 +1094,8 @@ namespace Unity.Netcode
                         if (networkVariable.CanSend())
                         {
                             shouldSend = true;
+                            break;
                         }
-                        break;
                     }
                 }
                 // All of this is just to prevent the DA Host from re-sending a NetworkVariable update it received from the client owner
