@@ -31,9 +31,9 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            if (ShouldSynchronize && networkManager.NetworkConfig.EnableSceneManagement && networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
+            if (ShouldSynchronize && networkManager.NetworkConfig.EnableSceneManagement && networkManager.DistributedAuthorityMode && !networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner)
             {
-                // networkManager.SceneManager.SynchronizeNetworkObjects(ClientId);
+                networkManager.SceneManager.SynchronizeNetworkObjects(ClientId);
             }
             else
             {

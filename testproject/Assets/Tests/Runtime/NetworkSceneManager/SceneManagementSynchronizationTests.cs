@@ -192,14 +192,28 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoiningClient_PeerCallbacks()
         {
-            SetManagerToTest(GetNonAuthorityNetworkManager());
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            var expectedClientId = nonAuthority.LocalClientId + 1;
+            SetManagerToTest(nonAuthority);
             // Setup expected events
+            if (m_UseCmbService)
+            {
+                m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
+                {
+                    SceneEvent = new SceneEvent()
+                    {
+                        SceneEventType = SceneEventType.SynchronizeComplete,
+                        ClientId = expectedClientId,
+                    },
+                });
+            }
+
             m_ExpectedEventQueue.Enqueue(new ExpectedEvent()
             {
                 ConnectionEvent = new ConnectionEventData()
                 {
                     EventType = ConnectionEvent.PeerConnected,
-                    ClientId = m_ManagerToTest.LocalClientId + 1,
+                    ClientId = expectedClientId,
                 }
             });
 

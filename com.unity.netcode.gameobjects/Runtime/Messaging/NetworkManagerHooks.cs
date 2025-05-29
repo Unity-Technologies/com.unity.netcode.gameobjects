@@ -76,7 +76,6 @@ namespace Unity.Netcode
 
                 if (m_NetworkManager.ConnectedClients.TryGetValue(senderId, out NetworkClient connectedClient) && messageType == typeof(ConnectionRequestMessage))
                 {
-
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
                         var transportErrorMsg = GetTransportErrorMessage(messageContent, m_NetworkManager);
@@ -99,7 +98,8 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage) && !(m_NetworkManager.CMBServiceConnection && m_NetworkManager.LocalClient.IsSessionOwner))
+                if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage) &&
+                    !(m_NetworkManager.CMBServiceConnection && m_NetworkManager.LocalClient.IsSessionOwner && m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -251,7 +252,7 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo($"[Client-{OwnerClientId}] Connection approved! Synchronizing...");
             }
 
-            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner)
+            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement && networkManager.LocalClientId != OwnerClientId)
             {
                 networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
                 return;
@@ -332,6 +333,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogInfo($"[Client-{OwnerClientId}][Scene Management Disabled] Synchronization complete!");
                 }
+
                 // When scene management is disabled we notify after everything is synchronized
                 networkManager.ConnectionManager.InvokeOnClientConnectedCallback(OwnerClientId);
 
@@ -374,6 +376,7 @@ namespace Unity.Netcode
                     }
                 }
             }
+
             ConnectedClientIds.Dispose();
         }
     }

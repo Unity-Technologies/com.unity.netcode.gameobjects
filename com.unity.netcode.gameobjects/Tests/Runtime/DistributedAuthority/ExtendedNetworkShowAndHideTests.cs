@@ -6,12 +6,18 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.DAHost, true)]
-    [TestFixture(HostOrServer.DAHost, false)]
+    [TestFixture(HostOrServer.DAHost, Config.SceneManagementEnabled)]
+    [TestFixture(HostOrServer.DAHost, Config.SceneManagementDisabled)]
     public class ExtendedNetworkShowAndHideTests : NetcodeIntegrationTest
     {
+        public enum Config
+        {
+            SceneManagementEnabled,
+            SceneManagementDisabled,
+        }
+
         protected override int NumberOfClients => 3;
-        private bool m_EnableSceneManagement;
+        private readonly bool m_EnableSceneManagement;
         private GameObject m_ObjectToSpawn;
         private NetworkObject m_SpawnedObject;
         private NetworkManager m_ClientToHideFrom;
@@ -25,9 +31,9 @@ namespace Unity.Netcode.RuntimeTests
             return false;
         }
 
-        public ExtendedNetworkShowAndHideTests(HostOrServer hostOrServer, bool enableSceneManagement) : base(hostOrServer)
+        public ExtendedNetworkShowAndHideTests(HostOrServer hostOrServer, Config enableSceneManagement) : base(hostOrServer)
         {
-            m_EnableSceneManagement = enableSceneManagement;
+            m_EnableSceneManagement = enableSceneManagement == Config.SceneManagementEnabled;
         }
 
         protected override void OnServerAndClientsCreated()

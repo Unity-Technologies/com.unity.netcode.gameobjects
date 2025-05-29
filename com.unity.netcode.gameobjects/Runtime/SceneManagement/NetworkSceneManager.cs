@@ -2581,6 +2581,14 @@ namespace Unity.Netcode
                         // Mark this client as being connected
                         NetworkManager.ConnectedClients[clientId].IsConnected = true;
 
+                        // Notify that a client has finished synchronizing
+                        OnSceneEvent?.Invoke(new SceneEvent()
+                        {
+                            SceneEventType = sceneEventData.SceneEventType,
+                            ClientId = clientId
+                        });
+                        OnSynchronizeComplete?.Invoke(clientId);
+
                         // For non-authority clients in a distributed authority session, we show hidden objects,
                         // we distribute NetworkObjects, and then we end the scene event.
                         if (NetworkManager.DistributedAuthorityMode && !NetworkManager.LocalClient.IsSessionOwner)
@@ -2598,16 +2606,6 @@ namespace Unity.Netcode
                             EndSceneEvent(sceneEventId);
                             return;
                         }
-
-                        // All scenes are synchronized, let the server know we are done synchronizing
-
-                        // Notify the local server that a client has finished synchronizing
-                        OnSceneEvent?.Invoke(new SceneEvent()
-                        {
-                            SceneEventType = sceneEventData.SceneEventType,
-                            ClientId = clientId
-                        });
-                        OnSynchronizeComplete?.Invoke(clientId);
 
                         // At this time the client is fully synchronized with all loaded scenes and
                         // NetworkObjects and should be considered "fully connected". Send the
