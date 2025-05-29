@@ -799,7 +799,7 @@ namespace Unity.Netcode.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator NetworkShowWithChangeOwnershipTest()
+        public IEnumerator NetworkShowAndChangeOwnership()
         {
             var authority = GetAuthorityNetworkManager();
 
