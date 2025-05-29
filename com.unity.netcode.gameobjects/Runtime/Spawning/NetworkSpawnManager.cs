@@ -565,18 +565,6 @@ namespace Unity.Netcode
             }
 
             var size = 0;
-            var clientsToShow = new List<ulong>();
-            if (ClientsToShowObject.ContainsKey(networkObject))
-            {
-                clientsToShow = ClientsToShowObject[networkObject];
-            }
-            if (ObjectsToShowToClient.ContainsKey(clientId))
-            {
-                if (ObjectsToShowToClient[clientId].Contains(networkObject))
-                {
-                    clientsToShow.Add(clientId);
-                }
-            }
 
             if (NetworkManager.DistributedAuthorityMode)
             {
