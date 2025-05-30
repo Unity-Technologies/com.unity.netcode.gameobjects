@@ -2940,7 +2940,7 @@ namespace Unity.Netcode
 
                 if (HasInstantiationData)
                 {
-                    writer.WriteValueSafe(OwnerObject.InstantiationData.Length);
+                    BytePacker.WriteValuePacked(writer, OwnerObject.InstantiationData.Length);
                     writer.WriteBytesSafe(OwnerObject.InstantiationData);
                 }
 
