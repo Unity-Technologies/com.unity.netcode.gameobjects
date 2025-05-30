@@ -889,12 +889,12 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class TemplateNetworkBehaviourType<T> : NetworkBehaviour
     {
-        public NetworkVariable<T> TheVar;
+        public NetworkVariable<T> TheVar = new NetworkVariable<T>();
     }
 
     internal class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
     {
-        public NetworkVariable<T> TheVar2;
+        public NetworkVariable<T> TheVar2 = new NetworkVariable<T>();
     }
 #if !NGO_MINIMALPROJECT
     internal class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>

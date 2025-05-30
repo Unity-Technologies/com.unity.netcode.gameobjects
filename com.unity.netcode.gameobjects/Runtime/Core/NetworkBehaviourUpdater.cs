@@ -104,10 +104,14 @@ namespace Unity.Netcode
                         }
                     }
                 }
+
                 // Now, reset all the no-longer-dirty variables
-                foreach (var dirtyobj in m_DirtyNetworkObjects)
+                foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    dirtyobj.PostNetworkVariableWrite(forceSend);
+                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
+                    {
+                        behaviour.PostNetworkVariableWrite(forceSend);
+                    }
                 }
                 m_DirtyNetworkObjects.Clear();
             }
