@@ -627,7 +627,8 @@ namespace Unity.Netcode
                     {
                         if (client.Key != client.Value.ClientId)
                         {
-                            throw new Exception($"Client key {client.Key} does not match the Client Id {client.Value.ClientId}");
+                            NetworkLog.LogError($"[Client-{client.Key}] Client key ({client.Key}) does not match the {nameof(NetworkClient)} client Id {client.Value.ClientId}! Client-{client.Key} will not receive ownership changed message!");
+                            continue;
                         }
                         size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
                         NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
