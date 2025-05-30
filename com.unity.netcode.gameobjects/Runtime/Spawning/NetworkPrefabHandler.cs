@@ -292,8 +292,9 @@ namespace Unity.Netcode
             }
 
             fastBufferReader.ReadValueSafe(out int dataSize);
-            var dataReader = new FastBufferReader(fastBufferReader, Collections.Allocator.Temp, dataSize, fastBufferReader.Position);
-            fastBufferReader.Seek(dataSize);
+            var position = fastBufferReader.Position;
+            var dataReader = new FastBufferReader(fastBufferReader, Collections.Allocator.Temp, dataSize, position);
+            fastBufferReader.Seek(position + dataSize);
             return dataReader;
         }
 
