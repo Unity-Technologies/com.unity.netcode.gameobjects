@@ -16,6 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     internal class NetworkTransformNonAuthorityTests : IntegrationTestWithApproximation
     {
         private const int k_NumberOfPasses = 3;
+        private const float k_LerpTime = 0.1f;
         protected override int NumberOfClients => 2;
 
         private StringBuilder m_ErrorMsg = new StringBuilder();
@@ -26,40 +27,160 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkTransformNonAuthorityTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+        /// <summary>
+        /// The NetworkTransform testing component used for this test
+        /// </summary>
         public class NetworkTransformTestComponent : NetworkTransform, INetworkUpdateSystem
         {
-            public static NetworkTransformTestComponent AuthorityInstance { get; private set; }
+            public static NetworkTransformTestComponent AuthorityInstance;
             public static readonly List<NetworkTransformTestComponent> AllInstances = new List<NetworkTransformTestComponent>();
 
-            public void SetDirValues(Vector3 positionMotion = default, Vector3 rotationMotion = default,
-                Vector3 scaleMotion = default, bool shouldMove = false)
+            public static bool VerboseDebug;
+
+            public static void Reset()
+            {
+                AllInstances.Clear();
+            }
+
+            /// <summary>
+            /// All of the below bools are set when the non-synchronized axis
+            /// have reached their target values.
+            /// </summary>
+            public bool NonSynchronizedPositionReached { get; private set; }
+            public bool NonSynchronizedRotationReached { get; private set; }
+            public bool NonSynchronizedScaleReached { get; private set; }
+
+            private bool m_UpdateNonSynchronizedAxis;
+            private float m_StartMotionTime;
+            private float m_Lerp;
+
+            /// <summary>
+            /// The below <see cref="Vector3"/> properties are used to
+            /// lerp from the current non-synchronized axis values to
+            /// the target non-synchronized axis values.
+            /// </summary>
+            private Vector3 m_OriginalPosition;
+            private Vector3 m_OriginalRotation;
+            private Vector3 m_OriginalScale;
+
+            /// <summary>
+            /// The below <see cref="Vector3"/> properties are the
+            /// target non-synchronized axis values.
+            /// </summary>
+            private Vector3 m_TargetPosition;
+            private Vector3 m_TargetRotation;
+            private Vector3 m_TargetScale;
+
+            private void Log(string msg)
+            {
+                if (!VerboseDebug)
+                {
+                    return;
+                }
+                Debug.Log(msg);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private bool Approximately(Vector3 a, Vector3 b, float deltaVariance = 0.0001f)
+            {
+                return System.Math.Round(Mathf.Abs(a.x - b.x), 4) <= deltaVariance &&
+                    System.Math.Round(Mathf.Abs(a.y - b.y), 4) <= deltaVariance &&
+                    System.Math.Round(Mathf.Abs(a.z - b.z), 4) <= deltaVariance;
+            }
+
+            /// <summary>
+            /// For debugging
+            /// </summary>
+            public void GetUnSynchronizedTargetInfo(StringBuilder builder)
+            {
+                if (!NonSynchronizedPositionReached)
+                {
+                    builder.Append($"[Position] Current: {GetNonSynchronizedPosition(transform.position)} | Target: {m_TargetPosition}");
+                }
+                if (!NonSynchronizedRotationReached)
+                {
+                    builder.Append($"[Rotation] Current: {GetNonSynchronizedRotation(transform.rotation.eulerAngles)} | Target: {m_TargetRotation}");
+                }
+                if (!NonSynchronizedScaleReached)
+                {
+                    builder.Append($"[Scale] Current: {GetNonSynchronizedScale(transform.localScale)} | Target: {m_TargetScale}");
+                }
+
+                builder.Append("\n");
+            }
+
+            public void ShouldMove(bool shouldMove = false)
             {
                 m_UpdateNonSynchronizedAxis = shouldMove;
                 if (m_UpdateNonSynchronizedAxis)
                 {
-                    m_PositionDir = GetSynchronizedPosition(positionMotion);
-                    m_RotationDir = GetSynchronizedRotation(rotationMotion);
-                    m_ScaleDir = GetSynchronizedScale(scaleMotion);
-                    m_TargetPosition = GetSynchronizedPosition(m_PositionDir + transform.position);
-                    var quat = Quaternion.identity;
-                    quat = transform.rotation;
-                    quat.eulerAngles = GetSynchronizedRotation(m_RotationDir + transform.rotation.eulerAngles);
-                    m_TargetRotation = quat.eulerAngles;
-                    m_TargetScale = GetSynchronizedScale(m_ScaleDir + transform.localScale);
-                    NonSynchronizedPositionReached = false;
-                    NonSynchronizedRotationReached = false;
-                    NonSynchronizedScaleReached = false;
-
-                    m_PosMag = 1.0f / m_TargetPosition.magnitude;
-                    m_RotMag = 1.0f / m_TargetRotation.magnitude;
-                    m_ScaleMag = 1.0f / m_TargetScale.magnitude;
+                    m_StartMotionTime = Time.realtimeSinceStartup;
+                    m_Lerp = 0.0f;
                 }
             }
 
-            private float m_PosMag;
-            private float m_RotMag;
-            private float m_ScaleMag;
+            public bool HasCompletedMotion()
+            {
+                return NonSynchronizedPositionReached && NonSynchronizedRotationReached && NonSynchronizedScaleReached;
+            }
 
+            #region Generate Random Non-Synchronized Axis Values
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private float GenerateRandom(float range)
+            {
+                var random = Random.Range(-range, range);
+                var negMult = random < 0 ? -1 : 1;
+                random = Mathf.Clamp(Mathf.Abs(random), range * 0.10f, range) * negMult;
+                return random;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector3 SetRandomNonSynchPosition(float range)
+            {
+                SetNonSynchPositionTarget(GetNonSynchronizedPosition(Vector3.one) * GenerateRandom(range));
+                return m_TargetPosition;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void SetNonSynchPositionTarget(Vector3 target)
+            {
+                m_OriginalPosition = GetNonSynchronizedPosition(transform.position);
+                m_TargetPosition = GetNonSynchronizedPosition(target);
+                NonSynchronizedPositionReached = false;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector3 SetRandomNonSynchRotation(float range)
+            {
+                m_OriginalRotation = GetNonSynchronizedRotation(transform.rotation.eulerAngles);
+                SetNonSynchRotationTarget(GetNonSynchronizedRotation(Vector3.one) * GenerateRandom(range));
+                return m_TargetRotation;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void SetNonSynchRotationTarget(Vector3 target)
+            {
+                m_TargetRotation = GetNonSynchronizedRotation(target);
+                NonSynchronizedRotationReached = false;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Vector3 SetRandomNonSynchScale(float range)
+            {
+                SetNonSynchScaleTarget(GetNonSynchronizedScale(Vector3.one) * GenerateRandom(range));
+                return m_TargetScale;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void SetNonSynchScaleTarget(Vector3 target)
+            {
+                m_OriginalScale = GetNonSynchronizedScale(transform.localScale);
+                m_TargetScale = target;
+                NonSynchronizedScaleReached = false;
+            }
+            #endregion
+
+            #region Update Synchronized Axis Values
             public Vector3 MovePosition(Vector3 position)
             {
                 if (!CanCommitToTransform)
@@ -67,7 +188,7 @@ namespace Unity.Netcode.RuntimeTests
                     return Vector3.zero;
                 }
 
-                transform.position += GetSynchronizedPosition(position, false);
+                transform.position += GetSynchronizedPosition(position);
                 return transform.position;
             }
 
@@ -78,7 +199,7 @@ namespace Unity.Netcode.RuntimeTests
                     return Vector3.zero;
                 }
                 var rotation = transform.rotation;
-                rotation.eulerAngles += GetSynchronizedRotation(eulerAngles, false);
+                rotation.eulerAngles += GetSynchronizedRotation(eulerAngles);
                 transform.rotation = rotation;
                 return rotation.eulerAngles;
             }
@@ -90,197 +211,253 @@ namespace Unity.Netcode.RuntimeTests
                     return Vector3.zero;
                 }
 
-                transform.localScale += GetSynchronizedScale(scale, false);
+                transform.localScale += GetSynchronizedScale(scale);
                 return transform.localScale;
             }
+            #endregion
 
-            public bool NonSynchronizedPositionReached { get; private set; }
-            public bool NonSynchronizedRotationReached { get; private set; }
-            public bool NonSynchronizedScaleReached { get; private set; }
+            #region Methods to Get Synchronized and Non-Synchronized Values
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetSynchronizedPosition(Vector3 position)
+            {
+                position.x *= SyncPositionX ? 1 : 0;
+                position.y *= SyncPositionY ? 1 : 0;
+                position.z *= SyncPositionZ ? 1 : 0;
+                return position;
+            }
 
-            private bool m_UpdateNonSynchronizedAxis;
-            private Vector3 m_PositionDir;
-            private Vector3 m_RotationDir;
-            private Vector3 m_ScaleDir;
-            private Vector3 m_TargetPosition;
-            private Vector3 m_TargetRotation;
-            private Vector3 m_TargetScale;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetNonSynchronizedPosition(Vector3 position)
+            {
+                position.x *= !SyncPositionX ? 1 : 0;
+                position.y *= !SyncPositionY ? 1 : 0;
+                position.z *= !SyncPositionZ ? 1 : 0;
+                return position;
+            }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetSynchronizedRotation(Vector3 rotation)
+            {
+                rotation.x *= SyncRotAngleX ? 1 : 0;
+                rotation.y *= SyncRotAngleY ? 1 : 0;
+                rotation.z *= SyncRotAngleZ ? 1 : 0;
+                return rotation;
+            }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetNonSynchronizedRotation(Vector3 rotation)
+            {
+
+                rotation.x *= !SyncRotAngleX ? 1 : 0;
+                rotation.y *= !SyncRotAngleY ? 1 : 0;
+                rotation.z *= !SyncRotAngleZ ? 1 : 0;
+
+                return rotation;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetSynchronizedScale(Vector3 scale)
+            {
+                scale.x *= SyncScaleX ? 1 : 0;
+                scale.y *= SyncScaleY ? 1 : 0;
+                scale.z *= SyncScaleZ ? 1 : 0;
+                return scale;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private Vector3 GetNonSynchronizedScale(Vector3 scale, bool invert = false)
+            {
+                scale.x *= !SyncScaleX ? 1 : 0;
+                scale.y *= !SyncScaleY ? 1 : 0;
+                scale.z *= !SyncScaleZ ? 1 : 0;
+                return scale;
+            }
+            #endregion
+
+            #region Spawn, Despawn, and Update Methods
             public override void OnNetworkSpawn()
             {
                 base.OnNetworkSpawn();
 
                 if (CanCommitToTransform)
                 {
-                    NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
-                    AuthorityInstance = this;
+                    NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
                 }
                 AllInstances.Add(this);
             }
 
             public override void OnNetworkDespawn()
             {
-                NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
+                NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
                 base.OnNetworkDespawn();
             }
 
             public void NetworkUpdate(NetworkUpdateStage updateStage)
             {
-                MoveObjectLocally();
-            }
-
-            private Vector3 GetSynchronizedPosition(Vector3 position, bool invert = true)
-            {
-                if (invert)
+                if (updateStage == NetworkUpdateStage.PreUpdate)
                 {
-                    position.x *= !SyncPositionX ? 1 : 0;
-                    position.y *= !SyncPositionY ? 1 : 0;
-                    position.z *= !SyncPositionZ ? 1 : 0;
-                }
-                else
-                {
-                    position.x *= SyncPositionX ? 1 : 0;
-                    position.y *= SyncPositionY ? 1 : 0;
-                    position.z *= SyncPositionZ ? 1 : 0;
-                }
-                return position;
-            }
-
-            private Vector3 GetSynchronizedRotation(Vector3 rotation, bool invert = true)
-            {
-                if (invert)
-                {
-                    rotation.x *= !SyncRotAngleX ? 1 : 0;
-                    rotation.y *= !SyncRotAngleY ? 1 : 0;
-                    rotation.z *= !SyncRotAngleZ ? 1 : 0;
-                }
-                else
-                {
-                    rotation.x *= SyncRotAngleX ? 1 : 0;
-                    rotation.y *= SyncRotAngleY ? 1 : 0;
-                    rotation.z *= SyncRotAngleZ ? 1 : 0;
-                }
-                return rotation;
-            }
-
-            private Vector3 GetSynchronizedScale(Vector3 scale, bool invert = true)
-            {
-                if (invert)
-                {
-                    scale.x *= !SyncScaleX ? 1 : 0;
-                    scale.y *= !SyncScaleY ? 1 : 0;
-                    scale.z *= !SyncScaleZ ? 1 : 0;
-                }
-                else
-                {
-                    scale.x *= SyncScaleX ? 1 : 0;
-                    scale.y *= SyncScaleY ? 1 : 0;
-                    scale.z *= SyncScaleZ ? 1 : 0;
-                }
-                return scale;
-            }
-
-            public bool HasCompletedMotion()
-            {
-                return NonSynchronizedPositionReached && NonSynchronizedRotationReached && NonSynchronizedScaleReached;
-            }
-
-            public void GetUnSynchronizedTargetInfo(StringBuilder builder)
-            {
-                if (!NonSynchronizedPositionReached)
-                {
-                    builder.Append($"[Position] Current: {GetSynchronizedPosition(transform.position)} | Target: {m_TargetPosition}");
-                }
-                if (!NonSynchronizedRotationReached)
-                {
-                    builder.Append($"[Rotation] Current: {GetSynchronizedRotation(transform.rotation.eulerAngles)} | Target: {m_TargetRotation}");
-                }
-                if (!NonSynchronizedScaleReached)
-                {
-                    builder.Append($"[Scale] Current: {GetSynchronizedScale(transform.localScale)} | Target: {m_TargetScale}");
-                }
-
-                builder.Append("\n");
-            }
-
-            private void MoveObjectLocally()
-            {
-                if (!m_UpdateNonSynchronizedAxis || HasCompletedMotion())
-                {
-                    return;
-                }
-                if (!NonSynchronizedPositionReached)
-                {
-                    var lerpAmount = Mathf.Clamp(1.0f - (Vector3.Distance(transform.position, m_TargetPosition) * m_PosMag), 0.25f, 1.0f);
-                    transform.position = Vector3.Lerp(transform.position, m_TargetPosition, lerpAmount);
-                    NonSynchronizedPositionReached = Approximately(GetSynchronizedPosition(transform.position), GetSynchronizedPosition(m_TargetPosition));
-                }
-
-                if (!NonSynchronizedRotationReached)
-                {
-                    var rotation = transform.rotation;
-                    var eulerRotation = rotation.eulerAngles;
-                    var lerpAmount = Mathf.Clamp(1.0f - (Vector3.Distance(eulerRotation, m_TargetRotation) * m_RotMag), 0.25f, 1.0f);
-                    eulerRotation = Vector3.Lerp(eulerRotation, m_TargetRotation, lerpAmount);
-                    rotation.eulerAngles = eulerRotation;
-                    transform.rotation = rotation;
-                    NonSynchronizedRotationReached = Approximately(GetSynchronizedRotation(transform.rotation.eulerAngles), m_TargetRotation);
-                }
-
-                if (!NonSynchronizedScaleReached)
-                {
-                    var lerpFactor = Vector3.Distance(transform.localScale, m_TargetScale);
-                    var lerpAmount = Mathf.Clamp(1.0f - (Vector3.Distance(transform.localScale, m_TargetScale) * m_ScaleMag), 0.25f, 1.0f);
-                    transform.localScale = Vector3.Lerp(transform.localScale, m_TargetScale, lerpAmount);
-                    NonSynchronizedScaleReached = Approximately(GetSynchronizedScale(transform.localScale), m_TargetScale);
+                    UpdateNonSynchronizedAxis();
                 }
             }
 
             public override void OnUpdate()
             {
+                UpdateNonSynchronizedAxis();
                 base.OnUpdate();
-
-                MoveObjectLocally();
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            protected bool Approximately(Vector3 a, Vector3 b)
+            /// <summary>
+            /// Updates the non-synchronized axis values
+            /// </summary>
+            private void UpdateNonSynchronizedAxis()
             {
-                var deltaVariance = 0.01f;
-                return System.Math.Round(Mathf.Abs(a.x - b.x), 2) <= deltaVariance &&
-                    System.Math.Round(Mathf.Abs(a.y - b.y), 2) <= deltaVariance &&
-                    System.Math.Round(Mathf.Abs(a.z - b.z), 2) <= deltaVariance;
+                if (!m_UpdateNonSynchronizedAxis || HasCompletedMotion())
+                {
+                    return;
+                }
+
+                // Calculate the lerp factor based on when we started motion vs the time to
+                // finish lerping.
+                var lerpComplete = m_Lerp >= 1.0f;
+                if (!lerpComplete)
+                {
+                    var deltaTime = Time.realtimeSinceStartup - m_StartMotionTime;
+                    if (deltaTime > 0.0f)
+                    {
+                        m_Lerp = Mathf.Clamp(deltaTime / k_LerpTime, 0.001f, 1.0f);
+                    }
+                }
+
+                // Handle non-synchronized position axis updates
+                if (!NonSynchronizedPositionReached)
+                {
+                    m_OriginalPosition = Vector3.Lerp(m_OriginalPosition, m_TargetPosition, m_Lerp);
+                    // Get the sum of the synchronized value with the lerped un-synchronized value and apply the new position.
+                    transform.position = GetSynchronizedPosition(transform.position) + m_OriginalPosition;
+                    NonSynchronizedPositionReached = Approximately(m_OriginalPosition, m_TargetPosition);
+                    if (NonSynchronizedPositionReached || lerpComplete)
+                    {
+                        Log($"[{name}][Position] Current: {transform.position} | Current-NonSync: {GetNonSynchronizedPosition(transform.position)} | Original: {m_OriginalPosition} Target: {m_TargetPosition}");
+                    }
+                }
+
+                // Handle non-synchronized rotation axis updates
+                if (!NonSynchronizedRotationReached)
+                {
+                    var rotation = transform.rotation;
+                    m_OriginalRotation = Vector3.Lerp(m_OriginalRotation, m_TargetRotation, m_Lerp);
+                    rotation.eulerAngles = GetSynchronizedRotation(rotation.eulerAngles) + m_OriginalRotation;
+                    transform.rotation = rotation;
+                    NonSynchronizedRotationReached = Approximately(m_OriginalRotation, m_TargetRotation);
+                    if (NonSynchronizedRotationReached || lerpComplete)
+                    {
+                        Log($"[{name}][Rotation] Current: {transform.rotation.eulerAngles} | Current-NonSync: {GetNonSynchronizedRotation(transform.rotation.eulerAngles)} | Target: {m_TargetRotation}");
+                    }
+                }
+
+                // Handle non-synchronized scale axis updates
+                if (!NonSynchronizedScaleReached)
+                {
+                    m_OriginalScale = Vector3.Lerp(m_OriginalScale, m_TargetScale, m_Lerp);
+                    transform.localScale = GetSynchronizedScale(transform.localScale) + m_OriginalScale;
+                    NonSynchronizedScaleReached = Approximately(m_OriginalScale, m_TargetScale);
+                    if (NonSynchronizedScaleReached || lerpComplete)
+                    {
+                        Log($"[{name}][Scale] Current: {transform.localScale} | Current-NonSync: {GetNonSynchronizedScale(transform.localScale)} | Target: {m_TargetScale}");
+                    }
+                }
             }
+            #endregion
+        }
+
+        protected override IEnumerator OnSetup()
+        {
+            NetworkTransformTestComponent.Reset();
+            return base.OnSetup();
+        }
+
+        /// <summary>
+        /// All of the below versions of <see cref="ShouldSyncAxis"/>
+        /// assure that at least 1 axis is disabled and/or 1 axis is enabled
+        /// </summary>
+        /// <returns></returns>
+        private bool ShouldSyncAxis()
+        {
+            return ShouldSyncAxis(true, true, false);
+        }
+
+        private bool ShouldSyncAxis(bool first)
+        {
+            return ShouldSyncAxis(first, true, false);
+        }
+
+        private bool ShouldSyncAxis(bool first, bool second, bool lastValue)
+        {
+            // Increase chances to not synchronize based on previous values
+            var start = 0;
+            if (first)
+            {
+                start += 20;
+            }
+            if (second)
+            {
+                start += 30;
+            }
+
+            // If we are on the last axis value, then
+            // we want to check for the previous two
+            // being both enabled or disabled in order
+            // to assure there is at least one axis that
+            // is enabled and at least one axis that is
+            // disabled.
+            if (lastValue)
+            {
+                if (first && second)
+                {
+                    // If the previous two are enabled, then
+                    // make the last one disabled.
+                    return false;
+                }
+                else
+                if (!first && !second)
+                {
+                    // If both are disabled, then make the
+                    // last one enabled.
+                    return true;
+                }
+            }
+            return Random.Range(start, 100) >= 50 ? false : true;
         }
 
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("TestObject");
             var networkTransform = m_PrefabToSpawn.AddComponent<NetworkTransformTestComponent>();
-            networkTransform.SyncPositionX = true;
-            networkTransform.SyncPositionY = false;
-            networkTransform.SyncPositionZ = true;
-            
-            networkTransform.SyncRotAngleX = true;
-            networkTransform.SyncRotAngleY = false;
-            networkTransform.SyncRotAngleZ = false;
 
-            networkTransform.SyncScaleX = false;
-            networkTransform.SyncScaleY = true;
-            networkTransform.SyncScaleZ = false;
-
+            // Randomly select one or more axis to disable
+            networkTransform.SyncPositionX = ShouldSyncAxis();
+            networkTransform.SyncPositionY = ShouldSyncAxis(networkTransform.SyncPositionX);
+            networkTransform.SyncPositionZ = ShouldSyncAxis(networkTransform.SyncPositionX, networkTransform.SyncPositionY, true);
+            networkTransform.SyncRotAngleX = ShouldSyncAxis();
+            networkTransform.SyncRotAngleY = ShouldSyncAxis(networkTransform.SyncRotAngleX);
+            networkTransform.SyncRotAngleZ = ShouldSyncAxis(networkTransform.SyncRotAngleX, networkTransform.SyncRotAngleY, true);
+            networkTransform.SyncScaleX = ShouldSyncAxis();
+            networkTransform.SyncScaleY = ShouldSyncAxis(networkTransform.SyncScaleX);
+            networkTransform.SyncScaleZ = ShouldSyncAxis(networkTransform.SyncScaleX, networkTransform.SyncScaleY, true);
             base.OnServerAndClientsCreated();
         }
 
+        /// <summary>
+        /// Conditional to verify that all spawned instances' transform values match
+        /// </summary>
         private bool AllTransformsAreApproximatelyTheSame()
         {
             m_ErrorMsg.Clear();
-            var authorityInstance = NetworkTransformTestComponent.AuthorityInstance;
+            var authorityInstance = m_AuthorityInstance.GetComponent<NetworkTransformTestComponent>();
 
             foreach (var instance in NetworkTransformTestComponent.AllInstances)
             {
-                if (instance ==  authorityInstance)
+                if (instance == authorityInstance)
                 {
                     continue;
                 }
@@ -303,6 +480,10 @@ namespace Unity.Netcode.RuntimeTests
             return m_ErrorMsg.Length == 0;
         }
 
+        /// <summary>
+        /// Conditional to verify that all spawned instances' finished their local
+        /// non-synchronized axis motion.
+        /// </summary>
         private bool AllNonSynchronizedMotionCompleted()
         {
             m_ErrorMsg.Clear();
@@ -317,9 +498,12 @@ namespace Unity.Netcode.RuntimeTests
             return m_ErrorMsg.Length == 0;
         }
 
+        /// <summary>
+        /// Conditional to verify that all clients have spawned an instance of the test object.
+        /// </summary>
         private bool AllClientsSpawnedObject()
         {
-            foreach(var networkManager in m_NetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_AuthorityInstance.NetworkObjectId))
                 {
@@ -329,138 +513,78 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Validates that a non-authority instances can apply changes to any non-synchronized
+        /// axis value when using a NetworkTransform.
+        /// </summary>
         [UnityTest]
         public IEnumerator NonAuthorityUpdateNonSynchronizedAxis()
         {
             var authority = GetNonAuthorityNetworkManager();
             m_AuthorityInstance = SpawnObject(m_PrefabToSpawn, authority).GetComponent<NetworkObject>();
+            NetworkTransformTestComponent.AuthorityInstance = m_AuthorityInstance.GetComponent<NetworkTransformTestComponent>();
             yield return WaitForConditionOrTimeOut(AllClientsSpawnedObject);
             AssertOnTimeout($"All clients did not spawn {m_AuthorityInstance.name}!");
 
-            for(int i = 0; i < k_NumberOfPasses; i++)
+            var authorityComponent = m_AuthorityInstance.GetComponent<NetworkTransformTestComponent>();
+            for (int i = 0; i < k_NumberOfPasses; i++)
             {
-                var positionDelta = GetRandomVector3(-4, 4);
-                var rotationDelta = GetRandomVector3(-20, 20);
-                var scaleDelta = GetRandomVector3(-2, 2);
-
+                // Start moving the authority on the axis being synchronized
                 var movePosition = NetworkTransformTestComponent.AuthorityInstance.MovePosition(GetRandomVector3(-4, 4));
                 var moveRotation = NetworkTransformTestComponent.AuthorityInstance.MoveRotation(GetRandomVector3(-20, 20));
                 var moveScale = NetworkTransformTestComponent.AuthorityInstance.MoveScale(GetRandomVector3(-2, 2));
 
+                // Set the non-synchronized axis delta on the authority and preserve each axis delta
+                // to be applied to all other non-authority instances.
+                var positionDelta = authorityComponent.SetRandomNonSynchPosition(4);
+                var rotationDelta = authorityComponent.SetRandomNonSynchRotation(20);
+                var scaleDelta = authorityComponent.SetRandomNonSynchScale(2);
+
+                var builder = new StringBuilder();
+                builder.AppendLine($"[Iteration-{i}]Final Expected Position: {movePosition + positionDelta} | Non-Synch: {positionDelta}");
+                VerboseDebug(builder.ToString());
                 foreach (var testTransform in NetworkTransformTestComponent.AllInstances)
                 {
-                    testTransform.SetDirValues(positionDelta, rotationDelta, scaleDelta, true);
+                    // We only need to start the authority instance moving
+                    // for the non-synchronized axis
+                    if (testTransform == authorityComponent)
+                    {
+                        testTransform.ShouldMove(true);
+                        continue;
+                    }
+                    // Apply the non-synchronized axis deltas to each cloned instance
+                    // and start the local motion.
+                    testTransform.SetNonSynchPositionTarget(positionDelta);
+                    testTransform.SetNonSynchRotationTarget(rotationDelta);
+                    testTransform.SetNonSynchScaleTarget(scaleDelta);
+                    testTransform.ShouldMove(true);
                 }
 
-                // Wait for all instances to finish their local controlled changes
+                // Wait for all instances to finish their local, non-synchronized, axis changes
                 yield return WaitForConditionOrTimeOut(AllNonSynchronizedMotionCompleted);
                 AssertOnTimeout($"[Iteration: {i}] Not all instances completed local motion! {m_ErrorMsg}");
 
-                // Wait for all instances' transforms to match
+                // Verify that upon completing motion, all instances' transforms match
                 yield return WaitForConditionOrTimeOut(AllTransformsAreApproximatelyTheSame);
+
+                // For debugging purposes
+                if (s_GlobalTimeoutHelper.HasTimedOut())
+                {
+                    builder.Clear();
+                    builder.AppendLine($"Final Expected Position: {movePosition + positionDelta}");
+                    builder.AppendLine($"Final Expected Rotation: {moveRotation + rotationDelta}");
+                    builder.AppendLine($"Final Expected Scale: {moveScale + scaleDelta}");
+                    foreach (var testTransform in NetworkTransformTestComponent.AllInstances)
+                    {
+                        builder.AppendLine($"[Client-{testTransform.NetworkManager.LocalClientId}] " +
+                            $"Position: {testTransform.transform.position}" +
+                            $"Rotation: {testTransform.transform.rotation.eulerAngles}" +
+                            $"Scale: {testTransform.transform.localScale}");
+                    }
+                    Debug.Log(builder.ToString());
+                }
                 AssertOnTimeout($"[Iteration: {i}] Not all instances' transforms match! {m_ErrorMsg}");
-
-                var builder = new StringBuilder();
-                builder.AppendLine($"Final Expected Position: {movePosition + positionDelta}");
-                foreach (var testTransform in NetworkTransformTestComponent.AllInstances)
-                {
-                    builder.AppendLine($"[Client-{testTransform.NetworkManager.LocalClientId}] Position: {testTransform.transform.position}");
-                }
-                Debug.Log(builder.ToString());
             }
-        }
-
-        private GameObject m_OwnershipObject;
-        private NetworkObject m_OwnershipNetworkObject;
-        private bool AllObjectsSpawnedOnClients()
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool ObjectHiddenOnNonAuthorityClients()
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                if (networkManager.LocalClientId == m_OwnershipNetworkObject.OwnerClientId)
-                {
-                    continue;
-                }
-                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        [UnityTest]
-        public IEnumerator NetworkShowWithChangeOwnershipTest()
-        {
-            var authority = GetAuthorityNetworkManager();
-
-            m_OwnershipObject = SpawnObject(m_PrefabToSpawn, authority);
-            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
-
-            yield return WaitForConditionOrTimeOut(AllObjectsSpawnedOnClients);
-            AssertOnTimeout("Timed out waiting for all clients to spawn the ownership object!");
-
-            VerboseDebug($"Hiding object {m_OwnershipNetworkObject.NetworkObjectId} on all clients");
-            foreach (var client in m_NetworkManagers)
-            {
-                if (client == authority)
-                {
-                    continue;
-                }
-                m_OwnershipNetworkObject.NetworkHide(client.LocalClientId);
-            }
-
-            yield return WaitForConditionOrTimeOut(ObjectHiddenOnNonAuthorityClients);
-            AssertOnTimeout("Timed out waiting for all clients to hide the ownership object!");
-
-            m_NewOwner = GetNonAuthorityNetworkManager();
-            Assert.AreNotEqual(m_OwnershipNetworkObject.OwnerClientId, m_NewOwner.LocalClientId, $"Client-{m_NewOwner.LocalClientId} should not have ownership of object {m_OwnershipNetworkObject.NetworkObjectId}!");
-            Assert.False(m_NewOwner.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId), $"Client-{m_NewOwner.LocalClientId} should not have object {m_OwnershipNetworkObject.NetworkObjectId} spawned!");
-
-            // Run NetworkShow and ChangeOwnership directly after one-another
-            VerboseDebug($"Calling {nameof(NetworkObject.NetworkShow)} on object {m_OwnershipNetworkObject.NetworkObjectId} for client {m_NewOwner.LocalClientId}");
-            m_OwnershipNetworkObject.NetworkShow(m_NewOwner.LocalClientId);
-            VerboseDebug($"Calling {nameof(NetworkObject.ChangeOwnership)} on object {m_OwnershipNetworkObject.NetworkObjectId} for client {m_NewOwner.LocalClientId}");
-            m_OwnershipNetworkObject.ChangeOwnership(m_NewOwner.LocalClientId);
-            m_ObjectId = m_OwnershipNetworkObject.NetworkObjectId;
-            yield return WaitForConditionOrTimeOut(OwnershipHasChanged);
-            AssertOnTimeout($"Timed out waiting for clients-{m_NewOwner.LocalClientId} to gain ownership of object {m_OwnershipNetworkObject.NetworkObjectId}!");
-            VerboseDebug($"Client {m_NewOwner.LocalClientId} now owns object {m_OwnershipNetworkObject.NetworkObjectId}!");
-        }
-
-        private NetworkManager m_NewOwner;
-
-        private bool OwnershipHasChanged()
-        {
-            if (!m_NewOwner.SpawnManager.SpawnedObjects.ContainsKey(m_ObjectId))
-            {
-                return false;
-            }
-            return m_NewOwner.SpawnManager.SpawnedObjects[m_ObjectId].OwnerClientId == m_NewOwner.LocalClientId;
-        }
-
-        private ulong m_ObjectId;
-        private bool ObjectDespawned()
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_ObjectId))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }
