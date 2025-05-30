@@ -625,7 +625,6 @@ namespace Unity.Netcode
                     }
                     if (networkObject.IsNetworkVisibleTo(client.Value.ClientId))
                     {
-                        Debug.Log($"[ChangeOwnership] Sending change ownership message to Client-{client.Key}");
                         if (client.Key != client.Value.ClientId)
                         {
                             throw new Exception($"Client key {client.Key} does not match the Client Id {client.Value.ClientId}");
