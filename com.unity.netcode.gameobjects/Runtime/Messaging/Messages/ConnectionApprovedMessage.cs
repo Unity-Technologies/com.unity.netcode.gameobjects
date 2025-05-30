@@ -247,14 +247,21 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
-            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement && networkManager.LocalClientId != OwnerClientId)
+            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                if (networkManager.LocalClientId != OwnerClientId)
                 {
-                    NetworkLog.LogInfo($"[Session Owner] Received connection approved for Client-{OwnerClientId}! Synchronizing...");
-                }
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"[Session Owner] Received connection approved for Client-{OwnerClientId}! Synchronizing...");
+                    }
 
-                networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
+                    networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
+                }
+                else
+                {
+                    NetworkLog.LogWarning($"[Client-{OwnerClientId}] Receiving duplicate connection approved. Client is already connected!");
+                }
                 return;
             }
 
