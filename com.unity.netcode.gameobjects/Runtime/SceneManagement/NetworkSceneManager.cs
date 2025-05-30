@@ -1071,6 +1071,18 @@ namespace Unity.Netcode
             var sceneEvent = SceneEventDataStore[sceneEventId];
             sceneEvent.SenderClientId = NetworkManager.LocalClientId;
 
+            // Send related message to the CMB service
+            if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection && HasSceneAuthority())
+            {
+                sceneEvent.TargetClientId = NetworkManager.ServerClientId;
+                var message = new SceneEventMessage
+                {
+                    EventData = sceneEvent,
+                };
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+                NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
+            }
+
             // Send to each individual client to assure only the in-scene placed NetworkObjects being observed by the client
             // is serialized
             foreach (var clientId in targetClientIds)
