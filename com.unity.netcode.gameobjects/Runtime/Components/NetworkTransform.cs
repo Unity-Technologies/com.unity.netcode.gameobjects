@@ -2537,7 +2537,7 @@ namespace Unity.Netcode.Components
             adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
             adjustedRotation.eulerAngles = adjustedRotAngles;
 
-            
+
             var adjustedScale = m_InternalCurrentScale;
             var currentScale = GetScale();
             adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
