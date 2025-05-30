@@ -1925,6 +1925,10 @@ namespace Unity.Netcode
         /// when many clients attempt to connect at the same time they will be
         /// handled sequentially so as to not saturate the session owner's maximum
         /// reliable messages.
+        /// DANGO-TODO: Get clients to track their synchronization status (if they haven't finished synchronizing)
+        ///     - pending clients can listen to SessionOwnerChanged messages
+        ///     - If the session owner changes, fire "some sort of event" to the service
+        ///     - service can fire ConnectionApproved at new session owner
         /// </summary>
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
@@ -2529,27 +2533,29 @@ namespace Unity.Netcode
                         {
                             // Remove the client that just synchronized
                             ClientConnectionQueue.Remove(clientId);
-
-                            // If we have pending clients to synchronize, then make sure they are still connected
-                            while (ClientConnectionQueue.Count > 0)
-                            {
-                                // If the next client is no longer connected then remove it from the list
-                                if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
-                                {
-                                    ClientConnectionQueue.RemoveAt(0);
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                            }
+                            // Debug.Log($"Remove client-{clientId} from synchronization queue.");
+                            //
+                            // // If we have pending clients to synchronize, then make sure they are still connected
+                            // while (ClientConnectionQueue.Count > 0)
+                            // {
+                            //     // If the next client is no longer connected then remove it from the list
+                            //     if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
+                            //     {
+                            //         Debug.Log($"Remove client-{clientId} from synchronization queue as they are no longer connected.");
+                            //         ClientConnectionQueue.RemoveAt(0);
+                            //     }
+                            //     else
+                            //     {
+                            //         break;
+                            //     }
+                            // }
 
                             // If we still have any pending clients waiting, then synchronize the next one
                             if (ClientConnectionQueue.Count > 0)
                             {
                                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                                 {
-                                    Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
+                                    Debug.Log($"Synchronizing Deferred Client-{ClientConnectionQueue[0]}...");
                                 }
                                 SynchronizeNetworkObjects(ClientConnectionQueue[0]);
                             }
