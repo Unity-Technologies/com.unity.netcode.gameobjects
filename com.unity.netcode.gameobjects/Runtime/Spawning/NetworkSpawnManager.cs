@@ -807,22 +807,22 @@ namespace Unity.Netcode
                             break;
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
-                        {
-                            // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
-                            // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
-                            // but might want to use the same source network prefab as an in-scene placed NetworkObject.
-                            // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
-                            // spawning them so the original prefab placed is preserved and this is not needed)
-                            if (inScenePlacedWithNoSceneManagement)
                             {
-                                networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
+                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
+                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
+                                // but might want to use the same source network prefab as an in-scene placed NetworkObject.
+                                // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
+                                // spawning them so the original prefab placed is preserved and this is not needed)
+                                if (inScenePlacedWithNoSceneManagement)
+                                {
+                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
+                                }
+                                else
+                                {
+                                    networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                                }
+                                break;
                             }
-                            else
-                            {
-                                networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                            }
-                            break;
-                        }
                     }
                 }
 

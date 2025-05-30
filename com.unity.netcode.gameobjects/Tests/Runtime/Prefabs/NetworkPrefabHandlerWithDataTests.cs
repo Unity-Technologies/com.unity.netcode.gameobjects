@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -8,145 +9,108 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    internal class NetworkPrefabHandlerWithDataTests
+    internal class NetworkPrefabHandlerWithDataTests : NetcodeIntegrationTest
     {
-        private const int k_ClientCount = 4;
+        protected override int NumberOfClients => 4;
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
-        private uint m_ObjectId = 1;
+        private GameObject m_Prefab;
+        private PrefabInstanceHandlerWithData[] m_ClientHandlers;
 
-        private GameObject _prefab;
-        private NetworkManager server;
-        private NetworkManager[] clients;
-
-        private PrefabInstanceHandlerWithData[] clientHandlers;
-
-        [SetUp]
-        public void Setup()
+        protected override void OnServerAndClientsCreated()
         {
-            NetcodeIntegrationTestHelpers.Create(k_ClientCount, out server, out clients);
-            _prefab = CreateNetworkPrefab();
+            // Creates a network object prefab and registers it to all clients.
+            m_Prefab = CreateNetworkObjectPrefab(k_TestPrefabObjectName).gameObject;
+            var authority = GetAuthorityNetworkManager();
 
-            RegisterPrefab(server, out _);
-
-            clientHandlers = new PrefabInstanceHandlerWithData[clients.Length];
-            for (int i = 0; i < clients.Length; i++)
+            m_ClientHandlers = new PrefabInstanceHandlerWithData[NumberOfClients];
+            var idx = 0;
+            foreach (var manager in m_NetworkManagers)
             {
-                RegisterPrefab(clients[i], out clientHandlers[i]);
+                RegisterPrefabHandler(manager, out var handler);
+                if (manager != authority)
+                {
+                    m_ClientHandlers[idx] = handler;
+                    idx++;
+                }
             }
         }
 
-        [TearDown]
-        public void Teardown()
+        private PrefabInstanceHandlerWithData m_LateJoinPrefabHandler;
+        protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            foreach (var client in clients)
-            {
-                client.PrefabHandler.RemoveHandler(_prefab);
-                client.NetworkConfig.Prefabs.Remove(_prefab);
-                client.Shutdown();
-            }
+            // This will register all prefabs from the authority to the newly created client.
+            base.OnNewClientCreated(networkManager);
 
-            server.PrefabHandler.RemoveHandler(_prefab);
-            server.NetworkConfig.Prefabs.Remove(_prefab);
-            server.Shutdown();
-
-            UnityEngine.Object.DestroyImmediate(_prefab);
-            NetcodeIntegrationTestHelpers.Destroy();
+            RegisterPrefabHandler(networkManager, out var lateJoinPrefabHandler);
+            m_LateJoinPrefabHandler = lateJoinPrefabHandler;
         }
 
         [UnityTest]
         public IEnumerator InstantiationPayload_SyncsCorrectly()
         {
-            yield return StartAndWaitForClients();
             var data = new NetworkSerializableTest { Value = 12, Value2 = 3.14f };
+
             SpawnPrefabWithData(data);
-            yield return WaitForAllClientsToSync(data);
+
+            yield return WaitForConditionOrTimeOut(() => AllHandlersSynchronized(data));
+            AssertOnTimeout("Not all handlers synchronized");
         }
 
         [UnityTest]
         public IEnumerator InstantiationPayload_LateJoinersReceiveData()
         {
-            yield return StartAndWaitForClients();
             var data = new NetworkSerializableTest { Value = 42, Value2 = 2.71f };
             SpawnPrefabWithData(data);
 
-            // Disconnect and destroy one client to simulate late join
-            var lateJoiner = clients[0];
-            lateJoiner.Shutdown();
-            yield return null;
+            yield return WaitForConditionOrTimeOut(() => AllHandlersSynchronized(data));
+            AssertOnTimeout("Not all handlers synchronized");
 
-            var lateJoinerIndex = 0;
-            clients[lateJoinerIndex] = NetcodeIntegrationTestHelpers.CreateNewClient(k_ClientCount);
-            RegisterPrefab(clients[lateJoinerIndex], out clientHandlers[lateJoinerIndex]);
-
-            NetcodeIntegrationTestHelpers.StartOneClient(clients[lateJoinerIndex]);
-            yield return NetcodeIntegrationTestHelpers.WaitForClientConnected(clients[lateJoinerIndex]);
+            // Late join a client
+            yield return CreateAndStartNewClient();
 
             // Confirm late joiner got correct data
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => clientHandlers[lateJoinerIndex].instantiationData.IsSynchronizedWith(data));
-            Assert.False(timeoutHelper.TimedOut, "Late joiner did not synchronize properly with instantiation data.");
+            yield return WaitForConditionOrTimeOut(() => m_LateJoinPrefabHandler.InstantiationData.IsSynchronizedWith(data));
+            AssertOnTimeout("Late joiner received incorrect data");
         }
 
-        private GameObject CreateNetworkPrefab()
+
+        private void RegisterPrefabHandler(NetworkManager manager, out PrefabInstanceHandlerWithData handler)
         {
-            var guid = NetworkManagerHelper.AddGameNetworkObject($"{k_TestPrefabObjectName}{m_ObjectId++}");
-            var networkObject = NetworkManagerHelper.InstantiatedNetworkObjects[guid];
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            return networkObject.gameObject;
+            handler = new PrefabInstanceHandlerWithData(m_Prefab);
+            manager.PrefabHandler.AddHandler(m_Prefab, handler);
         }
 
-        private void RegisterPrefab(NetworkManager manager, out PrefabInstanceHandlerWithData handler)
+        private void SpawnPrefabWithData(NetworkSerializableTest data)
         {
-            var networkPrefab = new NetworkPrefab { Prefab = _prefab };
-            manager.NetworkConfig.Prefabs.Add(networkPrefab);
-
-            handler = new PrefabInstanceHandlerWithData(_prefab);
-            manager.PrefabHandler.AddHandler(_prefab, handler);
-        }
-
-        private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
-        {
-            var instance = GameObject.Instantiate(_prefab).GetComponent<NetworkObject>();
-            server.PrefabHandler.SetInstantiationData(instance, data);
+            var instance = UnityEngine.Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
+            GetAuthorityNetworkManager().PrefabHandler.SetInstantiationData(instance, data);
             instance.Spawn();
-            return instance;
         }
 
-        private IEnumerator StartAndWaitForClients()
+        private bool AllHandlersSynchronized(NetworkSerializableTest expectedData)
         {
-            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
-                Assert.Fail("Failed to start instances");
-
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
-        }
-
-        private IEnumerator WaitForAllClientsToSync(NetworkSerializableTest expectedData)
-        {
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => clientHandlers.All(h => h.instantiationData.IsSynchronizedWith(expectedData)));
-            Assert.False(timeoutHelper.TimedOut, "Data did not synchronize correctly to all clients.");
+            return m_ClientHandlers.All(handler => handler.InstantiationData.IsSynchronizedWith(expectedData));
         }
 
         private class PrefabInstanceHandlerWithData : NetworkPrefabInstanceHandlerWithData<NetworkSerializableTest>
         {
-            public GameObject Prefab;
-            public NetworkSerializableTest instantiationData;
+            private readonly GameObject m_Prefab;
+            public NetworkSerializableTest InstantiationData;
 
             public PrefabInstanceHandlerWithData(GameObject prefab)
             {
-                Prefab = prefab;
+                m_Prefab = prefab;
             }
 
             public override NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, NetworkSerializableTest data)
             {
-                instantiationData = data;
-                return GameObject.Instantiate(Prefab, position, rotation).GetComponent<NetworkObject>();
+                InstantiationData = data;
+                return UnityEngine.Object.Instantiate(m_Prefab, position, rotation).GetComponent<NetworkObject>();
             }
 
             public override void Destroy(NetworkObject networkObject)
             {
-                GameObject.DestroyImmediate(networkObject.gameObject);
+                UnityEngine.Object.DestroyImmediate(networkObject.gameObject);
             }
         }
 

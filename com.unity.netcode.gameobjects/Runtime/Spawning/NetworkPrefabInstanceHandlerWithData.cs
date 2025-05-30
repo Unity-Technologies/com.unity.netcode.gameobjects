@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -12,18 +9,18 @@ namespace Unity.Netcode
     public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabInstanceHandlerWithData where T : struct, INetworkSerializable
     {
         public abstract NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, T instantiationData);
-        
+
         public abstract void Destroy(NetworkObject networkObject);
 
-        bool INetworkPrefabInstanceHandlerWithData.HandlesDataType<U>() => typeof(T) == typeof(U);
-       
+        bool INetworkPrefabInstanceHandlerWithData.HandlesDataType<TK>() => typeof(T) == typeof(TK);
+
         NetworkObject INetworkPrefabInstanceHandlerWithData.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader reader)
         {
             var startPosition = reader.Position;
-            reader.ReadValueSafe(out T _payload);
+            reader.ReadValueSafe(out T payload);
             var length = reader.Position - startPosition;
-           
-            NetworkObject networkObject = Instantiate(ownerClientId, position, rotation, _payload);
+
+            NetworkObject networkObject = Instantiate(ownerClientId, position, rotation, payload);
             reader.Seek(startPosition);
             if (networkObject.InstantiationData == null || networkObject.InstantiationData.Length != length)
             {
