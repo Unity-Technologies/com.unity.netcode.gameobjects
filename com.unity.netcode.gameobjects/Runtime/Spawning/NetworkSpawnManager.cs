@@ -587,9 +587,11 @@ namespace Unity.Netcode
                     {
                         networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
                     }
-                    // DANGO-TODO: We have no current way of handling the list of clients that should receive this message.
-                    // --- NGO: Extend ChangeOwnershipMessage to contain a list of client identifiers.
-                    // --- CMB Service: Needs to be adjusted to only forward the message provided in the list of client identifiers.
+
+                    // DANGO-TODO: CMB Service needs to be updated to check for these two already existing properties.
+                    message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => c != NetworkManager.ServerClientId || !IsObjectVisibilityPending(c, ref networkObject)).ToArray();
+                    message.ClientIdCount = message.ClientIds.Length;
+
                     size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(NetworkManager.LocalClientId, networkObject, size);
                 }
