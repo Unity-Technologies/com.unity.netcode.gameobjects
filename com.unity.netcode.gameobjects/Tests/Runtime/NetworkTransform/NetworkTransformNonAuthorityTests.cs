@@ -466,7 +466,7 @@ namespace Unity.Netcode.RuntimeTests
                     m_ErrorMsg.AppendLine($"[{instance.name}] Position ({instance.transform.position}) is not " +
                         $"equal to authority's ({authorityInstance.transform.position})! ");
                 }
-                if (!Approximately(instance.transform.rotation, authorityInstance.transform.rotation))
+                if (!ApproximatelyEuler(instance.transform.rotation.eulerAngles, authorityInstance.transform.rotation.eulerAngles))
                 {
                     m_ErrorMsg.AppendLine($"[{instance.name}] Rotation ({instance.transform.rotation.eulerAngles}) is not " +
                         $"equal to authority's ({authorityInstance.transform.rotation.eulerAngles})! ");
