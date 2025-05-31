@@ -265,7 +265,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private Vector3 GetNonSynchronizedScale(Vector3 scale, bool invert = false)
+            private Vector3 GetNonSynchronizedScale(Vector3 scale)
             {
                 scale.x *= !SyncScaleX ? 1 : 0;
                 scale.y *= !SyncScaleY ? 1 : 0;
