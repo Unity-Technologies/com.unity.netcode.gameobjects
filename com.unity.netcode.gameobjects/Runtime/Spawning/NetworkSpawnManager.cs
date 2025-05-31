@@ -588,8 +588,8 @@ namespace Unity.Netcode
                         networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
                     }
 
-                    // DANGO-TODO: CMB Service needs to be updated to check for these two already existing properties.
-                    message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => c != NetworkManager.ServerClientId || !IsObjectVisibilityPending(c, ref networkObject)).ToArray();
+                    // Populate valid target client identifiers that should receive this change in ownership message.
+                    message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => !IsObjectVisibilityPending(c, ref networkObject) && networkObject.IsNetworkVisibleTo(c)).ToArray();
                     message.ClientIdCount = message.ClientIds.Length;
 
                     size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
