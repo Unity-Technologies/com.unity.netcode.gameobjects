@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Transports.SinglePlayer;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Random = UnityEngine.Random;
