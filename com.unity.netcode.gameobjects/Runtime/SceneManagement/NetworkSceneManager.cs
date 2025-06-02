@@ -1925,6 +1925,10 @@ namespace Unity.Netcode
         /// when many clients attempt to connect at the same time they will be
         /// handled sequentially so as to not saturate the session owner's maximum
         /// reliable messages.
+        /// DANGO-TODO: Get clients to track their synchronization status (if they haven't finished synchronizing)
+        ///     - pending clients can listen to SessionOwnerChanged messages
+        ///     - If the session owner changes, fire "some sort of event" to the service
+        ///     - service can fire ConnectionApproved at new session owner
         /// </summary>
         internal List<ulong> ClientConnectionQueue = new List<ulong>();
 
@@ -2332,37 +2336,15 @@ namespace Unity.Netcode
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             if (NetworkManager.DistributedAuthorityMode)
                             {
-                                if (NetworkManager.CMBServiceConnection)
+                                sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
+                                sceneEventData.SenderClientId = NetworkManager.LocalClientId;
+                                var message = new SceneEventMessage
                                 {
-                                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
-                                    {
-                                        if (clientId == NetworkManager.LocalClientId)
-                                        {
-                                            continue;
-                                        }
-                                        sceneEventData.TargetClientId = clientId;
-                                        sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                                        var message = new SceneEventMessage
-                                        {
-                                            EventData = sceneEventData,
-                                        };
-                                        var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                                        var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
-                                        NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
-                                    }
-                                }
-                                else
-                                {
-                                    sceneEventData.TargetClientId = NetworkManager.CurrentSessionOwner;
-                                    sceneEventData.SenderClientId = NetworkManager.LocalClientId;
-                                    var message = new SceneEventMessage
-                                    {
-                                        EventData = sceneEventData,
-                                    };
-                                    var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
-                                    NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
-                                }
+                                    EventData = sceneEventData,
+                                };
+                                var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
+                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                                NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
                             }
                             else
                             {
@@ -2485,13 +2467,13 @@ namespace Unity.Netcode
                         // Mark this client as being connected
                         NetworkManager.ConnectedClients[clientId].IsConnected = true;
 
-                        // Notify the local server that a client has finished synchronizing
+                        // Notify that a client has finished synchronizing
                         OnSceneEvent?.Invoke(new SceneEvent()
                         {
                             SceneEventType = sceneEventData.SceneEventType,
-                            SceneName = string.Empty,
                             ClientId = clientId
                         });
+                        OnSynchronizeComplete?.Invoke(clientId);
 
                         // For non-authority clients in a distributed authority session, we show hidden objects,
                         // we distribute NetworkObjects, and then we end the scene event.
@@ -2510,9 +2492,6 @@ namespace Unity.Netcode
                             EndSceneEvent(sceneEventId);
                             return;
                         }
-
-                        // All scenes are synchronized, let the server know we are done synchronizing
-                        OnSynchronizeComplete?.Invoke(clientId);
 
                         // At this time the client is fully synchronized with all loaded scenes and
                         // NetworkObjects and should be considered "fully connected". Send the
@@ -2555,26 +2534,12 @@ namespace Unity.Netcode
                             // Remove the client that just synchronized
                             ClientConnectionQueue.Remove(clientId);
 
-                            // If we have pending clients to synchronize, then make sure they are still connected
-                            while (ClientConnectionQueue.Count > 0)
-                            {
-                                // If the next client is no longer connected then remove it from the list
-                                if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
-                                {
-                                    ClientConnectionQueue.RemoveAt(0);
-                                }
-                                else
-                                {
-                                    break;
-                                }
-                            }
-
                             // If we still have any pending clients waiting, then synchronize the next one
                             if (ClientConnectionQueue.Count > 0)
                             {
                                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                                 {
-                                    Debug.Log($"Synchronizing Client-{ClientConnectionQueue[0]}...");
+                                    Debug.Log($"Synchronizing deferred Client-{ClientConnectionQueue[0]}...");
                                 }
                                 SynchronizeNetworkObjects(ClientConnectionQueue[0]);
                             }

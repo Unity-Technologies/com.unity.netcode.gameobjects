@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where non-authority `NetworkTransform` instances would not allow non-synchronized axis values to be updated locally. (#3471)
 - Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3468)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3466)
+- Fixed issue with the Distributed Authority connection sequence with scene management enabled where the `ClientConnected` event was fired before the client was synchronized. (#3459)
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
 - Fixed memory leaks when domain reload is disabled. (#3427)
