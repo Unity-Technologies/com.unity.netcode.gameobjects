@@ -133,38 +133,7 @@ namespace Unity.Netcode
                 Debug.LogException(exception);
             }
 
-            if (!NetworkManager.IsServer)
-            {
-                var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
-                // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
-                using var sentinel = peerClientIds;
-
-                var idx = 0;
-                foreach (var peerId in NetworkManager.ConnectedClientsIds)
-                {
-                    if (peerId == NetworkManager.LocalClientId)
-                    {
-                        continue;
-                    }
-
-                    // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
-                    if (peerClientIds.Length > idx)
-                    {
-                        peerClientIds[idx] = peerId;
-                        ++idx;
-                    }
-                }
-
-                try
-                {
-                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                }
-            }
-            else
+            if (NetworkManager.IsServer || NetworkManager.LocalClient.IsSessionOwner)
             {
                 try
                 {
@@ -174,6 +143,38 @@ namespace Unity.Netcode
                 {
                     Debug.LogException(exception);
                 }
+
+                return;
+            }
+
+            // Invoking connection event on non-authority local client. Need to calculate PeerIds.
+            var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+            // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
+            using var sentinel = peerClientIds;
+
+            var idx = 0;
+            foreach (var peerId in NetworkManager.ConnectedClientsIds)
+            {
+                if (peerId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+
+                // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
+                if (peerClientIds.Length > idx)
+                {
+                    peerClientIds[idx] = peerId;
+                    ++idx;
+                }
+            }
+
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
