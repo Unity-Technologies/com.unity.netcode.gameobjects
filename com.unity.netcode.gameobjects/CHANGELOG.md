@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3468)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3466)
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
