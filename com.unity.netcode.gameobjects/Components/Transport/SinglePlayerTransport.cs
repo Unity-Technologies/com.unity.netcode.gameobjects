@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using Unity.Netcode;
 
 /// <summary>
-/// A transport that can be used to run a Netcode for GameObjects sessopm in "single player" mode
-/// by assigning this transport to the <see cref="NetworkConfig.NetworkTransport"/>
-/// property before starting a host.
+/// A transport that can be used to run a Netcode for GameObjects session in "single player" mode
+/// by assigning this transport to the <see cref="NetworkConfig.NetworkTransport"/> property before
+/// starting as a host.
 /// </summary>
+/// <remarks>
+/// You can only start as a host when using this transport.
+/// </remarks>
 public class SinglePlayerTransport : NetworkTransport
 {
     /// <inheritdoc/>
