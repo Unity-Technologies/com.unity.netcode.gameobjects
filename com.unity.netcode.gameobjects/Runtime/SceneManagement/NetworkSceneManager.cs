@@ -2533,29 +2533,13 @@ namespace Unity.Netcode
                         {
                             // Remove the client that just synchronized
                             ClientConnectionQueue.Remove(clientId);
-                            // Debug.Log($"Remove client-{clientId} from synchronization queue.");
-                            //
-                            // // If we have pending clients to synchronize, then make sure they are still connected
-                            // while (ClientConnectionQueue.Count > 0)
-                            // {
-                            //     // If the next client is no longer connected then remove it from the list
-                            //     if (!NetworkManager.ConnectedClientsIds.Contains(ClientConnectionQueue[0]))
-                            //     {
-                            //         Debug.Log($"Remove client-{clientId} from synchronization queue as they are no longer connected.");
-                            //         ClientConnectionQueue.RemoveAt(0);
-                            //     }
-                            //     else
-                            //     {
-                            //         break;
-                            //     }
-                            // }
 
                             // If we still have any pending clients waiting, then synchronize the next one
                             if (ClientConnectionQueue.Count > 0)
                             {
                                 if (NetworkManager.LogLevel <= LogLevel.Developer)
                                 {
-                                    Debug.Log($"Synchronizing Deferred Client-{ClientConnectionQueue[0]}...");
+                                    Debug.Log($"Synchronizing deferred Client-{ClientConnectionQueue[0]}...");
                                 }
                                 SynchronizeNetworkObjects(ClientConnectionQueue[0]);
                             }

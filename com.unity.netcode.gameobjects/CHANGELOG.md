@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with the Distributed Authority connection sequence with scene management enabled where the `ClientConnected` event was fired before the client was synchronized. (#3459)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3466)
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
