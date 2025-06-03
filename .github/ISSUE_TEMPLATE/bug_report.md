@@ -36,6 +36,7 @@ If applicable, add screenshots to help explain your problem.
 - Unity Version: [e.g. 2020.3]
 - Netcode Version: [e.g. 1.0.0-pre.6]
 - Netcode Commit: [e.g. https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/commit/ba418fa5b600ad9eb61fab0575f12fbecc2c6520]
+- Netcode Topology: [e.g. Client-Server, Distributed Authority, etc.]
 
 ### Additional Context
 
