@@ -129,7 +129,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// See the calculation for <see cref="TotalClients"/>.
         /// Distributed Authority network topology:<br />
         /// When connecting to a CMB server, if the <see cref="NumberOfClients"/> == 0 then a session owner client will
-        /// be automatically added in order to start the session and the private internal m_NumberOfClients value, which 
+        /// be automatically added in order to start the session and the private internal m_NumberOfClients value, which
         /// is initialized as <see cref="NumberOfClients"/>, will be incremented by 1 making <see cref="TotalClients"/> yield the
         /// same results as if we were running a Host where it will effectively be <see cref="NumberOfClients"/>
         /// + 1.
@@ -757,15 +757,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 // Wait for the new client to connect
                 yield return WaitForClientsConnectedOrTimeOut();
-
-                OnNewClientStartedAndConnected(networkManager);
                 if (s_GlobalTimeoutHelper.TimedOut)
                 {
                     AddRemoveNetworkManager(networkManager, false);
                     Object.DestroyImmediate(networkManager.gameObject);
+                    AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
+                    yield break;
+                }
+                else
+                {
+                    OnNewClientStartedAndConnected(networkManager);
                 }
 
-                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!\n {m_InternalErrorLog}");
                 ClientNetworkManagerPostStart(networkManager);
                 if (networkManager.DistributedAuthorityMode)
                 {
@@ -839,6 +842,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Wait for the new client to connect
             var connected = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+            AssertOnTimeout($"{nameof(CreateAndStartNewClientWithTimeTravel)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
             OnNewClientStartedAndConnected(networkManager);
             if (!connected)
@@ -1190,7 +1194,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     // Wait for all clients to connect
                     WaitForClientsConnectedOrTimeOutWithTimeTravel();
 
-                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!\n {m_InternalErrorLog}");
 
                     if (m_UseHost || authorityManager.IsHost)
                     {
@@ -1666,6 +1670,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForConditionOrTimeOut(Func<StringBuilder, bool> checkForCondition, TimeoutHelper timeOutHelper = null)
+        {
+            yield return WaitForConditionOrTimeOut(() =>
+            {
+                // Clear errorBuilder before each check to ensure the errorBuilder only contains information from the lastest run
+                m_InternalErrorLog.Clear();
+                return checkForCondition(m_InternalErrorLog);
+            }, timeOutHelper);
+        }
+
+        /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
         /// have connected or it will time out.
@@ -1714,12 +1735,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clientsToCheck">An array of clients to be checked</param>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var authorityNetworkManager = GetAuthorityNetworkManager();
-            var authorityClientCount = authorityNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                                 authorityNetworkManager.ConnectedClients.Count == authorityClientCount);
+            return WaitForConditionOrTimeOutWithTimeTravel(() => CheckClientsConnected(clientsToCheck));
         }
 
         /// <summary>
@@ -2025,7 +2041,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
-            Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
+
+            if (m_InternalErrorLog.Length > 0)
+            {
+                Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}\n{m_InternalErrorLog}");
+                m_InternalErrorLog.Clear();
+                return;
+            }
+
+            Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}");
         }
 
 

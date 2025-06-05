@@ -19,7 +19,7 @@ all_preview_apv_jobs:
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_3_-_windows
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (MacOS).
 preview_apv_-_6000_0_-_macos:
@@ -29,14 +29,14 @@ preview_apv_-_6000_0_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.0 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.0/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -70,10 +70,10 @@ preview_apv_-_6000_0_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Ubuntu).
 preview_apv_-_6000_0_-_ubuntu:
@@ -83,14 +83,14 @@ preview_apv_-_6000_0_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.0 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.0/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -124,10 +124,10 @@ preview_apv_-_6000_0_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Windows).
 preview_apv_-_6000_0_-_windows:
@@ -138,14 +138,14 @@ preview_apv_-_6000_0_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.0 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.0/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.0 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -179,10 +179,10 @@ preview_apv_-_6000_0_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (MacOS).
 preview_apv_-_6000_1_-_macos:
@@ -192,14 +192,14 @@ preview_apv_-_6000_1_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.1 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.1/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -233,10 +233,10 @@ preview_apv_-_6000_1_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (Ubuntu).
 preview_apv_-_6000_1_-_ubuntu:
@@ -246,14 +246,14 @@ preview_apv_-_6000_1_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.1 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.1/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -287,10 +287,10 @@ preview_apv_-_6000_1_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.1 manifest (Windows).
 preview_apv_-_6000_1_-_windows:
@@ -301,14 +301,14 @@ preview_apv_-_6000_1_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.1 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.1/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -342,10 +342,10 @@ preview_apv_-_6000_1_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (MacOS).
 preview_apv_-_6000_2_-_macos:
@@ -355,14 +355,14 @@ preview_apv_-_6000_2_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.2 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.2/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -396,10 +396,10 @@ preview_apv_-_6000_2_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Ubuntu).
 preview_apv_-_6000_2_-_ubuntu:
@@ -409,14 +409,14 @@ preview_apv_-_6000_2_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.2 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.2/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -450,10 +450,10 @@ preview_apv_-_6000_2_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Windows).
 preview_apv_-_6000_2_-_windows:
@@ -464,14 +464,14 @@ preview_apv_-_6000_2_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.2 -c Editor --fast
+  - command: unity-downloader-cli -u 6000.2/staging -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.2 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -505,10 +505,10 @@ preview_apv_-_6000_2_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.3 manifest (MacOS).
 preview_apv_-_6000_3_-_macos:
@@ -518,14 +518,14 @@ preview_apv_-_6000_3_-_macos:
     type: Unity::VM::osx
     flavor: b1.xlarge
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+  - command: unity-downloader-cli -u trunk -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -559,10 +559,10 @@ preview_apv_-_6000_3_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.3 manifest (Ubuntu).
 preview_apv_-_6000_3_-_ubuntu:
@@ -572,14 +572,14 @@ preview_apv_-_6000_3_-_ubuntu:
     type: Unity::VM
     flavor: b1.large
   commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+  - command: unity-downloader-cli -u trunk -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -613,10 +613,10 @@ preview_apv_-_6000_3_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 
 # Functional tests for dependents found in the latest 6000.3 manifest (Windows).
 preview_apv_-_6000_3_-_windows:
@@ -627,14 +627,14 @@ preview_apv_-_6000_3_-_windows:
     flavor: b1.large
   commands:
   - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-61_6af0746012fdbe27c8d9841fcad8f97465d1943826d6884e6aabf0d289b83093.zip -o wrench-localapv.zip
+  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
   - command: 7z x -aoa wrench-localapv.zip
   - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
   - command: python PythonScripts/print_machine_info.py
   - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
     timeout: 20
     retries: 10
-  - command: unity-downloader-cli -u 6000.3 -c Editor --fast
+  - command: unity-downloader-cli -u trunk -c Editor --fast
     timeout: 10
     retries: 3
   - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.3 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
@@ -668,8 +668,8 @@ preview_apv_-_6000_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.10.48.0
+    UPMPVP_CONTEXT_WRENCH: 0.11.2.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.10.48.0
+    Wrench: 0.11.2.0
 

@@ -68,7 +68,7 @@ namespace Unity.Netcode
         public List<NetworkTransform> NetworkTransforms { get; private set; }
 
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         /// <summary>
         /// All <see cref="NetworkRigidbodyBase"></see> component instances associated with a <see cref="NetworkObject"/> component instance.
         /// NOTE: This is only available if a physics package is included. If not, then this will not be available!
@@ -1955,7 +1955,11 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
-            MarkVariablesDirty(false);
+            foreach (var behavior in ChildNetworkBehaviours)
+            {
+                behavior.MarkVariablesDirty(false);
+            }
+
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
@@ -2621,7 +2625,7 @@ namespace Unity.Netcode
                             networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
                             NetworkTransforms.Add(networkTransform);
                         }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                         else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
                         {
                             if (NetworkRigidbodies == null)
@@ -2635,33 +2639,6 @@ namespace Unity.Netcode
                 }
 
                 return m_ChildNetworkBehaviours;
-            }
-        }
-
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
-        {
-            if (NetworkManager.DistributedAuthorityMode)
-            {
-                writer.WriteValueSafe((ushort)ChildNetworkBehaviours.Count);
-                if (ChildNetworkBehaviours.Count == 0)
-                {
-                    return;
-                }
-            }
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behavior = ChildNetworkBehaviours[i];
-                behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(writer, targetClientId);
-            }
-        }
-
-        internal void MarkVariablesDirty(bool dirty)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behavior = ChildNetworkBehaviours[i];
-                behavior.MarkVariablesDirty(dirty);
             }
         }
 
@@ -2720,31 +2697,6 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by the end of frame");
                 }
             }
-        }
-
-        /// <summary>
-        /// Only invoked during first synchronization of a NetworkObject (late join or newly spawned)
-        /// </summary>
-        internal bool SetNetworkVariableData(FastBufferReader reader, ulong clientId)
-        {
-            if (NetworkManager.DistributedAuthorityMode)
-            {
-                var readerPosition = reader.Position;
-                reader.ReadValueSafe(out ushort behaviourCount);
-                if (behaviourCount != ChildNetworkBehaviours.Count)
-                {
-                    Debug.LogError($"[{name}] Network Behavior Count Mismatch! [In: {behaviourCount} vs Local: {ChildNetworkBehaviours.Count}][StartReaderPos: {readerPosition}] CurrentReaderPos: {reader.Position}]");
-                    return false;
-                }
-            }
-
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behaviour = ChildNetworkBehaviours[i];
-                behaviour.InitializeVariables();
-                behaviour.SetNetworkVariableData(reader, clientId);
-            }
-            return true;
         }
 
         /// <summary>
@@ -3034,14 +2986,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void PostNetworkVariableWrite(bool forced = false)
-        {
-            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
-            {
-                ChildNetworkBehaviours[k].PostNetworkVariableWrite(forced);
-            }
-        }
-
         /// <summary>
         /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBehaviours.
         /// </summary>
@@ -3053,13 +2997,20 @@ namespace Unity.Netcode
         {
             if (serializer.IsWriter)
             {
+                // write placeholder int.
+                // Can't be bitpacked because we don't know the value until we calculate it later
                 var writer = serializer.GetFastBufferWriter();
                 var positionBeforeSynchronizing = writer.Position;
-                writer.WriteValueSafe((ushort)0);
+                writer.WriteValueSafe(0);
                 var sizeToSkipCalculationPosition = writer.Position;
 
                 // Synchronize NetworkVariables
-                WriteNetworkVariableData(writer, targetClientId);
+                foreach (var behavior in ChildNetworkBehaviours)
+                {
+                    behavior.InitializeVariables();
+                    behavior.WriteNetworkVariableData(writer, targetClientId);
+                }
+
                 // Reserve the NetworkBehaviour synchronization count position
                 var networkBehaviourCountPosition = writer.Position;
                 writer.WriteValueSafe((byte)0);
@@ -3081,7 +3032,7 @@ namespace Unity.Netcode
                 // synchronization.
                 writer.Seek(positionBeforeSynchronizing);
                 // We want the size of everything after our size to skip calculation position
-                var size = (ushort)(currentPosition - sizeToSkipCalculationPosition);
+                var size = currentPosition - sizeToSkipCalculationPosition;
                 writer.WriteValueSafe(size);
                 // Write the number of NetworkBehaviours synchronized
                 writer.Seek(networkBehaviourCountPosition);
@@ -3096,26 +3047,25 @@ namespace Unity.Netcode
                 var reader = serializer.GetFastBufferReader();
                 try
                 {
-                    reader.ReadValueSafe(out ushort sizeOfSynchronizationData);
+                    reader.ReadValueSafe(out int sizeOfSynchronizationData);
                     seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
+
                     // Apply the network variable synchronization data
-                    if (!SetNetworkVariableData(reader, targetClientId))
+                    foreach (var behaviour in ChildNetworkBehaviours)
                     {
-                        reader.Seek(seekToEndOfSynchData);
-                        return;
+                        behaviour.InitializeVariables();
+                        behaviour.SetNetworkVariableData(reader, targetClientId);
                     }
 
                     // Read the number of NetworkBehaviours to synchronize
                     reader.ReadValueSafe(out byte numberSynchronized);
-
-                    var networkBehaviourId = (ushort)0;
 
                     // If a NetworkBehaviour writes synchronization data, it will first
                     // write its NetworkBehaviourId so when deserializing the client-side
                     // can find the right NetworkBehaviour to deserialize the synchronization data.
                     for (int i = 0; i < numberSynchronized; i++)
                     {
-                        reader.ReadValueSafe(out networkBehaviourId);
+                        reader.ReadValueSafe(out ushort networkBehaviourId);
                         var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
                         networkBehaviour.Synchronize(ref serializer, targetClientId);
                     }
@@ -3230,7 +3180,7 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.ReadValueSafe(out int networkBehaviourSynchronizationDataLength);
                     reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
                 }
                 catch (Exception ex)
@@ -3429,7 +3379,7 @@ namespace Unity.Netcode
         {
             m_ChildNetworkBehaviours = null;
             NetworkTransforms?.Clear();
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             NetworkRigidbodies?.Clear();
 #endif
             SetCachedParent(transform.parent);

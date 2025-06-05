@@ -23,6 +23,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected GameObject m_PrefabToSpawn;
+        protected GameObject m_PrefabNoObserversSpawn;
 
         public NetworkObjectDontDestroyWithOwnerTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -30,6 +31,11 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("ClientOwnedObject");
             m_PrefabToSpawn.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
+
+            m_PrefabNoObserversSpawn = CreateNetworkObjectPrefab("NoObserversObject");
+            var prefabNoObserversNetworkObject = m_PrefabNoObserversSpawn.GetComponent<NetworkObject>();
+            prefabNoObserversNetworkObject.SpawnWithObservers = false;
+            prefabNoObserversNetworkObject.DontDestroyWithOwner = true;
         }
 
         [UnityTest]
@@ -73,6 +79,31 @@ namespace Unity.Netcode.RuntimeTests
                 // ensure ownership was transferred back
                 Assert.That(networkObject.OwnerClientId == m_ServerNetworkManager.LocalClientId);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkShowThenClientDisconnects()
+        {
+            var authorityManager = GetAuthorityNetworkManager();
+            var networkObject = SpawnObject(m_PrefabNoObserversSpawn, authorityManager).GetComponent<NetworkObject>();
+            var longWait = new WaitForSeconds(0.25f);
+            yield return longWait;
+            var nonAuthorityManager = GetNonAuthorityNetworkManager();
+            Assert.False(nonAuthorityManager.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId), $"[Client-{nonAuthorityManager.LocalClientId}] " +
+                $"Already has an instance of {networkObject.name} when it should not!");
+            networkObject.NetworkShow(nonAuthorityManager.LocalClientId);
+            networkObject.ChangeOwnership(nonAuthorityManager.LocalClientId);
+
+            yield return WaitForConditionOrTimeOut(() => nonAuthorityManager.SpawnManager.SpawnedObjects.ContainsKey(networkObject.NetworkObjectId)
+            && nonAuthorityManager.SpawnManager.SpawnedObjects[networkObject.NetworkObjectId].OwnerClientId == nonAuthorityManager.LocalClientId);
+            AssertOnTimeout($"[Client-{nonAuthorityManager.LocalClientId}] Failed to spawn {networkObject.name} when it was shown!");
+
+            yield return s_DefaultWaitForTick;
+
+            nonAuthorityManager.Shutdown();
+
+            yield return longWait;
+            Assert.True(networkObject.IsSpawned, $"The spawned test prefab was despawned on the authority side when it shouldn't have been!");
         }
     }
 }

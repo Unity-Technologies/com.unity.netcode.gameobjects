@@ -987,6 +987,7 @@ namespace TestProject.RuntimeTests
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
@@ -994,11 +995,25 @@ namespace TestProject.RuntimeTests
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+                clientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
                 clientNetworkManager.StartClient();
             }
 
+
+            bool AllClientsConnected()
+            {
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    if (!client.IsConnectedClient)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             // Wait for the server and clients to start and connect
-            success = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllClientsConnected, 1000);
             Assert.True(success, $"Client Failed to Connect!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }

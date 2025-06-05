@@ -2524,10 +2524,25 @@ namespace Unity.Netcode.Components
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
             var adjustedPosition = m_InternalCurrentPosition;
-            var adjustedRotation = m_InternalCurrentRotation;
+            var currentPosistion = GetSpaceRelativePosition();
+            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosistion.x;
+            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosistion.y;
+            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosistion.z;
 
+            var adjustedRotation = m_InternalCurrentRotation;
             var adjustedRotAngles = adjustedRotation.eulerAngles;
+            var currentRotation = GetSpaceRelativeRotation().eulerAngles;
+            adjustedRotAngles.x = SyncRotAngleX ? adjustedRotAngles.x : currentRotation.x;
+            adjustedRotAngles.y = SyncRotAngleY ? adjustedRotAngles.y : currentRotation.y;
+            adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
+            adjustedRotation.eulerAngles = adjustedRotAngles;
+
+
             var adjustedScale = m_InternalCurrentScale;
+            var currentScale = GetScale();
+            adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
+            adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
+            adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
 
             // Non-Authority Preservers the authority's transform state update modes
             InLocalSpace = networkState.InLocalSpace;
@@ -2650,7 +2665,18 @@ namespace Unity.Netcode.Components
                 // Update our current position if it changed or we are interpolating
                 if (networkState.HasPositionChange || Interpolate)
                 {
-                    m_InternalCurrentPosition = adjustedPosition;
+                    if (SyncPositionX && SyncPositionY && SyncPositionZ)
+                    {
+                        m_InternalCurrentPosition = adjustedPosition;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's position
+                        var position = InLocalSpace ? transform.localPosition : transform.position;
+                        m_InternalCurrentPosition.x = SyncPositionX ? adjustedPosition.x : position.x;
+                        m_InternalCurrentPosition.y = SyncPositionY ? adjustedPosition.y : position.y;
+                        m_InternalCurrentPosition.z = SyncPositionZ ? adjustedPosition.z : position.z;
+                    }
                 }
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
@@ -2696,7 +2722,21 @@ namespace Unity.Netcode.Components
                 // Update our current rotation if it changed or we are interpolating
                 if (networkState.HasRotAngleChange || Interpolate)
                 {
-                    m_InternalCurrentRotation = adjustedRotation;
+                    if ((SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ) || UseQuaternionSynchronization)
+                    {
+                        m_InternalCurrentRotation = adjustedRotation;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's rotation
+                        var rotation = InLocalSpace ? transform.localRotation.eulerAngles : transform.rotation.eulerAngles;
+                        var currentEuler = m_InternalCurrentRotation.eulerAngles;
+                        var updatedEuler = adjustedRotation.eulerAngles;
+                        currentEuler.x = SyncRotAngleX ? updatedEuler.x : rotation.x;
+                        currentEuler.y = SyncRotAngleY ? updatedEuler.y : rotation.y;
+                        currentEuler.z = SyncRotAngleZ ? updatedEuler.z : rotation.z;
+                        m_InternalCurrentRotation.eulerAngles = currentEuler;
+                    }
                 }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -2737,7 +2777,18 @@ namespace Unity.Netcode.Components
                 // Update our current scale if it changed or we are interpolating
                 if (networkState.HasScaleChange || Interpolate)
                 {
-                    m_InternalCurrentScale = adjustedScale;
+                    if (SyncScaleX && SyncScaleY && SyncScaleZ)
+                    {
+                        m_InternalCurrentScale = adjustedScale;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's scale
+                        var scale = transform.localScale;
+                        m_InternalCurrentScale.x = SyncScaleX ? adjustedScale.x : scale.x;
+                        m_InternalCurrentScale.y = SyncScaleY ? adjustedScale.y : scale.y;
+                        m_InternalCurrentScale.z = SyncScaleZ ? adjustedScale.z : scale.z;
+                    }
                 }
                 transform.localScale = m_InternalCurrentScale;
             }

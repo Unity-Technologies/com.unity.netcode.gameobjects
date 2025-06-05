@@ -50,7 +50,7 @@ namespace Unity.Netcode
         private List<int> m_UpdatedNetworkVariables;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteNetworkVariable(ref FastBufferWriter writer, ref NetworkVariableBase networkVariable, bool distributedAuthorityMode, bool ensureNetworkVariableLengthSafety, int nonfragmentedSize, int fragmentedSize)
+        private void WriteNetworkVariable(ref FastBufferWriter writer, ref NetworkVariableBase networkVariable, bool ensureNetworkVariableLengthSafety, int nonfragmentedSize, int fragmentedSize)
         {
             if (ensureNetworkVariableLengthSafety)
             {
@@ -67,27 +67,7 @@ namespace Unity.Netcode
             }
             else
             {
-                // TODO: Determine if we need to remove this with the 6.1 service updates
-                if (distributedAuthorityMode)
-                {
-                    var size_marker = writer.Position;
-                    writer.WriteValueSafe<ushort>(0);
-                    var start_marker = writer.Position;
-                    networkVariable.WriteDelta(writer);
-                    var end_marker = writer.Position;
-                    writer.Seek(size_marker);
-                    var size = end_marker - start_marker;
-                    if (size == 0)
-                    {
-                        UnityEngine.Debug.LogError($"Invalid write size of zero!");
-                    }
-                    writer.WriteValueSafe((ushort)size);
-                    writer.Seek(end_marker);
-                }
-                else
-                {
-                    networkVariable.WriteDelta(writer);
-                }
+                networkVariable.WriteDelta(writer);
             }
         }
 
@@ -104,7 +84,6 @@ namespace Unity.Netcode
             var nonFragmentedMessageMaxSize = networkManager.MessageManager.NonFragmentedMessageMaxSize;
             var fragmentedMessageMaxSize = networkManager.MessageManager.FragmentedMessageMaxSize;
             var ensureNetworkVariableLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
-            var distributedAuthorityMode = networkManager.DistributedAuthorityMode;
 
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
@@ -117,31 +96,17 @@ namespace Unity.Netcode
                 // If we are forwarding the message, then proceed to forward state updates specific to the targeted client
                 if (m_ForwardingMessage)
                 {
-                    // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                    if (distributedAuthorityMode)
-                    {
-                        writer.WriteValueSafe((ushort)NetworkBehaviour.NetworkVariableFields.Count);
-                    }
-
                     for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
                     {
                         var startingSize = writer.Length;
                         var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                         var shouldWrite = m_ForwardUpdates[TargetClientId].Contains(i);
 
-                        // This var does not belong to the currently iterating delivery group.
-                        if (distributedAuthorityMode)
+                        if (ensureNetworkVariableLengthSafety)
                         {
                             if (!shouldWrite)
                             {
-                                writer.WriteValueSafe<ushort>(0);
-                            }
-                        }
-                        else if (ensureNetworkVariableLengthSafety)
-                        {
-                            if (!shouldWrite)
-                            {
-                                BytePacker.WriteValueBitPacked(writer, (ushort)0);
+                                BytePacker.WriteValueBitPacked(writer, 0);
                             }
                         }
                         else
@@ -151,7 +116,7 @@ namespace Unity.Netcode
 
                         if (shouldWrite)
                         {
-                            WriteNetworkVariable(ref writer, ref networkVariable, distributedAuthorityMode, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
+                            WriteNetworkVariable(ref writer, ref networkVariable, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
                             networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, obj, networkVariable.Name, typeName, writer.Length - startingSize);
                         }
                     }
@@ -159,22 +124,12 @@ namespace Unity.Netcode
                 }
             }
 
-            // DANGO TODO: Remove this when we remove the service specific NetworkVariable stuff
-            if (distributedAuthorityMode)
-            {
-                writer.WriteValueSafe((ushort)NetworkBehaviour.NetworkVariableFields.Count);
-            }
 
             for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
                 if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
-                    // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                    if (distributedAuthorityMode)
-                    {
-                        writer.WriteValueSafe<ushort>(0);
-                    }
-                    else if (ensureNetworkVariableLengthSafety)
+                    if (ensureNetworkVariableLengthSafety)
                     {
                         BytePacker.WriteValueBitPacked(writer, (ushort)0);
                     }
@@ -211,19 +166,11 @@ namespace Unity.Netcode
                     shouldWrite = false;
                 }
 
-                // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                if (distributedAuthorityMode)
+                if (ensureNetworkVariableLengthSafety)
                 {
                     if (!shouldWrite)
                     {
-                        writer.WriteValueSafe<ushort>(0);
-                    }
-                }
-                else if (ensureNetworkVariableLengthSafety)
-                {
-                    if (!shouldWrite)
-                    {
-                        BytePacker.WriteValueBitPacked(writer, (ushort)0);
+                        BytePacker.WriteValueBitPacked(writer, 0);
                     }
                 }
                 else
@@ -233,7 +180,7 @@ namespace Unity.Netcode
 
                 if (shouldWrite)
                 {
-                    WriteNetworkVariable(ref writer, ref networkVariable, distributedAuthorityMode, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
+                    WriteNetworkVariable(ref writer, ref networkVariable, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
                     networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, obj, networkVariable.Name, typeName, writer.Length - startingSize);
                 }
             }
@@ -260,7 +207,6 @@ namespace Unity.Netcode
 
             if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
             {
-                var distributedAuthorityMode = networkManager.DistributedAuthorityMode;
                 var ensureNetworkVariableLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
                 var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
                 var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery && networkManager.IsServer;
@@ -276,16 +222,6 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                    if (distributedAuthorityMode)
-                    {
-                        m_ReceivedNetworkVariableData.ReadValueSafe(out ushort variableCount);
-                        if (variableCount != networkBehaviour.NetworkVariableFields.Count)
-                        {
-                            UnityEngine.Debug.LogError("Variable count mismatch");
-                        }
-                    }
-
                     // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
                     // updates at the end of the frame, we now track all NetworkVariable state updates, per client, that need to be forwarded
                     // to the client. This creates a list of all remaining connected clients that could have updates applied.
@@ -305,24 +241,13 @@ namespace Unity.Netcode
                     // Update NetworkVariable Fields
                     for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
                     {
-                        int varSize = 0;
+                        int expectedBytesToRead = 0;
                         var networkVariable = networkBehaviour.NetworkVariableFields[i];
 
-                        // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                        if (distributedAuthorityMode)
+                        if (ensureNetworkVariableLengthSafety)
                         {
-                            m_ReceivedNetworkVariableData.ReadValueSafe(out ushort variableSize);
-                            varSize = variableSize;
-
-                            if (varSize == 0)
-                            {
-                                continue;
-                            }
-                        }
-                        else if (ensureNetworkVariableLengthSafety)
-                        {
-                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out varSize);
-                            if (varSize == 0)
+                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out expectedBytesToRead);
+                            if (expectedBytesToRead == 0)
                             {
                                 continue;
                             }
@@ -339,7 +264,7 @@ namespace Unity.Netcode
                         if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
                         {
                             // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
-                            if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                            if (ensureNetworkVariableLengthSafety)
                             {
                                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                                 {
@@ -347,7 +272,7 @@ namespace Unity.Netcode
                                     NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
                                 }
 
-                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + varSize);
+                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + expectedBytesToRead);
                                 continue;
                             }
 
@@ -365,15 +290,14 @@ namespace Unity.Netcode
                             }
                             return;
                         }
-                        int readStartPos = m_ReceivedNetworkVariableData.Position;
+                        var readStartPos = m_ReceivedNetworkVariableData.Position;
 
-                        // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                        if (distributedAuthorityMode || ensureNetworkVariableLengthSafety)
+                        if (ensureNetworkVariableLengthSafety)
                         {
-                            var remainingBufferSize = m_ReceivedNetworkVariableData.Length - m_ReceivedNetworkVariableData.Position;
-                            if (varSize > (remainingBufferSize))
+                            var remainingBufferSize = m_ReceivedNetworkVariableData.Length - readStartPos;
+                            if (expectedBytesToRead > remainingBufferSize)
                             {
-                                UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {varSize} but only {remainingBufferSize} remains!");
+                                UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {expectedBytesToRead} but only {remainingBufferSize} remains!");
                                 return;
                             }
                         }
@@ -391,6 +315,19 @@ namespace Unity.Netcode
                         {
                             UnityEngine.Debug.LogException(ex);
                             return;
+                        }
+
+                        if (ensureNetworkVariableLengthSafety)
+                        {
+                            var totalBytesRead = m_ReceivedNetworkVariableData.Position - readStartPos;
+                            if (totalBytesRead != expectedBytesToRead)
+                            {
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                {
+                                    NetworkLog.LogWarning($"[{nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}][Delta State Read] NetworkVariable read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes!");
+                                }
+                                m_ReceivedNetworkVariableData.Seek(readStartPos + expectedBytesToRead);
+                            }
                         }
 
                         // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
@@ -422,29 +359,6 @@ namespace Unity.Netcode
                             networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
-
-                        // DANGO TODO: Remove distributedAuthorityMode portion when we remove the service specific NetworkVariable stuff
-                        if (distributedAuthorityMode || ensureNetworkVariableLengthSafety)
-                        {
-                            if (m_ReceivedNetworkVariableData.Position > (readStartPos + varSize))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"Var delta read too far. {m_ReceivedNetworkVariableData.Position - (readStartPos + varSize)} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                }
-
-                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
-                            }
-                            else if (m_ReceivedNetworkVariableData.Position < (readStartPos + varSize))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"Var delta read too little. {readStartPos + varSize - m_ReceivedNetworkVariableData.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                }
-
-                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
-                            }
-                        }
                     }
 
                     // If we are using the version of this message that includes network delivery, then
