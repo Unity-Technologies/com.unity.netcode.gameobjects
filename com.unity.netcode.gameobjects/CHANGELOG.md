@@ -10,6 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [2.4.0] - 2025-06-02
+
+### Added
+
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3473)
 - When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
 
@@ -25,9 +33,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed memory leaks when domain reload is disabled. (#3427)
 - Fixed issue where disabling the physics or physics2D package modules could result in a compilation error. (#3422)
 - Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
-
-### Changed
-
 
 ## [2.3.2] - 2025-04-22
 
