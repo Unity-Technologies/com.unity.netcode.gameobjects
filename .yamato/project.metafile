@@ -184,6 +184,3 @@ projects:
         - name: minimalproject
           path: minimalproject
           has_tests: false
-        - name: testproject-tools-integration
-          path: testproject-tools-integration
-          has_tests: true
