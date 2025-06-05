@@ -118,10 +118,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Overloaded version of <see cref="DeregisterNetworkObject"/>. <br />
+        /// Overloaded version of <see cref="DeregisterNetworkObject"/>.<br />
         /// Used by <see cref="ObjectNameIdentifier"/> to de-register a spawned <see cref="NetworkObject"/> instance.
         /// </summary>
-        /// <param name="localClientId">The client instance identifier of the spawned <see cref="NetworkObject"/> instance.
+        /// <param name="localClientId">The client instance identifier of the spawned <see cref="NetworkObject"/> instance.</param>
         /// <param name="networkObjectId">The <see cref="NetworkObject.NetworkObjectId"/> of the spawned instance.</param>
         public static void DeregisterNetworkObject(ulong localClientId, ulong networkObjectId)
         {
@@ -1826,6 +1826,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// more flexibility for checking complex conditional cases. Uses time travel to simulate this
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
+        /// <param name="conditionalPredicate">An <see cref="IConditionalPredicate"/> implementation used to determine if the condition(s) has/have been met.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public bool WaitForConditionOrTimeOutWithTimeTravel(IConditionalPredicate conditionalPredicate, int maxTries = 60)
         {
