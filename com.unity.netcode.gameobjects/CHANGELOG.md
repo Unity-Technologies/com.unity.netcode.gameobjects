@@ -12,6 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed: Issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
+
 ### Changed
 
 ## [2.4.0] - 2025-06-02
