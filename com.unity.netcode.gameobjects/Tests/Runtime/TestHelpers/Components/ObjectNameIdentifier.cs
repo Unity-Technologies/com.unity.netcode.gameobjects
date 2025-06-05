@@ -1,6 +1,12 @@
 using System;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
+    /// <summary>
+    /// Used in conjunction with integratioin tests, this <see cref="NetworkBehaviour"/> derived
+    /// class is used to provide additional identification information in the name of the spawned
+    /// objects in order to simplify finding a specific instance.
+    /// <see cref="NetcodeIntegrationTest"/>
+    /// </summary>
     public class ObjectNameIdentifier : NetworkBehaviour
     {
         private ulong m_CurrentOwner;
@@ -18,12 +24,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private NetworkObject m_NetworkObject;
         private string m_OriginalName;
 
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             RegisterAndLabelNetworkObject();
         }
 
 
+        /// <summary>
+        /// Invoke to register and label the spawned <see cref="NetworkObject"/>.
+        /// </summary>
         protected void RegisterAndLabelNetworkObject()
         {
             if (!m_IsRegistered)
@@ -58,6 +68,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Invoke to remove the object from registration.
+        /// </summary>
         protected void DeRegisterNetworkObject()
         {
             if (m_IsRegistered)
@@ -67,23 +80,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <inheritdoc/>
         public override void OnLostOwnership()
         {
             DeRegisterNetworkObject();
             RegisterAndLabelNetworkObject();
         }
 
+        /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
             DeRegisterNetworkObject();
             RegisterAndLabelNetworkObject();
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             DeRegisterNetworkObject();
         }
 
+        /// <inheritdoc/>
         public override void OnDestroy()
         {
             if (m_NetworkObject != null)

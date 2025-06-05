@@ -19,10 +19,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public static class NetworkManagerHelper
     {
+        /// <summary>
+        /// The <see cref="NetworkManager"/> component instantiated.
+        /// </summary>
         public static NetworkManager NetworkManagerObject { get; internal set; }
+
+        /// <summary>
+        /// The <see cref="GameObject"/> of the <see cref="NetworkManager"/>.
+        /// </summary>
         public static GameObject NetworkManagerGameObject { get; internal set; }
 
+        /// <summary>
+        /// All <see cref="GameObject"/> instances instantiated under the assigned <see cref="NetworkManager"/>.
+        /// </summary>
         public static Dictionary<Guid, GameObject> InstantiatedGameObjects = new Dictionary<Guid, GameObject>();
+
+        /// <summary>
+        /// All <see cref="NetworkObject"/> instances instantiated under the assigned <see cref="NetworkManager"/>.
+        /// </summary>
         public static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
         public static NetworkManagerOperatingMode CurrentNetworkManagerMode;
 
@@ -93,7 +107,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Add a GameObject with a NetworkObject component
         /// </summary>
         /// <param name="nameOfGameObject">the name of the object</param>
-        /// <returns>A unique identifier (GUID) for the newly created GameObject</returns>
+        /// <returns>A unique identifier, <see cref="Guid"/>, for the newly created GameObject</returns>
         public static Guid AddGameNetworkObject(string nameOfGameObject)
         {
             var gameObjectId = Guid.NewGuid();
@@ -196,7 +210,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
-        // This is called, even if we assert and exit early from a test
+        /// <summary>
+        /// Invoked even if we assert and exit early from a test, this shuts down the <see cref="NetworkManager"/>
+        /// and does some additional clean up.
+        /// </summary>
         public static void ShutdownNetworkManager()
         {
             // clean up any game objects created with custom unit testing components
@@ -219,6 +236,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetworkManagerObject = null;
         }
 
+        /// <summary>
+        /// Helper method to determine if two buffers match.
+        /// </summary>
+        /// <param name="indexOffset">Index offset to start from relative to both buffers.</param>
+        /// <param name="targetSize">The number of bytes to compare.</param>
+        /// <param name="sourceArray">The buffer to use for comparison.</param>
+        /// <param name="originalArray">The original buffer being compared.</param>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public static bool BuffersMatch(int indexOffset, long targetSize, byte[] sourceArray, byte[] originalArray)
         {
             long largeInt64Blocks = targetSize >> 3; // Divide by 8

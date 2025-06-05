@@ -18,7 +18,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
     public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
+        /// <summary>
+        /// Delegate defining <see cref="OnValueChanged"/>.
+        /// </summary>
+        /// <param name="previous">The previous value.</param>
+        /// <param name="next">The next or current value.</param>
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);
+
+        /// <summary>
+        /// Event invoked when a <see cref="NetworkVariable{T}"/>'s value is changed.
+        /// See also: <see cref="OnMyValueChangedDelegateHandler"/>.
+        /// </summary>
         public event OnMyValueChangedDelegateHandler OnValueChanged;
 
         /// <summary>
@@ -62,6 +72,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnValueChanged?.Invoke(previous, next);
         }
 
+        /// <summary>
+        /// Constructor taking a <see cref="NetworkVariableBase"/> as a parameter.
+        /// </summary>
+        /// <param name="networkVariable">The <see cref="NetworkVariableBase"/> parameter.</param>
         public NetworkVariableHelper(NetworkVariableBase networkVariable) : base(networkVariable)
         {
             m_NetworkVariable = networkVariable as NetworkVariable<T>;
@@ -129,6 +143,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Constructor taking <see cref="NetworkVariableBase"/> as parameter.
+        /// </summary>
+        /// <param name="networkVariable">The <see cref="NetworkVariableBase"/> parameter.</param>
         public NetworkVariableBaseHelper(NetworkVariableBase networkVariable)
         {
             if (s_Instances == null)

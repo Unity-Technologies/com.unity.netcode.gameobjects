@@ -23,7 +23,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkVariableCollectionsTests : NetcodeIntegrationTest
+    internal class NetworkVariableCollectionsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
@@ -1218,7 +1218,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Host, CollectionTypes.Dictionary)]
     [TestFixture(HostOrServer.Server, CollectionTypes.List)]
     [TestFixture(HostOrServer.Server, CollectionTypes.Dictionary)]
-    public class NetworkVariableCollectionsChangingTests : NetcodeIntegrationTest
+    internal class NetworkVariableCollectionsChangingTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
         public enum CollectionTypes
@@ -1411,7 +1411,7 @@ namespace Unity.Netcode.RuntimeTests
     /// Helper class to test adding <see cref="NetworkVariable{T}"/> dictionary entries rapidly with frequent ownership changes.
     /// This includes a companion <see cref="NetworkVariable{T}"/> integer that is continually incremented and used as the key value for each entry.
     /// </summary>
-    public class DictionaryCollectionUpdateHelper : BaseCollectionUpdateHelper
+    internal class DictionaryCollectionUpdateHelper : BaseCollectionUpdateHelper
     {
         private NetworkVariable<Dictionary<int, int>> m_DictionaryCollection = new NetworkVariable<Dictionary<int, int>>(new Dictionary<int, int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         private NetworkVariable<int> m_CurrentKeyValue = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -1459,7 +1459,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Helper class to test adding list entries rapidly with frequent ownership changes
     /// </summary>
-    public class ListCollectionUpdateHelper : BaseCollectionUpdateHelper
+    internal class ListCollectionUpdateHelper : BaseCollectionUpdateHelper
     {
         private NetworkVariable<List<int>> m_ListCollection = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -1507,7 +1507,7 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// The base class to test rapidly adding items to a collection type
     /// </summary>
-    public class BaseCollectionUpdateHelper : NetworkBehaviour
+    internal class BaseCollectionUpdateHelper : NetworkBehaviour
     {
         public static bool VerboseMode;
         private const int k_OwnershipTickDelay = 1;
@@ -1700,7 +1700,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region HASHSET COMPONENT HELPERS
-    public class HashSetBaseTypeTestHelper : ListTestHelperBase, IHashSetTestHelperBase<int>
+    internal class HashSetBaseTypeTestHelper : ListTestHelperBase, IHashSetTestHelperBase<int>
     {
         public static Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>>();
 
@@ -1949,7 +1949,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region DICTIONARY COMPONENT HELPERS
-    public class NestedDictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, Dictionary<int, SerializableObject>>
+    internal class NestedDictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, Dictionary<int, SerializableObject>>
     {
         public static Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>>();
 
@@ -2256,7 +2256,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, SerializableObject>
+    internal class DictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, SerializableObject>
     {
         public static Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>>();
 
@@ -2542,7 +2542,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region INETWORKSERIALIZABLE LIST TEST COMPONENT HELPERS
-    public class SerializableObject : INetworkSerializable, IEquatable<SerializableObject>
+    internal class SerializableObject : INetworkSerializable, IEquatable<SerializableObject>
     {
         public static SerializableObject GetRandomObject()
         {
@@ -2598,7 +2598,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class ListTestHelperListSerializableObject : ListTestHelperBase, IListTestHelperBase<List<SerializableObject>>
+    internal class ListTestHelperListSerializableObject : ListTestHelperBase, IListTestHelperBase<List<SerializableObject>>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperListSerializableObject>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperListSerializableObject>>();
 
@@ -2897,7 +2897,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class ListTestHelperSerializableObject : ListTestHelperBase, IListTestHelperBase<SerializableObject>
+    internal class ListTestHelperSerializableObject : ListTestHelperBase, IListTestHelperBase<SerializableObject>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperSerializableObject>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperSerializableObject>>();
 
@@ -3162,7 +3162,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region BUILT-IN LIST TEST COMPONENT HELPERS
-    public class ListTestHelperListInt : ListTestHelperBase, IListTestHelperBase<List<int>>
+    internal class ListTestHelperListInt : ListTestHelperBase, IListTestHelperBase<List<int>>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperListInt>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperListInt>>();
 
@@ -3466,7 +3466,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class ListTestHelperInt : ListTestHelperBase, IListTestHelperBase<int>
+    internal class ListTestHelperInt : ListTestHelperBase, IListTestHelperBase<int>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperInt>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperInt>>();
 
@@ -3735,7 +3735,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region BASE TEST COMPONENT HELPERS
-    public class ListTestHelperBase : NetworkBehaviour
+    internal class ListTestHelperBase : NetworkBehaviour
     {
         protected static bool IsDebugMode { get; private set; }
 
@@ -3782,7 +3782,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public interface IListTestHelperBase<T>
+    internal interface IListTestHelperBase<T>
     {
         public bool ValidateInstances();
 
@@ -3815,7 +3815,7 @@ namespace Unity.Netcode.RuntimeTests
         public void ResetTrackedChanges();
     }
 
-    public interface IDictionaryTestHelperBase<TKey, TValue>
+    internal interface IDictionaryTestHelperBase<TKey, TValue>
     {
         public bool ValidateInstances();
 
@@ -3844,7 +3844,7 @@ namespace Unity.Netcode.RuntimeTests
         public void ResetTrackedChanges();
     }
 
-    public interface IHashSetTestHelperBase<T>
+    internal interface IHashSetTestHelperBase<T>
     {
         public bool ValidateInstances();
 

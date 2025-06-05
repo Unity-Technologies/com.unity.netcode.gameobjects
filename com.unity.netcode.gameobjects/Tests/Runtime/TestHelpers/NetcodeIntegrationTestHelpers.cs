@@ -16,7 +16,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public static class NetcodeIntegrationTestHelpers
     {
+        /// <summary>
+        /// Defines the minimum number of frames to execute before <see cref="WaitForCondition(Func{bool}, ResultWrapper{bool}, float, int)"/> completes.
+        /// </summary>
         public const int DefaultMinFrames = 1;
+        /// <summary>
+        /// Defines the default timeout for <see cref="WaitForCondition(Func{bool}, ResultWrapper{bool}, float, int)"/>.
+        /// </summary>
         public const float DefaultTimeout = 4f;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
@@ -25,6 +31,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static int s_ClientCount;
         private static int s_OriginalTargetFrameRate = -1;
 
+        /// <summary>
+        /// Delegate to handle checking messages
+        /// </summary>
+        /// <param name="receivedMessage">The message to check provided as an <see cref="object"/>.</param>
+        /// <returns></returns>
         public delegate bool MessageHandleCheck(object receivedMessage);
 
         internal class MessageHandleCheckWithResult
@@ -122,6 +133,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         internal const string FirstPartOfTestRunnerSceneName = "InitTestScene";
 
+        /// <summary>
+        /// A list of all <see cref="NetworkManager"/> instances created for a test.
+        /// </summary>
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
         internal static List<IntegrationTestSceneHandler> ClientSceneHandlers = new List<IntegrationTestSceneHandler>();
@@ -175,7 +189,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Gets the CMB_SERVICE environemnt variable or returns "false" if it does not exist
         /// </summary>
-        /// <returns>string</returns>
+        /// <returns><see cref="string"/></returns>
         internal static string GetCMBServiceEnvironentVariable()
         {
 #if USE_CMB_SERVICE
@@ -328,7 +342,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return networkManager;
         }
 
-
         /// <summary>
         /// Used to add a client to the already existing list of clients
         /// </summary>
@@ -336,7 +349,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
-        /// <returns> Returns true if the clients were successfully created and configured, otherwise false</returns>
+        /// <returns> Returns <see cref="true"/> if the clients were successfully created and configured, otherwise <see cref="false"/>.</returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
@@ -439,6 +452,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
         /// </summary>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
@@ -515,6 +529,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Delegate callback for notifications prior to a client starting.
+        /// </summary>
         public delegate void BeforeClientStartCallback();
 
         internal static bool Start(bool host, bool startServer, NetworkManager server, NetworkManager[] clients)
@@ -529,7 +546,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
-        /// <returns>True if all instances started successfully, false otherwise</returns>
+        /// <returns><see cref="true"/> if all instances started successfully, <see cref="false"/> otherwise</returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
         {
             if (s_IsStarted)
@@ -598,18 +615,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private static uint s_AutoIncrementGlobalObjectIdHashCounter = 111111;
 
+        /// <summary>
+        /// Returns the next GlobalObjectIdHash value to use when spawning <see cref="NetworkObject"/>s during a test.
+        /// </summary>
+        /// <returns>The GlobsalObjectIdHash value as an <see cref="uint"/>.</returns>
         public static uint GetNextGlobalIdHashValue()
         {
             return ++s_AutoIncrementGlobalObjectIdHashCounter;
         }
 
-
+        /// <summary>
+        /// When <see cref="true"/> a netcode test is in progress.
+        /// </summary>
         public static bool IsNetcodeIntegrationTestRunning { get; internal set; }
+
+        /// <summary>
+        /// Can be invoked to register prior to starting a test.
+        /// </summary>
+        /// <param name="registered"><see cref="true"/> or <see cref="false"/></param>
         public static void RegisterNetcodeIntegrationTest(bool registered)
         {
             IsNetcodeIntegrationTestRunning = registered;
         }
-
 
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
@@ -655,7 +682,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="baseName">namr of the object</param>
         /// <param name="owner">owner of the object</param>
         /// <param name="moveToDDOL">when true, the instance is automatically migrated into the DDOL</param>
-        /// <returns></returns>
+        /// <returns><see cref="GameObject"/></returns>
         internal static GameObject CreateNetworkObject(string baseName, NetworkManager owner, bool moveToDDOL = false)
         {
             var gameObject = new GameObject
@@ -707,7 +734,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return gameObject;
         }
 
-        // We use GameObject instead of SceneObject to be able to keep hierarchy
+        /// <summary>
+        /// Deprecated an not used.
+        /// </summary>
+        /// <param name="networkObjectRoot"><see cref="GameObject"/></param>
+        /// <param name="server"><see cref="NetworkManager"/></param>
+        /// <param name="clients">An array of <see cref="NetworkManager"/>s</param>
+        [Obsolete("This method is no longer valid or used.", false)]
         public static void MarkAsSceneObjectRoot(GameObject networkObjectRoot, NetworkManager server, NetworkManager[] clients)
         {
             networkObjectRoot.name += " - Server";
@@ -739,6 +772,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="client">The client</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForClientConnected(NetworkManager client, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnected(new NetworkManager[] { client }, result, timeout);
@@ -750,6 +784,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients to be connected</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client
@@ -805,6 +840,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForClientConnectedToServer(NetworkManager server, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             yield return WaitForClientsConnectedToServer(server, server.IsHost ? s_ClientCount + 1 : s_ClientCount, result, timeout);
@@ -816,6 +852,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The server</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForClientsConnectedToServer(NetworkManager server, int clientCount = 1, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             if (!server.IsServer)
@@ -851,6 +888,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator GetNetworkObjectByRepresentation(ulong networkObjectId, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -882,6 +920,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result</param>
         /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator GetNetworkObjectByRepresentation(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, float timeout = DefaultTimeout)
         {
             if (result == null)
@@ -951,6 +990,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         /// <param name="minFrames">The min frames to wait for</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForCondition(Func<bool> predicate, ResultWrapper<bool> result = null, float timeout = DefaultTimeout, int minFrames = DefaultMinFrames)
         {
             if (predicate == null)
@@ -991,6 +1031,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
@@ -1019,6 +1060,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         internal static IEnumerator WaitForMessageOfTypeHandled<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
@@ -1043,6 +1085,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
+        /// <returns><see cref="IEnumerator"/></returns>
         internal static IEnumerator WaitForMessageMeetingRequirementHandled<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];
@@ -1075,11 +1118,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// This method is no longer used.
+        /// </summary>
+        /// <param name="scenesProcessed"><see cref="Action"/></param>
+        [Obsolete("This method is deprecated and no longer used", false)]
         public static void SetRefreshAllPrefabsCallback(Action scenesProcessed)
         {
             NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
         }
 
+        /// <summary>
+        /// This method is no longer used.
+        /// </summary>
+        /// <param name="networkObject"><see cref="NetworkObject"/></param>
+        /// <param name="scenesProcessed"><see cref="Action"/></param>
+        [Obsolete("This method is deprecated and no longer used", false)]
         public static void RefreshAllPrefabInstances(NetworkObject networkObject, Action scenesProcessed)
         {
             NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;

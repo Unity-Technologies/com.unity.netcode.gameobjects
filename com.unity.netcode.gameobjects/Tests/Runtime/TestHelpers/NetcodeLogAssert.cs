@@ -7,6 +7,9 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// Class used to handle asserting if certain log messages were not logged.
+    /// </summary>
     public class NetcodeLogAssert : IDisposable
     {
         private struct LogData
@@ -22,6 +25,12 @@ namespace Unity.Netcode.RuntimeTests
         private List<LogData> AllLogs { get; }
 
         private bool m_ResetIgnoreFailingMessagesOnTearDown;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="ignorFailingMessages"><see cref="true"/> or <see cref="false"/></param>
+        /// <param name="resetOnTearDown"><see cref="true"/> or <see cref="false"/></param>
         public NetcodeLogAssert(bool ignorFailingMessages = false, bool resetOnTearDown = true)
         {
             LogAssert.ignoreFailingMessages = ignorFailingMessages;
@@ -40,6 +49,12 @@ namespace Unity.Netcode.RuntimeTests
             Application.logMessageReceivedThreaded -= AddLog;
         }
 
+        /// <summary>
+        /// Invoke to add a log during a test.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        /// <param name="stacktrace">The stack trace of where the issue occurred.</param>
+        /// <param name="type">The <see cref="LogType"/>.</param>
         public void AddLog(string message, string stacktrace, LogType type)
         {
             lock (m_Lock)
@@ -55,6 +70,9 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Tear down method
+        /// </summary>
         [UnityTearDown]
         public void OnTearDown()
         {
@@ -65,6 +83,9 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Dispose method
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -88,6 +109,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Assert if a log message was logged with the expectation it would not be.
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="string"/> containing the message to search for.</param>
         public void LogWasNotReceived(LogType type, string message)
         {
             lock (m_Lock)
@@ -102,6 +128,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Assert if a log message was logged with the expectation it would not be. (RegEx version)
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="Regex"/> containing the message pattern to search for.</param>
         public void LogWasNotReceived(LogType type, Regex messageRegex)
         {
             lock (m_Lock)
@@ -116,6 +147,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Assert if a log message was not logged with the expectation that it would be.
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="string"/> containing the message to search for.</param>
         public void LogWasReceived(LogType type, string message)
         {
             lock (m_Lock)
@@ -137,6 +173,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Assert if a log message was not logged with the expectation that it would be. (RegEx version)
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="Regex"/> containing the message pattern to search for.</param>
         public void LogWasReceived(LogType type, Regex messageRegex)
         {
             lock (m_Lock)
@@ -158,6 +199,12 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Determines if a log message was logged or not.
+        /// </summary>
+        /// <param name="type"><see cref="LogType"/> to check for.</param>
+        /// <param name="message"><see cref="string"/> containing the message to search for.</param>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public bool HasLogBeenReceived(LogType type, string message)
         {
             var found = false;
@@ -175,6 +222,9 @@ namespace Unity.Netcode.RuntimeTests
             return found;
         }
 
+        /// <summary>
+        /// Clears out the log history that is searched.
+        /// </summary>
         public void Reset()
         {
             lock (m_Lock)
