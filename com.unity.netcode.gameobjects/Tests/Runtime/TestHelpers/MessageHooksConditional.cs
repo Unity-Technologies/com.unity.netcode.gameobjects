@@ -67,7 +67,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             base.OnFinished();
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Resets the instance.
+        /// </summary>
         public void Reset()
         {
             foreach (var entry in m_MessageHookEntries)

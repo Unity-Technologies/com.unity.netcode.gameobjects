@@ -52,7 +52,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public enum SceneManagementState
         {
+            /// <summary>
+            /// Scene management is enabled.
+            /// </summary>
             SceneManagementEnabled,
+            /// <summary>
+            /// Scene management is disabled.
+            /// </summary>
             SceneManagementDisabled
         }
 
@@ -115,8 +121,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Overloaded version of <see cref="DeregisterNetworkObject"/>. <br />
         /// Used by <see cref="ObjectNameIdentifier"/> to de-register a spawned <see cref="NetworkObject"/> instance.
         /// </summary>
-        /// <param name="networkObject">The <see cref="NetworkManager"/>'s assigned client identifier.</param>
-        /// <param name="networkObject">The <see cref="NetworkObject"/> being de-registered for a test in progress.</param>
+        /// <param name="localClientId">The client instance identifier of the spawned <see cref="NetworkObject"/> instance.
+        /// <param name="networkObjectId">The <see cref="NetworkObject.NetworkObjectId"/> of the spawned instance.</param>
         public static void DeregisterNetworkObject(ulong localClientId, ulong networkObjectId)
         {
             if (s_GlobalNetworkObjects.ContainsKey(localClientId) && s_GlobalNetworkObjects[localClientId].ContainsKey(networkObjectId))
@@ -1029,7 +1035,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// When using time travel, you can use this method to simulate packet jitter conditions.
         /// </summary>
-        /// <param name="dropRatePercent">The amount of packet jitter to be applied while time traveling.</param>
+        /// <param name="jitterSeconds">The amount of packet jitter to be applied while time traveling.</param>
         protected void SetTimeTravelSimulatedLatencyJitter(float jitterSeconds)
         {
             ((MockTransport)GetAuthorityNetworkManager().NetworkConfig.NetworkTransport).LatencyJitter = jitterSeconds;
@@ -1715,6 +1721,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Note: For more complex tests, <see cref="ConditionalPredicateBase"/> and the overloaded
         /// version of this method
         /// </summary>
+        /// <param name="checkForCondition">the conditional function to determine if the condition has been reached.</param>
+        /// <param name="timeOutHelper">the <see cref="TimeoutHelper"/> used to handle timing out the wait condition.</param>
         /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForConditionOrTimeOut(Func<bool> checkForCondition, TimeoutHelper timeOutHelper = null)
         {
@@ -1752,6 +1760,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits for the function condition to return true or it will time out. Uses time travel to simulate this
         /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
+        /// <param name="checkForCondition">the conditional function to determine if the condition has been reached.</param>
+        /// <param name="maxTries">the maximum times to check for the condition (default is 60).</param>
         /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public bool WaitForConditionOrTimeOutWithTimeTravel(Func<bool> checkForCondition, int maxTries = 60)
         {
@@ -1790,6 +1800,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This version accepts an IConditionalPredicate implementation to provide
         /// more flexibility for checking complex conditional cases.
         /// </summary>
+        /// <param name="conditionalPredicate">An <see cref="IConditionalPredicate"/> implementation used to determine if the condition(s) has/have been met.</param>
+        /// <param name="timeOutHelper">the <see cref="TimeoutHelper"/> used to handle timing out the wait condition.</param>
         /// <returns><see cref="IEnumerator"/></returns>
         public static IEnumerator WaitForConditionOrTimeOut(IConditionalPredicate conditionalPredicate, TimeoutHelper timeOutHelper = null)
         {
@@ -2028,6 +2040,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Overloaded method <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
         /// </summary>
+        /// <param name="prefabGameObject">the prefab <see cref="GameObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
         /// <returns>The <see cref="GameObject"/> of the newly spawned <see cref="NetworkObject"/>.</returns>
         protected GameObject SpawnObject(GameObject prefabGameObject, NetworkManager owner, bool destroyWithScene = false)
         {
@@ -2039,6 +2054,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Overloaded method <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
         /// </summary>
+        /// <param name="prefabGameObject">the prefab <see cref="GameObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
         /// <returns>The <see cref="GameObject"/> of the newly spawned player's <see cref="NetworkObject"/>.</returns>
         protected GameObject SpawnPlayerObject(GameObject prefabGameObject, NetworkManager owner, bool destroyWithScene = false)
         {
@@ -2050,9 +2068,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Spawn a NetworkObject prefab instance
         /// </summary>
-        /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
+        /// <param name="prefabNetworkObject">the prefab <see cref="NetworkObject"/> to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="destroyWithScene">default is false</param>
+        /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
         /// <returns>GameObject instance spawned</returns>
         private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
         {
@@ -2109,8 +2128,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Overloaded method <see cref="SpawnObjects(NetworkObject, NetworkManager, int, bool)"/>
+        /// Overloaded method <see cref="SpawnObjects(NetworkObject, NetworkManager, int, bool)"/>.
         /// </summary>
+        /// <param name="prefabGameObject">the prefab <see cref="GameObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="count">number of instances to create and spawn</param>
+        /// <param name="destroyWithScene">default is false</param>
         /// <returns>A <see cref="List{T}"/> of <see cref="GameObject"/>s spawned.</returns>
         protected List<GameObject> SpawnObjects(GameObject prefabGameObject, NetworkManager owner, int count, bool destroyWithScene = false)
         {
@@ -2123,7 +2146,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Will spawn (x) number of prefab NetworkObjects
         /// <see cref="SpawnObject(NetworkObject, NetworkManager, bool)"/>
         /// </summary>
-        /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
+        /// <param name="prefabNetworkObject">the prefab <see cref="NetworkObject"/> to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="count">number of instances to create and spawn</param>
         /// <param name="destroyWithScene">default is false</param>
@@ -2220,6 +2243,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Just a helper function to avoid having to write the entire assert just to check if you
         /// timed out.
         /// </summary>
+        /// <remarks>
+        /// If no <see cref="TimeoutHelper"/> is provided, then the <see cref="s_GlobalTimeoutHelper"/> will be used.
+        /// </remarks>
+        /// <param name="timeOutErrorMessage">The error message to log if a time out has occurred.</param>
+        /// <param name="assignedTimeoutHelper">Optional <see cref="TimeoutHelper"/> instance used during a conditional wait.</param>
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
@@ -2299,6 +2327,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Yields until specified amount of network ticks and the expected number of frames has been passed.
         /// </summary>
+        /// <param name="networkManager">The relative <see cref="NetworkManager"/> waiting for a specific tick.</param>
+        /// <param name="count">How many ticks to wait for.</param>
         /// <returns><see cref="IEnumerator"/></returns>
         protected IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {

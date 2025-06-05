@@ -132,7 +132,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Assert if a log message was logged with the expectation it would not be. (RegEx version)
         /// </summary>
         /// <param name="type"><see cref="LogType"/> to check for.</param>
-        /// <param name="message"><see cref="Regex"/> containing the message pattern to search for.</param>
+        /// <param name="messageRegex"><see cref="Regex"/> containing the message pattern to search for.</param>
         public void LogWasNotReceived(LogType type, Regex messageRegex)
         {
             lock (m_Lock)
@@ -177,7 +177,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Assert if a log message was not logged with the expectation that it would be. (RegEx version)
         /// </summary>
         /// <param name="type"><see cref="LogType"/> to check for.</param>
-        /// <param name="message"><see cref="Regex"/> containing the message pattern to search for.</param>
+        /// <param name="messageRegex"><see cref="Regex"/> containing the message pattern to search for.</param>
         public void LogWasReceived(LogType type, Regex messageRegex)
         {
             lock (m_Lock)

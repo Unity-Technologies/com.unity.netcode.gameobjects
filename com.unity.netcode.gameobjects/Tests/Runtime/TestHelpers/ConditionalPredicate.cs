@@ -10,6 +10,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
     {
         private bool m_TimedOut;
 
+        /// <summary>
+        /// Will be set to <see cref="true"/> if timed out.
+        /// </summary>
         public bool TimedOut { get { return m_TimedOut; } }
 
         /// <summary>
@@ -59,6 +62,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Test the conditions of the test to be reached
         /// </summary>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         bool HasConditionBeenReached();
 
         /// <summary>
@@ -67,9 +71,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         void Started();
 
         /// <summary>
-        /// Wait for condition has finished:
+        /// Wait for condition has finished: <br />
         /// Condition(s) met or timed out
         /// </summary>
+        /// <param name="timedOut"><see cref="true"/> or <see cref="false"/></param>
         void Finished(bool timedOut);
 
     }

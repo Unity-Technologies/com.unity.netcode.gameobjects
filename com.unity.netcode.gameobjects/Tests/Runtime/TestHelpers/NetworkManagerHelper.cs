@@ -38,6 +38,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// All <see cref="NetworkObject"/> instances instantiated under the assigned <see cref="NetworkManager"/>.
         /// </summary>
         public static Dictionary<Guid, NetworkObject> InstantiatedNetworkObjects = new Dictionary<Guid, NetworkObject>();
+
+        /// <summary>
+        /// The operation mode configured.
+        /// </summary>
         public static NetworkManagerOperatingMode CurrentNetworkManagerMode;
 
         /// <summary>
@@ -45,9 +49,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public enum NetworkManagerOperatingMode
         {
+            /// <summary>
+            /// None
+            /// </summary>
             None,
+            /// <summary>
+            /// Host mode
+            /// </summary>
             Host,
+            /// <summary>
+            /// Server mode
+            /// </summary>
             Server,
+            /// <summary>
+            /// Client mode
+            /// </summary>
             Client,
         }
 
@@ -58,6 +74,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// send messages to yourself (i.e. Host-Client to Host-Server and vice versa).
         /// As such, the default setting is to start in Host mode.
         /// </summary>
+        /// <param name="networkManager">The newly started <see cref="NetworkManager"/></param>
         /// <param name="managerMode">parameter to specify which mode you want to start the NetworkManager</param>
         /// <param name="networkConfig">parameter to specify custom NetworkConfig settings</param>
         /// <returns>true if it was instantiated or is already instantiate otherwise false means it failed to instantiate</returns>

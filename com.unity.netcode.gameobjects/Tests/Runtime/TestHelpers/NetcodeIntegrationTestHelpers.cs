@@ -175,6 +175,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// If deriving from <see cref="NetcodeIntegrationTest"/> or using <see cref="Destroy"/> then you
         /// typically won't need to call this.
         /// </summary>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> registering handlers.</param>
+        /// <param name="serverSideSceneManager">When <see cref="true"/>, the <see cref="NetworkManager"/> will register as the scene manager handler.</param>
         public static void RegisterHandlers(NetworkManager networkManager, bool serverSideSceneManager = false)
         {
             SceneManagerValidationAndTestRunnerInitialization(networkManager);
@@ -546,6 +548,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The Server NetworkManager</param>
         /// <param name="clients">The Clients NetworkManager</param>
         /// <param name="callback">called immediately after server is started and before client(s) are started</param>
+        /// <param name="startServer">true to start it false to not start it.</param>
         /// <returns><see cref="true"/> if all instances started successfully, <see cref="false"/> otherwise</returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null, bool startServer = true)
         {
@@ -608,8 +611,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Used to return a value of type T from a wait condition
         /// </summary>
+        /// <typeparam name="T">The type to wrap.</typeparam>
         public class ResultWrapper<T>
         {
+            /// <summary>
+            /// The result wrapped.
+            /// </summary>
             public T Result;
         }
 
@@ -850,6 +857,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Waits on the server side for 1 client to be connected
         /// </summary>
         /// <param name="server">The server</param>
+        /// <param name="clientCount">The number of clients.</param>
         /// <param name="result">The result. If null, it will automatically assert</param>
         /// <param name="timeout">Maximum time in seconds to wait for connection. Defaults to DefaultTimeout</param>
         /// <returns><see cref="IEnumerator"/></returns>
