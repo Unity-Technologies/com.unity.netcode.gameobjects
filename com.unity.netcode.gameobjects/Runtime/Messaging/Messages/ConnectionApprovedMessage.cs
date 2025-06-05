@@ -262,6 +262,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning($"[Client-{OwnerClientId}] Receiving duplicate connection approved. Client is already connected!");
                 }
+                ConnectedClientIds.Dispose();
                 return;
             }
 
@@ -303,6 +304,9 @@ namespace Unity.Netcode
                     networkManager.ConnectionManager.AddClient(clientId);
                 }
             }
+
+            // Dispose after it has been used.
+            ConnectedClientIds.Dispose();
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
@@ -387,7 +391,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-            ConnectedClientIds.Dispose();
         }
     }
 }
