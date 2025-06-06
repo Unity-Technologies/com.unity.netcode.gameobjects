@@ -29,7 +29,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// For debug logging purposes, this returns the <see cref="MessageHooks"/> still remaining as a string. 
+        /// For debug logging purposes, this returns the <see cref="MessageHooks"/> still remaining as a string.
         /// </summary>
         /// <returns>A list of the remaining message hooks.</returns>
         public string GetHooksStillWaiting()
