@@ -1,0 +1,53 @@
+{
+    "name": "Unity.Netcode.Editor.Tests",
+    "rootNamespace": "Unity.Netcode.EditorTests",
+    "references": [
+        "Unity.Collections",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Networking.Transport",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        },
+        {
+            "name": "com.unity.transport",
+            "expression": "2.4.0",
+            "define": "UTP_TRANSPORT_2_4_ABOVE"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.1.0a1",
+            "define": "HOSTNAME_RESOLUTION_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}
