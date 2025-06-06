@@ -59,8 +59,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// InstantiationData sent during the instantiation process.
-        /// Retrieved in <see cref="INetworkPrefabInstanceHandlerWithData.ReadInstantiationData{T}(ref BufferSerializer{T})"/>
-        /// and available to INetworkPrefabInstanceHandler.Instantiate() for custom handling by user code.
+        /// Available to read as T parameter to  <see cref="NetworkPrefabInstanceHandlerWithData{T}.Instantiate(ulong, Vector3, Quaternion, T)"/> for custom handling by user code.
         /// </summary>
         internal byte[] InstantiationData;
 
