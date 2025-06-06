@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -184,4 +183,3 @@ namespace Unity.Netcode.Editor.CodeGen
         }
     }
 }
-#endif

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.Components")]
 #if UNITY_EDITOR
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
-[assembly: InternalsVisibleTo("Unity.Netcode.CodeGen")]
+[assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]
 #endif // UNITY_EDITOR
 
 #if COM_UNITY_NETCODE_ADAPTER_UTP

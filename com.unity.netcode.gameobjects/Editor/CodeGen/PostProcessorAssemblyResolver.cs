@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -136,4 +135,3 @@ namespace Unity.Netcode.Editor.CodeGen
         }
     }
 }
-#endif

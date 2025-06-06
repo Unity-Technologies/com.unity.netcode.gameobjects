@@ -1,9 +1,9 @@
 {
-    "name": "Unity.Netcode.CodeGen",
+    "name": "Unity.Netcode.Editor.CodeGen",
     "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
-        "GUID:1491147abca9d7d4bb7105af628b223e",
-        "GUID:e0cd26848372d4e5c891c569017e11f1"
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"
@@ -13,9 +13,9 @@
     "overrideReferences": true,
     "precompiledReferences": [
         "Mono.Cecil.dll",
-        "Mono.Cecil.Rocks.dll",
         "Mono.Cecil.Mdb.dll",
-        "Mono.Cecil.Pdb.dll"
+        "Mono.Cecil.Pdb.dll",
+        "Mono.Cecil.Rocks.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],
