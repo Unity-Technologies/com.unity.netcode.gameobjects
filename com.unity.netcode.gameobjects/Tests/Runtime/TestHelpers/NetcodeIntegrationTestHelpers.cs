@@ -35,7 +35,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Delegate to handle checking messages
         /// </summary>
         /// <param name="receivedMessage">The message to check provided as an <see cref="object"/>.</param>
-        /// <returns></returns>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public delegate bool MessageHandleCheck(object receivedMessage);
 
         internal class MessageHandleCheckWithResult

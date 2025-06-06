@@ -151,14 +151,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Returns a randomly generated <see cref="Vector3"/> based on the <param name="min"/> and <param name="max"/> range specified in the parameters.
+        /// Returns a randomly generated <see cref="Vector3"/> based on the min and max range specified in the parameters.
         /// </summary>
         /// <remarks>
-        /// Each axis value is a randomly generated value between <param name="min"/> and <param name="max"/>.
+        /// Each axis value is a randomly generated value between min and max.
         /// </remarks>
         /// <param name="min">The minimum <see cref="float"/> value.</param>
         /// <param name="max">The maximum <see cref="float"/> value.</param>
-        /// <returns></returns>
+        /// <returns>The randomly generated <see cref="Vector3"/> result.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Vector3 GetRandomVector3(float min, float max)
         {

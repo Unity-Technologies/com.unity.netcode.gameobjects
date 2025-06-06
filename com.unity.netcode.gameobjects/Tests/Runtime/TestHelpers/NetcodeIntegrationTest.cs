@@ -1163,7 +1163,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Determines if all <see cref="NetcodeIntegrationTest"/> related messages should be logged or not.
         /// </summary>
-        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         protected virtual bool LogAllMessages => false;
 
         /// <summary>
