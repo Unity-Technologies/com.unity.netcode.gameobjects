@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using Mono.Cecil;
 
 namespace Unity.Netcode.Editor.CodeGen
@@ -10,3 +11,4 @@ namespace Unity.Netcode.Editor.CodeGen
         }
     }
 }
+#endif
