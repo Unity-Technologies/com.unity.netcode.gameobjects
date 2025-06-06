@@ -326,7 +326,7 @@ namespace Unity.Netcode
             {
                 var spawnedObject = sobj;
                 // Don't synchronize objects that have pending visibility as that will be sent as a CreateObjectMessage towards the end of the current frame
-                if (TargetClientId != NetworkManager.ServerClientId && m_NetworkManager.SpawnManager.IsObjectVisibilityPending(TargetClientId,ref spawnedObject))
+                if (TargetClientId != NetworkManager.ServerClientId && m_NetworkManager.SpawnManager.IsObjectVisibilityPending(TargetClientId, ref spawnedObject))
                 {
                     continue;
                 }
