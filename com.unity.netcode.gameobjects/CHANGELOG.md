@@ -6,13 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.4.1] - 2025-06-02
 
-### Added
-
-### Fixed
-
-### Changed
+- Changed: Various internal orginizational changes along with a large XML API update for the test helpers API primarialy.
+- Changed: Removed the multiplayer tools test project and migrated all of that to the tools repository.
 
 ## [2.4.0] - 2025-06-02
 
