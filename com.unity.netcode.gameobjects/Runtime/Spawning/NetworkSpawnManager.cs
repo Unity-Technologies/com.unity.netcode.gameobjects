@@ -565,6 +565,7 @@ namespace Unity.Netcode
             }
 
             var size = 0;
+
             if (NetworkManager.DistributedAuthorityMode)
             {
                 var message = new ChangeOwnershipMessage
@@ -578,6 +579,7 @@ namespace Unity.Netcode
                     OwnershipFlags = (ushort)networkObject.Ownership,
                 };
                 // If we are connected to the CMB service or not the DAHost (i.e. pure DA-Clients only)
+
                 if (NetworkManager.CMBServiceConnection || !NetworkManager.DAHost)
                 {
                     // Always update the network properties in distributed authority mode for the client gaining ownership
@@ -585,6 +587,11 @@ namespace Unity.Netcode
                     {
                         networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
                     }
+
+                    // Populate valid target client identifiers that should receive this change in ownership message.
+                    message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => !IsObjectVisibilityPending(c, ref networkObject) && networkObject.IsNetworkVisibleTo(c)).ToArray();
+                    message.ClientIdCount = message.ClientIds.Length;
+
                     size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(NetworkManager.LocalClientId, networkObject, size);
                 }
@@ -592,10 +599,11 @@ namespace Unity.Netcode
                 {
                     foreach (var client in NetworkManager.ConnectedClients)
                     {
-                        if (client.Value.ClientId == NetworkManager.ServerClientId)
+                        if (client.Value.ClientId == NetworkManager.ServerClientId || IsObjectVisibilityPending(client.Key, ref networkObject))
                         {
                             continue;
                         }
+
                         if (networkObject.IsNetworkVisibleTo(client.Value.ClientId))
                         {
                             size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
@@ -613,8 +621,17 @@ namespace Unity.Netcode
                 };
                 foreach (var client in NetworkManager.ConnectedClients)
                 {
+                    if (client.Value.ClientId == NetworkManager.ServerClientId || IsObjectVisibilityPending(client.Key, ref networkObject))
+                    {
+                        continue;
+                    }
                     if (networkObject.IsNetworkVisibleTo(client.Value.ClientId))
                     {
+                        if (client.Key != client.Value.ClientId)
+                        {
+                            NetworkLog.LogError($"[Client-{client.Key}] Client key ({client.Key}) does not match the {nameof(NetworkClient)} client Id {client.Value.ClientId}! Client-{client.Key} will not receive ownership changed message!");
+                            continue;
+                        }
                         size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
                         NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
                     }
@@ -637,6 +654,27 @@ namespace Unity.Netcode
                 var tickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
                 m_LastChangeInOwnership[networkObject.NetworkObjectId] = Time.realtimeSinceStartup + (tickFrequency * k_MaximumTickOwnershipChangeMultiplier);
             }
+        }
+
+        /// <summary>
+        /// Will determine if a client has been granted visibility for a NetworkObject but
+        /// the <see cref="CreateObjectMessage"/> has yet to be generated for it. Under this case,
+        /// the client might not need to be sent a message (i.e. <see cref="ChangeOwnershipMessage")
+        /// </summary>
+        /// <param name="clientId">the client to check</param>
+        /// <param name="networkObject">the <see cref="NetworkObject"/> to check if it is pending show</param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        internal bool IsObjectVisibilityPending(ulong clientId, ref NetworkObject networkObject)
+        {
+            if (NetworkManager.DistributedAuthorityMode && ClientsToShowObject.ContainsKey(networkObject))
+            {
+                return ClientsToShowObject[networkObject].Contains(clientId);
+            }
+            else if (ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                return ObjectsToShowToClient[clientId].Contains(networkObject);
+            }
+            return false;
         }
 
         internal bool HasPrefab(NetworkObject.SceneObject sceneObject)

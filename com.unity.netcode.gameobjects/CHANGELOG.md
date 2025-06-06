@@ -10,20 +10,30 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [2.4.0] - 2025-06-02
+
+### Added
+
+- Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3473)
 - When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
 - Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
 
 ### Fixed
 
+- Fixed issue where the `NetworkObject.DontDestroyWithOwner` was not being honored. (#3477)
+- Fixed issue where non-authority `NetworkTransform` instances would not allow non-synchronized axis values to be updated locally. (#3471)
+- Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3468)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3466)
+- Fixed issue with the Distributed Authority connection sequence with scene management enabled where the `ClientConnected` event was fired before the client was synchronized. (#3459)
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3458)
 - Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3405)
 - Fixed memory leaks when domain reload is disabled. (#3427)
 - Fixed issue where disabling the physics or physics2D package modules could result in a compilation error. (#3422)
 - Fixed an exception being thrown when unregistering a custom message handler from within the registered callback. (#3417)
-
-### Changed
-
 
 ## [2.3.2] - 2025-04-22
 

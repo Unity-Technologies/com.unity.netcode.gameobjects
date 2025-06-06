@@ -333,7 +333,7 @@ namespace Unity.Netcode
             if (networkObject.OwnerClientId == OwnerClientId)
             {
                 // Log error and then ignore the message
-                UnityEngine.Debug.LogError($"Client-{context.SenderId} ({RequestClientId}) sent unnecessary ownership changed message for {NetworkObjectId}.");
+                NetworkLog.LogError($"[Receiver: Client-{networkManager.LocalClientId}][Sender: Client-{context.SenderId}][RID: {RequestClientId}] Detected unnecessary ownership changed message for {networkObject.name} (NID:{NetworkObjectId}).");
                 return;
             }
 

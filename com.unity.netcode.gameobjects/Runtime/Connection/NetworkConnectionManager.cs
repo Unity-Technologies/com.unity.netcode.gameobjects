@@ -133,38 +133,7 @@ namespace Unity.Netcode
                 Debug.LogException(exception);
             }
 
-            if (!NetworkManager.IsServer)
-            {
-                var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
-                // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
-                using var sentinel = peerClientIds;
-
-                var idx = 0;
-                foreach (var peerId in NetworkManager.ConnectedClientsIds)
-                {
-                    if (peerId == NetworkManager.LocalClientId)
-                    {
-                        continue;
-                    }
-
-                    // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
-                    if (peerClientIds.Length > idx)
-                    {
-                        peerClientIds[idx] = peerId;
-                        ++idx;
-                    }
-                }
-
-                try
-                {
-                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                }
-            }
-            else
+            if (NetworkManager.IsServer || NetworkManager.LocalClient.IsSessionOwner)
             {
                 try
                 {
@@ -174,6 +143,38 @@ namespace Unity.Netcode
                 {
                     Debug.LogException(exception);
                 }
+
+                return;
+            }
+
+            // Invoking connection event on non-authority local client. Need to calculate PeerIds.
+            var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+            // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
+            using var sentinel = peerClientIds;
+
+            var idx = 0;
+            foreach (var peerId in NetworkManager.ConnectedClientsIds)
+            {
+                if (peerId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+
+                // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
+                if (peerClientIds.Length > idx)
+                {
+                    peerClientIds[idx] = peerId;
+                    ++idx;
+                }
+            }
+
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -1177,7 +1178,7 @@ namespace Unity.Netcode
                     {
                         // If destroying with owner, then always despawn and destroy (or defer destroying to prefab handler)
                         // Handle an object with no observers other than the current disconnecting client as destroying with owner
-                        if (!ownedObject.DontDestroyWithOwner || ownedObject.Observers.Count == 0 || (ownedObject.Observers.Count == 1 && ownedObject.Observers.Contains(clientId)))
+                        if (!ownedObject.DontDestroyWithOwner && (ownedObject.Observers.Count == 0 || (ownedObject.Observers.Count == 1 && ownedObject.Observers.Contains(clientId))))
                         {
                             if (NetworkManager.PrefabHandler.ContainsHandler(ownedObject.GlobalObjectIdHash))
                             {
@@ -1243,7 +1244,7 @@ namespace Unity.Netcode
                                     }
 
                                     // Skip destroy with owner objects as they will be processed by the outer loop
-                                    if (!childObject.DontDestroyWithOwner || childObject.Observers.Count == 0 || (childObject.Observers.Count == 1 && childObject.Observers.Contains(clientId)))
+                                    if (!childObject.DontDestroyWithOwner && (childObject.Observers.Count == 0 || (childObject.Observers.Count == 1 && childObject.Observers.Contains(clientId))))
                                     {
                                         continue;
                                     }
