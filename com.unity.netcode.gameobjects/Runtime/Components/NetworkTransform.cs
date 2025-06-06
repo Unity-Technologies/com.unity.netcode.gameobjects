@@ -852,7 +852,7 @@ namespace Unity.Netcode.Components
                 if (HasScaleChange)
                 {
                     // If we are teleporting (which includes synchronizing) and the associated NetworkObject has a parent
-                    // then we want to serialize the LossyScale since NetworkObject spawn order is not  guaranteed
+                    // then we want to serialize the LossyScale since NetworkObject spawn order is not guaranteed
                     if (IsTeleportingNextFrame && IsParented)
                     {
                         serializer.SerializeValue(ref LossyScale);
@@ -1014,7 +1014,7 @@ namespace Unity.Netcode.Components
             /// Uses a 1 to 2 phase smooth dampening approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase smooth dampens towards the current tick state update being processed by the accumulated delta time relative to the time to target.</description></item>
-            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
@@ -3777,13 +3777,13 @@ namespace Unity.Netcode.Components
 
         /// <inheritdoc/>
         /// <remarks>
-        /// When not using a NetworkRigidbody and using an owner authoritative motion model, you can <br />
+        /// When not using a NetworkRigidbody and using an owner authoritative motion model, you can<br />
         /// improve parenting transitions into and out of world and local space by:<br />
         /// - Disabling <see cref="NetworkObject.SyncOwnerTransformWhenParented"/><br />
         /// - Enabling <see cref="NetworkObject.AllowOwnerToParent"/><br />
         /// - Enabling <see cref="SwitchTransformSpaceWhenParented"/><br />
         /// -- Note: This handles changing from world space to local space for you.<br />
-        /// When these settings are applied, transitioning from: <br />
+        /// When these settings are applied, transitioning from:<br />
         /// - World space to local space (root-null parent/null to <see cref="NetworkObject"/> parent)
         /// - Local space back to world space (<see cref="NetworkObject"/> parent to root-null parent)
         /// - Local space to local space (<see cref="NetworkObject"/> parent to <see cref="NetworkObject"/> parent)
@@ -4152,12 +4152,12 @@ namespace Unity.Netcode.Components
             }
 
             // Note: This is for the legacy lerp type in order to maintain the same end result for any games under development that have tuned their
-            // project's to match the legacy lerp's end result. This will not allow changes
+            // project's to match the legacy lerp's end result.
             var cachedRenderTime = 0.0;
             if (PositionInterpolationType == InterpolationTypes.LegacyLerp || RotationInterpolationType == InterpolationTypes.LegacyLerp || ScaleInterpolationType == InterpolationTypes.LegacyLerp)
             {
                 // Since InterpolationBufferTickOffset defaults to zero, this should not impact exist projects but still provides users with the ability to tweak
-                // their ticks ago time. 
+                // their ticks ago time.
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer ? 2 : 1) + InterpolationBufferTickOffset;
                 cachedRenderTime = timeSystem.TimeTicksAgo(ticksAgo).Time;
             }
@@ -4584,7 +4584,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// Note: You can adjust this value during runtime. Increasing this value will set non-authority instances that much further
-        /// behind the authority instance but will increase the number of state updates to be processed. Increasing this can be useful 
+        /// behind the authority instance but will increase the number of state updates to be processed. Increasing this can be useful
         /// under higher latency conditions.<br />
         /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
         /// <see cref="NetworkTimeSystem.TickLatency"/>

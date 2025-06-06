@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.DAHost)]
-    public class RpcProxyMessageTesting : NetcodeIntegrationTest
+    internal class RpcProxyMessageTesting : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
