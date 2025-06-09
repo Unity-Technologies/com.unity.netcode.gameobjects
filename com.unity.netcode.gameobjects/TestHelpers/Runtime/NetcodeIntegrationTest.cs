@@ -1783,7 +1783,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private System.Text.StringBuilder m_WaitForLog = new System.Text.StringBuilder();
+        private StringBuilder m_WaitForLog = new StringBuilder();
 
         private void LogWaitForMessages()
         {
