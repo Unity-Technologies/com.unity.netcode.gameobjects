@@ -1,0 +1,10 @@
+{
+  "ErrorExceptions": [
+    {
+      "ValidationTest": "API Validation",
+      "ExceptionMessage": "Assembly \"Unity.Netcode.Editor.PackageChecker\" no longer exists or is no longer included in build. This change requires a new major version.",
+      "PackageVersion": "2.4.1"
+    }
+  ],
+  "WarningExceptions": []
+}
