@@ -2764,7 +2764,7 @@ namespace Unity.Netcode
                 }
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    var currentKnownChildren = new System.Text.StringBuilder();
+                    var currentKnownChildren = new StringBuilder();
                     currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
                     for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
                     {
