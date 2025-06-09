@@ -12,7 +12,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3491)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
+- Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
 
 ### Changed
 
