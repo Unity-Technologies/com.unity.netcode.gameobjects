@@ -1512,8 +1512,10 @@ namespace Unity.Netcode
                 }
             }
 
-            LocalClient.IsApproved = false;
-            LocalClient.IsConnected = false;
+            // Completely clear out the NetworkClient to default settings
+            LocalClient = new NetworkClient();
+
+            // Clear all lists
             ConnectedClients.Clear();
             ConnectedClientIds.Clear();
             ConnectedClientsList.Clear();
