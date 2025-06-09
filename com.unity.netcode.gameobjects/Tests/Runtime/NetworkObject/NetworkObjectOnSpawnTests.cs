@@ -390,7 +390,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool AllClientsSpawnedObject()
         {
-            foreach(var networkManager in m_NetworkManagers)
+            foreach (var networkManager in m_NetworkManagers)
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedInstanceId))
                 {
