@@ -317,6 +317,12 @@ namespace Unity.Netcode
             m_NetworkObjectsSync.Clear();
             foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
+                var spawnedObject = sobj;
+                // Don't synchronize objects that have pending visibility as that will be sent as a CreateObjectMessage towards the end of the current frame
+                if (TargetClientId != NetworkManager.ServerClientId && m_NetworkManager.SpawnManager.IsObjectVisibilityPending(TargetClientId, ref spawnedObject))
+                {
+                    continue;
+                }
                 if (sobj.Observers.Contains(TargetClientId))
                 {
                     m_NetworkObjectsSync.Add(sobj);
