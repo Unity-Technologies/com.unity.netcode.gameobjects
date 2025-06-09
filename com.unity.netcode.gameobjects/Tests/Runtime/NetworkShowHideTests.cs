@@ -645,7 +645,12 @@ namespace Unity.Netcode.RuntimeTests
             return m_NewOwner.SpawnManager.SpawnedObjects[m_ObjectId].OwnerClientId == m_NewOwner.LocalClientId;
         }
 
-
+        /// <summary>
+        /// Validates when invoking NetworkObject.NetworkShow and NetworkObject.ChangeOwnership
+        /// back-to-back it will not attempt to send a change ownership message since the visibility
+        /// message (CreateObjectMessage) is deferred until the end of the frame.
+        /// </summary>
+        /// <returns>IEnumerator</returns>
         [UnityTest]
         public IEnumerator NetworkShowAndChangeOwnership()
         {
