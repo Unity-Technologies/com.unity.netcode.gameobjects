@@ -15,6 +15,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3494)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3494)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3465)
 - Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
 
