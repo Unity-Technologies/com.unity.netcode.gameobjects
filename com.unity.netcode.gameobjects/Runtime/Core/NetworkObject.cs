@@ -58,6 +58,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// InstantiationData sent during the instantiation process.
+        /// Available to read as T parameter to  <see cref="NetworkPrefabInstanceHandlerWithData{T}.Instantiate(ulong, Vector3, Quaternion, T)"/> for custom handling by user code.
+        /// </summary>
+        internal byte[] InstantiationData;
+
+        /// <summary>
         /// All <see cref="NetworkTransform"/> component instances associated with a <see cref="NetworkObject"/> component instance.
         /// </summary>
         /// <remarks>
@@ -2837,6 +2843,12 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 10, value);
             }
 
+            public bool HasInstantiationData
+            {
+                get => ByteUtility.GetBit(m_BitField, 11);
+                set => ByteUtility.SetBit(ref m_BitField, 11, value);
+            }
+
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.
             public ulong[] Observers;
@@ -2923,6 +2935,12 @@ namespace Unity.Netcode
                 else
                 {
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
+                }
+
+                if (HasInstantiationData)
+                {
+                    BytePacker.WriteValuePacked(writer, OwnerObject.InstantiationData.Length);
+                    writer.WriteBytesSafe(OwnerObject.InstantiationData);
                 }
 
                 // Synchronize NetworkVariables and NetworkBehaviours
@@ -3101,7 +3119,8 @@ namespace Unity.Netcode
                 NetworkSceneHandle = NetworkSceneHandle,
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
-                TargetClientId = targetClientId
+                TargetClientId = targetClientId,
+                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
             };
 
             // Handle Parenting
@@ -3166,8 +3185,15 @@ namespace Unity.Netcode
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+
+            //Synchronize the instantiation data if needed
+            FastBufferReader instantiationDataReader = sceneObject.HasInstantiationData ? networkManager.PrefabHandler.GetInstantiationDataReader(sceneObject.Hash, reader) : default;
+
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationDataReader);
+
+            instantiationDataReader.Dispose();
 
             if (networkObject == null)
             {
@@ -3200,7 +3226,6 @@ namespace Unity.Netcode
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // Synchronize NetworkBehaviours
-            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
             // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are

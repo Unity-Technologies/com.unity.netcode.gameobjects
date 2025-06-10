@@ -817,14 +817,14 @@ namespace Unity.Netcode
         /// Gets the right NetworkObject prefab instance to spawn. If a handler is registered or there is an override assigned to the
         /// passed in globalObjectIdHash value, then that is what will be instantiated, spawned, and returned.
         /// </summary>
-        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false)
+        internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false, FastBufferReader instantiationDataReader = default)
         {
             NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
             if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
             {
                 // Let the handler spawn the NetworkObject
-                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default);
+                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationDataReader);
                 networkObject.NetworkManagerOwner = NetworkManager;
             }
             else
@@ -913,7 +913,7 @@ namespace Unity.Netcode
         /// For most cases this is client-side only, with the exception of when the server
         /// is spawning a player.
         /// </remarks>
-        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject)
+        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject, FastBufferReader instantiationDataReader = default)
         {
             NetworkObject networkObject = null;
             var globalObjectIdHash = sceneObject.Hash;
@@ -926,7 +926,7 @@ namespace Unity.Netcode
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.IsSceneObject)
             {
-                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject);
+                networkObject = GetNetworkObjectToSpawn(sceneObject.Hash, sceneObject.OwnerClientId, position, rotation, sceneObject.IsSceneObject, instantiationDataReader);
             }
             else // Get the in-scene placed NetworkObject
             {

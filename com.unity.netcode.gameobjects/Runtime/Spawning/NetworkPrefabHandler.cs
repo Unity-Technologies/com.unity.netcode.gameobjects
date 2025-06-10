@@ -21,6 +21,10 @@ namespace Unity.Netcode
         /// Note on Pooling:  If you are using a NetworkObject pool, don't forget to make the NetworkObject active
         /// via the  <see cref="GameObject.SetActive(bool)"/> method.
         /// </summary>
+        /// <remarks>
+        /// If you need to pass custom data at instantiation time (e.g., selecting a variant, setting initialization parameters, or choosing a pre-instantiated object),
+        /// implement <see cref="NetworkPrefabInstanceHandlerWithData{T}"/> instead.
+        /// </remarks>
         /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
         /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
@@ -56,6 +60,12 @@ namespace Unity.Netcode
         /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandler interface
         /// </summary>
         private readonly Dictionary<uint, INetworkPrefabInstanceHandler> m_PrefabAssetToPrefabHandler = new Dictionary<uint, INetworkPrefabInstanceHandler>();
+
+        /// <summary>
+        /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandlerWithData interface,
+        /// used to keep a smaller lookup table than <see cref="m_PrefabAssetToPrefabHandler"/> for faster instantiation data injection into NetworkObject
+        /// </summary>
+        private readonly Dictionary<uint, INetworkPrefabInstanceHandlerWithData> m_PrefabAssetToPrefabHandlerWithData = new Dictionary<uint, INetworkPrefabInstanceHandlerWithData>();
 
         /// <summary>
         /// Links the custom prefab instance's GlobalNetworkObjectId to the original prefab asset's GlobalNetworkObjectId.  (Needed for HandleNetworkPrefabDestroy)
@@ -98,10 +108,42 @@ namespace Unity.Netcode
             if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
             {
                 m_PrefabAssetToPrefabHandler.Add(globalObjectIdHash, instanceHandler);
+                if (instanceHandler is INetworkPrefabInstanceHandlerWithData instanceHandlerWithData)
+                {
+                    m_PrefabAssetToPrefabHandlerWithData.Add(globalObjectIdHash, instanceHandlerWithData);
+                }
                 return true;
             }
 
             return false;
+        }
+
+        public void SetInstantiationData<T>(GameObject gameObject, T instantiationData) where T : struct, INetworkSerializable
+        {
+            if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
+            {
+                SetInstantiationData(networkObject, instantiationData);
+            }
+        }
+        public void SetInstantiationData<T>(NetworkObject networkObject, T data) where T : struct, INetworkSerializable
+        {
+            if (!TryGetHandlerWithData(networkObject.GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
+            {
+                Debug.LogError("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+            }
+
+            using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
+            var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+
+            try
+            {
+                data.NetworkSerialize(serializer);
+                networkObject.InstantiationData = writer.ToArray();
+            }
+            catch (Exception ex)
+            {
+                NetworkLog.LogError($"[InstantiationData] Failed to serialize instantiation data for {nameof(NetworkObject)} '{networkObject.name}': {ex}");
+            }
         }
 
         /// <summary>
@@ -199,6 +241,7 @@ namespace Unity.Netcode
                 m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
             }
 
+            m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
             return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
         }
 
@@ -222,6 +265,38 @@ namespace Unity.Netcode
         /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
+
+        /// <summary>
+        /// Returns the <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        /// <param name="objectHash"></param>
+        /// <param name="handler"></param>
+        /// <returns></returns>
+        internal bool TryGetHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
+        {
+            return m_PrefabAssetToPrefabHandlerWithData.TryGetValue(objectHash, out handler);
+        }
+
+        /// <summary>
+        /// Reads the instantiation data for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        internal FastBufferReader GetInstantiationDataReader(uint objectHash, FastBufferReader fastBufferReader)
+        {
+            if (!TryGetHandlerWithData(objectHash, out _))
+            {
+                if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"No handler with data found for object hash {objectHash}.");
+                }
+                return default;
+            }
+
+            ByteUnpacker.ReadValuePacked(fastBufferReader, out int dataSize);
+            var position = fastBufferReader.Position;
+            var dataReader = new FastBufferReader(fastBufferReader, Collections.Allocator.Temp, dataSize, position);
+            fastBufferReader.Seek(position + dataSize);
+            return dataReader;
+        }
 
         /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
@@ -252,23 +327,30 @@ namespace Unity.Netcode
         /// <param name="position"></param>
         /// <param name="rotation"></param>
         /// <returns></returns>
-        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation)
+        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader instantiationDataReader = default)
         {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+            NetworkObject networkObjectInstance = null;
+            if (instantiationDataReader.IsInitialized)
             {
-                var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-
-                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
-                //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-                if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+                if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
-                    m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationDataReader);
                 }
-
-                return networkObjectInstance;
             }
-
-            return null;
+            else
+            {
+                if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+                {
+                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
+                }
+            }
+            //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
+            //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
+            if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+            {
+                m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+            }
+            return networkObjectInstance;
         }
 
         /// <summary>
