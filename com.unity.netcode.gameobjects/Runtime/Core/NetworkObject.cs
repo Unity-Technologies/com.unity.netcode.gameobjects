@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -1959,8 +1960,16 @@ namespace Unity.Netcode
             {
                 behavior.MarkVariablesDirty(false);
             }
-
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
+        }
+
+        internal void ResetOnDespawn()
+        {
+            // Always clear out the observers list when despawned
+            Observers.Clear();
+            IsSpawned = false;
+            DeferredDespawnTick = 0;
+            m_LatestParent = null;
         }
 
         /// <summary>
@@ -2695,6 +2704,17 @@ namespace Unity.Netcode
                 if (OrphanChildren.Count > 0)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by the end of frame");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        var builder = new StringBuilder();
+                        builder.AppendLine("Orphaned Children:");
+                        foreach (var child in OrphanChildren)
+                        {
+                            builder.Append($"| {child} ");
+                        }
+                        builder.AppendLine("|");
+                        NetworkLog.LogWarning(builder.ToString());
+                    }
                 }
             }
         }
@@ -2744,7 +2764,7 @@ namespace Unity.Netcode
                 }
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    var currentKnownChildren = new System.Text.StringBuilder();
+                    var currentKnownChildren = new StringBuilder();
                     currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
                     for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
                     {
