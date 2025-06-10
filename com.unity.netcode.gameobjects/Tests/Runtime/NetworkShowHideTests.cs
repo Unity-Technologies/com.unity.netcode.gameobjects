@@ -601,5 +601,89 @@ namespace Unity.Netcode.RuntimeTests
                 Compare(ShowHideObject.ObjectsPerClientId[0].MyList, ShowHideObject.ObjectsPerClientId[2].MyList);
             }
         }
+
+        private GameObject m_OwnershipObject;
+        private NetworkObject m_OwnershipNetworkObject;
+        private NetworkManager m_NewOwner;
+        private ulong m_ObjectId;
+
+
+        private bool AllObjectsSpawnedOnClients()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ObjectHiddenOnNonAuthorityClients()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                if (networkManager.LocalClientId == m_OwnershipNetworkObject.OwnerClientId)
+                {
+                    continue;
+                }
+                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool OwnershipHasChanged()
+        {
+            if (!m_NewOwner.SpawnManager.SpawnedObjects.ContainsKey(m_ObjectId))
+            {
+                return false;
+            }
+            return m_NewOwner.SpawnManager.SpawnedObjects[m_ObjectId].OwnerClientId == m_NewOwner.LocalClientId;
+        }
+
+        /// <summary>
+        /// Validates when invoking NetworkObject.NetworkShow and NetworkObject.ChangeOwnership
+        /// back-to-back it will not attempt to send a change ownership message since the visibility
+        /// message (CreateObjectMessage) is deferred until the end of the frame.
+        /// </summary>
+        /// <returns>IEnumerator</returns>
+        [UnityTest]
+        public IEnumerator NetworkShowAndChangeOwnership()
+        {
+            var authority = m_ServerNetworkManager;
+
+            m_OwnershipObject = SpawnObject(m_PrefabToSpawn, authority);
+            m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
+
+            yield return WaitForConditionOrTimeOut(AllObjectsSpawnedOnClients);
+            AssertOnTimeout("Timed out waiting for all clients to spawn the ownership object!");
+
+            VerboseDebug($"Hiding object {m_OwnershipNetworkObject.NetworkObjectId} on all clients");
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                m_OwnershipNetworkObject.NetworkHide(client.LocalClientId);
+            }
+
+            yield return WaitForConditionOrTimeOut(ObjectHiddenOnNonAuthorityClients);
+            AssertOnTimeout("Timed out waiting for all clients to hide the ownership object!");
+
+            m_NewOwner = m_ClientNetworkManagers[0];
+            Assert.AreNotEqual(m_OwnershipNetworkObject.OwnerClientId, m_NewOwner.LocalClientId, $"Client-{m_NewOwner.LocalClientId} should not have ownership of object {m_OwnershipNetworkObject.NetworkObjectId}!");
+            Assert.False(m_NewOwner.SpawnManager.SpawnedObjects.ContainsKey(m_OwnershipNetworkObject.NetworkObjectId), $"Client-{m_NewOwner.LocalClientId} should not have object {m_OwnershipNetworkObject.NetworkObjectId} spawned!");
+
+            // Run NetworkShow and ChangeOwnership directly after one-another
+            VerboseDebug($"Calling {nameof(NetworkObject.NetworkShow)} on object {m_OwnershipNetworkObject.NetworkObjectId} for client {m_NewOwner.LocalClientId}");
+            m_OwnershipNetworkObject.NetworkShow(m_NewOwner.LocalClientId);
+            VerboseDebug($"Calling {nameof(NetworkObject.ChangeOwnership)} on object {m_OwnershipNetworkObject.NetworkObjectId} for client {m_NewOwner.LocalClientId}");
+            m_OwnershipNetworkObject.ChangeOwnership(m_NewOwner.LocalClientId);
+            m_ObjectId = m_OwnershipNetworkObject.NetworkObjectId;
+            yield return WaitForConditionOrTimeOut(OwnershipHasChanged);
+            AssertOnTimeout($"Timed out waiting for clients-{m_NewOwner.LocalClientId} to gain ownership of object {m_OwnershipNetworkObject.NetworkObjectId}!");
+            VerboseDebug($"Client {m_NewOwner.LocalClientId} now owns object {m_OwnershipNetworkObject.NetworkObjectId}!");
+        }
     }
 }
