@@ -12,7 +12,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
+- Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
+- Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
 
 ### Changed
 
