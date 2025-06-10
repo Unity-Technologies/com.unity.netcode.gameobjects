@@ -129,49 +129,49 @@ namespace Unity.Netcode.RuntimeTests
         public T Value;
     }
 
-    public enum ByteEnum : byte
+    internal enum ByteEnum : byte
     {
         A,
         B,
         C = byte.MaxValue
     }
-    public enum SByteEnum : sbyte
+    internal enum SByteEnum : sbyte
     {
         A,
         B,
         C = sbyte.MaxValue
     }
-    public enum ShortEnum : short
+    internal enum ShortEnum : short
     {
         A,
         B,
         C = short.MaxValue
     }
-    public enum UShortEnum : ushort
+    internal enum UShortEnum : ushort
     {
         A,
         B,
         C = ushort.MaxValue
     }
-    public enum IntEnum : int
+    internal enum IntEnum : int
     {
         A,
         B,
         C = int.MaxValue
     }
-    public enum UIntEnum : uint
+    internal enum UIntEnum : uint
     {
         A,
         B,
         C = uint.MaxValue
     }
-    public enum LongEnum : long
+    internal enum LongEnum : long
     {
         A,
         B,
         C = long.MaxValue
     }
-    public enum ULongEnum : ulong
+    internal enum ULongEnum : ulong
     {
         A,
         B,
