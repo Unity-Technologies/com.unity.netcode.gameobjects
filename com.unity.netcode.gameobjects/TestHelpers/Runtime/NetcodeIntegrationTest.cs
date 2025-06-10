@@ -1760,9 +1760,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
-            var internalError = m_InternalErrorLog.Length > 0 ? $"{timeOutErrorMessage}\n{m_InternalErrorLog}" : timeOutErrorMessage;
-            Assert.False(timeoutHelper.TimedOut, internalError);
-            m_InternalErrorLog.Clear();
+            if (m_InternalErrorLog.Length > 0)
+            {
+                Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}\n{m_InternalErrorLog}");
+                m_InternalErrorLog.Clear();
+                return;
+            }
+
+            Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
         }
 
         private void UnloadRemainingScenes()

@@ -724,6 +724,14 @@ namespace Unity.Netcode
             }
             else
             {
+                // In the event there is no scene associated with the scene event then just return "No Scene"
+                // This can happen during unit tests when clients first connect and the only scene loaded is the
+                // unit test scene (which is ignored by default) that results in a scene event that has no associated
+                // scene.  Under this specific special case, we just return "No Scene".
+                if (sceneHash == 0)
+                {
+                    return "No Scene";
+                }
                 throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!  Verify that all scenes requiring" +
                     $" server to client synchronization are in the scenes in build list.");
             }
@@ -1198,7 +1206,7 @@ namespace Unity.Netcode
             sceneEventProgress.OnSceneEventCompleted = OnSceneUnloaded;
             var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
             // Notify local server that a scene is going to be unloaded
-            InvokeSceneEvents(NetworkManager.ServerClientId, sceneEventData);
+            InvokeSceneEvents(NetworkManager.ServerClientId, sceneEventData, sceneUnload);
 
             //Return the status
             return sceneEventProgress.Status;
@@ -1254,8 +1262,11 @@ namespace Unity.Netcode
                 throw new Exception($"Failed to remove server scene handle ({sceneEventData.SceneHandle}) or client scene handle({sceneHandle})! Happened during scene unload for {sceneName}.");
             }
 
+            // The only scenes unloaded are scenes that were additively loaded
+            sceneEventData.LoadSceneMode = LoadSceneMode.Additive;
+
             // Notify the local client that a scene is going to be unloaded
-            InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData);
+            InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneUnload);
         }
 
         /// <summary>
@@ -1933,7 +1944,7 @@ namespace Unity.Netcode
             EndSceneEvent(responseSceneEventData.SceneEventId);
 
             // Send notification to local client that the scene has finished loading
-            InvokeSceneEvents(NetworkManager.LocalClientId, responseSceneEventData);
+            InvokeSceneEvents(NetworkManager.LocalClientId, responseSceneEventData, scene: nextScene);
 
             // Check to see if we still have scenes to load and synchronize with
             HandleClientSceneEvent(sceneEventId);
