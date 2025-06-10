@@ -321,9 +321,12 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         continue;
                     }
-
+                    if (manager.SpawnManager == null)
+                    {
+                        continue;
+                    }
                     var clientOwnedObjects = manager.SpawnManager.SpawnedObjects.Where((c) => c.Value.OwnerClientId == clientId).ToList();
-                    if (clientOwnedObjects.Count > 0)
+                    if (clientOwnedObjects != null && clientOwnedObjects.Count > 0)
                     {
                         return false;
                     }

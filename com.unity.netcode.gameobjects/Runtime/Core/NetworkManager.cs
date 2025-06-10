@@ -1590,8 +1590,8 @@ namespace Unity.Netcode
             // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
             m_ShuttingDown = false;
 
-            // Reset the client's roles
-            ConnectionManager.LocalClient.SetRole(false, false);
+            // Completely reset the NetworkClient
+            ConnectionManager.LocalClient = new NetworkClient();
 
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs?.Shutdown();

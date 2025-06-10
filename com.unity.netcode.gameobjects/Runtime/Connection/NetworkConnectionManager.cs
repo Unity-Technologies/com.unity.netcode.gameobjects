@@ -1512,8 +1512,11 @@ namespace Unity.Netcode
                 }
             }
 
+            // Reset the approved and connectd flags
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
+
+            // Clear all lists
             ConnectedClients.Clear();
             ConnectedClientIds.Clear();
             ConnectedClientsList.Clear();
