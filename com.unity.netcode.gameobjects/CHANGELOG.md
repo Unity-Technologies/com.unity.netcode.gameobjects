@@ -8,8 +8,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [2.4.1] - 2025-06-02
 
-- Changed: Various internal orginizational changes along with a large XML API update for the test helpers API primarialy.
-- Changed: Removed the multiplayer tools test project and migrated all of that to the tools repository.
+### Added
+
+- Added: Large XML API update primarialy focused around the test helpers API.
+
+### Changed
+
+- Changed: Assembly names while keeping the same namespaces.
+- Changed: Migrated multiplayer metrics tests to tools repository and removed the multiplayer tools test project.
 
 ## [2.4.0] - 2025-06-02
 
