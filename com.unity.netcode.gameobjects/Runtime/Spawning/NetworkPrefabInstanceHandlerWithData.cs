@@ -4,8 +4,13 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Specialized version of <see cref="INetworkPrefabInstanceHandler"/> that receives
-    /// custom instantiation data injected by the server before spawning.
+    /// custom instantiation data injected by the authority before spawning.
     /// </summary>
+    /// <typeparam name="T"> The type of the instantiation data. Must be a struct implementing <see cref="INetworkSerializable"/>.</typeparam>
+    /// <remarks>
+    /// Use <see cref="NetworkPrefabHandler.SetInstantiationData{T}(NetworkObject, T)"/> or <see cref="NetworkPrefabHandler.SetInstantiationData{T}(GameObject, T)"/>
+    /// on the authority side to set instantiation data before spawning an object or synchronizing a client. The data set on the authority will then be passed into the <see cref="NetworkPrefabInstanceHandlerWithData{T}.Instantiate"/> call.
+    /// </remarks>
     public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabInstanceHandlerWithData where T : struct, INetworkSerializable
     {
         /// <inheritdoc cref="INetworkPrefabInstanceHandler.Instantiate"/>
