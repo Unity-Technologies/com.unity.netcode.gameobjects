@@ -913,6 +913,14 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
+        internal void ResetOnDespawn()
+        {
+            // Always clear out the observers list when despawned
+            Observers.Clear();
+            IsSpawned = false;
+            m_LatestParent = null;
+        }
+
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
         /// </summary>

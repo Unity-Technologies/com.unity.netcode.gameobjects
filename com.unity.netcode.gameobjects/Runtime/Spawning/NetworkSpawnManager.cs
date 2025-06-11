@@ -1191,15 +1191,13 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.IsSpawned = false;
-
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            // Always clear out the observers list when despawned
-            networkObject.Observers.Clear();
+            // Reset the NetworkObject when despawned.
+            networkObject.ResetOnDespawn();
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)

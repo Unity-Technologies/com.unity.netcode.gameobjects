@@ -16,6 +16,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3487)
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3494)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3494)
 - Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObjects` that already had pending visibility for the client being synchronized. (#3493)
 - Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3493)
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3465)
