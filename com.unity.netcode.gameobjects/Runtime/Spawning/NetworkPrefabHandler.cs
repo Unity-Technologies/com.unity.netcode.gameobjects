@@ -76,6 +76,7 @@ namespace Unity.Netcode
 
 
         /// <inheritdoc cref="SetInstantiationData{T}(NetworkObject, T)"/>
+        /// <typeparam name="T"> The type of instantiation data, which must be a struct implementing <see cref="INetworkSerializable"/>.</typeparam>
         /// <param name="gameObject">
         /// The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to which the instantiation data will be assigned. The <see cref="NetworkObject.GlobalObjectIdHash"/> must match a handler that was previously registered.
         /// </param>
