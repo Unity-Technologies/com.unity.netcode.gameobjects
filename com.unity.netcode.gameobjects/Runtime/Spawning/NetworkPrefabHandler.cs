@@ -74,6 +74,12 @@ namespace Unity.Netcode
             return false;
         }
 
+
+        /// <inheritdoc cref="SetInstantiationData{T}(NetworkObject, T)"/>
+        /// <param name="gameObject">
+        /// The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to which the instantiation data will be assigned. The <see cref="NetworkObject.GlobalObjectIdHash"/> must match a handler that was previously registered.
+        /// </param>
+        /// <param name="instantiationData">The custom instantiation data to serialize and assign.</param>
         public void SetInstantiationData<T>(GameObject gameObject, T instantiationData) where T : struct, INetworkSerializable
         {
             if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
@@ -81,11 +87,22 @@ namespace Unity.Netcode
                 SetInstantiationData(networkObject, instantiationData);
             }
         }
-        public void SetInstantiationData<T>(NetworkObject networkObject, T data) where T : struct, INetworkSerializable
+
+        /// <summary>
+        /// Serializes and assigns custom instantiation data to a <see cref="NetworkObject"/> for use during network spawning.
+        /// The <see cref="NetworkObject"/> must have a registered prefab handler that implements <see cref="NetworkPrefabInstanceHandlerWithData{T}"/>.
+        /// </summary>
+        /// <typeparam name="T"> The type of instantiation data, which must be a struct implementing <see cref="INetworkSerializable"/>.</typeparam>
+        /// <param name="networkObject">
+        /// The <see cref="NetworkObject"/> to which the instantiation data will be assigned. The <see cref="NetworkObject.GlobalObjectIdHash"/> must match a handler that was previously registered.
+        /// </param>
+        /// <param name="instantiationData">The custom instantiation data to serialize and assign.</param>
+        public void SetInstantiationData<T>(NetworkObject networkObject, T instantiationData) where T : struct, INetworkSerializable
         {
             if (!TryGetHandlerWithData(networkObject.GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
             {
                 Debug.LogError("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+                return;
             }
 
             using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
@@ -93,7 +110,7 @@ namespace Unity.Netcode
 
             try
             {
-                data.NetworkSerialize(serializer);
+                instantiationData.NetworkSerialize(serializer);
                 networkObject.InstantiationData = writer.ToArray();
             }
             catch (Exception ex)
@@ -276,7 +293,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
                     {
-                        Debug.LogWarning($"[InstantiationData] Failed instantiate with data: no compatible handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
+                        Debug.LogWarning($"[InstantiationData] Failed instantiate with data: no compatible data handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
                     }
                 }
             }
