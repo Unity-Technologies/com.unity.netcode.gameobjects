@@ -6,16 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [2.4.1] - 2025-06-02
+## [2.4.1] - 2025-06-11
 
 ### Added
 
-- Added: Large XML API update primarialy focused around the test helpers API.
+- Added: Full XML API documentation coverage primarily focused around the test helpers API.
 
 ### Changed
 
 - Changed: Assembly names while keeping the same namespaces.
-- Changed: Migrated multiplayer metrics tests to tools repository and removed the multiplayer tools test project.
+- Changed: Migrated multiplayer metrics tests to Multiplayer Tools repository and removed the multiplayer tools test project.
 
 ## [2.4.0] - 2025-06-02
 
