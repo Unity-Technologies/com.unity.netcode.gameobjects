@@ -1717,8 +1717,8 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.IsSpawned = false;
-            networkObject.DeferredDespawnTick = 0;
+            // Reset the NetworkObject when despawned.
+            networkObject.ResetOnDespawn();
 
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
@@ -1729,9 +1729,6 @@ namespace Unity.Netcode
             {
                 RemovePlayerObject(networkObject, destroyGameObject);
             }
-
-            // Always clear out the observers list when despawned
-            networkObject.Observers.Clear();
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
