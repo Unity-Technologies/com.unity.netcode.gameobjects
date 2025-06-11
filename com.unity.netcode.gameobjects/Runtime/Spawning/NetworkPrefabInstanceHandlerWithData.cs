@@ -8,25 +8,26 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabInstanceHandlerWithData where T : struct, INetworkSerializable
     {
+        /// <inheritdoc cref="INetworkPrefabInstanceHandler.Instantiate"/>
+        /// <param name="ownerClientId">The client ID that will own the instantiated object.</param>
+        /// <param name="position">The world position where the object should be spawned.</param>
+        /// <param name="rotation">The world rotation for the spawned object.</param>
+        /// <param name="instantiationData">Custom data of type <typeparamref name="T"/> provided by the server to be used during instantiation.</param>
         public abstract NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, T instantiationData);
 
+        /// <inheritdoc cref="INetworkPrefabInstanceHandler.Destroy"/>
         public abstract void Destroy(NetworkObject networkObject);
 
         bool INetworkPrefabInstanceHandlerWithData.HandlesDataType<TK>() => typeof(T) == typeof(TK);
 
-        NetworkObject INetworkPrefabInstanceHandlerWithData.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader reader)
+        NetworkObject INetworkPrefabInstanceHandlerWithData.Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] instantiationData)
         {
-            var startPosition = reader.Position;
+            using var reader = new FastBufferReader(instantiationData, Collections.Allocator.Temp);
             reader.ReadValueSafe(out T payload);
-            var length = reader.Position - startPosition;
 
-            NetworkObject networkObject = Instantiate(ownerClientId, position, rotation, payload);
-            reader.Seek(startPosition);
-            if (networkObject.InstantiationData == null || networkObject.InstantiationData.Length != length)
-            {
-                networkObject.InstantiationData = new byte[length];
-            }
-            reader.ReadBytesSafe(ref networkObject.InstantiationData, length);
+            var networkObject = Instantiate(ownerClientId, position, rotation, payload);
+            networkObject.InstantiationData = instantiationData;
+
             return networkObject;
         }
 
@@ -35,7 +36,7 @@ namespace Unity.Netcode
 
     internal interface INetworkPrefabInstanceHandlerWithData : INetworkPrefabInstanceHandler
     {
-        bool HandlesDataType<T>();
-        NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, FastBufferReader reader);
+        public bool HandlesDataType<T>();
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] instantiationData);
     }
 }

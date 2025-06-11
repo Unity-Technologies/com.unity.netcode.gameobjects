@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -9,12 +8,18 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     internal class NetworkPrefabHandlerWithDataTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
         private const string k_TestPrefabObjectName = "NetworkPrefabTestObject";
         private GameObject m_Prefab;
         private PrefabInstanceHandlerWithData[] m_ClientHandlers;
+
+        public NetworkPrefabHandlerWithDataTests(NetworkTopologyTypes topology) : base(topology)
+        {
+        }
 
         protected override void OnServerAndClientsCreated()
         {
@@ -60,10 +65,29 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator InstantiationPayload_LateJoinersReceiveData()
         {
             var data = new NetworkSerializableTest { Value = 42, Value2 = 2.71f };
-            SpawnPrefabWithData(data);
+            var spawned = SpawnPrefabWithData(data);
 
             yield return WaitForConditionOrTimeOut(() => AllHandlersSynchronized(data));
             AssertOnTimeout("Not all handlers synchronized");
+
+            // When running with Distributed Authority, test a late-joiner after an ownership change
+            // The object owner will synchronize the late joining client, showing that the instantiationData will survive host migration.
+            if (m_DistributedAuthority)
+            {
+                var newOwner = m_NetworkManagers.First(m => m.LocalClientId != spawned.OwnerClientId);
+                spawned.ChangeOwnership(newOwner.LocalClientId);
+
+                yield return WaitForConditionOrTimeOut(() =>
+                {
+                    if (newOwner.SpawnManager.SpawnedObjects.TryGetValue(spawned.NetworkObjectId, out var clientObject))
+                    {
+                        return clientObject.OwnerClientId == newOwner.LocalClientId;
+                    }
+
+                    return false;
+                });
+                AssertOnTimeout($"Timed out while waiting for Client-{newOwner.LocalClientId} to own object");
+            }
 
             // Late join a client
             yield return CreateAndStartNewClient();
@@ -73,18 +97,18 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout("Late joiner received incorrect data");
         }
 
-
         private void RegisterPrefabHandler(NetworkManager manager, out PrefabInstanceHandlerWithData handler)
         {
             handler = new PrefabInstanceHandlerWithData(m_Prefab);
             manager.PrefabHandler.AddHandler(m_Prefab, handler);
         }
 
-        private void SpawnPrefabWithData(NetworkSerializableTest data)
+        private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
         {
             var instance = UnityEngine.Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
             GetAuthorityNetworkManager().PrefabHandler.SetInstantiationData(instance, data);
             instance.Spawn();
+            return instance;
         }
 
         private bool AllHandlersSynchronized(NetworkSerializableTest expectedData)
