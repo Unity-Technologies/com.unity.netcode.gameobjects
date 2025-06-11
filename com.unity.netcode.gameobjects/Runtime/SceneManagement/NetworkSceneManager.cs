@@ -1879,7 +1879,17 @@ namespace Unity.Netcode
                 sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
 
                 // Notify local client that a scene load has begun
-                InvokeSceneEvents(NetworkManager.LocalClientId, sceneEventData, sceneLoad);
+                OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    AsyncOperation = sceneLoad,
+                    SceneEventType = SceneEventType.Load,
+                    LoadSceneMode = loadSceneMode,
+                    SceneName = sceneName,
+                    ScenePath = ScenePathFromHash(sceneHash),
+                    ClientId = NetworkManager.LocalClientId,
+                });
+
+                OnLoad?.Invoke(NetworkManager.LocalClientId, sceneName, loadSceneMode, sceneLoad);
             }
             else
             {
