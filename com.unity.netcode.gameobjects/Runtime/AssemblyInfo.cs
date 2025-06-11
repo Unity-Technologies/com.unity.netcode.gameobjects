@@ -24,7 +24,7 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("TestProject.Netcode.GameObjejct.Runtime.Tests")]
 #endif // MULTIPLAYER_TOOLS
 #endif // UNITY_INCLUDE_TESTS
-// Should always be visible when multiplayer tools package is instlled.
+// Should always be visible when multiplayer tools package is installed.
 #if MULTIPLAYER_TOOLS
 [assembly: InternalsVisibleTo("Unity.Multiplayer.Tools.Adapters.Ngo1WithUtp2")]
 #endif
