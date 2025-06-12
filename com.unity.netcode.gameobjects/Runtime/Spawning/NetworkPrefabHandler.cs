@@ -283,23 +283,22 @@ namespace Unity.Netcode
         internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] instantiationData = null)
         {
             NetworkObject networkObjectInstance = null;
+            var needsInstantiation = true;
             if (instantiationData != null)
             {
                 if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
+                    needsInstantiation = false;
                     networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
                 }
                 else
                 {
-                    if (NetworkManager.Singleton.LogLevel <= LogLevel.Developer)
-                    {
-                        Debug.LogWarning($"[InstantiationData] Failed instantiate with data: no compatible data handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
-                    }
+                    Debug.LogError($"[InstantiationData] Failed instantiate with data: no compatible data handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
                 }
             }
 
             // Fallback to default handler
-            if (!networkObjectInstance)
+            if (needsInstantiation)
             {
                 if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
@@ -309,9 +308,9 @@ namespace Unity.Netcode
 
             // Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
             // is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-            if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+            if (networkObjectInstance != null)
             {
-                m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+                m_PrefabInstanceToPrefabAsset.TryAdd(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
             }
             return networkObjectInstance;
         }

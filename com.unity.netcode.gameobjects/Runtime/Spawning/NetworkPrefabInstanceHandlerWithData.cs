@@ -31,7 +31,11 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out T payload);
 
             var networkObject = Instantiate(ownerClientId, position, rotation, payload);
-            networkObject.InstantiationData = instantiationData;
+
+            if (networkObject != null)
+            {
+                networkObject.InstantiationData = instantiationData;
+            }
 
             return networkObject;
         }
