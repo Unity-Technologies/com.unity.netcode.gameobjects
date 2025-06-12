@@ -3247,6 +3247,7 @@ namespace Unity.Netcode
                 var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                 networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
+                // Ensure that the buffer is completely reset
                 if (reader.Position != endOfSynchronizationData)
                 {
                     Debug.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");

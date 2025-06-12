@@ -283,27 +283,21 @@ namespace Unity.Netcode
         internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] instantiationData = null)
         {
             NetworkObject networkObjectInstance = null;
-            var needsInstantiation = true;
             if (instantiationData != null)
             {
                 if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
-                    needsInstantiation = false;
                     networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
                 }
                 else
                 {
                     Debug.LogError($"[InstantiationData] Failed instantiate with data: no compatible data handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
+                    return null;
                 }
             }
-
-            // Fallback to default handler
-            if (needsInstantiation)
+            else if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
             {
-                if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
-                {
-                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-                }
+                networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
             }
 
             // Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
@@ -465,6 +459,11 @@ namespace Unity.Netcode
         internal void Initialize(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
+        }
+
+        internal void Shutdown()
+        {
+            m_PrefabInstanceToPrefabAsset.Clear();
         }
     }
 }
