@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed `NullReferenceException` on `NetworkList` when used without a NetworkManager in scene. (#3503)
 - Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3491)
 - Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
 - Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
