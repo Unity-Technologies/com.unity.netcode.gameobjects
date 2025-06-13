@@ -10,14 +10,32 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+<<<<<<< feat/useful-custom-drivers
 - Added methods `GetDefaultNetworkSettings` and `GetDefaultPipelineConfigurations` to `UnityTransport`. These can be used to retrieve the default settings and pipeline stages that are used by `UnityTransport`. This is useful when providing a custom driver constructor through `UnityTransport.s_DriverConstructor`, since it allows reusing or tuning the existing configuration instead of trying to recreate it. This means a transport with a custom driver can now easily benefit from most of the features of `UnityTransport`, like integration with the Network Simulator and Network Profiler from the multiplayer tools package.
+=======
+>>>>>>> develop-2.0.0
 
 ### Fixed
 
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3491)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
 - Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
 - Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
 
 ### Changed
+
+
+## [2.4.1] - 2025-06-11
+
+### Added
+
+- Added: Full XML API documentation coverage primarily focused around the test helpers API. (#3444)
+
+### Changed
+
+- Changed: Assembly names while keeping the same namespaces. If your project is using the `Unity.Netcode.TestHelpers.Runtime` assembly then you need to switch `asmdef` references to `Unity.Netcode.Runtime.Tests`. (#3444)
+- Changed: Migrated multiplayer metrics tests to Multiplayer Tools repository and removed the multiplayer tools test project. (#3444)
+
 
 ## [2.4.0] - 2025-06-02
 
