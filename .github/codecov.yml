@@ -42,6 +42,6 @@ flag_management:
 component_management:
   individual_components:
     - component_id: "com.unity.netcode.gameobjects"
-      name: "Netcode for GameObjects"
+      name: "com.unity.netcode.gameobjects"
       paths:
         - com.unity.netcode.gameobjects
