@@ -337,6 +337,11 @@ namespace Unity.Netcode
             }
         }
 
+        internal bool LocalClientCannotWrite()
+        {
+            return m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
+        }
+
         /// <summary>
         /// Returns the ClientId of the owning client
         /// </summary>
