@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -379,6 +380,16 @@ namespace Unity.Netcode
                 case NetworkVariableWritePermission.Owner:
                     return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
             }
+        }
+
+        /// <summary>
+        /// Catches if the current <see cref="NetworkManager.LocalClientId"/> is not valid to write to this variable.
+        /// </summary>
+        /// <returns>false if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable, true otherwise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool LocalClientCannotWrite()
+        {
+            return m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
         }
 
         /// <summary>
