@@ -6,10 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
-
-### Added
-
+## [2.4.2] - 2025-06-13
 
 ### Fixed
 
@@ -17,8 +14,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
 - Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
 - Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
-
-### Changed
 
 
 ## [2.4.1] - 2025-06-11
