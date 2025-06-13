@@ -1723,6 +1723,14 @@ namespace Unity.Netcode
             // Authority is the server (client-server) and the owner or DAHost (distributed authority) when destroying a NetworkObject
             var isAuthority = HasAuthority || NetworkManager.DAHost;
 
+            // If we are not the authority, check to see if this is one of the edge case scenarios where a NetworkObject could be getting
+            // destroyed due to unloading a scene or loading a scene in single mode.
+            if (!isAuthority && IsSpawned && NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement
+                && NetworkManager.SceneManager.ShouldObjectBeDestroyedWhenUnloaded(this))
+            {
+                isAuthority = true;
+            }
+
             if (NetworkManager.IsListening && !isAuthority && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
@@ -1733,6 +1741,7 @@ namespace Unity.Netcode
                 // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
                 if (!NetworkManager.ShutdownInProgress)
                 {
+
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {

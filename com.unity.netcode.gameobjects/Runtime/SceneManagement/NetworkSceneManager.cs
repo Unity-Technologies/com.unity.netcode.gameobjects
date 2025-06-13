@@ -1,3 +1,4 @@
+using Codice.CM.Common.Tree.Partial;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -2818,6 +2819,44 @@ namespace Unity.Netcode
                 if (!sceneEventEntry.Value.HasTimedOut() && sceneEventEntry.Value.SceneEventType != SceneEventType.Synchronize && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started)
                 {
                     return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Used to determine if it is valid for a distributed authority client to destroy a spawned object
+        /// based on any current scene event in progress and/or the GameObject's scene status.
+        /// <see cref="NetworkObject.OnDestroy"/>
+        /// </summary>
+        /// <param name="networkObject">the NetworkObject to check</param>
+        internal bool ShouldObjectBeDestroyedWhenUnloaded(NetworkObject networkObject)
+        {
+            if (!IsSceneEventInProgress())
+            {
+                return false;
+            }
+            if (!networkObject.gameObject.scene.isLoaded)
+            {
+                return networkObject.DestroyWithScene;
+            }
+            var objectScene = networkObject.gameObject.scene;
+            var objectSceneHash = SceneHashFromNameOrPath(objectScene.name);
+            foreach (var sceneEventEntry in SceneEventProgressTracking)
+            {
+                if (sceneEventEntry.Value.HasTimedOut())
+                {
+                    continue;
+                }
+                if (sceneEventEntry.Value.SceneEventType == SceneEventType.Unload && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started
+                    && sceneEventEntry.Value.SceneHash == objectSceneHash)
+                {
+                    return networkObject.DestroyWithScene;
+                }
+                if (sceneEventEntry.Value.SceneEventType == SceneEventType.Load && sceneEventEntry.Value.LoadSceneMode == LoadSceneMode.Single &&
+                    sceneEventEntry.Value.SceneHash != objectSceneHash)
+                {
+                    return networkObject.DestroyWithScene;
                 }
             }
             return false;
