@@ -1200,6 +1200,7 @@ namespace Unity.Netcode
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
         public bool DestroyWithScene { get; set; }
+        internal bool DestroyPendingSceneEvent;
 
         /// <summary>
         /// When set to true and the active scene is changed, this will automatically migrate the <see cref="NetworkObject"/>
@@ -1720,18 +1721,11 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Authority is the server (client-server) and the owner or DAHost (distributed authority) when destroying a NetworkObject
-            var isAuthority = HasAuthority || NetworkManager.DAHost;
+            // An authoritzed destroy is when it is happening on the authority instance or it is being destroyed due to
+            // a scene event that will automatically destroy any NetworkObject instances that should be destroyed with the scene.
+            var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
 
-            // If we are not the authority, check to see if this is one of the edge case scenarios where a NetworkObject could be getting
-            // destroyed due to unloading a scene or loading a scene in single mode.
-            if (!isAuthority && IsSpawned && NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement
-                && NetworkManager.SceneManager.ShouldObjectBeDestroyedWhenUnloaded(this))
-            {
-                isAuthority = true;
-            }
-
-            if (NetworkManager.IsListening && !isAuthority && IsSpawned &&
+            if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
@@ -1741,7 +1735,6 @@ namespace Unity.Netcode
                 // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
                 if (!NetworkManager.ShutdownInProgress)
                 {
-
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
