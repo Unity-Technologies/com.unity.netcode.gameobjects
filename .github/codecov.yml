@@ -37,3 +37,11 @@ comment:
 flag_management:
   default_rules:
     carryforward: true
+
+# Components configuration
+component_management:
+  individual_components:
+    - component_id: "com.unity.netcode.gameobjects"
+      name: "Netcode for GameObjects"
+      paths:
+        - com.unity.netcode.gameobjects
