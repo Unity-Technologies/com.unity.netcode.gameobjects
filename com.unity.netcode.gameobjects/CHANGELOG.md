@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
 ### Fixed
 
 - Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3491)
@@ -18,6 +19,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
 
 ### Changed
+
+
+## [2.4.1] - 2025-06-11
+
+### Added
+
+- Added: Full XML API documentation coverage primarily focused around the test helpers API. (#3444)
+
+### Changed
+
+- Changed: Assembly names while keeping the same namespaces. If your project is using the `Unity.Netcode.TestHelpers.Runtime` assembly then you need to switch `asmdef` references to `Unity.Netcode.Runtime.Tests`. (#3444)
+- Changed: Migrated multiplayer metrics tests to Multiplayer Tools repository and removed the multiplayer tools test project. (#3444)
+
 
 ## [2.4.0] - 2025-06-02
 
