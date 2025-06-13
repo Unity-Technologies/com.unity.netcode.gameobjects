@@ -27,27 +27,6 @@ using TransportEvent = Unity.Networking.Transport.NetworkEvent.Type;
 namespace Unity.Netcode.Transports.UTP
 {
     /// <summary>
-    /// Provides an interface that overrides the ability to create your own drivers and pipelines
-    /// </summary>
-    public interface INetworkStreamDriverConstructor
-    {
-        /// <summary>
-        /// Creates the internal NetworkDriver
-        /// </summary>
-        /// <param name="transport">The owner transport</param>
-        /// <param name="driver">The driver</param>
-        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
-        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
-        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
-        void CreateDriver(
-            UnityTransport transport,
-            out NetworkDriver driver,
-            out NetworkPipeline unreliableFragmentedPipeline,
-            out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline);
-    }
-
-    /// <summary>
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
@@ -92,15 +71,19 @@ namespace Unity.Netcode.Transports.UTP
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
-
         /// <summary>
-        /// The global <see cref="INetworkStreamDriverConstructor"/> implementation
+        /// An instance of a <see cref="INetworkStreamDriverConstructor"/> implementation. If null,
+        /// the default driver constructor will be used. Setting it to a non-null value allows
+        /// controlling how the internal <see cref="NetworkDriver"/> instance is created. See the
+        /// interface's documentation for details.
         /// </summary>
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
 
         /// <summary>
-        /// Returns either the global <see cref="INetworkStreamDriverConstructor"/> implementation or the current <see cref="UnityTransport"/> instance
+        /// If a custom <see cref="INetworkStreamDriverConstructor"/> implementation is in use (see
+        /// <see cref="s_DriverConstructor"/>), this returns it. Otherwise it returns the current
+        /// <see cref="UnityTransport"/> instance, which acts as the default constructor.
         /// </summary>
         public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor ?? this;
 
@@ -1685,15 +1668,10 @@ namespace Unity.Netcode.Transports.UTP
             m_ClientCaCertificate = caCertificate;
         }
 
-        /// <summary>
-        /// Creates the internal NetworkDriver
-        /// </summary>
-        /// <param name="transport">The owner transport</param>
-        /// <param name="driver">The driver</param>
-        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
-        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
-        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
-        public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
+        /// <inheritdoc cref="INetworkStreamDriverConstructor.CreateDriver"/>
+        public void CreateDriver(
+            UnityTransport transport,
+            out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
