@@ -145,7 +145,7 @@ namespace Unity.Netcode
                 var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
-                    (networkManager.IsServer || networkVariable.CanClientWrite(networkManager.LocalClientId)) &&
+                    (networkManager.IsServer || networkVariable.CanWrite()) &&
                     networkVariable.CanSend();
 
                 // Prevent the server from writing to the client that owns a given NetworkVariable
