@@ -382,6 +382,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Returns true if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise false.
+        /// </summary>
+        internal bool CanWrite => m_NetworkManager && CanClientWrite(m_NetworkManager.LocalClientId);
+
+        /// <summary>
+        /// Returns false if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise true.
+        /// </summary>
+        internal bool CannotWrite => m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
+
+        /// <summary>
         /// Returns the ClientId of the owning client
         /// </summary>
         internal ulong OwnerClientId()

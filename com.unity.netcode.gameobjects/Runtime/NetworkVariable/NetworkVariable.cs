@@ -128,7 +128,7 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
+                if (CannotWrite)
                 {
                     LogWritePermissionError();
                     return;
@@ -162,7 +162,7 @@ namespace Unity.Netcode
             var isDirty = base.IsDirty();
 
             // A client without permissions invoking this method should only check to assure the current value is equal to the last known current value
-            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 // If modifications are detected, then revert back to the last known current value
                 if (!NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
@@ -245,7 +245,7 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (!NetworkUpdaterCheck && m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
+            if (!NetworkUpdaterCheck && CannotWrite && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_InternalOriginalValue))
             {
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
                 return true;
@@ -307,7 +307,7 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalOriginalValue, ref m_InternalValue))
+            if (CannotWrite && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalOriginalValue, ref m_InternalValue))
             {
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
             }
@@ -349,7 +349,7 @@ namespace Unity.Netcode
         {
             // If the client does not have write permissions but the internal value is determined to be locally modified and we are applying updates, then we should revert
             // to the original collection value prior to applying updates (primarily for collections).
-            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalOriginalValue, ref m_InternalValue))
+            if (CannotWrite && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalOriginalValue, ref m_InternalValue))
             {
                 NetworkVariableSerialization<T>.Duplicate(m_InternalOriginalValue, ref m_InternalValue);
             }
