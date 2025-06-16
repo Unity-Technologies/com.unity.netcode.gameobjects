@@ -260,11 +260,12 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestOnNetworkSpawnCallbacks()
         {
             // [Host-Side] Get the Host owned instance
-            var serverInstance = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ServerNetworkManager.LocalClientId].GetComponent<TrackOnSpawnFunctions>();
+            var authorityNetworkManager = GetAuthorityNetworkManager();
+            var authorityInstance = m_PlayerNetworkObjects[authorityNetworkManager.LocalClientId][authorityNetworkManager.LocalClientId].GetComponent<TrackOnSpawnFunctions>();
 
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientRpcTests = m_PlayerNetworkObjects[client.LocalClientId][m_ServerNetworkManager.LocalClientId].gameObject.GetComponent<TrackOnSpawnFunctions>();
+                var clientRpcTests = m_PlayerNetworkObjects[client.LocalClientId][authorityNetworkManager.LocalClientId].gameObject.GetComponent<TrackOnSpawnFunctions>();
                 Assert.IsNotNull(clientRpcTests);
                 m_ClientTrackOnSpawnInstances.Add(clientRpcTests);
             }
@@ -272,10 +273,10 @@ namespace Unity.Netcode.RuntimeTests
             // -------------- step 1 check player spawn despawn
 
             // check spawned on server
-            Assert.AreEqual(1, serverInstance.OnNetworkSpawnCalledCount);
+            Assert.AreEqual(1, authorityInstance.OnNetworkSpawnCalledCount);
 
             // safety check server despawned
-            Assert.AreEqual(0, serverInstance.OnNetworkDespawnCalledCount);
+            Assert.AreEqual(0, authorityInstance.OnNetworkDespawnCalledCount);
 
             // Conditional check for clients spawning or despawning
             var checkSpawnCondition = false;
@@ -314,10 +315,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns!");
 
             // despawn on server.  However, since we'll be using this object later in the test, don't delete it
-            serverInstance.GetComponent<NetworkObject>().Despawn(false);
+            authorityInstance.GetComponent<NetworkObject>().Despawn(false);
 
             // check despawned on server
-            Assert.AreEqual(1, serverInstance.OnNetworkDespawnCalledCount);
+            Assert.AreEqual(1, authorityInstance.OnNetworkDespawnCalledCount);
             // we now expect the clients to each have despawned once
             expectedDespawnCount = 1;
 
@@ -329,11 +330,11 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns!");
 
             //----------- step 2 check spawn and destroy again
-            serverInstance.GetComponent<NetworkObject>().Spawn();
+            authorityInstance.GetComponent<NetworkObject>().Spawn();
             // wait a tick
             yield return s_DefaultWaitForTick;
             // check spawned again on server this is 2 because we are reusing the object which was already spawned once.
-            Assert.AreEqual(2, serverInstance.OnNetworkSpawnCalledCount);
+            Assert.AreEqual(2, authorityInstance.OnNetworkSpawnCalledCount);
 
             checkSpawnCondition = true;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
@@ -341,12 +342,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side spawns! (2nd pass)");
 
             // destroy the server object
-            Object.Destroy(serverInstance.gameObject);
+            Object.Destroy(authorityInstance.gameObject);
 
             yield return s_DefaultWaitForTick;
 
             // check whether despawned was called again on server instance
-            Assert.AreEqual(2, serverInstance.OnNetworkDespawnCalledCount);
+            Assert.AreEqual(2, authorityInstance.OnNetworkDespawnCalledCount);
 
             checkSpawnCondition = false;
             yield return WaitForConditionOrTimeOut(HasConditionBeenMet);
@@ -386,5 +387,50 @@ namespace Unity.Netcode.RuntimeTests
                 OnNetworkDespawnCalledCount++;
             }
         }
+
+        private bool AllClientsSpawnedObject()
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedInstanceId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool AllClientsDespawnedObject()
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedInstanceId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private ulong m_SpawnedInstanceId;
+        [UnityTest]
+        public IEnumerator NetworkObjectResetOnDespawn()
+        {
+            var authorityNetworkManager = GetAuthorityNetworkManager();
+            var instance = SpawnObject(m_ObserverPrefab, authorityNetworkManager).GetComponent<NetworkObject>();
+            m_SpawnedInstanceId = instance.NetworkObjectId;
+            yield return WaitForConditionOrTimeOut(AllClientsSpawnedObject);
+            AssertOnTimeout($"Not all clients spawned an instance of {instance.name}!");
+
+            instance.Despawn(false);
+
+            yield return WaitForConditionOrTimeOut(AllClientsDespawnedObject);
+            AssertOnTimeout($"Not all clients de-spawned an instance of {instance.name}!");
+
+            Assert.IsNull(instance.GetNetworkParenting(), "Last parent was not reset!");
+
+            Object.Destroy(instance.gameObject);
+        }
+
     }
 }

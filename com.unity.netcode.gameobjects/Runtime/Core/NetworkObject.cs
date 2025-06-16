@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.Netcode.Components;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -56,6 +57,12 @@ namespace Unity.Netcode
                 return GlobalObjectIdHash;
             }
         }
+
+        /// <summary>
+        /// InstantiationData sent during the instantiation process.
+        /// Available to read as T parameter to  <see cref="NetworkPrefabInstanceHandlerWithData{T}.Instantiate(ulong, Vector3, Quaternion, T)"/> for custom handling by user code.
+        /// </summary>
+        internal byte[] InstantiationData;
 
         /// <summary>
         /// All <see cref="NetworkTransform"/> component instances associated with a <see cref="NetworkObject"/> component instance.
@@ -1959,8 +1966,16 @@ namespace Unity.Netcode
             {
                 behavior.MarkVariablesDirty(false);
             }
-
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
+        }
+
+        internal void ResetOnDespawn()
+        {
+            // Always clear out the observers list when despawned
+            Observers.Clear();
+            IsSpawned = false;
+            DeferredDespawnTick = 0;
+            m_LatestParent = null;
         }
 
         /// <summary>
@@ -2695,6 +2710,17 @@ namespace Unity.Netcode
                 if (OrphanChildren.Count > 0)
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by the end of frame");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        var builder = new StringBuilder();
+                        builder.AppendLine("Orphaned Children:");
+                        foreach (var child in OrphanChildren)
+                        {
+                            builder.Append($"| {child} ");
+                        }
+                        builder.AppendLine("|");
+                        NetworkLog.LogWarning(builder.ToString());
+                    }
                 }
             }
         }
@@ -2744,7 +2770,7 @@ namespace Unity.Netcode
                 }
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    var currentKnownChildren = new System.Text.StringBuilder();
+                    var currentKnownChildren = new StringBuilder();
                     currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
                     for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
                     {
@@ -2837,6 +2863,12 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 10, value);
             }
 
+            public bool HasInstantiationData
+            {
+                get => ByteUtility.GetBit(m_BitField, 11);
+                set => ByteUtility.SetBit(ref m_BitField, 11, value);
+            }
+
             // When handling the initial synchronization of NetworkObjects,
             // this will be populated with the known observers.
             public ulong[] Observers;
@@ -2864,6 +2896,7 @@ namespace Unity.Netcode
 
             public int NetworkSceneHandle;
 
+            internal int SynchronizationDataSize;
 
             public void Serialize(FastBufferWriter writer)
             {
@@ -2925,9 +2958,29 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
+                // write placeholder for serialized data size.
+                // Can't be bitpacked because we don't know the value until we calculate it later
+                var positionBeforeSynchronizing = writer.Position;
+                writer.WriteValueSafe(0);
+                var sizeToSkipCalculationPosition = writer.Position;
+
+                if (HasInstantiationData)
+                {
+                    writer.WriteValueSafe(OwnerObject.InstantiationData);
+                }
+
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                 OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
+
+                var currentPosition = writer.Position;
+                // Write the total number of bytes written for synchronization data.
+                writer.Seek(positionBeforeSynchronizing);
+                // We want the size of everything after our size to skip calculation position
+                var size = currentPosition - sizeToSkipCalculationPosition;
+                writer.WriteValueSafe(size);
+                // seek back to the head of the writer.
+                writer.Seek(currentPosition);
             }
 
             public void Deserialize(FastBufferReader reader)
@@ -2983,6 +3036,10 @@ namespace Unity.Netcode
                 // The NetworkSceneHandle is the server-side relative
                 // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
+
+                // Read the size of the remaining synchronization data
+                // This data will be read in AddSceneObject()
+                reader.ReadValueSafe(out SynchronizationDataSize);
             }
         }
 
@@ -2997,12 +3054,7 @@ namespace Unity.Netcode
         {
             if (serializer.IsWriter)
             {
-                // write placeholder int.
-                // Can't be bitpacked because we don't know the value until we calculate it later
                 var writer = serializer.GetFastBufferWriter();
-                var positionBeforeSynchronizing = writer.Position;
-                writer.WriteValueSafe(0);
-                var sizeToSkipCalculationPosition = writer.Position;
 
                 // Synchronize NetworkVariables
                 foreach (var behavior in ChildNetworkBehaviours)
@@ -3028,12 +3080,6 @@ namespace Unity.Netcode
                 }
 
                 var currentPosition = writer.Position;
-                // Write the total number of bytes written for NetworkVariable and NetworkBehaviour
-                // synchronization.
-                writer.Seek(positionBeforeSynchronizing);
-                // We want the size of everything after our size to skip calculation position
-                var size = currentPosition - sizeToSkipCalculationPosition;
-                writer.WriteValueSafe(size);
                 // Write the number of NetworkBehaviours synchronized
                 writer.Seek(networkBehaviourCountPosition);
                 writer.WriteValueSafe(synchronizationCount);
@@ -3043,41 +3089,26 @@ namespace Unity.Netcode
             }
             else
             {
-                var seekToEndOfSynchData = 0;
                 var reader = serializer.GetFastBufferReader();
-                try
+
+                // Apply the network variable synchronization data
+                foreach (var behaviour in ChildNetworkBehaviours)
                 {
-                    reader.ReadValueSafe(out int sizeOfSynchronizationData);
-                    seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
-
-                    // Apply the network variable synchronization data
-                    foreach (var behaviour in ChildNetworkBehaviours)
-                    {
-                        behaviour.InitializeVariables();
-                        behaviour.SetNetworkVariableData(reader, targetClientId);
-                    }
-
-                    // Read the number of NetworkBehaviours to synchronize
-                    reader.ReadValueSafe(out byte numberSynchronized);
-
-                    // If a NetworkBehaviour writes synchronization data, it will first
-                    // write its NetworkBehaviourId so when deserializing the client-side
-                    // can find the right NetworkBehaviour to deserialize the synchronization data.
-                    for (int i = 0; i < numberSynchronized; i++)
-                    {
-                        reader.ReadValueSafe(out ushort networkBehaviourId);
-                        var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                        networkBehaviour.Synchronize(ref serializer, targetClientId);
-                    }
-
-                    if (seekToEndOfSynchData != reader.Position)
-                    {
-                        Debug.LogWarning($"[Size mismatch] Expected: {seekToEndOfSynchData} Currently At: {reader.Position}!");
-                    }
+                    behaviour.InitializeVariables();
+                    behaviour.SetNetworkVariableData(reader, targetClientId);
                 }
-                catch
+
+                // Read the number of NetworkBehaviours to synchronize
+                reader.ReadValueSafe(out byte numberSynchronized);
+
+                // If a NetworkBehaviour writes synchronization data, it will first
+                // write its NetworkBehaviourId so when deserializing the client-side
+                // can find the right NetworkBehaviour to deserialize the synchronization data.
+                for (int i = 0; i < numberSynchronized; i++)
                 {
-                    reader.Seek(seekToEndOfSynchData);
+                    reader.ReadValueSafe(out ushort networkBehaviourId);
+                    var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                    networkBehaviour.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
@@ -3101,7 +3132,8 @@ namespace Unity.Netcode
                 NetworkSceneHandle = NetworkSceneHandle,
                 Hash = CheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
-                TargetClientId = targetClientId
+                TargetClientId = targetClientId,
+                HasInstantiationData = InstantiationData != null && InstantiationData.Length > 0
             };
 
             // Handle Parenting
@@ -3166,8 +3198,18 @@ namespace Unity.Netcode
         /// <returns>The deserialized NetworkObject or null if deserialization failed</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager, bool invokedByMessage = false)
         {
-            //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
+            var endOfSynchronizationData = reader.Position + sceneObject.SynchronizationDataSize;
+
+            byte[] instantiationData = null;
+            if (sceneObject.HasInstantiationData)
+            {
+                reader.ReadValueSafe(out instantiationData);
+            }
+
+
+            // Attempt to create a local NetworkObject
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject, instantiationData);
+
 
             if (networkObject == null)
             {
@@ -3180,8 +3222,7 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out int networkBehaviourSynchronizationDataLength);
-                    reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
+                    reader.Seek(endOfSynchronizationData);
                 }
                 catch (Exception ex)
                 {
@@ -3199,9 +3240,24 @@ namespace Unity.Netcode
             // Special Case: Invoke NetworkBehaviour.OnPreSpawn methods here before SynchronizeNetworkBehaviours
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
-            // Synchronize NetworkBehaviours
-            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-            networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+            // Process the remaining synchronization data from the buffer
+            try
+            {
+                // Synchronize NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+                networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+
+                // Ensure that the buffer is completely reset
+                if (reader.Position != endOfSynchronizationData)
+                {
+                    Debug.LogWarning($"[Size mismatch] Expected: {endOfSynchronizationData} Currently At: {reader.Position}!");
+                    reader.Seek(endOfSynchronizationData);
+                }
+            }
+            catch
+            {
+                reader.Seek(endOfSynchronizationData);
+            }
 
             // If we are an in-scene placed NetworkObject and we originally had a parent but when synchronized we are
             // being told we do not have a parent, then we want to clear the latest parent so it is not automatically
