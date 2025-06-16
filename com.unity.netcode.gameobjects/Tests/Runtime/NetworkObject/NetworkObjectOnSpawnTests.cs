@@ -352,5 +352,53 @@ namespace Unity.Netcode.RuntimeTests
                 OnNetworkDespawnCalledCount++;
             }
         }
+
+        private bool AllClientsSpawnedObject()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedInstanceId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool AllClientsDespawnedObject()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_SpawnedInstanceId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private ulong m_SpawnedInstanceId;
+        /// <summary>
+        /// Validates that NetworkObject is reset properly when despawned but not destroyed.
+        /// </summary>
+        /// <returns>IEnumerator</returns>
+        [UnityTest]
+        public IEnumerator NetworkObjectResetOnDespawn()
+        {
+            var authorityNetworkManager = m_ServerNetworkManager;
+            var instance = SpawnObject(m_ObserverPrefab, authorityNetworkManager).GetComponent<NetworkObject>();
+            m_SpawnedInstanceId = instance.NetworkObjectId;
+            yield return WaitForConditionOrTimeOut(AllClientsSpawnedObject);
+            AssertOnTimeout($"Not all clients spawned an instance of {instance.name}!");
+
+            instance.Despawn(false);
+
+            yield return WaitForConditionOrTimeOut(AllClientsDespawnedObject);
+            AssertOnTimeout($"Not all clients de-spawned an instance of {instance.name}!");
+
+            Assert.IsNull(instance.GetNetworkParenting(), "Last parent was not reset!");
+
+            Object.Destroy(instance.gameObject);
+        }
     }
 }
