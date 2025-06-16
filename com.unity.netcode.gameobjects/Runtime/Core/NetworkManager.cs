@@ -1593,8 +1593,9 @@ namespace Unity.Netcode
             // Completely reset the NetworkClient
             ConnectionManager.LocalClient = new NetworkClient();
 
-            // This cleans up the internal prefabs list
+            // Clean up the internal prefabs data
             NetworkConfig?.Prefabs?.Shutdown();
+            PrefabHandler.Shutdown();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes
