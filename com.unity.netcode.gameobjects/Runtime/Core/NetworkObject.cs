@@ -1200,6 +1200,7 @@ namespace Unity.Netcode
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
         public bool DestroyWithScene { get; set; }
+        internal bool DestroyPendingSceneEvent;
 
         /// <summary>
         /// When set to true and the active scene is changed, this will automatically migrate the <see cref="NetworkObject"/>
@@ -1720,10 +1721,11 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Authority is the server (client-server) and the owner or DAHost (distributed authority) when destroying a NetworkObject
-            var isAuthority = HasAuthority || NetworkManager.DAHost;
+            // An authorized destroy is when done by the authority instance or done due to a scene event and the NetworkObject
+            // was marked as destroy pending scene event (which means the destroy with scene property was set).
+            var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
 
-            if (NetworkManager.IsListening && !isAuthority && IsSpawned &&
+            if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
