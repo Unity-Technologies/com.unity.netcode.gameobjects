@@ -32,7 +32,7 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: b1.xlarge # We use b1.xlarge for WebGL builds since it requires more resources (otherwise it timeouts) especially on Ubuntu platform
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
