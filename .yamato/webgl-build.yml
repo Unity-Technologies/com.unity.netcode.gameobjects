@@ -26,7 +26,6 @@
   
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.all -%}
 webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
@@ -53,6 +52,5 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
         - "artifacts/**/*"
         - "build/players/**/*"
 {% endfor -%}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
