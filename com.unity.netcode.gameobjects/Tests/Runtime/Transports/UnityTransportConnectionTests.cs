@@ -22,6 +22,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
+            VerboseDebug = false;
             if (m_Server)
             {
                 m_Server.Shutdown();
@@ -57,8 +58,19 @@ namespace Unity.Netcode.RuntimeTests
             m_Clients[0].ConnectionData.Address = "MoreFubar";
             Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
             Assert.False(m_Clients[0].StartClient(), "Client failed to detect invalid endpoint!");
+#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+            LogAssert.Expect(LogType.Error, $"Listen network address ({m_Server.ConnectionData.Address}) is not a valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address!");
+            LogAssert.Expect(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is not a valid Fully Qualified Domain Name!");
+
+            m_Server.ConnectionData.Address = "my.fubar.com";
+            m_Server.ConnectionData.ServerListenAddress = "my.fubar.com";
+            Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
+            LogAssert.Expect(LogType.Error, $"While ({m_Server.ConnectionData.Address}) is a valid Fully Qualified Domain Name, you must use a " +
+                $"valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address when binding and listening for connections!");
+#else
             netcodeLogAssert.LogWasReceived(LogType.Error, $"Network listen address ({m_Server.ConnectionData.Address}) is Invalid!");
             netcodeLogAssert.LogWasReceived(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is Invalid!");
+#endif
         }
 
         // Check connection with a single client.
@@ -186,35 +198,36 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ClientDisconnectMultipleClients()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            m_Server.StartServer();
+            VerboseDebug = true;
+            InitializeTransport(out m_Server, out m_ServerEvents, identifier: "Server");
+            Assert.True(m_Server.StartServer(), "Failed to start server!");
 
             for (int i = 0; i < k_NumClients; i++)
             {
-                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i]);
-                m_Clients[i].StartClient();
+                InitializeTransport(out m_Clients[i], out m_ClientsEvents[i], identifier: $"Client-{i + 1}");
+                Assert.True(m_Clients[i].StartClient(), $"Failed to start client-{i + 1}");
+                // Assure all clients have connected before disconnecting them
+                yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[i], 5);
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[k_NumClients - 1]);
-
             // Disconnect a single client.
+            VerboseLog($"Disconnecting Client-1");
             m_Clients[0].DisconnectLocalClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents, 5);
 
             // Disconnect all the other clients.
             for (int i = 1; i < k_NumClients; i++)
             {
+                VerboseLog($"Disconnecting Client-{i + 1}");
                 m_Clients[i].DisconnectLocalClient();
             }
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForMultipleNetworkEvents(NetworkEvent.Disconnect, m_ServerEvents, 4, 20);
 
             // Check that we got the correct number of Disconnect events on the server.
             Assert.AreEqual(k_NumClients * 2, m_ServerEvents.Count);
             Assert.AreEqual(k_NumClients, m_ServerEvents.Count(e => e.Type == NetworkEvent.Disconnect));
-
-            yield return null;
         }
 
         // Check that server re-disconnects are no-ops.

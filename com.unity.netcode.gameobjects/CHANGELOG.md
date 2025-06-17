@@ -10,12 +10,33 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3475)
+- When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3440)
+
+### Fixed
+
+- Fixed inconsistencies in the `OnSceneEvent` callback. (#3487)
+- Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3494)
+- Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3494)
+- Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObjects` that already had pending visibility for the client being synchronized. (#3493)
+- Fixed issue where invoking `NetworkObject.NetworkShow` and `NetworkObject.ChangeOwnership` consecutively within the same call stack location could result in an unnecessary change in ownership error message generated on the target client side. (#3493)
+- Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3465)
+- Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
+
+### Changed
+
+## [1.13.0] - 2025-04-29
+
+### Added
+
 - Added `NetworkManager.OnPreShutdown` which is called before the NetworkManager cleans up and shuts down. (#3358)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset and the `ArraySegment.Count` as the `FastBufferReader` length. (#3320)
 - Added `FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1)` constructor that uses the `ArraySegment.Offset` as the `FastBufferReader` offset. (#3320)
 
 ### Fixed
 
+- Fixed memory leaks when domain reload is disabled. (#3428)
+- Fixed issues with the `NetworkBehaviour` and `NetworkVariable` length safety checks. (#3415)
 - Fixed issue where during a `NetworkObject`'s spawn if you instantiated, spawned, and parented another network prefab under the currently spawning `NetworkObject` the parenting message would not properly defer until the parent `NetworkObject` was spawned. (#3403)
 - Fixed issue where in-scene placed `NetworkObjects` could fail to synchronize its transform properly (especially without a `NetworkTransform`) if their parenting changes from the default when the scene is loaded and if the same scene remains loaded between network sessions while the parenting is completely different from the original hierarchy. (#3388)
 - Fixed an issue in `UnityTransport` where the transport would accept sends on invalid connections, leading to a useless memory allocation and confusing error message. (#3383)

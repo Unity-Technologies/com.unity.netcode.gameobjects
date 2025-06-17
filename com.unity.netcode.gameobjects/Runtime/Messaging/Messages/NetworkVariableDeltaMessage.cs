@@ -107,7 +107,7 @@ namespace Unity.Netcode
                         {
                             if (!shouldWrite)
                             {
-                                BytePacker.WriteValueBitPacked(writer, (ushort)0);
+                                BytePacker.WriteValueBitPacked(writer, 0);
                             }
                         }
                         else
@@ -131,7 +131,7 @@ namespace Unity.Netcode
                 {
                     if (ensureNetworkVariableLengthSafety)
                     {
-                        BytePacker.WriteValueBitPacked(writer, (ushort)0);
+                        BytePacker.WriteValueBitPacked(writer, 0);
                     }
                     else
                     {
@@ -170,7 +170,7 @@ namespace Unity.Netcode
                 {
                     if (!shouldWrite)
                     {
-                        BytePacker.WriteValueBitPacked(writer, (ushort)0);
+                        BytePacker.WriteValueBitPacked(writer, 0);
                     }
                 }
                 else
@@ -241,13 +241,13 @@ namespace Unity.Netcode
                     // Update NetworkVariable Fields
                     for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
                     {
-                        int varSize = 0;
+                        int expectedBytesToRead = 0;
                         var networkVariable = networkBehaviour.NetworkVariableFields[i];
 
                         if (ensureNetworkVariableLengthSafety)
                         {
-                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out varSize);
-                            if (varSize == 0)
+                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out expectedBytesToRead);
+                            if (expectedBytesToRead == 0)
                             {
                                 continue;
                             }
@@ -272,7 +272,7 @@ namespace Unity.Netcode
                                     NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
                                 }
 
-                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + varSize);
+                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + expectedBytesToRead);
                                 continue;
                             }
 
@@ -295,9 +295,9 @@ namespace Unity.Netcode
                         if (ensureNetworkVariableLengthSafety)
                         {
                             var remainingBufferSize = m_ReceivedNetworkVariableData.Length - m_ReceivedNetworkVariableData.Position;
-                            if (varSize > (remainingBufferSize))
+                            if (expectedBytesToRead > remainingBufferSize)
                             {
-                                UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {varSize} but only {remainingBufferSize} remains!");
+                                UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {expectedBytesToRead} but only {remainingBufferSize} remains!");
                                 return;
                             }
                         }
@@ -315,6 +315,19 @@ namespace Unity.Netcode
                         {
                             UnityEngine.Debug.LogException(ex);
                             return;
+                        }
+
+                        if (ensureNetworkVariableLengthSafety)
+                        {
+                            var totalBytesRead = m_ReceivedNetworkVariableData.Position - readStartPos;
+                            if (totalBytesRead != expectedBytesToRead)
+                            {
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                                {
+                                    NetworkLog.LogWarning($"[{nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}][Delta State Read] NetworkVariable read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes!");
+                                }
+                                m_ReceivedNetworkVariableData.Seek(readStartPos + expectedBytesToRead);
+                            }
                         }
 
                         // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
@@ -346,28 +359,6 @@ namespace Unity.Netcode
                             networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
-
-                        if (ensureNetworkVariableLengthSafety)
-                        {
-                            if (m_ReceivedNetworkVariableData.Position > (readStartPos + varSize))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"Var delta read too far. {m_ReceivedNetworkVariableData.Position - (readStartPos + varSize)} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                }
-
-                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
-                            }
-                            else if (m_ReceivedNetworkVariableData.Position < (readStartPos + varSize))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"Var delta read too little. {readStartPos + varSize - m_ReceivedNetworkVariableData.Position} bytes. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                }
-
-                                m_ReceivedNetworkVariableData.Seek(readStartPos + varSize);
-                            }
-                        }
                     }
 
                     // If we are using the version of this message that includes network delivery, then

@@ -183,6 +183,13 @@ namespace Unity.Netcode
             return isDirty;
         }
 
+        /// <inheritdoc/>
+        internal override void OnCheckIsDirtyState()
+        {
+            CheckDirtyState();
+            base.OnCheckIsDirtyState();
+        }
+
         internal ref T RefValue()
         {
             return ref m_InternalValue;

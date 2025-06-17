@@ -119,6 +119,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Calculates a NetworkTime value representing a point in the past relative to the current time (few ticks in the past).
+        /// </summary>
+        /// <param name="ticks">The number of ticks ago we're querying the time.</param>
+        /// <returns>A NetworkTime value representing the calculated past time point</returns>
+        public NetworkTime TimeTicksAgo(int ticks)
+        {
+            return TimeTicksAgo(ticks, 0.0f);
+        }
+
+        /// <summary>
         /// Calculates a NetworkTime value representing a point in the past relative to the current time (few ticks in the past)
         /// </summary>
         /// <param name="ticks">The number of ticks ago we're querying the time.</param>

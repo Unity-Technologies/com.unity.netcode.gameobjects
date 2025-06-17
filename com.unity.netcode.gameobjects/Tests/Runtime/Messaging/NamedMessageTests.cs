@@ -279,5 +279,38 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(message.Contains($"Given message size ({msgSize} bytes) is greater than the maximum"), $"Unexpected exception: {message}");
             }
         }
+
+        [Test]
+        public void NamedMessageHandlerIsUnregisteredWithoutException()
+        {
+            var messageName = Guid.NewGuid().ToString();
+            const int numMessagesToSend = 3;
+            const int expectedMessageHandlerCallCount = 1;
+
+            var messageHandlerCalled = 0;
+            m_ServerNetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(
+                messageName,
+                (_, _) =>
+                {
+                    messageHandlerCalled++;
+                    m_ServerNetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(messageName);
+                });
+
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteValueSafe(messageContent);
+                for (var i = 0; i < numMessagesToSend; i++)
+                {
+                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage(
+                        messageName,
+                        m_ServerNetworkManager.LocalClientId,
+                        writer);
+                }
+            }
+
+            Assert.AreEqual(expectedMessageHandlerCallCount, messageHandlerCalled);
+        }
     }
 }

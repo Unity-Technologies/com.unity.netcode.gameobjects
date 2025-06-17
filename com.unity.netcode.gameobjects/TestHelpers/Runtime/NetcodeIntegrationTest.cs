@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.RuntimeTests;
 using Unity.Netcode.Transports.UTP;
@@ -35,6 +36,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// This is calculated based on the default tick rate of the server's NetworkManager.
         /// </summary>
         protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
+
+        private readonly StringBuilder m_InternalErrorLog = new StringBuilder();
 
         /// <summary>
         /// An instance of <see cref="NetcodeLogAssert"/> used to capture and assert log messages during integration tests.
@@ -1467,6 +1470,42 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
+        /// </summary>
+        /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForConditionOrTimeOut(Func<StringBuilder, bool> checkForCondition, TimeoutHelper timeOutHelper = null)
+        {
+            if (checkForCondition == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            yield return WaitForConditionOrTimeOut(() =>
+            {
+                m_InternalErrorLog.Clear();
+                return checkForCondition(m_InternalErrorLog);
+            }, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Validation for clients connected.
+        /// </summary>
+        private bool CheckClientsConnected(NetworkManager[] clientsToCheck)
+        {
+            if (clientsToCheck.Any(client => !client.IsConnectedClient))
+            {
+                return false;
+            }
+            var expectedCount = m_ServerNetworkManager.IsHost ? clientsToCheck.Length + 1 : clientsToCheck.Length;
+            var currentCount = m_ServerNetworkManager.ConnectedClients.Count;
+
+            return currentCount == expectedCount;
+        }
+
+        /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
         /// have connected or it will time out.
@@ -1475,11 +1514,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator WaitForClientsConnectedOrTimeOut(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                         m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+            yield return WaitForConditionOrTimeOut(() => CheckClientsConnected(clientsToCheck));
         }
 
         /// <summary>
@@ -1492,11 +1527,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>True if all clients are connected within the specified number of frames; otherwise, false.</returns>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
         {
-            var remoteClientCount = clientsToCheck.Length;
-            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
-
-            return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-                                                                 m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+            return WaitForConditionOrTimeOutWithTimeTravel(() => CheckClientsConnected(clientsToCheck));
         }
         /// <summary>
         /// Overloaded method that just passes in all clients to
@@ -1729,6 +1760,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
             var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
+            if (m_InternalErrorLog.Length > 0)
+            {
+                Assert.False(timeoutHelper.TimedOut, $"{timeOutErrorMessage}\n{m_InternalErrorLog}");
+                m_InternalErrorLog.Clear();
+                return;
+            }
+
             Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
         }
 
@@ -1750,7 +1788,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private System.Text.StringBuilder m_WaitForLog = new System.Text.StringBuilder();
+        private StringBuilder m_WaitForLog = new StringBuilder();
 
         private void LogWaitForMessages()
         {

@@ -43,9 +43,19 @@
             "define": "UTP_TRANSPORT_2_1_ABOVE"
         },
         {
+            "name": "com.unity.transport",
+            "expression": "2.4.0",
+            "define": "UTP_TRANSPORT_2_4_ABOVE"
+        },
+        {
             "name": "Unity",
             "expression": "2023",
             "define": "UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.1.0a1",
+            "define": "HOSTNAME_RESOLUTION_AVAILABLE"
         }
     ]
 }

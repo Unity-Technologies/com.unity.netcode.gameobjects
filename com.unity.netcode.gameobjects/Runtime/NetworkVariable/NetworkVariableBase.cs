@@ -362,6 +362,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Primarily to check for collections dirty states when doing
+        /// a fully owner read/write NetworkVariable update.
+        /// </summary>
+        internal virtual void OnCheckIsDirtyState()
+        {
+
+        }
+
+        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="writer">The stream to write the dirty changes to</param>
@@ -398,12 +407,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// WriteFieldSynchronization will write the current value only if there are no pending changes.
+        /// Otherwise, it will write the previous value if there are pending changes since the pending
+        /// changes will be sent shortly after the client's synchronization.
+        /// <br/><br/>
         /// There are scenarios, specifically with collections, where a client could be synchronizing and
         /// some NetworkVariables have pending updates. To avoid duplicating entries, this is invoked only
         /// when sending the full synchronization information.
         /// </summary>
         /// <remarks>
-        /// Derrived classes should send the previous value for synchronization so when the updated value
+        /// Derived classes should send the previous value for synchronization so when the updated value
         /// is sent (after synchronizing the client) it will apply the updates.
         /// </remarks>
         /// <param name="writer"></param>

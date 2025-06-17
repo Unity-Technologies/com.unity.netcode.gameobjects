@@ -419,6 +419,24 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoObjectParentSync = true;
 
+        /// <summary>
+        /// Determines if the owner will apply transform values sent by the parenting message.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, the resultant parenting transform changes sent by the authority will be applied on all instances. <br />
+        /// When disabled, the resultant parenting transform changes sent by the authority will not be applied on the owner's instance. <br />
+        /// When disabled, all non-owner instances will still be synchronized by the authority's transform values when parented.
+        /// </remarks>
+        [Tooltip("When disabled (default enabled), the owner will not apply a server or host's transform properties when parenting changes. Primarily useful for client-server network topology configurations.")]
+        public bool SyncOwnerTransformWhenParented = true;
+
+        /// <summary>
+        /// Client-Server specific, when enabled an owner of a NetworkObject can parent locally as opposed to requiring the owner to notify the server it would like to be parented.
+        /// This behavior is always true when using a distributed authority network topology and does not require it to be set.
+        /// </summary>
+        [Tooltip("When enabled (default disabled), owner's can parent a NetworkObject locally without having to send an RPC to the server or host. Only pertinent when using client-server network topology configurations.")]
+        public bool AllowOwnerToParent;
+
         internal readonly HashSet<ulong> Observers = new HashSet<ulong>();
 
 #if MULTIPLAYER_TOOLS
@@ -897,6 +915,14 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
+        internal void ResetOnDespawn()
+        {
+            // Always clear out the observers list when despawned
+            Observers.Clear();
+            IsSpawned = false;
+            m_LatestParent = null;
+        }
+
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
         /// </summary>
@@ -1088,8 +1114,9 @@ namespace Unity.Netcode
             {
                 return false;
             }
-
-            if (!NetworkManager.IsServer && !NetworkManager.ShutdownInProgress)
+            // If we don't have authority and we are not shutting down, then don't allow any parenting.
+            // If we are shutting down and don't have authority then allow it.
+            if (!(NetworkManager.IsServer || (AllowOwnerToParent && IsOwner)) && !NetworkManager.ShutdownInProgress)
             {
                 return false;
             }
@@ -1103,6 +1130,8 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
+
 
             m_CachedWorldPositionStays = worldPositionStays;
 
@@ -1137,7 +1166,9 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!NetworkManager.IsServer)
+            var hasAuthority = NetworkManager.IsServer || (AllowOwnerToParent && IsOwner);
+
+            if (!hasAuthority)
             {
                 // Log exception if we are a client and not shutting down.
                 if (!NetworkManager.ShutdownInProgress)
@@ -1478,16 +1509,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behavior = ChildNetworkBehaviours[i];
-                behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(writer, targetClientId);
-            }
-        }
-
         internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -1497,12 +1518,39 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkOwnerReadVariablesDirty()
+        /// <summary>
+        /// Used when changing ownership, this will mark any owner read permission base NetworkVariables as dirty
+        /// and will check if any owner write permission NetworkVariables are dirty (primarily for collections) so
+        /// the new owner will get a full state update prior to changing ownership.
+        /// </summary>
+        /// <remarks>
+        /// We have to pass in the original owner and previous owner to "reset" back to the current state of this
+        /// NetworkObject in order to preserve the same ownership change flow. By the time this is invoked, the
+        /// new and previous owner ids have already been set.
+        /// </remarks>
+        /// <param name="originalOwnerId">the owner prior to beginning the change in ownership change.</param>
+        /// <param name="originalPreviousOwnerId">the previous owner prior to beginning the change in ownership change.</param>
+        internal void SynchronizeOwnerNetworkVariables(ulong originalOwnerId, ulong originalPreviousOwnerId)
         {
+            var currentOwnerId = OwnerClientId;
+            OwnerClientId = originalOwnerId;
+            PreviousOwnerId = originalPreviousOwnerId;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].MarkOwnerReadVariablesDirty();
+                ChildNetworkBehaviours[i].MarkOwnerReadDirtyAndCheckOwnerWriteIsDirty();
             }
+
+            // Now set the new owner and previous owner identifiers back to their original new values
+            // before we run the NetworkBehaviourUpdate. For owner read only permissions this order of
+            // operations is **particularly important** as we need to first (above) mark things as dirty
+            // from the context of the original owner and then second (below) we need to send the messages
+            // which requires the new owner to be set for owner read permission NetworkVariables.
+            OwnerClientId = currentOwnerId;
+            PreviousOwnerId = originalOwnerId;
+
+            // Force send a state update for all owner read NetworkVariables  and any currently dirty
+            // owner write NetworkVariables.
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
         }
 
         // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
@@ -1527,18 +1575,6 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
-        /// Only invoked during first synchronization of a NetworkObject (late join or newly spawned)
-        /// </summary>
-        internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
-        {
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                var behaviour = ChildNetworkBehaviours[i];
-                behaviour.InitializeVariables();
-                behaviour.SetNetworkVariableData(reader, clientId);
-            }
-        }
 
         internal ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
@@ -1751,14 +1787,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void PostNetworkVariableWrite(bool forceSend)
-        {
-            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
-            {
-                ChildNetworkBehaviours[k].PostNetworkVariableWrite(forceSend);
-            }
-        }
-
         /// <summary>
         /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBehaviours.
         /// </summary>
@@ -1772,11 +1800,16 @@ namespace Unity.Netcode
             {
                 var writer = serializer.GetFastBufferWriter();
                 var positionBeforeSynchronizing = writer.Position;
-                writer.WriteValueSafe((ushort)0);
+                writer.WriteValueSafe(0);
                 var sizeToSkipCalculationPosition = writer.Position;
 
                 // Synchronize NetworkVariables
-                WriteNetworkVariableData(writer, targetClientId);
+                foreach (var behavior in ChildNetworkBehaviours)
+                {
+                    behavior.InitializeVariables();
+                    behavior.WriteNetworkVariableData(writer, targetClientId);
+                }
+
                 // Reserve the NetworkBehaviour synchronization count position
                 var networkBehaviourCountPosition = writer.Position;
                 writer.WriteValueSafe((byte)0);
@@ -1798,7 +1831,7 @@ namespace Unity.Netcode
                 // synchronization.
                 writer.Seek(positionBeforeSynchronizing);
                 // We want the size of everything after our size to skip calculation position
-                var size = (ushort)(currentPosition - sizeToSkipCalculationPosition);
+                var size = currentPosition - sizeToSkipCalculationPosition;
                 writer.WriteValueSafe(size);
                 // Write the number of NetworkBehaviours synchronized
                 writer.Seek(networkBehaviourCountPosition);
@@ -1810,23 +1843,34 @@ namespace Unity.Netcode
             else
             {
                 var reader = serializer.GetFastBufferReader();
-
-                reader.ReadValueSafe(out ushort sizeOfSynchronizationData);
+                reader.ReadValueSafe(out int sizeOfSynchronizationData);
                 var seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
-                // Apply the network variable synchronization data
-                SetNetworkVariableData(reader, targetClientId);
-                // Read the number of NetworkBehaviours to synchronize
-                reader.ReadValueSafe(out byte numberSynchronized);
-                var networkBehaviourId = (ushort)0;
 
-                // If a NetworkBehaviour writes synchronization data, it will first
-                // write its NetworkBehaviourId so when deserializing the client-side
-                // can find the right NetworkBehaviour to deserialize the synchronization data.
-                for (int i = 0; i < numberSynchronized; i++)
+                try
                 {
-                    serializer.SerializeValue(ref networkBehaviourId);
-                    var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    // Apply the network variable synchronization data
+                    foreach (var behaviour in ChildNetworkBehaviours)
+                    {
+                        behaviour.InitializeVariables();
+                        behaviour.SetNetworkVariableData(reader, targetClientId);
+                    }
+
+                    // Read the number of NetworkBehaviours to synchronize
+                    reader.ReadValueSafe(out byte numberSynchronized);
+
+                    // If a NetworkBehaviour writes synchronization data, it will first
+                    // write its NetworkBehaviourId so when deserializing the client-side
+                    // can find the right NetworkBehaviour to deserialize the synchronization data.
+                    for (int i = 0; i < numberSynchronized; i++)
+                    {
+                        reader.ReadValueSafe(out ushort networkBehaviourId);
+                        var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                        networkBehaviour.Synchronize(ref serializer, targetClientId);
+                    }
+                }
+                catch
+                {
+                    reader.Seek(seekToEndOfSynchData);
                 }
             }
         }
@@ -1923,7 +1967,7 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.ReadValueSafe(out int networkBehaviourSynchronizationDataLength);
                     reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
                 }
                 catch (Exception ex)

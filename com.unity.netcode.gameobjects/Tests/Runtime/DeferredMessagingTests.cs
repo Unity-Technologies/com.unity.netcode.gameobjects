@@ -1269,7 +1269,9 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(0, manager.DeferredMessageCountForKey(IDeferredNetworkMessageManager.TriggerType.OnSpawn, serverObject2.GetComponent<NetworkObject>().NetworkObjectId));
             }
 
-            serverObject2.GetComponent<NetworkObject>().ChangeOwnership(m_ServerNetworkManager.LocalClientId);
+            // Changing ownership when the owner specified is already an owner should not send any messages
+            // The original test was changing ownership to the server when the object was spawned with the server being an owner.            
+            serverObject2.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[1].LocalClientId);
             WaitForAllClientsToReceive<ChangeOwnershipMessage>();
 
             foreach (var client in m_ClientNetworkManagers)

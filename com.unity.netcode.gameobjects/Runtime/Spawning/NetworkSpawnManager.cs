@@ -250,6 +250,17 @@ namespace Unity.Netcode
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
         {
+
+            if (clientId == networkObject.OwnerClientId)
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"[{nameof(NetworkSpawnManager)}][{nameof(ChangeOwnership)}] Attempting to change ownership to Client-{clientId} when the owner is already {networkObject.OwnerClientId}! (Ignoring)");
+
+                }
+                return;
+            }
+
             // If ownership changes faster than the latency between the client-server and there are NetworkVariables being updated during ownership changes,
             // then notify the user they could potentially lose state updates if developer logging is enabled.
             if (m_LastChangeInOwnership.ContainsKey(networkObject.NetworkObjectId) && m_LastChangeInOwnership[networkObject.NetworkObjectId] > Time.realtimeSinceStartup)
@@ -278,6 +289,8 @@ namespace Unity.Netcode
             {
                 throw new SpawnStateException("Object is not spawned");
             }
+            var originalPreviousOwnerId = networkObject.PreviousOwnerId;
+            var originalOwner = networkObject.OwnerClientId;
 
             // Used to distinguish whether a new owner should receive any currently dirty NetworkVariable updates
             networkObject.PreviousOwnerId = networkObject.OwnerClientId;
@@ -294,13 +307,10 @@ namespace Unity.Netcode
             // Always notify locally on the server when a new owner is assigned
             networkObject.InvokeBehaviourOnGainedOwnership();
 
+            // If we are the original owner, then we want to synchronize owner read & write NetworkVariables.
             if (networkObject.PreviousOwnerId == NetworkManager.LocalClientId)
             {
-                // Mark any owner read variables as dirty
-                networkObject.MarkOwnerReadVariablesDirty();
-                // Immediately queue any pending deltas and order the message before the
-                // change in ownership message.
-                NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(true);
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, originalPreviousOwnerId);
             }
 
             var message = new ChangeOwnershipMessage
@@ -311,6 +321,10 @@ namespace Unity.Netcode
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
+                if (IsObjectVisibilityPending(client.Key, ref networkObject))
+                {
+                    continue;
+                }
                 if (networkObject.IsNetworkVisibleTo(client.Value.ClientId))
                 {
                     var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
@@ -331,6 +345,23 @@ namespace Unity.Netcode
             }
             var tickFrequency = 1.0f / NetworkManager.NetworkConfig.TickRate;
             m_LastChangeInOwnership[networkObject.NetworkObjectId] = Time.realtimeSinceStartup + (tickFrequency * k_MaximumTickOwnershipChangeMultiplier);
+        }
+
+        /// <summary>
+        /// Will determine if a client has been granted visibility for a NetworkObject but
+        /// the <see cref="CreateObjectMessage"/> has yet to be generated for it. Under this case,
+        /// the client might not need to be sent a message (i.e. <see cref="ChangeOwnershipMessage")
+        /// </summary>
+        /// <param name="clientId">the client to check</param>
+        /// <param name="networkObject">the <see cref="NetworkObject"/> to check if it is pending show</param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        internal bool IsObjectVisibilityPending(ulong clientId, ref NetworkObject networkObject)
+        {
+            if (ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                return ObjectsToShowToClient[clientId].Contains(networkObject);
+            }
+            return false;
         }
 
         internal bool HasPrefab(NetworkObject.SceneObject sceneObject)
@@ -1160,15 +1191,13 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.IsSpawned = false;
-
             if (SpawnedObjects.Remove(networkObject.NetworkObjectId))
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
 
-            // Always clear out the observers list when despawned
-            networkObject.Observers.Clear();
+            // Reset the NetworkObject when despawned.
+            networkObject.ResetOnDespawn();
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
