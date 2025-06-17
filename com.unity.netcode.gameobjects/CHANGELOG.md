@@ -10,15 +10,23 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
 
 ### Fixed
 
+
+### Changed
+
+
+## [2.4.2] - 2025-06-13
+
+### Fixed
+
+- Fixed `NullReferenceException` on `NetworkList` when used without a NetworkManager in scene. (#3503)
 - Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3491)
 - Fixed issue where a pooled `NetworkObject` was not resetting the internal latest parent property when despawned. (#3491)
 - Fixed issue where the initial client synchronization pre-serialization process was not excluding spawned `NetworkObject` instances that already had pending visibility for the client being synchronized. (#3488)
 - Fixed issue where there was a potential for a small memory leak in the `ConnectionApprovedMessage`. (#3486)
-
-### Changed
 
 
 ## [2.4.1] - 2025-06-11
@@ -39,7 +47,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3473)
 - When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
-- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
+
 
 ### Fixed
 
