@@ -1721,8 +1721,8 @@ namespace Unity.Netcode
                 return;
             }
 
-            // An authoritzed destroy is when it is happening on the authority instance or it is being destroyed due to
-            // a scene event that will automatically destroy any NetworkObject instances that should be destroyed with the scene.
+            // An authorized destroy is when done by the authority instance or done due to a a scene event and the NetworkObject
+            // was marked as destroy pending scene event (which means the destroy with scene property was set).
             var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
 
             if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned &&

@@ -1093,7 +1093,7 @@ namespace Unity.Netcode
                 {
                     EventData = sceneEvent,
                 };
-                var sendTarget = distributedAuthority && !NetworkManager.DAHost  ? NetworkManager.ServerClientId : clientId;
+                var sendTarget = distributedAuthority && !NetworkManager.DAHost ? NetworkManager.ServerClientId : clientId;
                 var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, sendTarget);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
             }
