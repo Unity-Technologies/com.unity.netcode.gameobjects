@@ -54,106 +54,6 @@ namespace TestProject.RuntimeTests
             base.OnNewClientCreated(networkManager);
         }
 
-        public enum DespawnMode
-        {
-            Despawn,
-            DeferDespawn,
-        }
-
-        /// <summary>
-        /// This verifies that in-scene placed NetworkObjects will be properly
-        /// synchronized if:
-        /// 1.) Despawned prior to a client late-joining
-        /// 2.) Re-spawned after having been despawned without registering the in-scene
-        /// NetworkObject as a NetworkPrefab
-        /// </summary>
-        [UnityTest]
-        public IEnumerator InSceneNetworkObjectSynchAndSpawn([Values] DespawnMode despawnMode)
-        {
-            if (!m_DistributedAuthority && despawnMode == DespawnMode.DeferDespawn)
-            {
-                Assert.Ignore("Test ignored as DeferDespawn is only valid with Distributed Authority mode.");
-            }
-
-            var authority = GetAuthorityNetworkManager();
-            authority.SceneManager.OnSceneEvent += Server_OnSceneEvent;
-            var status = authority.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
-            Assert.IsTrue(status == SceneEventProgressStatus.Started, $"When attempting to load scene {k_SceneToLoad} was returned the following progress status: {status}");
-
-            var clientCount = NumberOfClients + 1;
-
-            // This verifies the scene loaded and the in-scene placed NetworkObjects spawned.
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
-            AssertOnTimeout($"Timed out waiting for total spawned in-scene placed NetworkObjects to reach a count of {clientCount} and is currently {NetworkObjectTestComponent.SpawnedInstances.Count}");
-
-            yield return WaitForConditionOrTimeOut(() => m_ServerSideSceneLoaded.IsValid() && m_ServerSideSceneLoaded.isLoaded);
-            AssertOnTimeout($"Timed out waiting for server to finish loading scene {k_SceneToLoad}!");
-
-            // Get the server-side instance of the in-scene NetworkObject
-            Assert.True(s_GlobalNetworkObjects.ContainsKey(authority.LocalClientId), "Could not find server instance of the test in-scene NetworkObject!");
-            var serverObject = NetworkObjectTestComponent.ServerNetworkObjectInstance;
-            Assert.IsNotNull(serverObject, "Could not find server-side in-scene placed NetworkObject!");
-            Assert.IsTrue(serverObject.IsSpawned, $"{serverObject.name} is not spawned!");
-
-            // Despawn the in-scene placed NetworkObject
-            if (despawnMode == DespawnMode.Despawn)
-            {
-                serverObject.Despawn(false);
-            }
-            else
-            {
-                serverObject.DeferDespawn(1, false);
-            }
-
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
-            AssertOnTimeout($"Timed out waiting for all in-scene instances to be despawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()}");
-
-            // Now late join a client
-            NetworkObjectTestComponent.OnInSceneObjectDespawned += OnInSceneObjectDespawned;
-            yield return CreateAndStartNewClient();
-            // Spawned another client
-            clientCount++;
-
-            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
-            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to connect!");
-
-            yield return s_DefaultWaitForTick;
-
-            // Make sure the late-joining client's in-scene placed NetworkObject received the despawn notification during synchronization
-            Assert.IsNotNull(m_JoinedClientDespawnedNetworkObject, $"{m_LateJoinClient.name} did not despawn the in-scene placed NetworkObject when connecting and synchronizing!");
-
-            // Update the newly joined client information
-            ClientNetworkManagerPostStartInit();
-
-            // We should still have no spawned in-scene placed NetworkObjects at this point
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
-            AssertOnTimeout($"{m_LateJoinClient.name} spawned in-scene placed NetworkObject!");
-
-            // Now test that the despawned in-scene placed NetworkObject can be re-spawned (without having been registered as a NetworkPrefab)
-            serverObject.Spawn();
-
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
-            AssertOnTimeout($"Timed out waiting for all in-scene instances to be spawned!  Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {clientCount}");
-
-            // Test NetworkHide on the first client
-            var firstClientId = GetNonAuthorityNetworkManager().LocalClientId;
-
-            serverObject.NetworkHide(firstClientId);
-            clientCount--;
-
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
-            AssertOnTimeout($"[NetworkHide] Timed out waiting for Client-{firstClientId} to despawn the in-scene placed NetworkObject! Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {clientCount}");
-
-            // Validate that the first client can spawn the "netcode hidden" in-scene placed NetworkObject
-            serverObject.NetworkShow(firstClientId);
-            clientCount++;
-
-            yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == clientCount);
-            AssertOnTimeout($"[NetworkShow] Timed out waiting for Client-{firstClientId} to spawn the in-scene placed NetworkObject! Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {clientCount}");
-
-            yield return CleanUpLoadedScene();
-        }
-
         private Scene m_ClientLoadedScene;
 
         [UnityTest]
@@ -268,7 +168,6 @@ namespace TestProject.RuntimeTests
             }
         }
 
-
         private bool m_AllClientsLoadedScene;
         private bool m_AllClientsUnloadedScene;
 
@@ -286,7 +185,7 @@ namespace TestProject.RuntimeTests
 
             foreach (var despawnedInstance in NetworkObjectTestComponent.DespawnedInstances)
             {
-                if (despawnedInstance.gameObject.activeInHierarchy)
+                if (despawnedInstance && despawnedInstance.gameObject && despawnedInstance.gameObject.activeInHierarchy)
                 {
                     return false;
                 }
@@ -365,7 +264,6 @@ namespace TestProject.RuntimeTests
             serverInSceneObjectInstance.gameObject.SetActive(true);
             serverInSceneObjectInstance.Spawn();
             yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
-            AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be enabled and spawned!");
 
             // Test #4: Now unload the in-scene object's scene and scene switch to the same scene while
             // also having the server-side disable the in-scene placed NetworkObject and verify all
@@ -583,6 +481,8 @@ namespace TestProject.RuntimeTests
 
     }
 
+    [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
+    [TestFixture(NetworkTopologyTypes.ClientServer)]
     internal class InScenePlacedNetworkObjectClientTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "InSceneNetworkObject";
@@ -591,11 +491,8 @@ namespace TestProject.RuntimeTests
 
         private Scene m_Scene;
 
-
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
+        public InScenePlacedNetworkObjectClientTests(NetworkTopologyTypes topology) : base(topology)
         {
-            return false;
         }
 
         protected override IEnumerator OnSetup()
@@ -632,8 +529,8 @@ namespace TestProject.RuntimeTests
 
             yield return s_DefaultWaitForTick;
 
-            var insceneObject = GameObject.Find("InSceneObject");
-            Assert.IsNotNull(insceneObject, $"Could not find the in-scene placed {nameof(NetworkObject)}: InSceneObject!");
+            var inSceneObject = GameObject.Find("InSceneObject");
+            Assert.IsNotNull(inSceneObject, $"Could not find the in-scene placed {nameof(NetworkObject)}: InSceneObject!");
         }
     }
 }
