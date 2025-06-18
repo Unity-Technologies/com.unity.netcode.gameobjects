@@ -7,6 +7,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
@@ -1126,36 +1127,15 @@ namespace Unity.Netcode
                 {
                     if (!playerObject.DontDestroyWithOwner)
                     {
-                        // If a player NetworkObject is being despawned, make sure to remove all children if they are marked to not be destroyed
-                        // with the owner.
-                        if (NetworkManager.DAHost)
-                        {
-                            // Remove any children from the player object if they are not going to be destroyed with the owner
-                            var childNetworkObjects = playerObject.GetComponentsInChildren<NetworkObject>();
-                            foreach (var child in childNetworkObjects)
-                            {
-                                // TODO: We have always just removed all children, but we might think about changing this to preserve the nested child hierarchy.
-                                if (child.DontDestroyWithOwner && child.transform.transform.parent)
-                                {
-                                    // If we are here, then we are running in DAHost mode and have the authority to remove the child from its parent
-                                    child.AuthorityAppliedParenting = true;
-                                    child.TryRemoveParentCachedWorldPositionStays();
-                                }
-                            }
-                        }
-
-                        if (NetworkManager.PrefabHandler.ContainsHandler(playerObject.GlobalObjectIdHash))
-                        {
-                            // Despawn but don't destroy. DA Host will act like the service and send despawn notifications.
-                            NetworkManager.SpawnManager.DespawnObject(playerObject, false, NetworkManager.DistributedAuthorityMode);
-                            // Let the prefab handler determine if it will be destroyed
-                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(playerObject);
-                        }
-                        else if (playerObject.IsSpawned)
+                        if (playerObject.IsSpawned)
                         {
                             // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked on the server-side (when the client side disconnected).
                             // This prevents the issue (when just destroying the GameObject) where any NetworkBehaviour component(s) destroyed before the NetworkObject would not have OnNetworkDespawn invoked.
-                            NetworkManager.SpawnManager.DespawnObject(playerObject, true, NetworkManager.DistributedAuthorityMode);
+                            NetworkManager.SpawnManager.DespawnObject(playerObject, true, true);
+                        }
+                        else
+                        {
+                            Object.Destroy(playerObject.gameObject);
                         }
                     }
                     else if (!NetworkManager.ShutdownInProgress)
@@ -1180,18 +1160,13 @@ namespace Unity.Netcode
                         // Handle an object with no observers other than the current disconnecting client as destroying with owner
                         if (!ownedObject.DontDestroyWithOwner && (ownedObject.Observers.Count == 0 || (ownedObject.Observers.Count == 1 && ownedObject.Observers.Contains(clientId))))
                         {
-                            if (NetworkManager.PrefabHandler.ContainsHandler(ownedObject.GlobalObjectIdHash))
+                            if (ownedObject.IsSpawned)
                             {
-                                if (ownedObject.IsSpawned)
-                                {
-                                    // Don't destroy (prefab handler will determine this, but always notify
-                                    NetworkManager.SpawnManager.DespawnObject(ownedObject, false, true);
-                                }
-                                NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(ownedObject);
+                                NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
                             }
                             else
                             {
-                                NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
+                                Object.Destroy(ownedObject.gameObject);
                             }
                         }
                         else if (!NetworkManager.ShutdownInProgress)
