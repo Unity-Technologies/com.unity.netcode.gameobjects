@@ -12,6 +12,7 @@ public class NGOSettings : AnnotatedSettingsBase
     static ValidationOptions validationOptions = new ValidationOptions()
     {
         ProjectPath = "testproject",
+        UtrTestingYamatoTimeout = 40
     };
 
     // update this to list all packages in this repo that you want to release.
