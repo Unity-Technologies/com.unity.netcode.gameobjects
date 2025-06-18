@@ -15,7 +15,10 @@ Netcode for GameObjects is a Unity package that provides networking capabilities
 
 Visit the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/) for package & API documentation, as well as information about several samples which leverage the Netcode for GameObjects package.
 
-You can also jump right into our [Hello World](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/helloworld) guide for a taste of how to use the framework for basic networked tasks.
+You can also jump right into our quick start guides:
+- [Client-Server quick start](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/get-started-ngo/).
+- [Distributed Authority quick start](https://docs-multiplayer.unity3d.com/netcode/current/learn/distributed-authority-quick-start/)
+  - [Distributed Authority WebGL quick start](https://docs-multiplayer.unity3d.com/netcode/current/learn/distributed-authority-webgl/)
 
 ### Netcode for GameObjects v2 
 The most recent version of Netcode for GameObjects (v2) includes several improvements along with the more recent [distributed authority network topology](https://docs-multiplayer.unity3d.com/netcode/current/terms-concepts/distributed-authority/) feature. You can find the source code for this on the [develop-2.0.0 branch](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/tree/develop-2.0.0). 
