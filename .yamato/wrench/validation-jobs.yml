@@ -16,12 +16,12 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
   - command: unity-downloader-cli -u 2021.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -29,8 +29,8 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -50,10 +50,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -82,12 +82,12 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
   - command: unity-downloader-cli -u 2021.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -95,8 +95,8 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -116,10 +116,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -148,12 +148,12 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
   - command: unity-downloader-cli -u 2021.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -161,8 +161,8 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -182,10 +182,10 @@ validate_-_netcode_gameobjects_-_2021_3_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -214,12 +214,12 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
   - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -227,8 +227,8 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -248,10 +248,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -280,12 +280,12 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
   - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -293,8 +293,8 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -314,10 +314,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -346,12 +346,12 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
   - command: unity-downloader-cli -u 2022.3/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -359,8 +359,8 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -380,10 +380,10 @@ validate_-_netcode_gameobjects_-_2022_3_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -412,12 +412,12 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
   - command: unity-downloader-cli -u 6000.0/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -425,8 +425,8 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -446,10 +446,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -478,12 +478,12 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
   - command: unity-downloader-cli -u 6000.0/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -491,8 +491,8 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -512,10 +512,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -544,12 +544,12 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
   - command: unity-downloader-cli -u 6000.0/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -557,8 +557,8 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -578,10 +578,10 @@ validate_-_netcode_gameobjects_-_6000_0_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -610,12 +610,12 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
   - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -623,8 +623,8 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -644,10 +644,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -676,12 +676,12 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
   - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -689,8 +689,8 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -710,10 +710,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -742,12 +742,12 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
   - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -755,8 +755,8 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -776,10 +776,10 @@ validate_-_netcode_gameobjects_-_6000_1_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -808,12 +808,12 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
   - command: unity-downloader-cli -u 6000.2/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -821,8 +821,8 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -842,10 +842,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -874,12 +874,12 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
   - command: unity-downloader-cli -u 6000.2/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -887,8 +887,8 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -908,10 +908,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -940,12 +940,12 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
   - command: unity-downloader-cli -u 6000.2/staging -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -953,8 +953,8 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -974,10 +974,10 @@ validate_-_netcode_gameobjects_-_6000_2_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -1006,12 +1006,12 @@ validate_-_netcode_gameobjects_-_6000_3_-_macos:
   - command: unity-downloader-cli -u trunk -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -1019,8 +1019,8 @@ validate_-_netcode_gameobjects_-_6000_3_-_macos:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
@@ -1040,10 +1040,10 @@ validate_-_netcode_gameobjects_-_6000_3_-_macos:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -1072,12 +1072,12 @@ validate_-_netcode_gameobjects_-_6000_3_-_ubuntu:
   - command: unity-downloader-cli -u trunk -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -1085,8 +1085,8 @@ validate_-_netcode_gameobjects_-_6000_3_-_ubuntu:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
@@ -1106,10 +1106,10 @@ validate_-_netcode_gameobjects_-_6000_3_-_ubuntu:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
@@ -1138,12 +1138,12 @@ validate_-_netcode_gameobjects_-_6000_3_-_windows:
   - command: unity-downloader-cli -u trunk -c editor --path .Editor --fast
     timeout: 10
     retries: 3
-  - command: upm-pvp create-test-project test-netcode.gameobjects --packages "upm-ci~/packages/*.tgz" --unity .Editor
+  - command: upm-pvp create-test-project testproject --packages "upm-ci~/packages/*.tgz" --unity .Editor
     timeout: 10
     retries: 1
   - command: echo No internal packages to add.
   - command: upm-pvp test --unity .Editor --packages "upm-ci~/packages/*.tgz" --results upm-ci~/pvp
-    timeout: 20
+    timeout: 40
     retries: 0
   - command: upm-pvp require "pkgprom-promote -PVP-29-2 rme" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 5
@@ -1151,8 +1151,8 @@ validate_-_netcode_gameobjects_-_6000_3_-_windows:
   - command: upm-pvp require "rme PVP-160-1 supported" --results upm-ci~/pvp --exemptions upm-ci~/pvp/failures.json
     timeout: 10
     retries: 0
-  - command: 'UnifiedTestRunner.exe --testproject=test-netcode.gameobjects --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
-    timeout: 20
+  - command: 'UnifiedTestRunner.exe --testproject=testproject --editor-location=.Editor --clean-library --reruncount=1 --clean-library-on-rerun --artifacts-path=artifacts --suite=Editor --suite=Playmode "--ff={ops.upmpvpevidence.enable=true}" '
+    timeout: 40
     retries: 1
   after:
   - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
@@ -1172,10 +1172,10 @@ validate_-_netcode_gameobjects_-_6000_3_-_windows:
       - '*.log'
       - '*.xml'
       - artifacts/**/*
-      - test-netcode.gameobjects/Logs/**
-      - test-netcode.gameobjects/Library/*.log
-      - test-netcode.gameobjects/*.log
-      - test-netcode.gameobjects/Builds/*.log
+      - testproject/Logs/**
+      - testproject/Library/*.log
+      - testproject/*.log
+      - testproject/Builds/*.log
       - build/test-results/**
       browsable: onDemand
   dependencies:
