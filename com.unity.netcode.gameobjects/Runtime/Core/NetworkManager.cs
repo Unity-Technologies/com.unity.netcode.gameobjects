@@ -1146,17 +1146,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Get the transportId from the associated clientId.
+        /// Get the TransportId from the associated ClientId.
         /// </summary>
         /// <param name="clientId">The ClientId to get the TransportId from</param>
-        /// <returns></returns>
+        /// <returns>The TransportId associated with the given ClientId</returns>
         public ulong GetTransportIdFromClientId(ulong clientId) => ConnectionManager.ClientIdToTransportId(clientId);
 
         /// <summary>
-        /// Get the clientId from the associated transportId.
+        /// Get the ClientId from the associated TransportId.
         /// </summary>
-        /// <param name="clientId">The TransportId to get the ClientId from</param>
-        /// <returns></returns>
+        /// <param name="transportId">The TransportId to get the ClientId from</param>
+        /// <returns>The ClientId from the associated TransportId</returns>
         public ulong GetClientIdFromTransportId(ulong transportId) => ConnectionManager.TransportIdToClientId(transportId);
 
         /// <summary>
@@ -1319,7 +1319,7 @@ namespace Unity.Netcode
             }
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= ModeChanged;
-#endif            
+#endif
         }
 
         // Command line options
