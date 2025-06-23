@@ -264,7 +264,7 @@ namespace Unity.Netcode
         }
 
         internal Dictionary<ulong, NetworkObject> NetworkTransformUpdate = new Dictionary<ulong, NetworkObject>();
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
         internal Dictionary<ulong, NetworkObject> NetworkTransformFixedUpdate = new Dictionary<ulong, NetworkObject>();
 #endif
 
@@ -284,7 +284,7 @@ namespace Unity.Netcode
                     NetworkTransformUpdate.Remove(networkObject.NetworkObjectId);
                 }
             }
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             else
             {
                 if (register)
@@ -341,7 +341,7 @@ namespace Unity.Netcode
 
                         MessageManager.CleanupDisconnectedClients();
                         AnticipationSystem.ProcessReanticipation();
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
                         {
                             // if not active or not spawned then skip
@@ -362,7 +362,7 @@ namespace Unity.Netcode
 #endif
                     }
                     break;
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 case NetworkUpdateStage.FixedUpdate:
                     {
                         foreach (var networkObjectEntry in NetworkTransformFixedUpdate)
@@ -1112,7 +1112,7 @@ namespace Unity.Netcode
             }
 #endif
 
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             NetworkTransformFixedUpdate.Clear();
 #endif
             NetworkTransformUpdate.Clear();
@@ -1157,7 +1157,7 @@ namespace Unity.Netcode
             }
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             this.RegisterNetworkUpdate(NetworkUpdateStage.FixedUpdate);
 #endif
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
@@ -1590,11 +1590,12 @@ namespace Unity.Netcode
             // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
             m_ShuttingDown = false;
 
-            // Reset the client's roles
-            ConnectionManager.LocalClient.SetRole(false, false);
+            // Completely reset the NetworkClient
+            ConnectionManager.LocalClient = new NetworkClient();
 
-            // This cleans up the internal prefabs list
+            // Clean up the internal prefabs data
             NetworkConfig?.Prefabs?.Shutdown();
+            PrefabHandler.Shutdown();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes

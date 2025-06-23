@@ -852,7 +852,7 @@ namespace Unity.Netcode.Components
                 if (HasScaleChange)
                 {
                     // If we are teleporting (which includes synchronizing) and the associated NetworkObject has a parent
-                    // then we want to serialize the LossyScale since NetworkObject spawn order is not  guaranteed
+                    // then we want to serialize the LossyScale since NetworkObject spawn order is not guaranteed
                     if (IsTeleportingNextFrame && IsParented)
                     {
                         serializer.SerializeValue(ref LossyScale);
@@ -1014,7 +1014,7 @@ namespace Unity.Netcode.Components
             /// Uses a 1 to 2 phase smooth dampening approach where:<br />
             /// <list type="bullet">
             /// <item><description>The first phase smooth dampens towards the current tick state update being processed by the accumulated delta time relative to the time to target.</description></item>
-            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the third phase at a rate of delta time divided by the respective max interpolation time.</description></item>
+            /// <item><description>The second phase (optional) performs lerp smoothing where the current respective transform value is lerped towards the result of the first phase at a rate of delta time divided by the respective max interpolation time.</description></item>
             /// </list>
             /// </summary>
             /// <remarks>
@@ -2524,10 +2524,25 @@ namespace Unity.Netcode.Components
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
             var adjustedPosition = m_InternalCurrentPosition;
-            var adjustedRotation = m_InternalCurrentRotation;
+            var currentPosistion = GetSpaceRelativePosition();
+            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosistion.x;
+            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosistion.y;
+            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosistion.z;
 
+            var adjustedRotation = m_InternalCurrentRotation;
             var adjustedRotAngles = adjustedRotation.eulerAngles;
+            var currentRotation = GetSpaceRelativeRotation().eulerAngles;
+            adjustedRotAngles.x = SyncRotAngleX ? adjustedRotAngles.x : currentRotation.x;
+            adjustedRotAngles.y = SyncRotAngleY ? adjustedRotAngles.y : currentRotation.y;
+            adjustedRotAngles.z = SyncRotAngleZ ? adjustedRotAngles.z : currentRotation.z;
+            adjustedRotation.eulerAngles = adjustedRotAngles;
+
+
             var adjustedScale = m_InternalCurrentScale;
+            var currentScale = GetScale();
+            adjustedScale.x = SyncScaleX ? adjustedScale.x : currentScale.x;
+            adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
+            adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
 
             // Non-Authority Preservers the authority's transform state update modes
             InLocalSpace = networkState.InLocalSpace;
@@ -2650,7 +2665,18 @@ namespace Unity.Netcode.Components
                 // Update our current position if it changed or we are interpolating
                 if (networkState.HasPositionChange || Interpolate)
                 {
-                    m_InternalCurrentPosition = adjustedPosition;
+                    if (SyncPositionX && SyncPositionY && SyncPositionZ)
+                    {
+                        m_InternalCurrentPosition = adjustedPosition;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's position
+                        var position = InLocalSpace ? transform.localPosition : transform.position;
+                        m_InternalCurrentPosition.x = SyncPositionX ? adjustedPosition.x : position.x;
+                        m_InternalCurrentPosition.y = SyncPositionY ? adjustedPosition.y : position.y;
+                        m_InternalCurrentPosition.z = SyncPositionZ ? adjustedPosition.z : position.z;
+                    }
                 }
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 if (m_UseRigidbodyForMotion)
@@ -2696,7 +2722,21 @@ namespace Unity.Netcode.Components
                 // Update our current rotation if it changed or we are interpolating
                 if (networkState.HasRotAngleChange || Interpolate)
                 {
-                    m_InternalCurrentRotation = adjustedRotation;
+                    if ((SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ) || UseQuaternionSynchronization)
+                    {
+                        m_InternalCurrentRotation = adjustedRotation;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's rotation
+                        var rotation = InLocalSpace ? transform.localRotation.eulerAngles : transform.rotation.eulerAngles;
+                        var currentEuler = m_InternalCurrentRotation.eulerAngles;
+                        var updatedEuler = adjustedRotation.eulerAngles;
+                        currentEuler.x = SyncRotAngleX ? updatedEuler.x : rotation.x;
+                        currentEuler.y = SyncRotAngleY ? updatedEuler.y : rotation.y;
+                        currentEuler.z = SyncRotAngleZ ? updatedEuler.z : rotation.z;
+                        m_InternalCurrentRotation.eulerAngles = currentEuler;
+                    }
                 }
 
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
@@ -2737,7 +2777,18 @@ namespace Unity.Netcode.Components
                 // Update our current scale if it changed or we are interpolating
                 if (networkState.HasScaleChange || Interpolate)
                 {
-                    m_InternalCurrentScale = adjustedScale;
+                    if (SyncScaleX && SyncScaleY && SyncScaleZ)
+                    {
+                        m_InternalCurrentScale = adjustedScale;
+                    }
+                    else
+                    {
+                        // Preserve any non-synchronized changes to the local instance's scale
+                        var scale = transform.localScale;
+                        m_InternalCurrentScale.x = SyncScaleX ? adjustedScale.x : scale.x;
+                        m_InternalCurrentScale.y = SyncScaleY ? adjustedScale.y : scale.y;
+                        m_InternalCurrentScale.z = SyncScaleZ ? adjustedScale.z : scale.z;
+                    }
                 }
                 transform.localScale = m_InternalCurrentScale;
             }
@@ -3726,13 +3777,13 @@ namespace Unity.Netcode.Components
 
         /// <inheritdoc/>
         /// <remarks>
-        /// When not using a NetworkRigidbody and using an owner authoritative motion model, you can <br />
+        /// When not using a NetworkRigidbody and using an owner authoritative motion model, you can<br />
         /// improve parenting transitions into and out of world and local space by:<br />
         /// - Disabling <see cref="NetworkObject.SyncOwnerTransformWhenParented"/><br />
         /// - Enabling <see cref="NetworkObject.AllowOwnerToParent"/><br />
         /// - Enabling <see cref="SwitchTransformSpaceWhenParented"/><br />
         /// -- Note: This handles changing from world space to local space for you.<br />
-        /// When these settings are applied, transitioning from: <br />
+        /// When these settings are applied, transitioning from:<br />
         /// - World space to local space (root-null parent/null to <see cref="NetworkObject"/> parent)
         /// - Local space back to world space (<see cref="NetworkObject"/> parent to root-null parent)
         /// - Local space to local space (<see cref="NetworkObject"/> parent to <see cref="NetworkObject"/> parent)
@@ -4101,12 +4152,12 @@ namespace Unity.Netcode.Components
             }
 
             // Note: This is for the legacy lerp type in order to maintain the same end result for any games under development that have tuned their
-            // project's to match the legacy lerp's end result. This will not allow changes
+            // project's to match the legacy lerp's end result.
             var cachedRenderTime = 0.0;
             if (PositionInterpolationType == InterpolationTypes.LegacyLerp || RotationInterpolationType == InterpolationTypes.LegacyLerp || ScaleInterpolationType == InterpolationTypes.LegacyLerp)
             {
                 // Since InterpolationBufferTickOffset defaults to zero, this should not impact exist projects but still provides users with the ability to tweak
-                // their ticks ago time. 
+                // their ticks ago time.
                 var ticksAgo = (!IsServerAuthoritative() && !IsServer ? 2 : 1) + InterpolationBufferTickOffset;
                 cachedRenderTime = timeSystem.TimeTicksAgo(ticksAgo).Time;
             }
@@ -4533,7 +4584,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// Note: You can adjust this value during runtime. Increasing this value will set non-authority instances that much further
-        /// behind the authority instance but will increase the number of state updates to be processed. Increasing this can be useful 
+        /// behind the authority instance but will increase the number of state updates to be processed. Increasing this can be useful
         /// under higher latency conditions.<br />
         /// The default value is 1 tick (plus the tick latency). When running on a local network, reducing this to 0 is recommended.<br />
         /// <see cref="NetworkTimeSystem.TickLatency"/>

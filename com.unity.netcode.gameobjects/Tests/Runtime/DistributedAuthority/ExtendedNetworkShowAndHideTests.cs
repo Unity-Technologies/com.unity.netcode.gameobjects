@@ -8,7 +8,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(HostOrServer.DAHost, true)]
     [TestFixture(HostOrServer.DAHost, false)]
-    public class ExtendedNetworkShowAndHideTests : NetcodeIntegrationTest
+    internal class ExtendedNetworkShowAndHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;
         private bool m_EnableSceneManagement;

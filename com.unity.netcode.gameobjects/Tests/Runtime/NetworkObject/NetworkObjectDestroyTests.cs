@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -21,56 +22,91 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
+        public class DestroyTestComponent : NetworkBehaviour
         {
-            return false;
+            public static List<string> ObjectsDestroyed = new List<string>();
+
+            public override void OnDestroy()
+            {
+                ObjectsDestroyed.Add(gameObject.name);
+                base.OnDestroy();
+            }
         }
 
         public NetworkObjectDestroyTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
+        protected override IEnumerator OnSetup()
+        {
+            // Re-apply the default for each test
+            LogAssert.ignoreFailingMessages = false;
+            DestroyTestComponent.ObjectsDestroyed.Clear();
+            return base.OnSetup();
+        }
+
         protected override void OnCreatePlayerPrefab()
         {
+            m_PlayerPrefab.AddComponent<DestroyTestComponent>();
             var playerNetworkObject = m_PlayerPrefab.GetComponent<NetworkObject>();
             playerNetworkObject.SceneMigrationSynchronization = true;
             base.OnCreatePlayerPrefab();
         }
 
+        private NetworkManager GetAuthorityOfNetworkObject(ulong networkObjectId)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                {
+                    continue;
+                }
+
+                if (networkManager.SpawnManager.SpawnedObjects[networkObjectId].HasAuthority)
+                {
+                    return networkManager;
+                }
+            }
+            return null;
+        }
+
+        private bool NetworkObjectDoesNotExist(ulong networkObjectId)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>
-        /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
+        /// Tests that the authority NetworkManager instance of a NetworkObject is allowed to destroy it.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>IEnumerator</returns>
         [UnityTest]
         public IEnumerator TestNetworkObjectAuthorityDestroy()
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
 
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
+            var ownerNetworkManager = m_ClientNetworkManagers[1];
+            var clientId = ownerNetworkManager.LocalClientId;
+            var localClientPlayer = ownerNetworkManager.LocalClient.PlayerObject;
+            var localNetworkObjectId = localClientPlayer.NetworkObjectId;
 
-            Assert.IsNotNull(serverClientPlayerResult.Result.gameObject);
-            Assert.IsNotNull(clientClientPlayerResult.Result.gameObject);
+            var authorityNetworkManager = GetAuthorityOfNetworkObject(localClientPlayer.NetworkObjectId);
+            Assert.True(authorityNetworkManager != null, $"Could not find the authority of {localClientPlayer}!");
 
-            var targetNetworkManager = m_ClientNetworkManagers[0];
-            if (m_DistributedAuthority)
-            {
-                targetNetworkManager = m_ClientNetworkManagers[1];
-                // destroy the authoritative player (distributed authority)
-                Object.Destroy(clientClientPlayerResult.Result.gameObject);
-            }
-            else
-            {
-                // destroy the authoritative player (client-server)
-                Object.Destroy(serverClientPlayerResult.Result.gameObject);
-            }
+            var authorityPlayerClone = authorityNetworkManager.ConnectedClients[clientId].PlayerObject;
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<DestroyObjectMessage>(targetNetworkManager);
+            // Have the authority NetworkManager destroy the player instance
+            Object.Destroy(authorityPlayerClone.gameObject);
 
-            Assert.IsTrue(serverClientPlayerResult.Result == null); // Assert.IsNull doesn't work here
-            Assert.IsTrue(clientClientPlayerResult.Result == null);
+            var messageListener = m_DistributedAuthority ? m_ClientNetworkManagers[0] : m_ClientNetworkManagers[1];
+
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<DestroyObjectMessage>(messageListener);
+
+            yield return WaitForConditionOrTimeOut(() => NetworkObjectDoesNotExist(localNetworkObjectId));
+            AssertOnTimeout($"Not all network managers despawned and destroyed player instance NetworkObjectId: {localNetworkObjectId}");
 
             // validate that any unspawned networkobject can be destroyed
             var go = new GameObject();
@@ -97,48 +133,31 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestNetworkObjectClientDestroy([Values] ClientDestroyObject clientDestroyObject)
         {
             var isShuttingDown = clientDestroyObject == ClientDestroyObject.ShuttingDown;
-            var clientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
-            var clientId = clientPlayer.OwnerClientId;
 
-            //destroying a NetworkObject while shutting down is allowed
+            var localNetworkManager = m_ClientNetworkManagers[1];
+            var clientId = localNetworkManager.LocalClientId;
+            var localClientPlayer = localNetworkManager.LocalClient.PlayerObject;
+
+            var nonAuthorityClient = m_ClientNetworkManagers[0];
+            var clientPlayerClone = nonAuthorityClient.ConnectedClients[clientId].PlayerObject;
+
             if (isShuttingDown)
             {
-                if (m_DistributedAuthority)
-                {
-                    // Shutdown the 2nd client
-                    m_ClientNetworkManagers[1].Shutdown();
-                }
-                else
-                {
-                    // Shutdown the
-                    m_ClientNetworkManagers[0].Shutdown();
-                }
+                // The non-authority client is allowed to destroy any spawned object it does not
+                // have authority over when it shuts down.
+                nonAuthorityClient.Shutdown();
             }
             else
             {
+                // The non-authority client is =NOT= allowed to destroy any spawned object it does not
+                // have authority over during runtime.
                 LogAssert.ignoreFailingMessages = true;
-                NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
+                NetworkLog.NetworkManagerOverride = nonAuthorityClient;
+                Object.Destroy(clientPlayerClone.gameObject);
             }
 
-            m_ClientPlayerName = clientPlayer.gameObject.name;
-            m_ClientNetworkObjectId = clientPlayer.NetworkObjectId;
-            if (m_DistributedAuthority)
-            {
-                m_ClientPlayerName = m_PlayerNetworkObjects[m_ClientNetworkManagers[1].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject.name;
-                m_ClientNetworkObjectId = m_PlayerNetworkObjects[m_ClientNetworkManagers[1].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].NetworkObjectId;
-
-                if (!isShuttingDown)
-                {
-                    NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[1];
-                }
-                // the 2nd client attempts to destroy the 1st client's player object (if shutting down then "ok" if not then not "ok")
-                Object.DestroyImmediate(m_PlayerNetworkObjects[m_ClientNetworkManagers[1].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].gameObject);
-            }
-            else
-            {
-                // the 1st client attempts to destroy its own player object (if shutting down then "ok" if not then not "ok")
-                Object.DestroyImmediate(m_ClientNetworkManagers[0].LocalClient.PlayerObject.gameObject);
-            }
+            m_ClientPlayerName = clientPlayerClone.gameObject.name;
+            m_ClientNetworkObjectId = clientPlayerClone.NetworkObjectId;
 
             // destroying a NetworkObject while a session is active is not allowed
             if (!isShuttingDown)
@@ -146,13 +165,15 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(HaveLogsBeenReceived);
                 AssertOnTimeout($"Not all expected logs were received when destroying a {nameof(NetworkObject)} on the client side during an active session!");
             }
-            if (m_DistributedAuthority)
-            {
-                Assert.IsFalse(m_ClientNetworkManagers[1].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
-            }
             else
             {
-                Assert.IsFalse(m_ClientNetworkManagers[0].SpawnManager.NetworkObjectsToSynchronizeSceneChanges.ContainsKey(m_ClientNetworkObjectId), $"Player object {m_ClientNetworkObjectId} still exists within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
+                bool NonAuthorityClientDestroyed()
+                {
+                    return DestroyTestComponent.ObjectsDestroyed.Contains(m_ClientPlayerName);
+                }
+
+                yield return WaitForConditionOrTimeOut(NonAuthorityClientDestroyed);
+                AssertOnTimeout($"Timed out waiting for player object {m_ClientNetworkObjectId} to no longer exist within {nameof(NetworkSpawnManager.NetworkObjectsToSynchronizeSceneChanges)}!");
             }
         }
 
@@ -183,8 +204,14 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             NetworkLog.NetworkManagerOverride = null;
-            LogAssert.ignoreFailingMessages = false;
             return base.OnTearDown();
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            // Re-apply the default as the last exiting action
+            LogAssert.ignoreFailingMessages = false;
+            base.OnOneTimeTearDown();
         }
     }
 }

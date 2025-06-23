@@ -246,10 +246,31 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
+
+            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
+            {
+                if (networkManager.LocalClientId != OwnerClientId)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"[Session Owner] Received connection approved for Client-{OwnerClientId}! Synchronizing...");
+                    }
+
+                    networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
+                }
+                else
+                {
+                    NetworkLog.LogWarning($"[Client-{OwnerClientId}] Receiving duplicate connection approved. Client is already connected!");
+                }
+                ConnectedClientIds.Dispose();
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Client-{OwnerClientId}] Connection approved! Synchronizing...");
             }
+
             networkManager.LocalClientId = OwnerClientId;
             networkManager.MessageManager.SetLocalClientId(networkManager.LocalClientId);
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
@@ -283,6 +304,9 @@ namespace Unity.Netcode
                     networkManager.ConnectionManager.AddClient(clientId);
                 }
             }
+
+            // Dispose after it has been used.
+            ConnectedClientIds.Dispose();
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
@@ -367,7 +391,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-            ConnectedClientIds.Dispose();
         }
     }
 }

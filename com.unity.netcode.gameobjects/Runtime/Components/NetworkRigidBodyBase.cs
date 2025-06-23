@@ -44,13 +44,24 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool AutoSetKinematicOnDespawn = true;
 
+#if COM_UNITY_MODULES_PHYSICS2D
         // Determines if this is a Rigidbody or Rigidbody2D implementation
         private bool m_IsRigidbody2D => RigidbodyType == RigidbodyTypes.Rigidbody2D;
+#else
+        private bool m_IsRigidbody2D = false;
+#endif
+
+
         // Used to cache the authority state of this Rigidbody during the last frame
         private bool m_IsAuthority;
 
+#if COM_UNITY_MODULES_PHYSICS
         protected internal Rigidbody m_InternalRigidbody { get; private set; }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS2D
         protected internal Rigidbody2D m_InternalRigidbody2D { get; private set; }
+#endif
 
         internal NetworkTransform NetworkTransform;
         private float m_TickFrequency;
@@ -70,12 +81,16 @@ namespace Unity.Netcode.Components
         /// </summary>
         public enum RigidbodyTypes
         {
+#if COM_UNITY_MODULES_PHYSICS
             Rigidbody,
+#endif
+#if COM_UNITY_MODULES_PHYSICS2D
             Rigidbody2D,
+#endif
         }
 
         public RigidbodyTypes RigidbodyType { get; private set; }
-
+#if COM_UNITY_MODULES_PHYSICS2D && !COM_UNITY_MODULES_PHYSICS
         /// <summary>
         /// Initializes the networked Rigidbody based on the <see cref="RigidbodyTypes"/>
         /// passed in as a parameter.
@@ -84,6 +99,109 @@ namespace Unity.Netcode.Components
         /// Cannot be initialized while the associated <see cref="NetworkObject"/> is spawned.
         /// </remarks>
         /// <param name="rigidbodyType">type of rigid body being initialized</param>
+        /// <param name="networkTransform">the <see cref="NetworkTransform"/> that is associated with this rigid body</param>
+        /// <param name="rigidbody2D">(optional) The <see cref="Rigidbody2D"/> to be used</param>
+        protected void Initialize(RigidbodyTypes rigidbodyType, NetworkTransform networkTransform = null, Rigidbody2D rigidbody2D = null)
+        {
+            // Don't initialize if already spawned
+            if (IsSpawned)
+            {
+                Debug.LogError($"[{name}] Attempting to initialize while spawned is not allowed.");
+                return;
+            }
+            RigidbodyType = rigidbodyType;
+            m_InternalRigidbody2D = rigidbody2D;
+            NetworkTransform = networkTransform;
+
+            if (m_IsRigidbody2D && m_InternalRigidbody2D == null)
+            {
+                m_InternalRigidbody2D = GetComponent<Rigidbody2D>();
+            }
+
+            SetOriginalInterpolation();
+
+            if (NetworkTransform == null)
+            {
+                NetworkTransform = GetComponent<NetworkTransform>();
+            }
+
+            if (NetworkTransform != null)
+            {
+                NetworkTransform.RegisterRigidbody(this);
+            }
+            else
+            {
+                throw new System.Exception($"[Missing {nameof(NetworkTransform)}] No {nameof(NetworkTransform)} is assigned or can be found during initialization!");
+            }
+
+            if (AutoUpdateKinematicState)
+            {
+                SetIsKinematic(true);
+            }
+        }
+#endif
+
+#if !COM_UNITY_MODULES_PHYSICS2D && COM_UNITY_MODULES_PHYSICS
+        /// <summary>
+        /// Initializes the networked Rigidbody based on the <see cref="RigidbodyTypes"/>
+        /// passed in as a parameter.
+        /// </summary>
+        /// <remarks>
+        /// Cannot be initialized while the associated <see cref="NetworkObject"/> is spawned.
+        /// </remarks>
+        /// <param name="rigidbodyType">type of rigid body being initialized</param>
+        /// <param name="networkTransform">the <see cref="NetworkTransform"/> that is associated with this rigid body</param>
+        /// <param name="rigidbody">(optional) The <see cref="Rigidbody"/> to be used</param>
+        protected void Initialize(RigidbodyTypes rigidbodyType, NetworkTransform networkTransform = null, Rigidbody rigidbody = null)
+        {
+            // Don't initialize if already spawned
+            if (IsSpawned)
+            {
+                Debug.LogError($"[{name}] Attempting to initialize while spawned is not allowed.");
+                return;
+            }
+            RigidbodyType = rigidbodyType;
+            m_InternalRigidbody = rigidbody;
+            NetworkTransform = networkTransform;
+
+            if (m_InternalRigidbody == null)
+            {
+                m_InternalRigidbody = GetComponent<Rigidbody>();
+            }
+
+            SetOriginalInterpolation();
+
+            if (NetworkTransform == null)
+            {
+                NetworkTransform = GetComponent<NetworkTransform>();
+            }
+
+            if (NetworkTransform != null)
+            {
+                NetworkTransform.RegisterRigidbody(this);
+            }
+            else
+            {
+                throw new System.Exception($"[Missing {nameof(NetworkTransform)}] No {nameof(NetworkTransform)} is assigned or can be found during initialization!");
+            }
+
+            if (AutoUpdateKinematicState)
+            {
+                SetIsKinematic(true);
+            }
+        }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+        /// <summary>
+        /// Initializes the networked Rigidbody based on the <see cref="RigidbodyTypes"/>
+        /// passed in as a parameter.
+        /// </summary>
+        /// <remarks>
+        /// Cannot be initialized while the associated <see cref="NetworkObject"/> is spawned.
+        /// </remarks>
+        /// <param name="rigidbodyType">type of rigid body being initialized</param>
+        /// <param name="networkTransform">the <see cref="NetworkTransform"/> that is associated with this rigid body</param>
         /// <param name="rigidbody2D">(optional) The <see cref="Rigidbody2D"/> to be used</param>
         /// <param name="rigidbody">(optional) The <see cref="Rigidbody"/> to be used</param>
         protected void Initialize(RigidbodyTypes rigidbodyType, NetworkTransform networkTransform = null, Rigidbody2D rigidbody2D = null, Rigidbody rigidbody = null)
@@ -95,6 +213,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             RigidbodyType = rigidbodyType;
+
             m_InternalRigidbody2D = rigidbody2D;
             m_InternalRigidbody = rigidbody;
             NetworkTransform = networkTransform;
@@ -130,7 +249,7 @@ namespace Unity.Netcode.Components
                 SetIsKinematic(true);
             }
         }
-
+#endif
         internal Vector3 GetAdjustedPositionThreshold()
         {
             // Since the threshold is a measurement of unity world space units per tick, we will allow for the maximum threshold
@@ -183,6 +302,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         public void SetLinearVelocity(Vector3 linearVelocity)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
 #if COM_UNITY_MODULES_PHYSICS2D_LINEAR
@@ -195,6 +315,17 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.linearVelocity = linearVelocity;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.linearVelocity = linearVelocity;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+            m_InternalRigidbody2D.linearVelocity = linearVelocity;
+#else
+            m_InternalRigidbody2D.velocity = linearVelocity;
+#endif
+#endif
         }
 
         /// <summary>
@@ -207,6 +338,8 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetLinearVelocity()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+#if COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
 #if COM_UNITY_MODULES_PHYSICS2D_LINEAR
@@ -216,9 +349,21 @@ namespace Unity.Netcode.Components
 #endif
             }
             else
+#endif
             {
                 return m_InternalRigidbody.linearVelocity;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            return m_InternalRigidbody.linearVelocity;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+#if COM_UNITY_MODULES_PHYSICS2D_LINEAR
+            return m_InternalRigidbody2D.linearVelocity;
+#else
+            return m_InternalRigidbody2D.velocity;
+#endif
+#endif
         }
 
         /// <summary>
@@ -232,6 +377,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetAngularVelocity(Vector3 angularVelocity)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.angularVelocity = angularVelocity.z;
@@ -240,6 +386,13 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.angularVelocity = angularVelocity;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.angularVelocity = angularVelocity;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.angularVelocity = angularVelocity.z;
+#endif
         }
 
         /// <summary>
@@ -252,6 +405,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetAngularVelocity()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 return Vector3.forward * m_InternalRigidbody2D.angularVelocity;
@@ -260,6 +414,13 @@ namespace Unity.Netcode.Components
             {
                 return m_InternalRigidbody.angularVelocity;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+           return m_InternalRigidbody.angularVelocity;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            return Vector3.forward * m_InternalRigidbody2D.angularVelocity;
+#endif
         }
 
         /// <summary>
@@ -269,6 +430,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetPosition()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 return m_InternalRigidbody2D.position;
@@ -277,7 +439,32 @@ namespace Unity.Netcode.Components
             {
                 return m_InternalRigidbody.position;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            return m_InternalRigidbody.position;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            return m_InternalRigidbody2D.position;
+#endif
         }
+
+#if COM_UNITY_MODULES_PHYSICS2D
+        private Quaternion Rotation2D()
+        {
+            var quaternion = Quaternion.identity;
+            var angles = quaternion.eulerAngles;
+            angles.z = m_InternalRigidbody2D.rotation;
+            quaternion.eulerAngles = angles;
+            return quaternion;
+        }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        private Quaternion Rotation()
+        {
+            return m_InternalRigidbody.rotation;
+        }
+#endif
 
         /// <summary>
         /// Gets the rotation of the Rigidbody
@@ -286,18 +473,15 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Quaternion GetRotation()
         {
-            if (m_IsRigidbody2D)
-            {
-                var quaternion = Quaternion.identity;
-                var angles = quaternion.eulerAngles;
-                angles.z = m_InternalRigidbody2D.rotation;
-                quaternion.eulerAngles = angles;
-                return quaternion;
-            }
-            else
-            {
-                return m_InternalRigidbody.rotation;
-            }
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            return m_IsRigidbody2D ? Rotation2D() : Rotation();
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            return Rotation();
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            return Rotation2D();
+#endif
         }
 
         /// <summary>
@@ -307,6 +491,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MovePosition(Vector3 position)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.MovePosition(position);
@@ -315,6 +500,13 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.MovePosition(position);
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.MovePosition(position);
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.MovePosition(position);
+#endif
         }
 
         /// <summary>
@@ -324,6 +516,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetPosition(Vector3 position)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.position = position;
@@ -332,6 +525,13 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.position = position;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.position = position;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.position = position;
+#endif
         }
 
         /// <summary>
@@ -340,6 +540,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ApplyCurrentTransform()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.position = transform.position;
@@ -350,10 +551,48 @@ namespace Unity.Netcode.Components
                 m_InternalRigidbody.position = transform.position;
                 m_InternalRigidbody.rotation = transform.rotation;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.position = transform.position;
+            m_InternalRigidbody.rotation = transform.rotation;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.position = transform.position;
+            m_InternalRigidbody2D.rotation = transform.eulerAngles.z;
+#endif
         }
 
         // Used for Rigidbody only (see info on normalized below)
         private Vector4 m_QuaternionCheck = Vector4.zero;
+
+#if COM_UNITY_MODULES_PHYSICS2D
+        private void InternalMoveRotation2D(Quaternion rotation)
+        {
+            var quaternion = Quaternion.identity;
+            var angles = quaternion.eulerAngles;
+            angles.z = m_InternalRigidbody2D.rotation;
+            quaternion.eulerAngles = angles;
+            m_InternalRigidbody2D.MoveRotation(quaternion);
+        }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        private void InternalMoveRotation(Quaternion rotation)
+        {
+            // Evidently we need to check to make sure the quaternion is a perfect
+            // magnitude of 1.0f when applying the rotation to a rigid body.
+            m_QuaternionCheck.x = rotation.x;
+            m_QuaternionCheck.y = rotation.y;
+            m_QuaternionCheck.z = rotation.z;
+            m_QuaternionCheck.w = rotation.w;
+            // If the magnitude is greater than 1.0f (even by a very small fractional value), then normalize the quaternion
+            if (m_QuaternionCheck.magnitude != 1.0f)
+            {
+                rotation.Normalize();
+            }
+            m_InternalRigidbody.MoveRotation(rotation);
+        }
+#endif
 
         /// <summary>
         /// Rotatates the Rigidbody towards a specified rotation
@@ -362,29 +601,22 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void MoveRotation(Quaternion rotation)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
-                var quaternion = Quaternion.identity;
-                var angles = quaternion.eulerAngles;
-                angles.z = m_InternalRigidbody2D.rotation;
-                quaternion.eulerAngles = angles;
-                m_InternalRigidbody2D.MoveRotation(quaternion);
+                InternalMoveRotation2D(rotation);
             }
             else
             {
-                // Evidently we need to check to make sure the quaternion is a perfect
-                // magnitude of 1.0f when applying the rotation to a rigid body.
-                m_QuaternionCheck.x = rotation.x;
-                m_QuaternionCheck.y = rotation.y;
-                m_QuaternionCheck.z = rotation.z;
-                m_QuaternionCheck.w = rotation.w;
-                // If the magnitude is greater than 1.0f (even by a very small fractional value), then normalize the quaternion
-                if (m_QuaternionCheck.magnitude != 1.0f)
-                {
-                    rotation.Normalize();
-                }
-                m_InternalRigidbody.MoveRotation(rotation);
+                InternalMoveRotation(rotation);
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            InternalMoveRotation(rotation);
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            InternalMoveRotation2D(rotation);
+#endif
         }
 
         /// <summary>
@@ -394,6 +626,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetRotation(Quaternion rotation)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.rotation = rotation.eulerAngles.z;
@@ -402,7 +635,62 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.rotation = rotation;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.rotation = rotation;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.rotation = rotation.eulerAngles.z;
+#endif
         }
+
+#if COM_UNITY_MODULES_PHYSICS2D
+        private void SetOriginalInterpolation2D()
+        {
+            switch (m_InternalRigidbody2D.interpolation)
+            {
+                case RigidbodyInterpolation2D.None:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.None;
+                        break;
+                    }
+                case RigidbodyInterpolation2D.Interpolate:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.Interpolate;
+                        break;
+                    }
+                case RigidbodyInterpolation2D.Extrapolate:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.Extrapolate;
+                        break;
+                    }
+            }
+        }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        private void SetOriginalInterpolation3D()
+        {
+            switch (m_InternalRigidbody.interpolation)
+            {
+                case RigidbodyInterpolation.None:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.None;
+                        break;
+                    }
+                case RigidbodyInterpolation.Interpolate:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.Interpolate;
+                        break;
+                    }
+                case RigidbodyInterpolation.Extrapolate:
+                    {
+                        m_OriginalInterpolation = InterpolationTypes.Extrapolate;
+                        break;
+                    }
+            }
+        }
+#endif
 
         /// <summary>
         /// Sets the original interpolation of the Rigidbody while taking the Rigidbody type into consideration
@@ -410,49 +698,44 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetOriginalInterpolation()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
-                switch (m_InternalRigidbody2D.interpolation)
-                {
-                    case RigidbodyInterpolation2D.None:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.None;
-                            break;
-                        }
-                    case RigidbodyInterpolation2D.Interpolate:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.Interpolate;
-                            break;
-                        }
-                    case RigidbodyInterpolation2D.Extrapolate:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.Extrapolate;
-                            break;
-                        }
-                }
+                SetOriginalInterpolation2D();
             }
             else
             {
-                switch (m_InternalRigidbody.interpolation)
-                {
-                    case RigidbodyInterpolation.None:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.None;
-                            break;
-                        }
-                    case RigidbodyInterpolation.Interpolate:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.Interpolate;
-                            break;
-                        }
-                    case RigidbodyInterpolation.Extrapolate:
-                        {
-                            m_OriginalInterpolation = InterpolationTypes.Extrapolate;
-                            break;
-                        }
-                }
+                SetOriginalInterpolation3D();
+            }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            SetOriginalInterpolation3D();
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            SetOriginalInterpolation2D();
+#endif
+        }
+
+
+#if COM_UNITY_MODULES_PHYSICS2D
+        private void WakeIfSleeping2D()
+        {
+            if (m_InternalRigidbody2D.IsSleeping())
+            {
+                m_InternalRigidbody2D.WakeUp();
             }
         }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        private void WakeIfSleeping3D()
+        {
+            if (m_InternalRigidbody.IsSleeping())
+            {
+                m_InternalRigidbody.WakeUp();
+            }
+        }
+#endif
 
         /// <summary>
         /// Wakes the Rigidbody if it is sleeping
@@ -460,20 +743,22 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WakeIfSleeping()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
-                if (m_InternalRigidbody2D.IsSleeping())
-                {
-                    m_InternalRigidbody2D.WakeUp();
-                }
+                WakeIfSleeping2D();
             }
             else
             {
-                if (m_InternalRigidbody.IsSleeping())
-                {
-                    m_InternalRigidbody.WakeUp();
-                }
+                WakeIfSleeping3D();
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            WakeIfSleeping3D();
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            WakeIfSleeping2D();
+#endif
         }
 
         /// <summary>
@@ -482,6 +767,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SleepRigidbody()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.Sleep();
@@ -490,11 +776,19 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.Sleep();
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.Sleep();
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.Sleep();
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsKinematic()
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 return m_InternalRigidbody2D.bodyType == RigidbodyType2D.Kinematic;
@@ -503,6 +797,13 @@ namespace Unity.Netcode.Components
             {
                 return m_InternalRigidbody.isKinematic;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            return m_InternalRigidbody.isKinematic;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            return m_InternalRigidbody2D.bodyType == RigidbodyType2D.Kinematic;
+#endif
         }
 
         /// <summary>
@@ -524,6 +825,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetIsKinematic(bool isKinematic)
         {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             if (m_IsRigidbody2D)
             {
                 m_InternalRigidbody2D.bodyType = isKinematic ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
@@ -532,13 +834,24 @@ namespace Unity.Netcode.Components
             {
                 m_InternalRigidbody.isKinematic = isKinematic;
             }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody.isKinematic = isKinematic;
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            m_InternalRigidbody2D.bodyType = isKinematic ? RigidbodyType2D.Kinematic : RigidbodyType2D.Dynamic;
+#endif
+            PostSetIsKinematic();
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void PostSetIsKinematic()
+        {
             // If we are not spawned, then exit early
             if (!IsSpawned)
             {
                 return;
             }
-
             if (UseRigidBodyForMotion)
             {
                 // Only if the NetworkTransform is set to interpolate do we need to check for extrapolation
@@ -567,48 +880,75 @@ namespace Unity.Netcode.Components
             }
         }
 
+#if COM_UNITY_MODULES_PHYSICS2D
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SetInterpolation(InterpolationTypes interpolationType)
+        private void SetInterpolation2D(InterpolationTypes interpolationType)
         {
             switch (interpolationType)
             {
                 case InterpolationTypes.None:
                     {
-                        if (m_IsRigidbody2D)
-                        {
-                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.None;
-                        }
-                        else
-                        {
-                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.None;
-                        }
+                        m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.None;
                         break;
                     }
                 case InterpolationTypes.Interpolate:
                     {
-                        if (m_IsRigidbody2D)
-                        {
-                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
-                        }
-                        else
-                        {
-                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-                        }
+                        m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
                         break;
                     }
                 case InterpolationTypes.Extrapolate:
                     {
-                        if (m_IsRigidbody2D)
-                        {
-                            m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Extrapolate;
-                        }
-                        else
-                        {
-                            m_InternalRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
-                        }
+                        m_InternalRigidbody2D.interpolation = RigidbodyInterpolation2D.Extrapolate;
                         break;
                     }
             }
+        }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetInterpolation3D(InterpolationTypes interpolationType)
+        {
+            switch (interpolationType)
+            {
+                case InterpolationTypes.None:
+                    {
+                        m_InternalRigidbody.interpolation = RigidbodyInterpolation.None;
+                        break;
+                    }
+                case InterpolationTypes.Interpolate:
+                    {
+                        m_InternalRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                        break;
+                    }
+                case InterpolationTypes.Extrapolate:
+                    {
+                        m_InternalRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
+                        break;
+                    }
+            }
+        }
+#endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetInterpolation(InterpolationTypes interpolationType)
+        {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            if (m_IsRigidbody2D)
+            {
+                SetInterpolation2D(interpolationType);
+            }
+            else
+            {
+                SetInterpolation3D(interpolationType);
+            }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+            SetInterpolation3D(interpolationType);
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+            SetInterpolation2D(interpolationType);
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -687,8 +1027,6 @@ namespace Unity.Netcode.Components
         // in place relative to the parent so jitter/stutter does not occur.
         // Alternately, users can affix the fixed joint to a child GameObject (without a rigid body) of the parent NetworkObject
         // and then add a NetworkTransform to that in order to get the parented child NetworkObject to move around in "local space"
-        public FixedJoint FixedJoint { get; private set; }
-        public FixedJoint2D FixedJoint2D { get; private set; }
 
         internal System.Collections.Generic.List<NetworkRigidbodyBase> NetworkRigidbodyConnections = new System.Collections.Generic.List<NetworkRigidbodyBase>();
         internal NetworkRigidbodyBase ParentBody;
@@ -714,6 +1052,9 @@ namespace Unity.Netcode.Components
         {
 
         }
+
+#if COM_UNITY_MODULES_PHYSICS2D
+        public FixedJoint2D FixedJoint2D { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ApplyFixedJoint2D(NetworkRigidbodyBase bodyToConnect, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
@@ -743,6 +1084,10 @@ namespace Unity.Netcode.Components
             FixedJoint2D.connectedBody = bodyToConnect.m_InternalRigidbody2D;
             OnFixedJoint2DCreated();
         }
+#endif
+
+#if COM_UNITY_MODULES_PHYSICS
+        public FixedJoint FixedJoint { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ApplyFixedJoint(NetworkRigidbodyBase bodyToConnectTo, Vector3 position, float connectedMassScale = 0.0f, float massScale = 1.0f, bool useGravity = false, bool zeroVelocity = true)
@@ -762,7 +1107,7 @@ namespace Unity.Netcode.Components
             FixedJoint.massScale = massScale;
             OnFixedJointCreated();
         }
-
+#endif
 
         /// <summary>
         /// Authority Only:
@@ -806,6 +1151,7 @@ namespace Unity.Netcode.Components
 
             if (objectToConnectTo != null)
             {
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
                 if (m_IsRigidbody2D)
                 {
                     ApplyFixedJoint2D(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
@@ -814,7 +1160,13 @@ namespace Unity.Netcode.Components
                 {
                     ApplyFixedJoint(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
                 }
-
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+                ApplyFixedJoint(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+                ApplyFixedJoint2D(objectToConnectTo, positionOfConnection, connectedMassScale, massScale, useGravity, zeroVelocity);
+#endif
                 ParentBody = objectToConnectTo;
                 ParentBody.NetworkRigidbodyConnections.Add(this);
                 if (teleportObject)
@@ -833,6 +1185,42 @@ namespace Unity.Netcode.Components
             ParentBody = null;
         }
 
+#if COM_UNITY_MODULES_PHYSICS2D
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void DetatchFromFixedJoint2D()
+        {
+            if (FixedJoint2D == null)
+            {
+                return;
+            }
+            if (!m_FixedJoint2DUsingGravity)
+            {
+                FixedJoint2D.connectedBody.gravityScale = m_OriginalGravityScale;
+            }
+            FixedJoint2D.connectedBody = null;
+            Destroy(FixedJoint2D);
+            FixedJoint2D = null;
+            ResetInterpolation();
+            RemoveFromParentBody();
+        }
+#endif
+#if COM_UNITY_MODULES_PHYSICS
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void DetatchFromFixedJoint3D()
+        {
+            if (FixedJoint == null)
+            {
+                return;
+            }
+            FixedJoint.connectedBody = null;
+            m_InternalRigidbody.useGravity = m_OriginalGravitySetting;
+            Destroy(FixedJoint);
+            FixedJoint = null;
+            ResetInterpolation();
+            RemoveFromParentBody();
+        }
+#endif
+
         /// <summary>
         /// Authority Only:
         /// When invoked and already connected to an object via <see cref="FixedJoint"/> or <see cref="FixedJoint2D"/> (depending upon the type of rigid body),
@@ -849,27 +1237,22 @@ namespace Unity.Netcode.Components
             }
             if (UseRigidBodyForMotion)
             {
-                if (m_IsRigidbody2D && FixedJoint2D != null)
+#if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+                if (m_IsRigidbody2D)
                 {
-                    if (!m_FixedJoint2DUsingGravity)
-                    {
-                        FixedJoint2D.connectedBody.gravityScale = m_OriginalGravityScale;
-                    }
-                    FixedJoint2D.connectedBody = null;
-                    Destroy(FixedJoint2D);
-                    FixedJoint2D = null;
-                    ResetInterpolation();
-                    RemoveFromParentBody();
+                    DetatchFromFixedJoint2D();
                 }
-                else if (FixedJoint != null)
+                else
                 {
-                    FixedJoint.connectedBody = null;
-                    m_InternalRigidbody.useGravity = m_OriginalGravitySetting;
-                    Destroy(FixedJoint);
-                    FixedJoint = null;
-                    ResetInterpolation();
-                    RemoveFromParentBody();
+                    DetatchFromFixedJoint3D();
                 }
+#endif
+#if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
+                DetatchFromFixedJoint3D();
+#endif
+#if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
+                DetatchFromFixedJoint2D();
+#endif
             }
         }
     }

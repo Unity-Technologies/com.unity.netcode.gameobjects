@@ -5,46 +5,6 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Interface for customizing, overriding, spawning, and destroying Network Prefabs
-    /// Used by <see cref="NetworkPrefabHandler"/>
-    /// </summary>
-    public interface INetworkPrefabInstanceHandler
-    {
-        /// <summary>
-        /// Client Side Only
-        /// Once an implementation is registered with the <see cref="NetworkPrefabHandler"/>, this method will be called every time
-        /// a Network Prefab associated <see cref="NetworkObject"/> is spawned on clients
-        ///
-        /// Note On Hosts: Use the <see cref="NetworkPrefabHandler.RegisterHostGlobalObjectIdHashValues(GameObject, List{GameObject})"/>
-        /// method to register all targeted NetworkPrefab overrides manually since the host will be acting as both a server and client.
-        ///
-        /// Note on Pooling:  If you are using a NetworkObject pool, don't forget to make the NetworkObject active
-        /// via the  <see cref="GameObject.SetActive(bool)"/> method.
-        /// </summary>
-        /// <param name="ownerClientId">the owner for the <see cref="NetworkObject"/> to be instantiated</param>
-        /// <param name="position">the initial/default position for the <see cref="NetworkObject"/> to be instantiated</param>
-        /// <param name="rotation">the initial/default rotation for the <see cref="NetworkObject"/> to be instantiated</param>
-        /// <returns>The instantiated NetworkObject instance. Returns null if instantiation fails.</returns>
-        NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
-
-        /// <summary>
-        /// Invoked on Client and Server
-        /// Once an implementation is registered with the <see cref="NetworkPrefabHandler"/>, this method will be called when
-        /// a Network Prefab associated <see cref="NetworkObject"/> is:
-        ///
-        /// Server Side: destroyed or despawned with the destroy parameter equal to true
-        /// If <see cref="NetworkObject.Despawn(bool)"/> is invoked with the default destroy parameter (i.e. false) then this method will NOT be invoked!
-        ///
-        /// Client Side: destroyed when the client receives a destroy object message from the server or host.
-        ///
-        /// Note on Pooling: When this method is invoked, you do not need to destroy the NetworkObject as long as you want your pool to persist.
-        /// The most common approach is to make the <see cref="NetworkObject"/> inactive by calling <see cref="GameObject.SetActive(bool)"/>.
-        /// </summary>
-        /// <param name="networkObject">The <see cref="NetworkObject"/> being destroyed</param>
-        void Destroy(NetworkObject networkObject);
-    }
-
-    /// <summary>
     /// Primary handler to add or remove customized spawn and destroy handlers for a network prefab (i.e. a prefab with a NetworkObject component)
     /// Register custom prefab handlers by implementing the <see cref="INetworkPrefabInstanceHandler"/> interface.
     /// </summary>
@@ -56,6 +16,12 @@ namespace Unity.Netcode
         /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandler interface
         /// </summary>
         private readonly Dictionary<uint, INetworkPrefabInstanceHandler> m_PrefabAssetToPrefabHandler = new Dictionary<uint, INetworkPrefabInstanceHandler>();
+
+        /// <summary>
+        /// Links a network prefab asset to a class with the INetworkPrefabInstanceHandlerWithData interface,
+        /// used to keep a smaller lookup table than <see cref="m_PrefabAssetToPrefabHandler"/> for faster instantiation data injection into NetworkObject
+        /// </summary>
+        private readonly Dictionary<uint, INetworkPrefabInstanceHandlerWithData> m_PrefabAssetToPrefabHandlerWithData = new Dictionary<uint, INetworkPrefabInstanceHandlerWithData>();
 
         /// <summary>
         /// Links the custom prefab instance's GlobalNetworkObjectId to the original prefab asset's GlobalNetworkObjectId.  (Needed for HandleNetworkPrefabDestroy)
@@ -98,10 +64,59 @@ namespace Unity.Netcode
             if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
             {
                 m_PrefabAssetToPrefabHandler.Add(globalObjectIdHash, instanceHandler);
+                if (instanceHandler is INetworkPrefabInstanceHandlerWithData instanceHandlerWithData)
+                {
+                    m_PrefabAssetToPrefabHandlerWithData.Add(globalObjectIdHash, instanceHandlerWithData);
+                }
                 return true;
             }
 
             return false;
+        }
+
+
+        /// <inheritdoc cref="SetInstantiationData{T}(NetworkObject, T)"/>
+        /// <param name="gameObject">
+        /// The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to which the instantiation data will be assigned. The <see cref="NetworkObject.GlobalObjectIdHash"/> must match a handler that was previously registered.
+        /// </param>
+        /// <param name="instantiationData">The custom instantiation data to serialize and assign.</param>
+        public void SetInstantiationData<T>(GameObject gameObject, T instantiationData) where T : struct, INetworkSerializable
+        {
+            if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
+            {
+                SetInstantiationData(networkObject, instantiationData);
+            }
+        }
+
+        /// <summary>
+        /// Serializes and assigns custom instantiation data to a <see cref="NetworkObject"/> for use during network spawning.
+        /// The <see cref="NetworkObject"/> must have a registered prefab handler that implements <see cref="NetworkPrefabInstanceHandlerWithData{T}"/>.
+        /// </summary>
+        /// <typeparam name="T"> The type of instantiation data, which must be a struct implementing <see cref="INetworkSerializable"/>.</typeparam>
+        /// <param name="networkObject">
+        /// The <see cref="NetworkObject"/> to which the instantiation data will be assigned. The <see cref="NetworkObject.GlobalObjectIdHash"/> must match a handler that was previously registered.
+        /// </param>
+        /// <param name="instantiationData">The custom instantiation data to serialize and assign.</param>
+        public void SetInstantiationData<T>(NetworkObject networkObject, T instantiationData) where T : struct, INetworkSerializable
+        {
+            if (!TryGetHandlerWithData(networkObject.GlobalObjectIdHash, out var prefabHandler) || !prefabHandler.HandlesDataType<T>())
+            {
+                Debug.LogError("[InstantiationData] Cannot inject data: no compatible handler found for the specified data type.");
+                return;
+            }
+
+            using var writer = new FastBufferWriter(4, Collections.Allocator.Temp, int.MaxValue);
+            var serializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+
+            try
+            {
+                instantiationData.NetworkSerialize(serializer);
+                networkObject.InstantiationData = writer.ToArray();
+            }
+            catch (Exception ex)
+            {
+                NetworkLog.LogError($"[InstantiationData] Failed to serialize instantiation data for {nameof(NetworkObject)} '{networkObject.name}': {ex}");
+            }
         }
 
         /// <summary>
@@ -199,6 +214,7 @@ namespace Unity.Netcode
                 m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
             }
 
+            m_PrefabAssetToPrefabHandlerWithData.Remove(globalObjectIdHash);
             return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
         }
 
@@ -222,6 +238,17 @@ namespace Unity.Netcode
         /// <param name="networkPrefabHash"></param>
         /// <returns>true or false</returns>
         internal bool ContainsHandler(uint networkPrefabHash) => m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabHash) || m_PrefabInstanceToPrefabAsset.ContainsKey(networkPrefabHash);
+
+        /// <summary>
+        /// Returns the <see cref="INetworkPrefabInstanceHandlerWithData"/> implementation for a given <see cref="NetworkObject.GlobalObjectIdHash"/>
+        /// </summary>
+        /// <param name="objectHash"></param>
+        /// <param name="handler"></param>
+        /// <returns></returns>
+        internal bool TryGetHandlerWithData(uint objectHash, out INetworkPrefabInstanceHandlerWithData handler)
+        {
+            return m_PrefabAssetToPrefabHandlerWithData.TryGetValue(objectHash, out handler);
+        }
 
         /// <summary>
         /// Returns the source NetworkPrefab's <see cref="NetworkObject.GlobalObjectIdHash"/>
@@ -251,24 +278,35 @@ namespace Unity.Netcode
         /// <param name="ownerClientId"></param>
         /// <param name="position"></param>
         /// <param name="rotation"></param>
+        /// <param name="instantiationData">Instantiation data sent from the authority if set</param>
         /// <returns></returns>
-        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation)
+        internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation, byte[] instantiationData = null)
         {
-            if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+            NetworkObject networkObjectInstance = null;
+            if (instantiationData != null)
             {
-                var networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
-
-                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
-                //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-                if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+                if (m_PrefabAssetToPrefabHandlerWithData.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
                 {
-                    m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+                    networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation, instantiationData);
                 }
-
-                return networkObjectInstance;
+                else
+                {
+                    Debug.LogError($"[InstantiationData] Failed instantiate with data: no compatible data handler found for object hash {networkPrefabAssetHash}. Instantiation data will be dropped.");
+                    return null;
+                }
+            }
+            else if (m_PrefabAssetToPrefabHandler.TryGetValue(networkPrefabAssetHash, out var prefabInstanceHandler))
+            {
+                networkObjectInstance = prefabInstanceHandler.Instantiate(ownerClientId, position, rotation);
             }
 
-            return null;
+            // Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
+            // is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
+            if (networkObjectInstance != null)
+            {
+                m_PrefabInstanceToPrefabAsset.TryAdd(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+            }
+            return networkObjectInstance;
         }
 
         /// <summary>
@@ -421,6 +459,11 @@ namespace Unity.Netcode
         internal void Initialize(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
+        }
+
+        internal void Shutdown()
+        {
+            m_PrefabInstanceToPrefabAsset.Clear();
         }
     }
 }
