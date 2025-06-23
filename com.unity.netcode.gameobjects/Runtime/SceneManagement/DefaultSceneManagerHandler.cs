@@ -293,11 +293,18 @@ namespace Unity.Netcode
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
             var localSpawnedObjectsHashSet = new HashSet<NetworkObject>(networkManager.SpawnManager.SpawnedObjectsList);
+            var distributedAuthority = networkManager.DistributedAuthorityMode;
             foreach (var networkObject in localSpawnedObjectsHashSet)
             {
                 if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
                 {
                     continue;
+                }
+
+                // Check to determine if we need to allow destroying a non-authority instance
+                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.HasAuthority)
+                {
+                    networkObject.DestroyPendingSceneEvent = true;
                 }
 
                 // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL are preserved
@@ -309,7 +316,7 @@ namespace Unity.Netcode
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
                 }
-                else if (networkManager.IsServer)
+                else if (networkObject.HasAuthority)
                 {
                     networkObject.Despawn();
                 }

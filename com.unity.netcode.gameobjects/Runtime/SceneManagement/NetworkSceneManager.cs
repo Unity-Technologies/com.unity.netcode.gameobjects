@@ -1062,7 +1062,8 @@ namespace Unity.Netcode
         /// <param name="targetClientIds">array of client identifiers to receive the scene event message</param>
         private void SendSceneEventData(uint sceneEventId, ulong[] targetClientIds)
         {
-            if (targetClientIds.Length == 0 && !NetworkManager.DistributedAuthorityMode)
+            var distributedAuthority = NetworkManager.DistributedAuthorityMode;
+            if (targetClientIds.Length == 0 && !distributedAuthority)
             {
                 // This would be the Host/Server with no clients connected
                 // Silently return as there is nothing to be done
@@ -1072,7 +1073,7 @@ namespace Unity.Netcode
             sceneEvent.SenderClientId = NetworkManager.LocalClientId;
 
             // Send related message to the CMB service
-            if (NetworkManager.DistributedAuthorityMode && NetworkManager.CMBServiceConnection && HasSceneAuthority())
+            if (distributedAuthority && NetworkManager.CMBServiceConnection && HasSceneAuthority())
             {
                 sceneEvent.TargetClientId = NetworkManager.ServerClientId;
                 var message = new SceneEventMessage
@@ -1092,7 +1093,7 @@ namespace Unity.Netcode
                 {
                     EventData = sceneEvent,
                 };
-                var sendTarget = NetworkManager.CMBServiceConnection ? NetworkManager.ServerClientId : clientId;
+                var sendTarget = distributedAuthority && !NetworkManager.DAHost ? NetworkManager.ServerClientId : clientId;
                 var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, sendTarget);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
             }
@@ -2679,11 +2680,18 @@ namespace Unity.Netcode
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
             var localSpawnedObjectsHashSet = new HashSet<NetworkObject>(NetworkManager.SpawnManager.SpawnedObjectsList);
+            var distributedAuthority = NetworkManager.DistributedAuthorityMode;
             foreach (var networkObject in localSpawnedObjectsHashSet)
             {
                 if (networkObject == null || (networkObject != null && networkObject.gameObject.scene == DontDestroyOnLoadScene))
                 {
                     continue;
+                }
+
+                // Check to determine if we need to allow destroying a non-authority instance
+                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.HasAuthority)
+                {
+                    networkObject.DestroyPendingSceneEvent = true;
                 }
 
                 // Only NetworkObjects marked to not be destroyed with the scene
