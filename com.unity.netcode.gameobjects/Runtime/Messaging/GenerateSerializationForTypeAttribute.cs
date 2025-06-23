@@ -19,9 +19,9 @@ namespace Unity.Netcode
         internal Type Type;
 
         /// <summary>
-        /// Initializes a new instance of the attribute
+        /// Initializes a new instance of the attribute.
         /// </summary>
-        /// <param name="type">The type that should have serialization code generated for it</param>
+        /// <param name="type">The type that should have serialization code generated for it.</param>
         public GenerateSerializationForTypeAttribute(Type type)
         {
             Type = type;

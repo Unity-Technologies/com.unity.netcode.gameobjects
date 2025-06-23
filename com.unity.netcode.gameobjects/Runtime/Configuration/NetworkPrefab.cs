@@ -58,10 +58,10 @@ namespace Unity.Netcode
         public GameObject OverridingTargetPrefab;
 
         /// <summary>
-        /// Compares this NetworkPrefab with another to determine equality
+        /// Compares this NetworkPrefab with another to determine equality.
         /// </summary>
-        /// <param name="other">The NetworkPrefab to compare against</param>
-        /// <returns>True if all fields match between the two NetworkPrefabs, false otherwise</returns>
+        /// <param name="other">The NetworkPrefab to compare against.</param>
+        /// <returns>True if all fields match between the two NetworkPrefabs, false otherwise.</returns>
         public bool Equals(NetworkPrefab other)
         {
             return Override == other.Override &&
@@ -72,11 +72,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the GlobalObjectIdHash of the source prefab based on the current override settings
+        /// Gets the GlobalObjectIdHash of the source prefab based on the current override settings.
         /// </summary>
-        /// <value>The hash value identifying the source prefab</value>
-        /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value</exception>
+        /// <value>The hash value identifying the source prefab.</value>
+        /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value.</exception>
         public uint SourcePrefabGlobalObjectIdHash
         {
             get
@@ -110,11 +110,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the GlobalObjectIdHash of the target prefab when using prefab overrides
+        /// Gets the GlobalObjectIdHash of the target prefab when using prefab overrides.
         /// </summary>
-        /// <value>The hash value identifying the target prefab, or 0 if no override is set</value>
-        /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value</exception>
+        /// <value>The hash value identifying the target prefab, or 0 if no override is set.</value>
+        /// <exception cref="InvalidOperationException">Thrown when required prefab references are missing or invalid.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when Override has an invalid value.</exception>
         public uint TargetPrefabGlobalObjectIdHash
         {
             get
@@ -140,10 +140,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Validates the NetworkPrefab configuration to ensure all required fields are properly set
+        /// Validates the NetworkPrefab configuration to ensure all required fields are properly set.
         /// </summary>
-        /// <param name="index">Optional index used for error reporting when validating lists of prefabs</param>
-        /// <returns>True if the NetworkPrefab is valid and ready for use, false otherwise</returns>
+        /// <param name="index">Optional index used for error reporting when validating lists of prefabs.</param>
+        /// <returns>True if the NetworkPrefab is valid and ready for use, false otherwise.</returns>
         public bool Validate(int index = -1)
         {
             NetworkObject networkObject;
@@ -247,9 +247,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns a string representation of this NetworkPrefab's source and target hash values
+        /// Returns a string representation of this NetworkPrefab's source and target hash values.
         /// </summary>
-        /// <returns>A string containing the source and target hash values</returns>
+        /// <returns>A string containing the source and target hash values.</returns>
         public override string ToString()
         {
             return $"{{SourceHash: {SourceHashToOverride}, TargetHash: {TargetPrefabGlobalObjectIdHash}}}";

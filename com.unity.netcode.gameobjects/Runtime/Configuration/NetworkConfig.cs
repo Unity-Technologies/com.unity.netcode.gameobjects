@@ -32,7 +32,7 @@ namespace Unity.Netcode
         public GameObject PlayerPrefab;
 
         /// <summary>
-        /// The collection of network prefabs available for spawning across the network
+        /// The collection of network prefabs available for spawning across the network.
         /// </summary>
         [SerializeField]
         public NetworkPrefabs Prefabs = new NetworkPrefabs();

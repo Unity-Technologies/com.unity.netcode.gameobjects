@@ -3,17 +3,17 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// RPC delivery types
+    /// RPC delivery types.
     /// </summary>
     public enum RpcDelivery
     {
         /// <summary>
-        /// Reliable delivery
+        /// Reliable delivery.
         /// </summary>
         Reliable = 0,
 
         /// <summary>
-        /// Unreliable delivery
+        /// Unreliable delivery.
         /// </summary>
         Unreliable
     }
@@ -26,54 +26,54 @@ namespace Unity.Netcode
     {
         // Must match the set of parameters below
         /// <summary>
-        /// Parameters that define the behavior of an RPC
+        /// Parameters that define the behavior of an RPC.
         /// </summary>
         public struct RpcAttributeParams
         {
             /// <summary>
-            /// The delivery method for the RPC
+            /// The delivery method for the RPC.
             /// </summary>
             public RpcDelivery Delivery;
 
             /// <summary>
-            /// When true, only the owner of the object can execute this RPC
+            /// When true, only the owner of the object can execute this RPC.
             /// </summary>
             public bool RequireOwnership;
 
             /// <summary>
-            /// When true, local execution of the RPC is deferred until the next network tick
+            /// When true, local execution of the RPC is deferred until the next network tick.
             /// </summary>
             public bool DeferLocal;
 
             /// <summary>
-            /// When true, allows the RPC target to be overridden at runtime
+            /// When true, allows the RPC target to be overridden at runtime.
             /// </summary>
             public bool AllowTargetOverride;
         }
 
         // Must match the fields in RemoteAttributeParams
         /// <summary>
-        /// Type of RPC delivery method
+        /// Type of RPC delivery method.
         /// </summary>
         public RpcDelivery Delivery = RpcDelivery.Reliable;
 
         /// <summary>
-        /// When true, only the owner of the object can execute this RPC
+        /// When true, only the owner of the object can execute this RPC.
         /// </summary>
         public bool RequireOwnership;
 
         /// <summary>
-        /// When true, local execution of the RPC is deferred until the next network tick
+        /// When true, local execution of the RPC is deferred until the next network tick.
         /// </summary>
         public bool DeferLocal;
 
         /// <summary>
-        /// When true, allows the RPC target to be overridden at runtime
+        /// When true, allows the RPC target to be overridden at runtime.
         /// </summary>
         public bool AllowTargetOverride;
 
         /// <summary>
-        /// Initializes a new instance of the RpcAttribute with the specified target
+        /// Initializes a new instance of the RpcAttribute with the specified target.
         /// </summary>
         /// <param name="target">The target for this RPC</param>
         public RpcAttribute(SendTo target)
@@ -95,12 +95,12 @@ namespace Unity.Netcode
     public class ServerRpcAttribute : RpcAttribute
     {
         /// <summary>
-        /// When true, only the owner of the NetworkObject can invoke this ServerRpc
+        /// When true, only the owner of the NetworkObject can invoke this ServerRpc.
         /// </summary>
         public new bool RequireOwnership;
 
         /// <summary>
-        /// Initializes a new instance of ServerRpcAttribute configured to target the server
+        /// Initializes a new instance of ServerRpcAttribute configured to target the server.
         /// </summary>
         public ServerRpcAttribute() : base(SendTo.Server)
         {
@@ -116,7 +116,7 @@ namespace Unity.Netcode
     public class ClientRpcAttribute : RpcAttribute
     {
         /// <summary>
-        /// Initializes a new instance of ClientRpcAttribute configured to target all non-server clients
+        /// Initializes a new instance of ClientRpcAttribute configured to target all non-server clients.
         /// </summary>
         public ClientRpcAttribute() : base(SendTo.NotServer)
         {

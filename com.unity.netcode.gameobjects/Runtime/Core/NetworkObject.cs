@@ -385,31 +385,31 @@ namespace Unity.Netcode
         public bool SpawnWithObservers = true;
 
         /// <summary>
-        /// Delegate type for checking visibility
+        /// Delegate type for checking visibility.
         /// </summary>
-        /// <param name="clientId">The clientId to check visibility for</param>
-        /// <returns>True if the object should be visible to the specified client, false otherwise</returns>
+        /// <param name="clientId">The clientId being checked for visibility.</param>
+        /// <returns>True if the object should be visible to the specified client and false if it should not.</returns>
         public delegate bool VisibilityDelegate(ulong clientId);
 
         /// <summary>
-        /// Delegate invoked when the netcode needs to know if the object should be visible to a client, if null it will assume true
+        /// Delegate invoked when the netcode needs to know if the object should be visible to a client, if null it will assume true.
         /// </summary>
         public VisibilityDelegate CheckObjectVisibility = null;
 
         /// <summary>
-        /// Delegate type for checking spawn options
+        /// Delegate type for checking spawn options.
         /// </summary>
-        /// <param name="clientId">The clientId to check spawn options for</param>
-        /// <returns>True if the object should be spawned for the specified client, false otherwise</returns>
+        /// <param name="clientId">The clientId being checked for visibility.</param>
+        /// <returns>True if the object should be visible to the specified client and false if it should not.</returns>
         public delegate bool SpawnDelegate(ulong clientId);
 
         /// <summary>
-        /// Delegate invoked when the netcode needs to know if it should include the transform when spawning the object, if null it will assume true
+        /// Delegate invoked when the netcode needs to know if it should include the transform when spawning the object, if null it will assume true.
         /// </summary>
         public SpawnDelegate IncludeTransformWhenSpawning = null;
 
         /// <summary>
-        /// Whether or not to destroy this object if it's owner is destroyed.
+        /// Whether or not to destroy this object if it's owner is destroyed.<br />
         /// If true, the objects ownership will be given to the server.
         /// </summary>
         public bool DontDestroyWithOwner;
@@ -1604,10 +1604,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a NetworkBehaviour component at the specified index in this object's NetworkBehaviour list
+        /// Gets a NetworkBehaviour component at the specified index in this object's NetworkBehaviour list.
         /// </summary>
-        /// <param name="index">The zero-based index of the NetworkBehaviour to retrieve</param>
-        /// <returns>The NetworkBehaviour at the specified index, or null if the index is out of bounds</returns>
+        /// <param name="index">The zero-based index of the NetworkBehaviour to retrieve.</param>
+        /// <returns>The NetworkBehaviour at the specified index, or null if the index is out of bounds.</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
             if (index >= ChildNetworkBehaviours.Count)
