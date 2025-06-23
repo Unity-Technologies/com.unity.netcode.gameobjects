@@ -1621,7 +1621,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (destroyGameObject && networkObject.IsSceneObject == true && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            if (destroyGameObject && networkObject.IsSceneObject == true && NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 Debug.LogWarning("Destroying in-scene network objects can lead to unexpected behavior. It is recommended to use NetworkObject.Despawn(false) instead.");
             }

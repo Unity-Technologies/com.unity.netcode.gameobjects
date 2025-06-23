@@ -1,9 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -16,202 +13,15 @@ namespace TestProject.RuntimeTests
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
-    public class InScenePlacedNetworkObjectTests : IntegrationTestWithApproximation
+    public class InScenePlacedNetworkObjectTests : InScenePlacedNetworkObjectBase
     {
         protected override int NumberOfClients => 2;
 
-        private const string k_SceneToLoad = "InSceneNetworkObject";
-        private const string k_InSceneUnder = "InSceneUnderGameObject";
-        private const string k_InSceneUnderWithNT = "InSceneUnderGameObjectWithNT";
-        private Scene m_ServerSideSceneLoaded;
-        private string m_SceneLoading = k_SceneToLoad;
-        private NetworkManager m_LateJoinClient;
-
         public InScenePlacedNetworkObjectTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
-        protected override IEnumerator OnSetup()
-        {
-            NetworkObjectTestComponent.Reset();
-            NetworkObjectTestComponent.VerboseDebug = m_EnableVerboseDebug;
-            return base.OnSetup();
-        }
-
-        /// <summary>
-        /// Very important to always have a backup "unloading" catch
-        /// in the event your test fails it could not potentially unload
-        /// a scene and the proceeding tests could be impacted by this!
-        /// </summary>
-        /// <returns></returns>
-        protected override IEnumerator OnTearDown()
-        {
-            m_LateJoinClient = null;
-            yield return CleanUpLoadedScene();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            m_LateJoinClient = networkManager;
-            base.OnNewClientCreated(networkManager);
-        }
-
-        private Scene m_ClientLoadedScene;
-
-        [UnityTest]
-        public IEnumerator ParentedInSceneObjectLateJoiningClient()
-        {
-            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
-
-            var authority = GetAuthorityNetworkManager();
-            var firstClient = GetNonAuthorityNetworkManager();
-            NetworkManager secondClient = m_NetworkManagers.FirstOrDefault(manager => manager != authority && manager != firstClient);
-            Assert.IsNotNull(secondClient);
-
-            firstClient.SceneManager.OnSceneEvent += OnSceneEvent;
-            authority.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
-
-            yield return WaitForConditionOrTimeOut(() => m_ClientLoadedScene.IsValid() && m_ClientLoadedScene.isLoaded);
-            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded!");
-
-            firstClient.SceneManager.OnSceneEvent -= OnSceneEvent;
-
-            var serverInSceneObjectInstance = NetworkObjectTestComponent.ServerNetworkObjectInstance;
-            Assert.IsNotNull(serverInSceneObjectInstance, $"Could not get the server-side registration of {nameof(NetworkObjectTestComponent)}!");
-
-            var firstClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.FirstOrDefault(c => c.NetworkManager == firstClient);
-            Assert.IsNotNull(firstClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)}!");
-
-            Assert.IsTrue(firstClientInSceneObjectInstance.NetworkManager == firstClient);
-
-            var playerObjectToParent = m_UseHost ? authority.LocalClient.PlayerObject : m_PlayerNetworkObjects[authority.LocalClientId][secondClient.LocalClientId];
-            var clientSidePlayer = (NetworkObject)null;
-            if (!m_UseHost)
-            {
-                playerObjectToParent = m_PlayerNetworkObjects[authority.LocalClientId][secondClient.LocalClientId];
-                clientSidePlayer = m_PlayerNetworkObjects[firstClient.LocalClientId][secondClient.LocalClientId];
-            }
-            else
-            {
-                clientSidePlayer = m_PlayerNetworkObjects[firstClient.LocalClientId][authority.LocalClientId];
-            }
-
-            // Parent the object
-            serverInSceneObjectInstance.transform.parent = playerObjectToParent.transform;
-
-            yield return WaitForConditionOrTimeOut(() => firstClientInSceneObjectInstance.transform.parent != null && firstClientInSceneObjectInstance.transform.parent == clientSidePlayer.transform);
-            AssertOnTimeout($"Timed out waiting for the client-side id ({authority.LocalClientId}) server player transform to be set on the client-side in-scene object!");
-
-            // Now late join a client
-            yield return CreateAndStartNewClient();
-            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
-            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to reconnect!");
-
-            yield return s_DefaultWaitForTick;
-
-            // Update the newly joined client information
-            ClientNetworkManagerPostStartInit();
-
-            var lateJoinClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.FirstOrDefault(c => c.NetworkManager == m_LateJoinClient);
-            Assert.IsNotNull(lateJoinClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)} for the late joining client!");
-
-            // Now get the late-joining client's instance for the server player
-            clientSidePlayer = m_PlayerNetworkObjects[m_LateJoinClient.LocalClientId][clientSidePlayer.OwnerClientId];
-
-            // Validate the late joined client's in-scene NetworkObject is parented to the server-side player
-            yield return WaitForConditionOrTimeOut(() => lateJoinClientInSceneObjectInstance.transform.parent != null && lateJoinClientInSceneObjectInstance.transform.parent == clientSidePlayer.transform);
-            AssertOnTimeout($"Timed out waiting for the client-side id ({firstClient.LocalClientId}) player transform to be set on the client-side in-scene object!");
-        }
-
-        private void OnSceneEvent(SceneEvent sceneEvent)
-        {
-            if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == m_SceneLoading && sceneEvent.ClientId == GetNonAuthorityNetworkManager().LocalClientId)
-            {
-                m_ClientLoadedScene = sceneEvent.Scene;
-            }
-        }
-
-        private NetworkObject m_JoinedClientDespawnedNetworkObject;
-
-        private void OnInSceneObjectDespawned(NetworkObject networkObject)
-        {
-            m_JoinedClientDespawnedNetworkObject = networkObject;
-            NetworkObjectTestComponent.OnInSceneObjectDespawned -= OnInSceneObjectDespawned;
-        }
-
-        private void Server_OnSceneEvent(SceneEvent sceneEvent)
-        {
-            if (sceneEvent.ClientId == GetAuthorityNetworkManager().LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadComplete
-                && sceneEvent.Scene.IsValid() && sceneEvent.Scene.isLoaded)
-            {
-                m_ServerSideSceneLoaded = sceneEvent.Scene;
-                GetAuthorityNetworkManager().SceneManager.OnSceneEvent -= Server_OnSceneEvent;
-            }
-        }
-
-        private IEnumerator CleanUpLoadedScene()
-        {
-            if (m_ServerSideSceneLoaded.IsValid() && m_ServerSideSceneLoaded.isLoaded)
-            {
-                var authority = GetAuthorityNetworkManager();
-                authority.SceneManager.OnSceneEvent += Unload_OnSceneEvent;
-                authority.SceneManager.UnloadScene(m_ServerSideSceneLoaded);
-                yield return WaitForConditionOrTimeOut(() => m_ClientNetworkManagers.Any(c => c.IsListening));
-                AssertOnTimeout($"[CleanUpLoadedScene] Timed out waiting for all in-scene instances to be despawned!  Current spawned count: {m_ClientNetworkManagers.Count(c => !c.IsListening)}");
-            }
-        }
-
-        private void Unload_OnSceneEvent(SceneEvent sceneEvent)
-        {
-            var authority = GetAuthorityNetworkManager();
-            if (sceneEvent.ClientId == authority.LocalClientId && sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted)
-            {
-                authority.SceneManager.OnSceneEvent -= Unload_OnSceneEvent;
-            }
-        }
-
-        private bool m_AllClientsLoadedScene;
-        private bool m_AllClientsUnloadedScene;
 
         private int m_NumberOfInstancesCheck;
 
-        private Scene m_SceneLoaded;
-
-        private bool HaveAllClientsDespawnedInSceneObject()
-        {
-            // Make sure we despawned all instances
-            if (NetworkObjectTestComponent.DespawnedInstances.Count < m_NumberOfInstancesCheck)
-            {
-                return false;
-            }
-
-            foreach (var despawnedInstance in NetworkObjectTestComponent.DespawnedInstances)
-            {
-                if (despawnedInstance && despawnedInstance.gameObject && despawnedInstance.gameObject.activeInHierarchy)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool HaveAllClientsSpawnedInSceneObject()
-        {
-            // Make sure we despawned all instances
-            if (NetworkObjectTestComponent.SpawnedInstances.Count < m_NumberOfInstancesCheck)
-            {
-                return false;
-            }
-
-            foreach (var despawnedInstance in NetworkObjectTestComponent.SpawnedInstances)
-            {
-                if (!despawnedInstance.gameObject.activeInHierarchy)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// This validates that users can despawn in-scene placed NetworkObjects and disable the
@@ -225,18 +35,16 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator EnableDisableInSceneObjectTests()
         {
+            m_EnableVerboseDebug = true;
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
             // Enabled disabling the NetworkObject when it is despawned
             NetworkObjectTestComponent.DisableOnDespawn = true;
-            // Set the number of instances to expect
-            m_NumberOfInstancesCheck = TotalClients;
-
             var authority = GetAuthorityNetworkManager();
-            authority.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
-            authority.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
-            yield return WaitForConditionOrTimeOut(() => m_AllClientsLoadedScene);
-            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded on all clients!");
-            authority.SceneManager.OnLoadEventCompleted -= SceneManager_OnLoadEventCompleted;
+
+            authority.SceneManager.LoadScene(SceneToLoad, LoadSceneMode.Additive);
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for {SceneToLoad} scene to be loaded on all clients!");
 
             // Verify all connected clients spawned the in-scene placed NetworkObject
             yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
@@ -252,11 +60,9 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"[Test #1] Timed out waiting for all instances to be despawned and disabled!");
 
             // Test #2: Late-join a client and re-verify that all in-scene placed object instances are still disabled
-            yield return CreateAndStartNewClient();
+            var newlyJoinedClient = CreateNewClient();
+            yield return StartClient(newlyJoinedClient);
 
-            var newlyJoinedClient = m_LateJoinClient;
-
-            m_NumberOfInstancesCheck++;
             yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
             AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be despawned and disabled!");
 
@@ -269,16 +75,14 @@ namespace TestProject.RuntimeTests
             // also having the server-side disable the in-scene placed NetworkObject and verify all
             // connected clients completed the scene switch and that all in-scene placed NetworkObjects
             // are despawned and disabled.
-            m_AllClientsLoadedScene = false;
-            m_AllClientsUnloadedScene = false;
 
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
             NetworkObjectTestComponent.DisableOnSpawn = true;
-            authority.SceneManager.OnUnloadEventCompleted += SceneManager_OnUnloadEventCompleted;
-            authority.SceneManager.UnloadScene(m_SceneLoaded);
-            yield return WaitForConditionOrTimeOut(() => m_AllClientsUnloadedScene);
-            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be unloaded on all clients!");
-            authority.SceneManager.OnUnloadEventCompleted -= SceneManager_OnUnloadEventCompleted;
+
+            authority.SceneManager.UnloadScene(GetLoadedScene());
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsUnloadedScene);
+            AssertOnTimeout($"Timed out waiting for {SceneToLoad} scene to be unloaded on all clients!");
 
             // Verify the spawned instances list is empty
             Assert.True(NetworkObjectTestComponent.SpawnedInstances.Count == 0, $"There are {NetworkObjectTestComponent.SpawnedInstances.Count} that did not despawn when the scene was unloaded!");
@@ -287,11 +91,10 @@ namespace TestProject.RuntimeTests
             NetworkObjectTestComponent.DespawnedInstances.Clear();
 
             // Now scene switch (LoadSceneMode.Single) into the scene with the in-scene placed NetworkObject we have been testing
-            authority.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
-            authority.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Single);
-            yield return WaitForConditionOrTimeOut(() => m_AllClientsLoadedScene);
-            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded on all clients!");
-            authority.SceneManager.OnLoadEventCompleted -= SceneManager_OnLoadEventCompleted;
+            authority.SceneManager.LoadScene(SceneToLoad, LoadSceneMode.Single);
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for {SceneToLoad} scene to be loaded on all clients!");
 
             // Verify all client instances are disabled and despawned when done scene switching
             yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
@@ -306,179 +109,8 @@ namespace TestProject.RuntimeTests
 
             // Verify all clients spawned their in-scene NetworkObject relative instance
             yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
-            AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be enabled and spawned!");
-            yield return StopOneClient(newlyJoinedClient, true);
-
-            // Tests complete!
+            AssertOnTimeout("[Test #2] Timed out waiting for all instances to be enabled and spawned!");
         }
-
-        private void SceneManager_OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
-        {
-            foreach (var clientId in clientsCompleted)
-            {
-                Assert.True(GetAuthorityNetworkManager().ConnectedClientsIds.Contains(clientId));
-            }
-            m_AllClientsUnloadedScene = true;
-        }
-
-        private void SceneManager_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
-        {
-            foreach (var clientId in clientsCompleted)
-            {
-                Assert.True(GetAuthorityNetworkManager().ConnectedClientsIds.Contains(clientId));
-            }
-            m_AllClientsLoadedScene = true;
-            m_SceneLoaded = SceneManager.GetSceneByName(sceneName);
-        }
-
-        public enum ParentSyncSettings
-        {
-            ParentSync,
-            NoParentSync
-        }
-
-        public enum TransformSyncSettings
-        {
-            TransformSync,
-            NoTransformSync
-        }
-
-        public enum TransformSpace
-        {
-            World,
-            Local
-        }
-
-        /// <summary>
-        /// This test validates the initial synchronization of an in-scene placed NetworkObject parented
-        /// underneath a GameObject. There are two scenes for this tests where the child NetworkObject does
-        /// and does not have a NetworkTransform component.
-        /// </summary>
-        /// <param name="inSceneUnderToLoad">Scene to load</param>
-        /// <param name="parentSyncSettings"><see cref="NetworkObject.AutoObjectParentSync"/> settings</param>
-        /// <param name="transformSyncSettings"><see cref="NetworkObject.SynchronizeTransform"/> settings</param>
-        /// <param name="transformSpace"><see cref="NetworkTransform.InLocalSpace"/> setting (when available)</param>
-        [UnityTest]
-        public IEnumerator ParentedInSceneObjectUnderGameObject([Values(k_InSceneUnder, k_InSceneUnderWithNT)] string inSceneUnderToLoad,
-            [Values] ParentSyncSettings parentSyncSettings, [Values] TransformSyncSettings transformSyncSettings, [Values] TransformSpace transformSpace)
-        {
-            var useNetworkTransform = m_SceneLoading == k_InSceneUnderWithNT;
-
-            m_SceneLoading = inSceneUnderToLoad;
-
-            // Note: This test is a modified copy of ParentedInSceneObjectLateJoiningClient.
-            // The 1st client is being ignored in this test and the focus is primarily on the late joining
-            // 2nd client after adjustments have been made to the child NetworkBehaviour and if applicable
-            // NetworkTransform.
-
-            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
-
-            var authority = GetAuthorityNetworkManager();
-            var nonAuthority = GetNonAuthorityNetworkManager();
-            var secondClient = m_ClientNetworkManagers.FirstOrDefault(c => c != authority && c != nonAuthority);
-
-            nonAuthority.SceneManager.OnSceneEvent += OnSceneEvent;
-            authority.SceneManager.LoadScene(m_SceneLoading, LoadSceneMode.Additive);
-            yield return WaitForConditionOrTimeOut(() => m_ClientLoadedScene.IsValid() && m_ClientLoadedScene.isLoaded);
-            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded!");
-
-            nonAuthority.SceneManager.OnSceneEvent -= OnSceneEvent;
-            var serverInSceneObjectInstance = NetworkObjectTestComponent.ServerNetworkObjectInstance;
-            Assert.IsNotNull(serverInSceneObjectInstance, $"Could not get the server-side registration of {nameof(NetworkObjectTestComponent)}!");
-            var firstClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.FirstOrDefault(c => c.NetworkManager == nonAuthority);
-            Assert.IsNotNull(firstClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)}!");
-            Assert.IsTrue(firstClientInSceneObjectInstance.NetworkManager == nonAuthority);
-
-            serverInSceneObjectInstance.AutoObjectParentSync = parentSyncSettings == ParentSyncSettings.ParentSync;
-            serverInSceneObjectInstance.SynchronizeTransform = transformSyncSettings == TransformSyncSettings.TransformSync;
-
-            var serverNetworkTransform = useNetworkTransform ? serverInSceneObjectInstance.GetComponent<NetworkTransform>() : null;
-            if (useNetworkTransform)
-            {
-                serverNetworkTransform.InLocalSpace = transformSpace == TransformSpace.Local;
-            }
-
-            // Now late join a client
-            yield return CreateAndStartNewClient();
-            yield return WaitForConditionOrTimeOut(() => (m_LateJoinClient.IsConnectedClient && m_LateJoinClient.IsListening));
-            AssertOnTimeout($"Timed out waiting for {m_LateJoinClient.name} to reconnect!");
-
-            yield return s_DefaultWaitForTick;
-
-            // Update the newly joined client information
-            ClientNetworkManagerPostStartInit();
-
-            var lateJoinClientInSceneObjectInstance = NetworkObjectTestComponent.SpawnedInstances.FirstOrDefault(c => c.NetworkManager == secondClient);
-            Assert.IsNotNull(lateJoinClientInSceneObjectInstance, $"Could not get the client-side registration of {nameof(NetworkObjectTestComponent)} for the late joining client!");
-
-            // Now make sure the server and newly joined client transform values match.
-            RotationsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform, transformSpace == TransformSpace.Local);
-            PositionsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform, transformSpace == TransformSpace.Local);
-            // When testing local space we also do a sanity check and validate the world space values too.
-            if (transformSpace == TransformSpace.Local)
-            {
-                RotationsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
-                PositionsMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
-            }
-            ScaleValuesMatch(serverInSceneObjectInstance.transform, lateJoinClientInSceneObjectInstance.transform);
-        }
-
-        protected bool RotationsMatch(Transform transformA, Transform transformB, bool inLocalSpace = false)
-        {
-            var authorityEulerRotation = inLocalSpace ? transformA.localRotation.eulerAngles : transformA.rotation.eulerAngles;
-            var nonAuthorityEulerRotation = inLocalSpace ? transformB.localRotation.eulerAngles : transformB.rotation.eulerAngles;
-            var xIsEqual = ApproximatelyEuler(authorityEulerRotation.x, nonAuthorityEulerRotation.x);
-            var yIsEqual = ApproximatelyEuler(authorityEulerRotation.y, nonAuthorityEulerRotation.y);
-            var zIsEqual = ApproximatelyEuler(authorityEulerRotation.z, nonAuthorityEulerRotation.z);
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}]" +
-                    $"Authority rotation {authorityEulerRotation} != [{transformB.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
-            }
-            else if (m_EnableVerboseDebug)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}] " +
-                    $"Authority rotation {authorityEulerRotation} != [{transformB.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        protected bool PositionsMatch(Transform transformA, Transform transformB, bool inLocalSpace = false)
-        {
-            var authorityPosition = inLocalSpace ? transformA.localPosition : transformA.position;
-            var nonAuthorityPosition = inLocalSpace ? transformB.localPosition : transformB.position;
-            var xIsEqual = Approximately(authorityPosition.x, nonAuthorityPosition.x);
-            var yIsEqual = Approximately(authorityPosition.y, nonAuthorityPosition.y);
-            var zIsEqual = Approximately(authorityPosition.z, nonAuthorityPosition.z);
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}] Authority position {authorityPosition} != [{transformB.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
-            }
-            else if (m_EnableVerboseDebug)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}] Authority position {authorityPosition} != [{transformB.gameObject.name}] NonAuthority position {nonAuthorityPosition}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
-        protected bool ScaleValuesMatch(Transform transformA, Transform transformB)
-        {
-            var authorityScale = transformA.localScale;
-            var nonAuthorityScale = transformB.localScale;
-            var xIsEqual = Approximately(authorityScale.x, nonAuthorityScale.x);
-            var yIsEqual = Approximately(authorityScale.y, nonAuthorityScale.y);
-            var zIsEqual = Approximately(authorityScale.z, nonAuthorityScale.z);
-            if (!xIsEqual || !yIsEqual || !zIsEqual)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}] Authority scale {authorityScale} != [{transformB.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
-            }
-            else if (m_EnableVerboseDebug)
-            {
-                VerboseDebug($"[{transformA.gameObject.name}] Authority scale {authorityScale} == [{transformB.gameObject.name}] NonAuthority scale {nonAuthorityScale}");
-            }
-            return xIsEqual && yIsEqual && zIsEqual;
-        }
-
     }
 
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
