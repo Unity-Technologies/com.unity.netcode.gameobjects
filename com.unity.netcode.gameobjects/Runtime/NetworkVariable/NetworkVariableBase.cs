@@ -50,9 +50,9 @@ namespace Unity.Netcode
         internal bool HasBeenInitialized { get; private set; }
 
         /// <summary>
-        /// Gets the NetworkBehaviour instance associated with this network variable
+        /// Gets the <see cref="NetworkBehaviour"/> instance associated with this network variable
         /// </summary>
-        /// <returns>The NetworkBehaviour that owns this network variable</returns>
+        /// <returns>The <see cref="NetworkBehaviour"/> that owns this network variable</returns>
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;
@@ -254,7 +254,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Marks the associated NetworkBehaviour as dirty, indicating it needs synchronization
+        /// Marks the associated <see cref="NetworkBehaviour"/> as dirty, indicating it needs synchronization
         /// </summary>
         protected void MarkNetworkBehaviourDirty()
         {
