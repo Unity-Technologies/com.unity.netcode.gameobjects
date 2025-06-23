@@ -1699,7 +1699,8 @@ namespace Unity.Netcode
                     m_TargetClientIds.Add(NetworkManager.ServerClientId);
                 }
                 // Otherwise send to the clients for which the object is visible
-                else {
+                else
+                {
                     foreach (var clientId in NetworkManager.ConnectedClientsIds)
                     {
                         if ((distributedAuthority && clientId == networkObject.OwnerClientId) || clientId == NetworkManager.LocalClientId)

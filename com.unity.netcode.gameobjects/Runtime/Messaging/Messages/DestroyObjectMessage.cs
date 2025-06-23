@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -67,7 +66,8 @@ namespace Unity.Netcode
                 {
                     BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
                 }
-            } else if (targetVersion >= k_AllowDestroyGameInPlaced)
+            }
+            else if (targetVersion >= k_AllowDestroyGameInPlaced)
             {
                 writer.WriteByteSafe(m_DestroyFlags);
             }
@@ -99,7 +99,8 @@ namespace Unity.Netcode
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
                 }
-            } else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
+            }
+            else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
             {
                 reader.ReadByteSafe(out m_DestroyFlags);
             }
