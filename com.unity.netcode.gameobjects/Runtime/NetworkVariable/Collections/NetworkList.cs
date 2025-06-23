@@ -26,7 +26,7 @@ namespace Unity.Netcode
         public event OnListChangedDelegate OnListChanged;
 
         /// <summary>
-        /// Creates a <see cref="NetworkList{T}"/>
+        /// Constructor for <see cref="NetworkList{T}"/>
         /// </summary>
         public NetworkList() { }
 
@@ -50,7 +50,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Finalizer that ensures proper cleanup of network list resources
+        /// The destructor for <see cref="NetworkList{T}"/>.
         /// </summary>
         ~NetworkList()
         {
