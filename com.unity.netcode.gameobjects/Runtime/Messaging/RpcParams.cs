@@ -197,7 +197,6 @@ namespace Unity.Netcode
     /// Note: Typically this is used primarily for sending to a specific list
     /// of clients as opposed to the default (all).<br />
     /// <see cref="ClientRpcSendParams"/>
-
     /// </remarks>
     public struct ClientRpcParams
     {
