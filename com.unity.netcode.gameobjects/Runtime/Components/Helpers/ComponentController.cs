@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -5,6 +6,31 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.Components
 {
+    /// <summary>
+    /// This is a serializable contianer class for <see cref="ComponentController"/> entries.
+    /// </summary>
+    [Serializable]
+    public class ComponentControllerEntry
+    {
+        /// <summary>
+        /// When true, this component's enabled state will be the inverse of
+        /// the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
+        /// </summary>
+        public bool InvertEnabled;
+
+        /// <summary>
+        /// The component to control.
+        /// </summary>
+        /// <remarks>
+        /// You can assign an entire <see cref="GameObject"/> to this property which will
+        /// add all components attached to the <see cref="GameObject"/>. The <see cref="StartEnabled"/>
+        /// and <see cref="InvertEnabled"/> properties will be applied to all components found on the <see cref="GameObject"/>.
+        /// </remarks>
+        public Object Component;
+
+        internal PropertyInfo PropertyInfo;
+    }
+
     /// <summary>
     /// Handles enabling or disabling commonly used components, behaviours, RenderMeshes, etc.<br />
     /// Anything that derives from <see cref="Component"/> and has an enabled property can be added
@@ -20,16 +46,21 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Determines whether the selected <see cref="Components"/>s will start enabled or disabled when spawned.
         /// </summary>
-        [Tooltip("The initial state of the components when spawned.")]
-        public bool InitialState = true;
+        [Tooltip("The initial state of the component controllers enabled status when instnatiated.")]
+        public bool StartEnabled = true;
 
         /// <summary>
         /// The list of <see cref="Components"/>s to be enabled and disabled.
         /// </summary>
         [Tooltip("The list of components to control. You can drag and drop an entire GameObject on this to include all components.")]
-        public List<Object> Components;
+        public List<ComponentControllerEntry> Components;
 
-        private Dictionary<Component, PropertyInfo> m_ValidComponents = new Dictionary<Component, PropertyInfo>();
+        /// <summary>
+        /// Returns the current enabled state of the <see cref="ComponentController"/>.
+        /// </summary>
+        public bool EnabledState => m_IsEnabled.Value;
+
+        private List<ComponentControllerEntry> m_ValidComponents = new List<ComponentControllerEntry>();
         private NetworkVariable<bool> m_IsEnabled = new NetworkVariable<bool>();
 
 #if UNITY_EDITOR
@@ -44,39 +75,45 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            var gameObjectsToScan = new List<GameObject>();
+            var gameObjectsToScan = new List<ComponentControllerEntry>();
             for (int i = Components.Count - 1; i >= 0; i--)
             {
                 if (Components[i] == null)
                 {
                     continue;
                 }
-                var componentType = Components[i].GetType();
+
+                if (Components[i].Component == null)
+                {
+                    continue;
+                }
+                var componentType = Components[i].Component.GetType();
                 if (componentType == typeof(GameObject))
                 {
-                    gameObjectsToScan.Add(Components[i] as GameObject);
+                    gameObjectsToScan.Add(Components[i]);
                     Components.RemoveAt(i);
                     continue;
                 }
 
                 if (componentType.IsSubclassOf(typeof(NetworkBehaviour)))
                 {
-                    Debug.LogWarning($"Removing {Components[i].name} since {nameof(NetworkBehaviour)}s are not allowed to be controlled by this component.");
+                    Debug.LogWarning($"Removing {Components[i].Component.name} since {nameof(NetworkBehaviour)}s are not allowed to be controlled by this component.");
                     Components.RemoveAt(i);
                     continue;
                 }
 
-                var propertyInfo = Components[i].GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
+                var propertyInfo = Components[i].Component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
                 if (propertyInfo == null && propertyInfo.PropertyType != typeof(bool))
                 {
-                    Debug.LogWarning($"{Components[i].name} does not contain a public enabled property! (Removing)");
+                    Debug.LogWarning($"{Components[i].Component.name} does not contain a public enabled property! (Removing)");
                     Components.RemoveAt(i);
                 }
             }
 
             foreach (var entry in gameObjectsToScan)
             {
-                var components = entry.GetComponents<Component>();
+                var asGameObject = entry.Component as GameObject;
+                var components = asGameObject.GetComponents<Component>();
                 foreach (var component in components)
                 {
                     // Ignore any NetworkBehaviour derived components
@@ -88,7 +125,12 @@ namespace Unity.Netcode.Components
                     var propertyInfo = component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
                     if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
                     {
-                        Components.Add(component);
+                        var componentEntry = new ComponentControllerEntry()
+                        {
+                            Component = component,
+                            PropertyInfo = propertyInfo,
+                        };
+                        Components.Add(componentEntry);
                     }
                 }
             }
@@ -97,23 +139,24 @@ namespace Unity.Netcode.Components
 #endif
 
         /// <summary>
-        /// Also checks to assure all <see cref="Component"/> entries are valid and creates a final table of
-        /// <see cref="Component"/>s paired to their <see cref="PropertyInfo"/>.
+        /// This checks to make sure that all <see cref="Component"/> entries are valid and will create a final
+        /// <see cref="ComponentControllerEntry"/> list of valid entries.
         /// </summary>
         protected virtual void Awake()
         {
             var emptyEntries = 0;
-            foreach (var someObject in Components)
+            foreach (var entry in Components)
             {
-                if (someObject == null)
+                if (entry == null)
                 {
                     emptyEntries++;
                     continue;
                 }
-                var propertyInfo = someObject.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
+                var propertyInfo = entry.Component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
                 if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
                 {
-                    m_ValidComponents.Add(someObject as Component, propertyInfo);
+                    entry.PropertyInfo = propertyInfo;
+                    m_ValidComponents.Add(entry);
                 }
                 else
                 {
@@ -128,6 +171,9 @@ namespace Unity.Netcode.Components
             {
                 Debug.Log($"{name} has {m_ValidComponents.Count} valid {nameof(Component)} entries.");
             }
+
+            // Apply the initial state of all components this instance is controlling.
+            InitializeComponents();
         }
 
         /// <inheritdoc/>
@@ -135,7 +181,7 @@ namespace Unity.Netcode.Components
         {
             if (HasAuthority)
             {
-                m_IsEnabled.Value = InitialState;
+                m_IsEnabled.Value = StartEnabled;
             }
             base.OnNetworkSpawn();
         }
@@ -165,17 +211,44 @@ namespace Unity.Netcode.Components
             ApplyEnabled(current);
         }
 
-        private void ApplyEnabled(bool enabled)
+        /// <summary>
+        /// Initializes each component entry to its initial state.
+        /// </summary>
+        private void InitializeComponents()
         {
             foreach (var entry in m_ValidComponents)
             {
-                entry.Value.SetValue(entry.Key, enabled);
+                // If invert enabled is true, then use the inverted value passed in.
+                // Otherwise, directly apply the value passed in.
+                var isEnabled = entry.InvertEnabled ? !StartEnabled : StartEnabled;
+                entry.PropertyInfo.SetValue(entry.Component, isEnabled);
             }
         }
 
         /// <summary>
-        /// Invoke on the authority side to enable or disable the <see cref="Object"/>s.
+        /// Applies states changes to all components being controlled by this instance.
         /// </summary>
+        /// <param name="enabled">the state update to apply</param>
+        private void ApplyEnabled(bool enabled)
+        {
+            foreach (var entry in m_ValidComponents)
+            {
+                // If invert enabled is true, then use the inverted value passed in.
+                // Otherwise, directly apply the value passed in.
+                var isEnabled = entry.InvertEnabled ? !enabled : enabled;
+                entry.PropertyInfo.SetValue(entry.Component, isEnabled);
+            }
+        }
+
+        /// <summary>
+        /// Invoke on the authority side to enable or disable components assigned to this instance.
+        /// </summary>
+        /// <remarks>
+        /// If any component entry has the <see cref="ComponentControllerEntry.InvertEnabled"/> set to true,
+        /// then the inverse of the isEnabled property passed in will be used. If the component entry has the
+        /// <see cref="ComponentControllerEntry.InvertEnabled"/> set to false (default), then the value of the
+        /// isEnabled property will be applied.
+        /// </remarks>
         /// <param name="isEnabled">true = enabled | false = disabled</param>
         public void SetEnabled(bool isEnabled)
         {
