@@ -5,9 +5,9 @@ using Unity.Collections;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Event based NetworkVariable container for syncing Lists
+    /// Event based NetworkVariable container for syncing Lists.
     /// </summary>
-    /// <typeparam name="T">The type for the list</typeparam>
+    /// <typeparam name="T">The type for the list.</typeparam>
     [GenerateSerializationForGenericParameter(0)]
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
@@ -15,18 +15,18 @@ namespace Unity.Netcode
         private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
-        /// Delegate type for list changed event
+        /// Delegate type for list changed event.
         /// </summary>
-        /// <param name="changeEvent">Struct containing information about the change event</param>
+        /// <param name="changeEvent">Struct containing information about the change event.</param>
         public delegate void OnListChangedDelegate(NetworkListEvent<T> changeEvent);
 
         /// <summary>
-        /// The callback to be invoked when the list gets changed
+        /// The callback to be invoked when the list gets changed.
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
 
         /// <summary>
-        /// Creates a <see cref="NetworkList{T}"/>
+        /// Constructor for <see cref="NetworkList{T}"/>.
         /// </summary>
         public NetworkList() { }
 
@@ -49,6 +49,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// The destructor for <see cref="NetworkList{T}"/>.
+        /// </summary>
         ~NetworkList()
         {
             Dispose();

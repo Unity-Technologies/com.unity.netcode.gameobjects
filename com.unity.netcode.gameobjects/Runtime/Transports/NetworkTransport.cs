@@ -28,6 +28,10 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate for transport network events
         /// </summary>
+        /// <param name="eventType">The type of network event that occurred.</param>
+        /// <param name="clientId">The ID of the client associated with this event.</param>
+        /// <param name="payload">The data payload received with this event.</param>
+        /// <param name="receiveTime">The time when this event was received.</param>
         public delegate void TransportEventDelegate(NetworkEvent eventType, ulong clientId, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
