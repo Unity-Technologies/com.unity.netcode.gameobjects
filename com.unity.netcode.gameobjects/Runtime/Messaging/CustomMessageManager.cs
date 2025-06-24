@@ -19,14 +19,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Delegate used for incoming unnamed messages
+        /// Delegate used for incoming unnamed messages.
         /// </summary>
-        /// <param name="clientId">The clientId that sent the message</param>
-        /// <param name="reader">The stream containing the message data</param>
+        /// <param name="clientId">The clientId that sent the message.</param>
+        /// <param name="reader">The stream containing the message data.</param>
         public delegate void UnnamedMessageDelegate(ulong clientId, FastBufferReader reader);
 
         /// <summary>
-        /// Event invoked when unnamed messages arrive
+        /// Event invoked when unnamed messages arrive.
         /// </summary>
         public event UnnamedMessageDelegate OnUnnamedMessage;
 
@@ -46,21 +46,21 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Sends unnamed message to all clients
+        /// Sends unnamed message to all clients.
         /// </summary>
-        /// <param name="messageBuffer">The message stream containing the data</param>
-        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        /// <param name="messageBuffer">The message stream containing the data.</param>
+        /// <param name="networkDelivery">The delivery type (QoS) used to send the data.</param>
         public void SendUnnamedMessageToAll(FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             SendUnnamedMessage(m_NetworkManager.ConnectedClientsIds, messageBuffer, networkDelivery);
         }
 
         /// <summary>
-        /// Sends unnamed message to a list of clients
+        /// Sends unnamed message to a list of clients.
         /// </summary>
-        /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="messageBuffer">The message stream containing the data</param>
-        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        /// <param name="clientIds">The clients to send to, sends to everyone if null.</param>
+        /// <param name="messageBuffer">The message stream containing the data.</param>
+        /// <param name="networkDelivery">The delivery type (QoS) used to send the data.</param>
         public void SendUnnamedMessage(IReadOnlyList<ulong> clientIds, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             if (!m_NetworkManager.IsServer)
@@ -103,11 +103,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Sends a unnamed message to a specific client
+        /// Sends a unnamed message to a specific client.
         /// </summary>
-        /// <param name="clientId">The client to send the message to</param>
-        /// <param name="messageBuffer">The message stream containing the data</param>
-        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
+        /// <param name="clientId">The client identifier to send the message to.</param>
+        /// <param name="messageBuffer">The message stream containing the data.</param>
+        /// <param name="networkDelivery">The delivery type (QoS) used to send the data.</param>
         public void SendUnnamedMessage(ulong clientId, FastBufferWriter messageBuffer, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)
         {
             ValidateMessageSize(messageBuffer, networkDelivery, isNamed: false);
@@ -137,8 +137,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Delegate used to handle named messages
+        /// Delegate used to handle named messages.
         /// </summary>
+        /// <param name="senderClientId">The client identifier of the message sender.</param>
+        /// <param name="messagePayload">The buffer containing the message data to be read.</param>
         public delegate void HandleNamedMessageDelegate(ulong senderClientId, FastBufferReader messagePayload);
 
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();

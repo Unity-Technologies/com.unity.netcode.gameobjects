@@ -31,6 +31,9 @@ namespace Unity.Netcode
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
         public GameObject PlayerPrefab;
 
+        /// <summary>
+        /// The collection of network prefabs available for spawning across the network.
+        /// </summary>
         [SerializeField]
         public NetworkPrefabs Prefabs = new NetworkPrefabs();
 

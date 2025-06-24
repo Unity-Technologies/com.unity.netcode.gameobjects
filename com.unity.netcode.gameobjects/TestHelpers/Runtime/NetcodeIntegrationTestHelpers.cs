@@ -421,11 +421,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Starts NetworkManager instances created by the Create method.
         /// </summary>
-        /// <param name="host">Whether or not to create a Host instead of Server</param>
-        /// <param name="server">The Server NetworkManager</param>
-        /// <param name="clients">The Clients NetworkManager</param>
-        /// <param name="callback">called immediately after server is started and before client(s) are started</param>
-        /// <returns></returns>
+        /// <param name="host">Whether or not to create a Host instead of Server.</param>
+        /// <param name="server">The Server NetworkManager.</param>
+        /// <param name="clients">The Clients NetworkManager.</param>
+        /// <param name="callback">called immediately after server is started and before client(s) are started.</param>
+        /// <returns>True if the network instances were started successfully, throws InvalidOperationException if already started.</returns>
         public static bool Start(bool host, NetworkManager server, NetworkManager[] clients, BeforeClientStartCallback callback = null)
         {
             if (s_IsStarted)
@@ -616,10 +616,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Similar to WaitForClientConnected, this waits for multiple clients to be connected.
         /// </summary>
-        /// <param name="clients">The clients to be connected</param>
-        /// <param name="result">The result. If null, it will automatically assert<</param>
+        /// <param name="clients">Array of clients to wait for.</param>
+        /// <param name="result">The result. If null, it will automatically assert.</param>
         /// <param name="timeout">Maximum time in seconds to wait for the object to be found.</param>
-        /// <returns></returns>
+        /// <returns>An IEnumerator that yields until all clients are connected or timeout is reached.</returns>
         public static IEnumerator WaitForClientsConnected(NetworkManager[] clients, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             // Make sure none are the host client

@@ -34,11 +34,14 @@ namespace Unity.Netcode
         /// This is used for the legacy way of spawning NetworkPrefabs with an override when manually instantiating and spawning.
         /// To handle multiple source NetworkPrefab overrides that all point to the same target NetworkPrefab use
         /// <see cref="NetworkSpawnManager.InstantiateAndSpawn(NetworkObject, ulong, bool, bool, bool, Vector3, Quaternion)"/>
-        /// or <see cref="NetworkObject.InstantiateAndSpawn(NetworkManager, ulong, bool, bool, bool, Vector3, Quaternion)"/>
+        /// or <see cref="NetworkObject.InstantiateAndSpawn(NetworkManager, ulong, bool, bool, bool, Vector3, Quaternion)"/>.
         /// </summary>
         [NonSerialized]
         public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
 
+        /// <summary>
+        /// Gets the read-only list of all registered network prefabs.
+        /// </summary>
         public IReadOnlyList<NetworkPrefab> Prefabs => m_Prefabs;
 
         [NonSerialized]
@@ -62,14 +65,16 @@ namespace Unity.Netcode
             m_Prefabs.Remove(networkPrefab);
         }
 
+        /// <summary>
+        /// Destructor that cleans up network prefab resources.
+        /// </summary>
         ~NetworkPrefabs()
         {
             Shutdown();
         }
 
         /// <summary>
-        /// Deregister from add and remove events
-        /// Clear the list
+        /// Deregister from add and remove events and clear the events.
         /// </summary>
         internal void Shutdown()
         {
@@ -84,6 +89,7 @@ namespace Unity.Netcode
         /// Processes the <see cref="NetworkPrefabsList"/> if one is present for use during runtime execution,
         /// else processes <see cref="Prefabs"/>.
         /// </summary>
+        /// <param name="warnInvalid">When true, logs warnings about invalid prefabs that are removed during initialization.</param>
         public void Initialize(bool warnInvalid = true)
         {
             m_Prefabs.Clear();
@@ -154,11 +160,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Add a new NetworkPrefab instance to the list
+        /// Add a new NetworkPrefab instance to the list.
         /// </summary>
+        /// <param name="networkPrefab">The <see cref="NetworkPrefab"/> to add.</param>
+        /// <returns>True if the prefab was successfully added, false if it was invalid or already registered</returns>
         /// <remarks>
-        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
-        ///
+        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.<br />
         /// Any modifications made here are not persisted. Permanent configuration changes should be done
         /// through the <see cref="NetworkPrefabsList"/> scriptable object property.
         /// </remarks>
@@ -175,11 +182,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Remove a NetworkPrefab instance from the list
+        /// Remove a NetworkPrefab instance from the list.
         /// </summary>
+        /// <param name="prefab">The <see cref="NetworkPrefab"/> to remove.</param>
         /// <remarks>
-        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
-        ///
+        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.<br />
         /// Any modifications made here are not persisted. Permanent configuration changes should be done
         /// through the <see cref="NetworkPrefabsList"/> scriptable object property.
         /// </remarks>
@@ -197,11 +204,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Remove a NetworkPrefab instance with matching <see cref="NetworkPrefab.Prefab"/> from the list
+        /// Remove a NetworkPrefab instance with matching <see cref="NetworkPrefab.Prefab"/> from the list.
         /// </summary>
+        /// <param name="prefab">The <see cref="GameObject"/> to match against for removal.</param>
         /// <remarks>
-        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.
-        ///
+        /// The framework does not synchronize this list between clients. Any runtime changes must be handled manually.<br />
         /// Any modifications made here are not persisted. Permanent configuration changes should be done
         /// through the <see cref="NetworkPrefabsList"/> scriptable object property.
         /// </remarks>
@@ -232,10 +239,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Check if the given GameObject is present as a prefab within the list
+        /// Check if the given GameObject is present as a prefab within the list.
         /// </summary>
-        /// <param name="prefab">The prefab to check</param>
-        /// <returns>Whether or not the prefab exists</returns>
+        /// <param name="prefab">The prefab to check.</param>
+        /// <returns>True if the prefab exists or false if it does not.</returns>
         public bool Contains(GameObject prefab)
         {
             for (int i = 0; i < m_Prefabs.Count; i++)
@@ -251,10 +258,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Check if the given NetworkPrefab is present within the list
+        /// Check if the given NetworkPrefab is present within the list.
         /// </summary>
-        /// <param name="prefab">The prefab to check</param>
-        /// <returns>Whether or not the prefab exists</returns>
+        /// <param name="prefab">The prefab to check.</param>
+        /// <returns>True if the prefab exists or false if it does not.</returns>
         public bool Contains(NetworkPrefab prefab)
         {
             for (int i = 0; i < m_Prefabs.Count; i++)
@@ -269,7 +276,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
+        /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>.
         /// </summary>
         private bool AddPrefabRegistration(NetworkPrefab networkPrefab)
         {
