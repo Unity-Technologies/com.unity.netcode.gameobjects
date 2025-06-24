@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -38,7 +39,7 @@ namespace Unity.Netcode.RuntimeTests
             var sourceChild = new GameObject("Child");
             sourceChild.transform.parent = m_TestPrefab.transform;
             var meshRenderer = sourceChild.AddComponent<MeshRenderer>();
-            var boxCollider = sourceChild.AddComponent<BoxCollider>();
+            var light = sourceChild.AddComponent<Light>();
             var controller = m_TestPrefab.AddComponent<ComponentController>();
             controller.Components = new List<ComponentControllerEntry>
             {
@@ -49,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
                 new ComponentControllerEntry()
                 {
                     InvertEnabled = true,
-                    Component = boxCollider,
+                    Component = light,
                 }
             };
             base.OnServerAndClientsCreated();
