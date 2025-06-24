@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
