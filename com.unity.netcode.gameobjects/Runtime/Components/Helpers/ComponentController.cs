@@ -39,7 +39,10 @@ namespace Unity.Netcode.Components
     /// </summary>
     /// <remarks>
     /// This will synchronize the enabled or disabled state of the <see cref="Component"/>s with
-    /// connected and late joining clients.
+    /// connected and late joining clients.<br />
+    /// This class provides the basic functionality to synchronizing components' enabled state.<br />
+    /// It is encouraged to create custom derived versions of this class to provide any additional
+    /// functionality required for your project specific needs.
     /// </remarks>
     public class ComponentController : NetworkBehaviour
     {
@@ -60,7 +63,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool EnabledState => m_IsEnabled.Value;
 
-        private List<ComponentControllerEntry> m_ValidComponents = new List<ComponentControllerEntry>();
+        internal List<ComponentControllerEntry> ValidComponents = new List<ComponentControllerEntry>();
         private NetworkVariable<bool> m_IsEnabled = new NetworkVariable<bool>();
 
 #if UNITY_EDITOR
@@ -144,7 +147,16 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected virtual void Awake()
         {
+            ValidComponents.Clear();
+
+            // If no components then don't try to initialize.
+            if (Components == null)
+            {
+                return;
+            }
+
             var emptyEntries = 0;
+
             foreach (var entry in Components)
             {
                 if (entry == null)
@@ -156,20 +168,16 @@ namespace Unity.Netcode.Components
                 if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
                 {
                     entry.PropertyInfo = propertyInfo;
-                    m_ValidComponents.Add(entry);
+                    ValidComponents.Add(entry);
                 }
                 else
                 {
-                    Debug.LogWarning($"{name} does not contain a public enable property! (Ignoring)");
+                    NetworkLog.LogWarning($"{name} does not contain a public enable property! (Ignoring)");
                 }
             }
             if (emptyEntries > 0)
             {
-                Debug.LogWarning($"{name} has {emptyEntries} emtpy(null) entries in the {nameof(Components)} list!");
-            }
-            else
-            {
-                Debug.Log($"{name} has {m_ValidComponents.Count} valid {nameof(Component)} entries.");
+                NetworkLog.LogWarning($"{name} has {emptyEntries} emtpy(null) entries in the {nameof(Components)} list!");
             }
 
             // Apply the initial state of all components this instance is controlling.
@@ -216,7 +224,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void InitializeComponents()
         {
-            foreach (var entry in m_ValidComponents)
+            foreach (var entry in ValidComponents)
             {
                 // If invert enabled is true, then use the inverted value passed in.
                 // Otherwise, directly apply the value passed in.
@@ -231,7 +239,7 @@ namespace Unity.Netcode.Components
         /// <param name="enabled">the state update to apply</param>
         private void ApplyEnabled(bool enabled)
         {
-            foreach (var entry in m_ValidComponents)
+            foreach (var entry in ValidComponents)
             {
                 // If invert enabled is true, then use the inverted value passed in.
                 // Otherwise, directly apply the value passed in.
