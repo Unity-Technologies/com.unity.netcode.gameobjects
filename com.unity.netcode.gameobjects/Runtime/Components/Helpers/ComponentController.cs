@@ -96,11 +96,10 @@ namespace Unity.Netcode.Components
         }
 #endif
 
-        /// <inheritdoc/>
-        /// <remarks>
+        /// <summary>
         /// Also checks to assure all <see cref="Component"/> entries are valid and creates a final table of
         /// <see cref="Component"/>s paired to their <see cref="PropertyInfo"/>.
-        /// </remarks>
+        /// </summary>
         protected virtual void Awake()
         {
             var emptyEntries = 0;

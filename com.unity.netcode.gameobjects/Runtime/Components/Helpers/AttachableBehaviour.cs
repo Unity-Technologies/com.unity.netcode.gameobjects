@@ -117,11 +117,10 @@ namespace Unity.Netcode.Components
         private Vector3 m_OriginalLocalPosition;
         private Quaternion m_OriginalLocalRotation;
 
-        /// <inheritdoc/>
-        /// <remarks>
+        /// <summary>
         /// If you create a custom <see cref="AttachableBehaviour"/> and override this method, you must invoke
         /// this base instance of <see cref="Awake"/>.
-        /// </remarks>
+        /// </summary>
         protected virtual void Awake()
         {
             m_DefaultParent = transform.parent == null ? gameObject : transform.parent.gameObject;
@@ -218,8 +217,8 @@ namespace Unity.Netcode.Components
         /// For customized/derived <see cref="AttachableBehaviour"/>s, override this method to receive notifications
         /// when the <see cref="AttachState"/> has changed.
         /// </summary>
-        /// <param name="attachState">the new <see cref="AttachState"/>.</param>
-        /// <param name="attachableNode"></param>
+        /// <param name="attachState">The new <see cref="AttachState"/>.</param>
+        /// <param name="attachableNode">The <see cref="AttachableNode"/> being attached to or from. Will be null when completely detatched.</param>
         protected virtual void OnAttachStateChanged(AttachState attachState, AttachableNode attachableNode)
         {
 
@@ -275,7 +274,7 @@ namespace Unity.Netcode.Components
         /// Both the <see cref="AttachableNode"/> and this <see cref="AttachableBehaviour"/> instances should be in the spawned state before this
         /// is invoked.
         /// </remarks>
-        /// <param name="parent">The <see cref="NetworkBehaviour"/> to be applied or null to reparent under its original <see cref="GameObject"/> when spawned.</param>
+        /// <param name="attachableNode">The <see cref="AttachableNode"/> to attach this instance to.</param>
         public void Attach(AttachableNode attachableNode)
         {
             if (!IsSpawned)
