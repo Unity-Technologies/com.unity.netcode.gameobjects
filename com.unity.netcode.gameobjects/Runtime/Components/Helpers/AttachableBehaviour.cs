@@ -361,7 +361,7 @@ namespace Unity.Netcode.Components
                 // this could potentially occur if inoked more than once for the same instance in the same frame.
                 if (m_AttachableNode && m_AttachState != AttachState.Detaching)
                 {
-                    NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name} is still referencing {nameof(AttachableNode)} {m_AttachableNode.name}! Could {nameof(AttachableBehaviour.Detach)} be getting invoked more than once for the same instance?");
+                    NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name} is still referencing {nameof(AttachableNode)} {m_AttachableNode.name}! Could {nameof(Detach)} be getting invoked more than once for the same instance?");
                 }
                 return;
             }
