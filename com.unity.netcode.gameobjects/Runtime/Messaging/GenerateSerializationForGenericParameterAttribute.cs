@@ -74,6 +74,10 @@ namespace Unity.Netcode
     {
         internal int ParameterIndex;
 
+        /// <summary>
+        /// Initializes a new instance of the attribute.
+        /// </summary>
+        /// <param name="parameterIndex">The zero-based index of the generic parameter that should be serialized.</param>
         public GenerateSerializationForGenericParameterAttribute(int parameterIndex)
         {
             ParameterIndex = parameterIndex;

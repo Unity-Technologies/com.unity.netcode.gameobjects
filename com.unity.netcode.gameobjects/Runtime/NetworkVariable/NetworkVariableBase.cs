@@ -3,11 +3,20 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Defines timing constraints for network variable updates
+    /// </summary>
     public struct NetworkVariableUpdateTraits
     {
+        /// <summary>
+        /// The minimum amount of time that must pass between sending updates. If this amount of time has not passed since the last update, dirtiness will be ignored.
+        /// </summary>
         [Tooltip("The minimum amount of time that must pass between sending updates. If this amount of time has not passed since the last update, dirtiness will be ignored.")]
         public float MinSecondsBetweenUpdates;
 
+        /// <summary>
+        /// The maximum amount of time that a variable can be dirty without sending an update. If this amount of time has passed since the last update, an update will be sent even if the dirtiness threshold has not been met.
+        /// </summary>
         [Tooltip("The maximum amount of time that a variable can be dirty without sending an update. If this amount of time has passed since the last update, an update will be sent even if the dirtiness threshold has not been met.")]
         public float MaxSecondsBetweenUpdates;
     }
@@ -40,6 +49,10 @@ namespace Unity.Netcode
         // this NetworkVariableBase property instance will not update until the last session time used.
         internal bool HasBeenInitialized { get; private set; }
 
+        /// <summary>
+        /// Gets the <see cref="NetworkBehaviour"/> instance associated with this network variable
+        /// </summary>
+        /// <returns>The <see cref="NetworkBehaviour"/> that owns this network variable</returns>
         public NetworkBehaviour GetBehaviour()
         {
             return m_NetworkBehaviour;
@@ -240,6 +253,9 @@ namespace Unity.Netcode
             LastUpdateSent = m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
         }
 
+        /// <summary>
+        /// Marks the associated <see cref="NetworkBehaviour"/> as dirty, indicating it needs synchronization
+        /// </summary>
         protected void MarkNetworkBehaviourDirty()
         {
             if (m_NetworkBehaviour == null)
