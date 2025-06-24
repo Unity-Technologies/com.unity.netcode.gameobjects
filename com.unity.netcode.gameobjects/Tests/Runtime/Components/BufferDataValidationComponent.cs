@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Returns back whether the test has completed the total number of iterations
         /// </summary>
-        /// <returns></returns>
+        /// <returns>True if the test has exceeded maximum buffer size or has already failed. False if the test is yet to complete and has not failed.</returns>
         public bool IsTestComplete()
         {
             if (m_CurrentBufferSize > MaximumBufferSize || TestFailed)
