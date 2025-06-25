@@ -12,14 +12,14 @@ namespace TestProject.RuntimeTests
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
-    public class InScenePlacedNetworkObjectParentingTests : InScenePlacedNetworkObjectBase
+    public class InSceneObjectParentingTests : InSceneObjectBase
     {
         protected override int NumberOfClients => 2;
 
         private const string k_InSceneUnder = "InSceneUnderGameObject";
         private const string k_InSceneUnderWithNetworkTransform = "InSceneUnderGameObjectWithNT";
 
-        public InScenePlacedNetworkObjectParentingTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
+        public InSceneObjectParentingTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         [UnityTest]
         public IEnumerator ParentedInSceneObjectLateJoiningClient()

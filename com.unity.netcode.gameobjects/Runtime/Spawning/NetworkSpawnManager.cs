@@ -1607,23 +1607,18 @@ namespace Unity.Netcode
             // We have to do this check first as subsequent checks assume we can access NetworkObjectId.
             if (!networkObject)
             {
-                Debug.LogWarning("Trying to destroy network object but it is null");
+                NetworkLog.LogWarning("Trying to destroy network object but it is null");
                 return;
             }
 
             // Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkObject.NetworkObjectId))
             {
-                if (!NetworkManager.ShutdownInProgress)
+                if (!NetworkManager.ShutdownInProgress && !NetworkManager.SceneManager.IsSceneEventInProgress())
                 {
-                    Debug.LogWarning($"Trying to destroy object {networkObject.NetworkObjectId} but it doesn't seem to exist anymore!");
+                    NetworkLog.LogWarning($"Trying to destroy object {networkObject.NetworkObjectId} but it doesn't seem to exist anymore!");
                 }
                 return;
-            }
-
-            if (destroyGameObject && networkObject.IsSceneObject == true && NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                Debug.LogWarning("Destroying in-scene network objects can lead to unexpected behavior. It is recommended to use NetworkObject.Despawn(false) instead.");
             }
 
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
@@ -1635,6 +1630,11 @@ namespace Unity.Netcode
             // and only attempt to remove the child's parent on the server-side
             if (!NetworkManager.ShutdownInProgress && hasAuthority)
             {
+                if (destroyGameObject && networkObject.IsSceneObject == true && !NetworkManager.SceneManager.IsSceneUnloading(networkObject))
+                {
+                    NetworkLog.LogWarning("Destroying in-scene network objects can lead to unexpected behavior. It is recommended to use NetworkObject.Despawn(false) instead.");
+                }
+
                 // Get all child NetworkObjects
                 var objectsToRemoveParent = networkObject.GetComponentsInChildren<NetworkObject>();
 

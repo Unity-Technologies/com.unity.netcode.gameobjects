@@ -13,11 +13,11 @@ namespace TestProject.RuntimeTests
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
-    public class InScenePlacedNetworkObjectTests : InScenePlacedNetworkObjectBase
+    public class InSceneObjectTests : InSceneObjectBase
     {
         protected override int NumberOfClients => 2;
 
-        public InScenePlacedNetworkObjectTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
+        public InSceneObjectTests(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
 
         private int m_NumberOfInstancesCheck;
@@ -35,7 +35,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator EnableDisableInSceneObjectTests()
         {
-            m_EnableVerboseDebug = true;
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
             // Enabled disabling the NetworkObject when it is despawned
             NetworkObjectTestComponent.DisableOnDespawn = true;
@@ -115,7 +114,7 @@ namespace TestProject.RuntimeTests
 
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
-    internal class InScenePlacedNetworkObjectClientTests : NetcodeIntegrationTest
+    internal class InSceneObjectClientTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "InSceneNetworkObject";
 
@@ -123,7 +122,7 @@ namespace TestProject.RuntimeTests
 
         private Scene m_Scene;
 
-        public InScenePlacedNetworkObjectClientTests(NetworkTopologyTypes topology) : base(topology)
+        public InSceneObjectClientTests(NetworkTopologyTypes topology) : base(topology)
         {
         }
 

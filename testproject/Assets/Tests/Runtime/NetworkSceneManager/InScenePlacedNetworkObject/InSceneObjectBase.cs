@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {
-    public class InScenePlacedNetworkObjectBase : IntegrationTestWithApproximation
+    public class InSceneObjectBase : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 2;
 
@@ -14,10 +14,10 @@ namespace TestProject.RuntimeTests
         private Scene m_AuthoritySideSceneLoaded;
         private Scene m_PreviousSceneLoaded;
 
-        protected InScenePlacedNetworkObjectBase(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
+        protected InSceneObjectBase(NetworkTopologyTypes networkTopologyType, HostOrServer hostOrServer) : base(networkTopologyType, hostOrServer) { }
 
         // Constructor that is used by InScenePlacedNetworkObjectDestroyTests
-        protected InScenePlacedNetworkObjectBase(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
+        protected InSceneObjectBase(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnSetup()
         {
@@ -36,6 +36,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             GetAuthorityNetworkManager().SceneManager.OnSceneEvent -= OnSceneEvent;
+            NetworkObjectTestComponent.Reset();
             yield return CleanUpLoadedScene();
         }
 
