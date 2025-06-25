@@ -174,16 +174,7 @@ Now we will test that the command line helper script works.
 1. Quit your app.
 1. Now to launch from the command line.  
 
-
-<Tabs
-  className="unique-tabs"
-  defaultValue="tab1"
-  values={[
-    {label: 'For Windows:', value: 'tab1'},
-    {label: 'For Mac', value: 'tab2'},
-  ]}>
-
-<TabItem value="tab1">
+#### Windows
 
 For Windows you should do the following:  
 
@@ -239,8 +230,7 @@ Modify the commands as follows:
   C:\Users\sarao>HelloWorld\Build\HelloWorld.exe -logfile -log-server.txt -mode server & HelloWorld\Build\HelloWorld.exe -logfile log-client.txt -mode client
   ```
 
-</TabItem>
-<TabItem value="tab2">
+#### MacOS
 
 For Mac you should do the following:
 
@@ -261,11 +251,6 @@ Run both as a single command:
 ```
 <Path to Project>/Build/HelloWorld.app/Contents/MacOS/<Project Name> -mode server -logfile - & ; ~ <Path to Project>/Build/HelloWorld.app/Contents/MacOS/<Project Name> -mode client -logfile -
 ```
-</TabItem>
-</Tabs>
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 ## Testing Hello World
 
