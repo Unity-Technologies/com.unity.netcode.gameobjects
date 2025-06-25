@@ -1280,13 +1280,7 @@ namespace Unity.Netcode
                 }
             }
 
-            sceneEventProgress.LoadSceneMode = LoadSceneMode.Additive;
-
-            // Any NetworkObjects marked to not be destroyed with a scene and reside within the scene about to be unloaded
-            // should be migrated temporarily into the DDOL, once the scene is unloaded they will be migrated into the
-            // currently active scene.
             var networkManager = NetworkManager;
-            SceneManagerHandler.MoveObjectsFromSceneToDontDestroyOnLoad(ref networkManager, scene);
 
             var sceneEventData = BeginSceneEvent();
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
@@ -1297,9 +1291,15 @@ namespace Unity.Netcode
 
             // This will be the message we send to everyone when this scene event sceneEventProgress is complete
             sceneEventProgress.SceneEventType = SceneEventType.UnloadEventCompleted;
+            sceneEventProgress.LoadSceneMode = LoadSceneMode.Additive;
 
             sceneEventProgress.SceneEventId = sceneEventData.SceneEventId;
             sceneEventProgress.OnSceneEventCompleted = OnSceneUnloaded;
+
+            // Any NetworkObjects marked to not be destroyed with a scene and reside within the scene about to be unloaded
+            // should be migrated temporarily into the DDOL, once the scene is unloaded they will be migrated into the
+            // currently active scene.
+            SceneManagerHandler.MoveObjectsFromSceneToDontDestroyOnLoad(ref networkManager, scene);
 
             if (!RemoveServerClientSceneHandle(sceneEventData.SceneHandle, scene.handle))
             {
@@ -2824,6 +2824,27 @@ namespace Unity.Netcode
             foreach (var sceneEventEntry in SceneEventProgressTracking)
             {
                 if (!sceneEventEntry.Value.HasTimedOut() && sceneEventEntry.Value.SceneEventType != SceneEventType.Synchronize && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal bool IsSceneUnloading(NetworkObject networkObject)
+        {
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement)
+            {
+                return false;
+            }
+
+            foreach (var sceneEventEntry in SceneEventProgressTracking)
+            {
+                var name = SceneNameFromHash(sceneEventEntry.Value.SceneHash);
+                var scene = SceneManager.GetSceneByName(name);
+                var sameScene = name == networkObject.gameObject.scene.name && scene.handle == networkObject.SceneOriginHandle;
+
+                if (!sceneEventEntry.Value.HasTimedOut() && sceneEventEntry.Value.IsUnloading() && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started && sameScene)
                 {
                     return true;
                 }

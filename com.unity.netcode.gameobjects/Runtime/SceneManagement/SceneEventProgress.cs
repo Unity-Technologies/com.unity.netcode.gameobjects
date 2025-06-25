@@ -224,6 +224,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Returns whether the SceneEventType is related to an unloading event.
+        /// </summary>
+        internal bool IsUnloading()
+        {
+            return SceneEventType is SceneEventType.Unload or SceneEventType.UnloadComplete or SceneEventType.UnloadEventCompleted;
+        }
+
+        /// <summary>
         /// Determines if the scene event has finished for both
         /// client(s) and server.
         /// </summary>

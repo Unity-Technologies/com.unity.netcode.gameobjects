@@ -15,13 +15,13 @@ namespace TestProject.RuntimeTests
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, DespawnMode.Despawn)]
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, DespawnMode.DeferDespawn)]
     [TestFixture(NetworkTopologyTypes.ClientServer, DespawnMode.Despawn)]
-    public class InScenePlacedNetworkObjectDestroyTests : InScenePlacedNetworkObjectBase
+    public class InSceneObjectDestroyTests : InSceneObjectBase
     {
         protected override int NumberOfClients => 2;
 
         private readonly DespawnMode m_DespawnMode;
 
-        public InScenePlacedNetworkObjectDestroyTests(NetworkTopologyTypes networkTopologyType, DespawnMode despawnMode) : base(networkTopologyType)
+        public InSceneObjectDestroyTests(NetworkTopologyTypes networkTopologyType, DespawnMode despawnMode) : base(networkTopologyType)
         {
             m_DespawnMode = despawnMode;
         }
@@ -93,6 +93,16 @@ namespace TestProject.RuntimeTests
             else
             {
                 serverObject.DeferDespawn(1, destroyGameObject);
+            }
+
+            const string expectedLog = "[Netcode] Destroying in-scene network objects can lead to unexpected behavior. It is recommended to use NetworkObject.Despawn(false) instead.";
+            if (destroyGameObject)
+            {
+                NetcodeLogAssert.LogWasReceived(LogType.Warning, expectedLog);
+            }
+            else
+            {
+                NetcodeLogAssert.LogWasNotReceived(LogType.Warning, expectedLog);
             }
 
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == 0);
