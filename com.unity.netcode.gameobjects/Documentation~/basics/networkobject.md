@@ -131,13 +131,13 @@ However, when you want to limit which prefabs are available (for example, to red
 
 ## Spawning with (or without) observers
 
-![image](/img/SpawnWithObservers.png)
+![image](../images/SpawnWithObservers.png)
 
 The `NetworkObject.SpawnWithObservers` property (default is true) enables you to spawn a `NetworkObject` with no initial observers. This is the recommended alternative to using `NetworkObject.CheckObjectVisibility` when you just want it to be applied globally to all clients (only when spawning an instance of the `NetworkObject` in question). If you want more precise per-client control then `NetworkObject.CheckObjectVisibility` is recommended. `NetworkObject.SpawnWithObservers` is only applied upon the initial server-side spawning and once spawned it has no impact on object visibility.
 
 ## Transform synchronization
 
-![image](/img/NetworkObject-TransformSynchronization.png)
+![image](../images/NetworkObject-TransformSynchronization.png)
 
 There are times when you want to use a NetworkObject for something that doesn't require the synchronization of its transform. You might have an [in-scene placed NetworkObject](./scenemanagement/inscene-placed-networkobjects.md) that's only used to manage game state and it doesn't make sense to incur the initial client synchronization cost of synchronizing its transform. To prevent a NetworkObject from initially synchronizing its transform when spawned, deselect the **Synchronize Transform** property. This property is enabled by default.
 
@@ -146,7 +146,7 @@ There are times when you want to use a NetworkObject for something that doesn't 
 
 ## Active scene synchronization
 
-![image](/img/ActiveSceneMigration.png)
+![image](../images/ActiveSceneMigration.png)
 
 When a GameObject is instantiated, it gets instantiated in the current active scene. However, sometimes you might find that you want to change the currently active scene and would like specific NetworkObject instances to automatically migrate to the newly assigned active scene. While you could keep a list or table of the NetworkObject instances and write the code/logic to migrate them into a newly assigned active scene, this can be time consuming and become complicated depending on project size and complexity. The alternate and recommended way to handle this is by enabling the **Active Scene Synchronization** property of each NetworkObject you want to automatically migrate into any newly assigned scene. This property defaults to disabled.
 
@@ -154,7 +154,7 @@ Refer to the [NetworkSceneManager active scene synchronization](../basics/scenem
 
 ## Scene migration synchronization
 
-![image](/img/SceneMigrationSynchronization.png)
+![image](../images/SceneMigrationSynchronization.png)
 
 Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
 

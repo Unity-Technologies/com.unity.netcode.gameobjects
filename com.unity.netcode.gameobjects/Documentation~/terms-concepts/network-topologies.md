@@ -14,13 +14,13 @@ Dedicated servers are often the most expensive network topology, but also offer 
 
 This network topology is primarily used by performance-sensitive games, such as first-person shooters, or competitive games where having a central server authority is necessary to minimize cheating and the effects of bad actors.
 
-![Dedicated Server](/img/ded_server.png)
+![Dedicated Server](../images/ded_server.png)
 
 ### Client-hosted listen server
 
 Listen servers are similar to dedicated game servers, except that the server runs in the same process as a game client. This makes it a cheaper option, but with the disadvantage that the hosting client has to communicate updates over a residential internet connection. Server performance is also degraded because the machine running the server is also generating an output image for the user playing on that machine.
 
-![Client Hosted](/img/client-hosted.png)
+![Client Hosted](../images/client-hosted.png)
 
 ## Other network topologies
 
@@ -36,4 +36,4 @@ Local area network games aren't connected to the internet, but use a hosted serv
 
 A peer-to-peer network is created when two or more computers are connected and share resources without going through a separate server.
 
-![Peer-to-Peer](/img/peer2peer1.png)
+![Peer-to-Peer](../images/peer2peer1.png)

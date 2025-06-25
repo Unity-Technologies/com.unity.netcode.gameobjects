@@ -22,15 +22,15 @@ When adding a NetworkTransform component to a GameObject, it requires a NetworkO
 
 In this image both NetworkTransform and NetworkObject components are on the same GameObject:
 
-![image](/img/NetworkTransformSimple.png)
+![image](../images/NetworkTransformSimple.png)
 
 Alternatively, a parent GameObject can have the NetworkObject component while the NetworkTransform is attached to a child object:
 
-![image](/img/NetworkTransformSimpleParent.png)
+![image](../images/NetworkTransformSimpleParent.png)
 
 You can also have NetworkTransform components on several child objects, all sharing the same NetworkObject in their common parent object:
 
-![image](/img/NetworkTransformNestedParent.png)
+![image](../images/NetworkTransformNestedParent.png)
 
 With such nested NetworkTransforms you can theoretically have a NetworkTransform on every child object. _However, we recommend exercising caution with the amount of nested NetworkTransforms in a network prefab. Particularly if there will be many instances of this network prefab._
 
@@ -44,7 +44,7 @@ With such nested NetworkTransforms you can theoretically have a NetworkTransform
 
 When you select a NetworkTransform component, you will see the following properties in the inspector view:
 
-![image](/img/NetworkTransformProperties.png)
+![image](../images/NetworkTransformProperties.png)
 
 ### Property synchronization
 
@@ -113,7 +113,7 @@ With Quaternion synchronization enabled, the authoritative instance still compar
 
 Quaternion synchronization comes with a price. It will increase the bandwidth cost, 16 bytes per instance, in exchange for handling the more complex rotation issues that more often occur when using nested NetworkTransform (one or more parent transforms with one or more child transforms). However, when you enable the **Use Quaternion Synchronization** property you will notice a change in both the **Syncing** axis selection check boxes and a new **Use Quaternion Compression** property will appear:
 
-![image](/img/NetworkTransformQuaternionSynch.png)
+![image](../images/NetworkTransformQuaternionSynch.png)
 
 > [!NOTE]
 > The rotation synchronization axis checkboxes are no longer available when **Use Quaternion Synchronization** is enabled (_since synchronizing the quaternion of a transform will always update all rotation axis_) and **Use Quaternion Compression** becomes a visible option.

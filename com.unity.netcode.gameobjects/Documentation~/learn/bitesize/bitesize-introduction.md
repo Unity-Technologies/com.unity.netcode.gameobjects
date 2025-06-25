@@ -17,7 +17,7 @@ You need Unity and Netcode for GameObjects installed to work with these samples.
 
 Download the project files from the [Bitesize Samples Repository](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize)
 
-![how to download](/img/bitesize/bitesize-download.png)
+![how to download](../images/bitesize/bitesize-download.png)
 
 After download, unzip the archive file. You are now ready to add the project to Unity Hub.
 

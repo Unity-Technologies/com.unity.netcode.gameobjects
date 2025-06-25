@@ -29,13 +29,13 @@ Before you begin, you need the following:
 ## Install Netcode for GameObjects with the Package Manager
 
 1. From the Unity Editor, select **Window** > **Package Manager**.
-1. From the Package Manager, select **Add** ![add symbol](/img/add.png) > **Add package by name…**
+1. From the Package Manager, select **Add** ![add symbol](../images/add.png) > **Add package by name…**
 1. Type (or copy and paste) `com.unity.netcode.gameobjects` into the package name field, then select **Add**.
 
 ### For Unity Editor versions 2020.3 LTS or earlier
 
 1. From the Unity Editor, select **Window** > **Package Manager**.
-1. From the Package Manager, select **Add** ![add symbol](/img/add.png) > **Add package by git URL…**
+1. From the Package Manager, select **Add** ![add symbol](../images/add.png) > **Add package by git URL…**
 1. Type (or copy and paste) `https://github.com/Unity-Technologies/com.unity.netcode.gameobjects` into the git URL field, then select **Add**.
 
 ## Next Steps

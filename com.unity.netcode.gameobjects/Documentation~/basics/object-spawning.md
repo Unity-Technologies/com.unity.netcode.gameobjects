@@ -102,7 +102,7 @@ m_SpawnedNetworkObject.Despawn();
 
 To make this the default from the editor Inspector view:
 
-![image](/img/DontDestroyWithOwner.png)
+![image](../images/DontDestroyWithOwner.png)
 
 As an alternative way, you can make the `NetworkObject.DontDestroyWithOwner` property default to `true` by setting it on the `NetworkObject` itself like in the above screenshot.
 
@@ -299,17 +299,17 @@ You might run across a situation where you still want other components on the ro
 
 Below is an example of what a non-pooled friendly Prefab might look like:
 
-![image](/img/non-pooled-friendly-prefab.png)
+![image](../images/non-pooled-friendly-prefab.png)
 
 The issues you might run into with the above Prefab hierarchy is that everything is on a single `GameObject`, and as such if you wanted to disable the `MeshRenderer` and the `NetworkObjectLabel`, [one of our classes in the Netcode for GameObjects test project](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/f0631414e5a5358a5ac7811d43273b1a82a60ca9/testproject/Assets/Scripts/NetworkObjectLabel.cs#L4), you would need to get those component types before disabling them (that is, during `Start` or `OnNetworkSpawn` or get them when `OnNetworkDespawn` is invoked).
 
 To reduce this level of complexity, a more "pooled dynamic spawning" friendly Prefab heirarchy might look like this:
 
-![image](/img/pooled-friendly-prefab.png)
+![image](../images/pooled-friendly-prefab.png)
 
 The `NetworkObject` sits at the root `GameObject` of the network prefab. The child `GameObject`, SpawnedComponents, then has everything that you might want to have disabled when the network Prefab instance isn't spawned:
 
-![image](/img/pooled-friendly-prefab-child.png)
+![image](../images/pooled-friendly-prefab-child.png)
 
 This reduces the complexity down to setting the SpawnedComponents `GameObject` to inactive, which will also disable all of the components attached to it.
 

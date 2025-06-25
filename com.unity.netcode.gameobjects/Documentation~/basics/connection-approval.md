@@ -204,7 +204,7 @@ The server assigns the `ConnectionApprovalCallback` when it spawns the in-scene 
 
 ### Copy the alternate player Prefab's GlobalObjectIdHash value
 
-![Copy-GlobalObjectIdHash](/img/CopyGlobalObjectIdHash.png)
+![Copy-GlobalObjectIdHash](../images/CopyGlobalObjectIdHash.png)
 
 To populate the `AlternatePlayerPrefabs` list:
 

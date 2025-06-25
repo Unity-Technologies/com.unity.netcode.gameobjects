@@ -38,7 +38,7 @@ The `2DSpaceShooter` object creates many objects dynamically at runtime includin
 
 2DSpaceShooter uses the NetworkObjectPool script, which can be found in the Community Contributions Repository.
 
-![pool img](/img/bitesize/invader-networkobjectpool.png)
+![pool img](../images/bitesize/invader-networkobjectpool.png)
 
 All of the runtime spawnable objects have been registered to the pool. On the client-side, this will cause Netcode to use an object from the pool instead of instantiating a new Object. When the `NetworkObject` is despawned, it will be automatically returned to the pool instead of getting destroyed.
 

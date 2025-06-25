@@ -37,10 +37,10 @@ From Unity version 2022.3, you can test the Relay service with Netcode for GameO
 This means you don't need to create UI elements to test the Relay service.
 
 If the connection fails then an error message appears in the UI and console.
-![](/img/relay/ngo-relay-connection.png)
+![](../images/relay/ngo-relay-connection.png)
 
 If Relay connects, a message appears in the inspector that displays the join code.
-![](/img/relay/ngo-relay-connected.png)
+![](../images/relay/ngo-relay-connected.png)
 
 You can copy the join code to share it, or test it in a project in a separate window. Refer to [testing locally](../tutorials/testing/testing_locally.md) for more details.
 

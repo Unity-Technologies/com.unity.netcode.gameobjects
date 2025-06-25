@@ -57,7 +57,7 @@ While client synchronization does fall partially outside of the scene management
 <br/>
 Below is a diagram of the client connection approval and synchronization process:
 
-![image](/img/scenemanagement_synchronization_overview.png)
+![image](../images/scenemanagement_synchronization_overview.png)
 
 Starting with the "Player" in the top right part of the above diagram, the client (Player) runs through the connection and approval process first which occurs within the `NetworkManager`.  Once approved, the server-side `NetworkSceneManager` begins the client synchronization process by sending the `SceneEventType.Synchronize` Scene Event message to the approved client.  The client then processes through the synchronization message.  Once the client is finished processing the synchronize message, it responds to the server with a `SceneEventType.SynchronizeComplete` message. At this point the client is considered "synchronized".  If the server determines any `NetworkObject` was despawned during the client-side synchronization message processing period, it will send a list of `NetworkObject` identifiers to the client via the `SceneEventType.ReSynchronize` message and the client will locally despawn the `NetworkObject`s.
 
@@ -228,10 +228,10 @@ You can stop the coroutine checking the progress upon receiving any of the follo
 The SceneEvent class has values that may or may not be set depending upon the `SceneEventType`.  Below are two quick lookup tables to determine which property is set for each `SceneEventType`.
 
 **Part-1**<br/>
-![image](/img/SceneEventProperties-1.png)<br/>
+![image](../images/SceneEventProperties-1.png)<br/>
 
 **Part-2** <br/>
-![image](/img/SceneEventProperties-2.png)<br/>
+![image](../images/SceneEventProperties-2.png)<br/>
 
 So, the big "take-away" from the above table is that you need to understand the `SceneEventType` context of the `SceneEvent` you are processing to know which properties are valid and you can use.  As an example, it wouldn't make sense to provide the AsyncOperation for the following `SceneEventType`s:
 - LoadComplete or LoadEventCompleted

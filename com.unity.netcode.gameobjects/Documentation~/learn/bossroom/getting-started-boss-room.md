@@ -1,6 +1,6 @@
 # Getting started with Boss Room
 
-![Boss Room banner](/img/banner.png)
+![Boss Room banner](../images/banner.png)
 
 Boss Room is a fully functional co-op multiplayer RPG made with Unity Netcode. it's an educational sample designed to showcase typical netcode [patterns](https://docs-multiplayer.unity3d.com/netcode/current/learn/bossroom/bossroom-actions/index.html) often featured in similar multiplayer games.
 

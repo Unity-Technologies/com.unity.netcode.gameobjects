@@ -43,25 +43,25 @@ First, create the NetworkManager component:
 
 1. Right-click in the **Hierarchy** tab, then select **Create Empty** to create an empty GameObject.
 
-![](/img/get-started-ngo/ngo-10.png)
+![](../images/get-started-ngo/ngo-10.png)
 
 2. Rename the empty GameObject **NetworkManager**.
 
-![](/img/get-started-ngo/ngo-11.png)
+![](../images/get-started-ngo/ngo-11.png)
 
 3. Select **NetworkManager**, then select **Add Component** from the **Inspector** tab.
 
-![](/img/get-started-ngo/ngo-6.png)
+![](../images/get-started-ngo/ngo-6.png)
 
 4. Select **Netcode** > **NetworkManager** from the component list.
 
-![](/img/get-started-ngo/ngo-1.png)
+![](../images/get-started-ngo/ngo-1.png)
 
 5. In the Inspector tab, locate the Unity Transport section, then select **UnityTransport** as the **Protocol type**.
 
-![](/img/get-started-ngo/ngo-13.png)
+![](../images/get-started-ngo/ngo-13.png)
 
-![](/img/get-started-ngo/ngo-14.png)
+![](../images/get-started-ngo/ngo-14.png)
 
 6. Save the scene by pressing **Ctrl/Cmd** + **S** (or by selecting **File** > **Save**).
 
@@ -80,22 +80,22 @@ This section guides you through creating an object that spawns for each connecte
 5. Name the folder **Prefabs**.
 6. Make the **Player** object you created earlier into a prefab by dragging it from the **Hierarchy** tab into the **Prefabs** folder.
 
-![](/img/get-started-ngo/ngo-12.png)
+![](../images/get-started-ngo/ngo-12.png)
 
 7. Delete the Player from the scene by selecting the Player capsule within the **Scene** tab, then pressing the **Delete** key (or **Cmd** + **Delete** for macOS).
     * You can remove the Player GameObject from the scene because you assign this network prefab to the Player prefab property in the NetworkManager component. The library doesn't support defining a player object as an in-scene placed NetworkObject.
 8. Select **NetworkManager**.
 9. With NetworkManager selected, locate the **PlayerPrefab** field in the **Inspector** tab.
 
-![](/img/get-started-ngo/ngo-9.png)
+![](../images/get-started-ngo/ngo-9.png)
 
 10. Drag the **Player** prefab from the **Project** tab into the **PlayerPrefab** slot within the **NetworkManager** component in the **Inspector** tab.
 
-![](/img/get-started-ngo/ngo-5.png)
+![](../images/get-started-ngo/ngo-5.png)
 
 11. Add a 3D Plane (centered at 0,0,0) to the scene by right-clicking in the **Hierarchy** tab, then selecting **3D Object** > **Plane**.
     * Adding the Plane adds a visual reference point to visualize the Player prefab's position, but it isn't necessary.
-![](/img/get-started-ngo/ngo-7.png)
+![](../images/get-started-ngo/ngo-7.png)
 
 12. Save the scene by pressing **Ctrl/Cmd** + **S** (selecting **File** > **Save**).
 
@@ -115,7 +115,7 @@ You can test your Hello World project using the Unity Editor or a command-line h
 
 1. Select **Play** from the top of the Unity Editor to start the scene.
 
-![](/img/get-started-ngo/ngo-8.png)
+![](../images/get-started-ngo/ngo-8.png)
 
 2. Select **NetworkManager** from the **Hierarchy** list.
 
@@ -123,7 +123,7 @@ You can test your Hello World project using the Unity Editor or a command-line h
 
 3. With **NetworkManager** selected (in the Hierarchy tab), select **Start Host** from the **Inspector** tab. Alternatively, you can use the in-game GUI buttons.
 
-![](/img/get-started-ngo/ngo-3.png)
+![](../images/get-started-ngo/ngo-3.png)
 
 If it works correctly, the option to **Stop Host** displays in the **Inspector** tab.
 

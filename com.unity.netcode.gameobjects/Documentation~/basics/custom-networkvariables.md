@@ -239,7 +239,7 @@ You can test the code above by:
 - Creating a stand alone build and running that as a host or server.
 - Running the same scene within the Editor and connecting as a client.
     - Once connected, you can then select the `GameObject` with the attached `NetworkObject` and `TestMyCustomNetworkVariable` components so it appears in the inspector view. There you can verify the `TestMyCustomNetworkVariable.CustomNetworkVariable` property was synchronized with the client (like in the screenshot below):
-    ![ScreenShot](/img/MyCustomNetworkVariableInspectorView.png)
+    ![ScreenShot](../images/MyCustomNetworkVariableInspectorView.png)
 
 > [!NOTE]
 > You can't nest `NetworkVariable`s inside other `NetworkVariable` classes. This is because Netcode for GameObjects performs a code generation step to define serialization callbacks for each type it finds in a `NetworkVariable`. The code generation step looks for variables as fields of `NetworkBehaviour` types; it misses any `NetworkVariable`s declared anywhere else.

@@ -6,7 +6,7 @@ Ensuring that objects spawn in a synchronized manner across clients can be diffi
 
 Due to the restrictive nature of only the server having the authority to spawn objects, visual anomalies between clients are common in [client-server](../terms-concepts/client-server.md) contexts. This typically occurs when using an owner-authoritative motion model, also known as a ClientNetworkTransform, and trying to visually synchronize the spawning of an object relative to a local player's current position (for example, a player shooting a projectile).
 
-![Client server spawn synchronization](/img/client-server-spawn-sync.jpg)
+![Client server spawn synchronization](../images/client-server-spawn-sync.jpg)
 
 In the diagram above, a client-owned object (a player) is in motion while firing a projectile. The code implementing this behavior involves sending a message (typically an [RPC](../advanced-topics/messaging-system.md)) from the client to the server to get an object to spawn based on the player's input. Due to the latency involved in sending this message to the server and then propagating the resulting spawn message across all clients, including back to the initiating client, the spawn projectile message reaches the initiating client after the client's local player has moved, resulting in a visual disconnect between the local player and the projectile.
 

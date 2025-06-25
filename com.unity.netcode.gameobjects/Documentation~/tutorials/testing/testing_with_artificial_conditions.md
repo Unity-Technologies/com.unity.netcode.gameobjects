@@ -133,7 +133,7 @@ Apple's Network Link Conditioner can be downloaded from the [Additional Tools fo
 Download the version that's appropriate for your XCode version and then run the .dmg file. Navigate to the `Hardware` folder and install the Network Link Conditioner panel.
 
 After that you will be able to find Network Link Conditioner in the System Preferences panel of your Mac:
-![nlc-in-system-preferences](/img/nlc-in-system-preferences.png)
+![nlc-in-system-preferences](../images/nlc-in-system-preferences.png)
 
 To test the builds with Network Link Conditioner:
  - Run Network Link Conditioner

@@ -6,7 +6,7 @@ In addition to the effects of [latency](lagandpacketloss.md), gameplay experienc
 
 Tick rate, also known as the simulation rate, is a measure of how frequently the server updates the game state. At the beginning of a tick, the server starts to process the data it's received from clients since the last tick and runs the necessary simulations to update the game state. The updated game state is then sent back to the clients. The faster the server finishes a tick, the earlier clients can receive the updated game state (subject to the client's [update rate](#update-rate)).
 
-![Tick rate](/img/tick_rate.png)
+![Tick rate](../images/tick_rate.png)
 
 Tick rate is measured in hertz (Hz). For example, a tick rate of 60 Hz means the server updates the game state sixty times a second, whereas a tick rate of 30 Hz means the server updates the game states only thirty times a second. Higher tick rates produce a more responsive game experience, at the cost of increased load on the simulating server.
 
