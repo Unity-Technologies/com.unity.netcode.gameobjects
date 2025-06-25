@@ -1,0 +1,14 @@
+# Serialization
+
+Netcode for GameObjects has built-in serialization support for C# and Unity primitive types out-of-the-box, also with ability to further extend network serialization for user defined types implementing `INetworkSerializable` interface.
+
+| **Topic**                       | **Description**                  |
+| :------------------------------ | :------------------------------- |
+| **[C# primitives](advanced-topics/serialization/cprimitives.md)** | C# primitive types are serialized by built-in serialization code. These types include `bool`, `char`, `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, and `string`. |
+| **[Unity primitives](advanced-topics/serialization/unity-primitives.md)** | Unity Primitive `Color`, `Color32`, `Vector2`, `Vector3`, `Vector4`, `Quaternion`, `Ray`, `Ray2D` types will be serialized by built-in serialization code. |
+| **[Enum types](advanced-topics/serialization/enum-types.md)** | A user-defined enum type will be serialized by built-in serialization code (with underlying integer type). |
+| **[Arrays](advanced-topics/serialization/serialization-arrays.md)** | Netcode for GameObjects has built-in serialization code for arrays of [C# value-type primitives](advanced-topics/serialization/cprimitives.md), like `int[]`, and [Unity primitive types](advanced-topics/serialization/unity-primitives.md). Any arrays of types that aren't handled by the built-in serialization code, such as `string[]`, need to be handled using a container class or structure that implements the [`INetworkSerializable`](advanced-topics/serialization/inetworkserializable.md) interface. |
+| **[INetworkSerializable](advanced-topics/serialization/inetworkserializable.md)** | You can use the `INetworkSerializable` interface to define custom serializable types. |
+| **[Custom serialization](advanced-topics/custom-serialization.md)** | Create custom serialization types. |
+| **[NetworkObject serialization](advanced-topics/serialization/networkobject-serialization.md)** | `GameObjects`, `NetworkObjects` and `NetworkBehaviour` aren't serializable types so they can't be used in `RPCs` or `NetworkVariables` by default. There are two convenience wrappers which can be used to send a reference to a `NetworkObject` or a `NetworkBehaviour` over RPCs or `NetworkVariables`. |
+| **[FastBufferWriter and FastBufferReader](advanced-topics/fastbufferwriter-fastbufferreader.md)** | The serialization and deserialization is done via `FastBufferWriter` and `FastBufferReader`. These have methods for serializing individual types and methods for serializing packed numbers, but in particular provide a high-performance method called `WriteValue()/ReadValue()` (for Writers and Readers, respectively) that can extremely quickly write an entire unmanaged struct to a buffer. |
