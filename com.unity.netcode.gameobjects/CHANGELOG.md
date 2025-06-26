@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where spawned objects with `NetworkObject.DontDestroyWithOwner` is set to `false` would not be destroyed when using a client-server network topology.
+- Fixed issue where spawned objects with `NetworkObject.DontDestroyWithOwner` is set to `false` would not be destroyed when using a client-server network topology. (#3522)
 
 
 ## [2.4.2] - 2025-06-13
