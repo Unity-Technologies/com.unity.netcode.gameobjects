@@ -164,7 +164,7 @@ This example shows a custom `NetworkVariable` type to help you understand how yo
         {
             // Do nothing for this example
         }
-    }    
+    }
 
     /// Bare minimum example of generic NetworkVariableBase derived class
     [Serializable]

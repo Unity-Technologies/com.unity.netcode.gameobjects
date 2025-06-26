@@ -7,7 +7,7 @@ Learn more about Unity error messages, including error collecting, issues that c
 Error messages are captured and returned through Unity Editor Diagnostics (required) and Roslyn Analyzers.
 
 * Unity ILPP and Editor errors are the source of truth. ILPP occurs in Unity and returns error messages, which prevents you from building/playing your game (hard compile errors).
-* [Roslyn Analyzers](https://devblogs.microsoft.com/dotnet/write-better-code-faster-with-roslyn-analyzers/) provide immediate feedback within the IDE, without jumping back to Unity to let it compile with your new changes.  
+* [Roslyn Analyzers](https://devblogs.microsoft.com/dotnet/write-better-code-faster-with-roslyn-analyzers/) provide immediate feedback within the IDE, without jumping back to Unity to let it compile with your new changes.
 
 ## NetworkObject errors
 

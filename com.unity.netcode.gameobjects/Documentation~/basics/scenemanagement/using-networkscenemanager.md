@@ -4,7 +4,7 @@
 
 ### The `NetworkSceneManager` Provides You With:
 - An existing framework that supports both the bootstrap and scene transitioning scene management usage patterns.
-- Automated client synchronization that occurs when a client is connected and approved.  
+- Automated client synchronization that occurs when a client is connected and approved.
   - All scenes loaded via `NetworkSceneManager` will be synchronized with clients during client synchronization.
     - _Later in this document, you will learn more about using scene validation to control what scenes are synchronized on the client, server, or both side(s)_.
   - All spawned Netcode objects are synchronized with clients during client synchronization.
@@ -52,11 +52,11 @@ In order to load a scene, there are four requirements:
 4. A Scene Event can't already be in progress.
 
 #### Basic Scene Loading Example
-Imagine that you have an in-scene placed NetworkObject, let's call it "ProjectSceneManager", that handles your project's scene management using the `NetworkSceneManager` and you wanted your server to load a scene when the ProjectSceneManager is spawned.  
+Imagine that you have an in-scene placed NetworkObject, let's call it "ProjectSceneManager", that handles your project's scene management using the `NetworkSceneManager` and you wanted your server to load a scene when the ProjectSceneManager is spawned.
 In its simplest form, it can look something like:
 ```csharp
 public class ProjectSceneManager : NetworkBehaviour
-{      
+{
   /// INFO: You can remove the #if UNITY_EDITOR code segment and make SceneName public,
   /// but this code assures if the scene name changes you won't have to remember to
   /// manually update it.
@@ -125,13 +125,13 @@ You can be notified of scene events by registering in one of two ways:
 2. Receive only a specific scene event notification type: [`NetworkSceneManager`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkSceneManager.html#events) has one for each [`SceneEventType`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.SceneEventType.html)<br/>
 
 > [!NOTE]
-> Receiving (via subscribing to the associated event callback) only specific scene event notification types does not change how a server or client receives and processes notifications.  
+> Receiving (via subscribing to the associated event callback) only specific scene event notification types does not change how a server or client receives and processes notifications.
 
 **Receiving All Scene Event Notifications**
-Typically, this is used on the server side to receive notifications for every scene event notification type for both the server and clients. You can receive all scene event type notifications by subscribing to the `NetworkSceneManager.OnSceneEvent` callback handler.  
+Typically, this is used on the server side to receive notifications for every scene event notification type for both the server and clients. You can receive all scene event type notifications by subscribing to the `NetworkSceneManager.OnSceneEvent` callback handler.
 
 **Receiving A Specific Scene Event Notification**
-Typically, this is used with clients or components that might only need to be notified of a specific scene event type.  There are 9 scene event types and each one has a corresponding "single event type" callback handler in `NetworkSceneManager`.  
+Typically, this is used with clients or components that might only need to be notified of a specific scene event type.  There are 9 scene event types and each one has a corresponding "single event type" callback handler in `NetworkSceneManager`.
 
 **As an example:**
 You might want to register for the `SceneEventType.LoadEventCompleted` scene event type to know, from a client perspective, that the server and all other clients have finished loading a scene.  This notification lets you know when you can start performing other netcode related actions on the newly loaded and spawned `NetworkObject`s.
@@ -165,7 +165,7 @@ Now that we understand the loading process, scene events, and can load a scene a
 > Unloading the currently active scene, in Netcode, is commonly referred to as "scene switching" or loading another scene in `LoadSceneMode.Single` mode.  This will unload all additively loaded scenes and upon the new scene being loaded in `LoadSceneMode.Single` mode it's set as the active scene and the previous active scene is unloaded.
 
 #### Basic Scene Unloading Example
-Below we are taking the previous scene loading example, the `ProjectSceneManager` class, and modifying it to handle unloading.  This includes keeping a reference to the `SceneEvent.Scene` locally in our class because `NetworkSceneManager.Unload` requires the `Scene` to be unloaded.  
+Below we are taking the previous scene loading example, the `ProjectSceneManager` class, and modifying it to handle unloading.  This includes keeping a reference to the `SceneEvent.Scene` locally in our class because `NetworkSceneManager.Unload` requires the `Scene` to be unloaded.
 
 **Below is an example of how to:**
 - Subscribe the server to `NetworkSceneManager.OnSceneEvent` notifications.
@@ -293,7 +293,7 @@ Really, if you take away the debug logging code the major differences are:
 ### Scene Validation
 Sometimes you might need to prevent the server or client from loading a scene under certain conditions.  Here are a few examples of when you might do this:
 - One or more game states determine if a scene is loaded additively
-  - Typically, this is done on the server-side.  
+  - Typically, this is done on the server-side.
 - The scene is already pre-loaded on the client
   - Typically, this is done on the client-side.
 - Security purposes
@@ -337,7 +337,7 @@ The callback is the first thing invoked on the server-side when invoking the `Ne
 
 > [!NOTE]
 > **Client-Side Scene Validation**<br/>
-> This is where you need to be cautious with scene validation, because any scene that you don't validate on the client side should not contain Netcode objects that are considered required dependencies for a connecting client to properly synchronize with the current netcode (game) session state.  
+> This is where you need to be cautious with scene validation, because any scene that you don't validate on the client side should not contain Netcode objects that are considered required dependencies for a connecting client to properly synchronize with the current netcode (game) session state.
 
 ### Dynamically Generated Scenes
 You might find yourself in a scenario where you just need to dynamically generate a scene.  A common use for dynamically generated scenes is when you need to dynamically generate collision geometry that you wish to only create on the server-host side. For this scenario you most likely would only want the server to have this scene loaded, but you might run into issues when synchronizing clients.  For single player games, you can just create a new scene at runtime, dynamically generate the collision geometry, add the collision geometry to the newly created scene, and everything works out.  With Netcode for GameObjects there are two extra steps you need to take to assure you don't run into any issues:
@@ -358,7 +358,7 @@ See Also: [Client Synchronization Mode](client-synchronization-mode.md)
 
 
 ### What Next?
-We have covered how to access the `NetworkSceneManager`, how to load and unload a scene, provided a basic overview on scene events and notifications, and even briefly discussed in-scene placed `NetworkObject`s.  You now have the fundamental building-blocks one needs to learn more advanced integrated scene management topics.  
+We have covered how to access the `NetworkSceneManager`, how to load and unload a scene, provided a basic overview on scene events and notifications, and even briefly discussed in-scene placed `NetworkObject`s.  You now have the fundamental building-blocks one needs to learn more advanced integrated scene management topics.
 _We recommend proceeding to the next integrated scene management topic, "Client Synchronization Mode", in the link below._
 
 <!-- Explore the [Netcode Scene Management Golden Path](link) for step-by-step examples of additive scene loading and management. -->

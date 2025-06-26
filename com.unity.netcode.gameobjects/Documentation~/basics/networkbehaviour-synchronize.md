@@ -36,7 +36,7 @@ In addition to the methods above, there are two special case convenience methods
 
 There can be scenarios where you need to include additional configuration data or use a `NetworkBehaviour` to configure some non-netcode related component (or the like) before a `NetworkObject` is spawned. This can be particularly critical if you want specific settings applied before `NetworkBehaviour.OnNetworkSpawn` is invoked. When a client is synchronizing with an existing network session, this can become problematic as messaging requires a client to be fully synchronized before you know "it is safe" to send the message, and even if you send a message there is the latency involved in the whole process that might not be convenient and can require additional specialized code to account for this.
 
-`NetworkBehaviour.OnSynchronize` allows you to write and read custom serialized data during the NetworkObject serialization process.  
+`NetworkBehaviour.OnSynchronize` allows you to write and read custom serialized data during the NetworkObject serialization process.
 
 There are two cases where NetworkObject synchronization occurs:
 
@@ -147,7 +147,7 @@ public class SimpleRpcState : NetworkBehaviour
 
 ### Debugging `OnSynchronize` serialization
 
-If your serialization code has a bug and throws an exception, then `NetworkBehaviour.OnSynchronize` has additional safety checking to handle a graceful recovery without completely breaking the rest of the synchronization serialization pipeline.  
+If your serialization code has a bug and throws an exception, then `NetworkBehaviour.OnSynchronize` has additional safety checking to handle a graceful recovery without completely breaking the rest of the synchronization serialization pipeline.
 
 #### When writing
 

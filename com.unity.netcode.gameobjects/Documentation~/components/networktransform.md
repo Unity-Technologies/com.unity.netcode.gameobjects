@@ -103,7 +103,7 @@ The __Axis to Synchronize__ properties that determine which axes are synchronize
 
 The authority mode of a NetworkTransform determines who is the authority over changes to the Transform state. This setting only applies when using a [client-server network topology](../terms-concepts/client-server.md) because in a [distributed authority network topology](../terms-concepts/distributed-authority.md) Netcode for GameObjects automatically sets the owner authority for every NetworkTransform. If you plan on developing for both network topologies then you can use this setting to preserve authority (whether server or owner) for the client-server network topology.
 
-By default, NetworkTransform operates in server-authoritative mode. This means that changes to the Transform axis (marked to be synchronized) are detected on the server-side and state updates are pushed to connected clients. This also means any changes to the Transform axis values are overridden by the authoritative state (in this case the server-side Transform state).  
+By default, NetworkTransform operates in server-authoritative mode. This means that changes to the Transform axis (marked to be synchronized) are detected on the server-side and state updates are pushed to connected clients. This also means any changes to the Transform axis values are overridden by the authoritative state (in this case the server-side Transform state).
 
 For example, if you've marked only the position and rotation axis to be synchronized, but excluded all scale axis on a NetworkTransform component for a network prefab, then when you spawn an instance of the network prefab the initial authoritative side scale values are synchronized upon spawning. From that point forward, the non-authoritative instances (in this case the client-side instances) will maintain those same scale axis values even though they are never updated again.
 
@@ -194,13 +194,13 @@ There are three types of interpolation types to chose from when the __Interpolat
 
 #### Lerp smoothing
 
-All interpolation types provide you with the ability to enable or disable lerp smoothing. Lerp smoothing provides you with a finer smoothing pass at the end of an interpolator's update, but this can be at the expense of precision depending on the value of the relative interpolator's max interpolation time.  
+All interpolation types provide you with the ability to enable or disable lerp smoothing. Lerp smoothing provides you with a finer smoothing pass at the end of an interpolator's update, but this can be at the expense of precision depending on the value of the relative interpolator's max interpolation time.
 
-##### Slerp position  
+##### Slerp position
 
 ![image](../images/networktransform/PositionSlerp.png)
 
-When this property and __Interpolation__ are both set, non-authoritative instances will [slerp](https://docs.unity3d.com/ScriptReference/Vector3.Slerp.html) towards their destination position rather than [lerping](https://docs.unity3d.com/ScriptReference/Vector3.Lerp.html). Slerping is typically used when your object is following a circular and/or spline-based motion path and you want to preserve the curvature of that path. Since lerping between two points yields a linear progression over a line between two points, there can be scenarios where the frequency of delta position state updates could yield a loss in the curvature of an object's motion.  
+When this property and __Interpolation__ are both set, non-authoritative instances will [slerp](https://docs.unity3d.com/ScriptReference/Vector3.Slerp.html) towards their destination position rather than [lerping](https://docs.unity3d.com/ScriptReference/Vector3.Lerp.html). Slerping is typically used when your object is following a circular and/or spline-based motion path and you want to preserve the curvature of that path. Since lerping between two points yields a linear progression over a line between two points, there can be scenarios where the frequency of delta position state updates could yield a loss in the curvature of an object's motion.
 
 > [!NOTE]
 > The NetworkTransform component only interpolates client-side. For smoother movement on the host or server, you can implement interpolation server-side as well. While the server won't have the jitter caused by the network, some stutter can still happen locally (for example, movement done in `FixedUpdate` with a low physics update rate).
@@ -229,7 +229,7 @@ When compared to the [legacy lerp interpolator type](#legacy-lerp-interpolator-t
     - Both use a tick latency value to adjust how far back in the pending states to begin processing. This is automatically adjusted based on the client's latency with respect to the server or distributed authority service.
 - They can both be used with _FixedUpdate_.
     - Their processing time is adjusted based on the _FixedUpdate_ time consumed. If _FixedUpdate_ is invoked multiple times in a single frame, they will both interpolate at that rate.
-- The maximum interpolation time property for both interpolator types is not impacted by frame time.  
+- The maximum interpolation time property for both interpolator types is not impacted by frame time.
 
 When using lerp and smooth dampening interpolator types, the maximum interpolation time for lerp smoothing can be calculated as such:
 
@@ -238,10 +238,10 @@ _Where the value of "t" is clamped between 0.0f and 1.0f._
 
 Both lerp and smooth dampening use their axis-relative lerp methods (Vector3 or Quaternion).
 
-__Lerp__  
+__Lerp__
 The lerp interpolation type, like that of the legacy lerp, uses [Vector3.Lerp](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Vector3.Lerp.html) and [Quaternion.Lerp](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Quaternion.Lerp.html) interpolation approaches.
 
-__Smooth Dampening__  
+__Smooth Dampening__
 This interpolation type uses [Vector3.SmoothDamp](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Vector3.SmoothDamp.html) for position and scale, and uses [Mathf.SmoothDampAngle](https://docs.unity3d.com/6000.0/Documentation/ScriptReference/Mathf.SmoothDampAngle.html) based on a quaternion's Euler angles.
 
 __Both interpolator types will:__
@@ -261,13 +261,13 @@ You can adjust the maximum interpolation time for any axis of a NetworkTransform
 
 This can be useful for edge case scenarios where things like object collision, jumping, and other similar scenarios could benefit from having a moment where accuracy is preferred over smoothing or you want to provide your players with the ability to make adjustments to suit their preferences.
 
-__Lerp and smooth dampening__  
+__Lerp and smooth dampening__
 If you're not yet sure what kind of response you need from your interpolator, then setting the maximum interpolation time to 0.5 will provide you with a reasonably smooth end result while still reasonably preserving the precision of each state update. Lerp will start to have more jitter on non-authority instances the closer its maximum interpolation time reaches 0.0f (the same as no smoothing). Smooth dampening can help preserve the smooth end result on non-authoritative instances as its maximum interpolation time approaches 0.0f.
 
-__Physics__  
+__Physics__
 If you want to have more precise collisions between kinematic and non-kinematic bodies (which can often be an issue when using NetworkRigidbody) and you're using a client-server network topology with owner authoritative NetworkTransform instances or you're using a distributed authority network topology, then you need to consider what kind of interpolator type you're using, the maximum interpolation time value (if smooth lerp is enabled), and what your Rigidbody component's settings are.
 
-For the best results, at the expense of additional processing time, setting the Rigidbody __Interpolate__ property to _Extrapolate_ and the __Collision Detection__ property to _Continuous Dynamic_ can help improve your overall end results when it comes to collision detection. However, you should always consider your maximum interpolation time value as being the first area to adjust before seeking more advanced options.  
+For the best results, at the expense of additional processing time, setting the Rigidbody __Interpolate__ property to _Extrapolate_ and the __Collision Detection__ property to _Continuous Dynamic_ can help improve your overall end results when it comes to collision detection. However, you should always consider your maximum interpolation time value as being the first area to adjust before seeking more advanced options.
 
 ### Use Quaternion Synchronization
 
@@ -279,8 +279,8 @@ Quaternion synchronization comes with a price, however. It increases the bandwid
 
 ![image](../images/networktransform/NetworkTransformQuaternionSynch.png)
 
-:::note  
-The rotation synchronization axis checkboxes are no longer available when __Use Quaternion Synchronization__ is enabled (since synchronizing the quaternion of a transform always updates all rotation axes) and __Use Quaternion Compression__ becomes a visible option.  
+:::note
+The rotation synchronization axis checkboxes are no longer available when __Use Quaternion Synchronization__ is enabled (since synchronizing the quaternion of a transform always updates all rotation axes) and __Use Quaternion Compression__ becomes a visible option.
 :::
 
 ### Use Quaternion Compression
@@ -303,7 +303,7 @@ Since there is a loss in precision, position state updates only provide the delt
 In other words, non-authoritative instances can potentially have a fractional delta (per applied update) from the authoritative instance for the duration of 1 network tick period or until the next transform state update is received. Additionally, `NetworkDeltaPosition` bridges the gap between the [maximum half float value](https://github.com/Unity-Technologies/Unity.Mathematics/blob/701d58fde76f3b93e40d0a792cd8fa4c130f1450/src/Unity.Mathematics/half.cs#L25) and the maximum boundaries of the Unity World space (global/project scale relative).
 
 > [!NOTE]
-> __Recommended Unity World Space Units Per Second:__  
+> __Recommended Unity World Space Units Per Second:__
 The maximum delta per update should not exceed 64 Unity world space units. If you're using the default network tick (30) then an object should not move at speeds that are equal to or exceed 1,920 Unity world space units per second (30 x 64). For reference, the default camera far clipping plane is 1,000 Unity world space units which means something moving at 1,920 Unity world space units would most likely not be visually detectable or appear as a brief "blip" in the render view frustum.
 
 When __Use Quaternion Synchronization__ and __Use Half Float Precision__ are both enabled and __Use Quaternion Compression__ is disabled, the quaternion values are synchronized via the `HalfVector4` serializable structure where each axial value (x, y, z, and w) are stored as [half values](https://docs.unity3d.com/Packages/com.unity.mathematics@1.2/api/Unity.Mathematics.half.html). This means that each rotation update is reduced from a full precision 16 bytes per update down to 8 bytes per update. Using half float precision for rotation provides a better precision than quaternion compression at 2x the bandwidth cost but half the cost of full precision.

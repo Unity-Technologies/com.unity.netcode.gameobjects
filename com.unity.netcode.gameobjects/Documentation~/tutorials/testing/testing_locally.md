@@ -30,6 +30,6 @@ Though functional, this approach can be somewhat slow for the purposes of local 
 
 ## Multiplayer Play Mode
 
-Multiplayer Play Mode is a Unity package you can use to simulate up to four players simultaneously on the same development device while using the same source assets on disk. It allows you to reduce project build times, run your game locally, and test the server-client relationship, all from within the Unity Editor.  
+Multiplayer Play Mode is a Unity package you can use to simulate up to four players simultaneously on the same development device while using the same source assets on disk. It allows you to reduce project build times, run your game locally, and test the server-client relationship, all from within the Unity Editor.
 
 For more details, refer to the [Multiplayer Play Mode documentation](https://docs-multiplayer.unity3d.com/mppm/current/about/).

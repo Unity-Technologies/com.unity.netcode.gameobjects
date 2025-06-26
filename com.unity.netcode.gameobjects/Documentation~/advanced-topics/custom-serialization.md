@@ -44,7 +44,7 @@ You can also optionally use the same method to add support for `BufferSerializer
 ```csharp
 // The class name doesn't matter here.
 public static class SerializationExtensions
-{  
+{
     public static void SerializeValue<TReaderWriter>(this BufferSerializer<TReaderWriter> serializer, ref Url url) where TReaderWriter: IReaderWriter
     {
         if (serializer.IsReader)
@@ -66,7 +66,7 @@ To add custom serialization support in `NetworkVariable`, follow the steps from 
 
 ```csharp
 UserNetworkVariableSerialization<Url>.WriteValue = SerializationExtensions.WriteValueSafe;
-UserNetworkVariableSerialization<Url>.ReadValue = SerializationExtensions.ReadValueSafe;    
+UserNetworkVariableSerialization<Url>.ReadValue = SerializationExtensions.ReadValueSafe;
 ```
 
 You can also use lambda expressions here:

@@ -155,7 +155,7 @@ public class ExplodingProjectile : NetworkBehaviour
                 m_SpawnedExplosion.SetParticlePlayingState(true);
             }
             m_ExplosionFx.OnValueChanged -= OnExplosionFxChanged;
-        }        
+        }
         base.OnNetworkDespawn();
     }
 }

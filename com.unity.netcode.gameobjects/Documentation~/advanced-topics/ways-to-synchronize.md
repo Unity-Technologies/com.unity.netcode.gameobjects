@@ -16,7 +16,7 @@ The Netcode for GameObjects messaging system allows you to send and receive mess
 
 ### Remote procedure calls (RPCs)
 
-RPCs are a way of sending an event notification as well as a way of handling direct communication between a server and a client, or between clients and the [distributed authority service](../terms-concepts/distributed-authority.md). This is sometimes useful when the ownership scope of the `NetworkBehavior`, that the remote procedure call is declared within, belongs to the server but you still want one or more clients to be able to communicate with the associated NetworkObject.  
+RPCs are a way of sending an event notification as well as a way of handling direct communication between a server and a client, or between clients and the [distributed authority service](../terms-concepts/distributed-authority.md). This is sometimes useful when the ownership scope of the `NetworkBehavior`, that the remote procedure call is declared within, belongs to the server but you still want one or more clients to be able to communicate with the associated NetworkObject.
 
 Usage examples:
 

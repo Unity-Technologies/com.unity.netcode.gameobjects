@@ -63,7 +63,7 @@ You can use an in-scene placed `NetworkObject` to keep track of when a door is o
 
 ### Netcode managers
 
-You can use an in-scene placed `NetworkObject` as a netcode manager, for tracking game states, or as a `NetworkObject` spawn manager. Typically, a manager stays instantiated and spawned as long as the scene it was placed in remains loaded.  For scenarios where you want to keep a global game state, the recommended solution is to place the in-scene `NetworkObject` in an additively loaded scene that remains loaded for the duration of your network game session.  
+You can use an in-scene placed `NetworkObject` as a netcode manager, for tracking game states, or as a `NetworkObject` spawn manager. Typically, a manager stays instantiated and spawned as long as the scene it was placed in remains loaded.  For scenarios where you want to keep a global game state, the recommended solution is to place the in-scene `NetworkObject` in an additively loaded scene that remains loaded for the duration of your network game session.
 
 If you're using scene switching (that is, loading a scene in `LoadSceneMode.Single`), then you can migrate the in-scene placed `NetworkObject` (used for management purposes) into the DDoL by sending its `GameObject` to the DDoL:
 
@@ -92,7 +92,7 @@ If you answered yes to any of the above questions, then using only an in-scene p
 
 ### Hybrid approach
 
-Because there are additional complexities involved with in-scene placed `NetworkObject`s, some use cases are more suited to dynamically spawned `NetworkObject`s, or require a combination of both types. Perhaps your project's design includes making some world items that can either be consumed (such as health) or picked up (such as weapons and items) by players. Initially, using a single in-scene placed `NetworkObject` might seem like the best approach for this world item feature.  
+Because there are additional complexities involved with in-scene placed `NetworkObject`s, some use cases are more suited to dynamically spawned `NetworkObject`s, or require a combination of both types. Perhaps your project's design includes making some world items that can either be consumed (such as health) or picked up (such as weapons and items) by players. Initially, using a single in-scene placed `NetworkObject` might seem like the best approach for this world item feature.
 
 However, there's another way to accomplish the same thing while maintaining a clear distinction between dynamically spawned and in-scene placed `NetworkObject`s. Rather than combining everything into a single network prefab and handling the additional complexities involved with in-scene placed `NetworkObject`s, you can create two network prefabs:
 
@@ -247,7 +247,7 @@ In-scene placed `NetworkObject`s follow the same parenting rules as [dynamically
 
 - When disabled, the `NetworkObject` ignores its parent and considers all of its transform values as being world space synchronized (that is, no matter where you move or rotate its parent, it will keep its current position and rotation).
   - Typically, when disabling this you need to handle synchronizing the client either through your own custom messages or RPCS, or add a `NetworkTransform` component to it. This is only useful if you want to have some global parent that might shift or have transform values that you don't want to impact the `NetworkObject` in question.
-- When enabled, the `NetworkObject` is aware of its parent and will treat all of its transform values as being local space synchronized.  
+- When enabled, the `NetworkObject` is aware of its parent and will treat all of its transform values as being local space synchronized.
   - This also applies to being pre-parented under a `GameObject` with no `NetworkObject` component.
 
 _**The caveat to the above is scale**:_

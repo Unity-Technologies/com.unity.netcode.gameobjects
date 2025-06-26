@@ -25,7 +25,7 @@ void Serialize(FastBufferWriter writer)
 {
     if(!writer.TryBeginWrite(sizeof(float) + sizeof(bool) + sizeof(i)))
     {
-		throw new OverflowException("Not enough space in the buffer");
+        throw new OverflowException("Not enough space in the buffer");
     }
     writer.WriteValue(f);
     writer.WriteValue(b);
@@ -38,7 +38,7 @@ void Serialize(FastBufferWriter writer)
 {
     if(!writer.TryBeginWrite(sizeof(ExampleStruct)))
     {
-		throw new OverflowException("Not enough space in the buffer");
+        throw new OverflowException("Not enough space in the buffer");
     }
     writer.WriteValue(this);
 }
@@ -135,8 +135,8 @@ To address that, `FastBufferReader` and `FastBufferWriter` don't, themselves, ha
 FastBufferWriter writer = new FastBufferWriter(256, Allocator.TempJob);
 using(var bitWriter = writer.EnterBitwiseContext())
 {
-	bitWriter.WriteBit(a);
-	bitWriter.WriteBits(b, 5);
+    bitWriter.WriteBit(a);
+    bitWriter.WriteBits(b, 5);
 } // Dispose automatically adds 2 more 0 bits to pad to the next byte.
 ```
 

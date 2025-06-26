@@ -41,7 +41,7 @@ public class VisibilityCheckExample : NetworkBehaviour
             if (ContinuallyCheckVisibility)
             {
                 NetworkManager.NetworkTickSystem.Tick += OnNetworkTick;
-            }                
+            }
         }
         base.OnNetworkSpawn();
     }

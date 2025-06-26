@@ -33,21 +33,21 @@ signifies that the server determines the client needs to be "re-synchronized" be
 
 
 ## Client Synchronization Details
-While client synchronization does fall partially outside of the scene management realm, it ended up making more sense to handle the initial client synchronization via the `NetworkSceneManager` since a large part of the synchronization process involves loading scenes and synchronizing (in-scene placed and dynamically spawned) `NetworkObjects`.  
+While client synchronization does fall partially outside of the scene management realm, it ended up making more sense to handle the initial client synchronization via the `NetworkSceneManager` since a large part of the synchronization process involves loading scenes and synchronizing (in-scene placed and dynamically spawned) `NetworkObjects`.
 - Scene synchronization is the first thing a client processes.
   - The synchronization message includes a list of all scenes the server has loaded via the `NetworkSceneManager`.
   - The client will load all of these scenes before proceeding to the `NetworkObject` synchronization.
     - This approach was used to assure all `GameObject`, `NetworkObject`, and `NetworkBehaviour` dependencies are loaded and instantiated before a client attempts to locally spawn a `NetworkObject`.
 - Synchronizing with all spawned `NetworkObjects`.
-  - Typically this involves both in-scene placed and dynamically spawned `NetworkObjects`.   
+  - Typically this involves both in-scene placed and dynamically spawned `NetworkObjects`.
     - Learn more about [Object Spawning here](..\object-spawning.md).
   - The `NetworkObject` list sent to the client is pre-ordered, by the server, to account for certain types of dependencies such as when using [Object Pooling](../../advanced-topics/object-pooling.md).
-    - Typically object pool managers are in-scene placed and need to be instantiated and spawned before spawning any of its pooled `NetworkObjects` on a client that is synchronizing. As such, `NetworkSceneManager` takes this into account to assure that all `NetworkObjects` spawned via the `NetworkPrefabHandler` will be instantiated and spawned after their object pool manager dependency has been instantiated and spawned locally on the client.        
+    - Typically object pool managers are in-scene placed and need to be instantiated and spawned before spawning any of its pooled `NetworkObjects` on a client that is synchronizing. As such, `NetworkSceneManager` takes this into account to assure that all `NetworkObjects` spawned via the `NetworkPrefabHandler` will be instantiated and spawned after their object pool manager dependency has been instantiated and spawned locally on the client.
         - You can have parented in-scene placed NetworkObjects (that is, items that are picked up or consumed by players)
             - `NetworkSceneManager` uses a combination of the `NetworkObject.GlobalObjectIdHash` and the instantiating scene's handle to uniquely identify in-scene placed `NetworkObject`s.
 
 > [!NOTE]
-> With additively loaded scenes, you can run into situations where your object pool manager, instantiated when the scene it's defined within is additively loaded by the server, is leaving its spawned `NetworkObject` instances within the [currently active scene](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.GetActiveScene.html).  While assuring that newly connected clients being synchronized have loaded all of the scenes first helps to avoid scene dependency issues, this alone does not resolve issue with the `NetworkObject` spawning order.  The integrated scene management, included in Netcode for GameObjects, takes scenarios such as this into consideration.       
+> With additively loaded scenes, you can run into situations where your object pool manager, instantiated when the scene it's defined within is additively loaded by the server, is leaving its spawned `NetworkObject` instances within the [currently active scene](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.GetActiveScene.html).  While assuring that newly connected clients being synchronized have loaded all of the scenes first helps to avoid scene dependency issues, this alone does not resolve issue with the `NetworkObject` spawning order.  The integrated scene management, included in Netcode for GameObjects, takes scenarios such as this into consideration.
 
 ### The Client Synchronization Process
 
@@ -92,7 +92,7 @@ public bool StartMyServer(bool isHost)
     if (success)
     {
         NetworkManager.Singleton.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-    }            
+    }
 
     return success;
 }
@@ -103,7 +103,7 @@ public bool StartMyClient()
     if (success)
     {
         NetworkManager.Singleton.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-    }     
+    }
     return success;
 }
 
@@ -126,7 +126,7 @@ private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
                 else
                 {
                     // Handle client side load event related tasks here
-                }                        
+                }
                 break;
             }
         // Handle server to client unload notifications
@@ -141,7 +141,7 @@ private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
                 // This will let you know when a load is completed
                 // Server Side: receives thisn'tification for both itself and all clients
                 if (IsServer)
-                {                            
+                {
                     if (sceneEvent.ClientId == NetworkManager.LocalClientId)
                     {
                         // Handle server side LoadComplete related tasks here
@@ -214,7 +214,7 @@ private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
 ```
 
 > [!NOTE]
-> This code can be applied to a component on your `GameObject` that has a `NetworkManager` component attached to it.  Since the `GameObject`, with the  `NetworkManager` component attached to it, is migrated into the DDOL (Dont Destroy on Load) scene, it will remain active for the duration of the network game session.  
+> This code can be applied to a component on your `GameObject` that has a `NetworkManager` component attached to it.  Since the `GameObject`, with the  `NetworkManager` component attached to it, is migrated into the DDOL (Dont Destroy on Load) scene, it will remain active for the duration of the network game session.
 > With that in mind, you can cache your scene events that occurred (for debug or reference purposes) and/or add your own events that other game objects can subscribe to. The general idea is that if you want to receive all notifications from the moment you start `NetworkManager` then you will want to subscribe to `NetworkSceneManager.OnSceneEvent` immediately after starting it.
 
 Scene event notifications provide users with all NetworkSceneManager related scene events (and associated data) through a single event handler. The one exception would be scene loading or unloading progress which users can handle with a coroutine (upon receiving a Load or Unload event) and checking the `SceneEvent.AsyncOperation.progress` value over time.
@@ -260,7 +260,7 @@ An example of subscribing to `NetworkSceneManager.OnSynchronize` for a client:
             if (success)
             {
                 NetworkManager.Singleton.SceneManager.OnSynchronize += SceneManager_OnSynchronize;
-            }           
+            }
             return success;
         }
 

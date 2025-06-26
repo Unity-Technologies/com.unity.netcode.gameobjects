@@ -25,10 +25,10 @@ You can use `NetworkVariable` [permissions](#permissions) to control read and wr
 
 ###  Initializing a NetworkVariable
 
-When a client first connects, it's synchronized with the current value of the `NetworkVariable`. Typically, clients should register for `NetworkVariable.OnValueChanged` within the `OnNetworkSpawn` method. A `NetworkBehaviour`'s `Start` and `OnNetworkSpawn` methods are invoked based on the type of `NetworkObject` the `NetworkBehaviour` is associated with:   
+When a client first connects, it's synchronized with the current value of the `NetworkVariable`. Typically, clients should register for `NetworkVariable.OnValueChanged` within the `OnNetworkSpawn` method. A `NetworkBehaviour`'s `Start` and `OnNetworkSpawn` methods are invoked based on the type of `NetworkObject` the `NetworkBehaviour` is associated with:
 
 - In-scene placed: Since the instantiation occurs via the scene loading mechanism(s), the `Start` method is invoked before `OnNetworkSpawn`.
-- Dynamically spawned: Since `OnNetworkSpawn` is invoked immediately (that is, within the same relative call-stack) after instantiation, the `Start` method is invoked after `OnNetworkSpawn`.  
+- Dynamically spawned: Since `OnNetworkSpawn` is invoked immediately (that is, within the same relative call-stack) after instantiation, the `Start` method is invoked after `OnNetworkSpawn`.
 
 Typically, these methods are invoked at least one frame after the `NetworkObject` and associated `NetworkBehaviour` components are instantiated. The table below lists the event order for dynamically spawned and in-scene placed objects respectively.
 
@@ -136,8 +136,8 @@ public class TestNetworkVariableSynchronization : NetworkBehaviour
  ```
 
 If you attach the above script to an in-scene placed `NetworkObject`, make a standalone build, run the standalone build as a host, and then connect to that host by entering Play Mode in the Editor, you can see (in the console output):
-- The client side `NetworkVariable` value is the same as the server when `NetworkBehaviour.OnNetworkSpawn` is invoked.  
-- The client detects any changes made to the `NetworkVariable` after the in-scene placed `NetworkObject` is spawned.  
+- The client side `NetworkVariable` value is the same as the server when `NetworkBehaviour.OnNetworkSpawn` is invoked.
+- The client detects any changes made to the `NetworkVariable` after the in-scene placed `NetworkObject` is spawned.
 
 This works the same way with dynamically spawned `NetworkObject`s.
 
@@ -591,7 +591,7 @@ public class TestFixedString : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
-        m_TextString.OnValueChanged -= OnTextStringChanged;        
+        m_TextString.OnValueChanged -= OnTextStringChanged;
     }
 
     private void OnTextStringChanged(FixedString128Bytes previous, FixedString128Bytes current)
@@ -620,4 +620,4 @@ public class TestFixedString : NetworkBehaviour
 
 
 > [!NOTE]
-> The above example uses a pre-set list of strings to cycle through for example purposes only.  If you have a predefined set of text strings as part of your actual design then you would not want to use a FixedString to handle synchronizing the changes to `m_TextString`.  Instead, you would want to use a `uint` for the type `T` where the `uint` was the index of the string message to apply to `m_TextString`.  
+> The above example uses a pre-set list of strings to cycle through for example purposes only.  If you have a predefined set of text strings as part of your actual design then you would not want to use a FixedString to handle synchronizing the changes to `m_TextString`.  Instead, you would want to use a `uint` for the type `T` where the `uint` was the index of the string message to apply to `m_TextString`.

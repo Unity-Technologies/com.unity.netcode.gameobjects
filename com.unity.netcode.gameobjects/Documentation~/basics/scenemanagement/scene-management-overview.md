@@ -3,7 +3,7 @@
 ## Netcode Scene Management
 Generally speaking, netcode aware scene management complexity can vary depending upon your project's needs and goals. Netcode for GameObjects (Netcode) provides you with two potential paths:
 
-### [Integrated Scene Management](using-networkscenemanager.md):  
+### [Integrated Scene Management](using-networkscenemanager.md):
 The Netcode for GameObjects scene management solution is enabled by default and provides you with a fully functional netcode scene management solution.
 
 > [!NOTE]

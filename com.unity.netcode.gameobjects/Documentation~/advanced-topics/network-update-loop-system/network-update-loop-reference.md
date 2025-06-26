@@ -1,4 +1,4 @@
-# NetworkUpdateLoop reference 
+# NetworkUpdateLoop reference
 
 The following diagrams provide insight into the Network Update Loop process and APIs.
 

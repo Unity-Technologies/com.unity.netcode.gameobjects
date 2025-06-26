@@ -26,7 +26,7 @@ There are four steps to registering a network Prefab with a `NetworkManager`:
 
 ### Spawning a Network Prefab (Overview)
 
-Netcode uses a server authoritative networking model so spawning netcode objects can only be done on a server or host. To spawn a network prefab, you must first create an instance of the network Prefab and then invoke the spawn method on the `NetworkObject` component of the instance you created.  
+Netcode uses a server authoritative networking model so spawning netcode objects can only be done on a server or host. To spawn a network prefab, you must first create an instance of the network Prefab and then invoke the spawn method on the `NetworkObject` component of the instance you created.
 _In most cases, you will want to keep the `NetworkObject` component attached to the root `GameObject` of the network prefab._
 
 By default a newly spawned network Prefab instance is owned by the server unless otherwise specified.

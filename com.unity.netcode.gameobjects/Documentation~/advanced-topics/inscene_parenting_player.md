@@ -24,7 +24,7 @@ Here is an example script that we recommend using to achieve this:
 using Unity.Netcode;
 
 public class ParentPlayerToInSceneNetworkObject : NetworkBehaviour
-{   
+{
     public override void OnNetworkSpawn()
     {
         if (IsServer)

@@ -24,8 +24,8 @@ After injection, the player loops follows these stages. The player loop executes
 In all `NetworkUpdateStages`, it iterates over an array and calls the `NetworkUpdate` method over `INetworkUpdateSystem` interface, and the pattern is repeated.
 
 <Mermaid chart={`
-	graph LR;
-	A(Initialization)
+    graph LR;
+    A(Initialization)
     B(EarlyUpdate)
     C(FixedUpdate)
     D(PreUpdate)

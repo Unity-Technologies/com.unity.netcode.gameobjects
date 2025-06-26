@@ -156,7 +156,7 @@ public class NetworkCommandLine : MonoBehaviour
 1. Back in the Editor, open **Edit** -> **Project Settings**
 1. Select the **Player tab**.
 1. Expand the **Resolution and Presentation**.
-1. From **Resolution** > **Fullscreen Mode**, change `Fullscreen Window` to `Windowed`.    
+1. From **Resolution** > **Fullscreen Mode**, change `Fullscreen Window` to `Windowed`.
 1. Back to the Editor main window, save your scene.
 
 
@@ -170,13 +170,13 @@ Now we will test that the command line helper script works.
 1. Select **File** > **Build and Run**.
 1. Create a new folder called `Build` inside your Hello World project folder.
 1. **Save As** the binary `HelloWorld`.
-1. Your project will build and launch in a new window, and you should see the plane.  
+1. Your project will build and launch in a new window, and you should see the plane.
 1. Quit your app.
-1. Now to launch from the command line.  
+1. Now to launch from the command line.
 
 #### Windows
 
-For Windows you should do the following:  
+For Windows you should do the following:
 
 
 1. Open your Command Prompt.
