@@ -18,6 +18,12 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_NumberObjectsToSpawn = 16;
         protected override int NumberOfClients => 3;
 
+        public enum ParentedPass
+        {
+            NoParent,
+            HasParent
+        }
+
         protected GameObject m_DestroyWithOwnerPrefab;
         protected GameObject m_DontDestroyWithOwnerPrefab;
         protected GameObject m_PrefabNoObserversSpawn;
@@ -96,6 +102,63 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Validates that the dont destroy with owner object is parented under
+        /// the destroy with owner object.
+        /// </summary>
+        private bool HaveAllObjectInstancesParented(StringBuilder errorLog)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var relativeSpawnedObjects = networkManager.SpawnManager.SpawnedObjects;
+                for (int i = 0; i < k_NumberObjectsToSpawn; i++)
+                {
+                    var dontDestroyObjectId = m_DontDestroyObjectIds[i];
+                    var destroyObjectId = m_DestroyObjectIds[i];
+                    var dontDestroyObject = (NetworkObject)null;
+                    var destroyObject = (NetworkObject)null;
+                    if (!relativeSpawnedObjects.ContainsKey(dontDestroyObjectId))
+                    {
+                        errorLog.AppendLine($"[Client-{networkManager.LocalClientId}][DontDestroyWithOwner] Has not spawned {nameof(NetworkObject)}-{dontDestroyObjectId}!");
+                    }
+                    else
+                    {
+                        dontDestroyObject = relativeSpawnedObjects[dontDestroyObjectId];
+                    }
+                    if (!relativeSpawnedObjects.ContainsKey(destroyObjectId))
+                    {
+                        errorLog.AppendLine($"[Client-{networkManager.LocalClientId}][DestroyWithOwner] Has not spawned {nameof(NetworkObject)}-{destroyObjectId}!");
+                    }
+                    else
+                    {
+                        destroyObject = relativeSpawnedObjects[destroyObjectId];
+                    }
+
+                    if (dontDestroyObject != null && destroyObject != null && dontDestroyObject.transform.parent != destroyObject.transform)
+                    {
+                        errorLog.AppendLine($"[Client-{networkManager.LocalClientId}][Not Parented] {destroyObject.name} is not parented under {dontDestroyObject.name}!");
+                    }
+                }
+            }
+            return errorLog.Length == 0;
+        }
+
+        /// <summary>
+        /// Parents the dont destroy with owner objects under the destroy with owner objects for the parenting portion of the test.
+        /// </summary>
+        private void ParentObjects()
+        {
+            var networkManager = !m_DistributedAuthority ? GetAuthorityNetworkManager() : m_NetworkManagers.Where((c) => c.LocalClientId == m_NonAuthorityClientId).First();
+            for (int i = 0; i < k_NumberObjectsToSpawn; i++)
+            {
+                var dontDestroyObjectId = m_DontDestroyObjectIds[i];
+                var destroyObjectId = m_DestroyObjectIds[i];
+                var dontDestroyObject = networkManager.SpawnManager.SpawnedObjects[dontDestroyObjectId];
+                var destroyObject = networkManager.SpawnManager.SpawnedObjects[destroyObjectId];
+                Assert.IsTrue(dontDestroyObject.TrySetParent(destroyObject), $"[Client-{networkManager.LocalClientId}][Parent Failure] Could not parent {destroyObject.name} under {dontDestroyObject.name}!");
+            }
+        }
+
+        /// <summary>
         /// Validates that the non-authority owner client disconnection
         /// was registered on all clients.
         /// </summary>
@@ -145,12 +208,38 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// The primary parented validation for the <see cref="DontDestroyWithOwnerTest"/>.
+        /// This validates that:
+        /// - Spawned objects that are set to destroy with the owner gets destroyed/despawned when the owning client disconnects.
+        /// - Spawned objects that are set to not destroy with the owner and parented under a spawned object set to destroy with owner that
+        /// the objects that are set to not destroy with the owner are not destroyed/despawned when the owning client disconnects.
+        /// </summary>
+        private bool ValidateParentedDontDestroyWithOwnerId(StringBuilder errorLog)
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                var relativeSpawnedObjects = networkManager.SpawnManager.SpawnedObjects;
+                for (int i = 0; i < k_NumberObjectsToSpawn; i++)
+                {
+                    var dontDestroyObjectId = m_DontDestroyObjectIds[i];
+                    var dontDestroyObjectOwnerId = relativeSpawnedObjects[dontDestroyObjectId].OwnerClientId;
+
+                    if (dontDestroyObjectOwnerId == m_NonAuthorityClientId)
+                    {
+                        errorLog.AppendLine($"[Client-{networkManager.LocalClientId}][DontDestroyWithOwner][!Owner!] {nameof(NetworkObject)}-{dontDestroyObjectId} should not still belong to Client-{m_NonAuthorityClientId}!");
+                    }
+                }
+            }
+            return errorLog.Length == 0;
+        }
+
+        /// <summary>
         /// This validates that:
         /// - Spawned objects that are set to destroy with the owner gets destroyed/despawned when the owning client disconnects.
         /// - Spawned objects that are set to not destroy with the owner are not destroyed/despawned when the owning client disconnects.
         /// </summary>
         [UnityTest]
-        public IEnumerator DontDestroyWithOwnerTest()
+        public IEnumerator DontDestroyWithOwnerTest([Values] ParentedPass parentedPass)
         {
             var authority = GetAuthorityNetworkManager();
             var nonAuthority = GetNonAuthorityNetworkManager();
@@ -164,13 +253,26 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(HaveAllObjectInstancesSpawned);
             AssertOnTimeout($"Timed out waiting for all clients to spawn objects!");
 
+            if (parentedPass == ParentedPass.HasParent)
+            {
+                ParentObjects();
+                yield return WaitForConditionOrTimeOut(HaveAllObjectInstancesParented);
+                AssertOnTimeout($"Timed out waiting for all DontDestroy objects to be parented under the Destroy objects!");
+            }
+
             yield return StopOneClient(nonAuthority);
 
             yield return WaitForConditionOrTimeOut(NonAuthorityHasDisconnected);
             AssertOnTimeout($"Timed out waiting for all clients to register that Client-{m_NonAuthorityClientId} has disconnected!");
 
             yield return WaitForConditionOrTimeOut(ValidateDontDestroyWithOwner);
-            AssertOnTimeout($"Timed out while validating the DontDestroyWithOwnerTest results!");
+            AssertOnTimeout($"Timed out while validating the base-line DontDestroyWithOwnerTest results!");
+
+            if (parentedPass == ParentedPass.HasParent)
+            {
+                yield return WaitForConditionOrTimeOut(ValidateParentedDontDestroyWithOwnerId);
+                AssertOnTimeout($"Timed out while validating the parented don't destroy objects do not still belong to disconnected Client-{m_NonAuthorityClientId}!");
+            }
         }
 
         [UnityTest]
