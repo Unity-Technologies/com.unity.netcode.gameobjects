@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+- Added mappings between `ClientId` and `TransportId`. (#3516)
+- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
+
+### Fixed
+
+- Fixed distributed authority related issue where enabling the `NetworkObject.DestroyWithScene` would cause errors when a destroying non-authority instances due to loading (single mode) or unloading scene events. (#3500)
+
+### Changed
+
+
 ## [2.4.3] - 2025-06-25
 
 ### Fixed
@@ -42,6 +56,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3473)
 - When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3441)
+
 
 ### Fixed
 
