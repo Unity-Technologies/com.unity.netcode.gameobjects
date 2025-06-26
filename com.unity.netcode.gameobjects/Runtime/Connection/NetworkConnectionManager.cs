@@ -1178,7 +1178,7 @@ namespace Unity.Netcode
                     {
                         // If destroying with owner, then always despawn and destroy (or defer destroying to prefab handler)
                         // Handle an object with no observers other than the current disconnecting client as destroying with owner
-                        if (!ownedObject.DontDestroyWithOwner && (ownedObject.Observers.Count == 0 || (ownedObject.Observers.Count == 1 && ownedObject.Observers.Contains(clientId))))
+                        if (!ownedObject.DontDestroyWithOwner && (ownedObject.Observers.Count == 0 || (ownedObject.Observers.Count >= 1 && ownedObject.Observers.Contains(clientId))))
                         {
                             if (NetworkManager.PrefabHandler.ContainsHandler(ownedObject.GlobalObjectIdHash))
                             {

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed issue where spawned objects with `NetworkObject.DontDestroyWithOwner` is set to `false` would not be destroyed when using a client-server network topology. (#3522)
+
+
 ## [2.4.2] - 2025-06-13
 
 ### Fixed
