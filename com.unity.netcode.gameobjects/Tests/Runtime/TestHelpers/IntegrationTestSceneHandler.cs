@@ -729,6 +729,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
 #endif
+            var distributedAuthority = networkManager.DistributedAuthorityMode;
             foreach (var networkObject in networkObjects)
             {
                 if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
@@ -759,6 +760,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     continue;
                 }
 
+                // Check to determine if we need to allow destroying a non-authority instance
+                if (distributedAuthority && networkObject.DestroyWithScene && !networkObject.HasAuthority)
+                {
+                    networkObject.DestroyPendingSceneEvent = true;
+                }
+
                 // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL are preserved
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
@@ -769,17 +776,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         Object.DontDestroyOnLoad(networkObject.gameObject);
                     }
                 }
-                else if (networkManager.IsServer)
+                else
                 {
-                    if (networkObject.NetworkManager == networkManager)
+                    if (networkObject.HasAuthority && networkObject.NetworkManager == networkManager)
                     {
                         VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Destroying {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
                         networkObject.Despawn();
                     }
                     else //For integration testing purposes, migrate remaining into DDOL
                     {
-                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Temporarily migrating {networkObject.gameObject.name} into DDOL to await server destroy message.");
-                        Object.DontDestroyOnLoad(networkObject.gameObject);
+                        if (networkObject.DestroyPendingSceneEvent)
+                        {
+                            Object.Destroy(networkObject.gameObject);
+                        }
+                        else
+                        {
+                            VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Temporarily migrating {networkObject.gameObject.name} into DDOL to await server destroy message.");
+                            Object.DontDestroyOnLoad(networkObject.gameObject);
+                        }
                     }
                 }
             }

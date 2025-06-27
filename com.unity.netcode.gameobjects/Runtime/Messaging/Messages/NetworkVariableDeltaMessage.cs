@@ -144,9 +144,9 @@ namespace Unity.Netcode
                 var startingSize = writer.Length;
                 var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
-                    networkVariable.CanClientRead(TargetClientId) &&
-                    (networkManager.IsServer || networkVariable.CanClientWrite(networkManager.LocalClientId)) &&
-                    networkVariable.CanSend();
+                    networkVariable.CanClientRead(TargetClientId)
+                    && (networkManager.IsServer ||
+                    (networkVariable.CanWrite && networkVariable.CanSend()));
 
                 // Prevent the server from writing to the client that owns a given NetworkVariable
                 // Allowing the write would send an old value to the client and cause jitter
