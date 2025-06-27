@@ -1013,9 +1013,9 @@ namespace Unity.Netcode.Transports.UTP
         {
             if (m_NetworkManager.IsServer)
             {
-                var ngoConnectionIds = m_NetworkManager.ConnectedClients.Keys;
-                foreach (var ngoConnectionId in ngoConnectionIds)
+                for (int i=0; i<m_NetworkManager.ConnectedClientsIds.Count; ++i)
                 {
+                    var ngoConnectionId =  m_NetworkManager.ConnectedClientsIds[i];
                     if (ngoConnectionId == 0 && m_NetworkManager.IsHost)
                     {
                         continue;
