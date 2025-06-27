@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added mappings between `ClientId` and `TransportId`. (#3516)
 - Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
 
 ### Fixed
@@ -17,6 +18,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed distributed authority related issue where enabling the `NetworkObject.DestroyWithScene` would cause errors when a destroying non-authority instances due to loading (single mode) or unloading scene events. (#3500)
 
 ### Changed
+
+
+## [2.4.3] - 2025-06-25
+
+### Fixed
+
+- Fixed issue where spawned objects with `NetworkObject.DontDestroyWithOwner` set to `false` would not be destroyed when using a client-server network topology. (#3522)
 
 
 ## [2.4.2] - 2025-06-13
