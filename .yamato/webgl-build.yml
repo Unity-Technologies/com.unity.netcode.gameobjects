@@ -25,14 +25,13 @@
   
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.all -%}
 webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
   name: WebGl Build - {{ project.name }} [{{ platform.name }}, {{ editor }}, il2cpp]
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: b1.xlarge # We use b1.xlarge for WebGL builds since it requires more resources (otherwise it timeouts) especially on Ubuntu platform
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
@@ -52,6 +51,5 @@ webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
         - "artifacts/**/*"
         - "build/players/**/*"
 {% endfor -%}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
