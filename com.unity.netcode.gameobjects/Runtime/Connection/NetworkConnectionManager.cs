@@ -11,7 +11,7 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// The connection event type set within <see cref="ConnectionEventData"/> to signify the type of connection event notification received.   
+    /// The connection event type set within <see cref="ConnectionEventData"/> to signify the type of connection event notification received.
     /// </summary>
     /// <remarks>
     /// <see cref="ConnectionEventData"/> is returned as a parameter of the <see cref="NetworkManager.OnConnectionEvent"/> event notification.
@@ -60,14 +60,16 @@ namespace Unity.Netcode
     /// </remarks>
     public struct ConnectionEventData
     {
+        /// <summary>
+        /// The type of connection event that occurred.
+        /// </summary>
         public ConnectionEvent EventType;
 
         /// <summary>
-        /// The client ID for the client that just connected
+        /// The client ID for the client that just connected.<br />
         /// For the <see cref="ConnectionEvent.ClientConnected"/> and <see cref="ConnectionEvent.ClientDisconnected"/>
-        /// events on the client side, this will be LocalClientId.
-        /// On the server side, this will be the ID of the client that just connected.
-        ///
+        /// events on the client side, this will be LocalClientId.<br />
+        /// On the server side, this will be the ID of the client that just connected.<br />
         /// For the <see cref="ConnectionEvent.PeerConnected"/> and <see cref="ConnectionEvent.PeerDisconnected"/>
         /// events on the client side, this will be the client ID assigned by the server to the remote peer.
         /// </summary>
@@ -83,10 +85,10 @@ namespace Unity.Netcode
 
     /// <summary>
     /// The NGO connection manager handles:
-    /// - Client Connections
-    /// - Client Approval
-    /// - Processing <see cref="NetworkEvent"/>s.
-    /// - Client Disconnection
+    /// - Client Connections.<br />
+    /// - Client Approval.<br />
+    /// - Processing <see cref="NetworkEvent"/>s.<br />
+    /// - Client Disconnection.<br />
     /// </summary>
     public sealed class NetworkConnectionManager
     {
@@ -99,7 +101,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called.
         /// </summary>
         public string DisconnectReason { get; internal set; }
 
@@ -226,8 +228,8 @@ namespace Unity.Netcode
         public event Action OnTransportFailure;
 
         /// <summary>
-        /// Is true when a server or host is listening for connections.
-        /// Is true when a client is connecting or connected to a network session.
+        /// Is true when a server or host is listening for connections.<br />
+        /// Is true when a client is connecting or connected to a network session.<br />
         /// Is false when not listening, connecting, or connected.
         /// </summary>
         public bool IsListening { get; internal set; }
@@ -247,7 +249,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Use <see cref="AddPendingClient(ulong)"/> and <see cref="RemovePendingClient(ulong)"/> to add or remove
-        /// Use <see cref="PendingClients"/> to internally access the pending client dictionary
+        /// Use <see cref="PendingClients"/> to internally access the pending client dictionary.
         /// </summary>
         private Dictionary<ulong, PendingClient> m_PendingClients = new Dictionary<ulong, PendingClient>();
 
@@ -257,7 +259,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Client-Side:
-        /// Starts the client-side approval timeout coroutine
+        /// Starts the client-side approval timeout coroutine.
         /// </summary>
         /// <param name="clientId"></param>
         internal void StartClientApprovalCoroutine(ulong clientId)
@@ -281,7 +283,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Handles the issue with populating NetworkManager.PendingClients
+        /// Handles the issue with populating <see cref="NetworkManager.PendingClients"/>.
         /// </summary>
         internal void AddPendingClient(ulong clientId)
         {
@@ -297,7 +299,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Handles the issue with depopulating NetworkManager.PendingClients
+        /// Handles the issue with depopulating <see cref="NetworkManager.PendingClients"/>.
         /// </summary>
         internal void RemovePendingClient(ulong clientId)
         {
@@ -310,7 +312,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used to generate client identifiers
+        /// Used to generate client identifiers.
         /// </summary>
         private ulong m_NextClientId = 1;
 
@@ -357,7 +359,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the networkId of the server
+        /// Gets the networkId of the server.
         /// </summary>
         internal ulong ServerTransportId => GetServerTransportId();
 
@@ -379,7 +381,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles cleaning up the transport id/client id tables after receiving a disconnect event from transport
+        /// Handles cleaning up the transport id/client id tables after receiving a disconnect event from transport.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdCleanUp(ulong transportId)
@@ -416,10 +418,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Event driven NetworkTransports (like UnityTransport) NetworkEvent handling
+        /// Event driven NetworkTransports (like UnityTransport) NetworkEvent handling.
         /// </summary>
         /// <remarks>
-        /// Polling NetworkTransports invoke this directly
+        /// Polling NetworkTransports invoke this directly.
         /// </remarks>
         internal void HandleNetworkEvent(NetworkEvent networkEvent, ulong transportClientId, ArraySegment<byte> payload, float receiveTime)
         {
@@ -598,7 +600,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Client-Side:
-        /// Upon transport connecting, the client will send a connection request
+        /// Upon transport connecting, the client will send a connection request.
         /// </summary>
         private void SendConnectionRequest()
         {
@@ -629,7 +631,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Approval time out coroutine
+        /// Approval time out coroutine.
         /// </summary>
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
@@ -704,7 +706,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Handles approval while processing a client connection request
+        /// Handles approval while processing a client connection request.
         /// </summary>
         internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
         {
@@ -723,7 +725,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Processes pending approvals and removes any stale pending clients
+        /// Processes pending approvals and removes any stale pending clients.
         /// </summary>
         internal void ProcessPendingApprovals()
         {
@@ -760,10 +762,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Server Side: Handles the approval of a client
+        /// Server Side:
+        /// Handles the approval of a client.
         /// </summary>
         /// <remarks>
-        /// This will spawn the player prefab as well as start client synchronization if <see cref="NetworkConfig.EnableSceneManagement"/> is enabled
+        /// This will spawn the player prefab as well as start client synchronization if <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.
         /// </remarks>
         internal void HandleConnectionApproval(ulong ownerClientId, NetworkManager.ConnectionApprovalResponse response)
         {
@@ -883,10 +886,10 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Spawns the newly approved player
+        /// Spawns the newly approved player.
         /// </summary>
-        /// <param name="clientId">new player client identifier</param>
-        /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player</param>
+        /// <param name="clientId">new player client identifier.</param>
+        /// <param name="playerPrefabHash">the prefab GlobalObjectIdHash value for this player.</param>
         internal void ApprovedPlayerSpawn(ulong clientId, uint playerPrefabHash)
         {
             foreach (var clientPair in ConnectedClients)
@@ -915,7 +918,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Creates a new <see cref="NetworkClient"/> and handles updating the associated
+        /// Creates a new <see cref="NetworkClient"/> and handles updating the associated.
         /// connected clients lists.
         /// </summary>
         internal NetworkClient AddClient(ulong clientId)
@@ -941,7 +944,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Invoked when a client is disconnected from a server-host
+        /// Invoked when a client is disconnected from a server-host.
         /// </summary>
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
@@ -1064,7 +1067,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Invoked when disconnecting a remote client
+        /// Invoked when disconnecting a remote client.
         /// </summary>
         internal void DisconnectRemoteClient(ulong clientId)
         {
@@ -1103,9 +1106,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Should be invoked when starting a server-host or client
+        /// Should be invoked when starting a server-host or client.
         /// </summary>
-        /// <param name="networkManager"></param>
+        /// <param name="networkManager">The <see cref="NetworkManager"/> that is initializing this <see cref="NetworkConnectionManager"/> instance.</param>
         internal void Initialize(NetworkManager networkManager)
         {
             // Prepare for a new session
@@ -1130,7 +1133,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Should be called when shutting down the NetworkManager
+        /// Should be called when shutting down the NetworkManager.
         /// </summary>
         internal void Shutdown()
         {

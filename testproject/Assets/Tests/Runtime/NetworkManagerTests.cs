@@ -9,9 +9,28 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    public class NetworkManagerTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 2;
+
+        [Test]
+        public void ValidateTransportAndClientIds()
+        {
+            var transportId = m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId);
+            Assert.IsTrue(m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId) == m_ServerNetworkManager.ConnectionManager.ServerTransportId);
+            Assert.IsTrue(m_ServerNetworkManager.GetClientIdFromTransportId(transportId) == m_ServerNetworkManager.LocalClientId);
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                transportId = m_ServerNetworkManager.GetTransportIdFromClientId(client.LocalClientId);
+                Assert.AreEqual(client.LocalClientId, m_ServerNetworkManager.GetClientIdFromTransportId(transportId), "Server and client transport IDs don't match.");
+            }
+        }
+    }
+
     [TestFixture(UseSceneManagement.SceneManagementDisabled)]
     [TestFixture(UseSceneManagement.SceneManagementEnabled)]
-    public class NetworkManagerTests : NetcodeIntegrationTest
+    public class NetworkManagerSceneTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "InSceneNetworkObject";
         protected override int NumberOfClients => 0;
@@ -33,7 +52,7 @@ namespace TestProject.RuntimeTests
 
         private bool m_UseSceneManagement;
 
-        public NetworkManagerTests(UseSceneManagement useSceneManagement)
+        public NetworkManagerSceneTests(UseSceneManagement useSceneManagement)
         {
             m_UseSceneManagement = useSceneManagement == UseSceneManagement.SceneManagementEnabled;
         }

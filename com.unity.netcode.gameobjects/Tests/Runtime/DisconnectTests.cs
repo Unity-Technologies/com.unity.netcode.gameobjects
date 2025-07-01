@@ -150,8 +150,8 @@ namespace Unity.Netcode.RuntimeTests
 
             if (clientDisconnectType == ClientDisconnectType.ServerDisconnectsClient)
             {
-                m_ClientNetworkManagers[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
-                m_ClientNetworkManagers[0].OnConnectionEvent += OnConnectionEvent;
+                clientManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                clientManager.OnConnectionEvent += OnConnectionEvent;
                 m_ServerNetworkManager.OnConnectionEvent += OnConnectionEvent;
                 m_ServerNetworkManager.DisconnectClient(m_ClientId);
             }
@@ -159,9 +159,18 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
                 m_ServerNetworkManager.OnConnectionEvent += OnConnectionEvent;
-                m_ClientNetworkManagers[0].OnConnectionEvent += OnConnectionEvent;
+                clientManager.OnConnectionEvent += OnConnectionEvent;
 
-                yield return StopOneClient(m_ClientNetworkManagers[0]);
+                yield return StopOneClient(clientManager);
+
+                if (clientManager.ConnectionManager != null)
+                {
+                    Assert.False(clientManager.ConnectionManager.LocalClient.IsClient, $"{clientManager.name} still has IsClient setting!");
+                    Assert.False(clientManager.ConnectionManager.LocalClient.IsConnected, $"{clientManager.name} still has IsConnected setting!");
+                    Assert.False(clientManager.ConnectionManager.LocalClient.ClientId != 0, $"{clientManager.name} still has ClientId ({clientManager.ConnectionManager.LocalClient.ClientId}) setting!");
+                    Assert.False(clientManager.ConnectionManager.LocalClient.IsApproved, $"{clientManager.name} still has IsApproved setting!");
+                    Assert.IsNull(clientManager.ConnectionManager.LocalClient.PlayerObject, $"{clientManager.name} still has Player assigned!");
+                }
             }
 
             yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
@@ -216,6 +225,15 @@ namespace Unity.Netcode.RuntimeTests
 
                 Assert.IsTrue(m_DisconnectedEvent.ContainsKey(m_ServerNetworkManager), $"Could not find the server {nameof(NetworkManager)} disconnect event entry!");
                 Assert.IsTrue(m_DisconnectedEvent[m_ServerNetworkManager].ClientId == NetworkManager.ServerClientId, $"Expected ClientID {m_ClientId} but found ClientID {m_DisconnectedEvent[m_ServerNetworkManager].ClientId} for the server {nameof(NetworkManager)} disconnect event entry!");
+                yield return s_DefaultWaitForTick;
+                if (m_ServerNetworkManager.ConnectionManager != null)
+                {
+                    Assert.False(m_ServerNetworkManager.ConnectionManager.LocalClient.IsClient, $"{m_ServerNetworkManager.name} still has IsClient setting!");
+                    Assert.False(m_ServerNetworkManager.ConnectionManager.LocalClient.IsConnected, $"{m_ServerNetworkManager.name} still has IsConnected setting!");
+                    Assert.False(m_ServerNetworkManager.ConnectionManager.LocalClient.ClientId != 0, $"{m_ServerNetworkManager.name} still has ClientId ({clientManager.ConnectionManager.LocalClient.ClientId}) setting!");
+                    Assert.False(m_ServerNetworkManager.ConnectionManager.LocalClient.IsApproved, $"{m_ServerNetworkManager.name} still has IsApproved setting!");
+                    Assert.IsNull(m_ServerNetworkManager.ConnectionManager.LocalClient.PlayerObject, $"{m_ServerNetworkManager.name} still has Player assigned!");
+                }
             }
         }
     }

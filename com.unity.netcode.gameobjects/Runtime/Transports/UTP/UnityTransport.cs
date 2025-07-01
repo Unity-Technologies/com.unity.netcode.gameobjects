@@ -384,6 +384,9 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Returns true if the end point address is of type <see cref="NetworkFamily.Ipv6"/>.
             /// </summary>
+            /// <value>
+            /// True if the Address property contains a valid IPv6 address, false if it's empty or an IPv4 address.
+            /// </value>
             public bool IsIpv6 => !string.IsNullOrEmpty(Address) && NetworkEndpoint.TryParse(Address, Port, out NetworkEndpoint _, NetworkFamily.Ipv6);
         }
 

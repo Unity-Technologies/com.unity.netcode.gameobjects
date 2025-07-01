@@ -44,6 +44,7 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
+        /// <inheritdoc/>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
@@ -294,6 +295,10 @@ namespace Unity.Netcode
             remove => ConnectionManager.OnTransportFailure -= value;
         }
 
+        /// <summary>
+        /// Delegate for handling network state reanticipation events.
+        /// </summary>
+        /// <param name="lastRoundTripTime">The most recent round-trip time measurement in seconds between client and server.</param>
         public delegate void ReanticipateDelegate(double lastRoundTripTime);
 
         /// <summary>
@@ -1146,6 +1151,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Get the TransportId from the associated ClientId.
+        /// </summary>
+        /// <param name="clientId">The ClientId to get the TransportId from</param>
+        /// <returns>The TransportId associated with the given ClientId</returns>
+        public ulong GetTransportIdFromClientId(ulong clientId) => ConnectionManager.ClientIdToTransportId(clientId);
+
+        /// <summary>
+        /// Get the ClientId from the associated TransportId.
+        /// </summary>
+        /// <param name="transportId">The TransportId to get the ClientId from</param>
+        /// <returns>The ClientId from the associated TransportId</returns>
+        public ulong GetClientIdFromTransportId(ulong transportId) => ConnectionManager.TransportIdToClientId(transportId);
+
+        /// <summary>
         /// Disconnects the remote client.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
@@ -1265,8 +1284,8 @@ namespace Unity.Netcode
             // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
             m_ShuttingDown = false;
 
-            // Reset the client's roles
-            ConnectionManager.LocalClient.SetRole(false, false);
+            // Completely reset the NetworkClient
+            ConnectionManager.LocalClient = new NetworkClient();
 
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs?.Shutdown();
@@ -1305,7 +1324,7 @@ namespace Unity.Netcode
             }
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= ModeChanged;
-#endif            
+#endif
         }
 
         // Command line options

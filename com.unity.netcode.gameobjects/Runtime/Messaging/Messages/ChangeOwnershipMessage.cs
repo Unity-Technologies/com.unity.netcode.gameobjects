@@ -35,6 +35,15 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
+
+            // Sanity check that we are not sending duplicated or unnecessary change ownership messages
+            if (networkObject.OwnerClientId == OwnerClientId)
+            {
+                // Log error and then ignore the message
+                NetworkLog.LogError($"[Receiver: Client-{networkManager.LocalClientId}][Sender: Client-{context.SenderId}] Detected unnecessary ownership changed message for {networkObject.name} (NID:{NetworkObjectId}).");
+                return;
+            }
+
             var originalOwner = networkObject.OwnerClientId;
 
             networkObject.OwnerClientId = OwnerClientId;

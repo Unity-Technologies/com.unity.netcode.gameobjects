@@ -21,7 +21,6 @@
   # In order to properly use -coverage-results-path parameter we need to start it with $PWD (which means the absolute path). Otherwise, coverage results will not be visible
   
 # QUALITY CONSIDERATIONS--------------------------------------------------------------------
-  # TODO: somewhere in 2025 we will be able to upload resuls to CodeCov from public repos
   # To see where this job is included (in trigger job definitions) look into _triggers.yml file
   
   
@@ -39,7 +38,7 @@ code_coverage_{{ platform.name }}_{{ editor }}:
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models
     - upm-pvp create-test-project test-project --packages "upm-ci~/packages/*.tgz" --unity .Editor
-    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage -coverage-results-path=$PWD/test-results/CodeCoverage --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
+    - UnifiedTestRunner --suite=editor --suite=playmode --editor-location=.Editor --testproject=test-project --enable-code-coverage coverage-upload-options="reportsDir:$PWD/test-results/CoverageResults;name:NGOv1_{{ platform.name }}_{{ editor }};flags:NGOv1_{{ platform.name }}_{{ editor }};verbose" --coverage-results-path=$PWD/test-results/CoverageResults --coverage-options="generateHtmlReport;generateAdditionalMetrics;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime" --extra-editor-arg=--burst-disable-compilation --timeout=1800 --reruncount=1 --clean-library-on-rerun --artifacts-path=test-results
   artifacts:
     logs:
       paths:
