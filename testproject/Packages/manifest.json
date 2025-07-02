@@ -1,4 +1,5 @@
 {
+  "disableProjectUpdate": false,
   "dependencies": {
     "com.unity.addressables": "1.21.9",
     "com.unity.ai.navigation": "1.1.1",
