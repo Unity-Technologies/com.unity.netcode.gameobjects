@@ -1,0 +1,14 @@
+# Testing and debugging
+
+Understand how to set up session management in Netcode for GameObjects.
+
+| **Topic**                       | **Description**                  |
+| :------------------------------ | :------------------------------- |
+| **[Testing locally](tutorials/testing/testing_locally.md)** | Use session management to keep data when a player disconnects and accurately reassign it to the player when they reconnect. |
+| **[Testing with artificial conditions](tutorials/testing/testing_with_artificial_conditions.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Testing client connection management](tutorials/testing/testing_client_connection_management.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Logging](basics/logging.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Techniques and tricks for debugging multiplayer games](tutorials/testing/techniques_and_tricks_for_debugging_multiplayer_games.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Command-line helper](tutorials/command-line-helper.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Troubleshooting](troubleshooting/troubleshooting.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
+| **[Error messages](troubleshooting/error-messages.md)** | In a multiplayer game, clients might get disconnected from the server for a variety of reasons (such as network issues or application/device crashes). For those reasons, you might want to allow your players to reconnect to the game. |
