@@ -28,6 +28,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+## [1.13.1] - 2025-07-07
+
+### Added
+
+- Added documentation to package repository.
+
 ## [1.13.0] - 2025-04-29
 
 ### Added
