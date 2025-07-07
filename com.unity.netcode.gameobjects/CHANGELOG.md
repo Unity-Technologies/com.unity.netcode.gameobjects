@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [1.13.1] - 2025-07-07
+
+### Added
+
+- Added documentation to package repository.
+
 ## [1.13.0] - 2025-04-29
 
 ### Added
