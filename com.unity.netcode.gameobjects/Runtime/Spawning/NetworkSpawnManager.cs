@@ -1431,59 +1431,52 @@ namespace Unity.Netcode
 
         internal void DespawnAndDestroyNetworkObjects()
         {
-#if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-#endif
-
-            for (int i = 0; i < networkObjects.Length; i++)
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.NetworkManager == NetworkManager);
+            for (int i = 0; i < networkObjects.Count(); i++)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                var networkObject = networkObjects.ElementAt(i);
+                if (NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
-                    {
-                        OnDespawnObject(networkObjects[i], false);
-                        // Leave destruction up to the handler
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                    }
-                    else
-                    {
-                        // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
-                        // is unloaded. Otherwise, despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value));
+                    OnDespawnObject(networkObject, false);
+                    // Leave destruction up to the handler
+                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                }
+                else
+                {
+                    // If it is an in-scene placed NetworkObject then just despawn and let it be destroyed when the scene
+                    // is unloaded. Otherwise, despawn and destroy it.
+                    var shouldDestroy = !(networkObject.IsSceneObject == null || (networkObject.IsSceneObject != null && networkObject.IsSceneObject.Value));
 
-                        // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
-                        if (shouldDestroy)
+                    // If we are going to destroy this NetworkObject, check for any in-scene placed children that need to be removed
+                    if (shouldDestroy)
+                    {
+                        // Check to see if there are any in-scene placed children that are marked to be destroyed with the scene
+                        var childrenObjects = networkObject.GetComponentsInChildren<NetworkObject>();
+                        foreach (var childObject in childrenObjects)
                         {
-                            // Check to see if there are any in-scene placed children that are marked to be destroyed with the scene
-                            var childrenObjects = networkObjects[i].GetComponentsInChildren<NetworkObject>();
-                            foreach (var childObject in childrenObjects)
+                            if (childObject == networkObject)
                             {
-                                if (childObject == networkObjects[i])
-                                {
-                                    continue;
-                                }
+                                continue;
+                            }
 
-                                // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
-                                // and set its parent to root
-                                if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
-                                {
-                                    childObject.TryRemoveParent(childObject.WorldPositionStays());
-                                }
+                            // If the child is an in-scene placed NetworkObject then remove the child from the parent (which was dynamically spawned)
+                            // and set its parent to root
+                            if (childObject.IsSceneObject != null && childObject.IsSceneObject.Value)
+                            {
+                                childObject.TryRemoveParent(childObject.WorldPositionStays());
                             }
                         }
+                    }
 
-                        // If spawned, then despawn and potentially destroy.
-                        if (networkObjects[i].IsSpawned)
-                        {
-                            OnDespawnObject(networkObjects[i], shouldDestroy);
-                        }
-                        else // Otherwise, if we are not spawned and we should destroy...then destroy.
-                        if (shouldDestroy)
-                        {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                        }
+                    // If spawned, then despawn and potentially destroy.
+                    if (networkObject.IsSpawned)
+                    {
+                        OnDespawnObject(networkObject, shouldDestroy);
+                    }
+                    else // Otherwise, if we are not spawned and we should destroy...then destroy.
+                    if (shouldDestroy)
+                    {
+                        UnityEngine.Object.Destroy(networkObject.gameObject);
                     }
                 }
             }
@@ -1588,7 +1581,10 @@ namespace Unity.Netcode
                 destroyGameObject = true;
             }
 
-            OnDespawnObject(networkObject, destroyGameObject);
+            // When despawning from within the OnDespawnNonAuthorityObject method, we need to always set the authorityOverride to true
+            // since this is only ever invoked internally when the authority has notified a non-authority client that it should despawn
+            // and optionally destroy the NetworkObject (both invocations are based off of processing a DestroyObjectMessage).
+            OnDespawnObject(networkObject, destroyGameObject, true);
         }
 
         /// <summary>
@@ -1623,10 +1619,24 @@ namespace Unity.Netcode
 
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
+            // Determine if this is a DA authority instance
+            var hasDAAuthority = distributedAuthority && networkObject.HasAuthority;
+            // Determine if this is a CS authority instance
+            var hasClientServerAuthority = !distributedAuthority && NetworkManager.IsServer;
+
+            // We have authority if either of the above authority types are true =or= this is
+            // an authority driven despawn action being carried out by a non-authority instance.
+            var hasAuthority = hasDAAuthority || hasClientServerAuthority || authorityOverride;
+
+            // TODO-Fix: NetworkLog.CurrentLogLevel need to either point to the correct NetworkManager instance
+            // for testing purposes =or= we need to remove all internal uses of NetworkLog.CurrentLogLevel and
+            // replace it with something like the below to assure that when running an integration test in order
+            // to be able to dynamically change the log level on a per NetworkManager instance basis.
+            var logLevel = NetworkManager.LogLevel;
+
             // If we are shutting down the NetworkManager, then ignore resetting the parent
-            // Remove the child's parent server-side or in distributedAuthorityMode
-            // DistributedAuthorityMode: All clients need to remove the parent locally due to mixed-authority hierarchies and race-conditions
-            if (!NetworkManager.ShutdownInProgress && (NetworkManager.IsServer || distributedAuthority))
+            // and only attempt to remove the child's parent on the server-side
+            if (!NetworkManager.ShutdownInProgress && hasAuthority)
             {
                 if (destroyGameObject && networkObject.IsSceneObject == true && !NetworkManager.SceneManager.IsSceneUnloading(networkObject))
                 {
@@ -1639,6 +1649,7 @@ namespace Unity.Netcode
                 // Move child NetworkObjects to the root when parent NetworkObject is destroyed
                 foreach (var spawnedNetObj in objectsToRemoveParent)
                 {
+                    // Ignore the object being despawned 
                     if (spawnedNetObj == networkObject)
                     {
                         continue;
@@ -1650,6 +1661,7 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
+
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
                     spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;
@@ -1660,27 +1672,24 @@ namespace Unity.Netcode
                     // scene via the editor.
                     if (!spawnedNetObj.TryRemoveParentCachedWorldPositionStays())
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        if (logLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogError($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} could not be moved to the root when its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} was being destroyed");
+                            NetworkLog.LogError($"{spawnedNetObj.name} ({nameof(NetworkObject)}-{spawnedNetObj.NetworkObjectId}) could not be moved to the root when its parent, {networkObject.name} ({nameof(NetworkObject)}-{networkObject.NetworkObjectId}), was being destroyed");
                         }
                     }
                     else
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (logLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} moved to the root because its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} is destroyed");
+                        NetworkLog.LogWarning($"{spawnedNetObj.name} ({nameof(NetworkObject)}-{spawnedNetObj.NetworkObjectId}) moved to the root because its parent, {networkObject.name} ({nameof(NetworkObject)}-{networkObject.NetworkObjectId}), is destroyed");
                     }
                 }
             }
 
             networkObject.InvokeBehaviourNetworkDespawn();
 
-            // Whether we are in distributedAuthority mode and have authority on this object
-            var hasDAAuthority = distributedAuthority && (networkObject.HasAuthority || (NetworkManager.DAHost && authorityOverride));
-
             // Don't send messages if shutting down
             // Otherwise send messages if we are the authority (either the server, or the DA mode authority of this object).
-            if (!NetworkManager.ShutdownInProgress && (hasDAAuthority || (!distributedAuthority && NetworkManager.IsServer)))
+            if (!NetworkManager.ShutdownInProgress && (hasDAAuthority || hasClientServerAuthority))
             {
                 if (NetworkManager.NetworkConfig.RecycleNetworkIds)
                 {

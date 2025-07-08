@@ -39,6 +39,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_DontDestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DontDestroyWith");
             m_DontDestroyWithOwnerPrefab.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
+            m_DontDestroyWithOwnerPrefab.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
 
             m_DestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DestroyWith");
 
