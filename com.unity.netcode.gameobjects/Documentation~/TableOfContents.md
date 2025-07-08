@@ -108,3 +108,4 @@
     * [Bitesize space shooter](samples/bitesize/bitesize-spaceshooter.md)
     * [Bitesize client driven](samples/bitesize/bitesize-clientdriven.md)
     * [Bitesize dynamic prefabs](samples/bitesize/bitesize-dynamicPrefabs.md)
+    * [Bitesize social hub](samples/bitesize/bitesize-socialhub.md)

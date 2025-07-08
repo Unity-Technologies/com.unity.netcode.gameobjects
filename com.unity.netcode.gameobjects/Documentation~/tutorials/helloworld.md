@@ -2,7 +2,7 @@
 
 A "Hello World" program is a computer program that outputs or displays the message "Hello, World!". Normally it's  the first program written by people learning to code. it's also used as a sanity test to make sure that a computer language is correctly installed and that the operator understands how to use it.
 
-This "Hello World" tutorial walks you through creating a project, installing Netcode for GameObjects (Netcode), and creating the basic components for your first networked game. it's also the base for the [Golden Path series](goldenpath_series/gp_intro.md).
+This "Hello World" tutorial walks you through creating a project, installing Netcode for GameObjects (Netcode), and creating the basic components for your first networked game.
 
 ## Create a new project in Unity
 
@@ -268,9 +268,8 @@ You can also use the command line helper to launch a server and one or more clie
 
 See the following content to continue your journey using Netcode:
 
-* Build on the Hello World project to continue learning about different features of Netcode with the [Golden Path series](goldenpath_series/gp_intro.md).
 * Check out the educational samples to further explore Netcode and its abilities:
-  * [Boss Room](../learn/bossroom/getting-started-boss-room.md)
+  * [Boss Room](../samples/bossroom/getting-started-boss-room.md)
   * [2D Spaceshooter Bitesize Sample](../samples/bitesize/bitesize-spaceshooter.md)
   * [Invaders Bitesize Sample](../samples/bitesize/bitesize-invaders.md)
   * [Client-Driven Bitesize Sample](../samples/bitesize/bitesize-clientdriven.md)
