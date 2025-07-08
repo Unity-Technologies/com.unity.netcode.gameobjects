@@ -271,6 +271,6 @@ See the following content to continue your journey using Netcode:
 * Build on the Hello World project to continue learning about different features of Netcode with the [Golden Path series](goldenpath_series/gp_intro.md).
 * Check out the educational samples to further explore Netcode and its abilities:
   * [Boss Room](../learn/bossroom/getting-started-boss-room.md)
-  * [2D Spaceshooter Bitesize Sample](../learn/bitesize/bitesize-spaceshooter.md)
-  * [Invaders Bitesize Sample](../learn/bitesize/bitesize-invaders.md)
-  * [Client-Driven Bitesize Sample](../learn/bitesize/bitesize-clientdriven.md)
+  * [2D Spaceshooter Bitesize Sample](../samples/bitesize/bitesize-spaceshooter.md)
+  * [Invaders Bitesize Sample](../samples/bitesize/bitesize-invaders.md)
+  * [Client-Driven Bitesize Sample](../samples/bitesize/bitesize-clientdriven.md)
