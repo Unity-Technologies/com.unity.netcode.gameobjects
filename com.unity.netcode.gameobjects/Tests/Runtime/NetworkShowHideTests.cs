@@ -627,7 +627,6 @@ namespace Unity.Netcode.RuntimeTests
             // check we'll actually be changing owners
             Assert.False(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == firstClient.LocalClientId);
 
-
             // change ownership
             m_NetSpawnedObject1.ChangeOwnership(firstClient.LocalClientId);
 
