@@ -1622,13 +1622,11 @@ namespace Unity.Netcode
             }
 
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
-            var hasDAAuthority = distributedAuthority && (networkObject.HasAuthority || (NetworkManager.DAHost && authorityOverride));
-            var hasClientServerAuthority = !distributedAuthority && NetworkManager.IsServer;
-            var hasAuthority = hasDAAuthority || hasClientServerAuthority;
 
             // If we are shutting down the NetworkManager, then ignore resetting the parent
-            // and only attempt to remove the child's parent on the server-side
-            if (!NetworkManager.ShutdownInProgress && hasAuthority)
+            // Remove the child's parent server-side or in distributedAuthorityMode
+            // DistributedAuthorityMode: All clients need to remove the parent locally due to mixed-authority hierarchies and race-conditions
+            if (!NetworkManager.ShutdownInProgress && (NetworkManager.IsServer || distributedAuthority))
             {
                 if (destroyGameObject && networkObject.IsSceneObject == true && !NetworkManager.SceneManager.IsSceneUnloading(networkObject))
                 {
@@ -1654,7 +1652,7 @@ namespace Unity.Netcode
                     }
                     // For mixed authority hierarchies, if the parent is despawned then any removal of children
                     // is considered "authority approved". Set the AuthorityAppliedParenting flag.
-                    spawnedNetObj.AuthorityAppliedParenting = authorityOverride;
+                    spawnedNetObj.AuthorityAppliedParenting = distributedAuthority && !networkObject.HasAuthority;
 
                     // Try to remove the parent using the cached WorldPositionStays value
                     // Note: WorldPositionStays will still default to true if this was an
@@ -1677,7 +1675,12 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkDespawn();
 
-            if (!NetworkManager.ShutdownInProgress && hasAuthority)
+            // Whether we are in distributedAuthority mode and have authority on this object
+            var hasDAAuthority = distributedAuthority && (networkObject.HasAuthority || (NetworkManager.DAHost && authorityOverride));
+
+            // Don't send messages if shutting down
+            // Otherwise send messages if we are the authority (either the server, or the DA mode authority of this object).
+            if (!NetworkManager.ShutdownInProgress && (hasDAAuthority || (!distributedAuthority && NetworkManager.IsServer)))
             {
                 if (NetworkManager.NetworkConfig.RecycleNetworkIds)
                 {
@@ -1692,7 +1695,6 @@ namespace Unity.Netcode
                 /*
                  * Configure message targets
                  */
-
                 // If we are using distributed authority and are not the DAHost, send a message to the Server (CMBService or DAHost)
                 if (hasDAAuthority && !NetworkManager.DAHost)
                 {
