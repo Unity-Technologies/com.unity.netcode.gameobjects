@@ -113,9 +113,27 @@ namespace Unity.Netcode.RuntimeTests
             ClientIdsRpcCalledOn?.Add(NetworkManager.LocalClientId);
         }
 
+        [Rpc(SendTo.Everyone)]
+        public void DistributedAuthorityRPC()
+        {
+            if (!Silent)
+            {
+                Debug.Log($"RPC called {NetworkManager.LocalClientId}");
+            }
+            ClientIdsRpcCalledOn?.Add(NetworkManager.LocalClientId);
+        }
+
         public void TriggerRpc()
         {
-            SomeRandomClientRPC();
+            Debug.Log("triggering RPC");
+            if (NetworkManager.CMBServiceConnection)
+            {
+                DistributedAuthorityRPC();
+            }
+            else
+            {
+                SomeRandomClientRPC();
+            }
         }
     }
 
@@ -124,12 +142,6 @@ namespace Unity.Netcode.RuntimeTests
     internal class NetworkShowHideTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
-
-        // TODO: [CmbServiceTests] https://jira.unity3d.com/browse/MTTB-1392
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
@@ -580,10 +592,14 @@ namespace Unity.Netcode.RuntimeTests
             var firstClient = GetNonAuthorityNetworkManager(0);
             var secondClient = GetNonAuthorityNetworkManager(1);
 
+            ShowHideObject.ValueAfterOwnershipChange = -1;
             ShowHideObject.ClientTargetedNetworkObjects.Clear();
             ShowHideObject.ObjectsPerClientId.Clear();
             ShowHideObject.ClientIdToTarget = secondClient.LocalClientId;
             ShowHideObject.Silent = true;
+
+            // only check for value change on one specific client
+            ShowHideObject.NetworkManagerOfInterest = firstClient;
 
             var spawnedObject1 = SpawnObject(m_PrefabToSpawn, authority);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
@@ -597,11 +613,19 @@ namespace Unity.Netcode.RuntimeTests
             // wait for three ticks
             yield return WaitForTicks(authority, 3);
 
+            if (!m_DistributedAuthority)
+            {
+                // Client/Server ClientIdToTarget should not see any value change
+                Assert.That(ShowHideObject.ValueAfterOwnershipChange, Is.EqualTo(-1));
+            }
+            else
+            {
+                // Distributed Authority mode everyone can always read so the value change should already have happened
+                Assert.That(ShowHideObject.ValueAfterOwnershipChange, Is.EqualTo(1));
+            }
+
             // check we'll actually be changing owners
             Assert.False(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == firstClient.LocalClientId);
-
-            // only check for value change on one specific client
-            ShowHideObject.NetworkManagerOfInterest = firstClient;
 
             // change ownership
             m_NetSpawnedObject1.ChangeOwnership(firstClient.LocalClientId);
@@ -731,10 +755,8 @@ namespace Unity.Netcode.RuntimeTests
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
 
             // wait for host to have spawned and gained ownership
-            while (ShowHideObject.GainOwnershipCount == 0)
-            {
-                yield return new WaitForSeconds(0.0f);
-            }
+            yield return WaitForConditionOrTimeOut(() => m_NetSpawnedObject1.IsSpawned && m_NetSpawnedObject1.OwnerClientId == authority.LocalClientId);
+            AssertOnTimeout($"Timed out waiting for {m_NetSpawnedObject1.name} to spawn");
 
             for (int i = 0; i < 4; i++)
             {
@@ -767,8 +789,8 @@ namespace Unity.Netcode.RuntimeTests
 
                 }
 
-                Compare(ShowHideObject.ObjectsPerClientId[0].MyList, ShowHideObject.ObjectsPerClientId[1].MyList);
-                Compare(ShowHideObject.ObjectsPerClientId[0].MyList, ShowHideObject.ObjectsPerClientId[2].MyList);
+                Compare(ShowHideObject.ObjectsPerClientId[authority.LocalClientId].MyList, ShowHideObject.ObjectsPerClientId[firstClient.LocalClientId].MyList);
+                Compare(ShowHideObject.ObjectsPerClientId[authority.LocalClientId].MyList, ShowHideObject.ObjectsPerClientId[secondClient.LocalClientId].MyList);
             }
         }
 
