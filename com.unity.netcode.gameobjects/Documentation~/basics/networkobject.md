@@ -2,7 +2,7 @@
 
 A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode.
 
-Netcode for GameObjects' high level components, [the RPC system](../advanced-topics/messaging-system.md), [object spawning](../object-spawning), and [`NetworkVariable`](networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
+Netcode for GameObjects' high level components, [the RPC system](../advanced-topics/messaging-system.md), [object spawning](object-spawning), and [`NetworkVariable`](networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
 
   1. `NetworkObject`
   2. [`NetworkBehaviour`](networkbehaviour.md)
@@ -165,6 +165,5 @@ Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchroniz
 
 ## Additional resources
 
-- [PlayerObjects and player prefabs](playerobjects.md)
 - [NetworkBehaviour](networkbehaviour.md)
 - [NetworkVariable](networkvariable.md)

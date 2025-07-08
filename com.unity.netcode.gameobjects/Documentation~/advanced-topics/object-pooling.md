@@ -6,7 +6,7 @@ See [Introduction to Object Pooling](https://learn.unity.com/tutorial/introducti
 
 ## NetworkPrefabInstanceHandler
 
-You can register your own spawn handlers by including the `INetworkPrefabInstanceHandler` interface and registering with the `NetworkPrefabHandler`.  
+You can register your own spawn handlers by including the `INetworkPrefabInstanceHandler` interface and registering with the `NetworkPrefabHandler`.
 ```csharp
     public interface INetworkPrefabInstanceHandler
     {

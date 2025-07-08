@@ -1,6 +1,6 @@
 # Improving performance with client-side interpolation
 
-As outlined in [Understanding latency](lagandpacketloss.md), latency and jitter can negatively affect gameplay experience for users. In addition to managing [tick and update rates](tick-and-update-rates.md), you can also use client-side interpolation to improve perceived latency for users.
+As outlined in [Understanding latency](lagandpacketloss.md), latency and jitter can negatively affect gameplay experience for users. In addition to managing [tick and update rates](ticks-and-update-rates.md), you can also use client-side interpolation to improve perceived latency for users.
 
 ## Without latency mitigation
 
