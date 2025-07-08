@@ -1628,10 +1628,10 @@ namespace Unity.Netcode
             // an authority driven despawn action being carried out by a non-authority instance.
             var hasAuthority = hasDAAuthority || hasClientServerAuthority || authorityOverride;
 
-            // TODO-Fix: NetworkLog.CurrentLogLevel need to either point to the correct NetworkManager instance
+            // TODO-Fix: NetworkLog.CurrentLogLevel needs to either point to the correct NetworkManager instance
             // for testing purposes =or= we need to remove all internal uses of NetworkLog.CurrentLogLevel and
-            // replace it with something like the below to assure that when running an integration test in order
-            // to be able to dynamically change the log level on a per NetworkManager instance basis.
+            // replace it with something like the below to assure that when running an integration test we are
+            // able to dynamically change the log level of any active NetworkManager instance and it will be honored.
             var logLevel = NetworkManager.LogLevel;
 
             // If we are shutting down the NetworkManager, then ignore resetting the parent
