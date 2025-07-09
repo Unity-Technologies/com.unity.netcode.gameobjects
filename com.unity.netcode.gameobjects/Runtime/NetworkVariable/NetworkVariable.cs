@@ -173,12 +173,13 @@ namespace Unity.Netcode
             }
 
             // Compare the previous with the current if not dirty or forcing a check.
-            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue))
+            if ((!isDirty || forceCheck) && !NetworkVariableSerialization<T>.AreEqual(ref m_InternalOriginalValue, ref m_InternalValue))
             {
                 SetDirty(true);
-                OnValueChanged?.Invoke(m_PreviousValue, m_InternalValue);
+                OnValueChanged?.Invoke(m_InternalOriginalValue, m_InternalValue);
                 m_IsDisposed = false;
                 isDirty = true;
+                NetworkVariableSerialization<T>.Duplicate(m_InternalValue, ref m_InternalOriginalValue);
             }
             return isDirty;
         }
