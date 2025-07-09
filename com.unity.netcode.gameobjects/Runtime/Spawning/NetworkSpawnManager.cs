@@ -1649,7 +1649,7 @@ namespace Unity.Netcode
                 // Move child NetworkObjects to the root when parent NetworkObject is destroyed
                 foreach (var spawnedNetObj in objectsToRemoveParent)
                 {
-                    // Ignore the object being despawned 
+                    // Ignore the object being despawned
                     if (spawnedNetObj == networkObject)
                     {
                         continue;
