@@ -1620,7 +1620,7 @@ namespace Unity.Netcode
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
             // Determine if this is a DA authority instance
-            var hasDAAuthority = distributedAuthority && networkObject.HasAuthority;
+            var hasDAAuthority = distributedAuthority && (networkObject.HasAuthority || NetworkManager.DAHost);
             // Determine if this is a CS authority instance
             var hasClientServerAuthority = !distributedAuthority && NetworkManager.IsServer;
 
