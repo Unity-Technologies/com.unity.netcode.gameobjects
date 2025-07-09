@@ -517,7 +517,12 @@ namespace Unity.Netcode.Transports.UTP
             // package. We just need to initialize the settings since otherwise these features will
             // not be enabled at all in the driver.
             settings.WithSimulatorStageParameters(
-                maxPacketCount: 300, // TODO Is there any way to compute a better value?
+                // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush
+                // an entire reliable window every tick, then at 60 ticks per second we need to be
+                // able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
+                // pipeline stage. Double that since we handle both directions and round it up, and
+                // that's how we get 400 here.
+                maxPacketCount: 400,
                 randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
             settings.WithNetworkSimulatorParameters();
 #endif
