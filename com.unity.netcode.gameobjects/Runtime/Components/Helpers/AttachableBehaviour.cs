@@ -254,10 +254,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void InternalAttach(AttachableNode attachableNode)
         {
-            if (attachableNode.NetworkManager != NetworkManager)
-            {
-                Debug.Log("Blam!");
-            }
             m_AttachState = AttachState.Attached;
             m_AttachableNode = attachableNode;
             // Attachables are always local space relative
