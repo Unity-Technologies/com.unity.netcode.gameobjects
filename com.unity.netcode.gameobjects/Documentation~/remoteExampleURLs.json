@@ -1,0 +1,213 @@
+{
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Infrastructure/NetworkObjectPool.cs": {
+    "localPath": "Documentation~/snippets/NetworkObjectPool.cs",
+    "exampleIds": [
+      "object-pooling-NetworkObjectPool"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/SessionManager.cs": {
+    "localPath": "Documentation~/snippets/SessionManager.cs",
+    "exampleIds": [
+      "session-management-SessionManager"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/HostingState.cs": {
+    "localPath": "Documentation~/snippets/HostingState.cs",
+    "exampleIds": [
+      "maxnumberplayers-HostingState"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/UserInput/ClientInputSender.cs": {
+    "localPath": "Documentation~/snippets/ClientInputSender.cs",
+    "exampleIds": [
+      "rpcnetvarexamples-ClientInputSender"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/Projectiles/PhysicsProjectile.cs": {
+    "localPath": "Documentation~/snippets/PhysicsProjectile.cs",
+    "exampleIds": [
+      "rpcnetvarexamples-PhysicsProjectile"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/Projectiles/FXProjectile.cs": {
+    "localPath": "Documentation~/snippets/FXProjectile.cs",
+    "exampleIds": [
+      "rpcnetvarexamples-FXProjectile"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/Breakable.cs": {
+    "localPath": "Documentation~/snippets/Breakable.cs",
+    "exampleIds": [
+      "rpcnetvarexamples-Breakable-L59-L78",
+      "rpcnetvarexamples-Breakable-L146-L156"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/Character/ServerAnimationHandler.cs": {
+    "localPath": "Documentation~/snippets/ServerAnimationHandler.cs",
+    "exampleIds": [
+      "rpcnetvarexamples-ServerAnimationHandler-L23-L30"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/SwitchedDoor.cs": {
+    "localPath": "Documentation~/snippets/SwitchedDoor.cs",
+    "exampleIds": [
+      "rpcvnetvar-SwitchedDoor-L10-L26"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/Input/AoeActionInput.cs": {
+    "localPath": "Documentation~/snippets/AoeActionInput.cs",
+    "exampleIds": [
+      "rpcvnetvar-AoeActionInput"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ConcreteActions/AOEAction.cs": {
+    "localPath": "Documentation~/snippets/AOEAction.cs",
+    "exampleIds": [
+      "rpcvnetvar-AOEAction-L8-L-40",
+      "rpcvnetvar-AOEAction-L77-L82"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/ClientDriven/Assets/StarterAssets/ThirdPersonController/Scripts/ThirdPersonController.cs": {
+    "localPath": "Documentation~/snippets/ThirdPersonController.cs",
+    "exampleIds": [
+      "bitesize-clientdriven-ThirdPersonController-L155-L162"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/ClientDriven/Assets/Scripts/ClientPlayerMove.cs": {
+    "localPath": "Documentation~/snippets/ClientPlayerMove.cs",
+    "exampleIds": [
+      "bitesize-clientdriven-ClientPlayerMove-L64-L94"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/ClientDriven/Assets/Scripts/ServerPlayerMove.cs": {
+    "localPath": "Documentation~/snippets/ServerPlayerMove.cs",
+    "exampleIds": [
+      "bitesize-clientdriven-ServerPlayerMove-L46-L82",
+      "bitesize-clientdriven-ServerPlayerMove-L50-L58",
+      "bitesize-clientdriven-ServerPlayerMove-L24-L44",
+      "bitesize-clientdriven-ServerPlayerMove-L46-L61"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/00_Preloading/Preloading.cs": {
+    "localPath": "Documentation~/snippets/Preloading.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-Preloading-L27-L31",
+      "bitesize-dynamicprefabs-Preloading-L33-L56"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/Shared/ConnectionStates/ClientConnectingState.cs": {
+    "localPath": "Documentation~/snippets/ClientConnectingState.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ClientConnectingState-L25-L32",
+      "bitesize-dynamicprefabs-ClientConnectingState-L39-L68"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/Shared/DynamicPrefabLoadingUtilities.cs": {
+    "localPath": "Documentation~/snippets/DynamicPrefabLoadingUtilities.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-DynamicPrefabLoadingUtilities-L81-L89"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/01_Connection%20Approval/ConnectionApproval.cs": {
+    "localPath": "Documentation~/snippets/ConnectionApproval.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ConnectionApproval-L30-L52",
+      "bitesize-dynamicprefabs-ConnectionApproval-L54-L69",
+      "bitesize-dynamicprefabs-ConnectionApproval-L85-L90",
+      "bitesize-dynamicprefabs-ConnectionApproval-L92-L105",
+      "bitesize-dynamicprefabs-ConnectionApproval-L107-L112",
+      "bitesize-dynamicprefabs-ConnectionApproval-L114-L128",
+      "bitesize-dynamicprefabs-ConnectionApproval-L140-L144"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/Shared/ConnectionStates/ClientPreloadingState.cs": {
+    "localPath": "Documentation~/snippets/ClientPreloadingState.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ClientPreloadingState-L30-L37"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/02_Server%20Authoritative%20Load%20All%20Async/ServerAuthoritativeLoadAllAsync.cs": {
+    "localPath": "Documentation~/snippets/ServerAuthoritativeLoadAllAsync.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ServerAuthoritativeLoadAllAsync-L36-L59",
+      "bitesize-dynamicprefabs-ServerAuthoritativeLoadAllAsync-L136-L145",
+      "bitesize-dynamicprefabs-ServerAuthoritativeLoadAllAsync-L147-L189",
+      "bitesize-dynamicprefabs-ServerAuthoritativeLoadAllAsync-L191-L213",
+      "bitesize-dynamicprefabs-ServerAuthoritativeLoadAllAsync-L215-L242"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/03_Server%20Authoritative%20Synchronous%20Spawning/ServerAuthoritativeSynchronousSpawning.cs": {
+    "localPath": "Documentation~/snippets/ServerAuthoritativeSynchronousSpawning.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L134-L149",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L151-L235",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L166-L171",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L176-L177",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L189-L203",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L205-L208",
+      "bitesize-dynamicprefabs-ServerAuthoritativeSynchronousSpawning-L261-L290"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/DynamicAddressablesNetworkPrefabs/Assets/Scripts/04_Server%20Authoritative%20Network-Visibility%20Spawning/ServerAuthoritativeNetworkVisibilitySpawning.cs": {
+    "localPath": "Documentation~/snippets/ServerAuthoritativeNetworkVisibilitySpawning.cs",
+    "exampleIds": [
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L134-L149",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L151-L225",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L161-L169",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L178-L179",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L185",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L187-L194",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L201-L205",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L207-L211",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L216-L218",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L221",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L272-L280",
+      "bitesize-dynamicprefabs-ServerAuthoritativeNetworkVisibilitySpawning-L227-L239"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/MenuControl.cs": {
+    "localPath": "Documentation~/snippets/MenuControl.cs",
+    "exampleIds": [
+      "bitesize-invaders-MenuControl-L16-L30"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/SceneTransitionHandler.cs": {
+    "localPath": "Documentation~/snippets/SceneTransitionHandler.cs",
+    "exampleIds": [
+      "bitesize-invaders-SceneTransitionHandler-L90-L97",
+      "bitesize-invaders-SceneTransitionHandler-L25-L34"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/InvadersGame.cs": {
+    "localPath": "Documentation~/snippets/InvadersGame.cs",
+    "exampleIds": [
+      "bitesize-invaders-InvadersGame-L156-L194",
+      "bitesize-invaders-InvadersGame-L205-L229",
+      "bitesize-invaders-InvadersGame-L196-L203",
+      "bitesize-invaders-InvadersGame-L276-L299"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/LobbyControl.cs": {
+    "localPath": "Documentation~/snippets/LobbyControl.cs",
+    "exampleIds": [
+      "bitesize-invaders-LobbyControl-L23-L45",
+      "bitesize-invaders-LobbyControl-L90-L107",
+      "bitesize-invaders-LobbyControl-L195-L209",
+      "bitesize-invaders-LobbyControl-L126-L144",
+      "bitesize-invaders-LobbyControl-L146-L174"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/PlayerControl.cs": {
+    "localPath": "Documentation~/snippets/PlayerControl.cs",
+    "exampleIds": [
+      "bitesize-invaders-PlayerControl-L176-L193"
+    ]
+  },
+  "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/2DSpaceShooter/Assets/Scripts/ShipControl.cs": {
+    "localPath": "Documentation~/snippets/ShipControl.cs",
+    "exampleIds": [
+      "bitesize-spaceshooter-ShipControl-L172-L175",
+      "bitesize-spaceshooter-ShipControl-L431-L486"
+    ]
+  }
+}
