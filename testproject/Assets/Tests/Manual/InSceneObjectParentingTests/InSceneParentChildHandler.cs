@@ -371,7 +371,7 @@ namespace TestProject.ManualTests
         {
             m_RequestSent = false;
             var errorCount = 0;
-            var autoSync = ParentingAutoSyncManager.ServerInstance;
+            var autoSync = ParentingAutoSyncManager.AuthorityInstance;
             var position = Vector3.zero;
             var rotation = Vector3.zero;
             var scale = Vector3.zero;

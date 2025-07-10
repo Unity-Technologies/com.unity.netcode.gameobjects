@@ -37,10 +37,10 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            m_DontDestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DestroyWith");
+            m_DontDestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DontDestroyWith");
             m_DontDestroyWithOwnerPrefab.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
 
-            m_DestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DontDestroyWith");
+            m_DestroyWithOwnerPrefab = CreateNetworkObjectPrefab("DestroyWith");
 
             m_PrefabNoObserversSpawn = CreateNetworkObjectPrefab("NoObserversObject");
             var prefabNoObserversNetworkObject = m_PrefabNoObserversSpawn.GetComponent<NetworkObject>();
