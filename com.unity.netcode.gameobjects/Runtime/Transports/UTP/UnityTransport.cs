@@ -27,27 +27,6 @@ using TransportEvent = Unity.Networking.Transport.NetworkEvent.Type;
 namespace Unity.Netcode.Transports.UTP
 {
     /// <summary>
-    /// Provides an interface that overrides the ability to create your own drivers and pipelines
-    /// </summary>
-    public interface INetworkStreamDriverConstructor
-    {
-        /// <summary>
-        /// Creates the internal NetworkDriver
-        /// </summary>
-        /// <param name="transport">The owner transport</param>
-        /// <param name="driver">The driver</param>
-        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
-        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
-        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
-        void CreateDriver(
-            UnityTransport transport,
-            out NetworkDriver driver,
-            out NetworkPipeline unreliableFragmentedPipeline,
-            out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline);
-    }
-
-    /// <summary>
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
@@ -92,15 +71,19 @@ namespace Unity.Netcode.Transports.UTP
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
-
         /// <summary>
-        /// The global <see cref="INetworkStreamDriverConstructor"/> implementation
+        /// An instance of a <see cref="INetworkStreamDriverConstructor"/> implementation. If null,
+        /// the default driver constructor will be used. Setting it to a non-null value allows
+        /// controlling how the internal <see cref="NetworkDriver"/> instance is created. See the
+        /// interface's documentation for details.
         /// </summary>
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
 
         /// <summary>
-        /// Returns either the global <see cref="INetworkStreamDriverConstructor"/> implementation or the current <see cref="UnityTransport"/> instance
+        /// If a custom <see cref="INetworkStreamDriverConstructor"/> implementation is in use (see
+        /// <see cref="s_DriverConstructor"/>), this returns it. Otherwise it returns the current
+        /// <see cref="UnityTransport"/> instance, which acts as the default constructor.
         /// </summary>
         public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor ?? this;
 
@@ -422,7 +405,6 @@ namespace Unity.Netcode.Transports.UTP
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
-        private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
         private NetworkPipeline m_UnreliableFragmentedPipeline;
@@ -477,8 +459,6 @@ namespace Unity.Netcode.Transports.UTP
                 m_Driver.Dispose();
             }
 
-            m_NetworkSettings.Dispose();
-
             foreach (var queue in m_SendQueue.Values)
             {
                 queue.Dispose();
@@ -487,6 +467,183 @@ namespace Unity.Netcode.Transports.UTP
             m_SendQueue.Clear();
 
             TransportDisposed?.Invoke(GetInstanceID());
+        }
+
+        /// <summary>
+        /// Get the <see cref="NetworkSettings"/> that will be used to create the underlying
+        /// <see cref="NetworkDriver"/> based on the current configuration of the transport. This
+        /// method is meant to be used with custom <see cref="INetworkStreamDriverConstructor"/>
+        /// implementations, where it can be used to modify the default parameters instead of
+        /// attempting to recreate them from scratch, which could be error-prone.
+        /// </summary>
+        /// <remarks>
+        /// The returned object is allocated using the <see cref="Allocator.Temp"/> allocator.
+        /// Do not hold a reference to it for longer than the current frame.
+        /// </remarks>
+        /// <returns>The default network settings.</returns>
+        /// <exception cref="Exception">
+        /// If the transport has an invalid configuration that prevents creating appropriate
+        /// settings for the driver. For example, if encryption is enabled but secrets haven't
+        /// been set, or if Relay is selected but the Relay server data hasn't been set.
+        /// </exception>
+        public NetworkSettings GetDefaultNetworkSettings()
+        {
+            var settings = new NetworkSettings();
+
+            // Basic driver configuration settings.
+            settings.WithNetworkConfigParameters(
+                maxConnectAttempts: m_MaxConnectAttempts,
+                connectTimeoutMS: m_ConnectTimeoutMS,
+                disconnectTimeoutMS: m_DisconnectTimeoutMS,
+                sendQueueCapacity: m_MaxPacketQueueSize,
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+                heartbeatTimeoutMS: m_HeartbeatTimeoutMS);
+
+            // Configure Relay if in use.
+            if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+            {
+                if (m_RelayServerData.Equals(default(RelayServerData)))
+                {
+                    throw new Exception("You must call SetRelayServerData() before calling StartClient() or StartServer().");
+                }
+                else
+                {
+                    settings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
+                }
+            }
+
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+            // Latency, jitter and packet loss will be set by the network simulator in the tools
+            // package. We just need to initialize the settings since otherwise these features will
+            // not be enabled at all in the driver.
+            settings.WithSimulatorStageParameters(
+                // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush
+                // an entire reliable window every tick, then at 60 ticks per second we need to be
+                // able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
+                // pipeline stage. Double that since we handle both directions and round it up, and
+                // that's how we get 400 here.
+                maxPacketCount: 400,
+                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
+            settings.WithNetworkSimulatorParameters();
+#endif
+
+            // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
+            // account for the overhead of its length when we store it in the send queue.
+            var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
+            settings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
+
+            // Bump the reliable window size to its maximum size of 64. Since NGO makes heavy use of
+            // reliable delivery, we're better off with the increased window size compared to the
+            // extra 4 bytes of header that this costs us.
+            //
+            // We also increase the maximum resend timeout since the default one in UTP is very
+            // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
+            // we sometimes notice a lot of useless resends, especially if using Relay.
+            var maxResendTime = m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500;
+            settings.WithReliableStageParameters(windowSize: 64, maximumResendTime: maxResendTime);
+
+            // Set up encryption if in use. This only needs to be done when not using Relay. If
+            // using Relay, then UTP configures encryption on its own based solely on the protocol
+            // configured in the Relay server data.
+            if (m_UseEncryption && m_ProtocolType == ProtocolType.UnityTransport)
+            {
+                if (m_NetworkManager.IsServer)
+                {
+                    if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
+                    {
+                        throw new Exception("In order to use encryption, you must call SetServerSecrets() before calling StartServer().");
+                    }
+                    else
+                    {
+                        settings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(m_ServerCommonName))
+                    {
+                        throw new Exception("In order to use encryption, you must call SetClientSecrets() before calling StartClient().");
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(m_ClientCaCertificate))
+                        {
+                            settings.WithSecureClientParameters(m_ServerCommonName);
+                        }
+                        else
+                        {
+                            settings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
+                        }
+                    }
+                }
+            }
+
+            return settings;
+        }
+
+        /// <summary>
+        /// Get the pipeline configurations that will be used based on the current configuration of
+        /// the transport. Useful for custom <see cref="INetworkStreamDriverConstructor"/>
+        /// implementations, since it allows extending the existing configuration while maintaining
+        /// the existing functionality of the default pipelines that's not otherwise available
+        /// publicly (like integration with the network profiler).
+        /// </summary>
+        /// <remarks>
+        /// All returned values are allocated with the <see cref="Allocator.Temp"/> allocator. Do not
+        /// hold references to them longer than the current frame. There is no need to dispose of the
+        /// returned lists.
+        /// </remarks>
+        /// <param name="unreliableFragmentedPipelineStages">
+        /// Pipeline stages that will be used for the unreliable and fragmented pipeline.
+        /// </param>
+        /// <param name="unreliableSequencedFragmentedPipelineStages">
+        /// Pipeline stages that will be used for the unreliable, sequenced, and fragmented pipeline.
+        /// </param>
+        /// <param name="reliableSequencedPipelineStages">
+        /// Pipeline stages that will be used for the reliable and sequenced pipeline stage.
+        /// </param>
+        public void GetDefaultPipelineConfigurations(
+            out NativeArray<NetworkPipelineStageId> unreliableFragmentedPipelineStages,
+            out NativeArray<NetworkPipelineStageId> unreliableSequencedFragmentedPipelineStages,
+            out NativeArray<NetworkPipelineStageId> reliableSequencedPipelineStages)
+        {
+            var unreliableFragmented = new NetworkPipelineStageId[]
+            {
+                NetworkPipelineStageId.Get<FragmentationPipelineStage>(),
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+#endif
+            };
+
+            var unreliableSequencedFragmented = new NetworkPipelineStageId[]
+            {
+                NetworkPipelineStageId.Get<FragmentationPipelineStage>(),
+                NetworkPipelineStageId.Get<UnreliableSequencedPipelineStage>(),
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+#endif
+            };
+
+            var reliableSequenced = new NetworkPipelineStageId[]
+            {
+                NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+#endif
+            };
+
+            unreliableFragmentedPipelineStages = new(unreliableFragmented, Allocator.Temp);
+            unreliableSequencedFragmentedPipelineStages = new(unreliableSequencedFragmented, Allocator.Temp);
+            reliableSequencedPipelineStages = new(reliableSequenced, Allocator.Temp);
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -509,6 +666,7 @@ namespace Unity.Netcode.Transports.UTP
                     return NetworkPipeline.Null;
             }
         }
+
 #if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
         private static bool IsValidFqdn(string fqdn)
         {
@@ -525,15 +683,6 @@ namespace Unity.Netcode.Transports.UTP
 
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
-                //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
-                //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-                if (m_RelayServerData.Equals(default(RelayServerData)))
-                {
-                    Debug.LogError("You must call SetRelayServerData() at least once before calling StartClient.");
-                    return false;
-                }
-
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
                 serverEndpoint = m_RelayServerData.Endpoint;
             }
             else
@@ -745,22 +894,6 @@ namespace Unity.Netcode.Transports.UTP
                 PacketJitterMS = packetJitter,
                 PacketDropRate = dropRate
             };
-        }
-
-        private bool StartRelayServer()
-        {
-            //This comparison is currently slow since RelayServerData does not implement a custom comparison operator that doesn't use
-            //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
-            if (m_RelayServerData.Equals(default(RelayServerData)))
-            {
-                Debug.LogError("You must call SetRelayServerData() at least once before calling StartServer.");
-                return false;
-            }
-            else
-            {
-                m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
-                return ServerBindAndListen(NetworkEndpoint.AnyIpv4);
-            }
         }
 
         [BurstCompile]
@@ -1301,26 +1434,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
-
-            m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
-
-            // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
-            // account for the overhead of its length when we store it in the send queue.
-            var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
-            m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
-
-            // Bump the reliable window size to its maximum size of 64. Since NGO makes heavy use of
-            // reliable delivery, we're better off with the increased window size compared to the
-            // extra 4 bytes of header that this costs us.
-            //
-            // We also increase the maximum resend timeout since the default one in UTP is very
-            // aggressive (optimized for latency and low bandwidth). With NGO, it's too low and
-            // we sometimes notice a lot of useless resends, especially if using Relay. (We can
-            // only do this with UTP 2.0 because 1.X doesn't support that parameter.)
-            m_NetworkSettings.WithReliableStageParameters(
-                windowSize: 64,
-                maximumResendTime: m_ProtocolType == ProtocolType.RelayUnityTransport ? 750 : 500
-            );
         }
 
         /// <summary>
@@ -1463,26 +1576,17 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            bool succeeded;
-            switch (m_ProtocolType)
+            var listenEndpoint = m_ProtocolType == ProtocolType.UnityTransport
+                ? ConnectionData.ListenEndPoint
+                : NetworkEndpoint.AnyIpv4;
+
+            var succeeded = ServerBindAndListen(listenEndpoint);
+            if (!succeeded && m_Driver.IsCreated)
             {
-                case ProtocolType.UnityTransport:
-                    succeeded = ServerBindAndListen(ConnectionData.ListenEndPoint);
-                    if (!succeeded && m_Driver.IsCreated)
-                    {
-                        m_Driver.Dispose();
-                    }
-                    return succeeded;
-                case ProtocolType.RelayUnityTransport:
-                    succeeded = StartRelayServer();
-                    if (!succeeded && m_Driver.IsCreated)
-                    {
-                        m_Driver.Dispose();
-                    }
-                    return succeeded;
-                default:
-                    return false;
+                m_Driver.Dispose();
             }
+
+            return succeeded;
         }
 
         /// <summary>
@@ -1522,23 +1626,6 @@ namespace Unity.Netcode.Transports.UTP
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = default;
-        }
-
-        private void ConfigureSimulator()
-        {
-            // As DebugSimulator is deprecated, the 'packetDelayMs', 'packetJitterMs' and 'packetDropPercentage'
-            // parameters are set to the default and are supposed to be changed using Network Simulator tool instead.
-            m_NetworkSettings.WithSimulatorStageParameters(
-                maxPacketCount: 300, // TODO Is there any way to compute a better value?
-                maxPacketSize: NetworkParameterConstants.MTU,
-                packetDelayMs: 0,
-                packetJitterMs: 0,
-                packetDropPercentage: 0,
-                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
-                , mode: ApplyMode.AllPackets
-            );
-
-            m_NetworkSettings.WithNetworkSimulatorParameters();
         }
 
         /// <inheritdoc cref="NetworkTransport.OnCurrentTopology"/>
@@ -1586,30 +1673,14 @@ namespace Unity.Netcode.Transports.UTP
             m_ClientCaCertificate = caCertificate;
         }
 
-        /// <summary>
-        /// Creates the internal NetworkDriver
-        /// </summary>
-        /// <param name="transport">The owner transport</param>
-        /// <param name="driver">The driver</param>
-        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
-        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
-        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
-        public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
+        /// <inheritdoc cref="INetworkStreamDriverConstructor.CreateDriver"/>
+        public void CreateDriver(
+            UnityTransport transport,
+            out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-            ConfigureSimulator();
-#endif
-            m_NetworkSettings.WithNetworkConfigParameters(
-                maxConnectAttempts: transport.m_MaxConnectAttempts,
-                connectTimeoutMS: transport.m_ConnectTimeoutMS,
-                disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
-                sendQueueCapacity: m_MaxPacketQueueSize,
-                receiveQueueCapacity: m_MaxPacketQueueSize,
-                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
-
 #if UNITY_WEBGL && !UNITY_EDITOR
             if (m_NetworkManager.IsServer && m_ProtocolType != ProtocolType.RelayUnityTransport)
             {
@@ -1632,48 +1703,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
-            if (m_UseEncryption)
-            {
-                if (m_ProtocolType == ProtocolType.RelayUnityTransport)
-                {
-                    if (m_RelayServerData.IsSecure == 0)
-                    {
-                        // log an error because we have mismatched configuration
-                        Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
-                    }
-
-                    // No need to to anything else if using Relay because UTP will handle the
-                    // configuration of the security parameters on its own.
-                }
-                else
-                {
-                    if (m_NetworkManager.IsServer)
-                    {
-                        if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
-                        {
-                            throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
-                        }
-
-                        m_NetworkSettings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(m_ServerCommonName))
-                        {
-                            throw new Exception("In order to use encrypted communications, clients must set the server common name.");
-                        }
-                        else if (string.IsNullOrEmpty(m_ClientCaCertificate))
-                        {
-                            m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
-                        }
-                        else
-                        {
-                            m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
-                        }
-                    }
-                }
-            }
-
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
                 if (m_UseWebSockets && m_RelayServerData.IsWebSocket == 0)
@@ -1689,15 +1718,15 @@ namespace Unity.Netcode.Transports.UTP
 
             if (m_UseWebSockets)
             {
-                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), GetDefaultNetworkSettings());
             }
             else
             {
 #if UNITY_WEBGL && !UNITY_EDITOR
                 Debug.LogWarning($"WebSockets were used even though they're not selected in NetworkManager. You should check {nameof(UseWebSockets)}', on the Unity Transport component, to silence this warning.");
-                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), GetDefaultNetworkSettings());
 #else
-                driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new UDPNetworkInterface(), GetDefaultNetworkSettings());
 #endif
             }
 
@@ -1705,48 +1734,14 @@ namespace Unity.Netcode.Transports.UTP
             driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
 
-            SetupPipelines(driver,
-                out unreliableFragmentedPipeline,
-                out unreliableSequencedFragmentedPipeline,
-                out reliableSequencedPipeline);
-        }
+            GetDefaultPipelineConfigurations(
+                out var unreliableFragmentedPipelineStages,
+                out var unreliableSequencedFragmentedPipelineStages,
+                out var reliableSequencedPipelineStages);
 
-        private void SetupPipelines(NetworkDriver driver,
-            out NetworkPipeline unreliableFragmentedPipeline,
-            out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline)
-        {
-
-            unreliableFragmentedPipeline = driver.CreatePipeline(
-                typeof(FragmentationPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-                , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-            );
-
-            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                typeof(FragmentationPipelineStage),
-                typeof(UnreliableSequencedPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-                , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-            );
-
-            reliableSequencedPipeline = driver.CreatePipeline(
-                typeof(ReliableSequencedPipelineStage)
-#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
-                , typeof(SimulatorPipelineStage)
-#endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                , typeof(NetworkMetricsPipelineStage)
-#endif
-            );
+            unreliableFragmentedPipeline = driver.CreatePipeline(unreliableFragmentedPipelineStages);
+            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(unreliableSequencedFragmentedPipelineStages);
+            reliableSequencedPipeline = driver.CreatePipeline(reliableSequencedPipelineStages);
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
