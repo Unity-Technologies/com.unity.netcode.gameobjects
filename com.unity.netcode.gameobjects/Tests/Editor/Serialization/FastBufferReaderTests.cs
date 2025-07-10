@@ -460,7 +460,7 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
-        
+
         protected override unsafe void RunTypeTestSafe<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);

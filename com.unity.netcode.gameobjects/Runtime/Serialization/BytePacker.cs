@@ -267,13 +267,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(FastBufferWriter writer, Pose pose)
         {
-            WriteValuePacked(writer, pose.position.x);
-            WriteValuePacked(writer, pose.position.y);
-            WriteValuePacked(writer, pose.position.z);
-            WriteValuePacked(writer, pose.rotation.x);
-            WriteValuePacked(writer, pose.rotation.y);
-            WriteValuePacked(writer, pose.rotation.z);
-            WriteValuePacked(writer, pose.rotation.w);
+            WriteValuePacked(writer, pose.position);
+            WriteValuePacked(writer, pose.rotation);
         }
 
         /// <summary>
