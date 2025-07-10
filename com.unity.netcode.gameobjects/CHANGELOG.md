@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added methods `GetDefaultNetworkSettings` and `GetDefaultPipelineConfigurations` to `UnityTransport`. These can be used to retrieve the default settings and pipeline stages that are used by `UnityTransport`. This is useful when providing a custom driver constructor through `UnityTransport.s_DriverConstructor`, since it allows reusing or tuning the existing configuration instead of trying to recreate it. This means a transport with a custom driver can now easily benefit from most of the features of `UnityTransport`, like integration with the Network Simulator and Network Profiler from the multiplayer tools package. (#3501)
 - Added mappings between `ClientId` and `TransportId`. (#3516)
 - Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
 
