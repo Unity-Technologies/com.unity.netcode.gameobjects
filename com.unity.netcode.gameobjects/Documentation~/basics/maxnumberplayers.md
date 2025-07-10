@@ -4,10 +4,8 @@ Netcode for GameObjects provides a way to customize the [connection approval pro
 
 Boss Room provides one example of how to handle limiting the number of players through the connection approval process:
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/HostingState.cs
-
-```
+<!-- CodeExample: maxnumberplayers-HostingState https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/HostingState.cs -->
+[!code-csharp[HostingState](../snippets/HostingState.cs)]
 
 The code below shows an example of an over-capacity check that would prevent more than a certain pre-defined number of players from connecting.
 

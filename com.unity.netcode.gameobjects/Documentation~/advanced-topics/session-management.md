@@ -25,9 +25,8 @@ In cases where we don't use the Player Object approach and instead manually attr
 
 Here is an example from the Boss Room sample, showing some simple session management. The game uses the Player Object approach and a GUID to identify unique players.
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/SessionManager.cs
-```
+<!-- CodeExample: session-management-SessionManager https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/SessionManager.cs -->
+[!code-csharp[SessionManager](../snippets/SessionManager.cs)]
 
 This class allows Boss Room to handle player session data, represented by a struct `T` implementing the `ISessionPlayerData` interface, by providing mechanisms to initialize, get and edit that data, and to associate it to a specific player. It also handles the clearing of data that's no longer used and the reinitialization of data between sessions.
 

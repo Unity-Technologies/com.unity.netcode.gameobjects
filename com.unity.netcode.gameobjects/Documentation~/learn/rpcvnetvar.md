@@ -20,9 +20,8 @@ If we sent an RPC to all clients, then all players connecting mid-game after tha
 
 In that case, it's preferable to use `NetworkVariable`s as show below:
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/SwitchedDoor.cs#L10-L26
-```
+<!-- CodeExample: rpcvnetvar-SwitchedDoor-L10-L26 https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/SwitchedDoor.cs -->
+[!code-csharp[SwitchedDoor](../snippets/SwitchedDoor.cs#L10-L26)]
 
 It uses a `BoolNetworkVariable` to represent the `IsOpen` state. If one player opens the door and a second player connects after this, the host replicates all the world's information to that new player, including the door's state.
 
@@ -44,21 +43,18 @@ Actions in Boss Room are a great example for this. The area of effect action (`A
 
 `AoeActionInput.cs` Shows the input being updated client side and not waiting for the server. It then calls an RPC when clicking on the area to affect.
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/Input/AoeActionInput.cs
-```
+<!-- CodeExample: rpcvnetvar-AoeActionInput https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/Input/AoeActionInput.cs -->
+[!code-csharp[AoeActionInput](../snippets/AoeActionInput.cs)]
 
 `AOEAction.cs` has server-side logic detecting enemies inside the area and applying damage. It then broadcasts an RPC to tell all clients to play the VFX at the appropriate position. Character's state will automatically update with their respective `NetworkVariable`s update (health and alive status for example).
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ConcreteActions/AOEAction.cs#L8-L-40
-```
+<!-- CodeExample: rpcvnetvar-AOEAction-L8-L-40 https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ConcreteActions/AOEAction.cs -->
+[!code-csharp[AOEAction](../snippets/AOEAction.cs#L8-L-40)]
 
 The following snippet of code is triggered by an RPC coming from the server
 
-```csharp reference
-https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ConcreteActions/AOEAction.cs#L77-L82
-```
+<!-- CodeExample: rpcvnetvar-AOEAction-L77-L82 https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ConcreteActions/AOEAction.cs -->
+[!code-csharp[AOEAction](../snippets/AOEAction.cs#L77-L82)]
 
 If you want to make sure two variables are received at the same time, RPCs are great for this.
 
