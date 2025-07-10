@@ -283,7 +283,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableLong = new NetworkVariable<long>(1);
             m_NetworkVariableSByte = new NetworkVariable<sbyte>(0);
             m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(Quaternion.identity);
-            m_NetworkVariablePose = new NetworkVariable<Pose>(Pose.identity);
+            m_NetworkVariablePose = new NetworkVariable<Pose>(new Pose(new Vector3(1, 1, 1), Quaternion.identity));
             m_NetworkVariableShort = new NetworkVariable<short>(256);
             m_NetworkVariableVector4 = new NetworkVariable<Vector4>(new Vector4(1, 1, 1, 1));
             m_NetworkVariableVector3 = new NetworkVariable<Vector3>(new Vector3(1, 1, 1));

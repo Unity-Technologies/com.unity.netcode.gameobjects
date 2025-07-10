@@ -286,14 +286,9 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(FastBufferReader reader, out Pose pose)
         {
-            pose = new Pose();
-            ReadValuePacked(reader, out pose.position.x);
-            ReadValuePacked(reader, out pose.position.y);
-            ReadValuePacked(reader, out pose.position.z);
-            ReadValuePacked(reader, out pose.rotation.x);
-            ReadValuePacked(reader, out pose.rotation.y);
-            ReadValuePacked(reader, out pose.rotation.z);
-            ReadValuePacked(reader, out pose.rotation.w);
+            ReadValuePacked(reader, out Vector3 position);
+            ReadValuePacked(reader, out Quaternion rotation);
+            pose = new Pose(position, rotation);
         }
 
         /// <summary>
