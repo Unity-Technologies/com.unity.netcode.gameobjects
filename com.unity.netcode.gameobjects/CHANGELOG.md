@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed synchronizing the destroyGameObject parameter to clients for InScenePlaced network objects. (#3514)
 - Fixed distributed authority related issue where enabling the `NetworkObject.DestroyWithScene` would cause errors when a destroying non-authority instances due to loading (single mode) or unloading scene events. (#3500)
 
 ### Changed

@@ -283,7 +283,38 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>A <see cref="NetworkManager"/> instance that will not be the session owner</returns>
         protected NetworkManager GetNonAuthorityNetworkManager()
         {
-            return m_ClientNetworkManagers.First(client => !client.LocalClient.IsSessionOwner);
+            // Return the equivalent of m_ClientNetworkManagers[0]
+            return GetNonAuthorityNetworkManager(0);
+        }
+
+        /// <summary>
+        /// Gets the non-session owner <see cref="NetworkManager"/> indicated by the passed in index.
+        /// </summary>
+        /// <param name="nonAuthorityIndex">Index of the number of the non-authority client wanted</param>
+        /// <returns>The <see cref="NetworkManager"/> instance that is not the session owner at the given index</returns>
+        protected NetworkManager GetNonAuthorityNetworkManager(int nonAuthorityIndex)
+        {
+            var numSeen = 0;
+            for (int i = 0; i < m_ClientNetworkManagers.Length; i++)
+            {
+                if (i == 0 && !NetcodeIntegrationTestHelpers.IsStarted)
+                {
+                    continue;
+                }
+
+                if (!m_ClientNetworkManagers[i].LocalClient.IsSessionOwner)
+                {
+                    if (numSeen == nonAuthorityIndex)
+                    {
+                        return m_ClientNetworkManagers[i];
+                    }
+
+                    numSeen++;
+                }
+
+            }
+            Assert.Fail("No valid non-authority network manager found!");
+            return null;
         }
 
         /// <summary>
@@ -636,7 +667,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 ComponentFactory.Register<IRealTimeProvider>(manager => new MockTimeProvider());
             }
 
-            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
+            if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && !NetcodeIntegrationTestHelpers.IsStarted ||
                 m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 CreateServerAndClients();
@@ -789,7 +820,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected virtual void OnNewClientCreated(NetworkManager networkManager)
         {
             // Ensure any late joining client has all NetworkPrefabs required to connect.
-            foreach (var networkPrefab in GetAuthorityNetworkManager().NetworkConfig.Prefabs.Prefabs)
+            var authority = GetAuthorityNetworkManager();
+            networkManager.NetworkConfig.EnableSceneManagement = authority.NetworkConfig.EnableSceneManagement;
+            foreach (var networkPrefab in authority.NetworkConfig.Prefabs.Prefabs)
             {
                 if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
                 {
@@ -832,11 +865,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// This will create, start, and connect a new client while in the middle of an
-        /// integration test.
+        /// This will create a new client while in the middle of an integration test.
+        /// Use <see cref="StartClient"/> to start the created client.
         /// </summary>
-        /// <returns>An <see cref="IEnumerator"/> to be used in a coroutine for asynchronous execution.</returns>
-        protected IEnumerator CreateAndStartNewClient()
+        /// <returns>The newly created <see cref="NetworkManager"/>.</returns>
+        protected NetworkManager CreateNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel, m_UseCmbService);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
@@ -846,6 +879,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // in the event any modifications need to be made before starting the client
             OnNewClientCreated(networkManager);
 
+            return networkManager;
+        }
+
+        /// <summary>
+        /// This will create, start, and connect a new client while in the middle of an
+        /// integration test.
+        /// </summary>
+        /// <returns>An <see cref="IEnumerator"/> to be used in a coroutine for asynchronous execution.</returns>
+        protected IEnumerator CreateAndStartNewClient()
+        {
+            var networkManager = CreateNewClient();
             yield return StartClient(networkManager);
         }
 
@@ -1882,14 +1926,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private bool CheckClientsConnected(NetworkManager[] clientsToCheck)
         {
             m_InternalErrorLog.Clear();
-            var allClientsConnected = true;
 
             for (int i = 0; i < clientsToCheck.Length; i++)
             {
                 if (!clientsToCheck[i].IsConnectedClient)
                 {
-                    allClientsConnected = false;
                     m_InternalErrorLog.AppendLine($"[Client-{i + 1}] Client is not connected!");
+                    return false;
                 }
             }
 
@@ -1898,11 +1941,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (currentCount != TotalClients)
             {
-                allClientsConnected = false;
                 m_InternalErrorLog.AppendLine($"[Server-Side] Expected {TotalClients} clients to connect but only {currentCount} connected!");
+                return false;
             }
 
-            return allClientsConnected;
+            return true;
         }
 
         /// <summary>
