@@ -1174,6 +1174,55 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreSame(testComp.AllInts[4], testComp.Int4);
         }
 
+        [Test]
+        public void TestNetworkVariableChangeAndReturnInSameFrame([Values] HostOrServer useHost)
+        {
+            InitializeServerAndClients(useHost);
+
+            var serverOnValueChangedCount = 0;
+            var clientOnValueChangedCount = 0;
+
+            void ServerOnValueChanged(NetworkVariableTest.SomeEnum previous, NetworkVariableTest.SomeEnum next)
+            {
+                serverOnValueChangedCount++;
+            }
+
+            void ClientOnValueChanged(NetworkVariableTest.SomeEnum previous, NetworkVariableTest.SomeEnum next)
+            {
+                clientOnValueChangedCount++;
+            }
+
+            bool VerifyStructure()
+            {
+                return m_Player1OnClient1.TheEnum.Value == m_Player1OnServer.TheEnum.Value;
+            }
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure));
+
+            m_Player1OnServer.TheEnum.OnValueChanged += ServerOnValueChanged;
+            m_Player1OnClient1.TheEnum.OnValueChanged += ClientOnValueChanged;
+
+            // Change the value once in a frame
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.B;
+
+            // Wait for the value to sync and assert that both server and client had OnValueChanged called an equal number of times
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure), "Timed out waiting for client and server values to match");
+            Assert.AreEqual(serverOnValueChangedCount, clientOnValueChangedCount, $"Expected OnValueChanged call count to be equal. Server OnValueChanged was called {serverOnValueChangedCount} times but client was called {clientOnValueChangedCount} times!");
+
+            // Change the value twice in a frame
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.A;
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.B;
+
+            // Wait for the value to sync and assert that the server had OnValueChanged called once more than the client
+            TimeTravelAdvanceTick();
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure), "Timed out waiting for client and server values to match");
+            Assert.AreEqual(serverOnValueChangedCount - 1, clientOnValueChangedCount, $"Unexpected OnValueChanged call count. Server OnValueChanged was called {serverOnValueChangedCount} times but client was called {clientOnValueChangedCount} times!");
+
+            m_Player1OnServer.TheEnum.OnValueChanged -= ServerOnValueChanged;
+            m_Player1OnClient1.TheEnum.OnValueChanged -= ClientOnValueChanged;
+        }
+
         private void TestValueType<T>(T testValue, T changedValue) where T : unmanaged
         {
             var serverVariable = new NetworkVariable<T>(testValue);
