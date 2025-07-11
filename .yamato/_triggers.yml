@@ -46,7 +46,7 @@ pull_request_trigger:
   # Run the following tests on a selection of different desktop platforms
   dependencies:
     # Run package EditMode and Playmode package tests on trunk and minimum supported editor (2021.3 in case of NGOv1.X)
-    - .yamato/project-tests.yml#test_testproject_mac_trunk
+    - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
     - .yamato/package-tests.yml#package_test_-_ngo_2021.3_win
 
     # Run testproject EditMode and Playmode project tests on trunk and minimum supported editor (2021.3 in case of NGOv1.X)
