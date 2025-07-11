@@ -34,8 +34,11 @@ namespace Unity.Netcode
 #endif
             try
             {
-                m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
-                m_PendingDirtyNetworkObjects.Clear();
+                if (m_PendingDirtyNetworkObjects.Count > 0)
+                {
+                    m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
+                    m_PendingDirtyNetworkObjects.Clear();
+                }
 
                 // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
                 // trying to process them, even if they were previously marked as dirty.

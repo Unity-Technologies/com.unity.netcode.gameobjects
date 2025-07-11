@@ -1616,7 +1616,7 @@ namespace Unity.Netcode
                         // Send destroy call
                         size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                         // Broadcast the destroy to all clients so they can update their observers list
-                        foreach (var client in NetworkManager.ConnectedClientsIds)
+                        foreach (var client in NetworkManager.ConnectionManager.ConnectedClientIds)
                         {
                             if (client == clientId || client == NetworkManager.LocalClientId)
                             {
@@ -2363,7 +2363,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.ServerClientId)
                         {
@@ -2382,7 +2382,7 @@ namespace Unity.Netcode
                     var maxCount = NetworkManager.ConnectedClientsIds.Count;
                     ulong* clientIds = stackalloc ulong[maxCount];
                     int idx = 0;
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.ServerClientId)
                         {

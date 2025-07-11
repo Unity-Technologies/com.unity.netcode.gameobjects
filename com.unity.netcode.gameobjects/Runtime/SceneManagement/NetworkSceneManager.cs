@@ -2593,7 +2593,7 @@ namespace Unity.Netcode
                                 EventData = sceneEventData,
                             };
                             // Forward synchronization to client then exit early because DAHost is not the current session owner
-                            foreach (var client in NetworkManager.ConnectedClientsIds)
+                            foreach (var client in NetworkManager.ConnectionManager.ConnectedClientIds)
                             {
                                 if (client == NetworkManager.LocalClientId)
                                 {

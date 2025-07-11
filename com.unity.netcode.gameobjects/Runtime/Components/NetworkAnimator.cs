@@ -996,7 +996,7 @@ namespace Unity.Netcode.Components
                 {
                     // Just notify all remote clients and not the local server
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1315,7 +1315,7 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1378,7 +1378,7 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1452,7 +1452,7 @@ namespace Unity.Netcode.Components
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
             m_ClientSendList.Clear();
-            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                 {
