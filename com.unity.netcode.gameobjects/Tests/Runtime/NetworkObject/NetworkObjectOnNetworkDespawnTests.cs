@@ -26,17 +26,8 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_ObjectToSpawn;
         private NetworkObject m_NetworkObject;
 
-        private HostOrServer m_HostOrServer;
-
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
-
         public NetworkObjectOnNetworkDespawnTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
-            m_HostOrServer = hostOrServer;
         }
 
         internal class OnNetworkDespawnTestComponent : NetworkBehaviour
@@ -65,22 +56,13 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool ObjectSpawnedOnAllNetworkManagerInstances()
         {
-            if (!s_GlobalNetworkObjects.ContainsKey(m_ServerNetworkManager.LocalClientId))
+            foreach (var manager in m_NetworkManagers)
             {
-                return false;
-            }
-            if (!s_GlobalNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_NetworkObject.NetworkObjectId))
-            {
-                return false;
-            }
-
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                if (!s_GlobalNetworkObjects.ContainsKey(clientNetworkManager.LocalClientId))
+                if (!s_GlobalNetworkObjects.ContainsKey(manager.LocalClientId))
                 {
                     return false;
                 }
-                if (!s_GlobalNetworkObjects[clientNetworkManager.LocalClientId].ContainsKey(m_NetworkObject.NetworkObjectId))
+                if (!s_GlobalNetworkObjects[manager.LocalClientId].ContainsKey(m_NetworkObject.NetworkObjectId))
                 {
                     return false;
                 }
@@ -96,8 +78,11 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestNetworkObjectDespawnOnShutdown([Values(InstanceTypes.Server, InstanceTypes.Client)] InstanceTypes despawnCheck)
         {
-            var networkManager = despawnCheck == InstanceTypes.Server ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
-            var networkManagerOwner = m_ServerNetworkManager;
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
+            var networkManager = despawnCheck == InstanceTypes.Server ? authority : nonAuthority;
+            var networkManagerOwner = authority;
             if (m_DistributedAuthority)
             {
                 networkManagerOwner = networkManager;

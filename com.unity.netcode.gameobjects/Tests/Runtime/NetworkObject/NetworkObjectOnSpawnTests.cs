@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
@@ -16,12 +17,6 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_TestNetworkObjectInstance;
 
         protected override int NumberOfClients => 2;
-
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
 
         public enum ObserverTestTypes
         {
@@ -44,16 +39,35 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
-        private bool CheckClientsSideObserverTestObj()
+        private bool CheckClientsSideObserverTestObj(StringBuilder errorMessage)
         {
             foreach (var client in m_ClientNetworkManagers)
             {
+                if (client.LocalClient.IsSessionOwner)
+                {
+                    continue;
+                }
+
+                var hasObjects = s_GlobalNetworkObjects.TryGetValue(client.LocalClientId, out var clientObjects);
                 if (m_ObserverTestType == ObserverTestTypes.WithObservers)
                 {
                     // When validating this portion of the test and spawning with observers is true, there
                     // should be spawned objects on the clients.
-                    if (!s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
+                    if (!hasObjects)
                     {
+                        errorMessage.AppendLine($"[Client-{client.LocalClientId}] has an no objects in global network object list");
+                        return false;
+                    }
+
+                    // Make sure they did spawn the object
+                    if (!clientObjects.TryGetValue(m_ObserverTestNetworkObject.NetworkObjectId, out var clientObject))
+                    {
+                        errorMessage.AppendLine($"[Client-{client.LocalClientId}] has no reference to object {m_ObserverTestNetworkObject.NetworkObjectId}");
+                        return false;
+                    }
+                    if (!clientObject.IsSpawned)
+                    {
+                        errorMessage.AppendLine($"[Client-{client.LocalClientId}] has not spawned object {m_ObserverTestNetworkObject.NetworkObjectId}");
                         return false;
                     }
                 }
@@ -61,48 +75,27 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     // When validating this portion of the test and spawning with observers is false, there
                     // should be no spawned objects on the clients.
-                    if (s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
+                    if (hasObjects)
                     {
+                        errorMessage.AppendLine($"[Client-{client.LocalClientId}] has an object in global network object");
                         return false;
                     }
                     // We don't need to check anything else for spawn without observers
-                    continue;
-                }
-
-                var clientObjects = s_GlobalNetworkObjects[client.LocalClientId];
-                // Make sure they did spawn the object
-                if (m_ObserverTestType == ObserverTestTypes.WithObservers)
-                {
-                    if (!clientObjects.ContainsKey(m_ObserverTestNetworkObject.NetworkObjectId))
-                    {
-                        return false;
-                    }
-                    if (!clientObjects[m_ObserverTestNetworkObject.NetworkObjectId].IsSpawned)
-                    {
-                        return false;
-                    }
                 }
             }
             return true;
         }
 
         /// <summary>
-        /// Assures the <see cref="ObserverSpawnTests"/> late joining client has all
-        /// NetworkPrefabs required to connect.
-        /// </summary>
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.EnableSceneManagement = m_ServerNetworkManager.NetworkConfig.EnableSceneManagement;
-            base.OnNewClientCreated(networkManager);
-        }
-
-        /// <summary>
         /// This test validates <see cref="NetworkObject.SpawnWithObservers"/> property
         /// </summary>
         /// <param name="observerTestTypes">whether to spawn with or without observers</param>
+        /// <param name="sceneManagement">whether or not to use scene management</param>
         [UnityTest]
         public IEnumerator ObserverSpawnTests([Values] ObserverTestTypes observerTestTypes, [Values] SceneManagementState sceneManagement)
         {
+            var authority = GetAuthorityNetworkManager();
+
             if (sceneManagement == SceneManagementState.SceneManagementDisabled)
             {
                 // When scene management is disabled, we need this wait period for all clients to be up to date with
@@ -112,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
                     yield return new WaitForSeconds(0.5f);
                 }
                 // Disable prefabs to prevent them from being destroyed
-                foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+                foreach (var networkPrefab in authority.NetworkConfig.Prefabs.Prefabs)
                 {
                     networkPrefab.Prefab.SetActive(false);
                 }
@@ -120,24 +113,36 @@ namespace Unity.Netcode.RuntimeTests
                 // Shutdown and clean up the current client NetworkManager instances
                 foreach (var networkManager in m_ClientNetworkManagers)
                 {
+                    if (networkManager == authority)
+                    {
+                        continue;
+                    }
+
                     m_PlayerNetworkObjects[networkManager.LocalClientId].Clear();
                     m_PlayerNetworkObjects.Remove(networkManager.LocalClientId);
                     yield return StopOneClient(networkManager, true);
                 }
 
                 // Shutdown and clean up the server NetworkManager instance
-                m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Clear();
-                yield return StopOneClient(m_ServerNetworkManager);
+                m_PlayerNetworkObjects[authority.LocalClientId].Clear();
+                yield return StopOneClient(authority);
 
                 // Set the prefabs to active again
-                foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+                foreach (var networkPrefab in authority.NetworkConfig.Prefabs.Prefabs)
                 {
                     networkPrefab.Prefab.SetActive(true);
                 }
 
                 // Disable scene management and start the host
-                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
-                m_ServerNetworkManager.StartHost();
+                authority.NetworkConfig.EnableSceneManagement = false;
+                if (m_UseCmbService)
+                {
+                    yield return StartClient(authority);
+                }
+                else
+                {
+                    authority.StartHost();
+                }
                 yield return s_DefaultWaitForTick;
 
                 // Create 2 new clients and connect them
@@ -150,7 +155,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ObserverTestType = observerTestTypes;
             var prefabNetworkObject = m_ObserverPrefab.GetComponent<NetworkObject>();
             prefabNetworkObject.SpawnWithObservers = observerTestTypes == ObserverTestTypes.WithObservers;
-            var instance = SpawnObject(m_ObserverPrefab, m_ServerNetworkManager);
+            var instance = SpawnObject(m_ObserverPrefab, authority);
             m_ObserverTestNetworkObject = instance.GetComponent<NetworkObject>();
             var withoutObservers = m_ObserverTestType == ObserverTestTypes.WithoutObservers;
             if (withoutObservers)
@@ -166,6 +171,10 @@ namespace Unity.Netcode.RuntimeTests
                 // Make each client an observer
                 foreach (var client in m_ClientNetworkManagers)
                 {
+                    if (client == authority)
+                    {
+                        continue;
+                    }
                     m_ObserverTestNetworkObject.NetworkShow(client.LocalClientId);
                 }
 
@@ -175,18 +184,19 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
 
                 // Validate that a late joining client does not see the NetworkObject when it spawns
-                yield return CreateAndStartNewClient();
+                var lateJoinClient = CreateNewClient();
+                yield return StartClient(lateJoinClient);
 
                 m_ObserverTestType = ObserverTestTypes.WithoutObservers;
                 // Just give a little time to make sure nothing spawned
                 yield return s_DefaultWaitForTick;
 
                 // This just requires a targeted check to assure the newly joined client did not spawn the NetworkObject with SpawnWithObservers set to false
-                var lateJoinClientId = m_ClientNetworkManagers[m_ClientNetworkManagers.Length - 1].LocalClientId;
+                var lateJoinClientId = lateJoinClient.LocalClientId;
                 Assert.False(s_GlobalNetworkObjects.ContainsKey(lateJoinClientId), $"[Client-{lateJoinClientId}] Spawned {instance.name} when it shouldn't have!");
 
                 // Now validate that we can make the NetworkObject visible to the newly joined client
-                m_ObserverTestNetworkObject.NetworkShow(m_ClientNetworkManagers[NumberOfClients].LocalClientId);
+                m_ObserverTestNetworkObject.NetworkShow(lateJoinClientId);
 
                 // Validate the NetworkObject is visible to all connected clients (including the recently joined client)
                 m_ObserverTestType = ObserverTestTypes.WithObservers;
