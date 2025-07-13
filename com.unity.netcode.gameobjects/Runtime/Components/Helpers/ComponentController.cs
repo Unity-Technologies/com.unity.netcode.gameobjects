@@ -51,7 +51,7 @@ namespace Unity.Netcode.Components
         private List<PendingStateUpdate> m_PendingStateUpdates = new List<PendingStateUpdate>();
 
         /// <summary>
-        /// Invoke prior to setting the state
+        /// Invoke prior to setting the state.
         /// </summary>
         internal bool QueueForDelay(bool enabled)
         {
@@ -139,8 +139,6 @@ namespace Unity.Netcode.Components
             }
         }
     }
-
-
 
     /// <summary>
     /// Handles enabling or disabling commonly used components, behaviours, RenderMeshes, etc.<br />
