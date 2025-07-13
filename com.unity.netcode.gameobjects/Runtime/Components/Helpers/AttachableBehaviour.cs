@@ -213,8 +213,8 @@ namespace Unity.Netcode.Components
             // Notify of the changed attached state
             UpdateAttachState(m_AttachState, m_AttachableNode);
 
-            // When detatching, we want to make our final action
-            // the invocation of the AttachableNode's Detatch method.
+            // When detaching, we want to make our final action
+            // the invocation of the AttachableNode's Detach method.
             if (!shouldParent && m_AttachableNode)
             {
                 m_AttachableNode.Detach(this);
@@ -227,7 +227,7 @@ namespace Unity.Netcode.Components
         /// when the <see cref="AttachState"/> has changed.
         /// </summary>
         /// <param name="attachState">The new <see cref="AttachState"/>.</param>
-        /// <param name="attachableNode">The <see cref="AttachableNode"/> being attached to or from. Will be null when completely detatched.</param>
+        /// <param name="attachableNode">The <see cref="AttachableNode"/> being attached to or from. Will be null when completely detached.</param>
         protected virtual void OnAttachStateChanged(AttachState attachState, AttachableNode attachableNode)
         {
 

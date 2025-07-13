@@ -23,13 +23,13 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
         /// </summary>
-        [Range(0.001f, 2.0f)]
+        [Range(0.0f, 2.0f)]
         public float EnableDelay;
 
         /// <summary>
         /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
         /// </summary>
-        [Range(0.001f, 2.0f)]
+        [Range(0f, 2.0f)]
         public float DisableDelay;
 
         /// <summary>
