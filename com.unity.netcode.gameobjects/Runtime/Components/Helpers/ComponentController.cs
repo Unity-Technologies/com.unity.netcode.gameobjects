@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -16,7 +17,18 @@ namespace Unity.Netcode.Components
         /// When true, this component's enabled state will be the inverse of
         /// the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
         /// </summary>
+        [Tooltip("When enabled, this component will inversely mirror the currently applied enable or disable state.")]
         public bool InvertEnabled;
+
+        /// <summary>
+        /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
+        /// </summary>
+        public float EnableDelay;
+
+        /// <summary>
+        /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
+        /// </summary>
+        public float DisableDelay;
 
         /// <summary>
         /// The component to control.
@@ -27,8 +39,63 @@ namespace Unity.Netcode.Components
         /// and <see cref="InvertEnabled"/> properties will be applied to all components found on the <see cref="GameObject"/>.
         /// </remarks>
         public Object Component;
-
         internal PropertyInfo PropertyInfo;
+
+
+        internal bool TimeDeltaDelayInProgress;
+        internal bool PendingState;
+        internal float EnableDelayTimeDelta;
+        internal float DisableDelayTimeDelta;
+
+        private bool GetRelativeEnabled(bool enabled)
+        {
+            return InvertEnabled ? !enabled : enabled;
+        }
+
+        internal bool HasDelay(bool enabled)
+        {
+            return GetRelativeEnabled(enabled) ? EnableDelay > 0.0f : DisableDelay > 0.0f;
+        }
+
+        internal void StartTimeDeltaTracking(bool isEnabled)
+        {
+            if (GetRelativeEnabled(isEnabled))
+            {
+                EnableDelayTimeDelta = Time.realtimeSinceStartup + EnableDelay;
+            }
+            else
+            {
+                DisableDelayTimeDelta = Time.realtimeSinceStartup + DisableDelay;
+            }
+            TimeDeltaDelayInProgress = true;
+            PendingState = isEnabled;
+        }
+
+
+        internal void SetValue(bool isEnabled)
+        {
+            // If invert enabled is true, then use the inverted value passed in.
+            // Otherwise, directly apply the value passed in.
+            PropertyInfo.SetValue(Component, GetRelativeEnabled(isEnabled));
+        }
+
+        internal bool CheckTimeDeltaDelay()
+        {
+            if (!TimeDeltaDelayInProgress)
+            {
+                return false;
+            }
+
+            var isDeltaDelayInProgress = ((EnableDelayTimeDelta > Time.realtimeSinceStartup)
+                || (DisableDelayTimeDelta > Time.realtimeSinceStartup));
+
+            if (!isDeltaDelayInProgress)
+            {
+                SetValue(PendingState);
+            }
+            TimeDeltaDelayInProgress = isDeltaDelayInProgress;
+            return TimeDeltaDelayInProgress;
+        }
     }
 
     /// <summary>
@@ -51,6 +118,17 @@ namespace Unity.Netcode.Components
         /// </summary>
         [Tooltip("The initial state of the component controllers enabled status when instnatiated.")]
         public bool StartEnabled = true;
+
+        /// <summary>
+        /// The coroutine yield time used to check on any pending delayed <see cref="ComponentControllerEntry"/> state transitions.
+        /// </summary>
+        /// <remarks>
+        /// If there are any <see cref="ComponentControllerEntry"/> delays (enable, disable, or both), then upon changing the state of a <see cref="ComponentController"/> a coroutine will be started
+        /// (if not already started) that will monitor any pending delayed transitions (<see cref="EnableDelay"/> or <see cref="DisableDelay"/>) and will
+        /// handle changing each delayed <see cref="ComponentControllerEntry"/> until all instances have transitioned their value to the pending state change.
+        /// When there are no more pending delayed <see cref="ComponentControllerEntry"/>s, the coroutine will stop.
+        /// </remarks>
+        public float PendingDelayYieldTime = 0.032f;
 
         /// <summary>
         /// The list of <see cref="Components"/>s to be enabled and disabled.
@@ -214,6 +292,17 @@ namespace Unity.Netcode.Components
             base.OnNetworkDespawn();
         }
 
+        /// <inheritdoc/>
+        public override void OnDestroy()
+        {
+            if (m_CoroutineObject.IsRunning)
+            {
+                StopCoroutine(m_CoroutineObject.Coroutine);
+                m_CoroutineObject.IsRunning = false;
+            }
+            base.OnDestroy();
+        }
+
         private void OnEnabledChanged(bool previous, bool current)
         {
             ApplyEnabled(current);
@@ -239,13 +328,54 @@ namespace Unity.Netcode.Components
         /// <param name="enabled">the state update to apply</param>
         private void ApplyEnabled(bool enabled)
         {
+
             foreach (var entry in ValidComponents)
             {
-                // If invert enabled is true, then use the inverted value passed in.
-                // Otherwise, directly apply the value passed in.
-                var isEnabled = entry.InvertEnabled ? !enabled : enabled;
-                entry.PropertyInfo.SetValue(entry.Component, isEnabled);
+                if (entry.HasDelay(enabled))
+                {
+                    if (!m_CoroutineObject.IsRunning)
+                    {
+                        m_CoroutineObject.Coroutine = StartCoroutine(PendingAppliedState());
+                        m_CoroutineObject.IsRunning = true;
+                    }
+                    entry.StartTimeDeltaTracking(enabled);
+                }
+                else
+                {
+                    entry.SetValue(enabled);
+                }
             }
+        }
+
+        private class CoroutineObject
+        {
+            public Coroutine Coroutine;
+            public bool IsRunning;
+        }
+
+        private CoroutineObject m_CoroutineObject = new CoroutineObject();
+
+
+        private IEnumerator PendingAppliedState()
+        {
+            var checkPendingDeltaDelays = true;
+            var waitTime = new WaitForSeconds(PendingDelayYieldTime);
+
+            while (checkPendingDeltaDelays)
+            {
+                yield return waitTime;
+                checkPendingDeltaDelays = false;
+                foreach (var entry in ValidComponents)
+                {
+                    if (!entry.CheckTimeDeltaDelay())
+                    {
+                        continue;
+                    }
+                    checkPendingDeltaDelays = true;
+                }
+            }
+            m_CoroutineObject.IsRunning = false;
+            yield break;
         }
 
         /// <summary>

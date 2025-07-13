@@ -15,6 +15,11 @@ using Unity.Netcode.Components;
 public class AttachableNode : NetworkBehaviour
 {
     /// <summary>
+    /// Returns true if the <see cref="AttachableNode"/> instance has one or more attached <see cref="AttachableBehaviour"/> components.
+    /// </summary>
+    public bool HasAttachments => m_AttachedBehaviours.Count > 0;
+
+    /// <summary>
     /// A <see cref="List{T}"/> of the currently attached <see cref="AttachableBehaviour"/>s.
     /// </summary>
     protected readonly List<AttachableBehaviour> m_AttachedBehaviours = new List<AttachableBehaviour>();

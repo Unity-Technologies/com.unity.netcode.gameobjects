@@ -18,7 +18,10 @@ namespace Unity.Netcode.Components
     /// The term "attach" is used in place of parenting in order to distinguish between <see cref="NetworkObject"/> parenting and
     /// <see cref="AttachableBehaviour"/> parenting ("attaching" and "detaching").<br />
     /// This component can be used along with one or more <see cref="ComponentController"/> in order to enable or disable different components depending
-    /// upon the <see cref="AttachableBehaviour"/> instance's current state.
+    /// upon the <see cref="AttachableBehaviour"/> instance's current state.<br />
+    /// <see cref="AttachableNode"/> invocation order:
+    /// - When attaching, the <see cref="AttachableNode"/>'s <see cref="AttachableNode.OnAttached(AttachableBehaviour)"/> is invoked just before the <see cref="OnAttachStateChanged"/> is invoked with the <see cref="AttachState.Attached"/> state.<br />
+    /// - When detaching, the <see cref="AttachableNode"/>'s <see cref="AttachableNode.OnDetached(AttachableBehaviour)"/> is invoked right after the <see cref="OnAttachStateChanged"/> is invoked with the <see cref="AttachState.Detached"/> notification.<br />
     /// </remarks>
     public class AttachableBehaviour : NetworkBehaviour
     {
@@ -191,9 +194,11 @@ namespace Unity.Netcode.Components
                 {
                     // Run through the same process without being triggerd by a NetVar update.
                     UpdateAttachState(AttachState.Detaching, m_AttachableNode);
+                    InternalDetach();
+                    UpdateAttachState(AttachState.Detached, m_AttachableNode);
+
                     m_AttachableNode.Detach(this);
-                    transform.parent = null;
-                    UpdateAttachState(AttachState.Detached, null);
+                    m_AttachableNode = null;
                 }
             }
 
@@ -211,6 +216,14 @@ namespace Unity.Netcode.Components
 
             // Notify of the changed attached state
             UpdateAttachState(m_AttachState, m_AttachableNode);
+
+            // When detatching, we want to make our final action
+            // the invocation of the AttachableNode's Detatch method.
+            if (!shouldParent && m_AttachableNode)
+            {
+                m_AttachableNode.Detach(this);
+                m_AttachableNode = null;
+            }
         }
 
         /// <summary>
@@ -309,8 +322,6 @@ namespace Unity.Netcode.Components
         {
             if (m_AttachableNode)
             {
-                m_AttachableNode.Detach(this);
-                m_AttachableNode = null;
                 if (m_DefaultParent)
                 {
                     // Set the original parent and origianl local position and rotation
