@@ -116,9 +116,25 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected AttachableNode m_AttachableNode { get; private set; }
 
-        private NetworkVariable<NetworkBehaviourReference> m_AttachedNodeReference = new NetworkVariable<NetworkBehaviourReference>(new NetworkBehaviourReference(null));
+        private NetworkBehaviourReference m_AttachedNodeReference = new NetworkBehaviourReference(null);
         private Vector3 m_OriginalLocalPosition;
         private Quaternion m_OriginalLocalRotation;
+
+        /// <inheritdoc/>
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            // Example of how to synchronize late joining clients when using an RPC to update
+            // a local property's state.
+            if (serializer.IsWriter)
+            {
+                serializer.SerializeValue(ref m_AttachedNodeReference);
+            }
+            else
+            {
+                serializer.SerializeValue(ref m_AttachedNodeReference);
+            }
+            base.OnSynchronize(ref serializer);
+        }
 
         /// <summary>
         /// If you create a custom <see cref="AttachableBehaviour"/> and override this method, you must invoke
@@ -131,21 +147,6 @@ namespace Unity.Netcode.Components
             m_OriginalLocalRotation = transform.localRotation;
             m_AttachState = AttachState.Detached;
             m_AttachableNode = null;
-        }
-
-        /// <inheritdoc/>
-        /// <remarks>
-        /// If you create a custom <see cref="AttachableBehaviour"/> and override this method, you must invoke
-        /// this base instance of <see cref="OnNetworkPostSpawn"/>.
-        /// </remarks>
-        protected override void OnNetworkPostSpawn()
-        {
-            if (HasAuthority)
-            {
-                m_AttachedNodeReference.Value = new NetworkBehaviourReference(null);
-            }
-            m_AttachedNodeReference.OnValueChanged += OnAttachedNodeReferenceChanged;
-            base.OnNetworkPostSpawn();
         }
 
         /// <inheritdoc/>
@@ -164,25 +165,20 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
-            m_AttachedNodeReference.OnValueChanged -= OnAttachedNodeReferenceChanged;
             InternalDetach();
             if (NetworkManager && !NetworkManager.ShutdownInProgress)
             {
                 // Notify of the changed attached state
                 UpdateAttachState(m_AttachState, m_AttachableNode);
             }
+            m_AttachedNodeReference = new NetworkBehaviourReference(null);
             base.OnNetworkDespawn();
-        }
-
-        private void OnAttachedNodeReferenceChanged(NetworkBehaviourReference previous, NetworkBehaviourReference current)
-        {
-            UpdateAttachedState();
         }
 
         private void UpdateAttachedState()
         {
             var attachableNode = (AttachableNode)null;
-            var shouldParent = m_AttachedNodeReference.Value.TryGet(out attachableNode, NetworkManager);
+            var shouldParent = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
             var preState = shouldParent ? AttachState.Attaching : AttachState.Detaching;
             var preNode = shouldParent ? attachableNode : m_AttachableNode;
             shouldParent = shouldParent && attachableNode != null;
@@ -310,8 +306,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Update the attached node reference to the new attachable node.
-            m_AttachedNodeReference.Value = new NetworkBehaviourReference(attachableNode);
+            ChangeReference(new NetworkBehaviourReference(attachableNode));
         }
 
         /// <summary>
@@ -344,7 +339,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!HasAuthority)
+            if (!OnHasAuthority())
             {
                 NetworkLog.LogError($"[{name}][Detach][Not Authority] Client-{NetworkManager.LocalClientId} is not the authority!");
                 return;
@@ -373,8 +368,40 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Update the attached node reference to nothing-null.
-            m_AttachedNodeReference.Value = new NetworkBehaviourReference(null);
+            ChangeReference(new NetworkBehaviourReference(null));
+        }
+
+        /// <summary>
+        /// Override this method to change how the instance determines the authority.<br />
+        /// The default is to use the <see cref="NetworkObject.HasAuthority"/> method.
+        /// </summary>
+        /// <remarks>
+        /// Useful when using a <see cref="NetworkTopologyTypes.ClientServer"/> network topology and you would like
+        /// to have the owner be the authority of this <see cref="ComponentController"/> instance.
+        /// </remarks>
+        /// <returns>true = has authoriy | false = does not have authority</returns>
+        protected virtual bool OnHasAuthority()
+        {
+            return HasAuthority;
+        }
+
+        private void ChangeReference(NetworkBehaviourReference networkBehaviourReference)
+        {
+            // Update the attached node reference to the new attachable node.
+            m_AttachedNodeReference = networkBehaviourReference;
+            UpdateAttachedState();
+
+            if (OnHasAuthority())
+            {
+                // Send notification of the change in this property's state.
+                UpdateAttachStateRpc(m_AttachedNodeReference);
+            }
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void UpdateAttachStateRpc(NetworkBehaviourReference attachedNodeReference)
+        {
+            ChangeReference(attachedNodeReference);
         }
     }
 }

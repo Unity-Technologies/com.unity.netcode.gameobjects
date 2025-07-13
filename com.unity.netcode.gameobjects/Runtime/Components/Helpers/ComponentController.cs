@@ -23,11 +23,13 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
         /// </summary>
+        [Range(0.001f, 2.0f)]
         public float EnableDelay;
 
         /// <summary>
         /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
         /// </summary>
+        [Range(0.001f, 2.0f)]
         public float DisableDelay;
 
         /// <summary>
@@ -41,36 +43,37 @@ namespace Unity.Netcode.Components
         public Object Component;
         internal PropertyInfo PropertyInfo;
 
-
-        internal bool TimeDeltaDelayInProgress;
-        internal bool PendingState;
-        internal float EnableDelayTimeDelta;
-        internal float DisableDelayTimeDelta;
-
-        private bool GetRelativeEnabled(bool enabled)
+        internal bool GetRelativeEnabled(bool enabled)
         {
             return InvertEnabled ? !enabled : enabled;
         }
 
-        internal bool HasDelay(bool enabled)
-        {
-            return GetRelativeEnabled(enabled) ? EnableDelay > 0.0f : DisableDelay > 0.0f;
-        }
+        private List<PendingStateUpdate> m_PendingStateUpdates = new List<PendingStateUpdate>();
 
-        internal void StartTimeDeltaTracking(bool isEnabled)
+        /// <summary>
+        /// Invoke prior to setting the state
+        /// </summary>
+        internal bool QueueForDelay(bool enabled)
         {
-            if (GetRelativeEnabled(isEnabled))
-            {
-                EnableDelayTimeDelta = Time.realtimeSinceStartup + EnableDelay;
-            }
-            else
-            {
-                DisableDelayTimeDelta = Time.realtimeSinceStartup + DisableDelay;
-            }
-            TimeDeltaDelayInProgress = true;
-            PendingState = isEnabled;
-        }
+            var relativeEnabled = GetRelativeEnabled(enabled);
 
+            if (relativeEnabled ? EnableDelay > 0.0f : DisableDelay > 0.0f)
+            {
+                // Start with no relative time offset
+                var relativeTimeOffset = 0.0f;
+                // If we have pending state updates, then get that time of the last state update
+                // and use that as the time to add this next state update.
+                if (m_PendingStateUpdates.Count > 0)
+                {
+                    relativeTimeOffset = m_PendingStateUpdates[m_PendingStateUpdates.Count - 1].DelayTimeDelta;
+                }
+
+                // We process backwards, so insert new entries at the front
+                m_PendingStateUpdates.Insert(0, new PendingStateUpdate(this, enabled, relativeTimeOffset));
+                return true;
+            }
+            return false;
+        }
 
         internal void SetValue(bool isEnabled)
         {
@@ -79,24 +82,65 @@ namespace Unity.Netcode.Components
             PropertyInfo.SetValue(Component, GetRelativeEnabled(isEnabled));
         }
 
-        internal bool CheckTimeDeltaDelay()
+        internal bool HasPendingStateUpdates()
         {
-            if (!TimeDeltaDelayInProgress)
+            for (int i = m_PendingStateUpdates.Count - 1; i >= 0; i--)
             {
-                return false;
+                if (!m_PendingStateUpdates[i].CheckTimeDeltaDelay())
+                {
+                    m_PendingStateUpdates.RemoveAt(i);
+                    continue;
+                }
+            }
+            return m_PendingStateUpdates.Count > 0;
+        }
+
+        private class PendingStateUpdate
+        {
+            internal bool TimeDeltaDelayInProgress;
+            internal bool PendingState;
+            internal float DelayTimeDelta;
+
+            internal ComponentControllerEntry ComponentControllerEntry;
+
+            internal bool CheckTimeDeltaDelay()
+            {
+                if (!TimeDeltaDelayInProgress)
+                {
+                    return false;
+                }
+
+                var isDeltaDelayInProgress = DelayTimeDelta > Time.realtimeSinceStartup;
+
+                if (!isDeltaDelayInProgress)
+                {
+                    ComponentControllerEntry.SetValue(PendingState);
+                }
+                TimeDeltaDelayInProgress = isDeltaDelayInProgress;
+                return TimeDeltaDelayInProgress;
             }
 
-            var isDeltaDelayInProgress = ((EnableDelayTimeDelta > Time.realtimeSinceStartup)
-                || (DisableDelayTimeDelta > Time.realtimeSinceStartup));
-
-            if (!isDeltaDelayInProgress)
+            internal PendingStateUpdate(ComponentControllerEntry componentControllerEntry, bool isEnabled, float relativeTimeOffset)
             {
-                SetValue(PendingState);
+                ComponentControllerEntry = componentControllerEntry;
+                // If there is a pending state, then add the delay to the end of the last pending state's.
+                var referenceTime = relativeTimeOffset > 0.0f ? relativeTimeOffset : Time.realtimeSinceStartup;
+
+                if (ComponentControllerEntry.GetRelativeEnabled(isEnabled))
+                {
+                    DelayTimeDelta = referenceTime + ComponentControllerEntry.EnableDelay;
+                }
+                else
+                {
+                    DelayTimeDelta = referenceTime + ComponentControllerEntry.DisableDelay;
+                }
+                TimeDeltaDelayInProgress = true;
+                PendingState = isEnabled;
             }
-            TimeDeltaDelayInProgress = isDeltaDelayInProgress;
-            return TimeDeltaDelayInProgress;
         }
     }
+
+
 
     /// <summary>
     /// Handles enabling or disabling commonly used components, behaviours, RenderMeshes, etc.<br />
@@ -120,17 +164,6 @@ namespace Unity.Netcode.Components
         public bool StartEnabled = true;
 
         /// <summary>
-        /// The coroutine yield time used to check on any pending delayed <see cref="ComponentControllerEntry"/> state transitions.
-        /// </summary>
-        /// <remarks>
-        /// If there are any <see cref="ComponentControllerEntry"/> delays (enable, disable, or both), then upon changing the state of a <see cref="ComponentController"/> a coroutine will be started
-        /// (if not already started) that will monitor any pending delayed transitions (<see cref="EnableDelay"/> or <see cref="DisableDelay"/>) and will
-        /// handle changing each delayed <see cref="ComponentControllerEntry"/> until all instances have transitioned their value to the pending state change.
-        /// When there are no more pending delayed <see cref="ComponentControllerEntry"/>s, the coroutine will stop.
-        /// </remarks>
-        public float PendingDelayYieldTime = 0.032f;
-
-        /// <summary>
         /// The list of <see cref="Components"/>s to be enabled and disabled.
         /// </summary>
         [Tooltip("The list of components to control. You can drag and drop an entire GameObject on this to include all components.")]
@@ -139,10 +172,10 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Returns the current enabled state of the <see cref="ComponentController"/>.
         /// </summary>
-        public bool EnabledState => m_IsEnabled.Value;
+        public bool EnabledState => m_IsEnabled;
 
         internal List<ComponentControllerEntry> ValidComponents = new List<ComponentControllerEntry>();
-        private NetworkVariable<bool> m_IsEnabled = new NetworkVariable<bool>();
+        private bool m_IsEnabled;
 
 #if UNITY_EDITOR
         /// <inheritdoc/>
@@ -219,6 +252,22 @@ namespace Unity.Netcode.Components
         }
 #endif
 
+        /// <inheritdoc/>
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            // Example of how to synchronize late joining clients when using an RPC to update
+            // a local property's state.
+            if (serializer.IsWriter)
+            {
+                serializer.SerializeValue(ref m_IsEnabled);
+            }
+            else
+            {
+                serializer.SerializeValue(ref m_IsEnabled);
+            }
+            base.OnSynchronize(ref serializer);
+        }
+
         /// <summary>
         /// This checks to make sure that all <see cref="Component"/> entries are valid and will create a final
         /// <see cref="ComponentControllerEntry"/> list of valid entries.
@@ -265,9 +314,9 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            if (HasAuthority)
+            if (OnHasAuthority())
             {
-                m_IsEnabled.Value = StartEnabled;
+                m_IsEnabled = StartEnabled;
             }
             base.OnNetworkSpawn();
         }
@@ -280,16 +329,8 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected override void OnNetworkPostSpawn()
         {
-            m_IsEnabled.OnValueChanged += OnEnabledChanged;
-            ApplyEnabled(m_IsEnabled.Value);
+            ApplyEnabled();
             base.OnNetworkPostSpawn();
-        }
-
-        /// <inheritdoc/>
-        public override void OnNetworkDespawn()
-        {
-            m_IsEnabled.OnValueChanged -= OnEnabledChanged;
-            base.OnNetworkDespawn();
         }
 
         /// <inheritdoc/>
@@ -301,11 +342,6 @@ namespace Unity.Netcode.Components
                 m_CoroutineObject.IsRunning = false;
             }
             base.OnDestroy();
-        }
-
-        private void OnEnabledChanged(bool previous, bool current)
-        {
-            ApplyEnabled(current);
         }
 
         /// <summary>
@@ -326,23 +362,21 @@ namespace Unity.Netcode.Components
         /// Applies states changes to all components being controlled by this instance.
         /// </summary>
         /// <param name="enabled">the state update to apply</param>
-        private void ApplyEnabled(bool enabled)
+        private void ApplyEnabled()
         {
-
             foreach (var entry in ValidComponents)
             {
-                if (entry.HasDelay(enabled))
+                if (entry.QueueForDelay(m_IsEnabled))
                 {
                     if (!m_CoroutineObject.IsRunning)
                     {
                         m_CoroutineObject.Coroutine = StartCoroutine(PendingAppliedState());
                         m_CoroutineObject.IsRunning = true;
                     }
-                    entry.StartTimeDeltaTracking(enabled);
                 }
                 else
                 {
-                    entry.SetValue(enabled);
+                    entry.SetValue(m_IsEnabled);
                 }
             }
         }
@@ -358,24 +392,24 @@ namespace Unity.Netcode.Components
 
         private IEnumerator PendingAppliedState()
         {
-            var checkPendingDeltaDelays = true;
-            var waitTime = new WaitForSeconds(PendingDelayYieldTime);
+            var continueProcessing = true;
 
-            while (checkPendingDeltaDelays)
+            while (continueProcessing)
             {
-                yield return waitTime;
-                checkPendingDeltaDelays = false;
+                continueProcessing = false;
                 foreach (var entry in ValidComponents)
                 {
-                    if (!entry.CheckTimeDeltaDelay())
+                    if (entry.HasPendingStateUpdates())
                     {
-                        continue;
+                        continueProcessing = true;
                     }
-                    checkPendingDeltaDelays = true;
+                }
+                if (continueProcessing)
+                {
+                    yield return null;
                 }
             }
             m_CoroutineObject.IsRunning = false;
-            yield break;
         }
 
         /// <summary>
@@ -396,12 +430,43 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!HasAuthority)
+            if (!OnHasAuthority())
             {
                 Debug.Log($"[Client-{NetworkManager.LocalClientId}] Attempting to invoke {nameof(SetEnabled)} without authority!");
                 return;
             }
-            m_IsEnabled.Value = isEnabled;
+            ChangeEnabled(isEnabled);
+        }
+
+        private void ChangeEnabled(bool isEnabled)
+        {
+            m_IsEnabled = isEnabled;
+            ApplyEnabled();
+
+            if (OnHasAuthority())
+            {
+                ToggleEnabledRpc(m_IsEnabled);
+            }
+        }
+
+        /// <summary>
+        /// Override this method to change how the instance determines the authority.<br />
+        /// The default is to use the <see cref="NetworkObject.HasAuthority"/> method.
+        /// </summary>
+        /// <remarks>
+        /// Useful when using a <see cref="NetworkTopologyTypes.ClientServer"/> network topology and you would like
+        /// to have the owner be the authority of this <see cref="ComponentController"/> instance.
+        /// </remarks>
+        /// <returns>true = has authoriy | false = does not have authority</returns>
+        protected virtual bool OnHasAuthority()
+        {
+            return HasAuthority;
+        }
+
+        [Rpc(SendTo.NotMe)]
+        private void ToggleEnabledRpc(bool enabled)
+        {
+            ChangeEnabled(enabled);
         }
     }
 }
