@@ -45,15 +45,15 @@ pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   # Run the following tests on a selection of different desktop platforms
   dependencies:
-    # Run package EditMode and Playmode package tests on trunk and an older supported editor (2022.3)
+    # Run package EditMode and Playmode package tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
     - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
     - .yamato/package-tests.yml#package_test_-_ngo_2022.3_win
 
-    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (2022.3)
+    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
     - .yamato/project-tests.yml#test_testproject_win_trunk
     - .yamato/project-tests.yml#test_testproject_mac_2022.3
 
-    # Run tools integration tests EditMode and Playmode tests on trunk and an older supported editor (2022.3)
+    # Run tools integration tests EditMode and Playmode tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
     - .yamato/project-tests.yml#test_testproject-tools-integration_ubuntu_2022.3
     - .yamato/project-tests.yml#test_testproject-tools-integration_win_trunk
 
