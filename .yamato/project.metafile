@@ -159,6 +159,7 @@ validation_editors:
         - 2022.3
         - 6000.0
         - 6000.1 
+        - 6000.2
         - trunk
         
         
