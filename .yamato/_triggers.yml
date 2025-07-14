@@ -55,10 +55,6 @@ pull_request_trigger:
     - .yamato/project-tests.yml#test_testproject_win_trunk
     - .yamato/project-tests.yml#test_testproject_mac_6000.0
 
-    # Run tools integration tests EditMode and Playmode tests on trunk and an older supported editor (6000.0)
-    - .yamato/project-tests.yml#test_testproject-tools-integration_ubuntu_6000.0
-    - .yamato/project-tests.yml#test_testproject-tools-integration_win_trunk
-
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_6000.0

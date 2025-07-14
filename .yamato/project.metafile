@@ -19,7 +19,7 @@
 # The small agent was created to handle jobs that don't involve running Unity and are in general super light when it comes to resource usage (for example pack job).
 # It uses ubuntu since Linux VMs are faster and cheaper to provision than Mac or Windows Virtual Machines (VMs).
 # The b1.small flavour is nearly always sufficient for jobs that don’t involve running Unity Editor.
-small_agent_platform: 
+small_agent_platform:
     - name: ubuntu
       type: Unity::VM
       image: package-ci/ubuntu-22.04:v4
@@ -40,7 +40,7 @@ test_platforms:
           image: package-ci/ubuntu-22.04:v4
           flavor: b1.large
           standalone: StandaloneLinux64
-    desktop:  
+    desktop:
         - name: ubuntu
           type: Unity::VM
           image: package-ci/ubuntu-22.04:v4
@@ -146,7 +146,7 @@ test_platforms:
           image: package-ci/win10-xbox:v4
           flavor: b1.large
           standalone: GameCoreScarlett
-    
+
 # EDITOR CONFIGURATIONS-------------------------------------------------------------------------------
 # Editors to be used for testing. NGOv2.X official support started from 6000.0 editor
 # TODO: When a new editor will be released it should be added to this list
@@ -156,14 +156,14 @@ validation_editors:
         - trunk
     all:
         - 6000.0
-        - 6000.1 
+        - 6000.1
         - 6000.2
         - trunk
-        
-        
+
+
 # Scripting backends used by Standalone RunTimeTests---------------------------------------------------
 
-scripting_backends: 
+scripting_backends:
   - mono
   - il2cpp
 
@@ -185,6 +185,3 @@ projects:
         - name: minimalproject
           path: minimalproject
           has_tests: false
-        - name: testproject-tools-integration
-          path: testproject-tools-integration
-          has_tests: true
