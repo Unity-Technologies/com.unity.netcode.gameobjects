@@ -43,18 +43,23 @@
 # Since standards job is a part of initial checks it's not present as direct dependency here
 pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
+  # Run the following tests on a selection of different desktop platforms
   dependencies:
-    # Run package EditMode and Playmode package tests on trunk
-    - .yamato/_run-all.yml#run_all_package_tests_trunk
-    # Run package EditMode and Playmode package tests on minimum supported editor (2021.3 in case of NGOv1.X)
-    - .yamato/_run-all.yml#run_all_package_tests_2021
-    # Run project EditMode and PLaymode project tests on trunk 
-    - .yamato/_run-all.yml#run_all_project_tests_trunk
-    # Run project EditMode and PLaymode project tests on minimum supported editor (2021.3 in case of NGOv1.X)
-    - .yamato/_run-all.yml#run_all_project_tests_2021
+    # Run package EditMode and Playmode package tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
+    - .yamato/package-tests.yml#package_test_-_ngo_2022.3_win
+
+    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    - .yamato/project-tests.yml#test_testproject_win_trunk
+    - .yamato/project-tests.yml#test_testproject_mac_2022.3
+
+    # Run tools integration tests EditMode and Playmode tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    - .yamato/project-tests.yml#test_testproject-tools-integration_ubuntu_2022.3
+    - .yamato/project-tests.yml#test_testproject-tools-integration_win_trunk
+
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_2021.3
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_2022.3
   triggers:
     cancel_old_ci: true
     pull_requests:
@@ -64,7 +69,7 @@ pull_request_trigger:
             - "develop-2.0.0"
             - "/release\/.*/"
       - drafts: false
-            
+
 
 # Run all tests on trunk on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
@@ -85,7 +90,7 @@ develop_nightly:
     # Run package EditMode and Playmode tests on desktop platforms on trunk and 2021.3
     - .yamato/_run-all.yml#run_all_package_tests_trunk
     - .yamato/_run-all.yml#run_all_package_tests_2021
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk and 2021.3 
+    # Run project EditMode and PLaymode tests on desktop platforms on trunk and 2021.3
     - .yamato/_run-all.yml#run_all_project_tests_trunk
     - .yamato/_run-all.yml#run_all_project_tests_2021
     # Run Runtime tests on desktop players on trunk and 2021 editors
