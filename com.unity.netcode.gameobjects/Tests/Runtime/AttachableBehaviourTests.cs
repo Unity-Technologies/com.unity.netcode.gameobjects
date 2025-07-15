@@ -25,6 +25,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// All of the below instances belong to the authority
         /// </summary>
+        private ulong m_TargetInstanceId;
         private NetworkObject m_SourceInstance;
         private NetworkObject m_TargetInstance;
         private NetworkObject m_TargetInstanceB;
@@ -47,6 +48,7 @@ namespace Unity.Netcode.RuntimeTests
             // The source prefab contains the nested NetworkBehaviour that
             // will be parented under the target prefab.
             m_SourcePrefab = CreateNetworkObjectPrefab("Source");
+            m_SourcePrefab.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
             // The target prefab that the source prefab will attach
             // will be parented under the target prefab.
             m_TargetPrefabA = CreateNetworkObjectPrefab("TargetA");
@@ -94,8 +96,11 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_ErrorLog.Clear();
             var target = GetTargetInstance();
+
+
             // The attachable can move between the two spawned instances.
             var currentAttachableRoot = m_AttachableBehaviourInstance.State == AttachableBehaviour.AttachState.Attached ? target : m_SourceInstance;
+
             foreach (var networkManager in m_NetworkManagers)
             {
                 // Source
@@ -110,7 +115,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 // Target
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_TargetInstance.NetworkObjectId))
+                if (m_TargetInstance && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_TargetInstance.NetworkObjectId))
                 {
                     m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {m_TargetInstance.name}!");
                 }
@@ -121,7 +126,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 // Target B
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_TargetInstanceB.NetworkObjectId))
+                if (m_TargetInstanceB && !networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_TargetInstanceB.NetworkObjectId))
                 {
                     m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {m_TargetInstanceB.name}!");
                 }
@@ -134,10 +139,11 @@ namespace Unity.Netcode.RuntimeTests
             return m_ErrorLog.Length == 0;
         }
 
-        private bool AllInstancesAttachedStateChanged(bool checkAttached)
+        private bool AllInstancesAttachedStateChanged(bool checkAttached, bool ignoreIfDespawned = false)
         {
             m_ErrorLog.Clear();
             var target = GetTargetInstance();
+            var targetId = target == null ? m_TargetInstanceId : target.NetworkObjectId;
             // The attachable can move between the two spawned instances so we have to use the appropriate one depending upon the authority's current state.
             var currentAttachableRoot = m_AttachableBehaviourInstance.State == AttachableBehaviour.AttachState.Attached ? target : m_SourceInstance;
             var attachable = (TestAttachable)null;
@@ -146,7 +152,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(currentAttachableRoot.NetworkObjectId))
                 {
-                    m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {currentAttachableRoot.name}!");
+                    if (!ignoreIfDespawned)
+                    {
+                        m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {currentAttachableRoot.name}!");
+                    }
                     continue;
                 }
                 else
@@ -156,7 +165,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (!attachable)
                 {
-                    attachable = networkManager.SpawnManager.SpawnedObjects[m_TargetInstance.NetworkObjectId].GetComponentInChildren<TestAttachable>();
+                    attachable = networkManager.SpawnManager.SpawnedObjects[m_TargetInstanceId].GetComponentInChildren<TestAttachable>();
                     if (!attachable)
                     {
                         attachable = networkManager.SpawnManager.SpawnedObjects[m_TargetInstanceB.NetworkObjectId].GetComponentInChildren<TestAttachable>();
@@ -168,14 +177,23 @@ namespace Unity.Netcode.RuntimeTests
                     continue;
                 }
 
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(target.NetworkObjectId))
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(targetId))
                 {
-                    m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {target.name}!");
+                    if (!ignoreIfDespawned)
+                    {
+                        m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}] Has no spawned instance of {target.name}!");
+                    }
                     continue;
                 }
                 else
                 {
-                    node = networkManager.SpawnManager.SpawnedObjects[target.NetworkObjectId].GetComponentInChildren<TestNode>();
+                    node = networkManager.SpawnManager.SpawnedObjects[targetId].GetComponentInChildren<TestNode>();
+                }
+
+                if (!node && ignoreIfDespawned)
+                {
+                    VerboseDebug("Skipping check during despawn.");
+                    continue;
                 }
 
                 if (!attachable.CheckStateChangedOverride(checkAttached, false, node))
@@ -202,6 +220,18 @@ namespace Unity.Netcode.RuntimeTests
             return m_ErrorLog.Length == 0;
         }
 
+        private bool AllInstancesDespawned()
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager.SpawnManager != null && networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_TargetInstanceId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         [UnityTest]
         public IEnumerator AttachAndDetachTests()
         {
@@ -209,6 +239,7 @@ namespace Unity.Netcode.RuntimeTests
             m_SourceInstance = SpawnObject(m_SourcePrefab, authority).GetComponent<NetworkObject>();
             m_TargetInstance = SpawnObject(m_TargetPrefabA, authority).GetComponent<NetworkObject>();
             m_TargetInstanceB = SpawnObject(m_TargetPrefabB, authority).GetComponent<NetworkObject>();
+            m_TargetInstanceId = m_TargetInstance.NetworkObjectId;
             yield return WaitForConditionOrTimeOut(AllClientsSpawnedInstances);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {m_SourceInstance.name} and {m_TargetInstance.name}!\n {m_ErrorLog}");
 
@@ -262,6 +293,26 @@ namespace Unity.Netcode.RuntimeTests
             m_AttachableBehaviourInstance.Detach();
             yield return WaitForConditionOrTimeOut(() => AllInstancesAttachedStateChanged(false));
             AssertOnTimeout($"Timed out waiting for all clients to detach {m_AttachableBehaviourInstance.name} from {m_AttachableNodeInstance.name}!\n {m_ErrorLog}");
+
+            // Finally, re-attach to the original spawned instance
+            Assert.True(ResetAllStates(), $"Failed to reset all states!\n {m_ErrorLog}");
+            m_AttachableBehaviourInstance.Attach(m_AttachableNodeInstance);
+
+            // Switch back to using the first target attachable node
+            m_UseTargetB = false;
+
+            yield return WaitForConditionOrTimeOut(() => AllInstancesAttachedStateChanged(true));
+            AssertOnTimeout($"[Despawn Detach Phase] Timed out waiting for all clients to attach {m_AttachableBehaviourInstance.name} to {m_AttachableNodeInstance.name}!\n {m_ErrorLog}");
+
+            var targetInstanceName = m_TargetInstance.name;
+            VerboseDebug("======== DESPAWN & DETACH ========");
+            m_TargetInstance.Despawn();
+            m_TargetInstance = null;
+            yield return WaitForConditionOrTimeOut(() => AllInstancesAttachedStateChanged(false, true));
+            AssertOnTimeout($"[Despawn Detach Phase] Timed out waiting for all clients to detach {m_AttachableBehaviourInstance.name} from {targetInstanceName}!\n {m_ErrorLog}");
+
+            yield return WaitForConditionOrTimeOut(AllInstancesDespawned);
+            AssertOnTimeout($"[Despawn Detach Phase] Timed out waiting for all clients to despawn {targetInstanceName}!");
         }
 
         /// <summary>
@@ -317,7 +368,6 @@ namespace Unity.Netcode.RuntimeTests
                 var tableToCheck = checkEvent ? m_StateUpdateEvents : m_StateUpdates;
                 var checkStatus = checkAttached ? (tableToCheck.ContainsKey(AttachState.Attaching) && tableToCheck.ContainsKey(AttachState.Attached)) :
                     (tableToCheck.ContainsKey(AttachState.Detaching) && tableToCheck.ContainsKey(AttachState.Detached));
-
                 if (checkStatus)
                 {
                     foreach (var entry in tableToCheck)
@@ -341,7 +391,9 @@ namespace Unity.Netcode.RuntimeTests
                         }
                         else if (entry.Value != attachableNode)
                         {
-                            Log($"[{entry.Key}][Value] The value {entry.Value.name} is not the same as {attachableNode.name}!");
+                            var attachableName = attachableNode == null ? "null" : attachableNode.name;
+                            var entryName = entry.Value == null ? "null" : entry.Value.name;
+                            Log($"[{entry.Key}][Value] The value {entryName} is not the same as {attachableName}!");
                             checkStatus = false;
                             break;
                         }
