@@ -18,15 +18,18 @@ namespace Unity.Netcode.Components
     [Serializable]
     public class ComponentControllerEntry
     {
-        [HideInInspector]
+
         // Ignoring the naming convention in order to auto-assign element names
 #pragma warning disable IDE1006
-        public string name = "Component";
+        /// <summary>
+        /// Used for naming each element entry.
+        /// </summary>
+        [HideInInspector]
+        public string name;
 #pragma warning restore IDE1006
 
         /// <summary>
-        /// When true, this component's enabled state will be the inverse of
-        /// the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
+        /// When true, this component's enabled state will be the inverse of the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
         /// </summary>
         [Tooltip("When enabled, this component will inversely mirror the currently applied ComponentController's enabled state.")]
         public bool InvertEnabled;
@@ -167,9 +170,8 @@ namespace Unity.Netcode.Components
     /// </summary>
     /// <remarks>
     /// This will synchronize the enabled or disabled state of the <see cref="Component"/>s with connected and late joining clients.<br />
-    /// - Use <see cref="EnabledState"/> to determine the current synchronized enabled state. <br />
+    /// - Use <see cref="EnabledState"/> to determine the current synchronized enabled state.<br />
     /// - Use <see cref="SetEnabled(bool)"/> to change the enabled state and have the change applied to all components this <see cref="ComponentController"/> is synchronizing.<br />
-    /// 
     /// It is encouraged to create custom derived versions of this class to provide any additional functionality required for your project specific needs.
     /// </remarks>
     public class ComponentController : NetworkBehaviour
@@ -374,7 +376,7 @@ namespace Unity.Netcode.Components
 
         /// <inheritdoc/>
         /// <remarks>
-        /// If overriding this method, it is required that you invoke this base method. <br />
+        /// If overriding this method, it is required that you invoke this base method.<br />
         /// Assures all instances subscribe to the internal <see cref="NetworkVariable{T}"/> of type
         /// <see cref="bool"/> that synchronizes all instances when <see cref="Object"/>s are enabled
         /// or disabled.
