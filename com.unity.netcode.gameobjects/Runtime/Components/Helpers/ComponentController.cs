@@ -2,8 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+#if UNITY_EDITOR
+using System.Text.RegularExpressions;
+#endif
 using UnityEngine;
 using Object = UnityEngine.Object;
+
 
 namespace Unity.Netcode.Components
 {
@@ -13,33 +18,48 @@ namespace Unity.Netcode.Components
     [Serializable]
     public class ComponentControllerEntry
     {
+        [HideInInspector]
+        // Ignoring the naming convention in order to auto-assign element names
+#pragma warning disable IDE1006
+        public string name = "Component";
+#pragma warning restore IDE1006
+
         /// <summary>
         /// When true, this component's enabled state will be the inverse of
         /// the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
         /// </summary>
-        [Tooltip("When enabled, this component will inversely mirror the currently applied enable or disable state.")]
+        [Tooltip("When enabled, this component will inversely mirror the currently applied ComponentController's enabled state.")]
         public bool InvertEnabled;
 
         /// <summary>
         /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
         /// </summary>
+        /// <remarks>
+        /// This can be useful under scenarios where you might want to prevent a component from being enabled too early prior to making any adjustments.<br />
+        /// As an example, you might find that delaying the enabling of a <see cref="MeshRenderer"/> until at least the next frame will avoid any single frame
+        /// rendering anomalies until the <see cref="Rigidbody"/> has updated the <see cref="Transform"/>.
+        /// </remarks>
         [Range(0.0f, 2.0f)]
+        [Tooltip("The amount of time to delay when transitioning this component from disabled to enabled. When 0, the change is immediate.")]
         public float EnableDelay;
 
         /// <summary>
         /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
         /// </summary>
+        /// <remarks>
+        /// This can be useful under scenarios where you might want to prevent a component from being disabled too early prior to making any adjustments.<br />
+        /// </remarks>
+        [Tooltip("The amount of time to delay when transitioning this component from enabled to disabled. When 0, the change is immediate.")]
         [Range(0f, 2.0f)]
         public float DisableDelay;
 
         /// <summary>
-        /// The component to control.
+        /// The component that will have its enabled property synchronized.
         /// </summary>
         /// <remarks>
-        /// You can assign an entire <see cref="GameObject"/> to this property which will
-        /// add all components attached to the <see cref="GameObject"/>. The <see cref="StartEnabled"/>
-        /// and <see cref="InvertEnabled"/> properties will be applied to all components found on the <see cref="GameObject"/>.
+        /// You can assign an entire <see cref="GameObject"/> to this property which will add all components attached to the <see cref="GameObject"/> and its children.
         /// </remarks>
+        [Tooltip("The component that will have its enabled status synchonized. You can drop a GameObject onto this field and all valid components will be added to the list.")]
         public Object Component;
         internal PropertyInfo PropertyInfo;
 
@@ -141,17 +161,16 @@ namespace Unity.Netcode.Components
     }
 
     /// <summary>
-    /// Handles enabling or disabling commonly used components, behaviours, RenderMeshes, etc.<br />
-    /// Anything that derives from <see cref="Component"/> and has an enabled property can be added
-    /// to the list of objects.<br />
-    /// <see cref="NetworkBehaviour"/> derived components are not allowed and will be automatically removed.
+    /// Handles enabling or disabling commonly used components like <see cref="MonoBehaviour"/>, <see cref="MeshRenderer"/>, <see cref="Collider"/>, etc.<br />
+    /// Anything that derives from <see cref="Component"/> and has an enabled property can be added to the list of objects.<br />
+    /// NOTE: <see cref="NetworkBehaviour"/> derived components are not allowed and will be automatically removed.
     /// </summary>
     /// <remarks>
-    /// This will synchronize the enabled or disabled state of the <see cref="Component"/>s with
-    /// connected and late joining clients.<br />
-    /// This class provides the basic functionality to synchronizing components' enabled state.<br />
-    /// It is encouraged to create custom derived versions of this class to provide any additional
-    /// functionality required for your project specific needs.
+    /// This will synchronize the enabled or disabled state of the <see cref="Component"/>s with connected and late joining clients.<br />
+    /// - Use <see cref="EnabledState"/> to determine the current synchronized enabled state. <br />
+    /// - Use <see cref="SetEnabled(bool)"/> to change the enabled state and have the change applied to all components this <see cref="ComponentController"/> is synchronizing.<br />
+    /// 
+    /// It is encouraged to create custom derived versions of this class to provide any additional functionality required for your project specific needs.
     /// </remarks>
     public class ComponentController : NetworkBehaviour
     {
@@ -176,6 +195,21 @@ namespace Unity.Netcode.Components
         private bool m_IsEnabled;
 
 #if UNITY_EDITOR
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsValidComponentType(Object component)
+        {
+            return !(component.GetType().IsSubclassOf(typeof(NetworkBehaviour)) || component.GetType() == typeof(NetworkObject) || component.GetType() == typeof(NetworkManager));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string GetComponentNameFormatted(Object component)
+        {
+            // Split the class name up based on capitalization
+            var classNameDisplay = Regex.Replace(component.GetType().Name, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
+            return $"{component.name} ({classNameDisplay})";
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// Checks for invalid <see cref="Object"/> entries.
@@ -188,6 +222,7 @@ namespace Unity.Netcode.Components
             }
 
             var gameObjectsToScan = new List<ComponentControllerEntry>();
+            // First pass is to verify all entries are valid and look for any GameObjects added as an entry to process next
             for (int i = Components.Count - 1; i >= 0; i--)
             {
                 if (Components[i] == null)
@@ -207,9 +242,9 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
-                if (componentType.IsSubclassOf(typeof(NetworkBehaviour)))
+                if (!IsValidComponentType(Components[i].Component))
                 {
-                    Debug.LogWarning($"Removing {Components[i].Component.name} since {nameof(NetworkBehaviour)}s are not allowed to be controlled by this component.");
+                    Debug.LogWarning($"Removing {GetComponentNameFormatted(Components[i].Component)} since {Components[i].Component.GetType().Name} is not an allowed component type.");
                     Components.RemoveAt(i);
                     continue;
                 }
@@ -222,14 +257,16 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // Second pass is to process any GameObjects added.
+            // Scan the GameObject and all of its children and add all valid components to the list.
             foreach (var entry in gameObjectsToScan)
             {
                 var asGameObject = entry.Component as GameObject;
-                var components = asGameObject.GetComponents<Component>();
+                var components = asGameObject.GetComponentsInChildren<Component>();
                 foreach (var component in components)
                 {
-                    // Ignore any NetworkBehaviour derived components
-                    if (component.GetType().IsSubclassOf(typeof(NetworkBehaviour)))
+                    // Ignore any NetworkBehaviour derived, NetworkObject, or NetworkManager components
+                    if (!IsValidComponentType(component))
                     {
                         continue;
                     }
@@ -247,6 +284,16 @@ namespace Unity.Netcode.Components
                 }
             }
             gameObjectsToScan.Clear();
+
+            // Final (third) pass is to name each list element item as the component is normally viewed in the inspector view.
+            for (int i = 0; i < Components.Count; i++)
+            {
+                if (!Components[i].Component)
+                {
+                    continue;
+                }
+                Components[i].name = GetComponentNameFormatted(Components[i].Component);
+            }
         }
 #endif
 
@@ -270,6 +317,9 @@ namespace Unity.Netcode.Components
         /// This checks to make sure that all <see cref="Component"/> entries are valid and will create a final
         /// <see cref="ComponentControllerEntry"/> list of valid entries.
         /// </summary>
+        /// <remarks>
+        /// If overriding this method, it is required that you invoke this base method.
+        /// </remarks>
         protected virtual void Awake()
         {
             ValidComponents.Clear();
@@ -310,6 +360,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// If overriding this method, it is required that you invoke this base method.
+        /// </remarks>
         public override void OnNetworkSpawn()
         {
             if (OnHasAuthority())
@@ -321,6 +374,7 @@ namespace Unity.Netcode.Components
 
         /// <inheritdoc/>
         /// <remarks>
+        /// If overriding this method, it is required that you invoke this base method. <br />
         /// Assures all instances subscribe to the internal <see cref="NetworkVariable{T}"/> of type
         /// <see cref="bool"/> that synchronizes all instances when <see cref="Object"/>s are enabled
         /// or disabled.
@@ -332,6 +386,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// If overriding this method, it is required that you invoke this base method.
+        /// </remarks>
         public override void OnDestroy()
         {
             if (m_CoroutineObject.IsRunning)
