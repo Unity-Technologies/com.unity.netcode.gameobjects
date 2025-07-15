@@ -2604,6 +2604,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            // Invoke OnNetworkPreDespawn on all child behaviours
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].InternalOnNetworkPreDespawn();
+            }
+
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
             NetworkManager.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 

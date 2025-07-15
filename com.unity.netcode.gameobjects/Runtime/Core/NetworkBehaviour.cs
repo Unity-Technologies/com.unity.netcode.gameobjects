@@ -737,6 +737,11 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnNetworkDespawn() { }
 
+        /// <summary>
+        /// Gets called before <see cref="OnNetworkDespawn"/> has been invoked for all <see cref="NetworkBehaviour"/>s associated with the currently spawned <see cref="NetworkObject"/> instance.
+        /// </summary>
+        public virtual void OnNetworkPreDespawn() { }
+
         internal void NetworkPreSpawn(ref NetworkManager networkManager)
         {
             try
@@ -809,6 +814,18 @@ namespace Unity.Netcode
             try
             {
                 OnInSceneObjectsSpawned();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+        }
+
+        internal void InternalOnNetworkPreDespawn()
+        {
+            try
+            {
+                OnNetworkPreDespawn();
             }
             catch (Exception e)
             {

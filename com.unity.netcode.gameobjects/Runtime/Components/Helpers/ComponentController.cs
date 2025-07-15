@@ -462,7 +462,7 @@ namespace Unity.Netcode.Components
         }
 
         [Rpc(SendTo.NotMe)]
-        private void ToggleEnabledRpc(bool enabled)
+        private void ToggleEnabledRpc(bool enabled, RpcParams rpcParams = default)
         {
             ChangeEnabled(enabled);
         }

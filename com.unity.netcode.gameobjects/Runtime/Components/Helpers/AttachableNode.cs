@@ -20,6 +20,11 @@ public class AttachableNode : NetworkBehaviour
     public bool HasAttachments => m_AttachedBehaviours.Count > 0;
 
     /// <summary>
+    /// When enabled, any attached <see cref="AttachableBehaviour"/>s will be automatically detached and re-parented under its original parent.
+    /// </summary>
+    public bool DetachOnDespawn = true;
+
+    /// <summary>
     /// A <see cref="List{T}"/> of the currently attached <see cref="AttachableBehaviour"/>s.
     /// </summary>
     protected readonly List<AttachableBehaviour> m_AttachedBehaviours = new List<AttachableBehaviour>();
@@ -29,12 +34,22 @@ public class AttachableNode : NetworkBehaviour
     /// If the <see cref="NetworkObject"/> this <see cref="AttachableNode"/> belongs to is despawned,
     /// then any attached <see cref="AttachableBehaviour"/> will be detached during <see cref="OnNetworkDespawn"/>.
     /// </remarks>
+    public override void OnNetworkPreDespawn()
+    {
+        if (IsSpawned && HasAuthority && DetachOnDespawn)
+        {
+            for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
+            {
+                m_AttachedBehaviours[i]?.Detach();
+            }
+        }
+        base.OnNetworkPreDespawn();
+    }
+
+    /// <inheritdoc/>
     public override void OnNetworkDespawn()
     {
-        for (int i = m_AttachedBehaviours.Count - 1; i > 0; i--)
-        {
-            m_AttachedBehaviours[i].InternalDetach();
-        }
+        m_AttachedBehaviours.Clear();
         base.OnNetworkDespawn();
     }
 

@@ -333,6 +333,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         public void Detach()
         {
+            if (!gameObject)
+            {
+                return;
+            }
             if (!IsSpawned)
             {
                 NetworkLog.LogError($"[{name}][Detach][Not Spawned] Cannot detach if not spawned!");
@@ -399,7 +403,7 @@ namespace Unity.Netcode.Components
         }
 
         [Rpc(SendTo.NotMe)]
-        private void UpdateAttachStateRpc(NetworkBehaviourReference attachedNodeReference)
+        private void UpdateAttachStateRpc(NetworkBehaviourReference attachedNodeReference, RpcParams rpcParams = default)
         {
             ChangeReference(attachedNodeReference);
         }
