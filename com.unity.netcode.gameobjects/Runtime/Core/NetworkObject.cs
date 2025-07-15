@@ -218,7 +218,7 @@ namespace Unity.Netcode
                     s_PrefabAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(s_PrefabStage.assetPath);
                 }
 
-                if (s_PrefabInstance.GlobalObjectIdHash != s_PrefabAsset.GlobalObjectIdHash)
+                if (s_PrefabAsset && s_PrefabInstance && s_PrefabInstance.GlobalObjectIdHash != s_PrefabAsset.GlobalObjectIdHash)
                 {
                     s_PrefabInstance.GlobalObjectIdHash = s_PrefabAsset.GlobalObjectIdHash;
                     // For InContext mode, we don't want to record these modifications (the in-scene GlobalObjectIdHash is serialized with the scene).
