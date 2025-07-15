@@ -270,7 +270,8 @@ namespace Unity.Netcode.RuntimeTests
                             // Add it to the table of state updates
                             var stateEntry = new StateEntry()
                             {
-                                TimeAdded = Time.realtimeSinceStartup,
+                                // Use the server time to get the valid "relative" time since the session started.
+                                TimeAdded = NetworkManager.ServerTime.TimeAsFloat,
                                 State = m_PosInterpolator.InterpolateState,
                             };
 
