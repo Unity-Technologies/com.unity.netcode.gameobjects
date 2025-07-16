@@ -159,7 +159,7 @@ validation_editors:
         - 6000.1
         - 6000.2
         - trunk
-     minimal:
+    minimal:
         - 6000.0
 
 
