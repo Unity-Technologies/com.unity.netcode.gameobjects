@@ -108,6 +108,8 @@ develop_nightly:
     # Build player for webgl platform on trunk and 2021 editors
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
     - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_2021.3
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
 
 
 # Run all tests on weekly bases
