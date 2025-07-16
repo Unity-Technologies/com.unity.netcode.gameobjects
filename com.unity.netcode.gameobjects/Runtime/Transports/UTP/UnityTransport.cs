@@ -15,9 +15,11 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Error;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 using NetcodeEvent = Unity.Netcode.NetworkEvent;
@@ -1056,6 +1058,9 @@ namespace Unity.Netcode.Transports.UTP
                             Debug.LogError("Failed to connect to server.");
                         }
 
+                        // Set the disconnect event error code
+                        SetDisconnectEvent(reader.ReadByte());
+
                         m_ServerClientId = default;
                         m_ReliableReceiveQueues.Remove(clientId);
                         ClearSendQueuesForClientId(clientId);
@@ -1348,7 +1353,7 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
-            if (m_Driver.IsCreated)
+            if (m_NetworkManager.IsServer && m_Driver.IsCreated)
             {
                 FlushSendQueuesForClientId(clientId);
 
@@ -1361,6 +1366,17 @@ namespace Unity.Netcode.Transports.UTP
                     m_Driver.Disconnect(connection);
                 }
             }
+        }
+
+        protected override void OnCreateDisconnectEventMap()
+        {
+            AddDisconnectEventMap(DisconnectEvents.Disconnected, (byte)DisconnectReason.Default);
+            AddDisconnectEventMap(DisconnectEvents.ProtocolTimeout, (byte)DisconnectReason.Timeout);
+            AddDisconnectEventMap(DisconnectEvents.MaxConnectionAttempts, (byte)DisconnectReason.MaxConnectionAttempts);
+            AddDisconnectEventMap(DisconnectEvents.ClosedByRemote, (byte)DisconnectReason.ClosedByRemote);
+            AddDisconnectEventMap(DisconnectEvents.AuthenticationFailure, (byte)DisconnectReason.AuthenticationFailure);            
+            AddDisconnectEventMap(DisconnectEvents.ProtocolError, (byte)DisconnectReason.ProtocolError);
+            base.OnCreateDisconnectEventMap();
         }
 
         /// <summary>

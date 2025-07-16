@@ -373,10 +373,14 @@ namespace Unity.Netcode
         {
             if (NetworkManager != null)
             {
-                var transport = NetworkManager.NetworkConfig.NetworkTransport;
-                if (transport != null)
+                if (Transport == null && NetworkManager.NetworkConfig.NetworkTransport != null)
                 {
-                    return transport.ServerClientId;
+                    Transport = NetworkManager.NetworkConfig.NetworkTransport;
+                }
+
+                if (Transport)
+                {
+                    return Transport.ServerClientId;
                 }
 
                 throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
@@ -412,7 +416,7 @@ namespace Unity.Netcode
             NetworkEvent networkEvent;
             do
             {
-                networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong transportClientId, out ArraySegment<byte> payload, out float receiveTime);
+                networkEvent = Transport.PollEvent(out ulong transportClientId, out ArraySegment<byte> payload, out float receiveTime);
                 HandleNetworkEvent(networkEvent, transportClientId, payload, receiveTime);
                 if (networkEvent == NetworkEvent.Disconnect || networkEvent == NetworkEvent.TransportFailure)
                 {
@@ -520,6 +524,22 @@ namespace Unity.Netcode
 #endif
         }
 
+        private void GenerateDisconnectInformation(ulong clientId, ulong transportClientId, string reason = null)
+        {
+            var header = $"[Disconnect Event][Client-{clientId}]";
+            var existingDisconnectReason = DisconnectReason;
+            var defaultMessage = reason ?? $"Disconnected.";
+            // Just go ahead and set this whether client or server so any subscriptions to a disconnect event can check the DisconnectReason
+            // to determine why the client disconnected
+            DisconnectReason = Transport.DisconnectEvent == NetworkTransport.DisconnectEvents.Disconnected ? $"{header} {defaultMessage}" :
+                $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
+            DisconnectReason = $"{DisconnectReason}\n{existingDisconnectReason}";
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"{DisconnectReason}");
+            }
+        }
+
         /// <summary>
         /// Handles a <see cref="NetworkEvent.Disconnect"/> event.
         /// </summary>
@@ -528,11 +548,8 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportDisconnect.Begin();
 #endif
-            var clientId = TransportIdCleanUp(transportClientId);
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"Disconnect Event From {clientId}");
-            }
+            var clientId = TransportIdToClientId(transportClientId);
+            TransportIdCleanUp(transportClientId);
 
             // If we are a client and we have gotten the ServerClientId back, then use our assigned local id as the client that was
             // disconnected (either the user disconnected or the server disconnected, but the client that disconnected is the LocalClientId)
@@ -540,6 +557,8 @@ namespace Unity.Netcode
             {
                 clientId = NetworkManager.LocalClientId;
             }
+
+            GenerateDisconnectInformation(clientId, transportClientId);
 
             // Process the incoming message queue so that we get everything from the server disconnecting us or, if we are the server, so we got everything from that client.
             MessageManager.ProcessIncomingMessageQueue();
@@ -1327,7 +1346,7 @@ namespace Unity.Netcode
             if (ClientIdToTransportIdMap.ContainsKey(clientId))
             {
                 var transportId = ClientIdToTransportId(clientId);
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+                Transport.DisconnectRemoteClient(transportId);
 
                 InvokeOnClientDisconnectCallback(clientId);
 
@@ -1393,9 +1412,14 @@ namespace Unity.Netcode
                 };
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
+            Transport.SetDisconnectEvent((byte)Networking.Transport.Error.DisconnectReason.Default);
 
+            GenerateDisconnectInformation(clientId, ClientIdToTransportId(clientId), reason);
             DisconnectRemoteClient(clientId);
         }
+
+        internal NetworkTransport Transport;
+        internal NetworkTransport.DisconnectEvents DisconnectEvent => Transport ? Transport.DisconnectEvent : NetworkTransport.DisconnectEvents.Disconnected;
 
         /// <summary>
         /// Should be invoked when starting a server-host or client
@@ -1418,10 +1442,14 @@ namespace Unity.Netcode
             NetworkManager = networkManager;
             MessageManager = networkManager.MessageManager;
 
-            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.MetricsManager.NetworkMetrics;
-
-            NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
-            NetworkManager.NetworkConfig.NetworkTransport.Initialize(networkManager);
+            Transport = NetworkManager.NetworkConfig.NetworkTransport;
+            if (Transport)
+            {
+                Transport.NetworkMetrics = NetworkManager.MetricsManager.NetworkMetrics;
+                Transport.OnTransportEvent += HandleNetworkEvent;
+                Transport.Initialize(networkManager);
+                Transport.CreateDisconnectEventMap();
+            }
         }
 
         /// <summary>
@@ -1435,7 +1463,7 @@ namespace Unity.Netcode
                 var disconnectedIds = new HashSet<ulong>();
 
                 //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shutdown. But this way the clients get a disconnect message from server (so long it does't get lost)
-                var serverTransportId = NetworkManager.NetworkConfig.NetworkTransport.ServerClientId;
+                var serverTransportId = GetServerTransportId();
                 foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
                 {
                     if (!disconnectedIds.Contains(pair.Key))
@@ -1478,7 +1506,7 @@ namespace Unity.Netcode
                 // Client only, send disconnect and if transport throws and exception, log the exception and continue the shutdown sequence (or forever be shutting down)
                 try
                 {
-                    NetworkManager.NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                    Transport.DisconnectLocalClient();
                 }
                 catch (Exception ex)
                 {
@@ -1508,6 +1536,11 @@ namespace Unity.Netcode
                 var transport = NetworkManager.NetworkConfig?.NetworkTransport;
                 if (transport != null)
                 {
+                    if (LocalClient.IsServer)
+                    {
+                        GenerateDisconnectInformation(NetworkManager.ServerClientId, Transport.ServerClientId, "Disconnecting due to shutdown.");
+                    }
+                    transport.CleanDisconnectEventMap();
                     transport.Shutdown();
 
                     if (NetworkManager.LogLevel <= LogLevel.Developer)

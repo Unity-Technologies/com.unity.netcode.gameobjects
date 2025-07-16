@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -163,6 +164,79 @@ namespace Unity.Netcode
         internal NetworkTopologyTypes CurrentTopology()
         {
             return OnCurrentTopology();
+        }
+
+
+        public enum DisconnectEvents : byte
+        {
+            Disconnected,
+            ProtocolTimeout,
+            MaxConnectionAttempts,
+            ClosedByRemote,
+            ClosedRemoteConnection,
+            AuthenticationFailure,
+            ProtocolError,
+        }
+
+        public DisconnectEvents DisconnectEvent { get; private set; }
+        private Dictionary<byte, DisconnectEvents> m_DisconnectEventMap = new Dictionary<byte, DisconnectEvents>();
+
+        /// <summary>
+        /// This should be invoked by the <see cref="NetworkTransport"/> derived class when a transport level disconnect event occurs.<br />
+        /// If there is a map for the specific transport event id, then <see cref="DisconnectEvent"/> will be set to the equivalent <see cref="DisconnectEvents"/> value.
+        /// </summary>
+        /// <param name="disconnectEventId">The transport's disconnect event identifer.</param>
+        public void SetDisconnectEvent(byte disconnectEventId)
+        {
+            if (m_DisconnectEventMap.ContainsKey(disconnectEventId))
+            {
+                DisconnectEvent = m_DisconnectEventMap[disconnectEventId];
+            }
+            else // If there are no maps, then this will always report just disconnected.
+            {
+                DisconnectEvent = DisconnectEvents.Disconnected;
+            }
+        }
+
+        internal void SetDisconnectEvent(DisconnectEvents disconnectEvent)
+        {
+            DisconnectEvent = disconnectEvent;
+        }
+
+        /// <summary>
+        /// Adds a map between the <see cref="DisconnectEvents"/> value and the transports equivalent event identifier.
+        /// </summary>
+        /// <param name="disconnectEvents">The <see cref="DisconnectEvents"/> value to be mapped.</param>
+        /// <param name="targetEventId">The transport's equivalent event identifier value.</param>
+        protected void AddDisconnectEventMap(DisconnectEvents disconnectEvents, byte targetEventId)
+        {
+            if (!m_DisconnectEventMap.ContainsKey(targetEventId))
+            {
+                m_DisconnectEventMap.Add(targetEventId, disconnectEvents);
+            }
+        }
+
+        /// <summary>
+        /// Override this method to create a disconnect event mapping table that will translate the transport's equivalent for each enum in <see cref="DisconnectEvents"/>.<br />
+        /// This method is invoked during <see cref="NetworkConnectionManager.Initialize(NetworkManager)"/> just after <see cref="Initialize(NetworkManager)"/> has been invoked.
+        /// </summary>
+        /// <remarks>
+        /// You can use <see cref="AddDisconnectEventMap"/> to register a map between <see cref="DisconnectEvents"/> and the transport's disconnect event equivalent.
+        /// </remarks>
+        protected virtual void OnCreateDisconnectEventMap()
+        {
+
+        }
+
+        internal void CreateDisconnectEventMap()
+        {
+            OnCreateDisconnectEventMap();
+        }
+
+        internal void CleanDisconnectEventMap()
+        {
+            DisconnectEvent = DisconnectEvents.Disconnected;
+            m_DisconnectEventMap.Clear();
         }
     }
 
