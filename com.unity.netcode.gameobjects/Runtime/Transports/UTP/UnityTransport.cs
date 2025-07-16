@@ -1368,14 +1368,25 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        private const byte k_ClosedRemoteConnection = 128;
+        private const byte k_TransportShutdown = 129;
+
+        /// <inheritdoc/>
         protected override void OnCreateDisconnectEventMap()
         {
-            AddDisconnectEventMap(DisconnectEvents.Disconnected, (byte)DisconnectReason.Default);
-            AddDisconnectEventMap(DisconnectEvents.ProtocolTimeout, (byte)DisconnectReason.Timeout);
-            AddDisconnectEventMap(DisconnectEvents.MaxConnectionAttempts, (byte)DisconnectReason.MaxConnectionAttempts);
-            AddDisconnectEventMap(DisconnectEvents.ClosedByRemote, (byte)DisconnectReason.ClosedByRemote);
-            AddDisconnectEventMap(DisconnectEvents.AuthenticationFailure, (byte)DisconnectReason.AuthenticationFailure);            
-            AddDisconnectEventMap(DisconnectEvents.ProtocolError, (byte)DisconnectReason.ProtocolError);
+            // Implemented in UTP
+
+            AddDisconnectEventMap(DisconnectEvents.Disconnected, (byte)DisconnectReason.Default, "Gracefully disconnected.");
+            AddDisconnectEventMap(DisconnectEvents.ProtocolTimeout, (byte)DisconnectReason.Timeout, "Connection timed out.");
+            AddDisconnectEventMap(DisconnectEvents.MaxConnectionAttempts, (byte)DisconnectReason.MaxConnectionAttempts, "Maximum connection attempts reached.");
+            AddDisconnectEventMap(DisconnectEvents.ClosedByRemote, (byte)DisconnectReason.ClosedByRemote, "Remote connection was closed.");
+            AddDisconnectEventMap(DisconnectEvents.AuthenticationFailure, (byte)DisconnectReason.AuthenticationFailure, "Authentication failed.");
+            AddDisconnectEventMap(DisconnectEvents.ProtocolError, (byte)DisconnectReason.ProtocolError, "Transport protocol error encountered.");
+
+            // Not implemented in UTP
+            AddDisconnectEventMap(DisconnectEvents.ClosedRemoteConnection, k_ClosedRemoteConnection, "Local transport closed the remote connection.");
+            AddDisconnectEventMap(DisconnectEvents.TransportShutdown, k_TransportShutdown, "The transport was shutdown.");
+
             base.OnCreateDisconnectEventMap();
         }
 

@@ -528,12 +528,17 @@ namespace Unity.Netcode
         {
             var header = $"[Disconnect Event][Client-{clientId}]";
             var existingDisconnectReason = DisconnectReason;
-            var defaultMessage = reason ?? $"Disconnected.";
+
+            var defaultMessage = Transport.DisconnectEventMessage;
+            if (reason != null)
+            {
+                defaultMessage = $"{reason} {defaultMessage}";
+            }
             // Just go ahead and set this whether client or server so any subscriptions to a disconnect event can check the DisconnectReason
             // to determine why the client disconnected
-            DisconnectReason = Transport.DisconnectEvent == NetworkTransport.DisconnectEvents.Disconnected ? $"{header} {defaultMessage}" :
-                $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
+            DisconnectReason = $"{header}[{Transport.DisconnectEvent}] {defaultMessage}";
             DisconnectReason = $"{DisconnectReason}\n{existingDisconnectReason}";
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"{DisconnectReason}");
@@ -558,7 +563,13 @@ namespace Unity.Netcode
                 clientId = NetworkManager.LocalClientId;
             }
 
-            GenerateDisconnectInformation(clientId, transportClientId);
+            // If the disconnect is due to the transport being shutdown and we have received a notification
+            // from transport that we have disconnected, then we are a client that has shutdown the NetworkManager
+            // and there is no need to generate any disconnect information as all of that should already be set at this point.
+            if (Transport.DisconnectEvent != NetworkTransport.DisconnectEvents.TransportShutdown)
+            {
+                GenerateDisconnectInformation(clientId, transportClientId);
+            }
 
             // Process the incoming message queue so that we get everything from the server disconnecting us or, if we are the server, so we got everything from that client.
             MessageManager.ProcessIncomingMessageQueue();
@@ -1412,8 +1423,8 @@ namespace Unity.Netcode
                 };
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
-            Transport.SetDisconnectEvent((byte)Networking.Transport.Error.DisconnectReason.Default);
 
+            Transport.ClosingRemoteConnection();
             GenerateDisconnectInformation(clientId, ClientIdToTransportId(clientId), reason);
             DisconnectRemoteClient(clientId);
         }
@@ -1457,6 +1468,14 @@ namespace Unity.Netcode
         /// </summary>
         internal void Shutdown()
         {
+            if (Transport && IsListening)
+            {
+                var clientId = NetworkManager ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
+                var transportId = ClientIdToTransportId(clientId);
+                Transport.SetDisconnectEvent(NetworkTransport.DisconnectEvents.TransportShutdown);
+                GenerateDisconnectInformation(clientId, transportId, $"{nameof(NetworkConnectionManager)} was shutdown.");
+            }
+
             if (LocalClient.IsServer)
             {
                 // Build a list of all client ids to be disconnected
@@ -1506,7 +1525,8 @@ namespace Unity.Netcode
                 // Client only, send disconnect and if transport throws and exception, log the exception and continue the shutdown sequence (or forever be shutting down)
                 try
                 {
-                    Transport.DisconnectLocalClient();
+                    Transport?.DisconnectLocalClient();
+                    Transport?.CleanDisconnectEventMap();
                 }
                 catch (Exception ex)
                 {
@@ -1536,13 +1556,8 @@ namespace Unity.Netcode
                 var transport = NetworkManager.NetworkConfig?.NetworkTransport;
                 if (transport != null)
                 {
-                    if (LocalClient.IsServer)
-                    {
-                        GenerateDisconnectInformation(NetworkManager.ServerClientId, Transport.ServerClientId, "Disconnecting due to shutdown.");
-                    }
                     transport.CleanDisconnectEventMap();
                     transport.Shutdown();
-
                     if (NetworkManager.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"{nameof(NetworkConnectionManager)}.{nameof(Shutdown)}() -> {nameof(IsListening)} && {nameof(NetworkManager.NetworkConfig.NetworkTransport)} != null -> {nameof(NetworkTransport)}.{nameof(NetworkTransport.Shutdown)}()");

@@ -169,6 +169,7 @@ namespace Unity.Netcode
 
         public enum DisconnectEvents : byte
         {
+            TransportShutdown,
             Disconnected,
             ProtocolTimeout,
             MaxConnectionAttempts,
@@ -179,14 +180,17 @@ namespace Unity.Netcode
         }
 
         public DisconnectEvents DisconnectEvent { get; private set; }
+        public string DisconnectEventMessage { get; private set; }
+
         private Dictionary<byte, DisconnectEvents> m_DisconnectEventMap = new Dictionary<byte, DisconnectEvents>();
+        private Dictionary<DisconnectEvents, string> m_DisconnectEventMessageMap = new Dictionary<DisconnectEvents, string>();
 
         /// <summary>
         /// This should be invoked by the <see cref="NetworkTransport"/> derived class when a transport level disconnect event occurs.<br />
         /// If there is a map for the specific transport event id, then <see cref="DisconnectEvent"/> will be set to the equivalent <see cref="DisconnectEvents"/> value.
         /// </summary>
         /// <param name="disconnectEventId">The transport's disconnect event identifer.</param>
-        public void SetDisconnectEvent(byte disconnectEventId)
+        public void SetDisconnectEvent(byte disconnectEventId, string message = null)
         {
             if (m_DisconnectEventMap.ContainsKey(disconnectEventId))
             {
@@ -196,11 +200,29 @@ namespace Unity.Netcode
             {
                 DisconnectEvent = DisconnectEvents.Disconnected;
             }
+            DisconnectEventMessage = string.Empty;
+            if (message != null)
+            {
+                DisconnectEventMessage = message;
+            }
+            else if (m_DisconnectEventMessageMap.ContainsKey(DisconnectEvent))
+            {
+                DisconnectEventMessage = m_DisconnectEventMessageMap[DisconnectEvent];
+            }
         }
 
-        internal void SetDisconnectEvent(DisconnectEvents disconnectEvent)
+        internal void SetDisconnectEvent(DisconnectEvents disconnectEvent, string message = null)
         {
             DisconnectEvent = disconnectEvent;
+            DisconnectEventMessage = string.Empty;
+            if (message != null)
+            {
+                DisconnectEventMessage = message;
+            }
+            else if (m_DisconnectEventMessageMap.ContainsKey(disconnectEvent))
+            {
+                DisconnectEventMessage = m_DisconnectEventMessageMap[disconnectEvent];
+            }
         }
 
         /// <summary>
@@ -208,11 +230,17 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="disconnectEvents">The <see cref="DisconnectEvents"/> value to be mapped.</param>
         /// <param name="targetEventId">The transport's equivalent event identifier value.</param>
-        protected void AddDisconnectEventMap(DisconnectEvents disconnectEvents, byte targetEventId)
+        /// <param name="message">Optional message to use for this disconnect event.</param>
+        protected void AddDisconnectEventMap(DisconnectEvents disconnectEvents, byte targetEventId, string message = null)
         {
             if (!m_DisconnectEventMap.ContainsKey(targetEventId))
             {
                 m_DisconnectEventMap.Add(targetEventId, disconnectEvents);
+            }
+
+            if (message != null && !m_DisconnectEventMessageMap.ContainsKey(disconnectEvents))
+            {
+                m_DisconnectEventMessageMap.Add(disconnectEvents, message);
             }
         }
 
@@ -230,6 +258,8 @@ namespace Unity.Netcode
 
         internal void CreateDisconnectEventMap()
         {
+            DisconnectEvent = DisconnectEvents.Disconnected;
+            DisconnectEventMessage = string.Empty;
             OnCreateDisconnectEventMap();
         }
 
@@ -237,6 +267,12 @@ namespace Unity.Netcode
         {
             DisconnectEvent = DisconnectEvents.Disconnected;
             m_DisconnectEventMap.Clear();
+            m_DisconnectEventMessageMap.Clear();
+        }
+
+        internal void ClosingRemoteConnection()
+        {
+            SetDisconnectEvent(DisconnectEvents.ClosedRemoteConnection);
         }
     }
 
