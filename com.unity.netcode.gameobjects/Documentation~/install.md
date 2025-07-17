@@ -29,13 +29,13 @@ Before you begin, you need the following:
 ## Install Netcode for GameObjects with the Package Manager
 
 1. From the Unity Editor, select **Window** > **Package Manager**.
-1. From the Package Manager, select **Add** ![add symbol](../images/add.png) > **Add package by name…**
+1. From the Package Manager, select **Add** ![add symbol](images/add.png) > **Add package by name…**
 1. Type (or copy and paste) `com.unity.netcode.gameobjects` into the package name field, then select **Add**.
 
 ### For Unity Editor versions 2020.3 LTS or earlier
 
 1. From the Unity Editor, select **Window** > **Package Manager**.
-1. From the Package Manager, select **Add** ![add symbol](../images/add.png) > **Add package by git URL…**
+1. From the Package Manager, select **Add** ![add symbol](images/add.png) > **Add package by git URL…**
 1. Type (or copy and paste) `https://github.com/Unity-Technologies/com.unity.netcode.gameobjects` into the git URL field, then select **Add**.
 
 ## Next Steps
@@ -43,8 +43,3 @@ Before you begin, you need the following:
 After installing Netcode for GameObjects, see the following content to continue your journey:
 
 * Use the [Get started with Netcode for GameObjects tutorial](./tutorials/get-started-with-ngo.md) to create a project, test your installation, and learn how to use the basic features of Netcode for GameObjects.
-* Check out the educational samples to further explore Netcode for GameObjects and its abilities:
-  * [Boss Room](./learn/bossroom/getting-started-boss-room.md)
-  * [2D Spaceshooter Bitesize sample](./learn/bitesize/bitesize-spaceshooter.md)
-  * [Invaders Bitesize sample](./learn/bitesize/bitesize-invaders.md)
-  * [Client-driven Bitesize sample](./learn/bitesize/bitesize-clientdriven.md)

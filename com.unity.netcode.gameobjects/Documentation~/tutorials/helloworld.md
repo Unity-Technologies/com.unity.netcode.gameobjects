@@ -156,7 +156,7 @@ public class NetworkCommandLine : MonoBehaviour
 1. Back in the Editor, open **Edit** -> **Project Settings**
 1. Select the **Player tab**.
 1. Expand the **Resolution and Presentation**.
-1. From **Resolution** > **Fullscreen Mode**, change `Fullscreen Window` to `Windowed`.    
+1. From **Resolution** > **Fullscreen Mode**, change `Fullscreen Window` to `Windowed`.
 1. Back to the Editor main window, save your scene.
 
 
@@ -170,13 +170,13 @@ Now we will test that the command line helper script works.
 1. Select **File** > **Build and Run**.
 1. Create a new folder called `Build` inside your Hello World project folder.
 1. **Save As** the binary `HelloWorld`.
-1. Your project will build and launch in a new window, and you should see the plane.  
+1. Your project will build and launch in a new window, and you should see the plane.
 1. Quit your app.
-1. Now to launch from the command line.  
+1. Now to launch from the command line.
 
 #### Windows
 
-For Windows you should do the following:  
+For Windows you should do the following:
 
 
 1. Open your Command Prompt.
@@ -271,6 +271,6 @@ See the following content to continue your journey using Netcode:
 * Build on the Hello World project to continue learning about different features of Netcode with the [Golden Path series](goldenpath_series/gp_intro.md).
 * Check out the educational samples to further explore Netcode and its abilities:
   * [Boss Room](../learn/bossroom/getting-started-boss-room.md)
-  * [2D Spaceshooter Bitesize Sample](../learn/bitesize/bitesize-spaceshooter.md)
-  * [Invaders Bitesize Sample](../learn/bitesize/bitesize-invaders.md)
-  * [Client-Driven Bitesize Sample](../learn/bitesize/bitesize-clientdriven.md)
+  * [2D Spaceshooter Bitesize Sample](../samples/bitesize/bitesize-spaceshooter.md)
+  * [Invaders Bitesize Sample](../samples/bitesize/bitesize-invaders.md)
+  * [Client-Driven Bitesize Sample](../samples/bitesize/bitesize-clientdriven.md)
