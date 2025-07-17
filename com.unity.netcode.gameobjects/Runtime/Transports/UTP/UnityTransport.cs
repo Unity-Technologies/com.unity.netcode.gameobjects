@@ -1352,7 +1352,9 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
-            if (m_NetworkManager.IsServer && m_Driver.IsCreated)
+            var hasAuthority = m_NetworkManager ? m_NetworkManager.IsServer : true;
+
+            if (hasAuthority && m_Driver.IsCreated)
             {
                 FlushSendQueuesForClientId(clientId);
 
