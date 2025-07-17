@@ -49,8 +49,11 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    // In distributed authority mode, we send to target id 0 (which would be a DAHost) via the group
-                    if (clientId == NetworkManager.ServerClientId && !m_NetworkManager.DistributedAuthorityMode)
+                    // In distributed authority mode, we send to target id 0 (which would be a DAHost).
+                    // We only add when there is a "DAHost" by
+                    // - excluding the server id when using client-server (i.e. !m_NetworkManager.DistributedAuthorityMode )
+                    // - excluding if connected to the CMB backend service (i.e. we don't want to send to service as it will broadcast it back)
+                    if (clientId == NetworkManager.ServerClientId && (!m_NetworkManager.DistributedAuthorityMode || m_NetworkManager.CMBServiceConnection))
                     {
                         continue;
                     }
