@@ -1,6 +1,6 @@
 # Dynamic Prefabs sample
 
-## Dynamic Addressables Network Prefabs Sample
+# Dynamic addressables Network Prefabs sample
 
 The [DynamicAddressablesNetworkPrefabs Sample](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/tree/main/Basic/DynamicAddressablesNetworkPrefabs) showcases the available ways you can use dynamic Prefabs to dynamically load network Prefabs at runtime, either pre-connection or post-connection. Doing so allows you to add new spawnable NetworkObject Prefabs to Netcode for GameObjects.
 
@@ -14,10 +14,11 @@ This sample covers a variety of possible ways you can use dynamically loaded net
 
 There's also the **APIPlayground**, which serves as an API playground that implements all post-connection uses together.
 
-> [!NOTE]
-> This sample leverages [Addressables](https://docs.unity3d.com/Packages/com.unity.addressables@1.21/manual/index.html) to load dynamic Prefabs.
+:::note
+**Note**: This sample leverages [Addressables](https://docs.unity3d.com/Packages/com.unity.addressables@1.21/manual/index.html) to load dynamic Prefabs.
+:::
 
-### Scene 00_Preloading Dynamic Prefabs
+### Scene 00_Preloading dynamic prefabs
 
 The `00_Preloading Dynamic Prefabs` scene is the simplest implementation of a dynamic Prefab. It instructs all game instances to load a network Prefab (it can be just one, it can also be a set of network Prefabs) and inject them to a NetworkManager's NetworkPrefabs list before starting the server. What's important is that it doesn't matter where the Prefab comes from. It can be a simple Prefab or it can be an Addressable - it's all the same.
 
@@ -115,8 +116,10 @@ https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blo
 
 After the client loads the necessary Prefabs, it once again transitions to the `ClientConnectingState`, and retries the connection to the server, sending along a new Prefab hash.
 
-> [!NOTE]
-> This sample leveraged a state machine to handle connection management. A state machine isn't by any means necessary for connection approvals to work—it serves to compartmentalize connection logic per state, and to be a debug-friendly tool to step through connection steps.
+:::note
+**Note**: This sample leveraged a state machine to handle connection management. A state machine isn't by any means necessary for connection approvals to work—it serves to compartmentalize connection logic per state, and to be a debug-friendly tool to step through connection steps.
+
+:::
 
 ### Scene 02_Server Authoritative Load All Prefabs Asynchronously
 
@@ -164,7 +167,7 @@ The server records that the client has successfully loaded the dynamic Prefab. A
 
 ### Scene 03_Server Authoritative Synchronous Dynamic Prefab Spawn
 
-The `03_Server Authoritative Synchronous Dynamic Prefab Spawn` scene is a dynamic Prefab loading scenario where the server instructs all clients to load a single network Prefab, and only invokes a spawn after all clients have finish loading the Prefab. The server initially sends a [ClientRpc](../../../docs/advanced-topics/message-system/clientrpc.md) to all clients, begins loading the Prefab on the server, awaits a acknowledgement of a load via a [ServerRpcs](../../../docs/advanced-topics/message-system/serverrpc.md) from each client, and only spawns the Prefab over the network after it receives an acknowledgement from every client, within a predetermined amount of time.
+The `03_Server Authoritative Synchronous Dynamic Prefab Spawn` scene is a dynamic Prefab loading scenario where the server instructs all clients to load a single network Prefab, and only invokes a spawn after all clients have finish loading the Prefab. The server initially sends an [RPC](../../advanced-topics/message-system/rpc.md) to all clients, begins loading the Prefab on the server, awaits a acknowledgement of a load via an RPC from each client, and only spawns the Prefab over the network after it receives an acknowledgement from every client, within a predetermined amount of time.
 
 This example implementation works best for scenarios where you want to guarantee the same world version across all connected clients. Because the server waits for all clients to finish loading the same dynamic Prefab, the spawn of said dynamic Prefab will be synchronous.
 
@@ -214,7 +217,7 @@ https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blo
 
 ### Scene 04_Server Authoritative Spawn Dynamic Prefab Using Network Visibility
 
-The `04_Server Authoritative Spawn Dynamic Prefab Using Network Visibility` scene is a dynamic Prefab loading scenario where the server instructs all clients to load a single network Prefab via a [ClientRpc](../../../docs/advanced-topics/message-system/clientrpc.md), spawns the Prefab as soon as it's loaded on the server, and marks the Prefab as network-visible only to clients that have already loaded that same Prefab. As soon as a client loads the Prefab locally, it sends an acknowledgement [ServerRpcs](../../../docs/advanced-topics/message-system/serverrpc.md), and the server marks that spawned NetworkObject as network-visible for that client.
+The `04_Server Authoritative Spawn Dynamic Prefab Using Network Visibility` scene is a dynamic Prefab loading scenario where the server instructs all clients to load a single network Prefab via an RPC, spawns the Prefab as soon as it's loaded on the server, and marks the Prefab as network-visible only to clients that have already loaded that same Prefab. As soon as a client loads the Prefab locally, it sends an acknowledgement RPC, and the server marks that spawned NetworkObject as network-visible for that client.
 
 An important implementation detail to note about this technique is that the server won't wait until all clients load a dynamic Prefab before spawning the corresponding NetworkObject. As a result, a NetworkObject becomes network-visible for a connected client as soon as the client loads it—a client isn't blocked by the loading operation of another client (which might take longer to load the asset or fail to load it at all). A consequence of this asynchronous loading technique is that clients might experience differing world versions momentarily. As a result, it's not recommend to use this technique for spawning game-changing gameplay elements (like a boss fight, for example) if you want all clients to interact with the spawned NetworkObject as soon as the server spawns it.
 

@@ -1,6 +1,6 @@
-# NetworkBehaviour
+# Samples
 
-Understand how to use NetworkBehaviour components in your project.
+Use the samples in this section to learn how to use Netcode for GameObjects in your projects. The samples are designed to help you understand the concepts and features of Netcode for GameObjects, and they provide practical examples of how to implement multiplayer functionality in Unity games.
 
 | **Topic**                       | **Description**                  |
 | :------------------------------ | :------------------------------- |

@@ -29,7 +29,7 @@ The `NetworkManager` is a required Netcode for GameObjects component that has al
 - [NetworkManager.SceneManager](../basics/scenemanagement/using-networkscenemanager.md): When scene management is enabled, this is used to load and unload scenes, register for scene events, and other scene management related actions.
 - [NetworkManager.SpawnManager](../basics/object-spawning.md): This handles NetworkObject spawn related functionality.
 - [NetworkManager.NetworkTimeSystem](../advanced-topics/networktime-ticks.md): a synchronized time that can be used to handle issues with latency between a client and the server.
-- [NetworkManager.NetworkTickSystem](../advanced-topics/networktime-ticks#network-ticks.md): Use this to adjust the frequency of when NetworkVariables are updated.
+- [NetworkManager.NetworkTickSystem](../advanced-topics/networktime-ticks.md#network-ticks): Use this to adjust the frequency of when NetworkVariables are updated.
 - [NetworkManager.CustomMessagingManager](../advanced-topics/message-system/custom-messages.md): Use this system to create and send custom messages.
 
 ## Starting a server, host, or client
@@ -47,14 +47,14 @@ NetworkManager.Singleton.StartClient();      // Starts the NetworkManager as jus
 
  When starting a Server or joining an already started session as client, the `NetworkManager` can spawn a "Player Object" belonging to the client. For more information about player prefabs, refer to:
 
- - [NetworkObject Player Prefab Documentation](../basics/networkobject.md#player-objects)
+ - [NetworkObject Player Prefab Documentation](../basics/networkobject.md)
  - [Connection Approval](../basics/connection-approval)
 
 ## Connecting
 
 When starting a client, the `NetworkManager` uses the IP and the Port provided in your `Transport` component for connecting. While you can set the IP address in the editor, many times you might want to be able to set the IP address and port during runtime.
 
-The below examples use [Unity Transport](../../../transport/current/about) to show a few ways you can gain access to the `UnityTransport` component via the `NetworkManager.Singleton` to configure your project's network settings programmatically:
+The below examples use [Unity Transport](https://docs.unity3d.com/Packages/com.unity.transport@latest?subfolder=/manual/index.html) to show a few ways you can gain access to the `UnityTransport` component via the `NetworkManager.Singleton` to configure your project's network settings programmatically:
 
 If you are only setting the IP address and port number, then you can use the `UnityTransport.SetConnectionData` method:
 ```csharp
