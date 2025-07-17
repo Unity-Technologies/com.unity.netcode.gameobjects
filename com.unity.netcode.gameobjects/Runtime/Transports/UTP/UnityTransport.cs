@@ -19,7 +19,6 @@ using Unity.Networking.Transport.Error;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 using NetcodeEvent = Unity.Netcode.NetworkEvent;
@@ -1371,21 +1370,30 @@ namespace Unity.Netcode.Transports.UTP
         private const byte k_ClosedRemoteConnection = 128;
         private const byte k_TransportShutdown = 129;
 
+        internal const string DisconnectedMessage = "Gracefully disconnected.";
+        internal const string TimeoutMessage = "Connection closed due to timed out.";
+        internal const string MaxConnectionAttemptsMessage = "Connection closed due to maximum connection attempts reached.";
+        internal const string ClosedByRemoteMessage = "Connection was closed by remote endpoint.";
+        internal const string AuthenticationFailureMessage = "Connection closed due to authentication failure.";
+        internal const string ProtocolErrorMessage = "Gracefully disconnected.";
+        internal const string ClosedRemoteConnectionMessage = "Local transport closed the remote endpoint connection.";
+        internal const string TransportShutdownMessage = "The transport was shutdown.";
+
         /// <inheritdoc/>
         protected override void OnCreateDisconnectEventMap()
         {
             // Implemented in UTP
 
-            AddDisconnectEventMap(DisconnectEvents.Disconnected, (byte)DisconnectReason.Default, "Gracefully disconnected.");
-            AddDisconnectEventMap(DisconnectEvents.ProtocolTimeout, (byte)DisconnectReason.Timeout, "Connection timed out.");
-            AddDisconnectEventMap(DisconnectEvents.MaxConnectionAttempts, (byte)DisconnectReason.MaxConnectionAttempts, "Maximum connection attempts reached.");
-            AddDisconnectEventMap(DisconnectEvents.ClosedByRemote, (byte)DisconnectReason.ClosedByRemote, "Remote connection was closed.");
-            AddDisconnectEventMap(DisconnectEvents.AuthenticationFailure, (byte)DisconnectReason.AuthenticationFailure, "Authentication failed.");
-            AddDisconnectEventMap(DisconnectEvents.ProtocolError, (byte)DisconnectReason.ProtocolError, "Transport protocol error encountered.");
+            AddDisconnectEventMap(DisconnectEvents.Disconnected, (byte)DisconnectReason.Default, DisconnectedMessage);
+            AddDisconnectEventMap(DisconnectEvents.ProtocolTimeout, (byte)DisconnectReason.Timeout, TimeoutMessage);
+            AddDisconnectEventMap(DisconnectEvents.MaxConnectionAttempts, (byte)DisconnectReason.MaxConnectionAttempts, MaxConnectionAttemptsMessage);
+            AddDisconnectEventMap(DisconnectEvents.ClosedByRemote, (byte)DisconnectReason.ClosedByRemote, ClosedByRemoteMessage);
+            AddDisconnectEventMap(DisconnectEvents.AuthenticationFailure, (byte)DisconnectReason.AuthenticationFailure, AuthenticationFailureMessage);
+            AddDisconnectEventMap(DisconnectEvents.ProtocolError, (byte)DisconnectReason.ProtocolError, ProtocolErrorMessage);
 
             // Not implemented in UTP
-            AddDisconnectEventMap(DisconnectEvents.ClosedRemoteConnection, k_ClosedRemoteConnection, "Local transport closed the remote connection.");
-            AddDisconnectEventMap(DisconnectEvents.TransportShutdown, k_TransportShutdown, "The transport was shutdown.");
+            AddDisconnectEventMap(DisconnectEvents.ClosedRemoteConnection, k_ClosedRemoteConnection, ClosedRemoteConnectionMessage);
+            AddDisconnectEventMap(DisconnectEvents.TransportShutdown, k_TransportShutdown, TransportShutdownMessage);
 
             base.OnCreateDisconnectEventMap();
         }

@@ -166,20 +166,57 @@ namespace Unity.Netcode
             return OnCurrentTopology();
         }
 
-
+        /// <summary>
+        /// The Netcode for GameObjects standardized disconnection event types.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="AddDisconnectEventMap"/> provides you with the ability to register the transport's disconnect event types with the local equivalent.
+        /// </remarks>
         public enum DisconnectEvents : byte
         {
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport closed the connection due to a locally invoked shutdown.
+            /// </summary>
             TransportShutdown,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies a graceful disconnect.
+            /// </summary>
             Disconnected,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport's connection to the endpoint has timed out and the connection was closed.
+            /// </summary>
             ProtocolTimeout,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the disconnect is due to the maximum number of failed connection attempts has been reached.
+            /// </summary>
             MaxConnectionAttempts,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the remote endpoint closed the connection.
+            /// </summary>
             ClosedByRemote,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies the local transport closed the incoming remote endpoint connection.
+            /// </summary>
             ClosedRemoteConnection,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the connection was closed due to an authentication failure.
+            /// </summary>
             AuthenticationFailure,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that a lower-level (unkown) transport error occurred.
+            /// </summary>
             ProtocolError,
         }
 
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping, then this will be set to the most recent disconnection event.
+        /// </summary>
         public DisconnectEvents DisconnectEvent { get; private set; }
+
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping and disconnection event message mapping, then this will contain
+        /// the transport specific message associated with the disconnect event type.
+        /// </summary>
         public string DisconnectEventMessage { get; private set; }
 
         private Dictionary<byte, DisconnectEvents> m_DisconnectEventMap = new Dictionary<byte, DisconnectEvents>();
