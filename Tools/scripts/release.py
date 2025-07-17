@@ -12,14 +12,25 @@ package_name = 'com.unity.netcode.gameobjects'
 
 def update_changelog(new_version):
     changelog_entry = f'## [{new_version}] - {datetime.date.today().isoformat()}'
-
-    print(changelog_entry)
-
     changelog_path = f'{package_name}/CHANGELOG.md'
+    print(changelog_entry)
+    
+    if not os.path.exists(changelog_path):
+        print(f"Error: CHANGELOG.md file not found at {changelog_path}")
+        return
+
     with open(changelog_path, 'rb') as f:
         changelog_text = f.read()
-
-    changelog_text = re.sub(br'## \[Unreleased\]', bytes(changelog_entry, 'UTF-8'), changelog_text)
+    
+    changelog_text_decoded = changelog_text.decode("utf-8")
+    if '## [Unreleased]' in changelog_text_decoded:
+        # Replace the `Unreleased` section with the new version entry
+        print("Found `## [Unreleased]` section. Updating it.")
+        changelog_text = re.sub(br'## \[Unreleased\]', bytes(changelog_entry, 'UTF-8'), changelog_text)
+    else:
+        # `Unreleased` section does not exist, so prepend the new entry at the top
+        print("No `## [Unreleased]` section found. Prepending the new entry.")
+        changelog_text = bytes(f"{changelog_entry}\n\n", 'UTF-8') + changelog_text
 
     with open(changelog_path, 'wb') as f:
         f.write(changelog_text)
@@ -59,6 +70,7 @@ def get_manifest_json_version(filename):
     return data['version']
 
 if __name__ == '__main__':
+    print(f"Current working directory: {os.getcwd()}")
     manifest_path = f'{package_name}/package.json'
     version = get_manifest_json_version(manifest_path)
     update_validation_exceptions(version)
