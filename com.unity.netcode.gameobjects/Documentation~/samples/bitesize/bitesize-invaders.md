@@ -1,6 +1,10 @@
-# Invaders sample
+---
+id: bitesize-invaders
+title: Invaders sample
+description: Learn more about game flow, modes, unconventional movement networked, and a shared timer using Netcode for GameObjects.
+---
 
-The [Invaders Sample Project](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/main/Basic/Invaders) to understand the game flow and modes with  Netcode for GameObjects (Netcode) using Scene Management, Unconventional Movement Networked, and a Shared Timer between clients updated client-side with server side seeding.
+The [Invaders Sample Project](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/tree/main/Deprecated/Invaders) to understand the game flow and modes with  Netcode for GameObjects (Netcode) using Scene Management, Unconventional Movement Networked, and a Shared Timer between clients updated client-side with server side seeding.
 
 ## Game Flows
 
@@ -40,8 +44,9 @@ https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blo
 
 One example of how to update the current `SceneState` is in *[InvadersGame.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/InvadersGame.cs)*, in the `OnNetworkSpawn` function.
 
-> [!NOTE]
-> This class has the same role as the Lobby Controller, it acts as a Manager, for a specific part of the game.
+:::note
+This class has the same role as the Lobby Controller, it acts as a Manager, for a specific part of the game.
+:::
 
 ```csharp reference
 https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/Invaders/Assets/Scripts/InvadersGame.cs#L156-L194

@@ -121,7 +121,7 @@ For performance reasons, by default, `FastBufferReader` and `FastBufferWriter` *
 > **In editor mode and development builds**, calling these functions records a watermark point, and any attempt to read or write past the watermark point will throw an exception. This ensures these functions are used properly, while avoiding the performance cost of per-operation checking in production builds. In production builds, attempting to read or write past the end of the buffer will cause undefined behavior, likely program instability and/or crashes.
 
 
-For convenience, every `WriteValue()` and `ReadValue()` method has an equivalent `WriteValueSafe()` and `ReadValueSafe()` that does bounds checking for you, throwing `OverflowException` if the boundary is exceeded. Additionally, some methods, such as arrays (where the amount of data being read can't be known until the size value is read) and [`INetworkSerializable`](inetworkserializable.md) values (where the size can't be predicted outside the implementation) will always do bounds checking internally.
+For convenience, every `WriteValue()` and `ReadValue()` method has an equivalent `WriteValueSafe()` and `ReadValueSafe()` that does bounds checking for you, throwing `OverflowException` if the boundary is exceeded. Additionally, some methods, such as arrays (where the amount of data being read can't be known until the size value is read) and [`INetworkSerializable`](serialization/inetworkserializable.md) values (where the size can't be predicted outside the implementation) will always do bounds checking internally.
 
 ## Bitwise Reading and Writing
 
