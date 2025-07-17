@@ -227,7 +227,8 @@ namespace Unity.Netcode
         /// If there is a map for the specific transport event id, then <see cref="DisconnectEvent"/> will be set to the equivalent <see cref="DisconnectEvents"/> value.
         /// </summary>
         /// <param name="disconnectEventId">The transport's disconnect event identifer.</param>
-        public void SetDisconnectEvent(byte disconnectEventId, string message = null)
+        /// <param name="messageOverride">Optional message to override any existing registered one for the transport specific disconnection event identifier.</param>
+        public void SetDisconnectEvent(byte disconnectEventId, string messageOverride = null)
         {
             if (m_DisconnectEventMap.ContainsKey(disconnectEventId))
             {
@@ -238,9 +239,9 @@ namespace Unity.Netcode
                 DisconnectEvent = DisconnectEvents.Disconnected;
             }
             DisconnectEventMessage = string.Empty;
-            if (message != null)
+            if (messageOverride != null)
             {
-                DisconnectEventMessage = message;
+                DisconnectEventMessage = messageOverride;
             }
             else if (m_DisconnectEventMessageMap.ContainsKey(DisconnectEvent))
             {
