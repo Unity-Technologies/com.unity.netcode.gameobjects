@@ -13,157 +13,6 @@ using Object = UnityEngine.Object;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// This is a serializable contianer class for <see cref="ComponentController"/> entries.
-    /// </summary>
-    [Serializable]
-    public class ComponentControllerEntry
-    {
-
-        // Ignoring the naming convention in order to auto-assign element names
-#pragma warning disable IDE1006
-        /// <summary>
-        /// Used for naming each element entry.
-        /// </summary>
-        [HideInInspector]
-        public string name;
-#pragma warning restore IDE1006
-
-        /// <summary>
-        /// When true, this component's enabled state will be the inverse of the value passed into <see cref="ComponentController.SetEnabled(bool)"/>.
-        /// </summary>
-        [Tooltip("When enabled, this component will inversely mirror the currently applied ComponentController's enabled state.")]
-        public bool InvertEnabled;
-
-        /// <summary>
-        /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
-        /// </summary>
-        /// <remarks>
-        /// This can be useful under scenarios where you might want to prevent a component from being enabled too early prior to making any adjustments.<br />
-        /// As an example, you might find that delaying the enabling of a <see cref="MeshRenderer"/> until at least the next frame will avoid any single frame
-        /// rendering anomalies until the <see cref="Rigidbody"/> has updated the <see cref="Transform"/>.
-        /// </remarks>
-        [Range(0.0f, 2.0f)]
-        [Tooltip("The amount of time to delay when transitioning this component from disabled to enabled. When 0, the change is immediate.")]
-        public float EnableDelay;
-
-        /// <summary>
-        /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
-        /// </summary>
-        /// <remarks>
-        /// This can be useful under scenarios where you might want to prevent a component from being disabled too early prior to making any adjustments.<br />
-        /// </remarks>
-        [Tooltip("The amount of time to delay when transitioning this component from enabled to disabled. When 0, the change is immediate.")]
-        [Range(0f, 2.0f)]
-        public float DisableDelay;
-
-        /// <summary>
-        /// The component that will have its enabled property synchronized.
-        /// </summary>
-        /// <remarks>
-        /// You can assign an entire <see cref="GameObject"/> to this property which will add all components attached to the <see cref="GameObject"/> and its children.
-        /// </remarks>
-        [Tooltip("The component that will have its enabled status synchonized. You can drop a GameObject onto this field and all valid components will be added to the list.")]
-        public Object Component;
-        internal PropertyInfo PropertyInfo;
-
-        internal bool GetRelativeEnabled(bool enabled)
-        {
-            return InvertEnabled ? !enabled : enabled;
-        }
-
-        private List<PendingStateUpdate> m_PendingStateUpdates = new List<PendingStateUpdate>();
-
-        /// <summary>
-        /// Invoke prior to setting the state.
-        /// </summary>
-        internal bool QueueForDelay(bool enabled)
-        {
-            var relativeEnabled = GetRelativeEnabled(enabled);
-
-            if (relativeEnabled ? EnableDelay > 0.0f : DisableDelay > 0.0f)
-            {
-                // Start with no relative time offset
-                var relativeTimeOffset = 0.0f;
-                // If we have pending state updates, then get that time of the last state update
-                // and use that as the time to add this next state update.
-                if (m_PendingStateUpdates.Count > 0)
-                {
-                    relativeTimeOffset = m_PendingStateUpdates[m_PendingStateUpdates.Count - 1].DelayTimeDelta;
-                }
-
-                // We process backwards, so insert new entries at the front
-                m_PendingStateUpdates.Insert(0, new PendingStateUpdate(this, enabled, relativeTimeOffset));
-                return true;
-            }
-            return false;
-        }
-
-        internal void SetValue(bool isEnabled)
-        {
-            // If invert enabled is true, then use the inverted value passed in.
-            // Otherwise, directly apply the value passed in.
-            PropertyInfo.SetValue(Component, GetRelativeEnabled(isEnabled));
-        }
-
-        internal bool HasPendingStateUpdates()
-        {
-            for (int i = m_PendingStateUpdates.Count - 1; i >= 0; i--)
-            {
-                if (!m_PendingStateUpdates[i].CheckTimeDeltaDelay())
-                {
-                    m_PendingStateUpdates.RemoveAt(i);
-                    continue;
-                }
-            }
-            return m_PendingStateUpdates.Count > 0;
-        }
-
-        private class PendingStateUpdate
-        {
-            internal bool TimeDeltaDelayInProgress;
-            internal bool PendingState;
-            internal float DelayTimeDelta;
-
-            internal ComponentControllerEntry ComponentControllerEntry;
-
-            internal bool CheckTimeDeltaDelay()
-            {
-                if (!TimeDeltaDelayInProgress)
-                {
-                    return false;
-                }
-
-                var isDeltaDelayInProgress = DelayTimeDelta > Time.realtimeSinceStartup;
-
-                if (!isDeltaDelayInProgress)
-                {
-                    ComponentControllerEntry.SetValue(PendingState);
-                }
-                TimeDeltaDelayInProgress = isDeltaDelayInProgress;
-                return TimeDeltaDelayInProgress;
-            }
-
-            internal PendingStateUpdate(ComponentControllerEntry componentControllerEntry, bool isEnabled, float relativeTimeOffset)
-            {
-                ComponentControllerEntry = componentControllerEntry;
-                // If there is a pending state, then add the delay to the end of the last pending state's.
-                var referenceTime = relativeTimeOffset > 0.0f ? relativeTimeOffset : Time.realtimeSinceStartup;
-
-                if (ComponentControllerEntry.GetRelativeEnabled(isEnabled))
-                {
-                    DelayTimeDelta = referenceTime + ComponentControllerEntry.EnableDelay;
-                }
-                else
-                {
-                    DelayTimeDelta = referenceTime + ComponentControllerEntry.DisableDelay;
-                }
-                TimeDeltaDelayInProgress = true;
-                PendingState = isEnabled;
-            }
-        }
-    }
-
-    /// <summary>
     /// Handles enabling or disabling commonly used components like <see cref="MonoBehaviour"/>, <see cref="MeshRenderer"/>, <see cref="Collider"/>, etc.<br />
     /// Anything that derives from <see cref="Component"/> and has an enabled property can be added to the list of objects.<br />
     /// NOTE: <see cref="NetworkBehaviour"/> derived components are not allowed and will be automatically removed.
@@ -177,6 +26,156 @@ namespace Unity.Netcode.Components
     public class ComponentController : NetworkBehaviour
     {
         /// <summary>
+        /// This is a serializable contianer class for <see cref="ComponentController"/> entries.
+        /// </summary>
+        [Serializable]
+        internal class ComponentEntry
+        {
+
+            // Ignoring the naming convention in order to auto-assign element names
+#pragma warning disable IDE1006
+            /// <summary>
+            /// Used for naming each element entry.
+            /// </summary>
+            [HideInInspector]
+            public string name;
+#pragma warning restore IDE1006
+
+            /// <summary>
+            /// When true, this component's enabled state will be the inverse of the value passed into <see cref="SetEnabled(bool)"/>.
+            /// </summary>
+            [Tooltip("When enabled, this component will inversely mirror the currently applied ComponentController's enabled state.")]
+            public bool InvertEnabled;
+
+            /// <summary>
+            /// The amount of time to delay enabling this component when the <see cref="ComponentController"/> has just transitioned from a disabled to enabled state.
+            /// </summary>
+            /// <remarks>
+            /// This can be useful under scenarios where you might want to prevent a component from being enabled too early prior to making any adjustments.<br />
+            /// As an example, you might find that delaying the enabling of a <see cref="MeshRenderer"/> until at least the next frame will avoid any single frame
+            /// rendering anomalies until the <see cref="Rigidbody"/> has updated the <see cref="Transform"/>.
+            /// </remarks>
+            [Range(0.0f, 2.0f)]
+            [Tooltip("The amount of time to delay when transitioning this component from disabled to enabled. When 0, the change is immediate.")]
+            public float EnableDelay;
+
+            /// <summary>
+            /// The amount of time to delay disabling this component when the <see cref="ComponentController"/> has just transitioned from an enabled to disabled state.
+            /// </summary>
+            /// <remarks>
+            /// This can be useful under scenarios where you might want to prevent a component from being disabled too early prior to making any adjustments.<br />
+            /// </remarks>
+            [Tooltip("The amount of time to delay when transitioning this component from enabled to disabled. When 0, the change is immediate.")]
+            [Range(0f, 2.0f)]
+            public float DisableDelay;
+
+            /// <summary>
+            /// The component that will have its enabled property synchronized.
+            /// </summary>
+            /// <remarks>
+            /// You can assign an entire <see cref="GameObject"/> to this property which will add all components attached to the <see cref="GameObject"/> and its children.
+            /// </remarks>
+            [Tooltip("The component that will have its enabled status synchonized. You can drop a GameObject onto this field and all valid components will be added to the list.")]
+            public Object Component;
+            internal PropertyInfo PropertyInfo;
+
+            internal bool GetRelativeEnabled(bool enabled)
+            {
+                return InvertEnabled ? !enabled : enabled;
+            }
+
+            private List<PendingStateUpdate> m_PendingStateUpdates = new List<PendingStateUpdate>();
+
+            /// <summary>
+            /// Invoke prior to setting the state.
+            /// </summary>
+            internal bool QueueForDelay(bool enabled)
+            {
+                var relativeEnabled = GetRelativeEnabled(enabled);
+
+                if (relativeEnabled ? EnableDelay > 0.0f : DisableDelay > 0.0f)
+                {
+                    // Start with no relative time offset
+                    var relativeTimeOffset = 0.0f;
+                    // If we have pending state updates, then get that time of the last state update
+                    // and use that as the time to add this next state update.
+                    if (m_PendingStateUpdates.Count > 0)
+                    {
+                        relativeTimeOffset = m_PendingStateUpdates[m_PendingStateUpdates.Count - 1].DelayTimeDelta;
+                    }
+
+                    // We process backwards, so insert new entries at the front
+                    m_PendingStateUpdates.Insert(0, new PendingStateUpdate(this, enabled, relativeTimeOffset));
+                    return true;
+                }
+                return false;
+            }
+
+            internal void SetValue(bool isEnabled)
+            {
+                // If invert enabled is true, then use the inverted value passed in.
+                // Otherwise, directly apply the value passed in.
+                PropertyInfo.SetValue(Component, GetRelativeEnabled(isEnabled));
+            }
+
+            internal bool HasPendingStateUpdates()
+            {
+                for (int i = m_PendingStateUpdates.Count - 1; i >= 0; i--)
+                {
+                    if (!m_PendingStateUpdates[i].CheckTimeDeltaDelay())
+                    {
+                        m_PendingStateUpdates.RemoveAt(i);
+                        continue;
+                    }
+                }
+                return m_PendingStateUpdates.Count > 0;
+            }
+
+            private class PendingStateUpdate
+            {
+                internal bool TimeDeltaDelayInProgress;
+                internal bool PendingState;
+                internal float DelayTimeDelta;
+
+                internal ComponentEntry ComponentEntry;
+
+                internal bool CheckTimeDeltaDelay()
+                {
+                    if (!TimeDeltaDelayInProgress)
+                    {
+                        return false;
+                    }
+
+                    var isDeltaDelayInProgress = DelayTimeDelta > Time.realtimeSinceStartup;
+
+                    if (!isDeltaDelayInProgress)
+                    {
+                        ComponentEntry.SetValue(PendingState);
+                    }
+                    TimeDeltaDelayInProgress = isDeltaDelayInProgress;
+                    return TimeDeltaDelayInProgress;
+                }
+
+                internal PendingStateUpdate(ComponentEntry componentControllerEntry, bool isEnabled, float relativeTimeOffset)
+                {
+                    ComponentEntry = componentControllerEntry;
+                    // If there is a pending state, then add the delay to the end of the last pending state's.
+                    var referenceTime = relativeTimeOffset > 0.0f ? relativeTimeOffset : Time.realtimeSinceStartup;
+
+                    if (ComponentEntry.GetRelativeEnabled(isEnabled))
+                    {
+                        DelayTimeDelta = referenceTime + ComponentEntry.EnableDelay;
+                    }
+                    else
+                    {
+                        DelayTimeDelta = referenceTime + ComponentEntry.DisableDelay;
+                    }
+                    TimeDeltaDelayInProgress = true;
+                    PendingState = isEnabled;
+                }
+            }
+        }
+        /// <summary>
         /// Determines whether the selected <see cref="Components"/>s will start enabled or disabled when spawned.
         /// </summary>
         [Tooltip("The initial state of the component controllers enabled status when instnatiated.")]
@@ -186,14 +185,15 @@ namespace Unity.Netcode.Components
         /// The list of <see cref="Components"/>s to be enabled and disabled.
         /// </summary>
         [Tooltip("The list of components to control. You can drag and drop an entire GameObject on this to include all components.")]
-        public List<ComponentControllerEntry> Components;
+        [SerializeField]
+        internal List<ComponentEntry> Components;
 
         /// <summary>
         /// Returns the current enabled state of the <see cref="ComponentController"/>.
         /// </summary>
         public bool EnabledState => m_IsEnabled;
 
-        internal List<ComponentControllerEntry> ValidComponents = new List<ComponentControllerEntry>();
+        internal List<ComponentEntry> ValidComponents = new List<ComponentEntry>();
         private bool m_IsEnabled;
 
 #if UNITY_EDITOR
@@ -205,7 +205,7 @@ namespace Unity.Netcode.Components
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string GetComponentNameFormatted(Object component)
+        internal static string GetComponentNameFormatted(Object component)
         {
             // Split the class name up based on capitalization
             var classNameDisplay = Regex.Replace(component.GetType().Name, "([A-Z])", " $1", RegexOptions.Compiled).Trim();
@@ -223,7 +223,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            var gameObjectsToScan = new List<ComponentControllerEntry>();
+            var gameObjectsToScan = new List<ComponentEntry>();
             // First pass is to verify all entries are valid and look for any GameObjects added as an entry to process next
             for (int i = Components.Count - 1; i >= 0; i--)
             {
@@ -236,10 +236,13 @@ namespace Unity.Netcode.Components
                 {
                     continue;
                 }
-                var componentType = Components[i].Component.GetType();
-                if (componentType == typeof(GameObject))
+                var objectType = Components[i].Component.GetType();
+                if (objectType == typeof(GameObject))
                 {
-                    gameObjectsToScan.Add(Components[i]);
+                    if (!gameObjectsToScan.Contains(Components[i]))
+                    {
+                        gameObjectsToScan.Add(Components[i]);
+                    }
                     Components.RemoveAt(i);
                     continue;
                 }
@@ -276,7 +279,7 @@ namespace Unity.Netcode.Components
                     var propertyInfo = component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
                     if (propertyInfo != null && propertyInfo.PropertyType == typeof(bool))
                     {
-                        var componentEntry = new ComponentControllerEntry()
+                        var componentEntry = new ComponentEntry()
                         {
                             Component = component,
                             PropertyInfo = propertyInfo,
@@ -304,25 +307,21 @@ namespace Unity.Netcode.Components
         {
             // Example of how to synchronize late joining clients when using an RPC to update
             // a local property's state.
-            if (serializer.IsWriter)
-            {
-                serializer.SerializeValue(ref m_IsEnabled);
-            }
-            else
-            {
-                serializer.SerializeValue(ref m_IsEnabled);
-            }
+            serializer.SerializeValue(ref m_IsEnabled);
             base.OnSynchronize(ref serializer);
         }
 
         /// <summary>
-        /// This checks to make sure that all <see cref="Component"/> entries are valid and will create a final
-        /// <see cref="ComponentControllerEntry"/> list of valid entries.
+        /// Override this method in place of Awake. This method is invoked during Awake.
         /// </summary>
         /// <remarks>
-        /// If overriding this method, it is required that you invoke this base method.
+        /// The <see cref="ComponentController"/>'s Awake method is protected to assure it is invoked in the correct order.
         /// </remarks>
-        protected virtual void Awake()
+        protected virtual void OnAwake()
+        {
+        }
+
+        private void Awake()
         {
             ValidComponents.Clear();
 
@@ -359,6 +358,15 @@ namespace Unity.Netcode.Components
 
             // Apply the initial state of all components this instance is controlling.
             InitializeComponents();
+
+            try
+            {
+                OnAwake();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
 
         /// <inheritdoc/>
@@ -419,11 +427,11 @@ namespace Unity.Netcode.Components
         /// Applies states changes to all components being controlled by this instance.
         /// </summary>
         /// <param name="enabled">the state update to apply</param>
-        private void ApplyEnabled()
+        private void ApplyEnabled(bool ignoreDelays = false)
         {
             foreach (var entry in ValidComponents)
             {
-                if (entry.QueueForDelay(m_IsEnabled))
+                if (!ignoreDelays && entry.QueueForDelay(m_IsEnabled))
                 {
                     if (!m_CoroutineObject.IsRunning)
                     {
@@ -504,6 +512,12 @@ namespace Unity.Netcode.Components
             {
                 ToggleEnabledRpc(m_IsEnabled);
             }
+        }
+
+        internal void ForceChangeEnabled(bool isEnabled, bool ignoreDelays = false)
+        {
+            m_IsEnabled = isEnabled;
+            ApplyEnabled(ignoreDelays);
         }
 
         /// <summary>

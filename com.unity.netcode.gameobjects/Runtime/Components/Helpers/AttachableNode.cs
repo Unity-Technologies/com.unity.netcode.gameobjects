@@ -30,6 +30,35 @@ public class AttachableNode : NetworkBehaviour
     protected readonly List<AttachableBehaviour> m_AttachedBehaviours = new List<AttachableBehaviour>();
 
     /// <inheritdoc/>
+    protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
+    {
+        m_AttachedBehaviours.Clear();
+        base.OnNetworkPreSpawn(ref networkManager);
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// When the ownership of an <see cref="AttachableNode"/> changes, it will find all currently attached <see cref="AttachableBehaviour"/> components
+    /// that are registered as being attached to this instance.
+    /// </remarks>
+    protected override void OnOwnershipChanged(ulong previous, ulong current)
+    {
+        if (current == NetworkManager.LocalClientId)
+        {
+            m_AttachedBehaviours.Clear();
+            var attachables = NetworkObject.transform.GetComponentsInChildren<AttachableBehaviour>();
+            foreach (var attachable in attachables)
+            {
+                if (attachable.AttachableNode == this)
+                {
+                    m_AttachedBehaviours.Add(attachable);
+                }
+            }
+        }
+        base.OnOwnershipChanged(previous, current);
+    }
+
+    /// <inheritdoc/>
     /// <remarks>
     /// If the <see cref="NetworkObject"/> this <see cref="AttachableNode"/> belongs to is despawned,
     /// then any attached <see cref="AttachableBehaviour"/> will be detached during <see cref="OnNetworkDespawn"/>.
@@ -46,11 +75,15 @@ public class AttachableNode : NetworkBehaviour
         base.OnNetworkPreDespawn();
     }
 
-    /// <inheritdoc/>
-    public override void OnNetworkDespawn()
+    internal override void InternalOnDestroy()
     {
+        // Notify any attached behaviours that this node is being destroyed.
+        for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
+        {
+            m_AttachedBehaviours[i]?.OnAttachNodeDestroy();
+        }
         m_AttachedBehaviours.Clear();
-        base.OnNetworkDespawn();
+        base.InternalOnDestroy();
     }
 
     /// <summary>
@@ -69,7 +102,6 @@ public class AttachableNode : NetworkBehaviour
             NetworkLog.LogError($"[{nameof(AttachableNode)}][{name}][Attach] {nameof(AttachableBehaviour)} {attachableBehaviour.name} is already attached!");
             return;
         }
-
         m_AttachedBehaviours.Add(attachableBehaviour);
         OnAttached(attachableBehaviour);
     }
@@ -90,7 +122,6 @@ public class AttachableNode : NetworkBehaviour
             NetworkLog.LogError($"[{nameof(AttachableNode)}][{name}][Detach] {nameof(AttachableBehaviour)} {attachableBehaviour.name} is not attached!");
             return;
         }
-
         m_AttachedBehaviours.Remove(attachableBehaviour);
         OnDetached(attachableBehaviour);
     }

@@ -1525,6 +1525,14 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Use to assure a helper component invokes script during destroy in the
+        /// event that a derived class does not invoke base.OnDestroy.
+        /// </summary>
+        internal virtual void InternalOnDestroy()
+        {
+
+        }
 
         /// <summary>
         /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to is destroyed.
@@ -1532,6 +1540,7 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnDestroy()
         {
+            InternalOnDestroy();
             if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
             {
                 // If the associated NetworkObject is still spawned then this

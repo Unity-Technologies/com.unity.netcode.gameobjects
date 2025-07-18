@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -25,6 +27,49 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public class AttachableBehaviour : NetworkBehaviour
     {
+        [Serializable]
+        internal class ComponentControllerEntry
+        {
+            // Ignoring the naming convention in order to auto-assign element names
+#pragma warning disable IDE1006
+            /// <summary>
+            /// Used for naming each element entry.
+            /// </summary>
+            [HideInInspector]
+            public string name;
+#pragma warning restore IDE1006
+
+
+#if UNITY_EDITOR
+
+            internal void OnValidate()
+            {
+                if (!HasInitialized)
+                {
+                    AutoTrigger = TriggerTypes.OnAttach | TriggerTypes.OnDetach;
+                    HasInitialized = true;
+                }
+                name = ComponentController != null ? ComponentController.GetComponentNameFormatted(ComponentController) : "Component Controller";
+            }
+#endif
+
+            [Flags]
+            public enum TriggerTypes : byte
+            {
+                Nothing,
+                OnAttach,
+                OnDetach,
+            }
+
+            public TriggerTypes AutoTrigger;
+            public bool EnableOnAttach = true;
+            public ComponentController ComponentController;
+
+            [HideInInspector]
+            [SerializeField]
+            internal bool HasInitialized;
+        }
+
 #if UNITY_EDITOR
         /// <inheritdoc/>
         /// <remarks>
@@ -45,6 +90,15 @@ namespace Unity.Netcode.Components
                 // Wait for the next editor update to create a nested child and add the AttachableBehaviour
                 EditorApplication.update += CreatedNestedChild;
             }
+
+            foreach (var componentController in ComponentControllers)
+            {
+                if (componentController == null)
+                {
+                    continue;
+                }
+                componentController.OnValidate();
+            }
         }
 
         private void CreatedNestedChild()
@@ -57,6 +111,34 @@ namespace Unity.Netcode.Components
             DestroyImmediate(this);
         }
 #endif
+        /// <summary>
+        /// Flags to determine if the <see cref="AttachableBehaviour"/> will automatically detatch.
+        /// </summary>
+        [Flags]
+        public enum AutoDetatchTypes
+        {
+            None,
+            /// <summary>
+            /// Detatch on ownership change.
+            /// </summary>
+            OnOwnershipChange,
+            /// <summary>
+            /// Detatch on despawn.
+            /// </summary>
+            OnDespawn,
+            /// <summary>
+            /// Detatch on destroy.
+            /// </summary>
+            OnAttachNodeDestroy,
+        }
+
+        /// <summary>
+        /// Determines if this <see cref="AttachableBehaviour"/> will automatically detatch on all instances if it has one of the <see cref="AutoDetatchTypes"/> flags.
+        /// </summary>
+        public AutoDetatchTypes AutoDetach = AutoDetatchTypes.OnDespawn | AutoDetatchTypes.OnOwnershipChange | AutoDetatchTypes.OnAttachNodeDestroy;
+
+        [SerializeField]
+        internal List<ComponentControllerEntry> ComponentControllers;
 
         /// <summary>
         /// Invoked when the <see cref="AttachState"/> of this instance has changed.
@@ -115,6 +197,7 @@ namespace Unity.Netcode.Components
         /// If attached, attaching, or detaching this will be the <see cref="AttachableNode"/> this <see cref="AttachableBehaviour"/> instance is attached to.
         /// </summary>
         protected AttachableNode m_AttachableNode { get; private set; }
+        internal AttachableNode AttachableNode => m_AttachableNode;
 
         private NetworkBehaviourReference m_AttachedNodeReference = new NetworkBehaviourReference(null);
         private Vector3 m_OriginalLocalPosition;
@@ -125,15 +208,18 @@ namespace Unity.Netcode.Components
         {
             // Example of how to synchronize late joining clients when using an RPC to update
             // a local property's state.
-            if (serializer.IsWriter)
-            {
-                serializer.SerializeValue(ref m_AttachedNodeReference);
-            }
-            else
-            {
-                serializer.SerializeValue(ref m_AttachedNodeReference);
-            }
+            serializer.SerializeValue(ref m_AttachedNodeReference);
             base.OnSynchronize(ref serializer);
+        }
+
+        /// <summary>
+        /// Override this method in place of Awake. This method is invoked during Awake.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="AttachableBehaviour"/>'s Awake method is protected to assure it initializes itself at this point in time.
+        /// </remarks>
+        protected virtual void OnAwake()
+        {
         }
 
         /// <summary>
@@ -147,6 +233,7 @@ namespace Unity.Netcode.Components
             m_OriginalLocalRotation = transform.localRotation;
             m_AttachState = AttachState.Detached;
             m_AttachableNode = null;
+            OnAwake();
         }
 
         /// <inheritdoc/>
@@ -162,9 +249,14 @@ namespace Unity.Netcode.Components
             base.OnNetworkSessionSynchronized();
         }
 
-        /// <inheritdoc/>
-        public override void OnNetworkDespawn()
+        internal void ForceDetatch()
         {
+            if (m_AttachState == AttachState.Detached || m_AttachState == AttachState.Detaching)
+            {
+                return;
+            }
+
+            ForceComponentChange(false, true);
             InternalDetach();
             if (NetworkManager && !NetworkManager.ShutdownInProgress)
             {
@@ -172,18 +264,37 @@ namespace Unity.Netcode.Components
                 UpdateAttachState(m_AttachState, m_AttachableNode);
             }
             m_AttachedNodeReference = new NetworkBehaviourReference(null);
+        }
+
+        /// <inheritdoc/>
+        public override void OnNetworkPreDespawn()
+        {
+            if (AutoDetach.HasFlag(AutoDetatchTypes.OnDespawn))
+            {
+                ForceDetatch();
+            }
             base.OnNetworkDespawn();
         }
 
         private void UpdateAttachedState()
         {
             var attachableNode = (AttachableNode)null;
-            var shouldParent = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
-            var preState = shouldParent ? AttachState.Attaching : AttachState.Detaching;
-            var preNode = shouldParent ? attachableNode : m_AttachableNode;
-            shouldParent = shouldParent && attachableNode != null;
+            var isAttaching = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
+            var preState = isAttaching ? AttachState.Attaching : AttachState.Detaching;
 
-            if (shouldParent && m_AttachableNode != null && m_AttachState == AttachState.Attached)
+            // Exit early if we are already in the correct attached state and the incoming
+            // AttachableNode reference is the same as the local AttachableNode property.
+            if (attachableNode == m_AttachableNode &&
+                ((isAttaching && m_AttachState == AttachState.Attached) ||
+                (!isAttaching && m_AttachState == AttachState.Detached)))
+            {
+                return;
+            }
+
+            var preNode = isAttaching ? attachableNode : m_AttachableNode;
+            isAttaching = isAttaching && attachableNode != null;
+
+            if (isAttaching && m_AttachableNode != null && m_AttachState == AttachState.Attached)
             {
                 // If we are attached to some other AttachableNode, then detach from that before attaching to a new one.
                 if (m_AttachableNode != attachableNode)
@@ -201,7 +312,8 @@ namespace Unity.Netcode.Components
             // Change the state to attaching or detaching
             UpdateAttachState(preState, preNode);
 
-            if (shouldParent)
+            ForceComponentChange(isAttaching, false);
+            if (isAttaching)
             {
                 InternalAttach(attachableNode);
             }
@@ -215,7 +327,7 @@ namespace Unity.Netcode.Components
 
             // When detaching, we want to make our final action
             // the invocation of the AttachableNode's Detach method.
-            if (!shouldParent && m_AttachableNode)
+            if (!isAttaching && m_AttachableNode)
             {
                 m_AttachableNode.Detach(this);
                 m_AttachableNode = null;
@@ -254,6 +366,29 @@ namespace Unity.Netcode.Components
             catch (Exception ex)
             {
                 Debug.LogException(ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override void OnOwnershipChanged(ulong previous, ulong current)
+        {
+            if (AutoDetach.HasFlag(AutoDetatchTypes.OnOwnershipChange))
+            {
+                ForceDetatch();
+            }
+            base.OnOwnershipChanged(previous, current);
+        }
+
+        internal void ForceComponentChange(bool isAttaching, bool forcedChange)
+        {
+            var triggerType = isAttaching ? ComponentControllerEntry.TriggerTypes.OnAttach : ComponentControllerEntry.TriggerTypes.OnDetach;
+
+            foreach (var componentControllerEntry in ComponentControllers)
+            {
+                if (componentControllerEntry.AutoTrigger.HasFlag(triggerType))
+                {
+                    componentControllerEntry.ComponentController.ForceChangeEnabled(componentControllerEntry.EnableOnAttach ? isAttaching : !isAttaching, forcedChange);
+                }
             }
         }
 
@@ -349,23 +484,23 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (m_AttachState != AttachState.Attached || m_AttachableNode == null)
+            if (m_AttachState == AttachState.Detached || m_AttachState == AttachState.Detaching || m_AttachableNode == null)
             {
                 // Check for the unlikely scenario that an instance has mismatch between the state and assigned attachable node.
-                if (!m_AttachableNode && m_AttachState == AttachState.Attached)
+                if (!m_AttachableNode)
                 {
                     NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name}'s state is still {m_AttachState} but has no {nameof(AttachableNode)} assigned!");
                 }
 
                 // Developer only notification for the most likely scenario where this method is invoked but the instance is not attached to anything.
-                if (NetworkManager && NetworkManager.LogLevel <= LogLevel.Developer)
+                if (!m_AttachableNode && NetworkManager && NetworkManager.LogLevel <= LogLevel.Developer)
                 {
                     NetworkLog.LogWarning($"[{name}][Detach] Cannot detach! {name} is not attached to anything!");
                 }
 
                 // If we have the attachable node set and we are not in the middle of detaching, then log an error and note
                 // this could potentially occur if inoked more than once for the same instance in the same frame.
-                if (m_AttachableNode && m_AttachState != AttachState.Detaching)
+                if (m_AttachableNode)
                 {
                     NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name} is still referencing {nameof(AttachableNode)} {m_AttachableNode.name}! Could {nameof(Detach)} be getting invoked more than once for the same instance?");
                 }
@@ -406,6 +541,19 @@ namespace Unity.Netcode.Components
         private void UpdateAttachStateRpc(NetworkBehaviourReference attachedNodeReference, RpcParams rpcParams = default)
         {
             ChangeReference(attachedNodeReference);
+        }
+
+        /// <summary>
+        /// Notification that the <see cref="AttachableNode"/> is being destroyed
+        /// </summary>
+        internal void OnAttachNodeDestroy()
+        {
+            // If this instance should force a detatch on destroy
+            if (AutoDetach.HasFlag(AutoDetatchTypes.OnAttachNodeDestroy))
+            {
+                // Force a detatch
+                ForceDetatch();
+            }
         }
     }
 }

@@ -40,13 +40,13 @@ namespace Unity.Netcode.RuntimeTests
             var meshRenderer = sourceChild.AddComponent<MeshRenderer>();
             var light = sourceChild.AddComponent<Light>();
             var controller = m_TestPrefab.AddComponent<ComponentController>();
-            controller.Components = new List<ComponentControllerEntry>
+            controller.Components = new List<ComponentController.ComponentEntry>
             {
-                new ComponentControllerEntry()
+                new ComponentController.ComponentEntry()
                 {
                     Component = meshRenderer,
                 },
-                new ComponentControllerEntry()
+                new ComponentController.ComponentEntry()
                 {
                     InvertEnabled = true,
                     Component = light,
