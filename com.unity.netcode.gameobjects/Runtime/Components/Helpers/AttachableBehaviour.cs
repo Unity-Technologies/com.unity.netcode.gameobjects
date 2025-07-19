@@ -117,6 +117,9 @@ namespace Unity.Netcode.Components
         [Flags]
         public enum AutoDetatchTypes
         {
+            /// <summary>
+            /// Disables auto detach.
+            /// </summary>
             None,
             /// <summary>
             /// Detatch on ownership change.
