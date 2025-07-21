@@ -2,7 +2,7 @@
 
 A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode. NetworkObjects are session-mode agnostic and used in both [client-server](../terms-concepts/client-server.md) and [distributed authority](../terms-concepts/distributed-authority.md) contexts.
 
-Netcode for GameObjects' high level components, [the RPC system](../advanced-topics/messaging-system.md), [object spawning](object-spawning.md), and [`NetworkVariable`](networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
+Netcode for GameObjects' high level components, [the RPC system](../advanced-topics/messaging-system.md), [object spawning](object-spawning), and [`NetworkVariable`](networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
 
   1. NetworkObject
   2. [`NetworkBehaviour`](networkbehaviour.md)
@@ -96,7 +96,7 @@ There are times when you want to use a NetworkObject for something that doesn't 
 
 When a GameObject is instantiated, it gets instantiated in the current active scene. However, sometimes you might find that you want to change the currently active scene and would like specific NetworkObject instances to automatically migrate to the newly assigned active scene. While you could keep a list or table of the NetworkObject instances and write the code/logic to migrate them into a newly assigned active scene, this can be time consuming and become complicated depending on project size and complexity. The alternate and recommended way to handle this is by enabling the **Active Scene Synchronization** property of each NetworkObject you want to automatically migrate into any newly assigned scene. This property defaults to disabled.
 
-Refer to the [NetworkSceneManager active scene synchronization](../scenemanagement/using-networkscenemanager#active-scene-synchronization) page for more details.
+Refer to the [NetworkSceneManager active scene synchronization](scenemanagement/using-networkscenemanager.md#active-scene-synchronization) page for more details.
 
 ## Scene migration synchronization
 
@@ -112,6 +112,5 @@ Scene migration synchronization is enabled by default. For NetworkObjects that d
 
 ## Additional resources
 
-- [PlayerObjects and player prefabs](playerobjects.md)
 - [NetworkBehaviour](networkbehaviour.md)
 - [NetworkVariable](networkvariable.md)

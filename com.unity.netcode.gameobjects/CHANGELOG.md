@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added serializer for `Pose` (#3546)
 - Added `AttachableBehaviour` helper component to provide an alternate approach to parenting items without using the `NetworkObject` parenting. (#3518)
 - Added `AttachableNode` helper component that is used by `AttachableBehaviour` as the target node for parenting. (#3518)
 - Added `ComponentController` helper component that can be used to synchronize the enabling and disabling of components and can be used in conjunction with `AttachableBehaviour`. (#3518)
@@ -27,6 +28,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+## [2.4.4] - 2025-07-07
+
+### Added
+
+- Added documentation to package repository.
 
 ## [2.4.3] - 2025-06-25
 
