@@ -90,7 +90,10 @@ namespace Unity.Netcode.Components
                 // Wait for the next editor update to create a nested child and add the AttachableBehaviour
                 EditorApplication.update += CreatedNestedChild;
             }
-
+            if (ComponentControllers == null)
+            {
+                return;
+            }
             foreach (var componentController in ComponentControllers)
             {
                 if (componentController == null)
@@ -112,33 +115,33 @@ namespace Unity.Netcode.Components
         }
 #endif
         /// <summary>
-        /// Flags to determine if the <see cref="AttachableBehaviour"/> will automatically detatch.
+        /// Flags to determine if the <see cref="AttachableBehaviour"/> will automatically detach.
         /// </summary>
         [Flags]
-        public enum AutoDetatchTypes
+        public enum AutoDetachTypes
         {
             /// <summary>
             /// Disables auto detach.
             /// </summary>
             None,
             /// <summary>
-            /// Detatch on ownership change.
+            /// Detach on ownership change.
             /// </summary>
             OnOwnershipChange,
             /// <summary>
-            /// Detatch on despawn.
+            /// Detach on despawn.
             /// </summary>
             OnDespawn,
             /// <summary>
-            /// Detatch on destroy.
+            /// Detach on destroy.
             /// </summary>
             OnAttachNodeDestroy,
         }
 
         /// <summary>
-        /// Determines if this <see cref="AttachableBehaviour"/> will automatically detatch on all instances if it has one of the <see cref="AutoDetatchTypes"/> flags.
+        /// Determines if this <see cref="AttachableBehaviour"/> will automatically detach on all instances if it has one of the <see cref="AutoDetachTypes"/> flags.
         /// </summary>
-        public AutoDetatchTypes AutoDetach = AutoDetatchTypes.OnDespawn | AutoDetatchTypes.OnOwnershipChange | AutoDetatchTypes.OnAttachNodeDestroy;
+        public AutoDetachTypes AutoDetach = AutoDetachTypes.OnDespawn | AutoDetachTypes.OnOwnershipChange | AutoDetachTypes.OnAttachNodeDestroy;
 
         [SerializeField]
         internal List<ComponentControllerEntry> ComponentControllers;
@@ -252,7 +255,7 @@ namespace Unity.Netcode.Components
             base.OnNetworkSessionSynchronized();
         }
 
-        internal void ForceDetatch()
+        internal void ForceDetach()
         {
             if (m_AttachState == AttachState.Detached || m_AttachState == AttachState.Detaching)
             {
@@ -260,21 +263,28 @@ namespace Unity.Netcode.Components
             }
 
             ForceComponentChange(false, true);
+
             InternalDetach();
-            if (NetworkManager && !NetworkManager.ShutdownInProgress)
-            {
-                // Notify of the changed attached state
-                UpdateAttachState(m_AttachState, m_AttachableNode);
-            }
+            // Notify of the changed attached state
+            UpdateAttachState(m_AttachState, m_AttachableNode);
+
             m_AttachedNodeReference = new NetworkBehaviourReference(null);
+
+            // When detaching, we want to make our final action
+            // the invocation of the AttachableNode's Detach method.
+            if (m_AttachableNode)
+            {
+                m_AttachableNode.Detach(this);
+                m_AttachableNode = null;
+            }
         }
 
         /// <inheritdoc/>
         public override void OnNetworkPreDespawn()
         {
-            if (AutoDetach.HasFlag(AutoDetatchTypes.OnDespawn))
+            if (AutoDetach.HasFlag(AutoDetachTypes.OnDespawn))
             {
-                ForceDetatch();
+                ForceDetach();
             }
             base.OnNetworkDespawn();
         }
@@ -375,9 +385,9 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
-            if (AutoDetach.HasFlag(AutoDetatchTypes.OnOwnershipChange))
+            if (AutoDetach.HasFlag(AutoDetachTypes.OnOwnershipChange))
             {
-                ForceDetatch();
+                ForceDetach();
             }
             base.OnOwnershipChanged(previous, current);
         }
@@ -551,11 +561,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void OnAttachNodeDestroy()
         {
-            // If this instance should force a detatch on destroy
-            if (AutoDetach.HasFlag(AutoDetatchTypes.OnAttachNodeDestroy))
+            // If this instance should force a detach on destroy
+            if (AutoDetach.HasFlag(AutoDetachTypes.OnAttachNodeDestroy))
             {
-                // Force a detatch
-                ForceDetatch();
+                // Force a detach
+                ForceDetach();
             }
         }
     }

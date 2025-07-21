@@ -43,9 +43,11 @@ public class AttachableNode : NetworkBehaviour
     /// </remarks>
     protected override void OnOwnershipChanged(ulong previous, ulong current)
     {
+        // Clear any known behaviours on all instances (really only the previous owner should know about AttachedBehaviours
+        m_AttachedBehaviours.Clear();
         if (current == NetworkManager.LocalClientId)
         {
-            m_AttachedBehaviours.Clear();
+            // Rebuild the list of AttachableBehaviours for the new owner
             var attachables = NetworkObject.transform.GetComponentsInChildren<AttachableBehaviour>();
             foreach (var attachable in attachables)
             {
@@ -69,7 +71,21 @@ public class AttachableNode : NetworkBehaviour
         {
             for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
             {
-                m_AttachedBehaviours[i]?.Detach();
+                if (!m_AttachedBehaviours[i])
+                {
+                    continue;
+                }
+                // If we don't have authority but should detach on despawn,
+                // then proceed to detach.
+                if (!m_AttachedBehaviours[i].HasAuthority)
+                {
+                    m_AttachedBehaviours[i].ForceDetach();
+                }
+                else
+                {
+                    // Detach the normal way with authority
+                    m_AttachedBehaviours[i].Detach();
+                }
             }
         }
         base.OnNetworkPreDespawn();
