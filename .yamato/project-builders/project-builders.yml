@@ -56,6 +56,7 @@ build_{{ netcodeProject[0] }}_project:
     # Add BuilderScript.cs to the project so we can modify and build the project using Unity Editor.
     # This is a bit tricky step, notice that we also need to include proper assembly definition in order for those scripts to compile properly.
     # TODO: the asmdef file can be simplified
+    - python -c "import os, shutil; d = 'C:/ClonedProject/{{ netcodeProject[1].projectPath }}/Assets/Scripts/Editor';  if os.path.exists(d): shutil.rmtree(d)" # --> Remove the directory if it exists to ensure we start with a clean slate
     - python -c "import os; os.makedirs('C:/ClonedProject/{{ netcodeProject[1].projectPath }}/Assets/Scripts/Editor', exist_ok=True)" # --> Create the directory if it doesn't exist
     - python -c "import shutil; shutil.copy('Tools/CI/scripts/BuildAutomation/Unity.ProjectBuild.Editor.asmdef', 'C:/ClonedProject/{{ netcodeProject[1].projectPath }}/Assets/Scripts/Editor/')" # --> Copy the asmdef file to the directory
     - python -c "import shutil; shutil.copy('Tools/CI/scripts/BuildAutomation/BuilderScripts.cs', 'C:/ClonedProject/{{ netcodeProject[1].projectPath }}/Assets/Scripts/Editor/')" # --> Copy the BuilderScripts.cs file to the directory (for build configuration setup)
