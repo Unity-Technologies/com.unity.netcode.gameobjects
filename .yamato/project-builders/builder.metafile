@@ -7,13 +7,3 @@ NetcodeProjects:
         branch: main
         manifestPath: Packages/manifest.json
         projectPath: '.'
-    Asteroids:
-        GithubRepo: "https://github.cds.internal.unity3d.com/unity/Asteroids-CMB-NGO-Sample.git"
-        branch: main
-        manifestPath: Packages/manifest.json
-        projectPath: '.'
-    SocialHub:
-        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize.git"
-        branch: main
-        manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
-        projectPath: 'Basic/DistributedAuthoritySocialHub'
