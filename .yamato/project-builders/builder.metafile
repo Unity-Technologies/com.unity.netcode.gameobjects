@@ -1,0 +1,19 @@
+# https://internaldocs.unity.com/yamato_continuous_integration/usage/templating/
+
+NetcodeProjects:
+    # Note that we are using internal Unity repo. This means that we may test with newest changes that are not yet released to our users (there are also public versions)
+    BossRoom:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git"
+        branch: main
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+    Asteroids:
+        GithubRepo: "https://github.cds.internal.unity3d.com/unity/Asteroids-CMB-NGO-Sample.git"
+        branch: main
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
+    SocialHub:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize.git"
+        branch: main
+        manifestPath: Basic/DistributedAuthoritySocialHub/Packages/manifest.json
+        projectPath: 'Basic/DistributedAuthoritySocialHub'
