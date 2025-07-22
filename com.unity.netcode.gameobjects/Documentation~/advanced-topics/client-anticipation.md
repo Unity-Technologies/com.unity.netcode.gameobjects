@@ -6,7 +6,7 @@ Client anticipation uses `AnticipatedNetworkVariable<T>` and `AnticipatedNetwork
 
 ## Overview
 
-Games with a server-authoritative architecture often face the problem of making the game feel responsive despite [latency](../learn/ladandpacketloss.md). For example, when a user wants to change the color of an object from green to blue they click a button in the UI, an RPC is sent to the server, and the server changes the object to blue. From the client's perspective, the object doesn't change to blue until the server responds to that message, resulting in a perceived delay for the user.
+Games with a server-authoritative architecture often face the problem of making the game feel responsive despite [latency](../learn/lagandpacketloss.md). For example, when a user wants to change the color of an object from green to blue they click a button in the UI, an RPC is sent to the server, and the server changes the object to blue. From the client's perspective, the object doesn't change to blue until the server responds to that message, resulting in a perceived delay for the user.
 
 ![](../images/sequence_diagrams/Anticipation/ServerAuthoritative.png)
 

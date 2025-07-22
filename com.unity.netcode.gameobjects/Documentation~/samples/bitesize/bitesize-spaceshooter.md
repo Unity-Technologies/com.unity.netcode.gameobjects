@@ -38,9 +38,9 @@ The `2DSpaceShooter` object creates many objects dynamically at runtime includin
 
 2DSpaceShooter uses the NetworkObjectPool script, which can be found in the Community Contributions Repository.
 
-![pool img](../images/bitesize/invader-networkobjectpool.png)
+![pool img](../../images/bitesize/invader-networkobjectpool.png)
 
-All of the runtime spawnable objects have been registered to the pool. On the client-side, this will cause Netcode to use an object from the pool instead of instantiating a new Object. When the `NetworkObject` is despawned, it will be automatically returned to the pool instead of getting destroyed.
+All of the runtime spawnable objects have been registered to the pool. On the client-side, this will cause Netcode to use an object from the pool instead of instantiating a new Object. When the NetworkObject is despawned, it will be automatically returned to the pool instead of getting destroyed.
 
 Adding the `NetworkObjectPool` to the scene won't yet pool server objects because these must be manually created and then spawned by the user. Instead of instantiating objects, your code should take them from the pool.
 
@@ -60,5 +60,6 @@ powerUp.GetComponent<NetworkObject>().Spawn(null, true);
 
 <!--  https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blob/v1.2.1/Basic/2DSpaceShooter/Assets/Scripts/Spawner.cs#L153-L156 -->
 
-> [!NOTE]
-> If you are using Unity 2021, you can use the built-in [Object Pooling API](https://docs.unity3d.com/2021.1/Documentation/ScriptReference/Pool.ObjectPool_1.html) instead to build your own object pools.
+:::tip
+If you are using Unity 2021, you can use the built-in [Object Pooling API](https://docs.unity3d.com/2021.1/Documentation/ScriptReference/Pool.ObjectPool_1.html) instead to build your own object pools.
+:::

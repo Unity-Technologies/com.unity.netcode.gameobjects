@@ -64,6 +64,25 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Bypassing this on v1.x as the deferred show message could be processed on the next
+        /// frame from when the client registers having connected.
+        /// </summary>
+        protected override bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Validate that the player object is spawned on the client side.
+        /// </summary>
+        /// <returns></returns>
+        private bool ClientSpawnedPlayer()
+        {
+            var playerObject = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            return playerObject != null && playerObject.IsSpawned && playerObject.IsOwner;
+        }
+
+        /// <summary>
         /// Tests the scenario where under a client-server network topology if a player prefab
         /// is spawned by the server with no observers but the player prefab itself has server
         /// side script that will network show the spawned object to the owning client.
@@ -81,7 +100,17 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return CreateAndStartNewClient();
 
-            yield return new WaitForSeconds(0.25f);
+            // Wait for the new client to connect
+            yield return WaitForClientsConnectedOrTimeOut();
+            AssertOnTimeout($"Timed out waiting for client to connect!");
+            OnNewClientStartedAndConnected(m_ClientNetworkManagers[0]);
+
+            // Wait for the new client to have spawned the player
+            yield return WaitForConditionOrTimeOut(ClientSpawnedPlayer);
+            AssertOnTimeout($"Timed out waiting for client to spawn its player object!");
+
+            // Provide some time to assure there are no additional attempts to spawn the same instance
+            yield return new WaitForSeconds(0.5f);
 
             NetcodeLogAssert.LogWasNotReceived(LogType.Warning, new Regex("but it is already in the spawned list!"));
             var client = GetNonAuthorityNetworkManager();

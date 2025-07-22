@@ -67,9 +67,9 @@ A relay server costs money, and the round trip times for packet exchange may be 
 Network Address Translation (NAT) punch-through, also known as hole punching, opens a direct connection without port forwarding. When successful, clients are directly connected to each other to exchange packets. However, depending on the NAT types among the clients, NAT punching often fails.
 
 Ways to NAT punch:
-* Session Traversal Utilities for NAT [STUN](../reference/glossary/network-terms.md#session-traversal-utilities-for-nat-stun)
-* Interactive Connectivity Establishment [ICE](../reference/glossary/network-terms.md#interactive-connectivity-establishment-ice)
-* User Datagram Protocol [(UDP) hole punching](../reference/glossary/network-terms.md#udp-hole-punching)
+* Session Traversal Utilities for NAT STUN
+* Interactive Connectivity Establishment ICE
+* User Datagram Protocol (UDP) hole punching
 
 Because of its high rate of failure, NAT punch-through is typically only used with a relay fallback.
 

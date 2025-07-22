@@ -23,6 +23,8 @@ The best way to reconnect players depends on your game. For example, if you use 
 
 In cases where we don't use the Player Object approach and instead manually attribute client ownership to `NetworkObject`(s), we can keep the objects that a player owns when they disconnect, and set the reconnected player as their new owner. To accomplish this, the only data we would need to keep would be the mapping between those objects and their owning player's identifier, then when a player reconnects we can use this mapping to set them as the new owner. This mapping can be as simple as a dictionary mapping the player identifier with the `NetworkObjectId`(s) of the `NetworkObject`(s) they own. Then, in the `OnClientConnectedCallback` from the `NetworkManager`, the server can set the ownership of these objects.
 
+<!-- Commenting this out until we can get external code references working
+
 Here is an example from the Boss Room sample, showing some simple session management. The game uses the Player Object approach and a GUID to identify unique players.
 
 ```csharp reference
@@ -36,3 +38,5 @@ In this case, since game sessions are quite short, the session data is only clea
 This code is in Boss Room's utilities package so it can be easily reused. You can add this package via the `Package Manager` window in the Unity Editor by selecting `add from Git URL` and adding the following URL: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git?path=/Packages/com.unity.multiplayer.samples.coop#main"
 
 Or you can directly add this line to your `manifest.json` file: "com.unity.multiplayer.samples.coop": "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git?path=/Packages/com.unity.multiplayer.samples.coop#main"
+
+-->

@@ -239,6 +239,10 @@ namespace Unity.Netcode.EditorTests
             {
                 RunTestWithWriteType(new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
+            else if (testType == typeof(Pose))
+            {
+                RunTestWithWriteType(new Pose(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), writeType);
+            }
             else if (testType == typeof(Color))
             {
                 RunTestWithWriteType(new Color((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
@@ -542,6 +546,20 @@ namespace Unity.Netcode.EditorTests
                         (float) random.NextDouble(), (float) random.NextDouble()),
                     new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
                         (float) random.NextDouble(), (float) random.NextDouble()),
+                }, writeType);
+            }
+            else if (testType == typeof(Pose))
+            {
+                RunTypeTestLocal(new[]{
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                            new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                            new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                            new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble(), (float) random.NextDouble())),
                 }, writeType);
             }
             else if (testType == typeof(Color))
@@ -884,6 +902,20 @@ namespace Unity.Netcode.EditorTests
                         (float) random.NextDouble(), (float) random.NextDouble()),
                     new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
                         (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Pose))
+            {
+                RunTypeTestLocal(new NativeArray<Pose>(new[]{
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                        new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                            new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                        new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble())),
                 }, Allocator.Temp), writeType);
             }
             else if (testType == typeof(Color))
@@ -1231,6 +1263,20 @@ namespace Unity.Netcode.EditorTests
                         (float) random.NextDouble(), (float) random.NextDouble()),
                     new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
                         (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Pose))
+            {
+                RunTypeTestLocal(new NativeArray<Pose>(new[]{
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                        new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                        new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble())),
+                    new Pose(new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                        new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble(), (float) random.NextDouble())),
                 }, Allocator.Temp), writeType);
             }
             else if (testType == typeof(Color))
