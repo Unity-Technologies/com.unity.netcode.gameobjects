@@ -1,6 +1,4 @@
-﻿# Filename: Tools/CI/scripts/prepare_build_scripts.py
-
-import os
+﻿import os
 import shutil
 import sys
 
