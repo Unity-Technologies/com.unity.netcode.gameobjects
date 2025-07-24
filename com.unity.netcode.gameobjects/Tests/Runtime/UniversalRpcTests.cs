@@ -475,7 +475,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         protected override bool m_TearDownIsACoroutine => false;
 
         protected GameObject m_ServerObject;
-        protected NetworkObject m_ServerNetworkObject;
+        internal NetworkObject ServerNetworkObject;
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -485,7 +485,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         protected override void OnServerAndClientsCreated()
         {
             m_ServerObject = CreateNetworkObjectPrefab("Server Object");
-            m_ServerNetworkObject = m_ServerObject.GetComponent<NetworkObject>();
+            ServerNetworkObject = m_ServerObject.GetComponent<NetworkObject>();
             m_ServerObject.AddComponent<UniversalRpcNetworkBehaviour>();
         }
 
@@ -533,7 +533,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return m_PlayerNetworkObjects[onClient][ownerClientId].GetComponent<UniversalRpcNetworkBehaviour>();
         }
 
-        protected UniversalRpcNetworkBehaviour GetPlayerObjectNext(ulong ownerClientId, ulong senderClientId)
+        internal UniversalRpcNetworkBehaviour InternalGetPlayerObject(ulong ownerClientId, ulong senderClientId)
         {
             var networkObjectId = 0UL;
 
@@ -544,7 +544,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             if (ownerClientId == NetworkManager.ServerClientId && !m_ServerNetworkManager.IsHost)
             {
-                networkObjectId = m_ServerNetworkObject.NetworkObjectId;
+                networkObjectId = ServerNetworkObject.NetworkObjectId;
             }
             else
             {
@@ -554,10 +554,10 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return senderNetworkManager.SpawnManager.SpawnedObjects[networkObjectId].GetComponent<UniversalRpcNetworkBehaviour>();
         }
 
-
+        #region VERIFY METHODS
         protected void VerifyLocalReceived(ulong objectOwner, ulong sender, string name, bool verifyReceivedFrom, int expectedReceived = 1)
         {
-            var obj = GetPlayerObject(objectOwner, sender);
+            var obj = InternalGetPlayerObject(objectOwner, sender);
             Assert.AreEqual(name, obj.Received);
             Assert.That(obj.ReceivedCount, Is.EqualTo(expectedReceived));
             Assert.IsNull(obj.ReceivedParams);
@@ -569,7 +569,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         protected void VerifyLocalReceivedWithParams(ulong objectOwner, ulong sender, string name, int i, bool b, float f, string s)
         {
-            var obj = GetPlayerObject(objectOwner, sender);
+            var obj = InternalGetPlayerObject(objectOwner, sender);
             Assert.AreEqual(name, obj.Received);
             Assert.That(obj.ReceivedCount, Is.EqualTo(1));
             Assert.IsNotNull(obj.ReceivedParams);
@@ -583,7 +583,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             foreach (var client in receivedBy)
             {
-                UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
+                UniversalRpcNetworkBehaviour playerObject = InternalGetPlayerObject(objectOwner, client);
                 Assert.AreEqual(string.Empty, playerObject.Received);
                 Assert.That(playerObject.ReceivedCount, Is.EqualTo(0));
                 Assert.IsNull(playerObject.ReceivedParams);
@@ -656,7 +656,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             foreach (var client in receivedBy)
             {
-                UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
+                UniversalRpcNetworkBehaviour playerObject = InternalGetPlayerObject(objectOwner, client);
                 Assert.AreEqual(message, playerObject.Received);
                 Assert.That(playerObject.ReceivedCount, Is.EqualTo(expectedReceived));
                 Assert.IsNull(playerObject.ReceivedParams);
@@ -730,7 +730,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             foreach (var client in receivedBy)
             {
-                UniversalRpcNetworkBehaviour playerObject = GetPlayerObject(objectOwner, client);
+                UniversalRpcNetworkBehaviour playerObject = InternalGetPlayerObject(objectOwner, client);
                 Assert.AreEqual(message, playerObject.Received);
                 Assert.That(playerObject.ReceivedCount, Is.EqualTo(1));
 
@@ -920,6 +920,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             VerifySentToNotIdWithParams(objectOwner, sender, sender, methodName, i, b, f, s);
         }
+        #endregion
 
         public void RethrowTargetInvocationException(Action action)
         {
@@ -1092,7 +1093,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}WithRpcParamsRpc";
             var verifyMethodName = $"VerifySentTo{sendTo}WithReceivedFrom";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { new RpcParams() });
 
@@ -1102,7 +1103,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         private void DisallowedOverride(SendTo sendTo, ulong objectOwner, ulong sender)
         {
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var methodName = $"DefaultTo{sendTo}WithRpcParamsRpc";
             var method = senderObject.GetType().GetMethod(methodName);
             Assert.Throws<RpcException>(() => RethrowTargetInvocationException(() => method.Invoke(senderObject, new object[] { (RpcParams)senderObject.RpcTarget.Everyone })));
@@ -1124,7 +1125,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}Rpc";
             var verifyMethodName = $"VerifySentTo{sendTo}";
 
-            var senderObject = GetPlayerObjectNext(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { });
 
@@ -1149,7 +1150,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}WithParamsRpc";
             var verifyMethodName = $"VerifySentTo{sendTo}WithParams";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { i, b, f, s });
 
@@ -1174,7 +1175,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var sendMethodName = $"DefaultTo{sendTo}WithParamsAndRpcParamsRpc";
             var verifyMethodName = $"VerifySentTo{sendTo}WithParams";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { i, b, f, s, new RpcParams() });
 
@@ -1186,7 +1187,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var sendMethodName = $"DefaultTo{sendTo}RequireOwnershipRpc";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             if (sender != objectOwner)
             {
@@ -1244,7 +1245,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             var targetField = typeof(RpcTarget).GetField(overrideSendTo.ToString());
             var verifyMethodName = $"VerifySentTo{overrideSendTo}";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             var target = (BaseRpcTarget)targetField.GetValue(senderObject.RpcTarget);
             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
@@ -1320,7 +1321,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             BaseRpcTarget target = null;
             switch (allocationType)
             {
@@ -1363,7 +1364,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
-            var senderObject = GetPlayerObject(objectOwner, sender);
+            var senderObject = InternalGetPlayerObject(objectOwner, sender);
             BaseRpcTarget target = null;
             switch (allocationType)
             {
@@ -1723,7 +1724,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                             OnInlineSetup();
                             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
-                            var senderObject = GetPlayerObject(objectOwner, sender);
+                            var senderObject = InternalGetPlayerObject(objectOwner, sender);
                             var target = senderObject.RpcTarget.Single(recipient, RpcTargetUse.Temp);
                             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
                             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
@@ -1771,7 +1772,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                             OnInlineSetup();
                             var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
 
-                            var senderObject = GetPlayerObject(objectOwner, sender);
+                            var senderObject = InternalGetPlayerObject(objectOwner, sender);
                             var target = senderObject.RpcTarget.Not(recipient, RpcTargetUse.Temp);
                             var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
                             sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
@@ -2050,7 +2051,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
                 var sendMethodName = $"DefaultTo{defaultSendTo}DeferLocalRpc";
                 var verifyMethodName = $"VerifySentTo{defaultSendTo}";
-                var senderObject = GetPlayerObject(objectOwner, sender);
+                var senderObject = InternalGetPlayerObject(objectOwner, sender);
                 var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
                 sendMethod.Invoke(senderObject, new object[] { new RpcParams() });
 
@@ -2088,7 +2089,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
                 var sendMethodName = $"DefaultTo{defaultSendTo}WithRpcParamsRpc";
                 var verifyMethodName = $"VerifySentTo{defaultSendTo}";
-                var senderObject = GetPlayerObject(objectOwner, sender);
+                var senderObject = InternalGetPlayerObject(objectOwner, sender);
                 var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
                 sendMethod.Invoke(senderObject, new object[] { (RpcParams)LocalDeferMode.Defer });
 
@@ -2126,7 +2127,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
                 var sendMethodName = $"DefaultTo{defaultSendTo}DeferLocalRpc";
                 var verifyMethodName = $"VerifySentTo{defaultSendTo}";
-                var senderObject = GetPlayerObject(objectOwner, sender);
+                var senderObject = InternalGetPlayerObject(objectOwner, sender);
                 var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
                 sendMethod.Invoke(senderObject, new object[] { (RpcParams)LocalDeferMode.SendImmediate });
 
@@ -2152,7 +2153,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestMutualRecursion()
         {
-            var serverObj = GetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
+            var serverObj = InternalGetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
 
             serverObj.MutualRecursionClientRpc();
 
@@ -2203,7 +2204,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         [Test]
         public void TestSelfRecursion()
         {
-            var serverObj = GetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
+            var serverObj = InternalGetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
 
             serverObj.SelfRecursiveRpc();
 
@@ -2322,11 +2323,11 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
             if (m_ObjType == ObjType.Server)
             {
-                m_Obj = GetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
+                m_Obj = InternalGetPlayerObject(NetworkManager.ServerClientId, NetworkManager.ServerClientId);
             }
             else
             {
-                m_Obj = GetPlayerObject(1, 1);
+                m_Obj = InternalGetPlayerObject(1, 1);
             }
         }
 
