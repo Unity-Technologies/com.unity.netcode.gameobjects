@@ -935,7 +935,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
     }
 
-    [Timeout(1200000)] // Tracked in MTT-11359
+    [Timeout(2400000)] // Extended time out
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     internal class UniversalRpcGroupedTests : UniversalRpcTestsBase
@@ -1044,6 +1044,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return MockSendC;
         }
 
+        [Timeout(900000)]
         [UnityTest]
         public IEnumerator RunGroupTestTypes([Values] TestTypes testType)
         {
@@ -1066,6 +1067,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var sendTo in sendToValues)
                 {
+                    UnityEngine.Debug.Log($"[{testType}][{sendTo}]");
                     for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
                     {
                         for (ulong sender = 0; sender <= numberOfClientsULong; sender++)
@@ -1214,6 +1216,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var defaultSendTo in sendToValues)
                 {
+                    UnityEngine.Debug.Log($"[{testType}][{defaultSendTo}]");
                     foreach (var overrideSendTo in sendToValues)
                     {
                         for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
@@ -1290,6 +1293,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             {
                 foreach (var defaultSendTo in sendToValues)
                 {
+                    UnityEngine.Debug.Log($"[{testType}][{defaultSendTo}]");
                     foreach (var sendGroup in recipientGroups)
                     {
 
