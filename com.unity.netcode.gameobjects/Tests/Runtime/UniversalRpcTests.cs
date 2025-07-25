@@ -1724,41 +1724,37 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
 
         [UnityTest]
-        public IEnumerator TestSendingWithSingleOverride()
+        public IEnumerator TestSendingWithSingleOverride([Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo defaultSendTo)
         {
-            foreach (var defaultSendTo in Enum.GetValues(typeof(SendTo)))
+            for (ulong recipient = 0u; recipient <= 2u; ++recipient)
             {
-                for (ulong recipient = 0u; recipient <= 2u; ++recipient)
+                for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
                 {
-                    for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
+                    for (ulong sender = 0u; sender <= 2u; ++sender)
                     {
-                        for (ulong sender = 0u; sender <= 2u; ++sender)
+                        if (++YieldCheck % YieldCycleCount == 0)
                         {
-                            if (++YieldCheck % YieldCycleCount == 0)
-                            {
-                                yield return null;
-                            }
-                            OnInlineSetup();
-                            var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
-
-                            var senderObject = InternalGetPlayerObject(objectOwner, sender);
-                            var target = senderObject.RpcTarget.Single(recipient, RpcTargetUse.Temp);
-                            var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
-                            sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
-
-                            VerifyRemoteReceived(objectOwner, sender, sendMethodName, new[] { recipient }, false);
-                            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient != c).ToArray());
-
-                            // Pass some time to make sure that no other client ever receives this
-                            TimeTravel(1f, 30);
-                            VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient != c).ToArray());
-                            OnInlineTearDown();
+                            yield return null;
                         }
+                        OnInlineSetup();
+                        var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
+
+                        var senderObject = InternalGetPlayerObject(objectOwner, sender);
+                        var target = senderObject.RpcTarget.Single(recipient, RpcTargetUse.Temp);
+                        var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+                        sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
+
+                        VerifyRemoteReceived(objectOwner, sender, sendMethodName, new[] { recipient }, false);
+                        VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient != c).ToArray());
+
+                        // Pass some time to make sure that no other client ever receives this
+                        TimeTravel(1f, 30);
+                        VerifyNotReceived(objectOwner, s_ClientIds.Where(c => recipient != c).ToArray());
+                        OnInlineTearDown();
                     }
                 }
             }
         }
-
     }
 
     [Timeout(1200000)] // Tracked in MTT-11359
@@ -1772,36 +1768,33 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         }
 
         [UnityTest]
-        public IEnumerator TestSendingWithSingleNotOverride()
+        public IEnumerator TestSendingWithSingleNotOverride([Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo defaultSendTo)
         {
-            foreach (var defaultSendTo in Enum.GetValues(typeof(SendTo)))
+            for (ulong recipient = 0u; recipient <= 2u; ++recipient)
             {
-                for (ulong recipient = 0u; recipient <= 2u; ++recipient)
+                for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
                 {
-                    for (ulong objectOwner = 0u; objectOwner <= 2u; ++objectOwner)
+                    for (ulong sender = 0u; sender <= 2u; ++sender)
                     {
-                        for (ulong sender = 0u; sender <= 2u; ++sender)
+                        if (++YieldCheck % YieldCycleCount == 0)
                         {
-                            if (++YieldCheck % YieldCycleCount == 0)
-                            {
-                                yield return null;
-                            }
-                            OnInlineSetup();
-                            var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
-
-                            var senderObject = InternalGetPlayerObject(objectOwner, sender);
-                            var target = senderObject.RpcTarget.Not(recipient, RpcTargetUse.Temp);
-                            var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
-                            sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
-
-                            VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient != c).ToArray(), false);
-                            VerifyNotReceived(objectOwner, new[] { recipient });
-
-                            // Pass some time to make sure that no other client ever receives this
-                            TimeTravel(1f, 30);
-                            VerifyNotReceived(objectOwner, new[] { recipient });
-                            OnInlineTearDown();
+                            yield return null;
                         }
+                        OnInlineSetup();
+                        var sendMethodName = $"DefaultTo{defaultSendTo}AllowOverrideRpc";
+
+                        var senderObject = InternalGetPlayerObject(objectOwner, sender);
+                        var target = senderObject.RpcTarget.Not(recipient, RpcTargetUse.Temp);
+                        var sendMethod = senderObject.GetType().GetMethod(sendMethodName);
+                        sendMethod.Invoke(senderObject, new object[] { (RpcParams)target });
+
+                        VerifyRemoteReceived(objectOwner, sender, sendMethodName, s_ClientIds.Where(c => recipient != c).ToArray(), false);
+                        VerifyNotReceived(objectOwner, new[] { recipient });
+
+                        // Pass some time to make sure that no other client ever receives this
+                        TimeTravel(1f, 30);
+                        VerifyNotReceived(objectOwner, new[] { recipient });
+                        OnInlineTearDown();
                     }
                 }
             }
