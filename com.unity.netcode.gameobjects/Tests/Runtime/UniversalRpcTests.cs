@@ -947,8 +947,6 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             SendingNoOverride,
             SendingNoOverrideWithParams,
             SendingNoOverrideWithParamsAndRpcParams,
-            SendingWithGroupNotOverride,
-            SendingWithGroupOverride,
             SendingWithTargetOverride,
             TestRequireOwnership,
         }
