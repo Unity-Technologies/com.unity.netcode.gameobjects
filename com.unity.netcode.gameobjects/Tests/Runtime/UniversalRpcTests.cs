@@ -953,6 +953,12 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             TestRequireOwnership,
         }
 
+        public enum TestTypesC
+        {
+            SendingWithGroupNotOverride,
+            SendingWithGroupOverride,
+        }
+
         private enum TestTables
         {
             ActionTableA,
@@ -962,12 +968,14 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         private Dictionary<TestTypes, Action<SendTo, ulong, ulong>> m_TestTypeToActionTableA = new Dictionary<TestTypes, Action<SendTo, ulong, ulong>>();
         private Dictionary<TestTypes, Action<SendTo, SendTo, ulong, ulong>> m_TestTypeToActionTableB = new Dictionary<TestTypes, Action<SendTo, SendTo, ulong, ulong>>();
-        private Dictionary<TestTypes, Action<SendTo, ulong[], ulong, ulong, AllocationType>> m_TestTypeToActionTableC = new Dictionary<TestTypes, Action<SendTo, ulong[], ulong, ulong, AllocationType>>();
+        private Dictionary<TestTypesC, Action<SendTo, ulong[], ulong, ulong, AllocationType>> m_TestTypeToActionTableC = new Dictionary<TestTypesC, Action<SendTo, ulong[], ulong, ulong, AllocationType>>();
 
-
+        private delegate IEnumerator TestTypeHandler(TestTypes testType);
         private Dictionary<TestTypes, TestTables> m_TestTypesToTableTypes = new Dictionary<TestTypes, TestTables>();
         private Dictionary<TestTables, Action<TestTypes>> m_TableTypesToTestStartAction = new Dictionary<TestTables, Action<TestTypes>>();
-        private Dictionary<TestTypes, ulong[][]> m_TypeToRecipientGroupsTable = new Dictionary<TestTypes, ulong[][]>();
+
+
+        private Dictionary<TestTypesC, ulong[][]> m_TypeToRecipientGroupsTable = new Dictionary<TestTypesC, ulong[][]>();
 
         public UniversalRpcGroupedTests(HostOrServer hostOrServer) : base(hostOrServer)
         {
@@ -986,9 +994,8 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             m_TestTypeToActionTableB.Add(testType, action);
         }
 
-        private void AddTestTypeC(TestTypes testType, Action<SendTo, ulong[], ulong, ulong, AllocationType> action)
+        private void AddTestTypeC(TestTypesC testType, Action<SendTo, ulong[], ulong, ulong, AllocationType> action)
         {
-            m_TestTypesToTableTypes.Add(testType, TestTables.ActionTableC);
             m_TestTypeToActionTableC.Add(testType, action);
         }
 
@@ -997,7 +1004,6 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             // Create a look up table to know what kind of test table action will be invoked
             m_TableTypesToTestStartAction.Add(TestTables.ActionTableA, RunTestTypeA);
             m_TableTypesToTestStartAction.Add(TestTables.ActionTableB, RunTestTypeB);
-            m_TableTypesToTestStartAction.Add(TestTables.ActionTableC, RunTestTypeC);
 
             // Type A action registrations
             AddTestTypeA(TestTypes.DisallowedOverride, DisallowedOverride);
@@ -1011,10 +1017,10 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             AddTestTypeB(TestTypes.SendingWithTargetOverride, SendingWithTargetOverride);
 
             // Type C action registrations
-            AddTestTypeC(TestTypes.SendingWithGroupOverride, SendingWithGroupOverride);
-            m_TypeToRecipientGroupsTable.Add(TestTypes.SendingWithGroupOverride, RecipientGroupsA);
-            AddTestTypeC(TestTypes.SendingWithGroupNotOverride, SendingWithGroupNotOverride);
-            m_TypeToRecipientGroupsTable.Add(TestTypes.SendingWithGroupNotOverride, RecipientGroupsB);
+            AddTestTypeC(TestTypesC.SendingWithGroupOverride, SendingWithGroupOverride);
+            m_TypeToRecipientGroupsTable.Add(TestTypesC.SendingWithGroupOverride, RecipientGroupsA);
+            AddTestTypeC(TestTypesC.SendingWithGroupNotOverride, SendingWithGroupNotOverride);
+            m_TypeToRecipientGroupsTable.Add(TestTypesC.SendingWithGroupNotOverride, RecipientGroupsB);
         }
 
         private Action<SendTo, ulong, ulong> GetTestTypeActionA(TestTypes testType)
@@ -1035,7 +1041,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return MockSendB;
         }
 
-        private Action<SendTo, ulong[], ulong, ulong, AllocationType> GetTestTypeActionC(TestTypes testType)
+        private Action<SendTo, ulong[], ulong, ulong, AllocationType> GetTestTypeActionC(TestTypesC testType)
         {
             if (m_TestTypeToActionTableC.ContainsKey(testType))
             {
@@ -1044,12 +1050,23 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             return MockSendC;
         }
 
-        [Timeout(900000)]
         [UnityTest]
         public IEnumerator RunGroupTestTypes([Values] TestTypes testType)
         {
             var testTypeToRun = m_TestTypesToTableTypes[testType];
             m_TableTypesToTestStartAction[testTypeToRun].Invoke(testType);
+            // Provide a small break to test runner in-between each test type
+            // since they are running all iterations of the legacy test type's
+            // values.
+            yield return s_DefaultWaitForTick;
+        }
+
+        [Timeout(900000)]
+        [UnityTest]
+        public IEnumerator RunGroupWithGroupOverridesTestTypes([Values] TestTypesC testType, [Values(SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost)] SendTo sendTo)
+        {
+            RunTestTypeC(testType, sendTo);
+
             // Provide a small break to test runner in-between each test type
             // since they are running all iterations of the legacy test type's
             // values.
@@ -1074,6 +1091,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                         {
                             actionToInvoke.Invoke(sendTo, objectOwner, sender);
                             Clear();
+                            MockTransport.ClearQueues();
                         }
                     }
                 }
@@ -1225,6 +1243,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
                             {
                                 actionToInvoke.Invoke(defaultSendTo, overrideSendTo, objectOwner, sender);
                                 Clear();
+                                MockTransport.ClearQueues();
                             }
                         }
                     }
@@ -1282,38 +1301,34 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
             List
         }
 
-        private void RunTestTypeC(TestTypes testType)
+        private void RunTestTypeC(TestTypesC testType, SendTo defaultSendTo)
         {
-            var sendToValues = new List<SendTo>() { SendTo.Everyone, SendTo.Me, SendTo.Owner, SendTo.Server, SendTo.NotMe, SendTo.NotOwner, SendTo.NotServer, SendTo.ClientsAndHost };
             var allocationTypes = new List<AllocationType>() { AllocationType.Array, AllocationType.NativeArray, AllocationType.NativeList, AllocationType.List };
             var numberOfClientsULong = (ulong)NumberOfClients;
             var actionToInvoke = GetTestTypeActionC(testType);
             var recipientGroups = m_TypeToRecipientGroupsTable[testType];
-            try
+            foreach (var sendGroup in recipientGroups)
             {
-                foreach (var defaultSendTo in sendToValues)
+                try
                 {
-                    UnityEngine.Debug.Log($"[{testType}][{defaultSendTo}]");
-                    foreach (var sendGroup in recipientGroups)
+                    for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
                     {
-
-                        for (ulong objectOwner = 0; objectOwner <= numberOfClientsULong; objectOwner++)
+                        for (ulong sender = 0; sender <= numberOfClientsULong; sender++)
                         {
-                            for (ulong sender = 0; sender <= numberOfClientsULong; sender++)
+                            foreach (var allocationType in allocationTypes)
                             {
-                                foreach (var allocationType in allocationTypes)
-                                {
-                                    actionToInvoke.Invoke(defaultSendTo, sendGroup, objectOwner, sender, allocationType);
-                                    Clear();
-                                }
+                                actionToInvoke.Invoke(defaultSendTo, sendGroup, objectOwner, sender, allocationType);
+                                TimeTravel(s_DefaultWaitForTick.waitTime, 4);
+                                Clear();
+                                MockTransport.ClearQueues();
                             }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Assert.Fail($"Threw Exception:{ex.Message}!\n{ex.StackTrace}");
+                catch (Exception ex)
+                {
+                    Assert.Fail($"Threw Exception:{ex.Message}!\n{ex.StackTrace}");
+                }
             }
         }
 
