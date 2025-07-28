@@ -632,6 +632,18 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Returns the contents of the NetworkList as a read-only NativeArray.
+        /// </summary>
+        /// <remarks>
+        /// This method returns the list contents as a NativeArray.ReadOnly. Be careful with the lifetime of the NativeArray.
+        /// </remarks>
+        /// <returns>A read-only NativeArray of the list contents.</returns>
+        public NativeArray<T>.ReadOnly AsNativeArray()
+        {
+            return m_List.AsReadOnly();
+        }
+
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
             m_DirtyEvents.Add(listEvent);
