@@ -64,7 +64,6 @@ Depending on your game, you might want to add the following features as well:
 
 ## Automatic reconnection example
 
-Check out the [Boss Room sample](../learn/bossroom/getting-started-boss-room.md) for an example implementation of automatic reconnection.
 
 The entry point for this feature is in [this class](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/ClientReconnectingState.cs). Boss Room's implementation uses a state inside a state machine that starts a coroutine on entering it ( `ReconnectCoroutine`) that attempts to reconnect a few times sequentially, until it either succeeds, surpasses the defined maximum number of attempts, or is cancelled. (Check out `OnClientConnected`, `OnClientDisconnect`, `OnDisconnectReasonReceived`, and `OnUserRequestedShutdown`.)
 
@@ -72,4 +71,3 @@ The reconnecting state is entered when a client disconnects unexpectedly. (Check
 
 > [!NOTE]
 > This sample connects with [Lobby](https://docs.unity.com/lobby/unity-lobby-service-overview.html) and [Relay](https://docs.unity.com/relay/get-started.html) services, so the client must make sure it has left the lobby before each reconnection try.
-> For more information about how Boss Room leverages Lobby and Relay, refer to [Getting Started with Boss Room](../learn/bossroom/getting-started-boss-room.md#register-the-project-with-unity-gaming-services-ugs).

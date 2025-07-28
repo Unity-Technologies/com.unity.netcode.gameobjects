@@ -1,6 +1,6 @@
 # NetworkManager
 
-The `NetworkManager` is a required Netcode for GameObjects component that has all of your project's netcode-related settings. Think of it as the central netcode hub for your netcode-enabled project.  
+The `NetworkManager` is a required Netcode for GameObjects component that has all of your project's netcode-related settings. Think of it as the central netcode hub for your netcode-enabled project.
 
 ## `NetworkManager` Inspector properties
 
@@ -15,7 +15,7 @@ The `NetworkManager` is a required Netcode for GameObjects component that has al
 - **Client Connection Buffer Timeout**: This value sets the amount of time that has to pass for a connecting client to complete the connection approval process.  If the time specified is exceeded the connecting client will be disconnected.
 - **Force Same Prefabs**: When checked it will always verify that connecting clients have the same registered network prefabs as the server.  When not checked, Netcode for GameObjects will ignore any differences.
 - **Recycle Network Ids**: When checked this will re-use previously assigned `NetworkObject.NetworkObjectIds` after the specified period of time.
-- **Network Id Recycle Delay**: The time it takes for a previously assigned but currently unassigned identifier to be available for use.  
+- **Network Id Recycle Delay**: The time it takes for a previously assigned but currently unassigned identifier to be available for use.
 - **Enable Scene Management**: When checked, Netcode for GameObjects will handle scene management and client synchronization for you.  When not checked, you will have to create your own scene management scripts and handle client synchronization.
 - **Load Scene Time Out**: When Enable Scene Management is checked, this specifies the period of time the `NetworkSceneManager` will wait while a scene is being loaded asynchronously before `NetworkSceneManager` considers the load/unload scene event to have failed/timed out.
 
@@ -29,7 +29,7 @@ The `NetworkManager` is a required Netcode for GameObjects component that has al
 - [NetworkManager.SceneManager](../basics/scenemanagement/using-networkscenemanager.md): When scene management is enabled, this is used to load and unload scenes, register for scene events, and other scene management related actions.
 - [NetworkManager.SpawnManager](../basics/object-spawning.md): This handles NetworkObject spawn related functionality.
 - [NetworkManager.NetworkTimeSystem](../advanced-topics/networktime-ticks.md): a synchronized time that can be used to handle issues with latency between a client and the server.
-- [NetworkManager.NetworkTickSystem](../advanced-topics/networktime-ticks#network-ticks.md): Use this to adjust the frequency of when NetworkVariables are updated.
+- [NetworkManager.NetworkTickSystem](../advanced-topics/networktime-ticks.md#network-ticks): Use this to adjust the frequency of when NetworkVariables are updated.
 - [NetworkManager.CustomMessagingManager](../advanced-topics/message-system/custom-messages.md): Use this system to create and send custom messages.
 
 ## Starting a server, host, or client
@@ -47,14 +47,14 @@ NetworkManager.Singleton.StartClient();      // Starts the NetworkManager as jus
 
  When starting a Server or joining an already started session as client, the `NetworkManager` can spawn a "Player Object" belonging to the client. For more information about player prefabs, refer to:
 
- - [NetworkObject Player Prefab Documentation](../basics/networkobject.md#player-objects)
- - [Connection Approval](../basics/connection-approval)  
+ - [NetworkObject Player Prefab Documentation](../basics/networkobject.md)
+ - [Connection Approval](../basics/connection-approval)
 
 ## Connecting
 
 When starting a client, the `NetworkManager` uses the IP and the Port provided in your `Transport` component for connecting. While you can set the IP address in the editor, many times you might want to be able to set the IP address and port during runtime.
 
-The below examples use [Unity Transport](../../../transport/current/about) to show a few ways you can gain access to the `UnityTransport` component via the `NetworkManager.Singleton` to configure your project's network settings programmatically:
+The below examples use [Unity Transport](https://docs.unity3d.com/Packages/com.unity.transport@latest?subfolder=/manual/index.html) to show a few ways you can gain access to the `UnityTransport` component via the `NetworkManager.Singleton` to configure your project's network settings programmatically:
 
 If you are only setting the IP address and port number, then you can use the `UnityTransport.SetConnectionData` method:
 ```csharp
@@ -74,7 +74,7 @@ NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData(
 ```
 
 > [!NOTE]
-> Using an IP address of 0.0.0.0 for the server listen address will make a server or host listen on all IP addresses assigned to the local system. This can be particularly helpful if you are testing a client instance on the same system as well as one or more client instances connecting from other systems on your local area network. Another scenario is while developing and debugging you might sometimes test local client instances on the same system and sometimes test client instances running on external systems.  
+> Using an IP address of 0.0.0.0 for the server listen address will make a server or host listen on all IP addresses assigned to the local system. This can be particularly helpful if you are testing a client instance on the same system as well as one or more client instances connecting from other systems on your local area network. Another scenario is while developing and debugging you might sometimes test local client instances on the same system and sometimes test client instances running on external systems.
 
 It is possible to access the current connection data at runtime, via `NetworkManager.Singleton.GetComponent<UnityTransport>().ConnectionData`. This will return a [`ConnectionAddressData` **struct**](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L239-L286), holding this info. You are strongly advised to use the `SetConnectionData` method to update this info.
 
@@ -87,7 +87,7 @@ If you are using Unity Relay to handle connections, however, **don't use `SetCon
 
 ### Disconnect from a network
 
-When you disconnect from a network you can't use or access any subsystems, for example `NetworkSceneManager`, because they become unavailable when `NetworkManager` stops. For client, host, or server modes, call the `NetworkManager.Shutdown` method to disconnect and shut down at the same time.  
+When you disconnect from a network you can't use or access any subsystems, for example `NetworkSceneManager`, because they become unavailable when `NetworkManager` stops. For client, host, or server modes, call the `NetworkManager.Shutdown` method to disconnect and shut down at the same time.
 
 > [!NOTE]
 > When no network session is active and the `NetworkManager` has been shutdown, you will need to use `UnityEngine.SceneManagement` to load any non-network session related scene.
@@ -128,7 +128,7 @@ At times you might need to disconnect a client for various reasons without shutt
 
 ```csharp
 void DisconnectPlayer(NetworkObject player)
-{   
+{
     // Note: If a client invokes this method, it will throw an exception.
     NetworkManager.DisconnectClient(player.OwnerClientId);
 }
@@ -164,7 +164,7 @@ using Unity.Netcode;
 /// <summary>
 /// Only attach this example component to the NetworkManager GameObject.
 /// This will provide you with a single location to register for client
-/// connect and disconnect events.  
+/// connect and disconnect events.
 /// </summary>
 public class ConnectionNotificationManager : MonoBehaviour
 {

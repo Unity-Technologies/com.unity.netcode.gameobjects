@@ -91,8 +91,9 @@ The impact of surpassing the Max Packet Queue Size threshold varies depending on
 
 Setting the Max Packet Queue Size parameter too low can introduce some [jitter](../../learn/lagandpacketloss.md) during frames where the number of packets sent or received is too high.  On the other hand, setting the Max Packet Queue Size parameter too high would use more memory than necessary.
 
-> [!NOTE]
-> Each unit in the Max Packet Queue Size parameter uses roughly 4 KB of memory. This value is based on twice the maximum size of a packet, which Unity Transport defines internally (it isn't exposed to Netcode users since this parameter governs the sizes of both the send and receive queues).
+:::note
+**Note**: Each unit in the Max Packet Queue Size parameter uses roughly 4 KB of memory. This value is based on twice the maximum size of a packet, which Unity Transport defines internally (it isn't exposed to Netcode users since this parameter governs the sizes of both the send and receive queues).
+:::
 
 The Boss Room sample uses a Max Packet Queue Size property value of 256. The reasoning behind choosing 256 is specific to how Boss Room uses Unity Transport.
 

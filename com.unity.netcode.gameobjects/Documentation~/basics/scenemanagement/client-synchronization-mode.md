@@ -12,7 +12,7 @@ If you are already familiar with Netcode for GameObjects, then this is most like
 
 This means any scene that is loaded on the client side prior to being synchronized will be unloaded when the first/default active scene is loaded.
 
-![image](../images/ClientSynchronizationModeSingle.png)
+![image](../../images/ClientSynchronizationModeSingle.png)
 
 The above image shows a high level overview of single mode client synchronization. For this scenario, a client had just left a network session where the game session was on Level 1. The client still has two common scenes to all levels, Enemy Spawner and World Items scenes, and the Level scenes contain unique assets/settings based on the level number reached. The client then joins a new game session that is on Level 3. With single mode client synchronization, the currently active scene on the server-side is the first scene loaded in `LoadSceneMode.Single` on the client-side (thus why we refer to the client synchronization mode as "single"). By default, loading a new scene in `LoadSceneMode.Single` mode will unload all currently loaded scenes before loading the new scene. Then, for each additional scene that the server requires the client to have loaded in order to be fully synchronized, all remaining scenes are loaded additively (`LoadSceneMode.Additive`).
 
@@ -25,7 +25,7 @@ Additive client synchronization is mode similar to additive scene loading in tha
 
 This can be particularly useful if you have common UI element scenes (i.e. menu interfaces) that you would like to persist throughout the duration of the application instance's life cycle (i.e. from the time the application starts to the time it is stopped/exited).  It can also be useful to have certain scenes pre-loaded ahead of time to reduce load times when connecting to an existing network session.
 
-![image](../images/ClientSynchronizationModeAdditive.png)
+![image](../../images/ClientSynchronizationModeAdditive.png)
 
 In the above image we can see a scenario where a server has a Menu UI Scene that it ignores using `NetworkSceneManager.VerifySceneBeforeLoading`, two scenes that the project is configured to always have pre-loaded _(Enemy Spawner and World Items scenes)_, and the server has reached "level 3" of the networked game session so it has the Level 3 scene loaded. The client side almost mirrors the server side (scenes loaded relative) when it began the synchronization process. The only difference between the server and the client was the Level 3 scene that the client has to load in order to be fully synchronized with the server.
 
@@ -34,12 +34,12 @@ _If the server was running in client synchronization mode `LoadSceneMode.Single`
 While additive client synchronization mode might cover the majority of your project's needs, you could find scenarios where you need to be a bit more selective with the scenes a client should keep loaded and the scenes that should be unloaded. There are two additional settings that you can use (only when client synchronization mode set to `LoadSceneMode.Additive`) to gain further control over this process.
 
 ### NetworkSceneManager.PostSynchronizationSceneUnloading
-When this flag is set on the client side any scenes that were not synchronized with the server or host will be unloaded. This can be useful if your project primarily uses `LoadSceneMode.Additive` to load the majority of your scenes (i.e. sometimes referred to a "bootstrap scene loading approach").  A client could have additional scenes specific to a portion of your game/project from a previous game network session that are not pertinent in a newly established game network session. Any scenes that are not required to become fully synchronized with the current server or host will get unloaded upon the client completing the synchronization process.  
+When this flag is set on the client side any scenes that were not synchronized with the server or host will be unloaded. This can be useful if your project primarily uses `LoadSceneMode.Additive` to load the majority of your scenes (i.e. sometimes referred to a "bootstrap scene loading approach").  A client could have additional scenes specific to a portion of your game/project from a previous game network session that are not pertinent in a newly established game network session. Any scenes that are not required to become fully synchronized with the current server or host will get unloaded upon the client completing the synchronization process.
 
 ### NetworkSceneManager.VerifySceneBeforeUnloading
 When `NetworkSceneManager.PostSynchronizationSceneUnloading` is set to `true` and the client synchronization mode is `LoadSceneMode.Additive`, if this callback is set then for each scene that is about to be unloaded the set callback will be invoked. If it returns `true` the scene will be unloaded and if it returns `false` the scene will remain loaded. This is useful if you have specific scenes you want to persist (menu interfaces etc.) but you also want some of the unused scenes (i.e. not used during synchronization) to be unloaded.
 
-![image](../images/ClientSynchronizationModeAdditive2.png)
+![image](../../images/ClientSynchronizationModeAdditive2.png)
 
 Let's take the previous client synchronization mode scenario into consideration with the client side having `NetworkSceneManager.PostSynchronizationSceneUnloading` set to `true` and registering a callback for `NetworkSceneManager.VerifySceneBeforeUnloading` where it returns false when client synchronization attempts to unload the Menu UI Scene. Let's also assume this game allows clients to join other network sessions while still in a current network session and that the client had just come from a previous game where the server was still on "level 1" (so the client has the level 1 scene still loaded). When the client begins to synchronize the two pre-loaded scenes are used for synchronization, the client still has to load the Level 3 scene, but at the end of the synchronization `NetworkSceneManager` begins to unload any remaining scenes not synchronized by the server and the client. When the Menu UI Scene is checked if it can be unloaded, the client side `NetworkSceneManager.VerifySceneBeforeUnloading` callback returns `false` so that scene remains loaded. Finally, the Level 1 scene is verified to be unloaded via `NetworkSceneManager.VerifySceneBeforeUnloading` which the user logic determines is "ok" to unload so it returns `true` and the Level 1 scene is unloaded.
 

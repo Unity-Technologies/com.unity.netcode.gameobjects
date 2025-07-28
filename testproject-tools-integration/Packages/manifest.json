@@ -1,4 +1,5 @@
 {
+  "disableProjectUpdate": false,
   "dependencies": {
     "com.unity.ide.rider": "3.0.34",
     "com.unity.multiplayer.tools": "1.1.1",

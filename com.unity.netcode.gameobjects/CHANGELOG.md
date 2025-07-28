@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added serializer for `Pose` (#3540)
 - Added mappings between `ClientId` and `TransportId`. (#3515)
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3475)
 - When using UnityTransport >=2.4 and Unity >= 6000.1.0a1, SetConnectionData will accept a fully qualified hostname instead of an IP as a connect address on the client side. (#3440)
@@ -27,6 +28,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
 
 ### Changed
+
+## [1.13.1] - 2025-07-07
+
+### Added
+
+- Added documentation to package repository.
 
 ## [1.13.0] - 2025-04-29
 

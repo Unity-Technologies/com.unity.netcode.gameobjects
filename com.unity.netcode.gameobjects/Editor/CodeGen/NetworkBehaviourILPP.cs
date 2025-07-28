@@ -562,6 +562,7 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(Vector3Int),
             typeof(Vector4),
             typeof(Quaternion),
+            typeof(Pose),
             typeof(Color),
             typeof(Color32),
             typeof(Ray),
