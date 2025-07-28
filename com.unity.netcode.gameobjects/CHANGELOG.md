@@ -10,6 +10,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
+
+### Changed
+
+## [1.14.0] - 2025-07-21
+
+### Added
+
 - Added serializer for `Pose` (#3540)
 - Added mappings between `ClientId` and `TransportId`. (#3515)
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3475)
