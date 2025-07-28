@@ -218,4 +218,3 @@ There are a few other parameters that can be passed to either the `Rpc` attribut
 ## Additional resources
 
 * [RPC parameters](rpc-params.md)
-* [Boss Room RPC Examples](../../learn/bossroom/bossroom-actions.md)

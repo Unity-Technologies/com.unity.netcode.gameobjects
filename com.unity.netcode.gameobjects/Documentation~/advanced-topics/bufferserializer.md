@@ -1,6 +1,6 @@
 # BufferSerializer
 
-`BufferSerializer<TReaderWriter>` is the bi-directional serializer primarily used for serializing within [`INetworkSerializable`](inetworkserializable.md) types. It wraps [`FastBufferWriter` and `FastBufferReader`](fastbufferwriter-fastbufferreader.md) to provide high performance serialization, but has a couple of differences to make it more user-friendly:
+`BufferSerializer<TReaderWriter>` is the bi-directional serializer primarily used for serializing within [`INetworkSerializable`](serialization/inetworkserializable.md) types. It wraps [`FastBufferWriter` and `FastBufferReader`](fastbufferwriter-fastbufferreader.md) to provide high performance serialization, but has a couple of differences to make it more user-friendly:
 
 - Rather than writing separate methods for serializing and deserializing, `BufferSerializer<TReaderWriter>` allows writing a single method that can handle both operations, which reduces the possibility of a mismatch between the two
 - `BufferSerializer<TReaderWriter>` does bound checking on every read and write by default, making it easier to avoid mistakes around manual bounds checking required by `FastBufferWriter` and `FastBufferReader`
