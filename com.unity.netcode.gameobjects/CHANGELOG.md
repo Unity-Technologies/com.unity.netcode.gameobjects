@@ -17,6 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3564)
 - Fixed regression issue in v2.x where `NetworkObject.GetNetworkBehaviourAtOrderIndex` was converted from public to internal. (#3541)
 - Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3539)
 - Fixed synchronizing the destroyGameObject parameter to clients for InScenePlaced network objects. (#3514)
