@@ -12,14 +12,15 @@ An exception to this organization structure is the Gameplay assembly, which hous
 
 This assembly separation style enforces better separation of concerns and helps keep the codebase organized. It also uses more granular recompilation during iterations to save time.
 
-![Assembly structure](../images/arch-2.png)
+![Assembly structure](../../images/arch-2.png)
 
 ## Application flow
 
 The application flow of Boss Room starts with the `Startup` scene (which should always load first).
 
-> [!NOTE]
-> The Boss Room sample has an editor tool that enforces starting from the `Startup` scene even if you're working in another scene. You can disable this tool through the Unity Editor by selecting **Menu** > **Boss Room** > **Don't Load Bootsrap Scene On Play**. Select **Load Bootsrap Scene On Play** to re-enable it.
+:::tip
+The Boss Room sample has an editor tool that enforces starting from the `Startup` scene even if you're working in another scene. You can disable this tool through the Unity Editor by selecting **Menu** > **Boss Room** > **Don't Load Bootstrap Scene On Play**. Select **Load Bootstrap Scene On Play** to re-enable it.
+:::
 
 The `ApplicationController` component lives on a GameObject in the Startup scene and serves as the application's entry point (and composition root). It binds dependencies throughout the application's lifetime (the core dependency injection managed “singletons”). See the [Dependency Injection](#dependency-injection) section for more information.
 
@@ -35,11 +36,11 @@ The `NetworkManager` starts when the `CharSelect` scene loads, which happens whe
 
 ### Application Flow Diagram
 
-![Application Flow Diagram](../images/arch-1.png)
+![Application Flow Diagram](../../images/arch-1.png)
 
-> [!NOTE]
+:::note
 Boss Room's main room has four scenes. The primary scene (Boss Room's root scene) has the state components, game logic, level `navmesh`, and trigger areas that let the server know to load a given sub-scene. Boss Room loads each sub-scene additively using those triggers.
-> [!NOTE]
+:::tip
 
 Sub-scenes contain spawn points for the enemies and visual assets for their respective level segments. The server unloads sub-scenes that don't have active players and loads the required sub-scenes based on the players' position. If at least one player overlaps with the sub-scene's trigger area, the server loads the sub-scene.
 
@@ -52,7 +53,7 @@ Boss Room supports two network transport mechanisms:
 
 Clients connect directly to a host via an IP address when using IP. However, the IP network transport only works if the client and host are in the same local area network (or if the host uses port forwarding).
 
-With the Unity Relay network transport, clients don't need to worry about sharing a local area network or port forwarding. However, you must first [set up the Relay service](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Documentation/Unity-Relay/README.md).
+With the Unity Relay network transport, clients don't need to worry about sharing a local area network or port forwarding. However, you must first [set up the Relay service](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Documentation/Unity-Relay/README.md).
 
 See the [Multiplayer over the internet](getting-started-boss-room.md) section of the Boss Room README for more information about using the two network transport mechanisms.
 
@@ -60,13 +61,13 @@ Boss Room uses the Unity Transport package. Boss Room's assigns its instance of 
 
 The Unity Transport Package is a network transport layer with network simulation tools that help spot networking issues early during development. Boss Room has both buttons to start a game in the two modes and will setup Unity Transport automatically to use either one of them at runtime.
 
-Unity Transport supports Unity Relay (provided by Unity Gaming Services). See the documentation on [Unity Transport package](../../../transport/about.md) and [Unity Relay](https://docs-multiplayer.unity3d.com/docs/relay/relay) for more information.
+Unity Transport supports Unity Relay (provided by Unity Gaming Services). See the documentation on [Unity Transport package](https://docs.unity3d.com/Packages/com.unity.transport@latest?subfolder=/manual/index.html) and [Unity Relay](https://docs-multiplayer.unity3d.com/docs/relay/relay) for more information.
 
 ## Connection flow state machine
 
 The `ConnectionManager`, a simple state machine, owns Boss Room's network connection flow. It receives inputs from Netcode for GameObjects (or the user) and handles the inputs according to its current state. Each state inherits from the `ConnectionState` abstract class. If you add a new transport, you must extend the `StartingHostState` and `ClientConnectingState` states. Both of these classes assume you're using the Unity Transport transport.
 
-![Connection flow state machine](../images/arch-3.png)
+![Connection flow state machine](../../images/arch-3.png)
 
 ## Session management and reconnection
 
@@ -86,22 +87,24 @@ These three UGS services allow players to host and join games without needing po
 
 To keep a single source of truth for service access (and avoid scattering of service access logic), Boss Room wraps UGS SDK access into `Facades` and uses UI mediators to contain the service logic triggered by user interfaces (UIs).
 
-* [`AuthenticationServiceFacade.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/UnityServices/Auth/AuthenticationServiceFacade.cs)
-* [`LobbyServiceFacade.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/UnityServices/Lobby/LobbyServiceFacade.cs)
-* Lobby and Relay - client join - `JoinLobbyRequest()` in [Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs)
-* Relay Join - `StartClientLobby()` in [Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs)
-* Relay Create - `StartHostLobby()` in [Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs)
-* Lobby and Relay - host creation - `CreateLobbyRequest()` in [Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs)
+* [`AuthenticationServiceFacade.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/UnityServices/Auth/AuthenticationServiceFacade.cs)
+* [`LobbyServiceFacade.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/UnityServices/Lobbies/LobbyServiceFacade.cs)
+* Lobby and Relay - client join - `JoinLobbyRequest()` in [Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs)
+* Relay Join - `StartClientLobby()` in [Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs)
+* Relay Create - `StartHostLobby()` in [Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/ConnectionManagement/ConnectionState/OfflineState.cs)
+* Lobby and Relay - host creation - `CreateLobbyRequest()` in [Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/UI/Lobby/LobbyUIMediator.cs)
 
 ## Core gameplay structure
 
-> [!NOTE]
-> An `Avatar` is at the same level as an `Imp` and lives in a scene. A `Persistent Player` lives across scenes.
+:::note
+An `Avatar` is at the same level as an `Imp` and lives in a scene. A `Persistent Player` lives across scenes.
+:::
 
 A `Persistent Player` Prefab goes into the `Player` Prefab slot in the `NetworkManager` of Boss Room. As a result, Boss Room spawns a single `Persistent Player` Prefab per client, and each client owns their respective `Persistent Player` instances.
 
-> [!NOTE]
-> There is no need to mark `Persistent Player` instances as `DontDestroyOnLoad`. Netcode for GameObjects automatically keeps these prefabs alive between scene loads while the connections are live.
+:::note
+There is no need to mark `Persistent Player` instances as `DontDestroyOnLoad`. Netcode for GameObjects automatically keeps these prefabs alive between scene loads while the connections are live.
+:::
 
 The `Persistent Player` Prefab stores synchronized data about a player, such as their name and selected `PlayerAvatar` GUID.
 
@@ -113,7 +116,7 @@ Inside the Boss Room scene, `ServerBossRoomState` spawns a `PlayerAvatar` per `P
 
 The following example of a selected “Archer Boy” class shows the `PlayerAvatar` GameObject hierarchy:
 
-* `PlayerAvatar` is a `NetworkObject` that Boss Room destroys when the scene unloads.
+* `PlayerAvatar` is a NetworkObject that Boss Room destroys when the scene unloads.
 * `PlayerGraphics` is a child `GameObject` containing a `NetworkAnimator` component responsible for replicating animations invoked on the server.
 * `PlayerGraphics_Archer_Boy` is a purely graphical representation of the selected avatar class.
 
@@ -133,16 +136,17 @@ The following example of a selected “Archer Boy” class shows the `PlayerAvat
 
 We defined Boss Room's game configuration using ScriptableObjects.
 
-The [`GameDataSource.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/RuntimeDataContainers/GameDataSource.cs) singleton class stores all actions and character classes in the game.
+The [`GameDataSource.cs`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/GameplayObjects/RuntimeDataContainers/GameDataSource.cs) singleton class stores all actions and character classes in the game.
 
-[`CharacterClass`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Configuration/CharacterClass.cs) is the data representation of a Character and has elements such as starting stats and a list of Actions the character can perform. It covers both player characters and non-player characters (NPCs) alike.
+[`CharacterClass`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/Configuration/CharacterClass.cs) is the data representation of a Character and has elements such as starting stats and a list of Actions the character can perform. It covers both player characters and non-player characters (NPCs) alike.
 
-The [`Action`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Configuration/Action.cs) subclasses are data-driven and represent discrete verbs, such as swinging a weapon or reviving a player.
+The [`Action`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/Configuration/Action.cs) subclasses are data-driven and represent discrete verbs, such as swinging a weapon or reviving a player.
 
 ### Action System
 
-> [!NOTE]
-> Boss Room's action system was created specifically for Boss Room's educational purpose. You'll need to implement a more user friendly custom action system to allow for better game design emergence from your game designers.
+:::note
+Boss Room's action system was created specifically for Boss Room's educational purpose. You'll need to implement a more user friendly custom action system to allow for better game design emergence from your game designers.
+:::
 
 Boss Room's Action System is a generalized mechanism for `Characters` to "do stuff" in a networked way. `ScriptableObject`-derived `Actions` implement the client and server logic of any given thing the characters can do in the game.
 
@@ -152,14 +156,15 @@ Each character can have multiple actions that exist simultaneously but only one 
 
 Boss Room synchronizes actions by calling a `ServerCharacter.RecvDoActionServerRPC` and passing the `ActionRequestData`, a struct that implements the `INetworkSerializable` interface.
 
-> [!NOTE]
-> `ActionRequestData` has an `ActionID` field, a simple struct that wraps an integer containing the index of a given `ScriptableObject` `Action` in the registry of abilities available to characters. The registry of available character abilities is stored in `GameDataSource`.
+:::note
+`ActionRequestData` has an `ActionID` field, a simple struct that wraps an integer containing the index of a given `ScriptableObject` `Action` in the registry of abilities available to characters. The registry of available character abilities is stored in `GameDataSource`.
+:::
 
 Boss Room uses the `ActionID` struct to reconstruct the requested action and play it on the server by creating a pooled clone of the `ScriptableObject` `Action` that corresponds to the action. Clients then play out the visual part of the ability (including particle effects and projectiles).
 
 It's also possible to play an anticipatory animation on the client requesting an ability. For instance, you might want to play a small jump animation when the character receives movement input but hasn't yet moved (because it hasn't synchronized the data from the server).
 
-[`ServerActionPlayer`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ActionPlayers/ServerActionPlayer.cs) and [`ClientActionPlayer`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/Action/ActionPlayers/ClientActionPlayer.cs) are companion classes to actions Boss Room uses to play out the actions on both the client and server.
+[`ServerActionPlayer`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/Action/ActionPlayers/ServerActionPlayer.cs) and [`ClientActionPlayer`](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Assets/Scripts/Gameplay/Action/ActionPlayers/ClientActionPlayer.cs) are companion classes to actions Boss Room uses to play out the actions on both the client and server.
 
 #### Movement action flow
 
@@ -175,8 +180,9 @@ The following list describes the movement flow of a player character.
 8. There's network latency before clients receive replication data.
 9. The client representation of the entity updates its NetworkVariables.
 
-> [!NOTE]
-> The Visuals GameObject never outpaces the simulation GameObject and is always slightly behind the networked position and rotation.
+:::note
+The Visuals GameObject never outpaces the simulation GameObject and is always slightly behind the networked position and rotation.
+:::
 
 ### Navigation system
 
@@ -198,8 +204,9 @@ Boss Room implements the [Dependency Injection](https://en.wikipedia.org/wiki/De
 
 DI also allows Boss Room to circumvent the problem of cross-scene references to common dependencies, even though it still has to manage the lifecycle of `MonoBehaviour`-based dependencies by marking them with `DontDestroyOnLoad` and destroying them manually when appropriate.
 
-> [!NOTE]
-> `ApplicationController` inherits from the `VContainer`'s `LifetimeScope`, a class that serves as a dependency injection scope and bootstrapper that facilitates binding dependencies. Scene-specific State classes inherit from `LifetimeScope`, too.
+:::note
+`ApplicationController` inherits from the `VContainer`'s `LifetimeScope`, a class that serves as a dependency injection scope and bootstrapper that facilitates binding dependencies. Scene-specific State classes inherit from `LifetimeScope`, too.
+:::
 
 In the Unity Editor Inspector, you can choose a parent scope for any `LifetimeScope`. When doing so, it's helpful to set a cross-scene reference to some parent scopes, most commonly the `ApplicationController`. Setting a cross-scene reference allows you to bind scene-specific dependencies while maintaining easy access to the global dependencies of the `ApplicationController` in the State-specific version of a `LifetimeScope` object.
 
@@ -252,8 +259,9 @@ These mechanisms allow for strong separation of concerns and coupling reduction 
 
 `MessageChannel` classes implement the `IPublisher` and `ISubscriber` interfaces and have the actual messaging logic.
 
-> [!NOTE]
-> The Boss Room development team considered using a third party library for messaging (like `MessagePipe`). However, since Boss Room needed custom networked channels and the use cases were quite simple, the team decided to go with an in-house light implementation. If Boss Room was a full game with more gameplay, it'd benefit more from a library that with more features.
+:::note
+The Boss Room development team considered using a third party library for messaging (like `MessagePipe`). However, since Boss Room needed custom networked channels and the use cases were quite simple, the team decided to go with an in-house light implementation. If Boss Room was a full game with more gameplay, it'd benefit more from a library that with more features.
+:::
 
 #### `NetworkedMessageChannel`
 

@@ -70,6 +70,9 @@ namespace Unity.Netcode
         public void SerializeValue(ref Quaternion value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Quaternion[] value) => m_Writer.WriteValueSafe(value);
 
+        public void SerializeValue(ref Pose value) => m_Writer.WriteValueSafe(value);
+        public void SerializeValue(ref Pose[] value) => m_Writer.WriteValueSafe(value);
+
         public void SerializeValue(ref Color value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Color[] value) => m_Writer.WriteValueSafe(value);
 
@@ -127,6 +130,9 @@ namespace Unity.Netcode
 
         public void SerializeValuePreChecked(ref Quaternion value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Quaternion[] value) => m_Writer.WriteValue(value);
+
+        public void SerializeValuePreChecked(ref Pose value) => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked(ref Pose[] value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Color value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Color[] value) => m_Writer.WriteValue(value);
