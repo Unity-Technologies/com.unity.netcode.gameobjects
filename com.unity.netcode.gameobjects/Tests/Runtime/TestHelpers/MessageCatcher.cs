@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -8,7 +9,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         private NetworkManager m_OwnerNetworkManager;
 
-        public MessageCatcher(NetworkManager ownerNetworkManager)
+        private bool m_VerboseDebug;
+
+        public MessageCatcher(NetworkManager ownerNetworkManager, bool verboseDebug = false)
         {
             m_OwnerNetworkManager = ownerNetworkManager;
         }
@@ -23,9 +26,38 @@ namespace Unity.Netcode.RuntimeTests
         }
         private readonly List<TriggerData> m_CaughtMessages = new List<TriggerData>();
 
+
+        private void Log(string message)
+        {
+            if (!m_VerboseDebug)
+            {
+                return;
+            }
+
+            Debug.Log($"[Client-{m_OwnerNetworkManager.LocalClientId}] {message}");
+        }
+
+        internal void ClearMessages()
+        {
+            if (m_CaughtMessages.Count == 0)
+            {
+                return;
+            }
+            Log($"Clearing messages.");
+            foreach (var caughtSpawn in m_CaughtMessages)
+            {
+                if (caughtSpawn.Reader.IsInitialized)
+                {
+                    Log($"Disposing reader (size: {caughtSpawn.Reader.Length}).");
+                    caughtSpawn.Reader.Dispose();
+                }
+            }
+
+            m_CaughtMessages.Clear();
+        }
+
         public void ReleaseMessages()
         {
-
             foreach (var caughtSpawn in m_CaughtMessages)
             {
                 // Reader will be disposed within HandleMessage
