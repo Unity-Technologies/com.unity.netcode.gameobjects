@@ -22,7 +22,7 @@ namespace Unity.Netcode.RuntimeTests
             Prefab,
             PrefabHash,
             NoPlayer,
-            FailValidation
+            FailValidation,
         }
         private PlayerCreation m_PlayerCreation;
         private bool m_ClientDisconnectReasonValidated;
@@ -38,7 +38,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 1;
 
-        private Guid m_ValidationToken;
+        private string m_ValidationToken;
 
         protected override bool ShouldCheckForSpawnedPlayers()
         {
@@ -56,8 +56,13 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientDisconnectReasonValidated = false;
             m_BypassConnectionTimeout = m_PlayerCreation == PlayerCreation.FailValidation;
             m_Validated.Clear();
-            m_ValidationToken = Guid.NewGuid();
-            var validationToken = Encoding.UTF8.GetBytes(m_ValidationToken.ToString());
+            m_ValidationToken = string.Empty;
+            // Exceed the expected MTU size
+            while (m_ValidationToken.Length < 2000)
+            {
+                m_ValidationToken += Guid.NewGuid().ToString();
+            }
+            var validationToken = Encoding.UTF8.GetBytes(m_ValidationToken);
             m_ServerNetworkManager.ConnectionApprovalCallback = NetworkManagerObject_ConnectionApprovalCallback;
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerCreation == PlayerCreation.Prefab ? m_PlayerPrefab : null;
             if (m_PlayerCreation == PlayerCreation.PrefabHash)
@@ -66,7 +71,6 @@ namespace Unity.Netcode.RuntimeTests
             }
             m_ServerNetworkManager.NetworkConfig.ConnectionApproval = true;
             m_ServerNetworkManager.NetworkConfig.ConnectionData = validationToken;
-
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.PlayerPrefab = m_PlayerCreation == PlayerCreation.Prefab ? m_PlayerPrefab : null;
