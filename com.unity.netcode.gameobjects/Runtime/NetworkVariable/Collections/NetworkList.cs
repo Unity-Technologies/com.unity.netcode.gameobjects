@@ -632,19 +632,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets a **zero‑allocation**, read‑only
-        /// <see cref="Unity.Collections.NativeArray{T}.ReadOnly"/> view over the current
+        /// Gets a **zero‑allocation**, <see cref="NativeArray{T}.ReadOnly"/> view over the current
         /// elements of this <see cref="NetworkList{T}"/>.
         /// </summary>
         /// <remarks>
         /// The returned array stays valid **only until** the list is mutated (add, remove,
-        /// clear, resize) or the container is <see cref="Dispose()"/>d.  Continuing to use
-        /// it afterwards results in undefined behaviour; callers are responsible for
-        /// ensuring a safe lifetime.
+        /// clear, resize) or <see cref="Dispose()"/> is called on the container.  Continuing to use
+        /// the array after it is invalid will result in undefined behaviour;
+        /// callers are responsible for ensuring a safe lifetime.
         /// </remarks>
         /// <returns>
-        /// A read‑only <see cref="Unity.Collections.NativeArray{T}.ReadOnly"/> that shares
-        /// the same backing memory as this list.
+        /// A <see cref="NativeArray{T}.ReadOnly"/> reference that shares the same backing memory as this list.
         /// </returns>
         public NativeArray<T>.ReadOnly AsNativeArray()
         {
