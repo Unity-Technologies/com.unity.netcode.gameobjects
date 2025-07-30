@@ -28,8 +28,8 @@
       * [PlayerObjects and player prefabs](components/foundational/playerobjects.md)
   * [Helper Components](components/Helpers/helpercomponents.md)
     * [AttachableBehaviour](components/Helpers/attachablebehaviour.md)
-    * AttachableNode
-    * ComponentController
+    * [AttachableNode](components/Helpers/attachablenode.md)
+    * [ComponentController](components/Helpers/componentcontroller.md)
     * [NetworkAnimator](components/helpers/networkanimator.md)
     * [NetworkTransform](components/helpers/networktransform.md)
       * [Physics](advanced-topics/physics.md)

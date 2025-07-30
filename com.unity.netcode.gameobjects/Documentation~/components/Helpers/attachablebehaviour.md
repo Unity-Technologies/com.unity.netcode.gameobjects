@@ -1,5 +1,17 @@
 # AttachableBehaviour
-The `AttachableBehaviour` Provides "out of the box" support for attaching (i.e. parenting) a nested child `GameObject` that includes an `AttachableBehaviour` component to another nested child `GameObject` with an `AttachableNode` component that is associated with a different `NetworkObject`.
+
+![alt text](../../images/attachable/AttachableBehaviour_InspectorView-1.png)
+
+The basic functionality of the `AttachableBehaviour` component provides:
+- The ability to assign (make aware) `ComponetController` components from any part of the parent-child hierarchy.
+  -  Each `ComponentControllerEntry` provides the ability to select when the `ComponentController` should be triggered (via the **Auto Trigger** property) and whether its enabled state should be enabled or disabled  upon attaching (via the **Enable On Attach** property). The default setting is to be disabled upon the `AttachableBehaviour` attaching to an `AttachableNode` and enabled upon detaching.  When the **Enable On Attach** property is enabled, the `ComponentController` will be set to enabled upon the `AttachableBehaviour` attaching to an `AttachableNode` and disabled upon detaching.
+- The ability to control when an `AttachableBehaviour` component will automatically detach from an `AttachableNode` via the **Auto Detach** property.
+  - The **Auto Detach** property can have any combination of the below flags or none (no flags):
+    - **On Ownership Changed:** Upon ownership changing, the `AttachableBehaviour` will detach from any `AttachableNode` it is attached to.
+    - **On Despawn:**  Upon the `AttachableBehaviour` being despawned, it will detach from any `AttachableNode` it is attached to.
+    - **On Attach Node Destroy**: Just prior to the `AttachableNode` being destroyed,  any  attached `AttachableBehaviour` with this flag will automatically detach from the `AttachableNode`.
+
+_Any of the `AttachableBehaviour.AutoDetach` settings will be invoked on all instances without the need for the owner to synchronize the end result(i.e. detaching) which provides a level of redundancy for edge case scenarios like a player being disconnected abruptly by the host or by timing out or any scenario where a spawned object is being destroyed with the owner or perhaps being redistributed to another client authority in a distributed authority session. Having the ability to select or deselect any of the auto-detach flags coupled with the ability to derive from `AttachableBehaviour` provides additional levels of modularity/customization._
 
 ## Attaching vs NetworkObject parenting
 
@@ -27,82 +39,15 @@ With attaching, a user would create nested `GameObject` children that represent 
 By placing an `AttachableBehaviour` component on the NestedChild-PickedUp `GameObject` and an `AttachableNode` component on the TargetNode, a user can then invoke the `AttachableBehaviour.Attach` method while passing in the `AttachableNode` component and the NestedChild-PickedUp `GameObject` will get parented under the TargetNode while also synchronizing this action with all other clients.<br />
 ![alt text](../../images/attachable/PlayerAndWorldItem-2.png)
 
-### AttachableBehaviour
-
-![alt text](../../images/attachable/AttachableBehaviour_InspectorView-1.png)
-
-The basic functionality of the `AttachableBehaviour` component provides:
-- The ability to assign (make aware) `ComponetController` components from any part of the parent-child hierarchy.
-  -  Each `ComponentControllerEntry` provides the ability to select when the `ComponentController` should be triggered (via the **Auto Trigger** property) and whether its enabled state should be enabled or disabled  upon attaching (via the **Enable On Attach** property). The default setting is to be disabled upon the `AttachableBehaviour` attaching to an `AttachableNode` and enabled upon detaching.  When the **Enable On Attach** property is enabled, the `ComponentController` will be set to enabled upon the `AttachableBehaviour` attaching to an `AttachableNode` and disabled upon detaching.
-- The ability to control when an `AttachableBehaviour` component will automatically detach from an `AttachableNode` via the **Auto Detach** property.
-  - The **Auto Detach** property can have any combination of the below flags or none (no flags):
-    - **On Ownership Changed:** Upon ownership changing, the `AttachableBehaviour` will detach from any `AttachableNode` it is attached to.
-    - **On Despawn:**  Upon the `AttachableBehaviour` being despawned, it will detach from any `AttachableNode` it is attached to.
-    - **On Attach Node Destroy**: Just prior to the `AttachableNode` being destroyed,  any  attached `AttachableBehaviour` with this flag will automatically detach from the `AttachableNode`.
-
-_Any of the `AttachableBehaviour.AutoDetach` settings will be invoked on all instances without the need for the owner to synchronize the end result(i.e. detaching) which provides a level of redundancy for edge case scenarios like a player being disconnected abruptly by the host or by timing out or any scenario where a spawned object is being destroyed with the owner or perhaps being redistributed to another client authority in a distributed authority session. Having the ability to select or deselect any of the auto-detach flags coupled with the ability to derive from `AttachableBehaviour` provides additional levels of modularity/customization._
-
-### AttachableNode
-
-![alt text](../../images/attachable/AttachableNode_InspectorView-1.png)
-
-The simplest component in the bunch, this provides a valid connection point (_i.e. what an `AttachableBehaviour` can attach to_) with the ability to have it automatically detach from any attached `AttachableBehaviour` instances when it is despawned.
-
-### ComponentController
-
-![alt text](../../images/attachable/ComponentController_InspectorView-1.png)
-
-Taking the above example into consideration, it would make sense that a user would want to be able to easily control whether a specific component is enabled or disabled when something is attached or detached.
-
-As an example:
-
-- When the WorldItemRoot is in the "placed in the world" state, it would make sense to disable any `MeshRenderer`, `Collider`, and other components on the NestedChild-PickedUp `GameObject` while enabling similar types of components on the NestedChild-World.
-- When the WorldItemRoot is in the "picked up" state, it would make sense to enable any `MeshRenderer`, `Collider`, and other components on the NestedChild-PickedUp `GameObject` while disabling similar types of components on the NestedChild-World.
-- It would also make sense to synchronize the enabling or disabling of components with all instances.
-
-The `ComponentController` provides this type of functionality:
-- Can be used with `AttachableBehaviour` or independently for another purpose.
-- Each assigned component entry can be configured to directly or inversely follow the `ComponentController`'s current state.
-- Each assigned component entry can have an enable and/or disable delay.
-  -  _When invoked internally by `AttachableBehaviour`, delays are ignored when an `AttachableNode` is being destroyed and the changes are immediate._
-The `ComponentController` could be daisy chained with minimal user script:
-```csharp
-/// <summary>
-/// Use as a component in the ComponentController that will
-/// trigger the Controller (ComponentController).
-/// This pattern can repeat.
-/// </summary>
-public class DaisyChainedController : MonoBehaviour
-{
-    public ComponentController Controller;
-
-    private void OnEnable()
-    {
-        if (!Controller || !Controller.HasAuthority)
-        {
-            return;
-        }
-        Controller.SetEnabled(true);
-    }
-
-    private void OnDisable()
-    {
-        if (!Controller || !Controller.HasAuthority)
-        {
-            return;
-        }
-        Controller.SetEnabled(false);
-    }
-}
-```
-
-### Example of synchronized RPC driven properties
+:::info
+**Example of synchronized RPC driven properties**
 
 Both the `AttachableBehaviour` and the `ComponentController` provide an example of using synchronized RPC driven properties in place of `NetworkVariable`. Under certain conditions it is better to use RPCs when a specific order of operations is needed as opposed to `NetworkVariable`s which can update out of order (regarding the order in which certain states were updated) depending upon several edge case scenarios.
 
 Under this condition using reliable RPCs will assure the messages are received in the order they were generated while also reducing the latency time between the change and the non-authority instances being notified of the change. Synchronized RPC driven properties only require overriding the `NetworkBehaviour.OnSynchronize` method and serializing any properties that need to be synchronized with late joining players or handling network object visibility related scenarios.
+:::
 
-## Usage Walk Through
+## Usage walk through
 
 ### Introduction
 
@@ -118,7 +63,7 @@ The player prefab in the above diagram is not complete, includes the components 
 
 This diagram has a bit more detail to it and introduces one possible usage of a `ComponentController` and `AttachableBehaviour`. The `ComponentController` will be used to control the enabling and disabling of components and synchronizing this with non-authority instances. The `AttachableBehaviour` resides on the child `AttachedView`'s `GameObject` and will be the catalyst for attaching to a player.
 
-### World vs Attached View Modes
+### World vs attached view modes
 
 ![alt text](../../images/attachable/AttachableDiagram-2.png)
 
@@ -161,3 +106,8 @@ Upon a `NetworkObject` component being spawned, all associated `NetworkBehaviour
 
 `AttachableBehaviour` leverages from this "spawn lifetime" relationship to provide another type of "parenting" (attaching) while also taking into consideration these types of edge case scenarios.
 :::
+
+## Additional resources
+
+- [AttachableNode](attachablenode.md)
+- [ComponentController](componentcontroller.md)

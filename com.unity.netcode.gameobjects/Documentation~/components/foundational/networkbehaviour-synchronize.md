@@ -97,9 +97,78 @@ Client-side:
     - The `NetworkObject` is spawned.
       - For each associated `NetworkBehaviour` component, `NetworkBehaviour.OnNetworkSpawn` is invoked.
 
-### `OnSynchronize` example
+### Synchronized RPC driven fields
 
-Now that you understand the general concept behind `NetworkBehaviour.OnSynchronize`, the question you might have is "when would you use such a thing"? `NetworkVariable`s can be useful to synchronize state, but they also are only updated every network tick and you might have some form of state that needs to be updated when it happens and not several frames later, so you decide to use RPCs. However, this becomes an issue when you want to synchronize late-joining clients as there is no way to synchronize late-joining clients based on RPC activity over the duration of a network session. This is one of many possible reasons one might want to use `NetworkBehaviour.OnSynchronize`.
+Now that you understand the general concept behind `NetworkBehaviour.OnSynchronize`, the question you might have is:
+
+_"When would you want to use `NetworkBehaviour.OnSynchronize`?"_
+
+ `NetworkVariable`s can be useful to synchronize state, but they also are only updated every network tick. While it is possible to adjust a `NetworkVariable`'s update frequency, `NetworkVariable`s (in general) guarantees state synchronization but does not guarantee state changes will be updated in the same order they were chanted relative to other `NetworkVariables`.
+ 
+ With this in mind, you might need states to be updated in the relative order in which they were changed. In order to do this, you can combine the use of an RPC to handle updating the change in a properties state/value while using `NetworkBehaviour.OnSynchronize` to assure that any late joining client will be synchronized with the current state of said property.
+
+**Using a synchronized RPC driven field approach:**
+
+- When the authority changes a local field's value, it would then need send an RPC to all non-authority instances.
+  - RPC messages are immediately queued in the outbound send queue which means the order in which an RPC is invoked is the order in which they will be received (_if using the default reliable fragmented sequenced delivery_).
+  - Any other synchronized RPC driven fields, whether on the same `NetworkBehaviour` or not, would occur in the order they were invoked on the authority instance side.
+- As long as you override the `NetworkBehaviour.OnSynchronize` method and serialize the field, then late joining clients will be synchronized with the authority's most current field value.
+
+:::info
+**Synchronized RPC driven fields vs NetworkVariables**
+When a NetworkVariable becomes dirty, the associated `NetworkObject` is add to a queue of `NetworkObject` instances to be scanned for changes to any NetworkVariable declared in a `NetworkBehaviour` associated with the `NetworkObject` instance. Towards the end of the frame, during late update, any `NetworkObject` instances marked as "having one or more dirty NetworkVariables" will be processed and the delta states will be serialized. This can lead to a scenario like the following:
+
+**Authority side**
+- During Update:
+  - NetworkBehaviour-A.NetworkVariable-1 is updated on the authority instance.
+    - NetworkObject-A is added to the "dirty NetworkObjects" queue.
+  - NetworkBehaviour-B.NetworkVariable-1 is updated on the authority instance.
+    - NetworkObject-B is added to the "dirty NetworkObjects" queue.
+  - NetworkBehaviour-A.NetworkVariable-2 is updated on the authority instance.
+    - NetworkObject-A is determined to already be in the "dirty NetworkObjects" queue.
+- During Late Update:
+  - NetworkObject-A is scanned for dirty `NetworkVariables` and a `NetworkVariableDeltaMessage` is generated.
+    - _This includes NetworkBehaviour-A.NetworkVariable-1 and NetworkBehaviour-A.NetworkVariable-2._
+  - NetworkObject-B is scanned for dirty `NetworkVariables` and a `NetworkVariableDeltaMessage` is generated.
+    - _This includes NetworkBehaviour-B.NetworkVariable-1._
+
+**Non-Authority side**
+- `NetworkVariableDeltaMessage` for NetworkObject-A is processed.
+  - NetworkBehaviour-A.NetworkVariable-1 is updated and notifications triggered.
+  - NetworkBehaviour-A.NetworkVariable-2 is updated and notifications triggered.
+- `NetworkVariableDeltaMessage` for NetworkObject-B is processed.
+  - NetworkBehaviour-B.NetworkVariable-1 is updated and notifications triggered.
+
+Based on the above, we can determine that there will be a different order of operations in regards to when a `NetworkVariable` is updated on non-authority instances:
+
+**Authority side order of operations**
+- NetworkBehaviour-A.NetworkVariable-1 is changed.
+- NetworkBehaviour-B.NetworkVariable-1 is changed.
+- NetworkBehaviour-A.NetworkVariable-2 is changed.
+
+**Non-Authority side order of operations**
+- NetworkBehaviour-A.NetworkVariable-1 is updated and notification triggered.
+- NetworkBehaviour-A.NetworkVariable-2 is changed and notification triggered.
+- NetworkBehaviour-B.NetworkVariable-1 is changed and notification triggered.
+
+If you depend on the authority's order of operations relative to when states should be updated on the non-authority instances, then using `NetworkVariable` has the potential to not honor the order of operations for changes to `NetworkVariables`.
+
+**Synchronized RPC driven fields**
+
+**Authority side**
+- NetworkBehaviour-A.Field-1 is changed and an RPC is sent to all non-authority instances.
+- NetworkBehaviour-B.Field-1 is changed and an RPC is sent to all non-authority instances.
+- NetworkBehaviour-A.Field-2 is changed and an RPC is sent to all non-authority instances.
+
+**Non-Authority side**
+- RPC for NetworkBehaviour-A.Field-1 is processed and field is updated.
+- RPC for NetworkBehaviour-B.Field-1 is processed and field is updated.
+- RPC for NetworkBehaviour-A.Field-2 is processed and field is updated.
+
+Using the synchronized RPC driven field approach preserves the order of operations in regards to when each field's state changed. The additional benefit of this approach is that it is more performant than that of a `NetworkVariable`.
+:::
+
+### Synchronized RPC driven field example
 
 The following example uses `NetworkBehaviour.OnSynchronize` to synchronize connecting (to-be-synchronized) clients and also uses an RPC to synchronize changes in state for already synchronized and connected clients:
 

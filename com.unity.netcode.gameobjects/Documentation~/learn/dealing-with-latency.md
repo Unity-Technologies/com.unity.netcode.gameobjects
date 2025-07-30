@@ -72,11 +72,11 @@ There are possible synchronizations issues with client authoritative games. If y
 
 Multiple clients with the ability to affect the same shared object can quickly become a mess.
 
-![Multiple clients trying to impose their reality on a shared object.](../../images/sequence_diagrams/dealing_with_latency/Example_CaptureFlagPart1_ClientAuthorityIssue.png)
+![Multiple clients trying to impose their reality on a shared object.](../images/sequence_diagrams/dealing_with_latency/Example_CaptureFlagPart1_ClientAuthorityIssue.png)
 
 To avoid this, it's recommended to use client **owner** authority, which allows only the owner of an object to interact with it. Since the server controls ownership in Netcode, there's no possibility of two clients running into a [race condition](https://en.wikipedia.org/wiki/Race_condition#In_software). To allow two clients to affect the same object, you must ask the server for ownership, wait for it, then execute the client authoritative logic you want.
 
-![Multiple clients ASKING to interact with a shared object.](../../images/sequence_diagrams/dealing_with_latency/Example_CaptureFlagPart2_ServerAuthorityFix.png)
+![Multiple clients ASKING to interact with a shared object.](../images/sequence_diagrams/dealing_with_latency/Example_CaptureFlagPart2_ServerAuthorityFix.png)
 
 #### Issue: Security
 
