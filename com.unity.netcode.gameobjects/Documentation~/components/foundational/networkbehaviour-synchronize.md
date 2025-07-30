@@ -103,9 +103,9 @@ Now that you understand the general concept behind `NetworkBehaviour.OnSynchroni
 
 _"When would you want to use `NetworkBehaviour.OnSynchronize`?"_
 
- `NetworkVariable`s can be useful to synchronize state, but they also are only updated every network tick. While it is possible to adjust a `NetworkVariable`'s update frequency, `NetworkVariable`s (in general) guarantees state synchronization but does not guarantee state changes will be updated in the same order they were chanted relative to other `NetworkVariables`.
- 
- With this in mind, you might need states to be updated in the relative order in which they were changed. In order to do this, you can combine the use of an RPC to handle updating the change in a properties state/value while using `NetworkBehaviour.OnSynchronize` to assure that any late joining client will be synchronized with the current state of said property.
+`NetworkVariable`s can be useful to synchronize state, but they also are only updated every network tick. While it is possible to adjust a `NetworkVariable`'s update frequency, `NetworkVariable`s (in general) guarantees state synchronization but does not guarantee state changes will be updated in the same order they were chanted relative to other `NetworkVariables`.
+
+With this in mind, you might need states to be updated in the relative order in which they were changed. In order to do this, you can combine the use of an RPC to handle updating the change in a properties state/value while using `NetworkBehaviour.OnSynchronize` to assure that any late joining client will be synchronized with the current state of said property.
 
 **Using a synchronized RPC driven field approach:**
 
@@ -186,7 +186,7 @@ public class SimpleRpcState : NetworkBehaviour
 
     /// <summary>
     /// Late joining clients will be synchronized
-    /// to the most current m_ToggleState
+    /// to the most current m_ToggleState.
     /// </summary>
     protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
     {
@@ -201,7 +201,7 @@ public class SimpleRpcState : NetworkBehaviour
 
     /// <summary>
     /// Synchronizes connected clients with the
-    /// server-side m_ToggleState
+    /// server-side m_ToggleState.
     /// </summary>
     /// <param name="stateIsSet"></param>
     [Rpc(SendTo.ClientsAndHost)]

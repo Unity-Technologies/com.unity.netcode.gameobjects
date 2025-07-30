@@ -6,8 +6,7 @@ The `ComponentController` can be:
 - Used with `AttachableBehaviour` or independently for another purpose.
 - Configured to directly or inversely follow the `ComponentController`'s current state.
 - Configured to have an enable and/or disable delay.
-  -  _When invoked internally by `AttachableBehaviour`, delays are ignored when an `AttachableNode` is being destroyed and the changes are immediate._
-
+  - _When invoked internally by `AttachableBehaviour`, delays are ignored when an `AttachableNode` is being destroyed and the changes are immediate._
 
 ## Configuring
 
@@ -20,7 +19,6 @@ A `ComponentController` can have one or more `ComponentEntry` entries in its **C
 - **Component:** The component to control and synchronize its enabled state.
 
 Both delay values (Enable & Disable) has many uses, but an example would be to prevent a `MeshRenderer` from being enabled prior to other specific events like avoiding it from rendering for a few frames while the attachable is positioned.
-
 
 ## Examples
 
@@ -60,15 +58,15 @@ public class DaisyChainedController : MonoBehaviour
 The above component could be arranged to create a chained sequence of components when the root `DaisyChainedController` component is enabled or disabled. Such a sequence could look like:
 
 - DaisyChainedController-A
-  - Controller 
+  - Controller
     - Points to DaisyChainedController-B
 - DaisyChainedController-B
-  - Controller 
+  - Controller
     - Points to DaisyChainedController-C
 - DaisyChainedController-C
-  - Controller 
+  - Controller
 
-When DaisyChainedController-A is enabled, then a sequence of events would occur where DaisyChainedController-B and DaisyChainedController-C would be enabled. The same sequence of events would occur when DaisyChainedController-A was then disabled. 
+When DaisyChainedController-A is enabled, then a sequence of events would occur where DaisyChainedController-B and DaisyChainedController-C would be enabled. The same sequence of events would occur when DaisyChainedController-A was then disabled.
 
 ### AttachableBehaviour Usage
 
