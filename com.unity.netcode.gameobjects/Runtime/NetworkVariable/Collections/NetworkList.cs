@@ -633,12 +633,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the contents of the NetworkList as a read-only NativeArray.
+        /// Gets a **zero‑allocation**, read‑only
+        /// <see cref="Unity.Collections.NativeArray{T}.ReadOnly"/> view over the current
+        /// elements of this <see cref="NetworkList{T}"/>.
         /// </summary>
         /// <remarks>
-        /// This method returns the list contents as a NativeArray.ReadOnly. Be careful with the lifetime of the NativeArray.
+        /// The returned array stays valid **only until** the list is mutated (add, remove,
+        /// clear, resize) or the container is <see cref="Dispose()"/>d.  Continuing to use
+        /// it afterwards results in undefined behaviour; callers are responsible for
+        /// ensuring a safe lifetime.
         /// </remarks>
-        /// <returns>A read-only NativeArray of the list contents.</returns>
+        /// <returns>
+        /// A read‑only <see cref="Unity.Collections.NativeArray{T}.ReadOnly"/> that shares
+        /// the same backing memory as this list.
+        /// </returns>
         public NativeArray<T>.ReadOnly AsNativeArray()
         {
             return m_List.AsReadOnly();
