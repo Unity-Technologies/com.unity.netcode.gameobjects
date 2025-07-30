@@ -13,7 +13,7 @@ In-scene placed `NetworkObject`s are GameObjects with a `NetworkObject` componen
    - For example, a heads up display (HUD) that includes information about other items or players.
    - Or some form of platform or teleporter that moves a player from one location to the next when a player enters a trigger or uses an object.
 
-Another benefit of in-scene placed `NetworkObject`s is that they don't require you to register them with the [`NetworkManager`](../../components/networkmanager.md). In-scene placed `NetworkObjects` are registered internally, when scene management is enabled, for tracking and identification purposes.
+Another benefit of in-scene placed `NetworkObject`s is that they don't require you to register them with the [`NetworkManager`](../../components/foundational/networkmanager.md). In-scene placed `NetworkObjects` are registered internally, when scene management is enabled, for tracking and identification purposes.
 
 > [!NOTE]
 > Items that can be picked up are typically better implemented using a [hybrid approach](#hybrid-approach) with both an in-scene placed and a dynamically spawned `NetworkObject`. The in-scene placed `NetworkObject` can be used to configure additional information about the item (what kind, does another one respawn after one is picked up, and if so how much time should it wait before spawning a new item), while the dynamically spawned object is the item itself.

@@ -34,7 +34,7 @@ The `Animator` trigger property type ("trigger") is basically nothing more than 
 
 The default setting for `NetworkAnimator` is server authoritative mode. When operating in server authoritative mode, any animation state changes that are set (triggers) or detected (change in layer, state, or any `Animator` properties excluding triggers) on the server side will be synchronized with all clients. Because the server initiates any synchronization of changes to an `Animator` 's state, a client that's the owner of the `NetworkObject` associated with the `NetworkAnimator` can lag by roughly the full round trip time (RTT). Below is a timing diagram to show this:
 
-![ServerAuthMode](../images/NetworkAnimatorServerAuthTiming.png)
+![ServerAuthMode](../../images/NetworkAnimatorServerAuthTiming.png)
 
 In the above diagram, a client might be sending the server an RPC to tell the server that the player is performing some kind of action that can change the player's animations (including setting a trigger). Under this scenario, the client sends an RPC to the server (half RTT), the server processes the RPC, the associated `Animator` state changes are detected by the `NetworkAnimator` (server-side), and then all clients (including the owner client) are synchronized with the changed.
 
@@ -63,7 +63,7 @@ Usually, your project's design (or personal preference) might require that owner
 
 Looking at the timing for an owner authoritative `NetworkAnimator`, in the diagram below, you can see that while the owner client gets "immediate visual animation response" the non-owner clients end up being roughly one full RTT behind the owner client and a host would be half RTT behind the owner client.
 
-![ServerAuthMode](../images/NetworkAnimatorOwnerAuthTiming.png)
+![ServerAuthMode](../../images/NetworkAnimatorOwnerAuthTiming.png)
 
 In the above diagram, it shows that the owner client has an `Animator` state change that's detected by the `NetworkAnimator` ( `OwnerNetworkAnimator`) which automatically synchronizes the server with the changed state. The server applies the change(s) locally and then broadcasts this state change to all non-owner clients.
 
@@ -90,13 +90,13 @@ Using `NetworkAnimator` is a pretty straight forward approach with the only subt
 
 If you decide you want to use the server authoritative model, then you can add a `NetworkAnimator` component to either the same `GameObject` that has the `NetworkObject` component attached to it or any child `GameObject`. In the below screenshot, you can see a network Prefab that houses two authoritative models. The `NetworkAnimatorCube-Server` `GameObject` has an `Animator` component, an `AnimatedCubeController` component (used for manual testing), and the `NetworkAnimator` component that has a reference to the `Animator` component.
 
-![Usage-1](../images/NetworkAnimatorUsage-1.png)
+![Usage-1](../../images/NetworkAnimatorUsage-1.png)
 
 ### Owner Authoritative
 
 If you decide you want to use the owner authoritative model, then (for example purposes) you would use your derived `OwnerNetworkAnimator` component as opposed to the default `NetworkAnimator` component like in the screenshot below:
 
-![Usage-1](../images/NetworkAnimatorUsage-2.png)
+![Usage-1](../../images/NetworkAnimatorUsage-2.png)
 
 > [!NOTE]
 > While it isn't advised to have different `NetworkAnimator` authoritative models "under the same root network Prefab `GameObject`, " you can have multiple children that each have their own `Animator` and `NetworkAnimator` all housed under a single `NetworkObject` and all use the same authoritative model. However, you should always consider the balance between performance (CPU or bandwidth consumption) and convenience/modularity.

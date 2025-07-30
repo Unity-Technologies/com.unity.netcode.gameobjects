@@ -68,7 +68,7 @@ First, create the NetworkManager component:
 ### Create an object to spawn for each connected player
 
 > [!NOTE]
-> When you drop the prefab into the **PlayerPrefab** slot, you're telling the library that when a client connects to the game, it automatically spawns this prefab as the character for the connecting client. Netcode for GameObjects won't spawn a player object if you don't have any prefab set as the **PlayerPrefab**. Refer to [Player Objects](../basics/networkobject.md#finding-playerobjects).
+> When you drop the prefab into the **PlayerPrefab** slot, you're telling the library that when a client connects to the game, it automatically spawns this prefab as the character for the connecting client. Netcode for GameObjects won't spawn a player object if you don't have any prefab set as the **PlayerPrefab**. Refer to [Player Objects](../components/foundational/networkobject.md#finding-playerobjects).
 
 
 This section guides you through creating an object that spawns for each connected player.

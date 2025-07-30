@@ -31,7 +31,7 @@ _In most cases, you will want to keep the `NetworkObject` component attached to 
 
 By default a newly spawned network Prefab instance is owned by the server unless otherwise specified.
 
-See [Ownership](networkobject.md#ownership) for more information.
+See [Ownership](../components/foundational/networkobject.md#ownership) for more information.
 
 The following is a basic example of how to spawn a network Prefab instance (with the default server ownership):
 

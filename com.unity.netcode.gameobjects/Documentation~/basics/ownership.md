@@ -1,6 +1,6 @@
 # Understanding ownership and authority
 
-By default, Netcode for GameObjects assumes a [client-server topology](../terms-concepts/client-server.md), in which the server owns all NetworkObjects (with [some exceptions](networkobject.md#ownership)) and has ultimate authority over [spawning and despawning](object-spawning.md).
+By default, Netcode for GameObjects assumes a [client-server topology](../terms-concepts/client-server.md), in which the server owns all NetworkObjects (with [some exceptions](../components/foundational/networkobject.md#ownership)) and has ultimate authority over [spawning and despawning](object-spawning.md).
 
 Netcode for GameObjects also supports building games with a [distributed authority topology](../terms-concepts/distributed-authority.md), which provides more options for ownership and authority over NetworkObjects.
 

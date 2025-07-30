@@ -5,13 +5,13 @@ The `NetworkManager` is a required Netcode for GameObjects component that has al
 ## `NetworkManager` Inspector properties
 
 - **LogLevel**:  Sets the network logging level
-- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object and assigned to the newly connected and authorized client. For more information about player prefabs, refer to [Player NetworkObjects](../basics/networkobject.md#player-networkobjects).
+- **PlayerPrefab**:  When a Prefab is assigned, the Prefab will be instantiated as the player object and assigned to the newly connected and authorized client. For more information about player prefabs, refer to [Player NetworkObjects](networkobject.md#player-networkobjects).
 - **NetworkPrefabs**: Where you register your network prefabs.  You can also create a single network Prefab override per registered network Prefab here.
 - **Protocol Version**: Set this value to help distinguish between builds when the most current build has new assets that can cause issues with older builds connecting.
 - **Network Transport**: Where your network specific settings and transport type is set.  This field accepts any INetworkTransport implementation.  However, unless you have unique transport specific needs UnityTransport is the recommended transport to use with Netcode for GameObjects.
 - **Tick Rate**: This value controls the network tick update rate.
 - **Ensure Network Variable Length Safety**: (Increases cpu processing and bandwidth) When this property is checked, Netcode for GameObjects will prevent user code from writing past the boundaries of a NetworkVariable.
-- **Connection Approval**: This enables [connection approval](../basics/connection-approval.md) when this is checked and the `NetworkManager.ConnectionApprovalCallback` is assigned.
+- **Connection Approval**: This enables [connection approval](../../basics/connection-approval.md) when this is checked and the `NetworkManager.ConnectionApprovalCallback` is assigned.
 - **Client Connection Buffer Timeout**: This value sets the amount of time that has to pass for a connecting client to complete the connection approval process.  If the time specified is exceeded the connecting client will be disconnected.
 - **Force Same Prefabs**: When checked it will always verify that connecting clients have the same registered network prefabs as the server.  When not checked, Netcode for GameObjects will ignore any differences.
 - **Recycle Network Ids**: When checked this will re-use previously assigned `NetworkObject.NetworkObjectIds` after the specified period of time.
@@ -25,12 +25,12 @@ The `NetworkManager` is a required Netcode for GameObjects component that has al
 > [!NOTE]
 > All `NetworkManager` sub-systems are instantiated once the `NetworkManager` is started (that is, `NetworkManager.IsListening == true`).  A good general "rule of thumb" is to not attempt to access the below sub-systems before starting the `NetworkManager`, otherwise they won't yet be initialized.
 
-- [NetworkManager.PrefabHandler](../advanced-topics/object-pooling.md): This provides access to the NetworkPrefabHandler that is used for NetworkObject pools and to have more control overriding network prefabs.
-- [NetworkManager.SceneManager](../basics/scenemanagement/using-networkscenemanager.md): When scene management is enabled, this is used to load and unload scenes, register for scene events, and other scene management related actions.
-- [NetworkManager.SpawnManager](../basics/object-spawning.md): This handles NetworkObject spawn related functionality.
-- [NetworkManager.NetworkTimeSystem](../advanced-topics/networktime-ticks.md): a synchronized time that can be used to handle issues with latency between a client and the server.
-- [NetworkManager.NetworkTickSystem](../advanced-topics/networktime-ticks.md#network-ticks): Use this to adjust the frequency of when NetworkVariables are updated.
-- [NetworkManager.CustomMessagingManager](../advanced-topics/message-system/custom-messages.md): Use this system to create and send custom messages.
+- [NetworkManager.PrefabHandler](../../advanced-topics/object-pooling.md): This provides access to the NetworkPrefabHandler that is used for NetworkObject pools and to have more control overriding network prefabs.
+- [NetworkManager.SceneManager](../../basics/scenemanagement/using-networkscenemanager.md): When scene management is enabled, this is used to load and unload scenes, register for scene events, and other scene management related actions.
+- [NetworkManager.SpawnManager](../../basics/object-spawning.md): This handles NetworkObject spawn related functionality.
+- [NetworkManager.NetworkTimeSystem](../../advanced-topics/networktime-ticks.md): a synchronized time that can be used to handle issues with latency between a client and the server.
+- [NetworkManager.NetworkTickSystem](../../advanced-topics/networktime-ticks.md#network-ticks): Use this to adjust the frequency of when NetworkVariables are updated.
+- [NetworkManager.CustomMessagingManager](../../advanced-topics/message-system/custom-messages.md): Use this system to create and send custom messages.
 
 ## Starting a server, host, or client
 
@@ -47,8 +47,8 @@ NetworkManager.Singleton.StartClient();      // Starts the NetworkManager as jus
 
  When starting a Server or joining an already started session as client, the `NetworkManager` can spawn a "Player Object" belonging to the client. For more information about player prefabs, refer to:
 
- - [NetworkObject Player Prefab Documentation](../basics/networkobject.md)
- - [Connection Approval](../basics/connection-approval)
+ - [NetworkObject Player Prefab Documentation](networkobject.md)
+ - [Connection Approval](../../basics/connection-approval)
 
 ## Connecting
 
@@ -81,7 +81,7 @@ It is possible to access the current connection data at runtime, via `NetworkMan
 If you are using Unity Relay to handle connections, however, **don't use `SetConnectionData`**. The host should call [`SetHostRelayData`](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L575), and clients should call [`SetClientRelayData`](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/blob/11922a0bc100a1615c541aa7298c47d253b74937/com.unity.netcode.gameobjects/Runtime/Transports/UTP/UnityTransport.cs#L588). Attempting to join a **Relay**-hosted game via entering IP/port number (via `SetConnectionData`) **won't work**.
 
 
-[More information about Netcode for GameObjects Transports](../advanced-topics/transports.md)
+[More information about Netcode for GameObjects Transports](../../advanced-topics/transports.md)
 
 ## Disconnecting and shutting down
 

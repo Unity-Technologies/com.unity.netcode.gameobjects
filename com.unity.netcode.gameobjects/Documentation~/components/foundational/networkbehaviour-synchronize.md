@@ -45,7 +45,7 @@ There are two cases where NetworkObject synchronization occurs:
   - that is, Full synchronization of the NetworkObjects and scenes.
 
 > [!NOTE]
-> If you aren't familiar with the [`INetworkSerializable` interface](../advanced-topics/serialization/inetworkserializable.md), then you might read up on that before proceeding, because `NetworkBehaviour.OnSynchronize` follows a similar usage pattern.
+> If you aren't familiar with the [`INetworkSerializable` interface](../../advanced-topics/serialization/inetworkserializable.md), then you might read up on that before proceeding, because `NetworkBehaviour.OnSynchronize` follows a similar usage pattern.
 
 #### Order of operations when dynamically spawning
 

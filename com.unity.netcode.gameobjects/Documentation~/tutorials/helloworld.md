@@ -22,7 +22,7 @@ In this section we will create the basic building blocks of a multiplayer game.
 
 ### Creating Network Manager and selecting the Transport
 
-In this section we add a Network Manager and add Unity Transport to our project. The [NetworkManager](../components/networkmanager.md) is the component that has all your project's netcode-related settings. Unity Transport is the transport layer that Netcode uses for communication between the server and the clients. See [here](../advanced-topics/transports.md) for more.
+In this section we add a Network Manager and add Unity Transport to our project. The [NetworkManager](../components/foundational/networkmanager.md) is the component that has all your project's netcode-related settings. Unity Transport is the transport layer that Netcode uses for communication between the server and the clients. See [here](../advanced-topics/transports.md) for more.
 
 1. Right-click in the **Hierarchy** tab of the main Unity Window.
 1. Select **Create Empty**.
