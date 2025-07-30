@@ -55,6 +55,7 @@ public class DaisyChainedController : MonoBehaviour
     }
 }
 ```
+
 The above component could be arranged to create a chained sequence of components when the root `DaisyChainedController` component is enabled or disabled. Such a sequence could look like:
 
 - DaisyChainedController-A
@@ -70,7 +71,7 @@ When DaisyChainedController-A is enabled, then a sequence of events would occur 
 
 ### AttachableBehaviour Usage
 
-The `AttachableBehaviour` can be assigned one or more component controllers that will be invoked, depending upon configuration, when the `AttachableBehaviour` is attached and detached from an `AttachableNode`. You can find the [usage example with an `AttachableBehaviour` here.](attachablebehaviour.md#usage-walk-through) 
+The `AttachableBehaviour` can be assigned one or more component controllers that will be invoked, depending upon configuration, when the `AttachableBehaviour` is attached and detached from an `AttachableNode`. You can find the [usage example with an `AttachableBehaviour` here.](attachablebehaviour.md#usage-walk-through)
 
 :::info
 **Example of synchronized RPC driven properties**
