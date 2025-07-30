@@ -291,7 +291,7 @@ namespace Unity.Netcode.Components
             gameObjectsToScan.Clear();
 
             // Final (third) pass is to name each list element item as the component is normally viewed in the inspector view.
-            foreach(var componentEntry in Components)
+            foreach (var componentEntry in Components)
             {
                 if (!componentEntry.Component)
                 {
