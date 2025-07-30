@@ -1,0 +1,10 @@
+# https://internaldocs.unity.com/yamato_continuous_integration/usage/templating/
+
+NetcodeProjects:
+    # Note that we are using internal Unity repo. This means that we may test with newest changes that are not yet released to our users (there are also public versions)
+    # Note that for BossRoom 'main' branch supports NGOv1.X and 'develop' branch supports NGOv2.X
+    BossRoom:
+        GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git"
+        branch: main
+        manifestPath: Packages/manifest.json
+        projectPath: '.'
