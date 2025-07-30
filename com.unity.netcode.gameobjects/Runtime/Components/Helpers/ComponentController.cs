@@ -255,7 +255,7 @@ namespace Unity.Netcode.Components
                 }
 
                 var propertyInfo = Components[i].Component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
-                if (propertyInfo == null && propertyInfo.PropertyType != typeof(bool))
+                if (propertyInfo == null || propertyInfo.PropertyType != typeof(bool))
                 {
                     Debug.LogWarning($"{Components[i].Component.name} does not contain a public enabled property! (Removing)");
                     Components.RemoveAt(i);
@@ -291,13 +291,13 @@ namespace Unity.Netcode.Components
             gameObjectsToScan.Clear();
 
             // Final (third) pass is to name each list element item as the component is normally viewed in the inspector view.
-            for (int i = 0; i < Components.Count; i++)
+            foreach(var componentEntry in Components)
             {
-                if (!Components[i].Component)
+                if (!componentEntry.Component)
                 {
                     continue;
                 }
-                Components[i].name = GetComponentNameFormatted(Components[i].Component);
+                componentEntry.name = GetComponentNameFormatted(componentEntry.Component);
             }
         }
 #endif

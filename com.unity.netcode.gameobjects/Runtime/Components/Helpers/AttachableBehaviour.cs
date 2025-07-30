@@ -96,11 +96,7 @@ namespace Unity.Netcode.Components
             }
             foreach (var componentController in ComponentControllers)
             {
-                if (componentController == null)
-                {
-                    continue;
-                }
-                componentController.OnValidate();
+                componentController?.OnValidate();
             }
         }
 
