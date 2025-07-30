@@ -27,7 +27,7 @@ With attaching, a user would create nested `GameObject` children that represent 
 By placing an `AttachableBehaviour` component on the NestedChild-PickedUp `GameObject` and an `AttachableNode` component on the TargetNode, a user can then invoke the `AttachableBehaviour.Attach` method while passing in the `AttachableNode` component and the NestedChild-PickedUp `GameObject` will get parented under the TargetNode while also synchronizing this action with all other clients.<br />
 ![alt text](../../images/attachable/PlayerAndWorldItem-2.png)
 
-### AttachableBehaviour 
+### AttachableBehaviour
 
 ![alt text](../../images/attachable/AttachableBehaviour_InspectorView-1.png)
 
@@ -52,7 +52,7 @@ The simplest component in the bunch, this provides a valid connection point (_i.
 
 ![alt text](../../images/attachable/ComponentController_InspectorView-1.png)
 
-Taking the above example into consideration, it would make sense that a user would want to be able to easily control whether a specific component is enabled or disabled when something is attached or detached. 
+Taking the above example into consideration, it would make sense that a user would want to be able to easily control whether a specific component is enabled or disabled when something is attached or detached.
 
 As an example:
 
@@ -65,7 +65,7 @@ The `ComponentController` provides this type of functionality:
 - Each assigned component entry can be configured to directly or inversely follow the `ComponentController`'s current state.
 - Each assigned component entry can have an enable and/or disable delay.
   -  _When invoked internally by `AttachableBehaviour`, delays are ignored when an `AttachableNode` is being destroyed and the changes are immediate._
-
+  
 The `ComponentController` could be daisy chained with minimal user script:
 ```csharp
 /// <summary>
@@ -111,7 +111,7 @@ For example purposes, we will walk through a common scenario where you might wan
 
 ![alt text](../../images/attachable/AttachableDiagram-1.png)
 
-#### Player 
+#### Player
 
 The player prefab in the above diagram is not complete, includes the components of interest, and some additional children and components for example purposes. A complete diagram would most definitely have additional components and children. The `AttachableNode` components provide a "target attach point" that any other spawned network prefab with an `AttachableBehaviour` could attach itself to.
 
@@ -151,16 +151,15 @@ We can see the `AttachableBehaviour`'s **Component Controllers** list contains `
 
 ![alt text](../../images/attachable/AttachableDiagram-3.png)
 
-The above diagram represents what the **Player** and **World Item** spawned objects (_including cloned/non-authority instances_) would look like once the **Attached View** object has been parented under the avatar's **Right Attach** object. The green area and arrow represent the still existing relationship that the **Attached View** has with the **World Item**'s `NetworkObject`. 
+The above diagram represents what the **Player** and **World Item** spawned objects (_including cloned/non-authority instances_) would look like once the **Attached View** object has been parented under the avatar's **Right Attach** object. The green area and arrow represent the still existing relationship that the **Attached View** has with the **World Item**'s `NetworkObject`.
 
 :::info
 **AttachableBehaviour & NetworkObject Relationship**
 
 Upon a `NetworkObject` component being spawned, all associated `NetworkBehaviour` based component instances, that are directly attached to the `NetworkObject`'s `GameObject` or are on any child `GameObject`, will be registered with the `NetworkObject` instance. This remains true even when a child `GameObject` containing one or more `NetworkBehaviour` based component instances of a spawned `NetworkObject` is parented, during runtime, under another `GameObject` that is associated with a different spawned `NetworkObject`. Of course, there are additional considerations like:
  - What happens when one or both of the NetworkObjects is de-spawned?
- - How do you assure the child attachable will return back to its default parent? 
+ - How do you assure the child attachable will return back to its default parent?
  - and several other edge case scenarios...
 
 `AttachableBehaviour` leverages from this "spawn lifetime" relationship to provide another type of "parenting" (attaching) while also taking into consideration these types of edge case scenarios.
 :::
-
