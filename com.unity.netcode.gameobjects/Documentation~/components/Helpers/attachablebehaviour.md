@@ -20,9 +20,9 @@ This is simple enough for many scenarios, but can become cumbersome under more s
 With attaching, a user would create nested `GameObject` children that represent the item when it is picked up and when it is dropped/placed somewhere in the scene (i.e. world).<br />
 ![alt text](../../images/attachable/PlayerAndWorldItem-1.png)
 
- - The WorldItemRoot is where the `NetworkObject` component is placed.
- - The NestedChild-World contains the components needed for the item when it is placed in the world.
- - The NestedChild-PickedUp contains the components needed for the item when it is picked up by a player.
+- The WorldItemRoot is where the `NetworkObject` component is placed.
+- The NestedChild-World contains the components needed for the item when it is placed in the world.
+- The NestedChild-PickedUp contains the components needed for the item when it is picked up by a player.
 
 By placing an `AttachableBehaviour` component on the NestedChild-PickedUp `GameObject` and an `AttachableNode` component on the TargetNode, a user can then invoke the `AttachableBehaviour.Attach` method while passing in the `AttachableNode` component and the NestedChild-PickedUp `GameObject` will get parented under the TargetNode while also synchronizing this action with all other clients.<br />
 ![alt text](../../images/attachable/PlayerAndWorldItem-2.png)
@@ -65,7 +65,6 @@ The `ComponentController` provides this type of functionality:
 - Each assigned component entry can be configured to directly or inversely follow the `ComponentController`'s current state.
 - Each assigned component entry can have an enable and/or disable delay.
   -  _When invoked internally by `AttachableBehaviour`, delays are ignored when an `AttachableNode` is being destroyed and the changes are immediate._
-  
 The `ComponentController` could be daisy chained with minimal user script:
 ```csharp
 /// <summary>
@@ -123,7 +122,6 @@ This diagram has a bit more detail to it and introduces one possible usage of a 
 
 ![alt text](../../images/attachable/AttachableDiagram-2.png)
 
-
 In the diagram above, we see arrows pointing from the `ComponentController` to the non-netcode standard Unity components such as a `MeshRenderer`, `Collider`, or any other component that should only be enabled when either in "World View" or "Attached View" modes. We can also see that the `AttachableBehaviour` points to the `ComponentController` with a diagram to the right that shows the `AttachableBehaviour` notifies the `ComponentController` that, in turn, enables or disables certain components.
 
 #### World Item Component Controller
@@ -157,9 +155,9 @@ The above diagram represents what the **Player** and **World Item** spawned obje
 **AttachableBehaviour & NetworkObject Relationship**
 
 Upon a `NetworkObject` component being spawned, all associated `NetworkBehaviour` based component instances, that are directly attached to the `NetworkObject`'s `GameObject` or are on any child `GameObject`, will be registered with the `NetworkObject` instance. This remains true even when a child `GameObject` containing one or more `NetworkBehaviour` based component instances of a spawned `NetworkObject` is parented, during runtime, under another `GameObject` that is associated with a different spawned `NetworkObject`. Of course, there are additional considerations like:
- - What happens when one or both of the NetworkObjects is de-spawned?
- - How do you assure the child attachable will return back to its default parent?
- - and several other edge case scenarios...
+- What happens when one or both of the NetworkObjects is de-spawned?
+- How do you assure the child attachable will return back to its default parent?
+- and several other edge case scenarios...
 
 `AttachableBehaviour` leverages from this "spawn lifetime" relationship to provide another type of "parenting" (attaching) while also taking into consideration these types of edge case scenarios.
 :::
