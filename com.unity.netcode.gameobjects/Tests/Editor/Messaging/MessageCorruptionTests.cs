@@ -90,10 +90,13 @@ namespace Unity.Netcode.EditorTests
                             break;
                         }
                     case TypeOfCorruption.CorruptBytes:
-                        batchData.Seek(batchData.Length - 2);
-                        var currentByte = batchData.GetUnsafePtr()[0];
-                        batchData.WriteByteSafe((byte)(currentByte == 0 ? 1 : 0));
-                        MessageQueue.Add(batchData.ToArray());
+                        for (int i = 0; i < 4; i++)
+                        {
+                            var currentByte = batchData.GetUnsafePtr()[i];
+                            currentByte = (byte)((currentByte + 1) % 255);
+                            batchData.WriteByteSafe(currentByte);
+                            MessageQueue.Add(batchData.ToArray());
+                        }
                         break;
                     case TypeOfCorruption.Truncated:
                         batchData.Truncate(batchData.Length - 1);
