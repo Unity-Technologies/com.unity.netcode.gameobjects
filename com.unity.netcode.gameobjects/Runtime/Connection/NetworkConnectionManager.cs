@@ -626,7 +626,7 @@ namespace Unity.Netcode
                 }
             }
 
-            SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
+            SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
             message.MessageVersions.Dispose();
         }
 

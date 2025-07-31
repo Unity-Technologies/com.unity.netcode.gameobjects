@@ -16,6 +16,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Fixed
+
+- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
+
+### Changed
+
+## [1.14.0] - 2025-07-21
+
+### Added
+
 - Added serializer for `Pose` (#3540)
 - Added mappings between `ClientId` and `TransportId`. (#3515)
 - Added `SinglePlayerTransport` that provides the ability to start as a host for a single player network session. (#3475)
@@ -23,6 +33,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3544)
 - Fixed `NullReferenceException` on `NetworkList` when used without a NetworkManager in scene. (#3502)
 - Fixed inconsistencies in the `OnSceneEvent` callback. (#3487)
 - Fixed issue where `NetworkClient` could persist some settings if re-using the same `NetworkManager` instance. (#3494)
