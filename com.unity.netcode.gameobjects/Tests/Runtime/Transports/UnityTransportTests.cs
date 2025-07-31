@@ -43,6 +43,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
+                m_Server = null;
             }
 
             if (m_Client1)
@@ -51,6 +52,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
+                m_Client1 = null;
             }
 
             if (m_Client2)
@@ -59,6 +61,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
+                m_Client2 = null;
             }
 
             m_ServerEvents?.Clear();
@@ -315,7 +318,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events, 5.0f);
 
             m_Server.Shutdown();
 

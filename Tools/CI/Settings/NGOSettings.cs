@@ -12,7 +12,7 @@ public class NGOSettings : AnnotatedSettingsBase
     static ValidationOptions validationOptions = new ValidationOptions()
     {
         ProjectPath = "testproject",
-        UtrTestingYamatoTimeout = 40
+        UtrTestingYamatoTimeout = 180 // 3h This it to address the issue that we are running both package and project test and that their execution is much slower on editors below 6000
     };
 
     // update this to list all packages in this repo that you want to release.
