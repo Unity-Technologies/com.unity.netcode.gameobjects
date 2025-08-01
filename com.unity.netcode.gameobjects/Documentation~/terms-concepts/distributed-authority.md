@@ -4,7 +4,7 @@
 
 The [distributed authority network topology](network-topologies.md#distributed-authority) is one possible [network topology](network-topologies.md) available within Netcode for GameObjects. Distributed authority games use the [distributed authority model](authority.md#distributed-authority).
 
-The traditional [client-server network topology](network-topologies.md/#client-server) has a dedicated game instance running the game simulation. This means all state changes must be communicated to the server and then the server communicates those updates to all other connected clients. This design works well when using a powerful dedicated game server, however significant latencies are added when communicating state changes with a [listen server architecture](../learn/listenserverhostarchitecture.md).
+The traditional [client-server network topology](network-topologies.md#client-server) has a dedicated game instance running the game simulation. This means all state changes must be communicated to the server and then the server communicates those updates to all other connected clients. This design works well when using a powerful dedicated game server, however significant latencies are added when communicating state changes with a [listen server architecture](../learn/listenserverhostarchitecture.md).
 
 > [!NOTE]
 > The distributed authority service provided by the [Multiplayer Services package](https://docs.unity.com/ugs/en-us/manual/mps-sdk/manual) offers a free tier for bandwidth and connectivity hours, allowing you to develop and test without immediate cost. Refer to the [Unity Gaming Services pricing page](https://unity.com/products/gaming-services/pricing) for complete details.
@@ -31,4 +31,4 @@ For more information about how distributed authority works in Netcode for GameOb
 - [Race conditions](../basics/race-conditions.md)
 - [Spawning synchronization](../basics/spawning-synchronization.md)
 - [Deferred despawning](../basics/deferred-despawning.md)
-- [Distributed Authority Social Hub sample](../learn/bitesize/bitesize-socialhub.md)
+- [Distributed Authority Social Hub sample](../samples/bitesize/bitesize-socialhub.md)

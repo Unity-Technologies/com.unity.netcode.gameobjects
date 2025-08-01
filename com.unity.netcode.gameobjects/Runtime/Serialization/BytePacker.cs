@@ -260,6 +260,18 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Writes the pose to the buffer.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="pose">Pose to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteValuePacked(FastBufferWriter writer, Pose pose)
+        {
+            WriteValuePacked(writer, pose.position);
+            WriteValuePacked(writer, pose.rotation);
+        }
+
+        /// <summary>
         /// Writes a string in a packed format
         /// </summary>
         /// <param name="writer">The writer to write to</param>

@@ -1,0 +1,96 @@
+{% metadata_file .yamato/project-builders/builder.metafile %}
+---
+# The above line corresponds to https://internaldocs.unity.com/yamato_continuous_integration/usage/templating/
+
+# Yamato paths disclaimer:
+# Note that artifacts can get only local paths and since cloned project is in different location, you need to be careful with paths
+# All artifact paths are defined relative to the Yamato source directory (YAMATO_SOURCE_DIR) and are case-sensitive.
+# !!! important “Artifact directory locations” All artifact globs are defined relative to the source directory (YAMATO_SOURCE_DIR). Yamato can’t capture artifacts from outside this directory, so if you need files from elsewhere, you should copy them into your source directory as part of job commands.
+
+# Those jobs were created in order to (in most cases) speed up playtesting and development time.
+# The aim is to collect all possible projects that use Netcode for Entities and create a job that will build the project with the given version of N4E package.
+# The package is taken directly from the branch from which the job was triggered. So image triggering the job from release/2.0.0 and release/2.1.0 branch to compare differences
+# Example use case would be to trigger the build job on Sunday so by Monday morning all builds are ready for playtesting. This limits the time a dev/QA has to spend building projects for different configurations (win, mac, Android, scripting backends, burst etc) or simply time necessary for building huge projects (Megacity).
+
+# This job takes parameters as scriptable backend configuration, burst compilation, unity editor version and platform.
+# Since Yamato variables can't be restricted to only specific values, the job will validate the parameters passed to it and fail quickly if those are incorrect. In order to see what options are available, please look at the variable name.
+
+# Note that for now all of those builds are being made on Windows machine (so for example combination of macOS + il2cpp is expected to fail)
+# TODO: for now all builds are being made on Windows machine, but it would be nice to have a Mac build as well.
+# TODO: add iOS support
+{% for netcodeProject in NetcodeProjects -%}
+build_{{ netcodeProject[0] }}_project:
+  name: {{ netcodeProject[0] }}
+  agent:
+    type: Unity::VM
+    image: package-ci/win10:v4
+    flavor: b1.xlarge
+  variables:
+    UNITY_VERSION: trunk
+    SCRIPTING_BACKEND_IL2CPP_MONO: il2cpp
+    BURST_ON_OFF: on
+    PLATFORM_WIN64_MAC_ANDROID: win64
+  commands:
+    # Validate inputs passed via Yamato variables
+    - python Tools/CI/scripts/BuildAutomation/validate_params.py
+    - echo Building {{ netcodeProject[0] }} project with Unity version of %UNITY_VERSION%, Scripting backend %SCRIPTING_BACKEND_IL2CPP_MONO%, Burst %BURST_ON_OFF% for platform %PLATFORM_WIN64_MAC_ANDROID%
+
+    # Clone the external project repository into a specific directory. Notice that branch is also specified.
+    - git clone --single-branch --branch {{ netcodeProject[1].branch }} {{ netcodeProject[1].GithubRepo }} C:/ClonedProject
+
+    # Modify the external project's manifest to use the local N4E package from current branch on which this Yamato job is running. (requires python that should be preinstalled in the image)
+    - python Tools/CI/scripts/BuildAutomation/manifest_update.py --manifest-path C:/ClonedProject/{{ netcodeProject[1].manifestPath }} --local-package-path %YAMATO_SOURCE_DIR%/com.unity.netcode.gameobjects
+
+    # Run python script to update ProjectSettings.asset in order to connect the project to Unity Services/set proper values.
+    # Notice that if a project has this already set up then in theory we don't need to run this script.
+    - python Tools/CI/scripts/BuildAutomation/connect_services.py --project-settings-path C:/ClonedProject/{{ netcodeProject[1].projectPath }}/ProjectSettings/ProjectSettings.asset
+
+    # Enable or disable Burst compilation. This step is specific to Netcode package (or any package that uses Burst)
+    - IF "%BURST_ON_OFF%"=="on" (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --enable-burst --project-path C:/ClonedProject/{{ netcodeProject[1].projectPath }})
+      ELSE (python Tools/CI/scripts/BuildAutomation/disable-enable-burst.py --disable-burst --project-path C:/ClonedProject/{{ netcodeProject[1].projectPath }})
+
+    # Download the Unity Editor version specified in the UNITY_VERSION variable. Il2cpp component is downloaded only if the SCRIPTING_BACKEND_IL2CPP_MONO is set to "il2cpp".
+    # TODO: we could download components only if needed
+    - unity-downloader-cli --fast --wait -u %UNITY_VERSION% -p C:/TestingEditor -c Editor -c il2cpp -c Android -c macOS
+
+    # Add BuilderScript.cs to the project so we can modify and build the project using Unity Editor.
+    # This is a bit tricky step, notice that we also need to include proper assembly definition in order for those scripts to compile properly.
+    # TODO: the asmdef file can be simplified
+    - python Tools/CI/scripts/BuildAutomation/FileCopy.py "C:/ClonedProject/{{ netcodeProject[1].projectPath }}"
+
+    # Build the project using Unity Editor. This will call the given static BuilderScripts method.
+    # Ideally, it would be nice to parametrize the BuilderScripts (for example to pass scripting backend as parameter) but -executeMethod only calls static methods without parameters so for now we will have multiple configurations
+    # Notice that for Android platform even if mono is selected, il2cpp will be used since mono is not supported for Android builds.
+    - IF "%PLATFORM_WIN64_MAC_ANDROID%"=="win64" (
+        IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
+        ) ELSE (
+          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget win64 -executeMethod BuilderScripts.BuildWinMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
+        )
+      )
+      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="mac" (
+          IF "%SCRIPTING_BACKEND_IL2CPP_MONO%"=="il2cpp" (
+            C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
+          ) ELSE (
+            C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget osx -executeMethod BuilderScripts.BuildMacMono -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
+          )
+      )
+      ELSE IF "%PLATFORM_WIN64_MAC_ANDROID%"=="android" (
+          C:/TestingEditor/Unity.exe -projectPath C:/ClonedProject/{{ netcodeProject[1].projectPath }} -buildTarget android -executeMethod BuilderScripts.BuildAndroidIl2cpp -batchmode -logFile ./artifacts/UnityLog.txt -automated -crash-report-folder ./artifacts/CrashArtifacts -quit
+      )
+
+    # Because of this we need to ensure that all files are copied to the source directory.
+    # TODO: this can be omitted if I can somehow build the project in the source directory (YAMATO_SOURCE_DIR) instead of C:/CompetitiveAction
+    - python -c "import os; os.makedirs('./build', exist_ok=True)" # --> Create the build directory if it doesn't exist
+    - python -c "import shutil; shutil.copytree('C:/ClonedProject/{{ netcodeProject[1].projectPath }}/build', './build', dirs_exist_ok=True)" # --> Copy the build directory to the source directory (YAMATO_SOURCE_DIR). Remember to copy entire directory and not only exe file
+
+  artifacts:
+    logs:
+      paths:
+        - '*.log'
+        - '*.xml'
+        - artifacts/**/*
+    players:
+      paths:
+        - build/**/*
+{% endfor -%}
