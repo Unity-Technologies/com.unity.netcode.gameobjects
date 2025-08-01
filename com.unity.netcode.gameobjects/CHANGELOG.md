@@ -10,11 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Added
+
 ### Fixed
 
 - Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
 
 ### Changed
+
 
 ## [1.14.0] - 2025-07-21
 

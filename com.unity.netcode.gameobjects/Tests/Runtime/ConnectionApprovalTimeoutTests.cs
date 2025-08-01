@@ -55,12 +55,19 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
+        private MessageCatcher<ConnectionRequestMessage> m_ConnectionRequestCatcher;
+        private MessageCatcher<ConnectionApprovedMessage> m_ConnectionApprovedCatcher;
         protected override IEnumerator OnStartedServerAndClients()
         {
+            m_ClientStopped = false;
+            m_ServerStopped = false;
+            m_ClientNetworkManagers[0].OnClientStopped += OnClientStopped;
+            m_ServerNetworkManager.OnServerStopped += OnServerStopped;
             if (m_ApprovalFailureType == ApprovalTimedOutTypes.ServerDoesNotRespond)
             {
                 // We catch (don't process) the incoming approval message to simulate the server not sending the approved message in time
-                m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(new MessageCatcher<ConnectionApprovedMessage>(m_ClientNetworkManagers[0]));
+                m_ConnectionApprovedCatcher = new MessageCatcher<ConnectionApprovedMessage>(m_ClientNetworkManagers[0], m_EnableVerboseDebug);
+                m_ClientNetworkManagers[0].ConnectionManager.MessageManager.Hook(m_ConnectionApprovedCatcher);
                 m_ExpectedLogMessage = new Regex("Timed out waiting for the server to approve the connection request.");
                 m_LogType = LogType.Log;
             }
@@ -68,7 +75,8 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // We catch (don't process) the incoming connection request message to simulate a transport connection but the client never
                 // sends (or takes too long to send) the connection request.
-                m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new MessageCatcher<ConnectionRequestMessage>(m_ServerNetworkManager));
+                m_ConnectionRequestCatcher = new MessageCatcher<ConnectionRequestMessage>(m_ServerNetworkManager, m_EnableVerboseDebug);
+                m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(m_ConnectionRequestCatcher);
 
                 // For this test, we know the timed out client will be Client-1
                 m_ExpectedLogMessage = new Regex("Server detected a transport connection from Client-1, but timed out waiting for the connection request message.");
@@ -98,6 +106,43 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(0, m_ServerNetworkManager.ConnectionManager.PendingClients.Count, $"Expected no pending clients when there were {m_ServerNetworkManager.ConnectionManager.PendingClients.Count} pending clients!");
             Assert.True(!m_ClientNetworkManagers[0].LocalClient.IsApproved, $"Expected the client to not have been approved, but it was!");
+
+            if (m_ApprovalFailureType == ApprovalTimedOutTypes.ServerDoesNotRespond)
+            {
+                m_ConnectionApprovedCatcher.ClearMessages();
+            }
+            else
+            {
+                m_ConnectionRequestCatcher.ClearMessages();
+            }
+
+            if (!m_ClientStopped)
+            {
+                m_ClientNetworkManagers[0].Shutdown();
+            }
+
+            if (!m_ServerStopped)
+            {
+                m_ServerNetworkManager.Shutdown();
+            }
+
+            yield return WaitForConditionOrTimeOut(() => m_ClientStopped && m_ServerStopped);
+            AssertOnTimeout($"Timed out waiting for the client or server to stop!");
         }
+
+        private bool m_ClientStopped;
+        private void OnClientStopped(bool obj)
+        {
+            m_ClientNetworkManagers[0].OnClientStopped -= OnClientStopped;
+            m_ClientStopped = true;
+        }
+
+        private bool m_ServerStopped;
+        private void OnServerStopped(bool obj)
+        {
+            m_ServerNetworkManager.OnServerStopped -= OnServerStopped;
+            m_ServerStopped = true;
+        }
+
     }
 }

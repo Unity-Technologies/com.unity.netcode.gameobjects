@@ -95,7 +95,8 @@ namespace Unity.Netcode.EditorTests
                             for (int i = 0; i < 4; i++)
                             {
                                 var currentByte = batchData.GetUnsafePtr()[i];
-                                batchData.WriteByteSafe((byte)(currentByte == 0 ? 1 : 0));
+                                currentByte = (byte)((currentByte + 1) % 255);
+                                batchData.WriteByteSafe(currentByte);
                                 MessageQueue.Add(batchData.ToArray());
                             }
                             break;
