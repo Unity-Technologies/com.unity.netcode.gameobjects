@@ -4,17 +4,7 @@ Netcode for GameObjects (Netcode) provides built-in support for Object Pooling, 
 
 See [Introduction to Object Pooling](https://learn.unity.com/tutorial/introduction-to-object-pooling) to learn more about the importance of pooling objects.
 
-## NetworkPrefabInstanceHandler
-
-You can register your own spawn handlers by including the `INetworkPrefabInstanceHandler` interface and registering with the `NetworkPrefabHandler`.
-```csharp
-    public interface INetworkPrefabInstanceHandler
-    {
-        NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation);
-        void Destroy(NetworkObject networkObject);
-    }
-```
-Netcode will use the `Instantiate` and `Destroy` methods in place of default spawn handlers for the `NetworkObject` used during spawning and despawning.  Because the message to instantiate a new `NetworkObject` originates from a Host or Server, both won't have the Instantiate method invoked. All clients (excluding a Host) will have the instantiate method invoked if the `INetworkPrefabInstanceHandler` implementation is  registered with `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`) and a Host or Server spawns the registered/associated `NetworkObject`.
+To learn how to override the default Netcode destroy and spawn handlers, see the [Network prefab handler](./network-prefab-handler.md).
 
 <!-- Commenting this out until we can get external code references working
 
