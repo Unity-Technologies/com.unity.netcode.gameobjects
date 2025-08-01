@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -172,7 +171,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// <see cref="AddDisconnectEventMap"/> provides you with the ability to register the transport's disconnect event types with the local equivalent.
         /// </remarks>
-        public enum DisconnectEvents : byte
+        public enum DisconnectEvents
         {
             /// <summary>
             /// If transport has mapped its disconnect events, this event signifies that the transport closed the connection due to a locally invoked shutdown.
@@ -219,98 +218,52 @@ namespace Unity.Netcode
         /// </summary>
         public string DisconnectEventMessage { get; private set; }
 
-        private Dictionary<byte, DisconnectEvents> m_DisconnectEventMap = new Dictionary<byte, DisconnectEvents>();
-        private Dictionary<DisconnectEvents, string> m_DisconnectEventMessageMap = new Dictionary<DisconnectEvents, string>();
-
         /// <summary>
         /// This should be invoked by the <see cref="NetworkTransport"/> derived class when a transport level disconnect event occurs.<br />
-        /// If there is a map for the specific transport event id, then <see cref="DisconnectEvent"/> will be set to the equivalent <see cref="DisconnectEvents"/> value.
+        /// It is up to the <see cref="NetworkTransport"/> derived class to create a map between the transport's disconnect events and the
+        /// pre-defined <see cref="DisconnectEvents"/> enum values.
         /// </summary>
-        /// <param name="disconnectEventId">The transport's disconnect event identifer.</param>
-        /// <param name="messageOverride">Optional message to override any existing registered one for the transport specific disconnection event identifier.</param>
-        public void SetDisconnectEvent(byte disconnectEventId, string messageOverride = null)
-        {
-            if (m_DisconnectEventMap.ContainsKey(disconnectEventId))
-            {
-                DisconnectEvent = m_DisconnectEventMap[disconnectEventId];
-            }
-            else // If there are no maps, then this will always report just disconnected.
-            {
-                DisconnectEvent = DisconnectEvents.Disconnected;
-            }
-            DisconnectEventMessage = string.Empty;
-            if (messageOverride != null)
-            {
-                DisconnectEventMessage = messageOverride;
-            }
-            else if (m_DisconnectEventMessageMap.ContainsKey(DisconnectEvent))
-            {
-                DisconnectEventMessage = m_DisconnectEventMessageMap[DisconnectEvent];
-            }
-        }
-
-        internal void SetDisconnectEvent(DisconnectEvents disconnectEvent, string message = null)
+        /// <param name="disconnectEvent">The <see cref="DisconnectEvents"/> type to set.</param>
+        /// <param name="message">An optional message override.</param>
+        protected void SetDisconnectEvent(DisconnectEvents disconnectEvent, string message = null)
         {
             DisconnectEvent = disconnectEvent;
             DisconnectEventMessage = string.Empty;
+
             if (message != null)
             {
                 DisconnectEventMessage = message;
             }
-            else if (m_DisconnectEventMessageMap.ContainsKey(disconnectEvent))
+            else
             {
-                DisconnectEventMessage = m_DisconnectEventMessageMap[disconnectEvent];
+                DisconnectEventMessage = OnGetDisconnectEventMessage(disconnectEvent);
             }
         }
 
         /// <summary>
-        /// Adds a map between the <see cref="DisconnectEvents"/> value and the transports equivalent event identifier.
+        /// Override this method to provide additional information about the disconnection event.
         /// </summary>
-        /// <param name="disconnectEvents">The <see cref="DisconnectEvents"/> value to be mapped.</param>
-        /// <param name="targetEventId">The transport's equivalent event identifier value.</param>
-        /// <param name="message">Optional message to use for this disconnect event.</param>
-        protected void AddDisconnectEventMap(DisconnectEvents disconnectEvents, byte targetEventId, string message = null)
+        /// <param name="disconnectEvent">The disconnect event to get from the <see cref="NetworkTransport"/> derived class.</param>
+        /// <returns><see cref="string.Empty"/> as a default or if overridden the <see cref="string"/> returned.</returns>
+        protected virtual string OnGetDisconnectEventMessage(DisconnectEvents disconnectEvent)
         {
-            if (!m_DisconnectEventMap.ContainsKey(targetEventId))
-            {
-                m_DisconnectEventMap.Add(targetEventId, disconnectEvents);
-            }
-
-            if (message != null && !m_DisconnectEventMessageMap.ContainsKey(disconnectEvents))
-            {
-                m_DisconnectEventMessageMap.Add(disconnectEvents, message);
-            }
+            return string.Empty;
         }
 
         /// <summary>
-        /// Override this method to create a disconnect event mapping table that will translate the transport's equivalent for each enum in <see cref="DisconnectEvents"/>.<br />
-        /// This method is invoked during <see cref="NetworkConnectionManager.Initialize(NetworkManager)"/> just after <see cref="Initialize(NetworkManager)"/> has been invoked.
+        /// Invoked when the local <see cref="NetworkManager"/> forces the transport to close a remote connection.
         /// </summary>
-        /// <remarks>
-        /// You can use <see cref="AddDisconnectEventMap"/> to register a map between <see cref="DisconnectEvents"/> and the transport's disconnect event equivalent.
-        /// </remarks>
-        protected virtual void OnCreateDisconnectEventMap()
-        {
-
-        }
-
-        internal void CreateDisconnectEventMap()
-        {
-            DisconnectEvent = DisconnectEvents.Disconnected;
-            DisconnectEventMessage = string.Empty;
-            OnCreateDisconnectEventMap();
-        }
-
-        internal void CleanDisconnectEventMap()
-        {
-            DisconnectEvent = DisconnectEvents.Disconnected;
-            m_DisconnectEventMap.Clear();
-            m_DisconnectEventMessageMap.Clear();
-        }
-
         internal void ClosingRemoteConnection()
         {
             SetDisconnectEvent(DisconnectEvents.ClosedRemoteConnection);
+        }
+
+        /// <summary>
+        /// Invoked just before the transport is shutdown.
+        /// </summary>
+        internal void ShuttingDown()
+        {
+            SetDisconnectEvent(DisconnectEvents.TransportShutdown);
         }
     }
 

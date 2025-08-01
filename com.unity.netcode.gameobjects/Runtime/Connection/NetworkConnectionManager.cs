@@ -1459,7 +1459,6 @@ namespace Unity.Netcode
                 Transport.NetworkMetrics = NetworkManager.MetricsManager.NetworkMetrics;
                 Transport.OnTransportEvent += HandleNetworkEvent;
                 Transport.Initialize(networkManager);
-                Transport.CreateDisconnectEventMap();
             }
         }
 
@@ -1470,9 +1469,9 @@ namespace Unity.Netcode
         {
             if (Transport && IsListening)
             {
+                Transport.ShuttingDown();
                 var clientId = NetworkManager ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
                 var transportId = ClientIdToTransportId(clientId);
-                Transport.SetDisconnectEvent(NetworkTransport.DisconnectEvents.TransportShutdown);
                 GenerateDisconnectInformation(clientId, transportId, $"{nameof(NetworkConnectionManager)} was shutdown.");
             }
 
@@ -1526,7 +1525,6 @@ namespace Unity.Netcode
                 try
                 {
                     Transport?.DisconnectLocalClient();
-                    Transport?.CleanDisconnectEventMap();
                 }
                 catch (Exception ex)
                 {
@@ -1556,7 +1554,6 @@ namespace Unity.Netcode
                 var transport = NetworkManager.NetworkConfig?.NetworkTransport;
                 if (transport != null)
                 {
-                    transport.CleanDisconnectEventMap();
                     transport.Shutdown();
                     if (NetworkManager.LogLevel <= LogLevel.Developer)
                     {
