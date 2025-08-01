@@ -57,7 +57,7 @@ The `OnReanticipate` event can also be used for other purposes, such as "forward
 
 ## `OnReanticipate` event
 
-`NetworkBehaviour` has a virtual method called `OnReanticipate`. When server data is received for an `AnticipatedNetworkVariable` or `AnticipatedNetworkTransform`, it's rolled back immediately, setting its anticipated state. During each frame in which a server update for any `AnticipatedNetworkVariable` or `AnticipatedNetworkTransform` is received (after **all** such operations have been performed and **all** objects are rolled back to their server state), each `NetworkObject` that had any rollbacks calls the `OnReanticipate` method on **all** of its `NetworkBehaviour`s.
+NetworkBehaviour has a virtual method called `OnReanticipate`. When server data is received for an `AnticipatedNetworkVariable` or `AnticipatedNetworkTransform`, it's rolled back immediately, setting its anticipated state. During each frame in which a server update for any `AnticipatedNetworkVariable` or `AnticipatedNetworkTransform` is received (after **all** such operations have been performed and **all** objects are rolled back to their server state), each NetworkObject that had any rollbacks calls the `OnReanticipate` method on **all** of its NetworkBehaviours.
 
 If you need to do any reanticipation to update the anticipated state of any of these variables or transforms, this method is where you will do it. `OnReanticipate` takes as its only parameter a `double` providing the amount of time, in seconds, that the object has been rolled back (which corresponds to the round-trip time of the current batch of responses received from the server). This value can be used to calculate the difference between what the server value is, and what the anticipated client value should be, and apply that change.
 
@@ -65,7 +65,7 @@ However, note that not all variables and transforms on that object may have rece
 
 ### Global `OnReanticipate`
 
-In addition to the `NetworkBehaviour`'s `OnReanticipate` method, `NetworkManager` also has a callback that can be subscribed to for global reanticipation. This is useful if you need to run your reanticipation in a more global way, such as if you need to run it step-wise (say, anticipating one frame at a time) and need all objects to complete one step before any of them begin the second one. This callback receives the same `lastRoundTripTime` value as the `NetworkBehaviour` method, and is called after all of the `NetworkBehaviour` methods have been called.
+In addition to the NetworkBehaviour's `OnReanticipate` method, NetworkManager also has a callback that can be subscribed to for global reanticipation. This is useful if you need to run your reanticipation in a more global way, such as if you need to run it step-wise (say, anticipating one frame at a time) and need all objects to complete one step before any of them begin the second one. This callback receives the same `lastRoundTripTime` value as the NetworkBehaviour method, and is called after all of the NetworkBehaviour methods have been called.
 
 > [!NOTE]
 >If you want to implement a full client-side prediction model in your game, the global OnReanticipate callback is likely the ideal place to incorporate your rollback and replay logic. The details of implementing this, however, are left up to users. Implementing a full, production-ready prediction loop is a complex topic and recommended for advanced users only.

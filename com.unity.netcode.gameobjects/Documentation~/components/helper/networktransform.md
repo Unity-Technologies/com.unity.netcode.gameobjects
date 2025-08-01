@@ -1,6 +1,6 @@
 # NetworkTransform
 
-[NetworkTransform](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkTransform.html) is a concrete class that inherits from [NetworkBehaviour](../foundational/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
+[NetworkTransform](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkTransform.html) is a concrete class that inherits from [NetworkBehaviour](../core/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
 
 The synchronization of a GameObject's Transform is a key netcode task, and usually proceeds in the following order:
 
@@ -20,7 +20,7 @@ There are other considerations when synchronizing Transform values, however, suc
 
 ## Add a NetworkTransform component to a GameObject
 
-Because a NetworkTransform component is derived from the NetworkBehaviour class, it has many of the [same requirements](../foundational/networkbehaviour.md). For example, when adding a NetworkTransform component to a GameObject, it should be added to the same or any hierarchy generation relative to the `NetworkObject` component.
+Because a NetworkTransform component is derived from the NetworkBehaviour class, it has many of the [same requirements](../core/networkbehaviour.md). For example, when adding a NetworkTransform component to a GameObject, it should be added to the same or any hierarchy generation relative to the NetworkObject component.
 
 In the following image both NetworkTransform and NetworkObject components are on the same GameObject:
 
@@ -33,7 +33,7 @@ Alternatively, the parent GameObject can have multiple children where any child 
 Theoretically, you can have a NetworkTransform on every child object of a 100 leaf deep hierarchy. However, it's recommended to exercise caution with the amount of nested NetworkTransforms in a network prefab, particularly if there will be many instances of the network prefab.
 
 > [!NOTE]
-> Generally, as long as there's at least one [NetworkObject](../foundational/networkobject.md) at the same GameObject hierarchy level or above, you can attach a NetworkTransform component to a GameObject. You could have a single root-parent GameObject that has a NetworkObject component and under the root-parent several levels of nested child GameObjects that all have NetworkTransform components attached to them. Each child GameObject doesn't require a NetworkObject component in order for the respective NetworkTransform component to synchronize properly.
+> Generally, as long as there's at least one [NetworkObject](../core/networkobject.md) at the same GameObject hierarchy level or above, you can attach a NetworkTransform component to a GameObject. You could have a single root-parent GameObject that has a NetworkObject component and under the root-parent several levels of nested child GameObjects that all have NetworkTransform components attached to them. Each child GameObject doesn't require a NetworkObject component in order for the respective NetworkTransform component to synchronize properly.
 
 ### Nesting NetworkTransforms
 
@@ -56,7 +56,7 @@ Some NetworkTransform properties are automatically synchronized by the authorita
 
 #### Properties that cause a full state update
 
-The following are a list of `NetworkTransform` properties that will cause a full state update (effectively a teleport) when changed during runtime by the authority instance:
+The following are a list of NetworkTransform properties that will cause a full state update (effectively a teleport) when changed during runtime by the authority instance:
 
 - [UseUnreliableDeltas](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseUnreliableDeltas)
 - [InLocalSpace](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_InLocalSpace)
@@ -89,7 +89,7 @@ You can have [nested NetworkTransforms](#nesting-networktransforms) as long as t
 
 If you don't plan on changing the Transform's scale after the initial synchronization (that occurs when joining a network session or when a network prefab instance is spawned for the first time), then disabling the X, Y, and Z properties for __Scale__ synchronization removes some additional processing overhead per instance. However, if you have a nested NetworkTransform and want to apply a unique scale (per instance) that's applied to that nested NetworkTransform's Transform when it's first spawned, then the adjusted scale won't be synchronized.
 
-Fortunately, the authority of the `NetworkTransform` instance can make changes to any of the __Axis to Synchronize__ properties during runtime and non-authoritative instances will receive updates for the axis marked for synchronization.
+Fortunately, the authority of the NetworkTransform instance can make changes to any of the __Axis to Synchronize__ properties during runtime and non-authoritative instances will receive updates for the axis marked for synchronization.
 
 When disabling an axis to be synchronized for performance purposes, you should always consider that NetworkTransform won't send updates as long as the axis in question doesn't have a change that exceeds its [threshold](#thresholds) value. So, taking the scale example into consideration, it can be simpler to leave those axes enabled if you only ever plan on changing them once or twice because the CPU cost for checking that change isn't as expensive as the serialization and state update sending process. The associated axis threshold values can make the biggest impact on frequency of sending state updates that, in turn, will reduce the number of state updates sent per second at the cost of losing some motion resolution.
 
@@ -166,7 +166,7 @@ When unreliable state updates are enabled, NetworkTransform instances are assign
 
 By default, NetworkTransform synchronizes the Transform of an object in world space. The __In Local Space__ configuration option allows you to change to synchronizing the transform in local space instead. A child's local space axis values (position and rotation primarily) are always relative offsets from the parent transform, where a child's world space axis values include the parent's axis values. Where a transform with no parent really is "parented" to the root of the scene hierarchy which results in its world and local space positions to always be the same.
 
-Enabling the __In Local Space__ property on a parented NetworkTransform can improve the synchronization of the transform when the object gets re-parented because the re-parenting won't change the local space Transform of the object (but does change the world space position) and you only need to update motion of the parented `NetworkTransform` relative to its parent (if the parent is moving and the child has no motion then there are no delta states to detect for the child but the child moves with the parent).
+Enabling the __In Local Space__ property on a parented NetworkTransform can improve the synchronization of the transform when the object gets re-parented because the re-parenting won't change the local space Transform of the object (but does change the world space position) and you only need to update motion of the parented NetworkTransform relative to its parent (if the parent is moving and the child has no motion then there are no delta states to detect for the child but the child moves with the parent).
 
 :::info
 The authority instance does synchronize changes to the __In Local Space__ property. As such, you can make adjustments to this property on the authoritative side during runtime and the non-authoritative instances will automatically be updated.

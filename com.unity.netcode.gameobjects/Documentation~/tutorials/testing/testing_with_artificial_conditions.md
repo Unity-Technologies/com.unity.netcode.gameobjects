@@ -78,7 +78,7 @@ To combine the benefits of Simulator Tools Window with ParrelSync - create or op
 
 Debug builds do allow for the possibility of applying artificial network conditions to the Unity Transport driver, but the Simulator Tools window itself only sets these values in the Editor.
 
-To set the latency, jitter and packet-loss percentage values for develop builds we need the following code to execute before `NetworkManager` attempts to connect (changing the values of the parameters as desired):
+To set the latency, jitter and packet-loss percentage values for develop builds we need the following code to execute before NetworkManager attempts to connect (changing the values of the parameters as desired):
 
 ```
 #if DEVELOPMENT_BUILD && !UNITY_EDITOR

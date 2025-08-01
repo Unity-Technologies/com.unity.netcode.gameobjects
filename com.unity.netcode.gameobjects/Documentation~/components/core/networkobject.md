@@ -1,11 +1,11 @@
 # NetworkObject
 
-A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode. NetworkObjects are session-mode agnostic and used in both [client-server](../terms-concepts/client-server.md) and [distributed authority](../../terms-concepts/distributed-authority.md) contexts.
+A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode. NetworkObjects are session-mode agnostic and used in both [client-server](../../terms-concepts/client-server.md) and [distributed authority](../../terms-concepts/distributed-authority.md) contexts.
 
 Netcode for GameObjects' high level components, [the RPC system](../../advanced-topics/messaging-system.md), [object spawning](../../basics/object-spawning.md), and [`NetworkVariable`](../../basics/networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
 
   1. NetworkObject
-  2. [`NetworkBehaviour`](networkbehaviour.md)
+  2. [NetworkBehaviour](networkbehaviour.md)
 
 NetworkObjects require the use of specialized [`NetworkObjectReference`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObjectReference.html) structures before you can serialize and use them with RPCs and `NetworkVariable`s
 
@@ -70,7 +70,7 @@ To see if the server owns the NetworkObject, you can check the [`NetworkBehaviou
 
 Network prefabs are registered to a `NetworkPrefabsList` object (a type of `ScriptableObject`). By default, a default prefabs list containing every network prefab in your project.
 
-However, when you want to limit which prefabs are available (for example, to reduce memory usage), you can disable this behavior in **Project Settings** > **Netcode For GameObjects** > **Project Settings**. You can also manually create a `NetworkPrefabsList` by right-clicking in the assets view and selecting **Create** > **Netcode** > **Network Prefabs List** and adding your prefabs to it. That prefab list can then be assigned to a `NetworkManager` to allow that `NetworkManager` to create those prefabs.
+However, when you want to limit which prefabs are available (for example, to reduce memory usage), you can disable this behavior in **Project Settings** > **Netcode For GameObjects** > **Project Settings**. You can also manually create a `NetworkPrefabsList` by right-clicking in the assets view and selecting **Create** > **Netcode** > **Network Prefabs List** and adding your prefabs to it. That prefab list can then be assigned to a NetworkManager to allow that NetworkManager to create those prefabs.
 
 > [!NOTE]
 > You can only have one NetworkObject at the root of a prefab. Don't create prefabs with nested `NetworkObjects`.

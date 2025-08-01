@@ -97,9 +97,9 @@ To send to a different target, you must define an additional parameter of type `
 
 #### Built-in targets
 
-`NetworkManager` and `NetworkBehaviour` both provide reference to a field called `RpcTarget`, which provides references to the various override targets you can pass in. The list mirrors the list of targets provided in the `SendTo` enum, and has the same behavior as described in the table above.
+NetworkManager and NetworkBehaviour both provide reference to a field called `RpcTarget`, which provides references to the various override targets you can pass in. The list mirrors the list of targets provided in the `SendTo` enum, and has the same behavior as described in the table above.
 
-The `RpcTarget` object is shared by all `NetworkBehaviours` attached to a given `NetworkManager`, so you can get access to this via any `NetworkBehaviour` or via the `NetworkManager` object itself.
+The `RpcTarget` object is shared by all `NetworkBehaviours` attached to a given NetworkManager, so you can get access to this via any NetworkBehaviour or via the NetworkManager object itself.
 
 ```csharp
 public class SomeNetworkBehaviour : NetworkBehaviour

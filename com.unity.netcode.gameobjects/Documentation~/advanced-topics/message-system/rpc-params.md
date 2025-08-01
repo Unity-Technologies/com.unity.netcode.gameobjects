@@ -29,7 +29,7 @@ For those accustomed to the legacy `ServerRpc` and `ClientRpc` parameters, there
     - `Defer`: Invokes the RPC locally on the next frame.
     - `SendImmediate` (default): Immediately invokes the RPC (at the current call stack) locally.
 
-- Changing destination of an RPC is done using the properties and methods of `RpcTarget` (each `NetworkBehaviour` contains a reference to the shared `RpcTarget` object, as does `NetworkManager`.) This allows conveniently selecting various common targets (Server, NotServer, Owner, NotOwner, etc), as well as custom client lists using `RpcTarget.Single()` (to send to one client ID), `RpcTarget.Group()` (to send to multiple client IDs),  and`RpcTarget.Not()` (to send to everyone except for the specified client ID or list of client IDs)
+- Changing destination of an RPC is done using the properties and methods of `RpcTarget` (each NetworkBehaviour contains a reference to the shared `RpcTarget` object, as does NetworkManager.) This allows conveniently selecting various common targets (Server, NotServer, Owner, NotOwner, etc), as well as custom client lists using `RpcTarget.Single()` (to send to one client ID), `RpcTarget.Group()` (to send to multiple client IDs),  and`RpcTarget.Not()` (to send to everyone except for the specified client ID or list of client IDs)
 - `RpcParams` do not allow overriding the destination at runtime unless either the default target is `SendTo.SpecifiedInParams` or `AllowTargetOverride = true` is passed to the attribute.
 
 ```csharp

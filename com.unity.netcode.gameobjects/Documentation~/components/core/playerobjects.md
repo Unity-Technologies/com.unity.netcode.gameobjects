@@ -8,7 +8,7 @@ PlayerObjects are instantiated by reference to a player prefab, which defines th
 
 If you're using `UnityEngine.InputSystem.PlayerInput` or `UnityEngine.PhysicsModule.CharacterController` components on your player prefab(s), you should disable them by default and only enable them for the local client's PlayerObject. Otherwise, you may get events from the most recently instantiated player prefab instance, even if it isn't the local client instance.
 
-You can disable these components in the **Inspector** view on the prefab itself, or disable them during `Awake` in one of your `NetworkBehaviour` components. Then you can enable the components only on the owner's instance using code like the example below:
+You can disable these components in the **Inspector** view on the prefab itself, or disable them during `Awake` in one of your NetworkBehaviour components. Then you can enable the components only on the owner's instance using code like the example below:
 
 ```csharp
 PlayerInput m_PlayerInput;

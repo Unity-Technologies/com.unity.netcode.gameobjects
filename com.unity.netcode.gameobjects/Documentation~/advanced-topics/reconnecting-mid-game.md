@@ -40,7 +40,7 @@ To implement automatic reconnection:
 
   - For example, you can use the `NetworkManager.OnClientDisconnectCallback` callback, or some other unique event depending on your game.
 
-- Ensure the `NetworkManager` shuts down before attempting any reconnection.
+- Ensure the NetworkManager shuts down before attempting any reconnection.
 
   - You can use the `NetworkManager.ShutdownInProgress` property to manage this.
 
@@ -58,7 +58,7 @@ To implement automatic reconnection:
 
 Depending on your game, you might want to add the following features as well:
 
-- Include multiple reconnection attempts in case of failure. You need to define the number of attempts, ensure that `NetworkManager` properly shuts down between each try, and reset the client's state (if needed).
+- Include multiple reconnection attempts in case of failure. You need to define the number of attempts, ensure that NetworkManager properly shuts down between each try, and reset the client's state (if needed).
 
 - Offer an option for players to cancel the reconnection process. This might be useful when there are a lot of reconnection attempts or when each try lasts a long duration.
 

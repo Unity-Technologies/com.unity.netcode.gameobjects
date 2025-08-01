@@ -1,8 +1,8 @@
 # About NetworkUpdateLoop
 
-Often there is a need to update netcode systems like RPC queue, transport IO, and others outside the standard `MonoBehaviour` event cycle.
+Often there is a need to update netcode systems like RPC queue, transport IO, and others outside the standard MonoBehaviour event cycle.
 
-The Network Update Loop infrastructure utilizes Unity's low-level Player Loop API allowing for registering `INetworkUpdateSystems` with `NetworkUpdate()` methods to be executed at specific `NetworkUpdateStages` which may be either before or after `MonoBehaviour`-driven game logic execution.
+The Network Update Loop infrastructure utilizes Unity's low-level Player Loop API allowing for registering `INetworkUpdateSystems` with `NetworkUpdate()` methods to be executed at specific `NetworkUpdateStages` which may be either before or after MonoBehaviour-driven game logic execution.
 
 Typically you will interact with `NetworkUpdateLoop` for registration and `INetworkUpdateSystem` for implementation. Systems such as network tick and future features (such as network variable snapshotting) will rely on this pipeline.
 
