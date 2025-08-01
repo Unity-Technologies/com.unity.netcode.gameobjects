@@ -1,6 +1,6 @@
 # Object spawning
 
-In Unity, you typically create a new game object using the `Instantiate` function. Creating a game object with `Instantiate` will only create that object on the local machine. `Spawning` in Netcode for GameObjects (Netcode) means to instantiate and/or spawn the object that is synchronized between all clients by the server.
+In Unity, you typically create a new game object using the `Instantiate` function. Creating a game object with `Instantiate` will only create that object on the local machine. `Spawning` in Netcode for GameObjects (Netcode) means to instantiate and/or spawn the object that is synchronized between all game clients.
 
 ## Network Prefabs
 
@@ -26,14 +26,16 @@ There are four steps to registering a network Prefab with a `NetworkManager`:
 
 ### Spawning a Network Prefab (Overview)
 
-Netcode uses a server authoritative networking model so spawning netcode objects can only be done on a server or host. To spawn a network prefab, you must first create an instance of the network Prefab and then invoke the spawn method on the `NetworkObject` component of the instance you created.
+When using a [server authoritative networking model](../terms-concepts/authority/#server-authority) only the server or host can spawn netcode objects. Under a [distributed authority networking model](..terms-concepts/authority/#distributed-authority), any game client can spawn netcode objects. The game client that spawned the network object then becomes the [authority](../terms-concepts/authority.md) of that object.
+
+To spawn a network prefab, you must first create an instance of the network Prefab and then invoke the spawn method on the `NetworkObject` component of the instance you created.
 _In most cases, you will want to keep the `NetworkObject` component attached to the root `GameObject` of the network prefab._
 
-By default a newly spawned network Prefab instance is owned by the server unless otherwise specified.
+By default a newly spawned network Prefab instance is owned by the authority unless otherwise specified.
 
 See [Ownership](networkobject.md#ownership) for more information.
 
-The following is a basic example of how to spawn a network Prefab instance (with the default server ownership):
+The following is a basic example of how to spawn a network Prefab instance:
 
 ```csharp
 var instance = Instantiate(myPrefab);
@@ -42,6 +44,7 @@ instanceNetworkObject.Spawn();
 ```
 
 The `NetworkObject.Spawn` method takes 1 optional parameter that defaults to `true`:
+
 ```csharp
 public void Spawn(bool destroyWithScene = true);
 ```
@@ -54,11 +57,13 @@ When you set the destroyWithScene property to `false` it will be treated the sam
 > You might find it useful to add a `GameObject` property in a `NetworkBehaviour`-derived component to use when assigning a network prefab instance for dynamically spawning. You need to make sure to instantiate a new instance **prior** to spawning. If you attempt to just spawn the actual network prefab instance it can result in unexpected results.
 
 ### Taking Prefab Overrides Into Consideration
-Sometimes, you might want to make a simpler prefab instance to be spawned on server version the override for clients. You should take this into consideration when dynamically spawning a network prefab. If you're running as a host, you want the override to spawn since a host is both a server and a client. However, if you also want to have the ability to run as a dedicated server, you might want to spawn the source network prefab.
+
+Sometimes, you might want to use a different prefab instance on the authority compare to other clients. You should take this into consideration when dynamically spawning a network prefab. If you're running as a host, you want the override to spawn since a host is both a server and a client. However, if you also want to have the ability to run as a dedicated server, you might want to spawn the source network prefab.
 
 There are two ways you can accomplish this, as explained below.
 
 #### Get The Network Prefab Override First
+
 This option provides you with the overall view of getting the network prefab override, instantiating it, and then spawning it.
 
 ```csharp
@@ -66,15 +71,18 @@ var instance = Instantiate(NetworkManager.GetNetworkPrefabOverride(myPrefab));
 var instanceNetworkObject = instance.GetComponent<NetworkObject>();
 instanceNetworkObject.Spawn();
 ```
+
 In the above script, we get the prefab override using the `NetworkManager.GetNetworkPrefabOverride` method. Then we create an instance of the network prefab override, and finally we spawn the network prefab override instance's `NetworkObject`.
 
 #### Using InstantiateAndSpawn
+
 The second option is to leverage the `NetworkSpawnManager.InstantiateAndSpawn` method that handles whether or not to spawn an override for you. The below script is written as if it's being invoked within a `NetworkBehaviour`.
 
 ```csharp
 var networkObject = NetworkManager.SpawnManager.InstantiateAndSpawn(myPrefab, ownerId);
 ```
-We pass in the overridden source network prefab we want to have instantiated and spawned, and then it returns the instantiated and spawned `NetworkObject` of the spawned object. The default behavior of `InstantiateAndSpawn` is to spawn the override if running as a host and the original source prefab if running as a server.
+
+We pass in the overridden source network prefab we want to have instantiated and spawned, and then it returns the instantiated and spawned `NetworkObject` of the spawned object. The default behavior of `InstantiateAndSpawn` is to spawn the original source prefab if running as a server and the override otherwise.
 
 `InstantiateAndSpawn` has several parameters to provide more control over this process:
 
@@ -84,14 +92,15 @@ InstantiateAndSpawn(NetworkObject networkPrefab, ulong ownerClientId = NetworkMa
 
 Looking at the parameters, we can see it defaults to the server as the owner, ensures that the instantiated `NetworkObject` won't be destroyed if the scene is unloaded, is not spawned as a player, has a `forceOverride` parameter, and provides a way to set the position and rotation of the newly instantiated `NetworkObject`.
 
-The `forceOverride` parameter, when set to true, will use the override whether you're running as either server or host.
+The `forceOverride` parameter, when set to true, will always use the override.
 
+To override prefabs on non-authority game clients, see the [Network prefab handler](./network-prefab-handler.md).
 
 ## Destroying / Despawning
 
-By default, a spawned network Prefab instance that is destroyed on the server/host will be automatically destroyed on all clients.
+By default, a spawned network Prefab instance that is destroyed on the authority will be automatically destroyed on all clients.
 
-When a client disconnects, all network Prefab instances created during the network session will be destroyed on the client-side by default. If you don't want that to happen, set the `DontDestroyWithOwner` field on `NetworkObject` to true before despawning.
+When a client disconnects, all network Prefab instances dynamically created during the network session will be destroyed on the client-side by default. If you don't want that to happen, set the `DontDestroyWithOwner` field on `NetworkObject` to true before despawning.
 
 To do this at runtime:
 
@@ -108,9 +117,9 @@ As an alternative way, you can make the `NetworkObject.DontDestroyWithOwner` pro
 
 ### Despawning
 
-Only a server can despawn a `NetworkObject`, and the default despawn behavior is to destroy the associated GameObject. to despawn but not destroy a `NetworkObject`, you should call `NetworkObject.Despawn` and pass false as the parameter. Clients will always be notified and will mirror the despawn behavior. If you despawn and destroy on the server then all clients will despawn and then destroy the `GameObject` that the `NetworkObjet` component is attached to.
+Only the authority can despawn a `NetworkObject`, and the default despawn behavior is to destroy the associated GameObject. to despawn but not destroy a `NetworkObject`, you should call `NetworkObject.Despawn` and pass false as the parameter. Non-authority clients will always be notified and will mirror the despawn behavior. If you despawn and destroy on the authority then all other connected clients will despawn and then destroy the `GameObject` that the `NetworkObjet` component is attached to.
 
-On the client side, you should never call `Object.Destroy` on any `GameObject` with a `NetworkObject` component attached to it (this isn't supported and will cause an exception to be thrown). If you want to use a more client authority model, have the client with ownership invoke an RPC to defer the despawning on server side.
+On the non-authority side, you should never call `Object.Destroy` on any `GameObject` with a `NetworkObject` component attached to it (this isn't supported and will cause an exception to be thrown). To allow non-authority clients to destroy objects they do not own, have the relevant client invoke an RPC to defer the despawning on the authority side.
 
 The only way to despawn `NetworkObject` for a specific client is to use `NetworkObject.NetworkHide`.
 See: [Object Visibility](object-visibility.md) for more information on this.
@@ -136,8 +145,8 @@ This type of dynamically spawned `NetworkObject` typically is a simple wrapper c
 
         public override void OnNetworkSpawn()
         {
-            // Only the server spawns, clients will disable this component on their side
-            enabled = IsServer;
+            // Only the authority spawns, other clients will disable this component on their side
+            enabled = HasAuthority;
             if (!enabled || PrefabToSpawn == null)
             {
                 return;
@@ -156,7 +165,7 @@ This type of dynamically spawned `NetworkObject` typically is a simple wrapper c
 
         public override void OnNetworkDespawn()
         {
-            if (IsServer && DestroyWithSpawner && m_SpawnedNetworkObject != null && m_SpawnedNetworkObject.IsSpawned)
+            if (HasAuthority && DestroyWithSpawner && m_SpawnedNetworkObject != null && m_SpawnedNetworkObject.IsSpawned)
             {
                 m_SpawnedNetworkObject.Despawn();
             }
@@ -171,11 +180,11 @@ Consumable and/or items that can be picked up by a player or NPC(that is, a weap
 > While the NonPooledDynamicSpawner example is one of the simplest ways to spawn a NetworkObject, there is a memory allocation cost associated with instantiating and destroying the GameObject and all attached components. This design pattern can sometimes be all you need for the netcode game asset you are working with, and other times you might want to respawn/re-use the object instance. When performance is a concern and you want to spawn more than just one `NetworkObject` during the lifetime of the spawner or want to repeatedly respawn a single `NetworkObject`, the less proccessor and memory allocation intensive technique is to use [pooled dynamic spawning](#pooled-dynamic-spawning).
 
 > [!NOTE]
-> Really, when we use the term "non-pooled" more often than not we are referring to the concept that a `GameObject` will be instantiated on both the server and the clients each time an instance is spawned.
+> Really, when we use the term "non-pooled" more often than not we are referring to the concept that a `GameObject` will be instantiated on all game clients each time an instance is spawned.
 
 ### Pooled Dynamic Spawning
 
-Pooled dynamic spawning is when netcode objects (`GameObject` with one `NetworkObject` component) aren't destroyed on the server or the client when despawned. Instead, specific components are just disabled (or the `GameObject` itself) when a netcode object is despawned. A pooled dynamically spawned netcode object is typically instantiated during an already memory allocation heavy period of time (like when a scene is loaded or even at the start of your application before even establishing a network connection). Pooled dynamically spawned netcode objects are more commonly thought of as more than one netcode object that can be re-used without incurring the memory allocation and initialization costs. However, you might also run into scenarios where you need just one dynamically spawned netcode object to be treated like a pooled dynmically spawned netcode object.
+Pooled dynamic spawning is when netcode objects (`GameObject` with one `NetworkObject` component) aren't destroyed on game clients when despawned. Instead, specific components are just disabled (or the `GameObject` itself) when a netcode object is despawned. A pooled dynamically spawned netcode object is typically instantiated during an already memory allocation heavy period of time (like when a scene is loaded or even at the start of your application before even establishing a network connection). Pooled dynamically spawned netcode objects are more commonly thought of as more than one netcode object that can be re-used without incurring the memory allocation and initialization costs. However, you might also run into scenarios where you need just one dynamically spawned netcode object to be treated like a pooled dynmically spawned netcode object.
 
 Fortunately, Netcode for GameObjects provides you with a way to be in control over the instatiation and destruction process for one or many netcode objects by via the `INetworkPrefabInstanceHandler` interface. Any `INetworkPrefabInstanceHandler`implementation should be registered with the `NetworkPrefabHandler`(for multiple netcode objects see [Object Pooling](../advanced-topics/object-pooling.md)) to accomplish this.
 
@@ -193,7 +202,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkPrefabInstan
 
     private void Start()
     {
-        // Instantiate our instance when we start (for both clients and server)
+        // Instantiate our instance when we start (for all connected game clients)
         m_PrefabInstance = Instantiate(PrefabToSpawn);
 
         // Get the NetworkObject component assigned to the Prefab instance
@@ -219,7 +228,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkPrefabInstan
     }
 
     /// <summary>
-    /// Invoked only on clients and not server or host
+    /// Invoked only on non-authority clients
     /// INetworkPrefabInstanceHandler.Instantiate implementation
     /// Called when Netcode for GameObjects need an instance to be spawned
     /// </summary>
@@ -232,7 +241,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkPrefabInstan
     }
 
     /// <summary>
-    /// Client and Server side
+    /// Called on all game clients
     /// INetworkPrefabInstanceHandler.Destroy implementation
     /// </summary>
     public void Destroy(NetworkObject networkObject)
@@ -242,7 +251,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkPrefabInstan
 
     public void SpawnInstance()
     {
-        if (!IsServer)
+        if (!HasAuthority)
         {
             return;
         }
@@ -261,7 +270,7 @@ public class SinglePooledDynamicSpawner : NetworkBehaviour, INetworkPrefabInstan
         // INetworkPrefabInstanceHandler interface with the Prefab handler
         NetworkManager.PrefabHandler.AddHandler(PrefabToSpawn, this);
 
-        if (!IsServer || !SpawnPrefabAutomatically)
+        if (!HasAuthority || !SpawnPrefabAutomatically)
         {
             return;
         }
@@ -318,7 +327,7 @@ This reduces the complexity down to setting the SpawnedComponents `GameObject` t
 
 ## In-Scene Placed `NetworkObject`
 
-Any objects in the scene with active and spawned `NetworkObject` components will get automatically replicated by Netcode. There is no need to manually spawn them when scene management is enabled in the `NetworkManager`. In-scene placed `NetworkObjects` should typically be used like a "static" netcode object, where the netcode object is typically spawned upon the scene being loaded on the server-side and synchronized with clients once they finish loading the same scene.
+Any objects in the scene with active and spawned `NetworkObject` components will get automatically replicated by Netcode. There is no need to manually spawn them when scene management is enabled in the `NetworkManager`. In-scene placed `NetworkObjects` should typically be used like a "static" netcode object, where the netcode object is typically spawned upon the scene being loaded on the authority-side and synchronized with other clients once they finish loading the same scene.
 
 [Learn more about In-Scene Placed `NetworkObjects`](scenemanagement/inscene-placed-networkobjects.md)
 
