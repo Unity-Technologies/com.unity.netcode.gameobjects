@@ -10,6 +10,23 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added disconnection event notification handling capabilities where `NetworkTransport` derived custom transports can set the current disconnect event type (`NetworkTransport.DisconnectEvents`) that, if implemented, will provide more details on why the transport disconnected. (#3551)
+- Added protected method `NetworkTransport.SetDisconnectEvent` that a `NetworkTransport` derived custom transport can use to provide the disconnect event type that occurred. (#3551)
+- Added protected virtual method `NetworkTransport.OnGetDisconnectEventMessage` that, when overridden, a `NetworkTransport` derived custom transport can use to provide a customized extended message for each `NetworkTransport.DisconnectEvents` value. (#3551)
+
+### Fixed
+
+- Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
+- Fixed issue where `SendTo.NotMe` could cause an RPC to be delivered to the sender when connected to a live distributed authority session. (#3551)
+
+### Changed
+
+- Changed `UnityTransport` now handles setting the current disconnect notification type, via internal `UnityTransportNotificationHandler` class, while also providing extended informational messages for each disconnect event type. (#3551)
+
+## [Unreleased] (2.5.0)
+
+### Added
+
 - Added serializer for `Pose` (#3546)
 - Added methods `GetDefaultNetworkSettings` and `GetDefaultPipelineConfigurations` to `UnityTransport`. These can be used to retrieve the default settings and pipeline stages that are used by `UnityTransport`. This is useful when providing a custom driver constructor through `UnityTransport.s_DriverConstructor`, since it allows reusing or tuning the existing configuration instead of trying to recreate it. This means a transport with a custom driver can now easily benefit from most of the features of `UnityTransport`, like integration with the Network Simulator and Network Profiler from the multiplayer tools package. (#3501)
 - Added mappings between `ClientId` and `TransportId`. (#3516)
