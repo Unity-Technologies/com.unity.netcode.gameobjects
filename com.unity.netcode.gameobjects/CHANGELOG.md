@@ -23,7 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Changed `UnityTransport` now handles setting the current disconnect notification type, via internal `UnityTransportNotificationHandler` class, while also providing extended informational messages for each disconnect event type. (#3551)
 
-## [Unreleased] (2.5.0)
+## [2.5.0] - 2025-08-01
 
 ### Added
 
