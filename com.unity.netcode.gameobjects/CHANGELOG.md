@@ -19,7 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 
-## [2.5.0] 2025-08-01
+## [2.5.0] - 2025-08-01
 
 ### Added
 
