@@ -46,7 +46,7 @@ jobs:
               }
             ];
 
-            const missing = requiredSections.filter(section => !body.includes(section));
+            const missing = requiredSections.filter(section => !body.includes(section.header));
 
             if (missing.length > 0) {
               const message = [
