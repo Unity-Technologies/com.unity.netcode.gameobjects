@@ -6,7 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [Unrelease]
+
+### Added
+
+
+### Fixed
+
+- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`.
+
+### Changed
+
+
+## [2.5.0] 2025-08-01
 
 ### Added
 
