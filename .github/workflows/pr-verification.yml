@@ -29,9 +29,8 @@ jobs:
             const pr = context.payload.pull_request;
             const body = pr.body || '';
 
-            // List of mandatory PR sections 
-            const requiredSections =
-            [
+            // List of mandatory PR sections
+            const requiredSections = [
               {
                 header: '## Backport',
                 description: 'PR description must include a "## Backport" section. Please add this section and provide information about this PR backport to develop or develop-2.0.0 branch respectively or explain why backport is not needed.'
@@ -42,19 +41,21 @@ jobs:
               },
               {
                 header: '### Documentation',
-                description: 'PR description must include a "### Documentation" section. Please add this section and provide information about the documentation changes made in this PR. It's important to keep the documentation up to date with the code changes.'
+                description: 'PR description must include a "### Documentation" section. Please add this section and provide information about the documentation changes made in this PR. It is important to keep the documentation up to date with the code changes.'
               }
             ];
 
             const missing = requiredSections.filter(section => !body.includes(section.header));
 
             if (missing.length > 0) {
-              const message = [
-                'PR description is missing the following required section(s):',
-                ...missing.map(
-                  s => `- ${s.header}: ${s.description}`
-                ),
-                '\nPlease add them to your PR description.'
-              ].join('\n');
+              let message = 'PR description is missing the following required section(s):\n';
+
+              const missingDescriptions = missing.map(
+                s => `- ${s.header}: ${s.description}`
+              );
+
+              message += missingDescriptions.join('\n');
+              message += '\n\nPlease add them to your PR description.';
+
               core.setFailed(message);
             }
