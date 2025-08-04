@@ -61,13 +61,12 @@ pull_request_trigger:
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_trunk
   triggers:
     cancel_old_ci: true
-    pull_requests:
-      - targets:
-          only:
-            - "develop"
-            - "develop-2.0.0"
-            - "/release\/.*/"
-        drafts: false
+    expression: |-
+      (pull_request.target eq "develop" OR
+      pull_request.target eq "develop-2.0.0" OR
+      pull_request.target match "/release\/.*/") AND
+      NOT pull_request.draft AND
+      NOT push.changes.all match "**/Documentation~/**"
 
 
 # Run all tests on trunk on nightly basis.
