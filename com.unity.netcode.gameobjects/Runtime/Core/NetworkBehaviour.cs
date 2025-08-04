@@ -541,7 +541,7 @@ namespace Unity.Netcode
 
             var networkManager = m_NetworkObject.NetworkManager;
 
-            // Only server can MODIFY. So allow modification if network is either not running or we are server
+            // Only the authority can MODIFY. So allow modification if network is either not running or we are the authority.
             return    !networkManager.IsListening ||
                 ((networkManager.DistributedAuthorityMode && m_NetworkObject.IsOwner) || (!networkManager.DistributedAuthorityMode && networkManager.IsServer));
         }
