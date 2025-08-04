@@ -1,10 +1,12 @@
-﻿# This workflow is designed to verify that the pull request description contains a "## Backport" section, which is important as a reminder to account for backports for anyone that works with NGO repository.
-# We have 2 development branches (develop and develop-2.0.0) and we need to ensure that relevant changes are landing in only one or both of them
-# If the "##Backport" section is missing, the workflow will fail and block the PR from merging, prompting the developer to add this section.
+﻿# This workflow is designed to verify that the pull request description contains a required sections that are important from quality perspective.
+# ## Backport section is important as a reminder to account for backports for anyone that works with NGO repository (to 1.X or 2.X branches respectively).
+# ## Testing & QA section is important to ensure that the PR has appropriate testing coverage and is important when QA will evaluate PRs before Playtesting for the release.
+# ### Documentation section is important to ensure that the documentation is updated with the changes made in the PR.
 
+# If any of the sections is missing, the workflow will fail and block the PR from merging, prompting the developer to add those sections to the PR description.
 # The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
 
-name: "NGO - Backport Verification"
+name: "NGO - PR Verification"
 
 on:
   pull_request:
