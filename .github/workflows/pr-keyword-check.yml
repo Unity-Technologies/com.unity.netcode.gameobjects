@@ -1,0 +1,10 @@
+﻿name: PR keyword check
+on:
+  workflow_dispatch:
+
+# This workflow deliberately does nothing of value. The branch rules require the associated "Check PR issue comments for trigger keywords" job to have run before the PR being merged
+jobs:
+  pr-keyword-check:
+    runs-on: unity-linux-runner
+    steps:
+      - run: ls
