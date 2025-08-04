@@ -77,11 +77,7 @@ pull_request_trigger:
   triggers:
     cancel_old_ci: true
     expression: |-
-      pull_request.comment eq "ngo" AND
-      (pull_request.target eq "develop" OR
-      pull_request.target eq "develop-2.0.0" OR
-      pull_request.target match "/release\/.*/") AND
-      NOT pull_request.draft
+      pull_request.comment eq "ngo"
 
 # Run all tests on trunk on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
