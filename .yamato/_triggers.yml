@@ -43,7 +43,7 @@
 
 # Gates the merger of PRs as a pre-requisite. Runs when `/ci ngo` or `/ci ignore` is present as an issue comment
 check_pr_issue_comments_for_trigger_keywords:
-  name: Check PR issue comments for trigger keywords
+  name: Check PR for trigger comments of ngo or ignore. For example /ci ngo
   agent:
     type: Unity::github::action
     action_source: pr-keyword-check.yml
