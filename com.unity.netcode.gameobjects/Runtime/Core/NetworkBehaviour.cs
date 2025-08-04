@@ -529,11 +529,21 @@ namespace Unity.Netcode
 
         internal bool IsBehaviourEditable()
         {
+            if (!m_NetworkObject)
+            {
+                return true;
+            }
+
+            if (!m_NetworkObject.NetworkManager)
+            {
+                return true;
+            }
+
+            var networkManager = m_NetworkObject.NetworkManager;
+
             // Only server can MODIFY. So allow modification if network is either not running or we are server
-            return !m_NetworkObject ||
-                m_NetworkObject.NetworkManager == null ||
-                m_NetworkObject.NetworkManager.IsListening == false ||
-                m_NetworkObject.NetworkManager.IsServer;
+            return    !networkManager.IsListening ||
+                ((networkManager.DistributedAuthorityMode && m_NetworkObject.IsOwner) || (!networkManager.DistributedAuthorityMode && networkManager.IsServer));
         }
 
         //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
