@@ -30,7 +30,8 @@ jobs:
             const body = pr.body || '';
 
             // List of mandatory PR sections 
-            const requiredSections = [
+            const requiredSections =
+            [
               {
                 header: '## Backport',
                 description: 'PR description must include a "## Backport" section. Please add this section and provide information about this PR backport to develop or develop-2.0.0 branch respectively or explain why backport is not needed.'
