@@ -78,13 +78,13 @@ Note that the `Initialize` method is only called on non-authority clients. To cu
 
 When using a handler derived from `NetworkPrefabInstanceHandlerWithData`, you must manually set the instantiation data after instantiating the instance but before spawning. To do this, invoke the `NetworkPrefabInstanceHandlerWithData.SetInstantiationData` method before invoking the `NetworkObject.Spawn` method. If `SetInstantiationData` is not called, the `default` implementation will be sent to the `Instantiate` call.
 
-#### Example
+#### Simple Example 
 
-Below we can find an example script where the `InstantiateData` structure implements the `INetworkSerializable` interface and it will be used to serialize the instantiation data for the network prefab defined within the below `SpawnPrefabWithColor` NetworkBehaviour.
+Below we can find a simple "pseudo" example script where the `InstantiateData` structure implements the `INetworkSerializable` interface and it will be used to serialize the instantiation data for the network prefab defined within the below `SpawnPrefabWithColor` NetworkBehaviour.
 
 ```csharp
 /// <summary>
-/// The instantiation data that is serialzied and sent with the
+/// The instantiation data that is serialized and sent with the
 /// spawn object message and provided prior to instantiating.
 /// </summary>
 public struct InstantiateData : INetworkSerializable
@@ -103,7 +103,7 @@ public struct InstantiateData : INetworkSerializable
 }
 ```
 
-The below `SpawnPrefabWithColor` is a very simple example of a NetworkBehavior component that is to be placed on an in-scene placed NetworkObject. This allows you to configure which network prefab is going to be used to register the `SpawnWithColorSystem`and has a `SpawnWithColorSystem.SpawnObject` method that can be used to instantiate the network prefab instance with instantiation data containing the color to be applied. We can also see that each client/server instance of the `SpawnPrefabWithColor` component will create a `SpawnWithColorHandler` instance.
+The below `SpawnPrefabWithColor` is an example of a NetworkBehavior component, to be placed on an in-scene placed NetworkObject, that handles the instantiation of a prefab handler (`SpawnWithColorHandler`) and the means to configure the network prefab to register with the handler. It also has a `SpawnWithColorSystem.SpawnObject` method that can be used to instantiate an instance of the assigned network prefab instance that will also have instantiation data associated with it that contains the color to be applied to the instance's `MeshRenderer`s. 
 
 _While there are much easier ways to synchronize the color of MeshRenderer instances across clients, this is only for example purposes._
 
@@ -148,7 +148,7 @@ public class SpawnPrefabWithColor : NetworkBehaviour
 ```
 Above, we can see the `SpawnWithColorSystem` invokes the `SpawnWithColorHandler.InstantiateSetDataAndSpawn` method to create a new network prefab instance, set the instantiation data, and then spawn the network prefab instance.
 
-Below we will find the more complex of the three scripts for this example. The `SpawnWithColorHandler` constructor automatically registers itself with the `NetworkManager`.  
+Below we will find the slightly more complex, of the three scripts, `SpawnWithColorHandler` with a constructor that automatically registers itself and the network prefab with the `NetworkManager.PrefabHandler`:
 
 ```csharp
 /// <summary>
@@ -221,6 +221,35 @@ public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<Instan
 }
 ```
 When instantiating from user script for a host, server, or distributed authority client, the above `InstantiateSetDataAndSpawn` method is used. When instantiating on non-authority instances the `GetPrefabInstance` is used since the authority provides the instantiation data.
+
+
+While setting the color of a `MeshRenderer` doesn't really provide a broad spectrum use case scenario for `NetworkPrefabInstanceHandlerWithData`, the above example does provide you with a simple implementation in order to better understand:
+
+- Creating a serializable structure to be serialized with the spawned network prefab.
+- Creating a component (this case a `NetworkBehaviour`) that is used to instantiate the handler and configure the network prefab to be registered.
+- Creating a `NetworkPrefabInstanceHandlerWithData` derived class that:
+  - Handles instantiating and destroying instances of the registered prefab.
+  - Provides an example of instantiating the network prefab, setting the instantiation data for the instance, and then spawning the instance.
+  - Provides an example of taking the de-serialized instantiation data and using one (or more) fields to configure the network prefab instance prior to it being spawned.
+
+### Pre-instantiation data vs spawn data
+
+While the `NetworkPrefabInstanceHandlerWithData` feature provides you with the ability to include pre-spawn instantiation data that you can then use to define the instance before the instance is instantiated and/or spawned, there are some subtle differences between pre-spawn serialized data and spawn serialized data.
+
+- *Pre-spawn serialized data*:
+  - Is included in the `NetworkObject` serialized data.
+  - Is extracted and de-serialized prior to invoking the `NetworkPrefabInstanceHandlerWithData.Instantiate` method.
+  - Can be used to identify pre-instantiated objects and/or the type of network prefab to be spawned.
+  - Has no context for the "to-be spawned" network prefab, unless you provide that in the instantiation data.
+  - Can include any kind of serialized data types supported by Netcode for GameObjects.
+  - Can be used to spawn pre-determined instances that are created prior to connecting to the session or created while synchronizing with a session.
+- *Spawn serialized data*:
+  - Is not available until the network prefab is already instantiated and is in the middle of or has finished the spawn process.
+  - Cannot be used to define what network prefab to instantiate.
+  - Typically will include other netcode related states (NetworkVariables, RPCs, etc.).
+
+When it comes to including instantiation data you should be cautious about including data from already spawned objects. It is not that you are not allowed to do this, but that you need to assure that the serialized information of already spawned objects, like a `NetworkBehaviourReference` or `NetworkObjectReference`, exists prior to being used.
+
 
 ## Further Reading
 
