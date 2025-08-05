@@ -22,7 +22,7 @@ _Link to related jira ticket ([Use the smart commits](https://support.atlassian.
 - [ ] The users can understand why this API was removed and what they should use instead.
 -->
 
-### Documentation
+## Documentation
 [//]: # (
 This section is REQUIRED and should mention what documentation changes were following the changes in this PR. 
 We should always evaluate if the changes in this PR require any documentation changes.
