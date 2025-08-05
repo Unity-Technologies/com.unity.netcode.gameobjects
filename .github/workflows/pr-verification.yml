@@ -40,8 +40,8 @@ jobs:
                 description: 'PR description must include a "## Testing & QA" section. Please add this section and provide information about the testing performed for this PR. It can range from adding unit tests to full samples and is needed from QA side to analyze PRs while Playtesting for the release.'
               },
               {
-                header: '### Documentation',
-                description: 'PR description must include a "### Documentation" section. Please add this section and provide information about the documentation changes made in this PR. It is important to keep the documentation up to date with the code changes.'
+                header: '## Documentation',
+                description: 'PR description must include a "## Documentation" section. Please add this section and provide information about the documentation changes made in this PR. It is important to keep the documentation up to date with the code changes.'
               }
             ];
 
