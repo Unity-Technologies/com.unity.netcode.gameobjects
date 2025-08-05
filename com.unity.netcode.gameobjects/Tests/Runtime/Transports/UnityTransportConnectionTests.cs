@@ -67,7 +67,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Clients[0].ConnectionData.Address = "MoreFubar";
             Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
             Assert.False(m_Clients[0].StartClient(), "Client failed to detect invalid endpoint!");
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
             LogAssert.Expect(LogType.Error, $"Listen network address ({m_Server.ConnectionData.Address}) is not a valid {Networking.Transport.NetworkFamily.Ipv4} or {Networking.Transport.NetworkFamily.Ipv6} address!");
             LogAssert.Expect(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is not a valid Fully Qualified Domain Name!");
 

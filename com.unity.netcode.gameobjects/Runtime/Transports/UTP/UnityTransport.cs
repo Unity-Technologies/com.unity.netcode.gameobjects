@@ -7,7 +7,7 @@
 
 using System;
 using System.Collections.Generic;
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
 using System.Text.RegularExpressions;
 #endif
 using Unity.Burst;
@@ -260,7 +260,7 @@ namespace Unity.Netcode.Transports.UTP
                     var networkEndpoint = ParseNetworkEndpoint(Address, Port);
                     if (networkEndpoint == default)
                     {
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
                         if (!IsValidFqdn(Address))
 #endif
                         {
@@ -667,7 +667,7 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
         private static bool IsValidFqdn(string fqdn)
         {
             // Regular expression to validate FQDN
@@ -693,7 +693,7 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (serverEndpoint.Family == NetworkFamily.Invalid)
             {
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
 
                 // If it's not valid, assure it meets FQDN standards
                 if (IsValidFqdn(ConnectionData.Address))
@@ -745,7 +745,7 @@ namespace Unity.Netcode.Transports.UTP
             // Verify the endpoint is valid before proceeding
             if (endPoint.Family == NetworkFamily.Invalid)
             {
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
+#if HOSTNAME_RESOLUTION_AVAILABLE
                 // If it's not valid, assure it meets FQDN standards
                 if (!IsValidFqdn(ConnectionData.Address))
                 {
