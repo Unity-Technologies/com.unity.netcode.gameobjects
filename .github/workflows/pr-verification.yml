@@ -1,7 +1,7 @@
 ﻿# This workflow is designed to verify that the pull request description contains a required sections that are important from quality perspective.
 # ## Backport section is important as a reminder to account for backports for anyone that works with NGO repository (to 1.X or 2.X branches respectively).
 # ## Testing & QA section is important to ensure that the PR has appropriate testing coverage and is important when QA will evaluate PRs before Playtesting for the release.
-# ### Documentation section is important to ensure that the documentation is updated with the changes made in the PR.
+# ## Documentation section is important to ensure that the documentation is updated with the changes made in the PR.
 
 # If any of the sections is missing, the workflow will fail and block the PR from merging, prompting the developer to add those sections to the PR description.
 # The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
