@@ -11,8 +11,7 @@ _Link to related jira ticket ([Use the smart commits](https://support.atlassian.
 
 - Added: The package whose Changelog should be added to should be in the header. Delete the changelog section entirely if it's not needed.
 - Fixed: If you update multiple packages, create a new section with a new header for the other package.
-- Removed/Deprecated/Changed: Each bullet should be prefixed with Added, Fixed, Removed, Deprecated, or Changed to indicate where the entry should go.
-- Documentation: Contains significant docs changes
+- Removed/Deprecated/Changed: Each bullet should be prefixed with Added, Fixed, Removed, Deprecated, or Changed to indicate where the entry should go
 
 <!--  Uncomment and mark items off with a * if this PR deprecates any API:
 ### Deprecated API
