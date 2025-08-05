@@ -34,9 +34,9 @@ namespace Unity.Netcode
 #endif
             try
             {
-                foreach (var o in m_PendingDirtyNetworkObjects)
+                foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
                 {
-                    m_DirtyNetworkObjects.Add(o);
+                    m_DirtyNetworkObjects.Add(dirtyNetworkObject);
                 }
                 m_PendingDirtyNetworkObjects.Clear();
 
