@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 
 ### Fixed
 
