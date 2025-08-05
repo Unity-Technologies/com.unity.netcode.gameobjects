@@ -78,7 +78,7 @@ Note that the `Initialize` method is only called on non-authority clients. To cu
 
 When using a handler derived from `NetworkPrefabInstanceHandlerWithData`, you must manually set the instantiation data after instantiating the instance but before spawning. To do this, invoke the `NetworkPrefabInstanceHandlerWithData.SetInstantiationData` method before invoking the `NetworkObject.Spawn` method. If `SetInstantiationData` is not called, the `default` implementation will be sent to the `Instantiate` call.
 
-#### Simple Example 
+#### Simple Example
 
 Below we can find a simple "pseudo" example script where the `InstantiateData` structure implements the `INetworkSerializable` interface and it will be used to serialize the instantiation data for the network prefab defined within the below `SpawnPrefabWithColor` NetworkBehaviour.
 
@@ -103,7 +103,7 @@ public struct InstantiateData : INetworkSerializable
 }
 ```
 
-The below `SpawnPrefabWithColor` is an example of a NetworkBehavior component, to be placed on an in-scene placed NetworkObject, that handles the instantiation of a prefab handler (`SpawnWithColorHandler`) and the means to configure the network prefab to register with the handler. It also has a `SpawnWithColorSystem.SpawnObject` method that can be used to instantiate an instance of the assigned network prefab instance that will also have instantiation data associated with it that contains the color to be applied to the instance's `MeshRenderer`s. 
+The below `SpawnPrefabWithColor` is an example of a NetworkBehavior component, to be placed on an in-scene placed NetworkObject, that handles the instantiation of a prefab handler (`SpawnWithColorHandler`) and the means to configure the network prefab to register with the handler. It also has a `SpawnWithColorSystem.SpawnObject` method that can be used to instantiate an instance of the assigned network prefab instance that will also have instantiation data associated with it that contains the color to be applied to the instance's `MeshRenderer`s.
 
 _While there are much easier ways to synchronize the color of MeshRenderer instances across clients, this is only for example purposes._
 
@@ -179,10 +179,10 @@ public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<Instan
     /// instantiate the prefab, set the instantiation data, and then spawn.
     /// </summary>
     public NetworkObject InstantiateSetDataAndSpawn(Vector3 position, Quaternion rotation, InstantiateData instantiateData)
-    {            
+    {
         var instance = GetPrefabInstance(position, rotation, instantiateData);
 
-        // Set the spawndata before spawning
+        // Set the instantiate data before spawning
         m_NetworkManager.PrefabHandler.SetInstantiationData(instance, instantiateData);
 
         instance.GetComponent<NetworkObject>().Spawn();
@@ -199,10 +199,9 @@ public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<Instan
         var meshRenderers = instance.GetComponentsInChildren<MeshRenderer>();
         foreach (var renderer in meshRenderers)
         {
-            // Assign the color to each MeshRenderer (just a psuedo example)
+            // Assign the color to each MeshRenderer (just a pseudo example)
             renderer.material.color = instantiateData.Color;
         }
-
         return instance.GetComponent<NetworkObject>();
     }
 
@@ -221,7 +220,6 @@ public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<Instan
 }
 ```
 When instantiating from user script for a host, server, or distributed authority client, the above `InstantiateSetDataAndSpawn` method is used. When instantiating on non-authority instances the `GetPrefabInstance` is used since the authority provides the instantiation data.
-
 
 While setting the color of a `MeshRenderer` doesn't really provide a broad spectrum use case scenario for `NetworkPrefabInstanceHandlerWithData`, the above example does provide you with a simple implementation in order to better understand:
 
