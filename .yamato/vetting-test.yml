@@ -1,0 +1,25 @@
+{% metadata_file .yamato/project.metafile %} # All configuration that is used to create different configurations (used in for loops) is taken from this file.
+---
+# DESCRIPTION--------------------------------------------------------------------------
+# This configuration defines vetting tests for the Tools package which allows to validate if the package is in releasable state. This is important in particular because of API validation that allows to detect if we are introducing any new APIs that will force us to bump package version to new minor
+# If this test fails with new API error we should either make those API internal OR bump package version to new minor (note that the package version reflects the current package state)
+
+# Note that we are packing the package only (no project context) so if package have any soft dependencies then project should be used to test it (to enable those APIs)
+{% for editor in validation_editors.minimal -%}
+vetting_test:
+  name: MP Tools - Vetting Test (Win, {{editor}} LTS)
+  agent: { type: Unity::VM, flavor: b1.large, image: package-ci/win11:v4 }
+  commands:
+    - python Tools/scripts/release.py # Needed to ensure that CHANGELOG is properly formatted for this test
+    - npm install -g "upm-ci-utils@stable" --registry https://artifactory.prd.it.unity3d.com/artifactory/api/npm/upm-npm
+    - unity-downloader-cli --fast --wait --unity-version {{ editor }} --components editor --arch x64
+    - upm-ci package pack --package-path com.unity.netcode.gameobjects
+    - upm-ci package test -u .Editor --package-path com.unity.netcode.gameobjects --type vetting-tests
+  artifacts:
+    logs:
+      paths:
+        - pvp-results/*
+        - test-results/**
+        - upm-ci~/test-results/**
+        - upm-ci~/upm-ci.log
+{% endfor -%}

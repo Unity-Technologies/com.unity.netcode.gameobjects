@@ -10,6 +10,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Fixed
+
+- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
+- Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
+
+### Changed
+
+
+## [2.5.0] - 2025-08-01
+
+### Added
+
 - Added serializer for `Pose` (#3546)
 - Added `AttachableBehaviour` helper component to provide an alternate approach to parenting items without using the `NetworkObject` parenting. (#3518)
 - Added `AttachableNode` helper component that is used by `AttachableBehaviour` as the target node for parenting. (#3518)
