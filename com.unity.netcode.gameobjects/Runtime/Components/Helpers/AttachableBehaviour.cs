@@ -499,18 +499,16 @@ namespace Unity.Netcode.Components
                 if (!m_AttachableNode)
                 {
                     NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name}'s state is still {m_AttachState} but has no {nameof(AttachableNode)} assigned!");
+                    // Developer only notification for the most likely scenario where this method is invoked but the instance is not attached to anything.
+                    if (NetworkManager && NetworkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"[{name}][Detach] Cannot detach! {name} is not attached to anything!");
+                    }                    
                 }
-
-                // Developer only notification for the most likely scenario where this method is invoked but the instance is not attached to anything.
-                if (!m_AttachableNode && NetworkManager && NetworkManager.LogLevel <= LogLevel.Developer)
+                else
                 {
-                    NetworkLog.LogWarning($"[{name}][Detach] Cannot detach! {name} is not attached to anything!");
-                }
-
-                // If we have the attachable node set and we are not in the middle of detaching, then log an error and note
-                // this could potentially occur if inoked more than once for the same instance in the same frame.
-                if (m_AttachableNode)
-                {
+                    // If we have the attachable node set and we are not in the middle of detaching, then log an error and note
+                    // this could potentially occur if inoked more than once for the same instance in the same frame.
                     NetworkLog.LogError($"[{name}][Detach] Invalid state detected! {name} is still referencing {nameof(AttachableNode)} {m_AttachableNode.name}! Could {nameof(Detach)} be getting invoked more than once for the same instance?");
                 }
                 return;
