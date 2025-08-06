@@ -34,7 +34,10 @@ namespace Unity.Netcode
 #endif
             try
             {
-                m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
+                foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
+                {
+                    m_DirtyNetworkObjects.Add(dirtyNetworkObject);
+                }
                 m_PendingDirtyNetworkObjects.Clear();
 
                 // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
