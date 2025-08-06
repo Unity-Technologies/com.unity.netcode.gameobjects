@@ -5,23 +5,53 @@ namespace Unity.Netcode
 {
     internal struct ServiceConfig : INetworkSerializable
     {
-        public uint Version;
+        public uint SessionVersion;
         public bool IsRestoredSession;
         public ulong CurrentSessionOwner;
+        public bool ServerRedistribution;
+        public ulong SessionStateToken;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (serializer.IsWriter)
             {
-                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), Version);
+                BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), SessionVersion);
                 serializer.SerializeValue(ref IsRestoredSession);
                 BytePacker.WriteValueBitPacked(serializer.GetFastBufferWriter(), CurrentSessionOwner);
+
+                if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
+                {
+                    serializer.SerializeValue(ref ServerRedistribution);
+                }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
+                }
             }
             else
             {
-                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out Version);
+                ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out SessionVersion);
                 serializer.SerializeValue(ref IsRestoredSession);
                 ByteUnpacker.ReadValueBitPacked(serializer.GetFastBufferReader(), out CurrentSessionOwner);
+
+                if (SessionVersion >= SessionConfig.ServerDistributionCompatible)
+                {
+                    serializer.SerializeValue(ref ServerRedistribution);
+                }
+                else
+                {
+                    ServerRedistribution = false;
+                }
+
+                if (SessionVersion >= SessionConfig.SessionStateToken)
+                {
+                    serializer.SerializeValue(ref SessionStateToken);
+                }
+                else
+                {
+                    SessionStateToken = 0;
+                }
             }
         }
     }
@@ -190,11 +220,13 @@ namespace Unity.Netcode
                 if (receivedMessageVersion >= k_AddCMBServiceConfig)
                 {
                     reader.ReadNetworkSerializable(out ServiceConfig);
+                    networkManager.SessionConfig = new SessionConfig(ServiceConfig);
                 }
                 else
                 {
                     reader.ReadValueSafe(out IsRestoredSession);
                     ByteUnpacker.ReadValueBitPacked(reader, out CurrentSessionOwner);
+                    networkManager.SessionConfig = new SessionConfig(SessionConfig.NoFeatureCompatibility);
                 }
             }
 
@@ -214,10 +246,31 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
+
+            if (networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
+            {
+                if (networkManager.LocalClientId != OwnerClientId)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"[Session Owner] Received connection approved for Client-{OwnerClientId}! Synchronizing...");
+                    }
+
+                    networkManager.SceneManager.SynchronizeNetworkObjects(OwnerClientId);
+                }
+                else
+                {
+                    NetworkLog.LogWarning($"[Client-{OwnerClientId}] Receiving duplicate connection approved. Client is already connected!");
+                }
+                ConnectedClientIds.Dispose();
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"[Client-{OwnerClientId}] Connection approved! Synchronizing...");
             }
+
             networkManager.LocalClientId = OwnerClientId;
             networkManager.MessageManager.SetLocalClientId(networkManager.LocalClientId);
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
@@ -241,18 +294,30 @@ namespace Unity.Netcode
             // Stop the client-side approval timeout coroutine since we are approved.
             networkManager.ConnectionManager.StopClientApprovalCoroutine();
 
-            networkManager.ConnectionManager.ConnectedClientIds.Clear();
             foreach (var clientId in ConnectedClientIds)
             {
-                if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(clientId))
+                // DANGO-TODO: Revisit the entire connection sequence and determine why we would need to check both cases as we shouldn't have to =or= we could
+                // try removing this after the Rust server connection sequence stuff is resolved. (Might be only needed if scene management is disabled)
+                // If there is any disconnect between the connection sequence of Ids vs ConnectedClients, then add the client.
+                if (!networkManager.ConnectionManager.ConnectedClientIds.Contains(clientId) || !networkManager.ConnectionManager.ConnectedClients.ContainsKey(clientId))
                 {
                     networkManager.ConnectionManager.AddClient(clientId);
                 }
             }
 
+            // Dispose after it has been used.
+            ConnectedClientIds.Dispose();
+
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
+                /// Mark the client being connected before running through the spawning synchronization so we
+                /// can assure that if a user attempts to spawn something when an already spawned NetworkObject
+                /// is spawned (during the initial synchronization just below) it will not error out complaining
+                /// about the player not being connected.
+                /// The check for this is done within <see cref="NetworkObject.SpawnInternal(bool, ulong, bool)"/>
+                networkManager.IsConnectedClient = true;
+
                 // DANGO-TODO: This is a temporary fix for no DA CMB scene event handling.
                 // We will either use this same concept or provide some way for the CMB state plugin to handle it.
                 if (networkManager.DistributedAuthorityMode && networkManager.LocalClient.IsSessionOwner)
@@ -275,9 +340,6 @@ namespace Unity.Netcode
                     NetworkObject.AddSceneObject(sceneObject, m_ReceivedSceneObjectData, networkManager);
                 }
 
-                // Mark the client being connected
-                networkManager.IsConnectedClient = true;
-
                 if (networkManager.AutoSpawnPlayerPrefabClientSide)
                 {
                     networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
@@ -288,7 +350,7 @@ namespace Unity.Netcode
                     NetworkLog.LogInfo($"[Client-{OwnerClientId}][Scene Management Disabled] Synchronization complete!");
                 }
                 // When scene management is disabled we notify after everything is synchronized
-                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
+                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(OwnerClientId);
 
                 // For convenience, notify all NetworkBehaviours that synchronization is complete.
                 networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
@@ -298,14 +360,14 @@ namespace Unity.Netcode
                 if (networkManager.DistributedAuthorityMode && networkManager.CMBServiceConnection && networkManager.LocalClient.IsSessionOwner && networkManager.NetworkConfig.EnableSceneManagement)
                 {
                     // Mark the client being connected
-                    networkManager.IsConnectedClient = true;
+                    networkManager.IsConnectedClient = networkManager.ConnectionManager.LocalClient.IsApproved;
 
                     networkManager.SceneManager.IsRestoringSession = GetIsSessionRestor();
 
                     if (!networkManager.SceneManager.IsRestoringSession)
                     {
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -317,9 +379,9 @@ namespace Unity.Netcode
                         }
 
                         // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId);
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
-                        // With scene management enabled and since the session owner doesn't send a Synchronize scene event synchronize itself,
+                        // With scene management enabled and since the session owner doesn't send a scene event synchronize to itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.
                         networkManager.SpawnManager.NotifyNetworkObjectsSynchronized();
 
@@ -329,7 +391,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-            ConnectedClientIds.Dispose();
         }
     }
 }

@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace TestProject.ManualTests
@@ -33,6 +34,10 @@ namespace TestProject.ManualTests
             if (IsSpawned)
             {
                 var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
+                if (!playerObject)
+                {
+                    Debug.LogError("Player object not spawned");
+                }
                 if (playerObject.gameObject.scene != gameObject.scene)
                 {
                     SceneManager.MoveGameObjectToScene(playerObject.gameObject, gameObject.scene);

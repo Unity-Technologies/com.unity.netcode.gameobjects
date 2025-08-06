@@ -21,6 +21,12 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         internal class TestComponentHelper : NetworkBehaviour
         {
             internal class ChildInfo
@@ -216,14 +222,6 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.LogLevel = m_EnableVerboseDebug ? LogLevel.Developer : LogLevel.Normal;
 
             base.OnServerAndClientsCreated();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
         }
 
         private bool HaveAllClientsSpawnedObjects()

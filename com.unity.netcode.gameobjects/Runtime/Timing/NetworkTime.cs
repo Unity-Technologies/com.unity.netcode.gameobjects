@@ -45,10 +45,18 @@ namespace Unity.Netcode
         public double FixedTime => m_CachedTick * m_TickInterval;
 
         /// <summary>
-        /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant.
-        /// Similar to <see cref="Time.fixedUnscaledTime"/> There is no equivalent to <see cref="Time.deltaTime"/>.
+        /// Gets the fixed delta time. This value is calculated by dividing 1.0 by the <see cref="TickRate"/> and stays constant.
         /// </summary>
+        /// <remarks>
+        /// This could result in a potential floating point precision variance on different systems. <br />
+        /// See <see cref="FixedDeltaTimeAsDouble"/> for a more precise value.
+        /// </remarks>
         public float FixedDeltaTime => (float)m_TickInterval;
+
+        /// <summary>
+        /// Gets the fixed delta time as a double. This value is calculated by dividing 1.0 by the <see cref="TickRate"/> and stays constant.
+        /// </summary>
+        public double FixedDeltaTimeAsDouble => m_TickInterval;
 
         /// <summary>
         /// Gets the amount of network ticks which have passed until reaching the current time value.
@@ -70,7 +78,7 @@ namespace Unity.Netcode
             Assert.IsTrue(tickRate > 0, "Tickrate must be a positive value.");
 
             m_TickRate = tickRate;
-            m_TickInterval = 1f / m_TickRate; // potential floating point precision issue, could result in different interval on different machines
+            m_TickInterval = 1.0 / m_TickRate;
             m_CachedTickOffset = 0;
             m_CachedTick = 0;
             m_TimeSec = 0;
@@ -114,10 +122,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Returns the time a number of ticks in the past.
+        /// Calculates a NetworkTime value representing a point in the past relative to the current time (few ticks in the past)
         /// </summary>
-        /// <param name="ticks">The number of ticks ago we're querying the time</param>
-        /// <returns></returns>
+        /// <param name="ticks">The number of ticks ago we're querying the time.</param>
+        /// <param name="offset">Optional parameter to specify a tick offset (fractional) value.</param>
+        /// <returns>A NetworkTime value representing the calculated past time point</returns>
         public NetworkTime TimeTicksAgo(int ticks, float offset = 0.0f)
         {
             return this - new NetworkTime(TickRate, ticks, offset);

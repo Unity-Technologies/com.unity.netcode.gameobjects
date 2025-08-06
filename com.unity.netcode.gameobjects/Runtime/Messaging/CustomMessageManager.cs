@@ -161,6 +161,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
+        /// <param name="senderClientId">The client identifier of the message sender</param>
+        /// <param name="messagePayload">The buffer containing the message data to be read</param>
         public delegate void HandleNamedMessageDelegate(ulong senderClientId, FastBufferReader messagePayload);
 
         private Dictionary<ulong, HandleNamedMessageDelegate> m_NamedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
@@ -178,14 +180,18 @@ namespace Unity.Netcode
                 // We dont know what size to use. Try every (more collision prone)
                 if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                 {
+                    // handler can remove itself, cache the name for metrics
+                    var messageName = m_MessageHandlerNameLookup32[hash];
                     messageHandler32(sender, reader);
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, messageName, bytesCount);
                 }
 
                 if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                 {
+                    // handler can remove itself, cache the name for metrics
+                    var messageName = m_MessageHandlerNameLookup64[hash];
                     messageHandler64(sender, reader);
-                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
+                    m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, messageName, bytesCount);
                 }
             }
             else
@@ -196,15 +202,19 @@ namespace Unity.Netcode
                     case HashSize.VarIntFourBytes:
                         if (m_NamedMessageHandlers32.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler32))
                         {
+                            // handler can remove itself, cache the name for metrics
+                            var messageName = m_MessageHandlerNameLookup32[hash];
                             messageHandler32(sender, reader);
-                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup32[hash], bytesCount);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, messageName, bytesCount);
                         }
                         break;
                     case HashSize.VarIntEightBytes:
                         if (m_NamedMessageHandlers64.TryGetValue(hash, out HandleNamedMessageDelegate messageHandler64))
                         {
+                            // handler can remove itself, cache the name for metrics
+                            var messageName = m_MessageHandlerNameLookup64[hash];
                             messageHandler64(sender, reader);
-                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, m_MessageHandlerNameLookup64[hash], bytesCount);
+                            m_NetworkManager.NetworkMetrics.TrackNamedMessageReceived(sender, messageName, bytesCount);
                         }
                         break;
                 }

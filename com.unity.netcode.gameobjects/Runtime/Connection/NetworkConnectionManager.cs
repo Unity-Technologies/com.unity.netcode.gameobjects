@@ -7,20 +7,63 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
-
+    /// <summary>
+    /// The connection event type set within <see cref="ConnectionEventData"/> to signify the type of connection event notification received.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ConnectionEventData"/> is returned as a parameter of the <see cref="NetworkManager.OnConnectionEvent"/> event notification.
+    /// <see cref="ClientConnected"/> and <see cref="ClientDisconnected"/> event types occur on the client-side of the newly connected client and on the server-side. <br />
+    /// <see cref="PeerConnected"/> and <see cref="PeerDisconnected"/> event types occur on connected clients to notify that a new client (peer) has joined/connected.
+    /// </remarks>
     public enum ConnectionEvent
     {
+        /// <summary>
+        /// This event is set on the client-side of the newly connected client and on the server-side.<br />
+        /// </summary>
+        /// <remarks>
+        /// On the newly connected client side, the <see cref="ConnectionEventData.ClientId"/> will be the <see cref="NetworkManager.LocalClientId"/>.<br />
+        /// On the server side, the <see cref="ConnectionEventData.ClientId"/> will be the ID of the client that just connected.
+        /// </remarks>
         ClientConnected,
+        /// <summary>
+        /// This event is set on clients that are already connected to the session.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="ConnectionEventData.ClientId"/> will be the ID of the client that just connected.
+        /// </remarks>
         PeerConnected,
+        /// <summary>
+        /// This event is set on the client-side of the client that disconnected client and on the server-side.
+        /// </summary>
+        /// <remarks>
+        /// On the disconnected client side, the <see cref="ConnectionEventData.ClientId"/> will be the <see cref="NetworkManager.LocalClientId"/>.<br />
+        /// On the server side, this will be the ID of the client that disconnected.
+        /// </remarks>
         ClientDisconnected,
+        /// <summary>
+        /// This event is set on clients that are already connected to the session.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="ConnectionEventData.ClientId"/> will be the ID of the client that just disconnected.
+        /// </remarks>
         PeerDisconnected
     }
 
+    /// <summary>
+    /// Returned as a parameter of the <see cref="NetworkManager.OnConnectionEvent"/> event notification.
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="ConnectionEvent"/> for more details on the types of connection events received.
+    /// </remarks>
     public struct ConnectionEventData
     {
+        /// <summary>
+        /// The type of connection event that occurred
+        /// </summary>
         public ConnectionEvent EventType;
 
         /// <summary>
@@ -91,38 +134,7 @@ namespace Unity.Netcode
                 Debug.LogException(exception);
             }
 
-            if (!NetworkManager.IsServer)
-            {
-                var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
-                // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
-                using var sentinel = peerClientIds;
-
-                var idx = 0;
-                foreach (var peerId in NetworkManager.ConnectedClientsIds)
-                {
-                    if (peerId == NetworkManager.LocalClientId)
-                    {
-                        continue;
-                    }
-
-                    // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
-                    if (peerClientIds.Length > idx)
-                    {
-                        peerClientIds[idx] = peerId;
-                        ++idx;
-                    }
-                }
-
-                try
-                {
-                    OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
-                }
-                catch (Exception exception)
-                {
-                    Debug.LogException(exception);
-                }
-            }
-            else
+            if (NetworkManager.IsServer || NetworkManager.LocalClient.IsSessionOwner)
             {
                 try
                 {
@@ -132,6 +144,38 @@ namespace Unity.Netcode
                 {
                     Debug.LogException(exception);
                 }
+
+                return;
+            }
+
+            // Invoking connection event on non-authority local client. Need to calculate PeerIds.
+            var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+            // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
+            using var sentinel = peerClientIds;
+
+            var idx = 0;
+            foreach (var peerId in NetworkManager.ConnectedClientsIds)
+            {
+                if (peerId == NetworkManager.LocalClientId)
+                {
+                    continue;
+                }
+
+                // This assures if the server has not timed out prior to the client synchronizing that it doesn't exceed the allocated peer count.
+                if (peerClientIds.Length > idx)
+                {
+                    peerClientIds[idx] = peerId;
+                    ++idx;
+                }
+            }
+
+            try
+            {
+                OnConnectionEvent?.Invoke(NetworkManager, new ConnectionEventData { ClientId = NetworkManager.LocalClientId, EventType = ConnectionEvent.ClientConnected, PeerClientIds = peerClientIds });
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -563,7 +607,7 @@ namespace Unity.Netcode
         {
             var message = new ConnectionRequestMessage
             {
-                CMBServiceConnection = NetworkManager.CMBServiceConnection,
+                DistributedAuthority = NetworkManager.DistributedAuthorityMode,
                 // Since only a remote client will send a connection request, we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkManager.NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkManager.NetworkConfig.ConnectionApproval,
@@ -571,8 +615,9 @@ namespace Unity.Netcode
                 MessageVersions = new NativeArray<MessageVersionData>(MessageManager.MessageHandlers.Length, Allocator.Temp)
             };
 
-            if (NetworkManager.CMBServiceConnection)
+            if (NetworkManager.DistributedAuthorityMode)
             {
+                message.ClientConfig.SessionConfig = NetworkManager.SessionConfig;
                 message.ClientConfig.TickRate = NetworkManager.NetworkConfig.TickRate;
                 message.ClientConfig.EnableSceneManagement = NetworkManager.NetworkConfig.EnableSceneManagement;
             }
@@ -590,7 +635,7 @@ namespace Unity.Netcode
                 }
             }
 
-            SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
+            SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
             message.MessageVersions.Dispose();
         }
 
@@ -1001,6 +1046,14 @@ namespace Unity.Netcode
             }
 
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
+
+            // If not using DA return early or if using DA and scene management is disabled then exit early Since we use NetworkShow to spawn
+            // objects on the newly connected client side.
+            if (!distributedAuthority || distributedAuthority && !NetworkManager.NetworkConfig.EnableSceneManagement)
+            {
+                return networkClient;
+            }
+
             var sessionOwnerId = NetworkManager.CurrentSessionOwner;
             var isSessionOwner = NetworkManager.LocalClient.IsSessionOwner;
             foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
@@ -1074,149 +1127,150 @@ namespace Unity.Netcode
                 {
                     if (!playerObject.DontDestroyWithOwner)
                     {
-                        // DANGO-TODO: This is something that would be best for CMB Service to handle as it is part of the disconnection process
-                        // If a player NetworkObject is being despawned, make sure to remove all children if they are marked to not be destroyed
-                        // with the owner.
-                        if (NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost)
-                        {
-                            // Remove any children from the player object if they are not going to be destroyed with the owner
-                            var childNetworkObjects = playerObject.GetComponentsInChildren<NetworkObject>();
-                            foreach (var child in childNetworkObjects)
-                            {
-                                // TODO: We have always just removed all children, but we might think about changing this to preserve the nested child
-                                // hierarchy.
-                                if (child.DontDestroyWithOwner && child.transform.transform.parent != null)
-                                {
-                                    // If we are here, then we are running in DAHost mode and have the authority to remove the child from its parent
-                                    child.AuthorityAppliedParenting = true;
-                                    child.TryRemoveParentCachedWorldPositionStays();
-                                }
-                            }
-                        }
-
-                        if (NetworkManager.PrefabHandler.ContainsHandler(playerObject.GlobalObjectIdHash))
-                        {
-                            if (NetworkManager.DAHost && NetworkManager.DistributedAuthorityMode)
-                            {
-                                NetworkManager.SpawnManager.DespawnObject(playerObject, true, NetworkManager.DistributedAuthorityMode);
-                            }
-                            else
-                            {
-                                NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(playerObject);
-                            }
-                        }
-                        else if (playerObject.IsSpawned)
+                        if (playerObject.IsSpawned)
                         {
                             // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked on the server-side (when the client side disconnected).
                             // This prevents the issue (when just destroying the GameObject) where any NetworkBehaviour component(s) destroyed before the NetworkObject would not have OnNetworkDespawn invoked.
-                            NetworkManager.SpawnManager.DespawnObject(playerObject, true, NetworkManager.DistributedAuthorityMode);
+                            NetworkManager.SpawnManager.DespawnObject(playerObject, true, true);
+                        }
+                        else
+                        {
+                            Object.Destroy(playerObject.gameObject);
                         }
                     }
                     else if (!NetworkManager.ShutdownInProgress)
                     {
-                        if (!NetworkManager.ShutdownInProgress)
-                        {
-                            playerObject.RemoveOwnership();
-                        }
+                        playerObject.RemoveOwnership();
                     }
                 }
 
                 // Get the NetworkObjects owned by the disconnected client
                 var clientOwnedObjects = NetworkManager.SpawnManager.SpawnedObjectsList.Where((c) => c.OwnerClientId == clientId).ToList();
-                if (clientOwnedObjects == null)
-                {
-                    // This could happen if a client is never assigned a player object and is disconnected
-                    // Only log this in verbose/developer mode
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        NetworkLog.LogWarning($"ClientID {clientId} disconnected with (0) zero owned objects!  Was a player prefab not assigned?");
-                    }
-                }
-                else
-                {
-                    // Handle changing ownership and prefab handlers
-                    var clientCounter = 0;
-                    var predictedClientCount = ConnectedClientsList.Count - 1;
-                    var remainingClients = NetworkManager.DistributedAuthorityMode ? ConnectedClientsList.Where((c) => c.ClientId != clientId).ToList() : null;
-                    for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
-                    {
-                        var ownedObject = clientOwnedObjects[i];
-                        if (ownedObject != null)
-                        {
-                            if (!ownedObject.DontDestroyWithOwner)
-                            {
-                                if (NetworkManager.PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
-                                {
-                                    NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
-                                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
-                                }
-                                else
-                                {
-                                    NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
-                                }
-                            }
-                            else if (!NetworkManager.ShutdownInProgress)
-                            {
-                                // NOTE: All of the below code only handles ownership transfer.
-                                // For client-server, we just remove the ownership.
-                                // For distributed authority, we need to change ownership based on parenting
-                                if (NetworkManager.DistributedAuthorityMode)
-                                {
-                                    // Only NetworkObjects that have the OwnershipStatus.Distributable flag set and no parent
-                                    // (ownership is transferred to all children) will have their ownership redistributed.
-                                    if (ownedObject.IsOwnershipDistributable && ownedObject.GetCachedParent() == null)
-                                    {
-                                        if (ownedObject.IsOwnershipLocked)
-                                        {
-                                            ownedObject.SetOwnershipLock(false);
-                                        }
 
-                                        // DANGO-TODO: We will want to match how the CMB service handles this. For now, we just try to evenly distribute
-                                        // ownership.
-                                        var targetOwner = NetworkManager.ServerClientId;
-                                        if (predictedClientCount > 1)
+                // Handle changing ownership and prefab handlers
+                var clientCounter = 0;
+                var predictedClientCount = ConnectedClientsList.Count - 1;
+                var remainingClients = NetworkManager.DistributedAuthorityMode ? ConnectedClientsList.Where((c) => c.ClientId != clientId).ToList() : null;
+                for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
+                {
+                    var ownedObject = clientOwnedObjects[i];
+                    if (ownedObject)
+                    {
+                        // If destroying with owner, then always despawn and destroy (or defer destroying to prefab handler)
+                        if (!ownedObject.DontDestroyWithOwner)
+                        {
+                            if (ownedObject.IsSpawned)
+                            {
+                                NetworkManager.SpawnManager.DespawnObject(ownedObject, true, true);
+                            }
+                            else
+                            {
+                                Object.Destroy(ownedObject.gameObject);
+                            }
+                        }
+                        else if (!NetworkManager.ShutdownInProgress)
+                        {
+                            // NOTE: All of the below code only handles ownership transfer
+                            // For client-server, we just remove the ownership.
+                            // For distributed authority (DAHost only), we only transfer objects that are not parented or belong to the session owner.
+                            // Rust server handles the object redistribution on its end.
+                            if (NetworkManager.DistributedAuthorityMode)
+                            {
+                                if (ownedObject.IsOwnershipSessionOwner || ownedObject.GetCachedParent())
+                                {
+                                    continue;
+                                }
+
+                                if (ownedObject.IsOwnershipLocked)
+                                {
+                                    ownedObject.SetOwnershipLock(false);
+                                }
+
+                                var targetOwner = NetworkManager.ServerClientId;
+                                // Cycle through the full count of clients to find
+                                // the next viable owner. If none are found, then
+                                // the DAHost defaults to the owner.
+                                for (int j = 0; j < remainingClients.Count; j++)
+                                {
+                                    clientCounter++;
+                                    clientCounter = clientCounter % predictedClientCount;
+                                    if (ownedObject.Observers.Contains(remainingClients[clientCounter].ClientId))
+                                    {
+                                        targetOwner = remainingClients[clientCounter].ClientId;
+                                        break;
+                                    }
+                                }
+                                if (EnableDistributeLogging)
+                                {
+                                    Debug.Log($"[Disconnected][Client-{clientId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
+                                }
+
+                                NetworkManager.SpawnManager.ChangeOwnership(ownedObject, targetOwner, true);
+
+                                // Ownership gets passed down to all children that have the same owner.
+                                var childNetworkObjects = ownedObject.GetComponentsInChildren<NetworkObject>();
+                                foreach (var childObject in childNetworkObjects)
+                                {
+                                    // We already changed ownership for this
+                                    if (childObject == ownedObject)
+                                    {
+                                        continue;
+                                    }
+
+                                    // Skip destroy with owner objects as they will be processed by the outer loop
+                                    if (!childObject.DontDestroyWithOwner)
+                                    {
+                                        continue;
+                                    }
+                                    // If the client owner disconnected, it is ok to unlock this at this point in time.
+                                    if (childObject.IsOwnershipLocked)
+                                    {
+                                        childObject.SetOwnershipLock(false);
+                                    }
+
+                                    // Ignore session owner marked objects
+                                    if (childObject.IsOwnershipSessionOwner)
+                                    {
+                                        continue;
+                                    }
+
+                                    // If the child's owner is not the client disconnected and the objects are marked with either distributable or transferable, then
+                                    // do not change ownership.
+                                    if (childObject.OwnerClientId != clientId && (childObject.IsOwnershipDistributable || childObject.IsOwnershipTransferable))
+                                    {
+                                        continue;
+                                    }
+
+                                    var childOwner = targetOwner;
+                                    if (!childObject.Observers.Contains(childOwner))
+                                    {
+                                        for (int j = 0; j < remainingClients.Count; j++)
                                         {
                                             clientCounter++;
                                             clientCounter = clientCounter % predictedClientCount;
-                                            targetOwner = remainingClients[clientCounter].ClientId;
-                                        }
-                                        if (EnableDistributeLogging)
-                                        {
-                                            Debug.Log($"[Disconnected][Client-{clientId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
-                                        }
-                                        NetworkManager.SpawnManager.ChangeOwnership(ownedObject, targetOwner, true);
-                                        // DANGO-TODO: Should we try handling inactive NetworkObjects?
-                                        // Ownership gets passed down to all children
-                                        var childNetworkObjects = ownedObject.GetComponentsInChildren<NetworkObject>();
-                                        foreach (var childObject in childNetworkObjects)
-                                        {
-                                            // We already changed ownership for this
-                                            if (childObject == ownedObject)
+                                            if (ownedObject.Observers.Contains(remainingClients[clientCounter].ClientId))
                                             {
-                                                continue;
-                                            }
-                                            // If the client owner disconnected, it is ok to unlock this at this point in time.
-                                            if (childObject.IsOwnershipLocked)
-                                            {
-                                                childObject.SetOwnershipLock(false);
-                                            }
-
-                                            NetworkManager.SpawnManager.ChangeOwnership(childObject, targetOwner, true);
-                                            if (EnableDistributeLogging)
-                                            {
-                                                Debug.Log($"[Disconnected][Client-{clientId}][Child of {ownedObject.NetworkObjectId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
+                                                childOwner = remainingClients[clientCounter].ClientId;
+                                                break;
                                             }
                                         }
                                     }
+
+                                    NetworkManager.SpawnManager.ChangeOwnership(childObject, childOwner, true);
+                                    if (EnableDistributeLogging)
+                                    {
+                                        Debug.Log($"[Disconnected][Client-{clientId}][Child of {ownedObject.NetworkObjectId}][NetworkObjectId-{ownedObject.NetworkObjectId} Distributed to Client-{targetOwner}");
+                                    }
                                 }
-                                else
-                                {
-                                    ownedObject.RemoveOwnership();
-                                }
+                            }
+                            else
+                            {
+                                ownedObject.RemoveOwnership();
                             }
                         }
                     }
                 }
+
 
                 // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
                 foreach (var sobj in NetworkManager.SpawnManager.SpawnedObjectsList)
@@ -1432,8 +1486,11 @@ namespace Unity.Netcode
                 }
             }
 
+            // Reset the approved and connectd flags
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
+
+            // Clear all lists
             ConnectedClients.Clear();
             ConnectedClientIds.Clear();
             ConnectedClientsList.Clear();

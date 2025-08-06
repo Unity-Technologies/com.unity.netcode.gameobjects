@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools.Utils;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -117,6 +118,7 @@ namespace Unity.Netcode.RuntimeTests
         public void WhenAnticipating_ValueChangesImmediately()
         {
             var testComponent = GetTestComponent();
+            var quaternionComparer = new QuaternionEqualityComparer(0.000001f);
 
             testComponent.AnticipateMove(new Vector3(0, 1, 2));
             testComponent.AnticipateScale(new Vector3(1, 2, 3));
@@ -124,12 +126,11 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.transform.position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.transform.localScale);
-            Assert.AreEqual(Quaternion.LookRotation(new Vector3(2, 3, 4)), testComponent.transform.rotation);
+            Assert.That(testComponent.transform.rotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
 
             Assert.AreEqual(new Vector3(0, 1, 2), testComponent.AnticipatedState.Position);
             Assert.AreEqual(new Vector3(1, 2, 3), testComponent.AnticipatedState.Scale);
-            Assert.AreEqual(Quaternion.LookRotation(new Vector3(2, 3, 4)), testComponent.AnticipatedState.Rotation);
-
+            Assert.That(testComponent.AnticipatedState.Rotation, Is.EqualTo(Quaternion.LookRotation(new Vector3(2, 3, 4))).Using(quaternionComparer)); // Quaternion comparer added due to FP precision problems on Android devices.
         }
 
         [Test]

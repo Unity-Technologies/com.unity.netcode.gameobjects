@@ -8,6 +8,13 @@ namespace Unity.Netcode.RuntimeTests
     {
         private NetworkVariableNameComponent m_NetworkVariableNameComponent;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [SetUp]
         public void SetUp()
         {

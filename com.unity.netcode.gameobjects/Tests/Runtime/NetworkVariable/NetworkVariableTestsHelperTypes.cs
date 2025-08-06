@@ -129,49 +129,49 @@ namespace Unity.Netcode.RuntimeTests
         public T Value;
     }
 
-    public enum ByteEnum : byte
+    internal enum ByteEnum : byte
     {
         A,
         B,
         C = byte.MaxValue
     }
-    public enum SByteEnum : sbyte
+    internal enum SByteEnum : sbyte
     {
         A,
         B,
         C = sbyte.MaxValue
     }
-    public enum ShortEnum : short
+    internal enum ShortEnum : short
     {
         A,
         B,
         C = short.MaxValue
     }
-    public enum UShortEnum : ushort
+    internal enum UShortEnum : ushort
     {
         A,
         B,
         C = ushort.MaxValue
     }
-    public enum IntEnum : int
+    internal enum IntEnum : int
     {
         A,
         B,
         C = int.MaxValue
     }
-    public enum UIntEnum : uint
+    internal enum UIntEnum : uint
     {
         A,
         B,
         C = uint.MaxValue
     }
-    public enum LongEnum : long
+    internal enum LongEnum : long
     {
         A,
         B,
         C = long.MaxValue
     }
-    public enum ULongEnum : ulong
+    internal enum ULongEnum : ulong
     {
         A,
         B,
@@ -802,6 +802,23 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Dictionary<Vector2, Quaternion>> Vector2QuaternionDictionaryVar;
         public NetworkVariable<Dictionary<HashMapKeyClass, Quaternion>> HashMapKeyClassQuaternionDictionaryVar;
 
+        public NetworkVariable<Pose> PoseVar;
+        public NetworkVariable<NativeArray<Pose>> PoseArrayVar;
+        public NetworkVariable<List<Pose>> PoseManagedListVar;
+        public NetworkVariable<HashSet<Pose>> PoseManagedHashSetVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        public NetworkVariable<NativeList<Pose>> PoseListVar;
+        public NetworkVariable<NativeHashSet<Pose>> PoseHashSetVar;
+        public NetworkVariable<NativeHashMap<byte, Pose>> BytePoseHashMapVar;
+        public NetworkVariable<NativeHashMap<ulong, Pose>> ULongPoseHashMapVar;
+        public NetworkVariable<NativeHashMap<Vector2, Pose>> Vector2PoseHashMapVar;
+        public NetworkVariable<NativeHashMap<HashMapKeyStruct, Pose>> HashMapKeyStructPoseHashMapVar;
+#endif
+        public NetworkVariable<Dictionary<byte, Pose>> BytePoseDictionaryVar;
+        public NetworkVariable<Dictionary<ulong, Pose>> ULongPoseDictionaryVar;
+        public NetworkVariable<Dictionary<Vector2, Pose>> Vector2PoseDictionaryVar;
+        public NetworkVariable<Dictionary<HashMapKeyClass, Pose>> HashMapKeyClassPoseDictionaryVar;
+
         public NetworkVariable<Color> ColorVar;
         public NetworkVariable<NativeArray<Color>> ColorArrayVar;
         public NetworkVariable<List<Color>> ColorManagedListVar;
@@ -889,12 +906,12 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class TemplateNetworkBehaviourType<T> : NetworkBehaviour
     {
-        public NetworkVariable<T> TheVar;
+        public NetworkVariable<T> TheVar = new NetworkVariable<T>();
     }
 
     internal class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
     {
-        public NetworkVariable<T> TheVar2;
+        public NetworkVariable<T> TheVar2 = new NetworkVariable<T>();
     }
 #if !NGO_MINIMALPROJECT
     internal class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>

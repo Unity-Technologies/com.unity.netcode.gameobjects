@@ -38,6 +38,13 @@ namespace TestProject.RuntimeTests
             m_NetworkTopologyType = networkTopologyType;
         }
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (scene.name == nameof(NetworkObjectParentingTests))

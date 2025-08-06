@@ -34,8 +34,14 @@ namespace Unity.Netcode
         /// </summary>
         internal bool IsApproved { get; set; }
 
+        /// <summary>
+        /// Defines the network topology type being used for the current network session
+        /// </summary>
         public NetworkTopologyTypes NetworkTopologyType { get; internal set; }
 
+        /// <summary>
+        /// Indicates whether this client is running in Distributed Authority Host mode
+        /// </summary>
         public bool DAHost { get; internal set; }
 
         /// <summary>

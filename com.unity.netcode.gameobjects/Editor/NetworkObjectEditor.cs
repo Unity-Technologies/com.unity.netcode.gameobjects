@@ -14,6 +14,9 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkObjectEditor : UnityEditor.Editor
     {
+        private const NetworkObject.OwnershipStatus k_AllOwnershipFlags = NetworkObject.OwnershipStatus.RequestRequired | NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.Distributable;
+        private const int k_SessionOwnerFlagAsInt = (int)NetworkObject.OwnershipStatus.SessionOwner;
+
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
@@ -88,6 +91,14 @@ namespace Unity.Netcode.Editor
 
                         while (observerClientIds.MoveNext())
                         {
+                            if (!m_NetworkObject.NetworkManager.ConnectedClients.ContainsKey(observerClientIds.Current))
+                            {
+                                if ((observerClientIds.Current == 0 && m_NetworkObject.NetworkManager.IsHost) || observerClientIds.Current > 0)
+                                {
+                                    Debug.LogWarning($"Client-{observerClientIds.Current} is listed as an observer but is not connected!");
+                                }
+                                continue;
+                            }
                             if (m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject != null)
                             {
                                 EditorGUILayout.ObjectField($"ClientId: {observerClientIds.Current}", m_NetworkObject.NetworkManager.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
@@ -106,7 +117,39 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 serializedObject.UpdateIfRequiredOrScript();
+
+                // Get the current ownership property and precalculate values in order to handle
+                // the exclusion or inclusion of "all" or just the session owner flags.
+                var ownershipProperty = serializedObject.FindProperty(nameof(NetworkObject.Ownership));
+                var previousOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                var hadAll = previousOwnership == k_AllOwnershipFlags;
+                var hadSessionOwner = ownershipProperty.intValue == k_SessionOwnerFlagAsInt;
+
                 DrawPropertiesExcluding(serializedObject, k_HiddenFields);
+
+                // If the ownership flags were changed
+                var currentOwnership = (NetworkObject.OwnershipStatus)ownershipProperty.intValue;
+                if (currentOwnership != previousOwnership)
+                {
+                    // Determine if we need to handle setting or removing the session owner flag specifically
+                    // when a user selects the "All" enum flag value.
+                    var hasSessionOwner = currentOwnership.HasFlag(NetworkObject.OwnershipStatus.SessionOwner);
+                    if (hasSessionOwner)
+                    {
+                        if (ownershipProperty.intValue == -1 && !hadAll)
+                        {
+                            ownershipProperty.intValue = (int)k_AllOwnershipFlags;
+                        }
+                        else if ((hadAll && !hadSessionOwner) || (!hadAll && !hadSessionOwner))
+                        {
+                            ownershipProperty.intValue = k_SessionOwnerFlagAsInt;
+                        }
+                        else if (hadSessionOwner && hasSessionOwner)
+                        {
+                            ownershipProperty.intValue &= ~k_SessionOwnerFlagAsInt;
+                        }
+                    }
+                }
                 serializedObject.ApplyModifiedProperties();
                 EditorGUI.EndChangeCheck();
 
@@ -185,9 +228,9 @@ namespace Unity.Netcode.Editor
 
             // The below can cause visual anomalies and/or throws an exception within the EditorGUI itself (index out of bounds of the array). and has
             // The visual anomaly is when you select one field it is set in the drop down but then the flags selection in the popup menu selects more items
-            // even though if you exit the popup menu the flag setting is correct. 
-            //var ownership = (NetworkObject.OwnershipStatus)EditorGUI.EnumFlagsField(position, label, (NetworkObject.OwnershipStatus)property.enumValueFlag);
-            //property.enumValueFlag = (int)ownership;
+            // even though if you exit the popup menu the flag setting is correct.
+            // var ownership = (NetworkObject.OwnershipStatus)EditorGUI.EnumFlagsField(position, label, (NetworkObject.OwnershipStatus)property.enumValueFlag);
+            // property.enumValueFlag = (int)ownership;
             EditorGUI.EndDisabledGroup();
             EditorGUI.EndProperty();
         }

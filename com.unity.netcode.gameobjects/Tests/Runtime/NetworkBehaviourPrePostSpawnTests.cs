@@ -12,6 +12,12 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 0;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private bool m_AllowServerToStart;
 
         private GameObject m_PrePostSpawnObject;
@@ -91,12 +97,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_AllowServerToStart = false;
             return base.OnSetup();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            base.OnNewClientCreated(networkManager);
         }
 
         /// <summary>

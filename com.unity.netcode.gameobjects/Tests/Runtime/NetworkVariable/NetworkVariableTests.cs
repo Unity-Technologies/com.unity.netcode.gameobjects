@@ -396,10 +396,16 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
+    internal enum Serialization
+    {
+        EnsureLengthSafety,
+        Default,
+    }
+
 #if !MULTIPLAYER_TOOLS
-    [TestFixture(true)]
+    [TestFixture(Serialization.EnsureLengthSafety)]
 #endif
-    [TestFixture(false)]
+    [TestFixture(Serialization.Default)]
     internal class NetworkVariableTests : NetcodeIntegrationTest
     {
         private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
@@ -432,9 +438,9 @@ namespace Unity.Netcode.RuntimeTests
 
         private readonly bool m_EnsureLengthSafety;
 
-        public NetworkVariableTests(bool ensureLengthSafety)
+        public NetworkVariableTests(Serialization serialization)
         {
-            m_EnsureLengthSafety = ensureLengthSafety;
+            m_EnsureLengthSafety = serialization == Serialization.EnsureLengthSafety;
         }
 
         protected override bool CanStartServerAndClients()
@@ -467,15 +473,21 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<ClassHavingNetworkBehaviour2>();
             m_PlayerPrefab.AddComponent<StructHavingNetworkBehaviour>();
 
+            m_UseHost = useHost == HostOrServer.DAHost || useHost == HostOrServer.Host;
+            m_NetworkTopologyType = useHost == HostOrServer.DAHost ? NetworkTopologyTypes.DistributedAuthority : NetworkTopologyTypes.ClientServer;
+
             m_ServerNetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            SetDistributedAuthorityProperties(m_ServerNetworkManager);
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureLengthSafety;
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+                SetDistributedAuthorityProperties(client);
             }
 
-            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost == HostOrServer.Host, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            var useServer = useHost == HostOrServer.Server;
+            Assert.True(NetcodeIntegrationTestHelpers.Start(!useServer, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
@@ -491,7 +503,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager, result);
 
             // Assign server-side client's player
-            m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
+            var serverVersionOfPlayer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
             NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentationWithTimeTravel(
@@ -499,7 +511,14 @@ namespace Unity.Netcode.RuntimeTests
                 m_ClientNetworkManagers[0], result);
 
             // Assign client-side local player
-            m_Player1OnClient1 = result.Result.GetComponent<NetworkVariableTest>();
+            var clientVersionOfPlayer = result.Result.GetComponent<NetworkVariableTest>();
+
+            // In distributed authority mode, the client is the authority of itself, rather than the server.
+            var authority = m_DistributedAuthority ? clientVersionOfPlayer : serverVersionOfPlayer;
+            var nonAuthority = m_DistributedAuthority ? serverVersionOfPlayer : clientVersionOfPlayer;
+
+            m_Player1OnServer = authority;
+            m_Player1OnClient1 = nonAuthority;
 
             m_Player1OnServer.TheList.Clear();
 
@@ -512,7 +531,7 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost == HostOrServer.Host ? NumberOfClients * 3 : NumberOfClients * 2;
+            var instanceCount = useHost == HostOrServer.Server ? NumberOfClients * 2 : NumberOfClients * 3;
             // Wait for the client-side to notify it is finished initializing and spawning.
             success = WaitForConditionOrTimeOutWithTimeTravel(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 
@@ -1012,8 +1031,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        // Exceptions should be thrown in DA mode with UserNetworkVariableSerialization
-        public void TestUnsupportedManagedTypesWithUserSerializationDoNotThrowExceptionsInClientServerMode()
+        public void TestUnsupportedManagedTypesWithUserSerializationDoNotThrowExceptions()
         {
             var variable = new NetworkVariable<string>();
             UserNetworkVariableSerialization<string>.ReadValue = (FastBufferReader reader, out string value) =>
@@ -1038,10 +1056,6 @@ namespace Unity.Netcode.RuntimeTests
                 using var reader = new FastBufferReader(writer, Allocator.None);
                 variable.ReadField(reader);
                 Assert.AreEqual("012345", variable.Value);
-            }
-            catch (Exception)
-            {
-                Assert.True(NetworkVariableSerialization<UserNetworkVariableSerialization<string>>.IsDistributedAuthority);
             }
             finally
             {
@@ -1157,6 +1171,55 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreSame(testComp.AllInts[2], testComp.Int2);
             Assert.AreSame(testComp.AllInts[3], testComp.Int3);
             Assert.AreSame(testComp.AllInts[4], testComp.Int4);
+        }
+
+        [Test]
+        public void TestNetworkVariableChangeAndReturnInSameFrame([Values] HostOrServer useHost)
+        {
+            InitializeServerAndClients(useHost);
+
+            var serverOnValueChangedCount = 0;
+            var clientOnValueChangedCount = 0;
+
+            void ServerOnValueChanged(NetworkVariableTest.SomeEnum previous, NetworkVariableTest.SomeEnum next)
+            {
+                serverOnValueChangedCount++;
+            }
+
+            void ClientOnValueChanged(NetworkVariableTest.SomeEnum previous, NetworkVariableTest.SomeEnum next)
+            {
+                clientOnValueChangedCount++;
+            }
+
+            bool VerifyStructure()
+            {
+                return m_Player1OnClient1.TheEnum.Value == m_Player1OnServer.TheEnum.Value;
+            }
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure));
+
+            m_Player1OnServer.TheEnum.OnValueChanged += ServerOnValueChanged;
+            m_Player1OnClient1.TheEnum.OnValueChanged += ClientOnValueChanged;
+
+            // Change the value once in a frame
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.B;
+
+            // Wait for the value to sync and assert that both server and client had OnValueChanged called an equal number of times
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure), "Timed out waiting for client and server values to match");
+            Assert.AreEqual(serverOnValueChangedCount, clientOnValueChangedCount, $"Expected OnValueChanged call count to be equal. Server OnValueChanged was called {serverOnValueChangedCount} times but client was called {clientOnValueChangedCount} times!");
+
+            // Change the value twice in a frame
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.A;
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.B;
+
+            // Wait for the value to sync and assert that the server had OnValueChanged called once more than the client
+            TimeTravelAdvanceTick();
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyStructure), "Timed out waiting for client and server values to match");
+            Assert.AreEqual(serverOnValueChangedCount - 1, clientOnValueChangedCount, $"Unexpected OnValueChanged call count. Server OnValueChanged was called {serverOnValueChangedCount} times but client was called {clientOnValueChangedCount} times!");
+
+            m_Player1OnServer.TheEnum.OnValueChanged -= ServerOnValueChanged;
+            m_Player1OnClient1.TheEnum.OnValueChanged -= ClientOnValueChanged;
         }
 
         private void TestValueType<T>(T testValue, T changedValue) where T : unmanaged
@@ -1674,7 +1737,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -1794,6 +1857,12 @@ namespace Unity.Netcode.RuntimeTests
                     new Quaternion(5, 10, 15, 20),
                     new Quaternion(25, 30, 35, 40));
             }
+            else if (testType == typeof(Pose))
+            {
+                TestValueType(
+                    new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)),
+                    new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)));
+            }
             else if (testType == typeof(Color))
             {
                 TestValueType(
@@ -1835,7 +1904,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -1994,6 +2063,12 @@ namespace Unity.Netcode.RuntimeTests
                 TestValueTypeNativeArray(
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) }, Allocator.Temp),
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Pose))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) }, Allocator.Temp),
+                    new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) }, Allocator.Temp));
             }
             else if (testType == typeof(Color))
             {
@@ -2164,13 +2239,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(Quaternion), typeof(Pose), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
                 typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -2290,6 +2366,14 @@ namespace Unity.Netcode.RuntimeTests
             {
                 (var original, var original2, var changed, var changed2) = GetArarys(
                     (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())
+                );
+                TestValueTypeNativeArray(original, changed);
+                TestValueTypeNativeArray(original2, changed2);
+            }
+            else if (testType == typeof(Pose))
+            {
+                (var original, var original2, var changed, var changed2) = GetArarys(
+                    (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()))
                 );
                 TestValueTypeNativeArray(original, changed);
                 TestValueTypeNativeArray(original2, changed2);
@@ -2617,13 +2701,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeListNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(Quaternion), typeof(Pose), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
                 typeof(NetworkVariableTestClass), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -2747,6 +2832,14 @@ namespace Unity.Netcode.RuntimeTests
                 TestList(original, changed);
                 TestList(original2, changed2);
             }
+            else if (testType == typeof(Pose))
+            {
+                (var original, var original2, var changed, var changed2) = GetLists(
+                    (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()))
+                );
+                TestList(original, changed);
+                TestList(original2, changed2);
+            }
             else if (testType == typeof(Color))
             {
                 (var original, var original2, var changed, var changed2) = GetLists(
@@ -2803,13 +2896,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(HashableNetworkVariableTestClass), typeof(FixedString32Bytes))]
+                typeof(Quaternion), typeof(Pose), typeof(HashableNetworkVariableTestClass), typeof(FixedString32Bytes))]
             Type testType)
         {
             if (testType == typeof(byte))
@@ -2932,6 +3026,14 @@ namespace Unity.Netcode.RuntimeTests
                 TestHashSet(original, changed);
                 TestHashSet(original2, changed2);
             }
+            else if (testType == typeof(Pose))
+            {
+                (var original, var original2, var changed, var changed2) = GetHashSets(
+                    (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()))
+                );
+                TestHashSet(original, changed);
+                TestHashSet(original2, changed2);
+            }
             else if (testType == typeof(Color))
             {
                 (var original, var original2, var changed, var changed2) = GetHashSets(
@@ -2958,6 +3060,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.Android, RuntimePlatform.IPhonePlayer })] // Ignored test tracked in MTT-11343
         [Repeat(5)]
         public void WhenSerializingAndDeserializingVeryLargeDictionaryNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2965,7 +3068,7 @@ namespace Unity.Netcode.RuntimeTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(HashMapValClass), typeof(FixedString32Bytes))]
+                typeof(Quaternion), typeof(Pose), typeof(HashMapValClass), typeof(FixedString32Bytes))]
             Type valType)
         {
             if (valType == typeof(byte))
@@ -3490,6 +3593,35 @@ namespace Unity.Netcode.RuntimeTests
                     TestDictionary(original2, changed2);
                 }
             }
+            else if (valType == typeof(Pose))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<byte>, (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries(RandGenBytes<ulong>, (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyClass))
+                {
+                    (var original, var original2, var changed, var changed2) = GetDictionaries((rand) => new HashMapKeyClass { Data = RandGenBytes<HashMapKeyStruct>(rand) }, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestDictionary(original, changed);
+                    TestDictionary(original2, changed2);
+                }
+            }
             else if (valType == typeof(HashMapValClass))
             {
                 if (keyType == typeof(byte))
@@ -3559,7 +3691,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -3718,6 +3850,12 @@ namespace Unity.Netcode.RuntimeTests
                 TestValueTypeNativeList(
                     new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
                     new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Pose))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Pose>(Allocator.Temp) { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
+                    new NativeList<Pose>(Allocator.Temp) { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
             }
             else if (testType == typeof(Color))
             {
@@ -3940,11 +4078,7 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
-#if UTP_TRANSPORT_2_0_ABOVE
                 var which = rand.Next(changed2.Count);
-#else
-                var which = rand.Next(changed2.Count());
-#endif
                 T toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4017,11 +4151,7 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Removes; ++i)
             {
-#if UTP_TRANSPORT_2_0_ABOVE
                 var which = rand.Next(changed2.Count);
-#else
-                var which = rand.Next(changed2.Count());
-#endif
                 TKey toRemove = default;
                 foreach (var check in changed2)
                 {
@@ -4038,11 +4168,7 @@ namespace Unity.Netcode.RuntimeTests
 
             for (var i = 0; i < changed2Changes; ++i)
             {
-#if UTP_TRANSPORT_2_0_ABOVE
                 var which = rand.Next(changed2.Count);
-#else
-                var which = rand.Next(changed2.Count());
-#endif
                 TKey key = default;
                 foreach (var check in changed2)
                 {
@@ -4083,7 +4209,7 @@ namespace Unity.Netcode.RuntimeTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
+                typeof(Quaternion), typeof(Pose),typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D),
                 typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -4207,6 +4333,14 @@ namespace Unity.Netcode.RuntimeTests
                 TestValueTypeNativeList(original, changed);
                 TestValueTypeNativeList(original2, changed2);
             }
+            else if (testType == typeof(Pose))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeLists(
+                    (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()))
+                );
+                TestValueTypeNativeList(original, changed);
+                TestValueTypeNativeList(original2, changed2);
+            }
             else if (testType == typeof(Color))
             {
                 (var original, var original2, var changed, var changed2) = GetNativeLists(
@@ -4266,7 +4400,7 @@ namespace Unity.Netcode.RuntimeTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(HashableNetworkVariableTestStruct), typeof(FixedString32Bytes))]
+                typeof(Quaternion), typeof(Pose), typeof(HashableNetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
             if (testType == typeof(byte))
@@ -4389,6 +4523,14 @@ namespace Unity.Netcode.RuntimeTests
                 TestValueTypeNativeHashSet(original, changed);
                 TestValueTypeNativeHashSet(original2, changed2);
             }
+            else if (testType == typeof(Pose))
+            {
+                (var original, var original2, var changed, var changed2) = GetNativeHashSets(
+                    (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()))
+                );
+                TestValueTypeNativeHashSet(original, changed);
+                TestValueTypeNativeHashSet(original2, changed2);
+            }
             else if (testType == typeof(Color))
             {
                 (var original, var original2, var changed, var changed2) = GetNativeHashSets(
@@ -4419,7 +4561,7 @@ namespace Unity.Netcode.RuntimeTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
-                typeof(Quaternion), typeof(HashMapValStruct), typeof(FixedString32Bytes))]
+                typeof(Quaternion), typeof(Pose), typeof(HashMapValStruct), typeof(FixedString32Bytes))]
             Type valType)
         {
             if (valType == typeof(byte))
@@ -4940,6 +5082,35 @@ namespace Unity.Netcode.RuntimeTests
                 else if (keyType == typeof(HashMapKeyStruct))
                 {
                     (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+            }
+            else if (valType == typeof(Pose))
+            {
+                if (keyType == typeof(byte))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<byte>, (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(ulong))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<ulong>, (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+                }
+                else if (keyType == typeof(Vector2))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps((rand) => new Vector2((float)rand.NextDouble(), (float)rand.NextDouble()), (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
+                    TestValueTypeNativeHashMap(original, changed);
+                    TestValueTypeNativeHashMap(original2, changed2);
+
+                }
+                else if (keyType == typeof(HashMapKeyStruct))
+                {
+                    (var original, var original2, var changed, var changed2) = GetMaps(RandGenBytes<HashMapKeyStruct>, (rand) => new Pose(new Vector3((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()), new Quaternion((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble())));
                     TestValueTypeNativeHashMap(original, changed);
                     TestValueTypeNativeHashMap(original2, changed2);
                 }

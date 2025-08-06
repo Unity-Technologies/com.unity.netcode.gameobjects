@@ -17,6 +17,12 @@ namespace TestProject.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
             return NetworkManagerInstatiationMode.DoNotCreate;

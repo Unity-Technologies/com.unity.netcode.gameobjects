@@ -53,6 +53,11 @@ namespace TestProject.RuntimeTests
         private OwnerShipMode m_OwnerShipMode;
         private AuthoritativeMode m_AuthoritativeMode;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
 
         public NetworkAnimatorTests(HostOrServer hostOrServer, OwnerShipMode ownerShipMode, AuthoritativeMode authoritative)
         {
@@ -624,18 +629,6 @@ namespace TestProject.RuntimeTests
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{m_OwnerShipMode}] Stopping ------------------ ");
         }
 
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationCheerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationCheerOwnerTestPrefab };
-            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-        }
-
         /// <summary>
         /// Verifies that triggers are synchronized with currently connected clients
         /// </summary>
@@ -862,8 +855,8 @@ namespace TestProject.RuntimeTests
             Assert.True(success, $"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(m_AuthoritativeMode)} to be spawned!");
 
             // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
-            var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
-            Assert.True(calculatedClients == TotalClients, $"Number of client");
+            var calculatedClients = AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0);
+            Assert.True(calculatedClients == TotalClients, $"Incorrect number of clients: actual {calculatedClients}, expected {TotalClients}.");
 
             var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
@@ -994,6 +987,7 @@ namespace TestProject.RuntimeTests
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
@@ -1001,11 +995,25 @@ namespace TestProject.RuntimeTests
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+                clientNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
                 clientNetworkManager.StartClient();
             }
 
+
+            bool AllClientsConnected()
+            {
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    if (!client.IsConnectedClient)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             // Wait for the server and clients to start and connect
-            success = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllClientsConnected, 1000);
             Assert.True(success, $"Client Failed to Connect!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }

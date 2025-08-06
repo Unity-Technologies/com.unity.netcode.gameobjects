@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -6,6 +7,13 @@ namespace Unity.Netcode.RuntimeTests
     internal class StartStopTests
     {
         private NetworkManager m_NetworkManager;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         [SetUp]
         public void Setup()

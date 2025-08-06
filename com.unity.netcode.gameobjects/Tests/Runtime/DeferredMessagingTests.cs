@@ -259,8 +259,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 AddPrefabsToClient(networkManager);
             }
-
-            base.OnNewClientCreated(networkManager);
+            // Don't call base to avoid synchronizing the prefabs
         }
 
         private void SpawnClients(bool clearTestDeferredMessageManagerCallFlags = true)
@@ -495,7 +494,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        //[Ignore("Disabling this temporarily until it is migrated into new integration test.")]
         public void WhenASpawnMessageArrivesBeforeThePrefabIsAvailable_ItIsDeferred()
         {
             m_SkipAddingPrefabsToClient = true;

@@ -34,7 +34,10 @@ namespace Unity.Netcode
 #endif
             try
             {
-                m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
+                foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
+                {
+                    m_DirtyNetworkObjects.Add(dirtyNetworkObject);
+                }
                 m_PendingDirtyNetworkObjects.Clear();
 
                 // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
@@ -104,12 +107,14 @@ namespace Unity.Netcode
                         }
                     }
                 }
+
                 // Now, reset all the no-longer-dirty variables
-                foreach (var dirtyobj in m_DirtyNetworkObjects)
+                foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    dirtyobj.PostNetworkVariableWrite(forceSend);
-                    // Once done processing, we set the previous owner id to the current owner id
-                    dirtyobj.PreviousOwnerId = dirtyobj.OwnerClientId;
+                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
+                    {
+                        behaviour.PostNetworkVariableWrite(forceSend);
+                    }
                 }
                 m_DirtyNetworkObjects.Clear();
             }
@@ -141,6 +146,9 @@ namespace Unity.Netcode
 
             // Then show any NetworkObjects queued to be made visible/shown
             m_NetworkManager.SpawnManager.HandleNetworkObjectShow();
+
+            // Handle object redistribution (DA + disabled scene management only)
+            m_NetworkManager.HandleRedistributionToClients();
         }
     }
 }

@@ -232,6 +232,18 @@ namespace Unity.Netcode
         public void SerializeValue(ref Quaternion[] value) => m_Implementation.SerializeValue(ref value);
 
         /// <summary>
+        /// Read or write a Pose value
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValue(ref Pose value) => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
+        /// Read or write an array of Pose values
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        public void SerializeValue(ref Pose[] value) => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
         /// Read or write a Color value
         /// </summary>
         /// <param name="value">The value to read/write</param>
@@ -301,7 +313,6 @@ namespace Unity.Netcode
         /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The values to read/write</param>
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray when reading</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value, allocator);
 
@@ -311,7 +322,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The values to read/write</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref NativeList<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
 #endif
@@ -330,8 +340,8 @@ namespace Unity.Netcode
         /// SerializeValuePreChecked methods. But note that the benefit is small and only likely to be
         /// noticeable if serializing a very large number of items.
         /// </summary>
-        /// <param name="amount"></param>
-        /// <returns></returns>
+        /// <param name="amount">The number of values that will need to be read or written</param>
+        /// <returns>True if there is sufficient space available for the specified amount, false otherwise</returns>
         public bool PreCheck(int amount)
         {
             return m_Implementation.PreCheck(amount);
@@ -554,6 +564,24 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         public void SerializeValuePreChecked(ref Quaternion[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        /// <summary>
+        /// Serialize a Pose, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref Pose value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        /// <summary>
+        /// Serialize a Pose array, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref Pose[] value) => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
         /// Serialize a Color, "pre-checked", which skips buffer checks.

@@ -460,6 +460,7 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
+
         protected override unsafe void RunTypeTestSafe<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -682,7 +683,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -696,7 +697,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -710,7 +711,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -725,7 +726,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -1578,6 +1579,22 @@ namespace Unity.Netcode.EditorTests
                 reader.TryBeginReadInternal(5);
                 Assert.AreEqual(reader.Handle->AllowedReadMark, 25);
             }
+        }
+
+        [Test]
+        public unsafe void WhenUsingArraySegment_ConstructorHonorsArraySegmentConfiguration()
+        {
+            var bytes = new byte[] { 0, 1, 2, 3 };
+            var segment = new ArraySegment<byte>(bytes, 1, 3);
+            var reader = new FastBufferReader(segment, Allocator.Temp);
+
+            var readerArray = reader.ToArray();
+            Assert.True(readerArray.Length == bytes.Length - 1, $"Array of reader should have a length of {bytes.Length - 1} but was {readerArray.Length}!");
+            for (int i = 0; i < readerArray.Length; i++)
+            {
+                Assert.True(bytes[i + 1] == readerArray[i], $"Value of {nameof(readerArray)} at index {i} is {readerArray[i]} but should be {bytes[i + 1]}!");
+            }
+            reader.Dispose();
         }
     }
 }

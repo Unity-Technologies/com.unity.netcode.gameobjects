@@ -19,6 +19,13 @@ namespace TestProject.RuntimeTests
 
         protected float m_ConditionMetFrequency = 0.1f;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This does not need to be tested against a CMB Server
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [UnitySetUp]
         protected IEnumerator SetUp()
         {

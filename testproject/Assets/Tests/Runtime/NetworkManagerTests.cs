@@ -9,9 +9,28 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    public class NetworkManagerTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 2;
+
+        [Test]
+        public void ValidateTransportAndClientIds()
+        {
+            var transportId = m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId);
+            Assert.IsTrue(m_ServerNetworkManager.GetTransportIdFromClientId(m_ServerNetworkManager.LocalClientId) == m_ServerNetworkManager.ConnectionManager.ServerTransportId);
+            Assert.IsTrue(m_ServerNetworkManager.GetClientIdFromTransportId(transportId) == m_ServerNetworkManager.LocalClientId);
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                transportId = m_ServerNetworkManager.GetTransportIdFromClientId(client.LocalClientId);
+                Assert.AreEqual(client.LocalClientId, m_ServerNetworkManager.GetClientIdFromTransportId(transportId), "Server and client transport IDs don't match.");
+            }
+        }
+    }
+
     [TestFixture(UseSceneManagement.SceneManagementDisabled)]
     [TestFixture(UseSceneManagement.SceneManagementEnabled)]
-    public class NetworkManagerTests : NetcodeIntegrationTest
+    public class NetworkManagerSceneTests : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "InSceneNetworkObject";
         protected override int NumberOfClients => 0;
@@ -22,7 +41,6 @@ namespace TestProject.RuntimeTests
             SceneManagementDisabled
         }
 
-        private bool m_EnableSceneManagement;
         private NetworkObject m_NetworkObject;
         private bool m_NetworkObjectWasSpawned;
         private bool m_NetworkBehaviourIsHostWasSet;
@@ -34,7 +52,7 @@ namespace TestProject.RuntimeTests
 
         private bool m_UseSceneManagement;
 
-        public NetworkManagerTests(UseSceneManagement useSceneManagement)
+        public NetworkManagerSceneTests(UseSceneManagement useSceneManagement)
         {
             m_UseSceneManagement = useSceneManagement == UseSceneManagement.SceneManagementEnabled;
         }
@@ -85,7 +103,7 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = m_UseSceneManagement;
             m_NetworkObjectTestComponent.ConfigureClientConnected(m_ServerNetworkManager, OnClientConnectedCallback);
         }
 
@@ -108,17 +126,13 @@ namespace TestProject.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.EnableSceneManagement = m_EnableSceneManagement;
-            foreach (var prefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(prefab);
-            }
+            networkManager.NetworkConfig.EnableSceneManagement = m_UseSceneManagement;
             base.OnNewClientCreated(networkManager);
         }
 
         /// <summary>
         /// Validate shutting down a second time does not cause an exception.
-        /// </summary>        
+        /// </summary>
         [UnityTest]
         public IEnumerator ValidateShutdown([Values] ShutdownChecks shutdownCheck)
         {
@@ -133,7 +147,7 @@ namespace TestProject.RuntimeTests
             }
             else
             {
-                // For this test (simplify the complexity) with a late joining client, just remove the 
+                // For this test (simplify the complexity) with a late joining client, just remove the
                 // in-scene placed NetworkObject prior to the client connecting
                 // (We are testing the shutdown sequence)
                 var spawnedObjects = m_ServerNetworkManager.SpawnManager.SpawnedObjectsList.ToList();

@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -85,15 +85,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SeconValue = new NetworkVariable<int>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         }
 
-        public override void OnNetworkSpawn()
-        {
-            // Non-Authority will register each NetworkObject when it is spawned
-            if ((NetworkManager.DistributedAuthorityMode && !IsOwner) || (!NetworkManager.DistributedAuthorityMode && !IsServer))
-            {
-                NetworkBehaviourUpdaterTests.ClientSideNotifyObjectSpawned(gameObject);
-            }
-        }
-
         /// <summary>
         /// Server side only, sets the NetworkVariables being used to the ValueToSetNetVarTo
         /// that is pre-configured when the Network Prefab is created.
@@ -160,12 +151,14 @@ namespace Unity.Netcode.RuntimeTests
     internal class NetworkBehaviourUpdaterTests : NetcodeIntegrationTest
     {
         // Go ahead and create maximum number of clients (not all tests will use them)
-        protected override int NumberOfClients => m_NumberOfClients;
+        protected override int NumberOfClients => m_ClientCount;
         public const int NetVarValueToSet = 1;
-        private static List<GameObject> s_ClientSpawnedNetworkObjects = new List<GameObject>();
+        private List<ulong> m_SpawnedObjects = new List<ulong>();
         private GameObject m_PrefabToSpawn;
         private NetVarCombinationTypes m_NetVarCombinationTypes;
-        private int m_NumberOfClients = 0;
+        private int m_ClientCount = 0;
+
+        private StringBuilder m_ErrorLog = new StringBuilder();
 
         public NetworkBehaviourUpdaterTests(HostOrServer hostOrServer, int numberOfClients, NetVarContainer.NetVarsToCheck first, NetVarContainer.NetVarsToCheck second) : base(hostOrServer)
         {
@@ -174,25 +167,14 @@ namespace Unity.Netcode.RuntimeTests
                 FirstType = first,
                 SecondType = second
             };
-            m_NumberOfClients = numberOfClients;
+            // Adjust the client count if connecting to the service.
+            m_ClientCount = numberOfClients;
         }
 
         protected override IEnumerator OnSetup()
         {
-            s_ClientSpawnedNetworkObjects.Clear();
+            m_SpawnedObjects.Clear();
             return base.OnSetup();
-        }
-
-        /// <summary>
-        /// Clients will call this when NetworkObjects are spawned on their end
-        /// </summary>
-        /// <param name="objectSpaned">the GameObject of the NetworkObject spawned</param>
-        public static void ClientSideNotifyObjectSpawned(GameObject objectSpaned)
-        {
-            if (!s_ClientSpawnedNetworkObjects.Contains(objectSpaned))
-            {
-                s_ClientSpawnedNetworkObjects.Add(objectSpaned);
-            }
         }
 
         protected override void OnServerAndClientsCreated()
@@ -222,6 +204,31 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Determines if all clients have spawned clone instances.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="m_ErrorLog"/> will contain log entries of the
+        /// <see cref="NetworkManager"/> instances and NetworkObjects
+        /// that did not get spawned.
+        /// </remarks>
+        /// <returns>true(success) or false (failure)</returns>
+        private bool AllClientsSpawnedObjects()
+        {
+            m_ErrorLog.Clear();
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                foreach (var networkObjectId in m_SpawnedObjects)
+                {
+                    if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        m_ErrorLog.AppendLine($"[{networkManager.name}] Has not spawned {nameof(NetworkObject)}-{networkObjectId}.");
+                    }
+                }
+            }
+            return m_ErrorLog.Length == 0;
+        }
+
+        /// <summary>
         /// The updated BehaviourUpdaterAllTests was re-designed to replicate the same functionality being tested in the
         /// original version of this test with additional time out handling and a re-organization in the order of operations.
         /// Things like making sure all clients have spawned the NetworkObjects in question prior to testing for the
@@ -243,22 +250,19 @@ namespace Unity.Netcode.RuntimeTests
             // the appropriate number of NetworkObjects with the NetVarContainer behaviour
             var numberOfObjectsToSpawn = numToSpawn * NumberOfClients;
 
-            var authority = m_NetworkTopologyType == NetworkTopologyTypes.DistributedAuthority ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            var authority = GetAuthorityNetworkManager();
 
             // spawn the objects
             for (int i = 0; i < numToSpawn; i++)
             {
-                var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
+                var spawnedObject = SpawnObject(m_PrefabToSpawn, authority);
                 spawnedPrefabs.Add(spawnedObject);
-                var networkSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
-                networkSpawnedObject.NetworkManagerOwner = authority;
-                networkSpawnedObject.Spawn();
+                m_SpawnedObjects.Add(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
             }
 
             // Waits for all clients to spawn the NetworkObjects
-            yield return WaitForConditionOrTimeOut(() => numberOfObjectsToSpawn == s_ClientSpawnedNetworkObjects.Count);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for clients to report spawning objects! " +
-                $"Total reported client-side spawned objects {s_ClientSpawnedNetworkObjects.Count}");
+            yield return WaitForConditionOrTimeOut(AllClientsSpawnedObjects);
+            AssertOnTimeout($"Timed out waiting for clients to report spawning objects!\n {m_ErrorLog}");
 
 
             // Once all clients have spawned the NetworkObjects, set the network variables for
@@ -287,12 +291,19 @@ namespace Unity.Netcode.RuntimeTests
 
             // Get a list of all NetVarContainer components on the client-side spawned NetworkObjects
             var clientSideNetVarContainers = new List<NetVarContainer>();
-            foreach (var clientSpawnedObjects in s_ClientSpawnedNetworkObjects)
+            foreach (var networkManager in m_NetworkManagers)
             {
-                var netVarContainers = clientSpawnedObjects.GetComponents<NetVarContainer>();
-                foreach (var netvarContiner in netVarContainers)
+                if (networkManager == authority)
                 {
-                    clientSideNetVarContainers.Add(netvarContiner);
+                    continue;
+                }
+                foreach (var networkObjectId in m_SpawnedObjects)
+                {
+                    var netVarContainers = networkManager.SpawnManager.SpawnedObjects[networkObjectId].GetComponents<NetVarContainer>();
+                    foreach (var netvarContiner in netVarContainers)
+                    {
+                        clientSideNetVarContainers.Add(netvarContiner);
+                    }
                 }
             }
 

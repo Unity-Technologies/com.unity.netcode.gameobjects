@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using NUnit.Framework;
 using TestProject.ManualTests;
@@ -241,9 +242,10 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
 
-            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            var sceneEventStartedStatus = authority.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
             Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
             yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
             AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
@@ -419,9 +421,10 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-            m_ServerNetworkManager.SceneManager.ClientSynchronizationMode = LoadSceneMode.Additive;
-            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            authority.SceneManager.ClientSynchronizationMode = LoadSceneMode.Additive;
+            var sceneEventStartedStatus = authority.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
             Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
             yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
             AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
@@ -447,7 +450,7 @@ namespace TestProject.RuntimeTests
                 return;
             }
 
-            if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
+            if (sceneEvent.ClientId == GetAuthorityNetworkManager().LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
             {
                 m_InitialClientsLoadedScene = true;
             }
@@ -463,9 +466,10 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
 
-            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            var sceneEventStartedStatus = authority.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
             Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
             yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
             AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
@@ -483,114 +487,58 @@ namespace TestProject.RuntimeTests
         private bool AllClientInstancesMatchServerInstance()
         {
             m_ErrorValidationLog.Clear();
-            if (ParentingAutoSyncManager.ServerInstance == null)
+            if (ParentingAutoSyncManager.AuthorityInstance == null)
             {
                 m_ErrorValidationLog.AppendLine("ServerInstance is null");
                 return false;
             }
-            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms.Count; i++)
+
+            if (!AllClientInstancesMatchServerInstances("AutoSync On", ParentingAutoSyncManager.AuthorityInstance.NetworkObjectAutoSyncOnTransforms))
             {
-                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms[i];
-                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
-                {
-                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
-                    var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOnTransforms[i];
-                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s position {clientRelativeAutoSyncManager.transform.position} does not equal the server-side position {serverTransformToTest.transform.position}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s rotation {clientRelativeAutoSyncManager.transform.eulerAngles} does not equal the server-side position {serverTransformToTest.transform.eulerAngles}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s scale {clientRelativeAutoSyncManager.transform.localScale} does not equal the server-side position {serverTransformToTest.transform.localScale}");
-                        return false;
-                    }
-                }
+                return false;
             }
 
-            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms.Count; i++)
+            if (!AllClientInstancesMatchServerInstances("AutoSync Off", ParentingAutoSyncManager.AuthorityInstance.NetworkObjectAutoSyncOffTransforms))
             {
-                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms[i];
-                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
-                {
-                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
-                    var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOffTransforms[i];
-                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s position {clientRelativeAutoSyncManager.transform.position} does not equal the server-side position {serverTransformToTest.transform.position}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s rotation {clientRelativeAutoSyncManager.transform.eulerAngles} does not equal the server-side position {serverTransformToTest.transform.eulerAngles}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s scale {clientRelativeAutoSyncManager.transform.localScale} does not equal the server-side position {serverTransformToTest.transform.localScale}");
-                        return false;
-                    }
-                }
+                return false;
             }
 
-            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms.Count; i++)
+            if (!AllClientInstancesMatchServerInstances("GO-AutoSync On", ParentingAutoSyncManager.AuthorityInstance.GameObjectAutoSyncOnTransforms))
             {
-                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms[i];
-                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
+                return false;
+            }
+
+            return AllClientInstancesMatchServerInstances("GO-AutoSync Off", ParentingAutoSyncManager.AuthorityInstance.GameObjectAutoSyncOffTransforms);
+        }
+
+        private bool AllClientInstancesMatchServerInstances(string type, List<Transform> serverInstances)
+        {
+            for (int i = 0; i < serverInstances.Count; i++)
+            {
+                var serverTransformToTest = serverInstances[i];
+                foreach (var client in m_ClientNetworkManagers)
                 {
-                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    if (client.LocalClient.IsSessionOwner)
+                    {
+                        continue;
+                    }
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[client.LocalClientId];
                     var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOnTransforms[i];
                     if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
                     {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s position {clientRelativeAutoSyncManager.transform.position} does not equal the server-side position {serverTransformToTest.transform.position}");
+                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][{type}] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s position {clientRelativeAutoSyncManager.transform.position} does not equal the server-side position {serverTransformToTest.transform.position}");
                         return false;
                     }
 
                     if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
                     {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s rotation {clientRelativeAutoSyncManager.transform.eulerAngles} does not equal the server-side position {serverTransformToTest.transform.eulerAngles}");
+                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][{type}] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s rotation {clientRelativeAutoSyncManager.transform.eulerAngles} does not equal the server-side position {serverTransformToTest.transform.eulerAngles}");
                         return false;
                     }
 
                     if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
                     {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync On] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s scale {clientRelativeAutoSyncManager.transform.localScale} does not equal the server-side position {serverTransformToTest.transform.localScale}");
-                        return false;
-                    }
-                }
-            }
-
-            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms.Count; i++)
-            {
-                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms[i];
-                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
-                {
-                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
-                    var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOffTransforms[i];
-                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s position {clientRelativeAutoSyncManager.transform.position} does not equal the server-side position {serverTransformToTest.transform.position}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s rotation {clientRelativeAutoSyncManager.transform.eulerAngles} does not equal the server-side position {serverTransformToTest.transform.eulerAngles}");
-                        return false;
-                    }
-
-                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
-                    {
-                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][GO-AutoSync Off] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s scale {clientRelativeAutoSyncManager.transform.localScale} does not equal the server-side position {serverTransformToTest.transform.localScale}");
+                        m_ErrorValidationLog.AppendLine($"[Client-{clientRelativeAutoSyncManager.NetworkManager.LocalClientId}][{type}] {nameof(NetworkObject)}-{clientRelativeAutoSyncManager.NetworkObjectId}'s scale {clientRelativeAutoSyncManager.transform.localScale} does not equal the server-side position {serverTransformToTest.transform.localScale}");
                         return false;
                     }
                 }
@@ -609,9 +557,10 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
-            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+            var authority = GetAuthorityNetworkManager();
+            authority.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
 
-            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            var sceneEventStartedStatus = authority.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
             Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
             yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
             AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");

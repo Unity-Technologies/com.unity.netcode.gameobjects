@@ -17,6 +17,13 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_Instantiated;
         private bool m_Destroyed;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         /// <summary>
         /// Validates the <see cref="NetworkManager.OnInstantiated"/> and <see cref="NetworkManager.OnDestroying"/> event notifications
         /// </summary>
@@ -234,6 +241,46 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitUntilServerBufferingIsReady();
             Assert.AreEqual(2, callbacksInvoked, "either OnServerStarted or OnClientStarted wasn't invoked");
+        }
+
+        [UnityTest]
+        public IEnumerator OnPreShutdownCalledWhenShuttingDown()
+        {
+            bool preShutdownInvoked = false;
+            bool shutdownInvoked = false;
+            var gameObject = new GameObject(nameof(OnPreShutdownCalledWhenShuttingDown));
+            m_ServerManager = gameObject.AddComponent<NetworkManager>();
+
+            // Set dummy transport that does nothing
+            var transport = gameObject.AddComponent<DummyTransport>();
+            m_ServerManager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            Action onPreShutdown = () =>
+            {
+                preShutdownInvoked = true;
+                Assert.IsFalse(shutdownInvoked, "OnPreShutdown was invoked after OnServerStopped");
+            };
+
+            Action<bool> onServerStopped = (bool wasAlsoClient) =>
+            {
+                shutdownInvoked = true;
+                Assert.IsTrue(preShutdownInvoked, "OnPreShutdown wasn't invoked before OnServerStopped");
+            };
+
+            // Start server to cause initialization process
+            Assert.True(m_ServerManager.StartServer());
+            Assert.True(m_ServerManager.IsListening);
+
+            m_ServerManager.OnPreShutdown += onPreShutdown;
+            m_ServerManager.OnServerStopped += onServerStopped;
+            m_ServerManager.Shutdown();
+            Object.DestroyImmediate(gameObject);
+
+            yield return WaitUntilManagerShutsdown();
+
+            Assert.False(m_ServerManager.IsListening);
+            Assert.True(preShutdownInvoked, "OnPreShutdown wasn't invoked");
+            Assert.True(shutdownInvoked, "OnServerStopped wasn't invoked");
         }
 
         private IEnumerator WaitUntilManagerShutsdown()

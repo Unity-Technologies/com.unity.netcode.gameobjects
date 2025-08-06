@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEngine;
 using UnityEngine.TestTools;
 using Random = UnityEngine.Random;
 
@@ -20,10 +19,10 @@ namespace Unity.Netcode.RuntimeTests
     /// - HashSet
     /// This also does some testing on nested collections, but does
     /// not test every possible combination.
-    /// </summary>    
+    /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkVariableCollectionsTests : NetcodeIntegrationTest
+    internal class NetworkVariableCollectionsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 2;
 
@@ -218,7 +217,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForConditionOrTimeOut(() => compInt.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                 AssertOnTimeout($"Client-{client.LocalClientId} full set failed to synchronize on {nameof(ListTestHelperInt)} {compInt.name}!");
                 //////////////////////////////////
-                // Server Full Set    
+                // Server Full Set
                 compIntServer.FullSet(GetRandomIntList(5), ListTestHelperBase.Targets.Server);
                 yield return WaitForConditionOrTimeOut(() => compIntServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                 AssertOnTimeout($"Server full set failed to synchronize on {nameof(ListTestHelperInt)} {compIntServer.name}!");
@@ -285,7 +284,7 @@ namespace Unity.Netcode.RuntimeTests
                 // Only test restore on non-host clients (otherwise a host is both server and client/owner)
                 if (!client.IsServer)
                 {
-                    // No Write Client Remove List<int> item with CheckDirtyState restore                
+                    // No Write Client Remove List<int> item with CheckDirtyState restore
                     compListInt.Remove(compListInt.ListCollectionServer.Value[index], ListTestHelperBase.Targets.Server);
                     yield return WaitForConditionOrTimeOut(() => compListInt.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                     AssertOnTimeout($"Client-{client.LocalClientId} remove failed to restore on {nameof(ListTestHelperListInt)} {compListIntServer.name}! {compListIntServer.GetLog()}");
@@ -474,7 +473,7 @@ namespace Unity.Netcode.RuntimeTests
                     yield return WaitForConditionOrTimeOut(() => compObjectServer.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                     AssertOnTimeout($"Client-{client.LocalClientId} change failed to restore on {nameof(ListTestHelperSerializableObject)} {compObjectServer.name}!");
 
-                    // No Write Client Remove Serializable item with owner state update restore                
+                    // No Write Client Remove Serializable item with owner state update restore
                     compObject.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
                 }
                 compObjectServer.ListCollectionServer.Value[index] = SerializableObject.GetRandomObject();
@@ -838,7 +837,7 @@ namespace Unity.Netcode.RuntimeTests
                     compDictionaryServer.ListCollectionOwner.IsDirty();
                     yield return WaitForConditionOrTimeOut(() => compDictionaryServer.CompareTrackedChanges(ListTestHelperBase.Targets.Owner));
                     AssertOnTimeout($"Server add to owner write collection property failed to restore on {className} {compDictionaryServer.name}! {compDictionaryServer.GetLog()}");
-                    // Server-side add the same key and SerializableObject to owner write permission (would throw key exists exception too if previous failed)                    
+                    // Server-side add the same key and SerializableObject to owner write permission (would throw key exists exception too if previous failed)
                     compDictionaryServer.ListCollectionOwner.Value.Add(newEntry.Item1, newEntry.Item2);
                     // Server-side add a completely new key and SerializableObject to to owner write permission property
                     compDictionaryServer.ListCollectionOwner.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
@@ -864,7 +863,7 @@ namespace Unity.Netcode.RuntimeTests
                     compDictionary.ListCollectionServer.IsDirty();
                     yield return WaitForConditionOrTimeOut(() => compDictionary.CompareTrackedChanges(ListTestHelperBase.Targets.Server));
                     AssertOnTimeout($"Client-{client.LocalClientId} add to server write collection property failed to restore on {className} {compDictionary.name}! {compDictionary.GetLog()}");
-                    // Client-side add the same key and SerializableObject to server write permission property (would throw key exists exception too if previous failed)                    
+                    // Client-side add the same key and SerializableObject to server write permission property (would throw key exists exception too if previous failed)
                     compDictionary.ListCollectionServer.Value.Add(newEntry.Item1, newEntry.Item2);
                     // Client-side add a completely new key and SerializableObject to to server write permission property
                     compDictionary.ListCollectionServer.Value.Add(GetNextKey(), SerializableObject.GetRandomObject());
@@ -1212,507 +1211,8 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    [TestFixture(HostOrServer.DAHost, CollectionTypes.List)]
-    [TestFixture(HostOrServer.DAHost, CollectionTypes.Dictionary)]
-    [TestFixture(HostOrServer.Host, CollectionTypes.List)]
-    [TestFixture(HostOrServer.Host, CollectionTypes.Dictionary)]
-    [TestFixture(HostOrServer.Server, CollectionTypes.List)]
-    [TestFixture(HostOrServer.Server, CollectionTypes.Dictionary)]
-    public class NetworkVariableCollectionsChangingTests : NetcodeIntegrationTest
-    {
-        protected override int NumberOfClients => 2;
-        public enum CollectionTypes
-        {
-            Dictionary,
-            List,
-        }
-        private StringBuilder m_ErrorLog = new StringBuilder();
-        private CollectionTypes m_CollectionType;
-        private GameObject m_TestPrefab;
-        private NetworkObject m_Instance;
-
-        public NetworkVariableCollectionsChangingTests(HostOrServer hostOrServer, CollectionTypes collectionType) : base(hostOrServer)
-        {
-            m_CollectionType = collectionType;
-        }
-
-        protected override void OnServerAndClientsCreated()
-        {
-            m_TestPrefab = CreateNetworkObjectPrefab("TestObject");
-            if (m_CollectionType == CollectionTypes.Dictionary)
-            {
-                m_TestPrefab.AddComponent<DictionaryCollectionUpdateHelper>();
-            }
-            else
-            {
-                m_TestPrefab.AddComponent<ListCollectionUpdateHelper>();
-            }
-            if (m_DistributedAuthority)
-            {
-                var networkObject = m_TestPrefab.GetComponent<NetworkObject>();
-                networkObject.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
-            }
-            base.OnServerAndClientsCreated();
-        }
-
-        private bool AllInstancesSpawned()
-        {
-            if (!UseCMBService())
-            {
-                if (!m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                if (!client.SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private Dictionary<ulong, NetworkManager> m_NetworkManagers = new Dictionary<ulong, NetworkManager>();
-
-        private bool ValidateAllInstances()
-        {
-            if (!m_NetworkManagers.ContainsKey(m_Instance.OwnerClientId))
-            {
-                return false;
-            }
-
-            if (!m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects.ContainsKey(m_Instance.NetworkObjectId))
-            {
-                return false;
-            }
-
-            var ownerNetworkManager = m_NetworkManagers[m_Instance.OwnerClientId];
-
-            var ownerClientInstance = m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
-
-            foreach (var client in m_NetworkManagers)
-            {
-                if (client.Value == ownerNetworkManager)
-                {
-                    continue;
-                }
-
-                var otherInstance = client.Value.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
-                if (!ownerClientInstance.ValidateAgainst(otherInstance))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool OwnershipChangedOnAllClients(ulong expectedOwner)
-        {
-            m_ErrorLog.Clear();
-            foreach (var client in m_NetworkManagers)
-            {
-                var otherInstance = client.Value.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
-                if (otherInstance.OwnerClientId != expectedOwner)
-                {
-                    m_ErrorLog.AppendLine($"Client-{client.Value.LocalClientId} instance of {m_Instance.name} still shows the owner is Client-{otherInstance.OwnerClientId} when it should be Client-{expectedOwner}!");
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private BaseCollectionUpdateHelper GetOwnerInstance()
-        {
-            var ownerNetworkManager = m_NetworkManagers[m_Instance.OwnerClientId];
-            return m_NetworkManagers[m_Instance.OwnerClientId].SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
-        }
-
-        /// <summary>
-        /// Gets the authority instance.
-        /// Client-Server: will always return the server-side instance
-        /// Distributed Authority: will always return the owner
-        /// </summary>
-        /// <returns>authority instance</returns>
-        private BaseCollectionUpdateHelper GetAuthorityInstance()
-        {
-            if (m_DistributedAuthority)
-            {
-                return GetOwnerInstance();
-            }
-            else
-            {
-                return m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_Instance.NetworkObjectId].GetComponent<BaseCollectionUpdateHelper>();
-            }
-        }
-
-        [UnityTest]
-        public IEnumerator CollectionAndOwnershipChangingTest()
-        {
-            BaseCollectionUpdateHelper.VerboseMode = m_EnableVerboseDebug;
-            var runWaitPeriod = new WaitForSeconds(0.5f);
-            m_NetworkManagers.Clear();
-            if (!UseCMBService() && m_UseHost)
-            {
-                m_NetworkManagers.Add(m_ServerNetworkManager.LocalClientId, m_ServerNetworkManager);
-            }
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                m_NetworkManagers.Add(client.LocalClientId, client);
-            }
-
-            var authorityNetworkManager = UseCMBService() || !m_UseHost ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-
-            var instance = SpawnObject(m_TestPrefab, authorityNetworkManager);
-            m_Instance = instance.GetComponent<NetworkObject>();
-            var helper = instance.GetComponent<BaseCollectionUpdateHelper>();
-            var currentOwner = helper.OwnerClientId;
-            yield return WaitForConditionOrTimeOut(AllInstancesSpawned);
-            AssertOnTimeout($"[Pre][1st Phase] Timed out waiting for all clients to spawn {m_Instance.name}!");
-            helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
-            yield return runWaitPeriod;
-
-            // Update values, validate values, change owner, updates values, and repeat until all clients have been the owner at least once
-            for (int i = 0; i < 4; i++)
-            {
-                helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
-                yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-                AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to validdate their values!");
-                helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
-                yield return s_DefaultWaitForTick;
-
-                currentOwner = GetAuthorityInstance().ChangeOwner();
-                Assert.IsFalse(currentOwner == ulong.MaxValue, "A non-authority instance attempted to change ownership!");
-
-                yield return WaitForConditionOrTimeOut(() => OwnershipChangedOnAllClients(currentOwner));
-                AssertOnTimeout($"[1st Phase] Timed out waiting for all clients to change ownership!\n {m_ErrorLog.ToString()}");
-                helper = GetOwnerInstance();
-                yield return runWaitPeriod;
-            }
-
-            // Now reset the values
-            helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
-            helper.Clear();
-
-            // Validate all instances are reset
-            yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[Pre][2nd Phase]Timed out waiting for all clients to validdate their values!");
-            helper.SetState(BaseCollectionUpdateHelper.HelperStates.Start);
-
-            // Update, change ownership, and repeat until all clients have been the owner at least once
-            for (int i = 0; i < 4; i++)
-            {
-                yield return runWaitPeriod;
-                currentOwner = GetAuthorityInstance().ChangeOwner();
-                Assert.IsFalse(currentOwner == ulong.MaxValue, "A non-authority instance attempted to change ownership!");
-                yield return WaitForConditionOrTimeOut(() => OwnershipChangedOnAllClients(currentOwner));
-                AssertOnTimeout($"[2nd Phase] Timed out waiting for all clients to change ownership!");
-                helper = GetOwnerInstance();
-            }
-
-            helper.SetState(BaseCollectionUpdateHelper.HelperStates.Pause);
-            yield return WaitForConditionOrTimeOut(ValidateAllInstances);
-            AssertOnTimeout($"[Last Validate] Timed out waiting for all clients to validdate their values!");
-        }
-    }
-
-    #region COLLECTION CHANGING COMPONENTS
-    /// <summary>
-    /// Helper class to test adding <see cref="NetworkVariable{T}"/> dictionary entries rapidly with frequent ownership changes.
-    /// This includes a companion <see cref="NetworkVariable{T}"/> integer that is continually incremented and used as the key value for each entry.
-    /// </summary>
-    public class DictionaryCollectionUpdateHelper : BaseCollectionUpdateHelper
-    {
-        private NetworkVariable<Dictionary<int, int>> m_DictionaryCollection = new NetworkVariable<Dictionary<int, int>>(new Dictionary<int, int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-        private NetworkVariable<int> m_CurrentKeyValue = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-        protected override bool OnValidateAgainst(BaseCollectionUpdateHelper otherHelper)
-        {
-            var otherListHelper = otherHelper as DictionaryCollectionUpdateHelper;
-            var localValues = m_DictionaryCollection.Value;
-            var otherValues = otherListHelper.m_DictionaryCollection.Value;
-
-            if (localValues.Count != otherValues.Count)
-            {
-                return false;
-            }
-
-            foreach (var entry in m_DictionaryCollection.Value)
-            {
-                if (!otherValues.ContainsKey(entry.Key))
-                {
-                    return false;
-                }
-
-                if (entry.Value != otherValues[entry.Key])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        protected override void OnClear()
-        {
-            m_DictionaryCollection.Value.Clear();
-            m_DictionaryCollection.CheckDirtyState();
-            base.OnClear();
-        }
-
-        protected override void AddItem()
-        {
-            m_DictionaryCollection.Value.Add(m_CurrentKeyValue.Value, m_CurrentKeyValue.Value);
-            m_DictionaryCollection.CheckDirtyState();
-            m_CurrentKeyValue.Value++;
-        }
-    }
-
-    /// <summary>
-    /// Helper class to test adding list entries rapidly with frequent ownership changes
-    /// </summary>
-    public class ListCollectionUpdateHelper : BaseCollectionUpdateHelper
-    {
-        private NetworkVariable<List<int>> m_ListCollection = new NetworkVariable<List<int>>(new List<int>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-
-        protected override bool OnValidateAgainst(BaseCollectionUpdateHelper otherHelper)
-        {
-            var otherListHelper = otherHelper as ListCollectionUpdateHelper;
-            var localValues = m_ListCollection.Value;
-            var otherValues = otherListHelper.m_ListCollection.Value;
-
-            if (localValues.Count != otherValues.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < localValues.Count - 1; i++)
-            {
-                if (localValues[i] != i)
-                {
-                    return false;
-                }
-
-                if (localValues[i] != otherValues[i])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        protected override void OnClear()
-        {
-            m_ListCollection.Value.Clear();
-            m_ListCollection.CheckDirtyState();
-            base.OnClear();
-        }
-
-        protected override void AddItem()
-        {
-            m_ListCollection.Value.Add(m_ListCollection.Value.Count);
-            m_ListCollection.CheckDirtyState();
-        }
-    }
-
-    /// <summary>
-    /// The base class to test rapidly adding items to a collection type
-    /// </summary>
-    public class BaseCollectionUpdateHelper : NetworkBehaviour
-    {
-        public static bool VerboseMode;
-        private const int k_OwnershipTickDelay = 1;
-
-        public enum HelperStates
-        {
-            Stop,
-            Start,
-            Pause,
-            ClearToChangeOwner,
-            ChangingOwner
-        }
-        public HelperStates HelperState { get; private set; }
-
-        private int m_SendClearForOwnershipOnTick;
-        private ulong m_NextClient = 0;
-        private ulong m_ClientToSendClear = 0;
-
-        public void SetState(HelperStates helperState)
-        {
-            HelperState = helperState;
-        }
-
-        protected virtual bool OnValidateAgainst(BaseCollectionUpdateHelper otherHelper)
-        {
-            return true;
-        }
-
-        public bool ValidateAgainst(BaseCollectionUpdateHelper otherHelper)
-        {
-            return OnValidateAgainst(otherHelper);
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            // Register for tick updates
-            NetworkManager.NetworkTickSystem.Tick += OnNetworkTick;
-
-            base.OnNetworkSpawn();
-        }
-        public override void OnNetworkDespawn()
-        {
-            NetworkManager.NetworkTickSystem.Tick -= OnNetworkTick;
-            base.OnNetworkDespawn();
-        }
-
-        protected virtual void OnClear()
-        {
-        }
-
-        public void Clear()
-        {
-            OnClear();
-        }
-
-        protected virtual void AddItem()
-        {
-        }
-
-        private bool CanUpdate()
-        {
-            return HelperState == HelperStates.Start;
-        }
-
-        private void Update()
-        {
-            // Exit early if not spawn, updating is not enabled, or is not the owner
-            if (!IsSpawned || !CanUpdate() || !IsOwner)
-            {
-                return;
-            }
-
-            AddItem();
-        }
-
-        protected override void OnOwnershipChanged(ulong previous, ulong current)
-        {
-            // When the ownership changes and the client is the owner, then immediately add an item to the collection
-            if (NetworkManager.LocalClientId == current)
-            {
-                AddItem();
-            }
-            base.OnOwnershipChanged(previous, current);
-        }
-
-
-        /// <summary>
-        /// Sets the tick delay period of time to provide all in-flight deltas to be processed.
-        /// </summary>
-        private void SetTickDelay()
-        {
-            m_SendClearForOwnershipOnTick = NetworkManager.ServerTime.Tick + k_OwnershipTickDelay;
-        }
-
-        /// <summary>
-        /// Changes the ownership
-        /// </summary>
-        /// <returns>next owner or ulong.MaxValue that means the authority did not invoke this method</returns>
-        public ulong ChangeOwner()
-        {
-            if (HasAuthority && !IsOwnershipChanging())
-            {
-                var index = NetworkManager.ConnectedClientsIds.ToList().IndexOf(OwnerClientId);
-                index++;
-                index = index % NetworkManager.ConnectedClientsIds.Count;
-                m_NextClient = NetworkManager.ConnectedClientsIds[index];
-
-                // If we are in distributed authority and the authority or we are in client-server and the server, then make the change ourselves.
-                if (OwnerClientId == NetworkManager.LocalClientId && (NetworkManager.DistributedAuthorityMode || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer)))
-                {
-                    HelperState = HelperStates.ChangingOwner;
-                    SetTickDelay();
-                    Log($"Locally changing ownership to Client-{m_NextClient}");
-                }
-
-                if (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer && OwnerClientId != NetworkManager.LocalClientId)
-                {
-                    // If we are transitioning between a client to the host or client to client,
-                    // send a "heads-up" Rpc to the client prior to changing ownership. The client
-                    // will stop updating for the tick delay period and then send a confirmation
-                    // to the host that it is clear to change ownership.
-                    ChangingOwnershipRpc(RpcTarget.Single(OwnerClientId, RpcTargetUse.Temp));
-                    Log($"Remotely changing ownership to Client-{m_NextClient}");
-                }
-
-                return m_NextClient;
-            }
-
-            return ulong.MaxValue;
-        }
-
-        /// <summary>
-        /// Sent by the host to a client when ownership is transitioning from a client to
-        /// the host or to another client.
-        /// </summary>
-        [Rpc(SendTo.SpecifiedInParams)]
-        private void ChangingOwnershipRpc(RpcParams rpcParams = default)
-        {
-            // The sender is who we respond to that it is clear to change ownership
-            m_ClientToSendClear = rpcParams.Receive.SenderClientId;
-            HelperState = HelperStates.ClearToChangeOwner;
-            SetTickDelay();
-        }
-
-        /// <summary>
-        /// Notification that the current owner has stopped updating and ownership
-        /// updates can occur without missed updates.
-        /// </summary>
-        /// <param name="rpcParams"></param>
-        [Rpc(SendTo.SpecifiedInParams)]
-        private void ChangingOwnershipClearRpc(RpcParams rpcParams = default)
-        {
-            HelperState = HelperStates.ChangingOwner;
-            SetTickDelay();
-            Log($"Changing ownership to Client-{m_NextClient} based on ready request.");
-        }
-
-        private bool IsOwnershipChanging()
-        {
-            return HelperState == HelperStates.ClearToChangeOwner || HelperState == HelperStates.ChangingOwner;
-        }
-
-        private void OnNetworkTick()
-        {
-            if (!IsSpawned || !IsOwnershipChanging() || m_SendClearForOwnershipOnTick > NetworkManager.ServerTime.Tick)
-            {
-                return;
-            }
-
-            if (HelperState == HelperStates.ChangingOwner)
-            {
-                NetworkObject.ChangeOwnership(m_NextClient);
-                Log($"Local Change ownership to Client-{m_NextClient} complete! New Owner is {NetworkObject.OwnerClientId} | Expected {m_NextClient}");
-            }
-            else
-            {
-                ChangingOwnershipClearRpc(RpcTarget.Single(m_ClientToSendClear, RpcTargetUse.Temp));
-            }
-            HelperState = HelperStates.Stop;
-        }
-
-        protected void Log(string msg)
-        {
-            if (VerboseMode)
-            {
-                Debug.Log($"[Client-{NetworkManager.LocalClientId}] {msg}");
-            }
-        }
-    }
-    #endregion
-
     #region HASHSET COMPONENT HELPERS
-    public class HashSetBaseTypeTestHelper : ListTestHelperBase, IHashSetTestHelperBase<int>
+    internal class HashSetBaseTypeTestHelper : ListTestHelperBase, IHashSetTestHelperBase<int>
     {
         public static Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, HashSetBaseTypeTestHelper>>();
 
@@ -1961,7 +1461,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region DICTIONARY COMPONENT HELPERS
-    public class NestedDictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, Dictionary<int, SerializableObject>>
+    internal class NestedDictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, Dictionary<int, SerializableObject>>
     {
         public static Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, NestedDictionaryTestHelper>>();
 
@@ -2268,7 +1768,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class DictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, SerializableObject>
+    internal class DictionaryTestHelper : ListTestHelperBase, IDictionaryTestHelperBase<int, SerializableObject>
     {
         public static Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>> Instances = new Dictionary<ulong, Dictionary<ulong, DictionaryTestHelper>>();
 
@@ -2554,7 +2054,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region INETWORKSERIALIZABLE LIST TEST COMPONENT HELPERS
-    public class SerializableObject : INetworkSerializable, IEquatable<SerializableObject>
+    internal class SerializableObject : INetworkSerializable, IEquatable<SerializableObject>
     {
         public static SerializableObject GetRandomObject()
         {
@@ -2610,7 +2110,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class ListTestHelperListSerializableObject : ListTestHelperBase, IListTestHelperBase<List<SerializableObject>>
+    internal class ListTestHelperListSerializableObject : ListTestHelperBase, IListTestHelperBase<List<SerializableObject>>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperListSerializableObject>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperListSerializableObject>>();
 
@@ -2909,7 +2409,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public class ListTestHelperSerializableObject : ListTestHelperBase, IListTestHelperBase<SerializableObject>
+    internal class ListTestHelperSerializableObject : ListTestHelperBase, IListTestHelperBase<SerializableObject>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperSerializableObject>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperSerializableObject>>();
 
@@ -3174,7 +2674,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region BUILT-IN LIST TEST COMPONENT HELPERS
-    public class ListTestHelperListInt : ListTestHelperBase, IListTestHelperBase<List<int>>
+    internal class ListTestHelperListInt : ListTestHelperBase, IListTestHelperBase<List<int>>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperListInt>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperListInt>>();
 
@@ -3478,7 +2978,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    public class ListTestHelperInt : ListTestHelperBase, IListTestHelperBase<int>
+    internal class ListTestHelperInt : ListTestHelperBase, IListTestHelperBase<int>
     {
         public static Dictionary<ulong, Dictionary<ulong, ListTestHelperInt>> Instances = new Dictionary<ulong, Dictionary<ulong, ListTestHelperInt>>();
 
@@ -3747,7 +3247,7 @@ namespace Unity.Netcode.RuntimeTests
     #endregion
 
     #region BASE TEST COMPONENT HELPERS
-    public class ListTestHelperBase : NetworkBehaviour
+    internal class ListTestHelperBase : NetworkBehaviour
     {
         protected static bool IsDebugMode { get; private set; }
 
@@ -3794,7 +3294,7 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    public interface IListTestHelperBase<T>
+    internal interface IListTestHelperBase<T>
     {
         public bool ValidateInstances();
 
@@ -3827,7 +3327,7 @@ namespace Unity.Netcode.RuntimeTests
         public void ResetTrackedChanges();
     }
 
-    public interface IDictionaryTestHelperBase<TKey, TValue>
+    internal interface IDictionaryTestHelperBase<TKey, TValue>
     {
         public bool ValidateInstances();
 
@@ -3856,7 +3356,7 @@ namespace Unity.Netcode.RuntimeTests
         public void ResetTrackedChanges();
     }
 
-    public interface IHashSetTestHelperBase<T>
+    internal interface IHashSetTestHelperBase<T>
     {
         public bool ValidateInstances();
 

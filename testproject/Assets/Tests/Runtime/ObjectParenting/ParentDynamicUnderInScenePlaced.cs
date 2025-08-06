@@ -36,6 +36,12 @@ namespace TestProject.RuntimeTests
         private GameObject m_DynamicallySpawned;
         private bool m_SceneIsLoaded;
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public ParentDynamicUnderInScenePlaced(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnSetup()
@@ -55,15 +61,6 @@ namespace TestProject.RuntimeTests
         {
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             return base.OnStartedServerAndClients();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
-            {
-                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
-            }
-            base.OnNewClientCreated(networkManager);
         }
 
         protected override void OnNewClientStarted(NetworkManager networkManager)

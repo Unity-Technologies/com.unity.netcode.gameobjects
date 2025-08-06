@@ -7,18 +7,38 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
-#if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Networking.Transport;
-#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    internal enum NetworkConfigOptions
+    {
+        EnsureVariableLengthSafety,
+        Default,
+    }
+
+    /// <summary>
+    /// This class tests the NGO message codec between the C# SDK and the Rust runtime.
+    /// </summary>
+    /// <remarks>
+    /// These tests are run against a rust echo-server.
+    /// This server decodes incoming messages, and then re-encodes them before sending them back to the client.
+    /// Any errors in decoding or encoding messages will not echo the messages back, causing the tests to fail
+    /// No message handling logic is tested in these tests. They are only testing the codec.
+    /// The tests check if they can bind to a rust echo-server at the given address and port, if all tests are ignored.
+    /// The rust echo-server is run using `cargo run --example ngo_echo_server -- --port {port}`
+    /// The C# port can be configured using the environment variable "ECHO_SERVER_PORT"
+    /// The default behaviour when unity fails to connect to the echo-server is to ignore all tests in this class.
+    /// This can be overridden by setting the environment variable "ENSURE_CODEC_TESTS" to any value - then the tests will fail.
+    /// </remarks>
+    [TestFixture(NetworkConfigOptions.EnsureVariableLengthSafety)]
+    [TestFixture(NetworkConfigOptions.Default)]
     internal class DistributedAuthorityCodecTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 0;
 
         // Use the CMB Service for all tests
         protected override bool UseCMBService() => true;
@@ -27,11 +47,28 @@ namespace Unity.Netcode.RuntimeTests
         protected override NetworkTopologyTypes OnGetNetworkTopologyType() => NetworkTopologyTypes.DistributedAuthority;
 
         private CodecTestHooks m_ClientCodecHook;
-        private NetworkManager Client => m_ClientNetworkManagers[0];
+        private NetworkManager m_Client;
 
         private string m_TransportHost = Environment.GetEnvironmentVariable("NGO_HOST") ?? "127.0.0.1";
-        private const int k_TransportPort = 7777;
+        private static readonly ushort k_TransportPort = GetPortToBind();
         private const int k_ClientId = 0;
+
+        private bool m_EnsureVariableLengthSafety;
+
+        public DistributedAuthorityCodecTests(NetworkConfigOptions configOptions) : base()
+        {
+            m_EnsureVariableLengthSafety = configOptions == NetworkConfigOptions.EnsureVariableLengthSafety;
+        }
+
+        /// <summary>
+        /// Configures the port to look for the rust echo-server.
+        /// </summary>
+        /// <returns>The port from the environment variable "ECHO_SERVER_PORT" if it is set and valid; otherwise uses port 7777</returns>
+        private static ushort GetPortToBind()
+        {
+            var value = Environment.GetEnvironmentVariable("ECHO_SERVER_PORT");
+            return ushort.TryParse(value, out var configuredPort) ? configuredPort : (ushort)7777;
+        }
 
         private GameObject m_SpawnObject;
 
@@ -49,14 +86,18 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnOneTimeSetup()
         {
             // Prevents the tests from running if no CMB Service is detected
-#if !UTP_TRANSPORT_2_0_ABOVE
-            Assert.Ignore("ignoring DA codec tests because UTP transport must be 2.0");
-#else
             if (!CanConnectToServer(m_TransportHost, k_TransportPort))
             {
-                Assert.Ignore("ignoring DA codec tests because UTP transport cannot connect to the runtime");
+                var shouldFail = Environment.GetEnvironmentVariable("ENSURE_CODEC_TESTS");
+                if (string.IsNullOrEmpty(shouldFail) || shouldFail.ToLower() == "false")
+                {
+                    Assert.Ignore($"ignoring DA codec tests because UTP transport cannot connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
+                else
+                {
+                    Assert.Fail($"Failed to connect to the rust echo-server at {m_TransportHost}:{k_TransportPort}");
+                }
             }
-#endif
             base.OnOneTimeSetup();
         }
 
@@ -74,48 +115,49 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         protected override void OnServerAndClientsCreated()
         {
-            var utpTransport = Client.gameObject.AddComponent<UnityTransport>();
-            Client.NetworkConfig.NetworkTransport = utpTransport;
-            Client.NetworkConfig.EnableSceneManagement = false;
-            Client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = true;
+            m_Client = GetAuthorityNetworkManager();
+
+            var utpTransport = m_Client.gameObject.AddComponent<UnityTransport>();
+            m_Client.NetworkConfig.NetworkTransport = utpTransport;
+            m_Client.NetworkConfig.EnableSceneManagement = false;
+            m_Client.NetworkConfig.AutoSpawnPlayerPrefabClientSide = true;
+            m_Client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureVariableLengthSafety;
             utpTransport.ConnectionData.Address = Dns.GetHostAddresses(m_TransportHost).First().ToString();
             utpTransport.ConnectionData.Port = k_TransportPort;
-            Client.LogLevel = LogLevel.Developer;
+            m_Client.LogLevel = LogLevel.Developer;
 
             // Validate we are in distributed authority mode with client side spawning and using CMB Service
-            Assert.True(Client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
-            Assert.True(Client.AutoSpawnPlayerPrefabClientSide, "Client side spawning is not set!");
-            Assert.True(Client.CMBServiceConnection, "CMBServiceConnection is not set!");
+            Assert.True(m_Client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
+            Assert.True(m_Client.AutoSpawnPlayerPrefabClientSide, "Client side spawning is not set!");
+            Assert.True(m_Client.CMBServiceConnection, "CMBServiceConnection is not set!");
 
             // Create a prefab for creating and destroying tests (auto-registers with NetworkManagers)
             m_SpawnObject = CreateNetworkObjectPrefab("TestObject");
             m_SpawnObject.AddComponent<TestNetworkComponent>();
-
-            // Ignore the client connection timeout after starting the client
-            m_BypassConnectionTimeout = true;
         }
 
         protected override IEnumerator OnStartedServerAndClients()
         {
             // Validate the NetworkManager are in distributed authority mode
-            Assert.True(Client.DistributedAuthorityMode, "Distributed authority is not set!");
+            Assert.True(m_Client.DistributedAuthorityMode, "Distributed authority is not set!");
 
-            // Register hooks after starting clients and server (in this case just the one client)
-            // We do this at this point in time because the MessageManager exists (happens within the same call stack when starting NetworkManagers)
-            m_ClientCodecHook = new CodecTestHooks();
-            Client.MessageManager.Hook(m_ClientCodecHook);
             yield return base.OnStartedServerAndClients();
 
             // wait for client to connect since m_BypassConnectionTimeout
-            yield return WaitForConditionOrTimeOut(() => Client.LocalClient.PlayerObject != null);
+            yield return WaitForConditionOrTimeOut(() => m_Client.LocalClient.PlayerObject != null);
             AssertOnTimeout($"Timed out waiting for the client's player to be spanwed!");
+
+            // Register hooks after starting clients and server (in this case just the one client)
+            // We do this at this after all the setup has finished in order to ensure our hooks are only catching messages from the tests
+            m_ClientCodecHook = new CodecTestHooks();
+            m_Client.MessageManager.Hook(m_ClientCodecHook);
         }
 
         [UnityTest]
         public IEnumerator AuthorityRpc()
         {
-            var player = Client.LocalClient.PlayerObject;
-            player.OwnerClientId = Client.LocalClientId + 1;
+            var player = m_Client.LocalClient.PlayerObject;
+            player.OwnerClientId = m_Client.LocalClientId + 1;
 
             var networkComponent = player.GetComponent<TestNetworkComponent>();
             networkComponent.UpdateNetworkProperties();
@@ -163,14 +205,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator CreateObject()
         {
-            SpawnObject(m_SpawnObject, Client);
+            SpawnObject(m_SpawnObject, m_Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
         }
 
         [UnityTest]
         public IEnumerator DestroyObject()
         {
-            var spawnedObject = SpawnObject(m_SpawnObject, Client);
+            var spawnedObject = SpawnObject(m_SpawnObject, m_Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
             spawnedObject.GetComponent<NetworkObject>().Despawn();
             yield return m_ClientCodecHook.WaitForMessageReceived<DestroyObjectMessage>();
@@ -205,10 +247,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkVariableDelta()
         {
-            var component = Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>();
+            var component = m_Client.LocalClient.PlayerObject.GetComponent<TestNetworkComponent>();
             var message = new NetworkVariableDeltaMessage
             {
-                NetworkObjectId = Client.LocalClient.PlayerObject.NetworkObjectId,
+                NetworkObjectId = m_Client.LocalClient.PlayerObject.NetworkObjectId,
                 NetworkBehaviourIndex = component.NetworkBehaviourId,
                 DeliveryMappedNetworkVariableIndex = new HashSet<int> { 0, 1 },
                 TargetClientId = 5,
@@ -221,9 +263,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkVariableDelta_WithValueUpdate()
         {
-            var networkObj = CreateNetworkObjectPrefab("TestObject");
-            networkObj.AddComponent<TestNetworkComponent>();
-            var instance = SpawnObject(networkObj, Client);
+            var instance = SpawnObject(m_SpawnObject, m_Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
             var component = instance.GetComponent<TestNetworkComponent>();
 
@@ -236,9 +276,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkListDelta_WithValueUpdate()
         {
-            var networkObj = CreateNetworkObjectPrefab("TestObject");
-            networkObj.AddComponent<TestNetworkComponent>();
-            var instance = SpawnObject(networkObj, Client);
+            var instance = SpawnObject(m_SpawnObject, m_Client);
             yield return m_ClientCodecHook.WaitForMessageReceived<CreateObjectMessage>();
             var component = instance.GetComponent<TestNetworkComponent>();
 
@@ -315,8 +353,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageLoad()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.Load,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -335,14 +373,14 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageLoadWithObjects()
         {
-            Client.SceneManager.SkipSceneHandling = true;
+            m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
 
-            Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<int, NetworkObject>()
+            m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<int, NetworkObject>()
             {
                 { 1, prefabNetworkObject }
             });
-            var eventData = new SceneEventData(Client)
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.Load,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -361,8 +399,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageUnload()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.Unload,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -381,8 +419,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageLoadComplete()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.LoadComplete,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -401,8 +439,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageUnloadComplete()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.UnloadComplete,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -421,8 +459,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageLoadCompleted()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.LoadEventCompleted,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -443,8 +481,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageUnloadLoadCompleted()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.UnloadEventCompleted,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -465,8 +503,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageSynchronize()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.Synchronize,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -490,8 +528,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageReSynchronize()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.ReSynchronize,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -510,8 +548,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageSynchronizeComplete()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.ReSynchronize,
                 LoadSceneMode = LoadSceneMode.Single,
@@ -530,8 +568,8 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator SceneEventMessageActiveSceneChanged()
         {
-            Client.SceneManager.SkipSceneHandling = true;
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.SkipSceneHandling = true;
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.ActiveSceneChanged,
                 ActiveSceneHash = XXHash.Hash32("ActiveScene")
@@ -547,15 +585,15 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest, Ignore("Serializing twice causes data to disappear in the SceneManager for this event")]
         public IEnumerator SceneEventMessageObjectSceneChanged()
         {
-            Client.SceneManager.SkipSceneHandling = true;
+            m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
-            Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<int, Dictionary<ulong, List<NetworkObject>>>
+            m_Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<int, Dictionary<ulong, List<NetworkObject>>>
             {
                 { 0, new Dictionary<ulong, List<NetworkObject>>()}
             };
 
-            Client.SceneManager.ObjectsMigratedIntoNewScene[0].Add(Client.LocalClientId, new List<NetworkObject>() { prefabNetworkObject });
-            var eventData = new SceneEventData(Client)
+            m_Client.SceneManager.ObjectsMigratedIntoNewScene[0].Add(m_Client.LocalClientId, new List<NetworkObject>() { prefabNetworkObject });
+            var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.ObjectSceneChanged,
             };
@@ -570,16 +608,15 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator SendMessage<T>(ref T message) where T : INetworkMessage
         {
-            Client.MessageManager.SetVersion(k_ClientId, XXHash.Hash32(typeof(T).FullName), message.Version);
+            m_Client.MessageManager.SetVersion(k_ClientId, XXHash.Hash32(typeof(T).FullName), message.Version);
 
             var clientIds = new NativeArray<ulong>(1, Allocator.Temp);
             clientIds[0] = k_ClientId;
-            Client.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds);
-            Client.MessageManager.ProcessSendQueues();
+            m_Client.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds);
+            m_Client.MessageManager.ProcessSendQueues();
             return m_ClientCodecHook.WaitForMessageReceived(message);
         }
 
-#if UTP_TRANSPORT_2_0_ABOVE
         private static bool CanConnectToServer(string host, ushort port, double timeoutMs = 100)
         {
             var address = Dns.GetHostAddresses(host).First();
@@ -604,7 +641,6 @@ namespace Unity.Netcode.RuntimeTests
             driver.Disconnect(connection);
             return true;
         }
-#endif
     }
 
     internal class CodecTestHooks : INetworkHooks

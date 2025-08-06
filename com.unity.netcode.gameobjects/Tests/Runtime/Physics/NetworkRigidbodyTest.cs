@@ -1,4 +1,4 @@
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -341,7 +341,6 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-
         private GameObject m_RigidbodyContactEventManager;
 
         public enum ContactEventTypes
@@ -394,44 +393,47 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool PlayersSpawnedInRightLocation()
         {
-            var position = m_ServerNetworkManager.LocalClient.PlayerObject.transform.position;
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
+            var position = authority.LocalClient.PlayerObject.transform.position;
             if (!Approximately(ContactEventTransformHelper.SessionOwnerSpawnPoint, position))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} player position {position} does not match the assigned player position {ContactEventTransformHelper.SessionOwnerSpawnPoint}!");
+                m_ErrorLogger.AppendLine($"Client-{authority.LocalClientId} player position {position} does not match the assigned player position {ContactEventTransformHelper.SessionOwnerSpawnPoint}!");
                 return false;
             }
 
-            position = m_ClientNetworkManagers[0].LocalClient.PlayerObject.transform.position;
+            position = nonAuthority.LocalClient.PlayerObject.transform.position;
             if (!Approximately(ContactEventTransformHelper.ClientSpawnPoint, position))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ClientNetworkManagers[0].LocalClientId} player position {position} does not match the assigned player position {ContactEventTransformHelper.ClientSpawnPoint}!");
+                m_ErrorLogger.AppendLine($"Client-{nonAuthority.LocalClientId} player position {position} does not match the assigned player position {ContactEventTransformHelper.ClientSpawnPoint}!");
                 return false;
             }
             var playerObject = (NetworkObject)null;
-            if (!m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_ClientNetworkManagers[0].LocalClient.PlayerObject.NetworkObjectId))
+            if (!authority.SpawnManager.SpawnedObjects.ContainsKey(nonAuthority.LocalClient.PlayerObject.NetworkObjectId))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} cannot find a local spawned instance of Client-{m_ClientNetworkManagers[0].LocalClientId}'s player object!");
+                m_ErrorLogger.AppendLine($"Client-{authority.LocalClientId} cannot find a local spawned instance of Client-{nonAuthority.LocalClientId}'s player object!");
                 return false;
             }
-            playerObject = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_ClientNetworkManagers[0].LocalClient.PlayerObject.NetworkObjectId];
+            playerObject = authority.SpawnManager.SpawnedObjects[nonAuthority.LocalClient.PlayerObject.NetworkObjectId];
             position = playerObject.transform.position;
 
             if (!Approximately(ContactEventTransformHelper.ClientSpawnPoint, position))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} player position {position} for Client-{playerObject.OwnerClientId} does not match the assigned player position {ContactEventTransformHelper.ClientSpawnPoint}!");
+                m_ErrorLogger.AppendLine($"Client-{authority.LocalClientId} player position {position} for Client-{playerObject.OwnerClientId} does not match the assigned player position {ContactEventTransformHelper.ClientSpawnPoint}!");
                 return false;
             }
 
-            if (!m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects.ContainsKey(m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId))
+            if (!nonAuthority.SpawnManager.SpawnedObjects.ContainsKey(authority.LocalClient.PlayerObject.NetworkObjectId))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ClientNetworkManagers[0].LocalClientId} cannot find a local spawned instance of Client-{m_ServerNetworkManager.LocalClientId}'s player object!");
+                m_ErrorLogger.AppendLine($"Client-{nonAuthority.LocalClientId} cannot find a local spawned instance of Client-{authority.LocalClientId}'s player object!");
                 return false;
             }
-            playerObject = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[m_ServerNetworkManager.LocalClient.PlayerObject.NetworkObjectId];
+            playerObject = nonAuthority.SpawnManager.SpawnedObjects[authority.LocalClient.PlayerObject.NetworkObjectId];
             position = playerObject.transform.position;
             if (!Approximately(ContactEventTransformHelper.SessionOwnerSpawnPoint, playerObject.transform.position))
             {
-                m_ErrorLogger.AppendLine($"Client-{m_ClientNetworkManagers[0].LocalClientId} player position {position} for Client-{playerObject.OwnerClientId} does not match the assigned player position {ContactEventTransformHelper.SessionOwnerSpawnPoint}!");
+                m_ErrorLogger.AppendLine($"Client-{nonAuthority.LocalClientId} player position {position} for Client-{playerObject.OwnerClientId} does not match the assigned player position {ContactEventTransformHelper.SessionOwnerSpawnPoint}!");
                 return false;
             }
             return true;
@@ -450,10 +452,13 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Timed out waiting for all player instances to spawn in the corect location:\n {m_ErrorLogger}");
             m_ErrorLogger.Clear();
 
-            var sessionOwnerPlayer = m_ContactEventType == ContactEventTypes.Default ? m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelper>() :
-                m_ServerNetworkManager.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelperWithInfo>();
-            var clientPlayer = m_ContactEventType == ContactEventTypes.Default ? m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<ContactEventTransformHelper>() :
-                m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<ContactEventTransformHelperWithInfo>();
+            var authority = GetAuthorityNetworkManager();
+            var nonAuthority = GetNonAuthorityNetworkManager();
+
+            var sessionOwnerPlayer = m_ContactEventType == ContactEventTypes.Default ? authority.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelper>() :
+                authority.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelperWithInfo>();
+            var clientPlayer = m_ContactEventType == ContactEventTypes.Default ? nonAuthority.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelper>() :
+                nonAuthority.LocalClient.PlayerObject.GetComponent<ContactEventTransformHelperWithInfo>();
 
             // Get both players to point towards each other
             sessionOwnerPlayer.Target = clientPlayer;
@@ -468,11 +473,11 @@ namespace Unity.Netcode.RuntimeTests
 
             clientPlayer.RegisterForContactEvents(false);
             sessionOwnerPlayer.RegisterForContactEvents(false);
-            var otherPlayer = m_ContactEventType == ContactEventTypes.Default ? m_ServerNetworkManager.SpawnManager.SpawnedObjects[clientPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelper>() :
-                m_ServerNetworkManager.SpawnManager.SpawnedObjects[clientPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelperWithInfo>();
+            var otherPlayer = m_ContactEventType == ContactEventTypes.Default ? authority.SpawnManager.SpawnedObjects[clientPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelper>() :
+                authority.SpawnManager.SpawnedObjects[clientPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelperWithInfo>();
             otherPlayer.RegisterForContactEvents(false);
-            otherPlayer = m_ContactEventType == ContactEventTypes.Default ? m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[sessionOwnerPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelper>() :
-                m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[sessionOwnerPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelperWithInfo>();
+            otherPlayer = m_ContactEventType == ContactEventTypes.Default ? nonAuthority.SpawnManager.SpawnedObjects[sessionOwnerPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelper>() :
+                nonAuthority.SpawnManager.SpawnedObjects[sessionOwnerPlayer.NetworkObjectId].GetComponent<ContactEventTransformHelperWithInfo>();
             otherPlayer.RegisterForContactEvents(false);
 
             Object.Destroy(m_RigidbodyContactEventManager);

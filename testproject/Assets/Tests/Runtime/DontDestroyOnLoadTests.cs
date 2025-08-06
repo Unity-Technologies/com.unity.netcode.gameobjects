@@ -9,23 +9,21 @@ using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.DAHost)]
     public class DontDestroyOnLoadTests : NetcodeIntegrationTest
     {
         private const int k_ClientsToConnect = 4;
         protected override int NumberOfClients => 0;
         private GameObject m_DontDestroyOnLoadObject;
 
+        public DontDestroyOnLoadTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
         protected override void OnServerAndClientsCreated()
         {
             m_DontDestroyOnLoadObject = CreateNetworkObjectPrefab("DDOLObject");
             m_DontDestroyOnLoadObject.AddComponent<ObjectToNotDestroyBehaviour>();
             base.OnServerAndClientsCreated();
-        }
-
-        protected override void OnNewClientCreated(NetworkManager networkManager)
-        {
-            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
-            base.OnNewClientCreated(networkManager);
         }
 
         private ulong m_SpawnedNetworkObjectId;
@@ -58,7 +56,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateNetworkObjectSynchronization()
         {
-            var objectInstance = SpawnObject(m_DontDestroyOnLoadObject, m_ServerNetworkManager);
+            var objectInstance = SpawnObject(m_DontDestroyOnLoadObject, GetAuthorityNetworkManager());
             m_SpawnedNetworkObjectId = objectInstance.GetComponent<NetworkObject>().NetworkObjectId;
             // Wait a tick for the object to be automatically migrated into the DDOL
             yield return s_DefaultWaitForTick;

@@ -17,6 +17,13 @@ namespace Unity.Netcode.RuntimeTests
 
         private float m_OriginalTimeScale = 1.0f;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [SetUp]
         public void Setup()
         {
@@ -62,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator CorrectAmountTicksTest()
         {
             NetworkTickSystem tickSystem = NetworkManager.Singleton.NetworkTickSystem;
-            float delta = tickSystem.LocalTime.FixedDeltaTime;
+            double delta = tickSystem.LocalTime.FixedDeltaTimeAsDouble;
             int previous_localTickCalculated = 0;
             int previous_serverTickCalculated = 0;
 
@@ -78,7 +85,6 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     previous_localTickCalculated++;
                 }
-
 
                 tickCalculated = NetworkManager.Singleton.ServerTime.Time / delta;
                 previous_serverTickCalculated = (int)tickCalculated;

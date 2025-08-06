@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -34,6 +35,13 @@ namespace Unity.Netcode.RuntimeTests
         private UnityTransport m_Server, m_Client1, m_Client2;
         private List<TransportEvent> m_ServerEvents, m_Client1Events, m_Client2Events;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
@@ -43,6 +51,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
+                m_Server = null;
             }
 
             if (m_Client1)
@@ -51,6 +60,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
+                m_Client1 = null;
             }
 
             if (m_Client2)
@@ -59,6 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
+                m_Client2 = null;
             }
             m_ServerEvents?.Clear();
             m_Client1Events?.Clear();
@@ -309,7 +320,9 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events, 5.0f);
+
+            var serverClientId = m_Client1.ServerClientId;
 
             m_Server.Shutdown();
 
@@ -322,7 +335,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             LogAssert.Expect(LogType.Error, "Couldn't add payload of size 1024 to reliable send queue. " +
-                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained.");
+                $"Closing connection {serverClientId} as reliability guarantees can't be maintained.");
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
@@ -366,63 +379,6 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(1024, m_ServerEvents[i].Data.Count);
             }
         }
-
-#if !UTP_TRANSPORT_2_0_ABOVE
-        // Check that simulator parameters are effective. We only check with the drop rate, because
-        // that's easy to check and we only really want to make sure the simulator parameters are
-        // configured properly (the simulator pipeline stage is already well-tested in UTP).
-        [UnityTest]
-        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
-        public IEnumerator SimulatorParametersAreEffective()
-        {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-
-            m_Server.SetDebugSimulatorParameters(0, 0, 100);
-
-            m_Server.StartServer();
-            m_Client1.StartClient();
-
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
-
-            var data = new ArraySegment<byte>(new byte[] { 42 });
-            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
-
-            yield return new WaitForSeconds(MaxNetworkEventWaitTime);
-
-            Assert.AreEqual(1, m_ServerEvents.Count);
-
-            yield return null;
-        }
-
-        // Check that RTT is reported correctly.
-        [UnityTest]
-        [UnityPlatform(include = new[] { RuntimePlatform.OSXEditor, RuntimePlatform.WindowsEditor, RuntimePlatform.LinuxEditor })]
-        public IEnumerator CurrentRttReportedCorrectly()
-        {
-            const int simulatedRtt = 25;
-
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-
-            m_Server.SetDebugSimulatorParameters(simulatedRtt, 0, 0);
-
-            m_Server.StartServer();
-            m_Client1.StartClient();
-
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
-
-            var data = new ArraySegment<byte>(new byte[] { 42 });
-            m_Client1.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
-
-            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents,
-                timeout: MaxNetworkEventWaitTime + (2 * simulatedRtt));
-
-            Assert.GreaterOrEqual(m_Client1.GetCurrentRtt(m_Client1.ServerClientId), simulatedRtt);
-
-            yield return null;
-        }
-#endif
 
         [UnityTest]
         public IEnumerator SendQueuesFlushedOnShutdown([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
@@ -498,6 +454,64 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
+        }
+
+        public enum AfterShutdownAction
+        {
+            Send,
+            DisconnectRemoteClient,
+            DisconnectLocalClient,
+        }
+
+        [UnityTest]
+        public IEnumerator DoesNotActAfterShutdown([Values] AfterShutdownAction afterShutdownAction)
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            m_Server.Shutdown();
+
+            if (afterShutdownAction == AfterShutdownAction.Send)
+            {
+                var data = new ArraySegment<byte>(new byte[16]);
+                m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+
+                yield return EnsureNoNetworkEvent(m_Client1Events);
+            }
+            else if (afterShutdownAction == AfterShutdownAction.DisconnectRemoteClient)
+            {
+                m_Server.DisconnectRemoteClient(m_Client1.ServerClientId);
+
+                LogAssert.Expect(LogType.Warning, $"{nameof(UnityTransport.DisconnectRemoteClient)} should only be called on a listening server!");
+            }
+            else if (afterShutdownAction == AfterShutdownAction.DisconnectLocalClient)
+            {
+                m_Server.DisconnectLocalClient();
+
+                yield return EnsureNoNetworkEvent(m_Client1Events);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator DoesNotAttemptToSendOnInvalidConnections()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[42]);
+            m_Server.Send(0, data, NetworkDelivery.Reliable);
+
+            yield return EnsureNoNetworkEvent(m_Client1Events);
         }
     }
 }

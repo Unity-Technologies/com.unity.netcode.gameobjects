@@ -1,0 +1,22 @@
+{
+    "name": "Unity.Netcode.PackageChecker.Editor",
+    "rootNamespace": "Unity.Netcode.Editor.PackageChecker",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "COM_UNITY_NETCODE_ADAPTER_UTP"
+        }
+    ],
+    "noEngineReferences": false
+}
