@@ -188,6 +188,12 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Animator")]
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
     {
+#if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
+        internal bool NetworkAnimatorExpanded;
+#endif
+
         [Serializable]
         internal class TransitionStateinfo
         {
@@ -511,6 +517,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [Tooltip("The animator that this NetworkAnimator component will be synchronizing.")]
         [SerializeField] private Animator m_Animator;
 
         /// <summary>
