@@ -201,6 +201,35 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Determines if the server or client owner pushes animation state updates.
+        /// </summary>
+        public enum AuthorityModes
+        {
+            /// <summary>
+            /// Server pushes animator state updates.
+            /// </summary>
+            Server,
+            /// <summary>
+            /// Client owner pushes animator state updates.
+            /// </summary>
+            Owner,
+        }
+
+
+        /// <summary>
+        /// Determines whether this <see cref="NetworkAnimator"/> instance will have state updates pushed by the server or the client owner.
+        /// <see cref="AuthorityModes"/>
+        /// </summary>
+#if MULTIPLAYER_SERVICES_SDK_INSTALLED
+        [Tooltip("Selects who has authority (sends state updates) over the <see cref="NetworkAnimator"/> instance. When the network topology is set to distributed authority, this always defaults to owner authority. If server (the default), then only server-side adjustments to the " +
+            "<see cref="NetworkAnimator"/> instance will be synchronized with clients. If owner (or client), then only the owner-side adjustments to the <see cref="NetworkAnimator"/> instance will be synchronized with both the server and other clients.")]
+#else
+        [Tooltip("Selects who has authority (sends state updates) over the <see cref=\"NetworkAnimator\"/> instance. If server (the default), then only server-side adjustments to the <see cref=\"NetworkAnimator\"/> instance will be synchronized with clients. If owner (or client), " +
+            "then only the owner-side adjustments to the <see cref=\"NetworkAnimator\"/> instance will be synchronized with both the server and other clients.")]
+#endif
+        public AuthorityModes AuthorityMode;
+
+        /// <summary>
         /// Used to build the destination state to transition info table
         /// </summary>
         [HideInInspector]
@@ -484,6 +513,9 @@ namespace Unity.Netcode.Components
 
         [SerializeField] private Animator m_Animator;
 
+        /// <summary>
+        /// The <see cref="Animator"/> associated with this <see cref="NetworkAnimator"/> instance.
+        /// </summary>
         public Animator Animator
         {
             get { return m_Animator; }
@@ -493,13 +525,19 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal bool IsServerAuthoritative()
+        /// <summary>
+        /// Determines whether the <see cref="NetworkAnimator"/> is <see cref="AuthorityModes.Server"/> or <see cref="AuthorityModes.Owner"/> based on the <see cref="AuthorityMode"/> field.
+        /// Optionally, you can still derive from <see cref="NetworkAnimator"/> and override the <see cref="OnIsServerAuthoritative"/> method.
+        /// </summary>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritative();
         }
 
         /// <summary>
-        /// Override this method and return false to switch to owner authoritative mode.
+        /// Override this method and return false to switch to owner authoritative mode.<br />
+        /// Alternately, you can update the <see cref="AuthorityMode"/> field within the inspector view to select the authority mode.
         /// </summary>
         /// <remarks>
         /// When using a distributed authority network topology, this will default to
@@ -507,7 +545,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected virtual bool OnIsServerAuthoritative()
         {
-            return NetworkManager ? !NetworkManager.DistributedAuthorityMode : true;
+            return NetworkManager && NetworkManager.DistributedAuthorityMode ? true : AuthorityMode == AuthorityModes.Server;
         }
 
         private int[] m_TransitionHash;
