@@ -41,7 +41,6 @@ namespace Unity.Netcode.Components
 
 
 #if UNITY_EDITOR
-
             internal void OnValidate()
             {
                 if (!HasInitialized)
@@ -503,7 +502,7 @@ namespace Unity.Netcode.Components
                     if (NetworkManager && NetworkManager.LogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogWarning($"[{name}][Detach] Cannot detach! {name} is not attached to anything!");
-                    }                    
+                    }
                 }
                 else
                 {
