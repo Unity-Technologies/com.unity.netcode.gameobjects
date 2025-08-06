@@ -16,7 +16,7 @@ run_quick_checks:
   name: Run Quick Initial Checks
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.2
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
 
@@ -31,9 +31,9 @@ run_all_package_tests:
 {% endfor -%}
 
 
-# Runs all package tests on trunk editor
-run_all_package_tests_trunk:
-  name: Run All Package Tests [Trunk only]
+# Runs all package tests on 6000.2 editor (latest supported editor)
+run_all_package_tests_6000.2:
+  name: Run All Package Tests [6000.2 only]
   dependencies:
 {% for platform in test_platforms.desktop -%}
 {% for editor in validation_editors.default -%}
@@ -41,12 +41,12 @@ run_all_package_tests_trunk:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all package tests on mimimum supported editor (2021.3 in case of NGOv1.X)
-run_all_package_tests_2021:
-  name: Run All Package Tests [2021.3]
+# Runs all package tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
+run_all_package_tests_2022:
+  name: Run All Package Tests [2022.3]
   dependencies:
 {% for platform in test_platforms.desktop -%}
-    - .yamato/package-tests.yml#package_test_-_ngo_2021.3_{{ platform.name }}
+    - .yamato/package-tests.yml#package_test_-_ngo_2022.3_{{ platform.name }}
 {% endfor -%}
 
 
@@ -65,9 +65,9 @@ run_all_project_tests:
 {% endfor -%}
 
 
-# Runs all projects tests on trunk editor
-run_all_project_tests_trunk:
-  name: Run All Project Tests [Trunk only]
+# Runs all projects tests on 6000.2 editor (latest supported editor)
+run_all_project_tests_6000.2:
+  name: Run All Project Tests [6000.2 only]
   dependencies:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
@@ -79,14 +79,14 @@ run_all_project_tests_trunk:
 {% endif -%}
 {% endfor -%}
 
-# Runs all projects tests on mimimum supported editor (2021.3 in case of NGOv1.X)
-run_all_project_tests_2021:
-  name: Run All Project Tests [2021.3]
+# Runs all projects tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
+run_all_project_tests_2022:
+  name: Run All Project Tests [2022.3]
   dependencies:
 {% for project in projects.all -%}
 {% if project.has_tests == "true" -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_2021.3
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ platform.name }}_2022.3
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -118,9 +118,9 @@ run_all_webgl_builds:
 {% endfor -%}
 
 
-# Runs all WebGL builds on trunk editor
-run_all_webgl_builds_trunk:
-  name: Run All WebGl Build [Trunk only]
+# Runs all WebGL builds on 6000.2 editor (latest supported editor)
+run_all_webgl_builds_6000.2:
+  name: Run All WebGl Build [6000.2 only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -130,13 +130,13 @@ run_all_webgl_builds_trunk:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all WebGL builds on 2021.3 editor
-run_all_webgl_builds_2021:
-  name: Run All WebGl Build [2021.3]
+# Runs all WebGL builds on 2022.3 editor (2022.3 will soon be a minimum supported editor)
+run_all_webgl_builds_2022:
+  name: Run All WebGl Build [2022.3]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_2021.3
+    - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_2022.3
 {% endfor -%}
 {% endfor -%}
 
@@ -156,9 +156,9 @@ run_all_project_tests_desktop_standalone:
 {% endfor -%}
 
 
-# Runs all Desktop tests on trunk editor
-run_all_project_tests_desktop_standalone_trunk:
-  name: Run All Standalone Tests - Desktop [Trunk only]
+# Runs all Desktop tests on 6000.2 editor (latest supported editor)
+run_all_project_tests_desktop_standalone_6000.2:
+  name: Run All Standalone Tests - Desktop [6000.2 only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
@@ -170,14 +170,14 @@ run_all_project_tests_desktop_standalone_trunk:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Desktop tests on mimimum supported editor (2021.3 in case of NGOv1.X)
-run_all_project_tests_desktop_standalone_2021:
-  name: Run All Standalone Tests - Desktop [2021.3]
+# Runs all Desktop tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
+run_all_project_tests_desktop_standalone_2022:
+  name: Run All Standalone Tests - Desktop [2022.3]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
 {% for backend in scripting_backends -%}
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_2021.3
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_2022.3
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -195,9 +195,9 @@ run_all_project_tests_mobile_standalone:
 {% endfor -%}
 
 
-# Runs all Mobile tests on trunk editor
-run_all_project_tests_mobile_standalone_trunk:
-  name: Run All Standalone Tests - Mobile [Trunk only]
+# Runs all Mobile tests on 6000.2 editor (latest supported editor)
+run_all_project_tests_mobile_standalone_6000.2:
+  name: Run All Standalone Tests - Mobile [6000.2 only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
@@ -207,13 +207,13 @@ run_all_project_tests_mobile_standalone_trunk:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Mobile tests on mimimum supported editor (2021.3 in case of NGOv1.X)
-run_all_project_tests_mobile_standalone_2021:
-  name: Run All Standalone Tests - Mobile [2021.3]
+# Runs all Mobile tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
+run_all_project_tests_mobile_standalone_2022:
+  name: Run All Standalone Tests - Mobile [2022.3]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.mobile_test -%}
-    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
+    - .yamato/mobile-standalone-test.yml#mobile_standalone_test_{{ project.name }}_{{ platform.name }}_2022.3
 {% endfor -%}
 {% endfor -%}
 
@@ -231,9 +231,9 @@ run_all_project_tests_console_standalone:
 {% endfor -%}
 
 
-# Runs all Console tests on trunk editor
-run_all_project_tests_console_standalone_trunk:
-  name: Run All Standalone Tests - Console [Trunk only]
+# Runs all Console tests on 6000.2 editor (latest supported editor)
+run_all_project_tests_console_standalone_6000.2:
+  name: Run All Standalone Tests - Console [6000.2 only]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
@@ -243,12 +243,12 @@ run_all_project_tests_console_standalone_trunk:
 {% endfor -%}
 {% endfor -%}
 
-# Runs all Console tests on mimimum supported editor (2021.3 in case of NGOv1.X)
-run_all_project_tests_console_standalone_2021:
-  name: Run All Standalone Tests - Console [2021.3]
+# Runs all Console tests on mimimum supported editor (2022.3 in case of NGOv1.X) (2022.3 will soon be a minimum supported editor)
+run_all_project_tests_console_standalone_2022:
+  name: Run All Standalone Tests - Console [2022.3]
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.console_test -%}
-    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_2021.3
+    - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_2022.3
 {% endfor -%}
 {% endfor -%}

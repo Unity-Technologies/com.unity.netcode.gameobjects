@@ -12,7 +12,7 @@
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
   # 1. For default platform only (Ubuntu) since coverage would not vary between platforms (no need for checks on more platforms)
-  # 2. For default editor version (trunk) since coverage would not vary between editors (no need for checks on more editors)
+  # 2. For default editor version (6000.2) since coverage would not vary between editors (no need for checks on more editors)
   
 #TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # In theory this job also runs package tests, but we don't want to use it as default since is heavier (because of added coverage analysis) and coverage is not changing that often
