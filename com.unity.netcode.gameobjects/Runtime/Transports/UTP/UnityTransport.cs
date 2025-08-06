@@ -253,6 +253,12 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
+            /// <remarks>
+            /// If a DNS hostname was set as the address, this will return an invalid endpoint. This
+            /// is still handled correctly by NGO, but for this reason usage of this property is
+            /// discouraged.
+            /// </remarks>
+            [Obsolete("Use NetworkEndpoint.Parse on the Address field instead.")]
             public NetworkEndpoint ServerEndPoint
             {
                 get
