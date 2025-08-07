@@ -16,7 +16,7 @@ _Link to related jira ticket ([Use the smart commits](https://support.atlassian.
 <!--  Uncomment and mark items off with a * if this PR deprecates any API:
 ### Deprecated API
 - [ ] An `[Obsolete]` attribute was added along with a `(RemovedAfter yyyy-mm-dd)` entry.
-- [ ] An [api updater] was added.
+- [ ] An [api updater](https://confluence.unity3d.com/display/DEV/Obsolete+API+updaters) was added.
 - [ ] Deprecation of the API is explained in the CHANGELOG.
 - [ ] The users can understand why this API was removed and what they should use instead.
 -->
