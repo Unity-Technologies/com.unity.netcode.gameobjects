@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -261,7 +262,7 @@ namespace Unity.Netcode.Components
 
             InternalDetach();
             // Notify of the changed attached state
-            UpdateAttachState(m_AttachState, m_AttachableNode);
+            NotifyAttachedStateChanged(m_AttachState, m_AttachableNode);
 
             m_AttachedNodeReference = new NetworkBehaviourReference(null);
 
@@ -284,42 +285,39 @@ namespace Unity.Netcode.Components
             base.OnNetworkDespawn();
         }
 
+        /// <summary>
+        /// This will apply the final attach or detatch state based on the current value of <see cref="m_AttachedNodeReference"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void UpdateAttachedState()
         {
-            var attachableNode = (AttachableNode)null;
-            var referenceHasNode = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
+            // Process the NetworkBehaviourReference to get the new AttachableNode or null.
+            // If null, then isAttaching will always be false.
+            var isAttaching = m_AttachedNodeReference.TryGet(out AttachableNode attachableNode, NetworkManager);
 
-            /////////////////////////////////////////////////////////////
             // Exit early if we are already in the correct attached state and the incoming
             // AttachableNode reference is the same as the local AttachableNode property.
             if (attachableNode == m_AttachableNode &&
-                ((referenceHasNode && m_AttachState == AttachState.Attached) ||
-                (!referenceHasNode && m_AttachState == AttachState.Detached)))
+                ((isAttaching && m_AttachState == AttachState.Attached) ||
+                (!isAttaching && m_AttachState == AttachState.Detached)))
             {
                 return;
             }
-
-            // If we are in an attaching state but the node is null then we are still not attaching.
-            var isAttaching = referenceHasNode && attachableNode != null;
 
             // If we are attached to some other AttachableNode, then detach from that before attaching to a new one.
             if (isAttaching && m_AttachableNode != null && m_AttachState == AttachState.Attached)
             {
                 // Run through the same process without being triggerd by a NetVar update.
-                UpdateAttachState(AttachState.Detaching, m_AttachableNode);
+                NotifyAttachedStateChanged(AttachState.Detaching, m_AttachableNode);
                 InternalDetach();
-                UpdateAttachState(AttachState.Detached, m_AttachableNode);
+                NotifyAttachedStateChanged(AttachState.Detached, m_AttachableNode);
 
                 m_AttachableNode.Detach(this);
                 m_AttachableNode = null;
             }
 
-            // Used for attaching or detatching notifications
-            var preNode = referenceHasNode ? attachableNode : m_AttachableNode;
-            var preState = referenceHasNode ? AttachState.Attaching : AttachState.Detaching;
-
             // Change the state to attaching or detaching
-            UpdateAttachState(preState, preNode);
+            NotifyAttachedStateChanged(isAttaching ? AttachState.Attaching : AttachState.Detaching, isAttaching ? attachableNode : m_AttachableNode);
 
             ForceComponentChange(isAttaching, false);
             if (isAttaching)
@@ -332,7 +330,7 @@ namespace Unity.Netcode.Components
             }
 
             // Notify of the changed attached state
-            UpdateAttachState(m_AttachState, m_AttachableNode);
+            NotifyAttachedStateChanged(m_AttachState, m_AttachableNode);
 
             // When detaching, we want to make our final action
             // the invocation of the AttachableNode's Detach method.
@@ -357,7 +355,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Update the attached state.
         /// </summary>
-        private void UpdateAttachState(AttachState attachState, AttachableNode attachableNode)
+        private void NotifyAttachedStateChanged(AttachState attachState, AttachableNode attachableNode)
         {
             try
             {
@@ -432,7 +430,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!HasAuthority)
+            if (!OnHasAuthority())
             {
                 NetworkLog.LogError($"[{name}][Attach][Not Authority] Client-{NetworkManager.LocalClientId} is not the authority!");
                 return;
