@@ -178,7 +178,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Determines whether the selected <see cref="Components"/>s will start enabled or disabled when spawned.
         /// </summary>
-        [Tooltip("The initial state of the component controllers enabled status when instnatiated.")]
+        [Tooltip("The initial state of the component controllers enabled status when instantiated.")]
         public bool StartEnabled = true;
 
         /// <summary>
