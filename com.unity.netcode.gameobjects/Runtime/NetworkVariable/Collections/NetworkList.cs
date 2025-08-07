@@ -618,7 +618,7 @@ namespace Unity.Netcode
 
                 var previousValue = m_List[index];
 
-                // Compare the Value being applied to the current value
+                // Only trigger an event if the value has changed
                 if (NetworkVariableSerialization<T>.AreEqual(ref previousValue, ref value))
                 {
                     return;
