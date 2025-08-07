@@ -13,7 +13,7 @@
   # Jobs configurations are generated using nested loops through:
     # 1. For all NGO projects (testproject, testproject-tools-interation, minimalproject)
     # 2. For default platform only (Ubuntu) since standards would not vary between platforms (no need for checks on more platforms)
-    # 3. For default editor version (trunk) since standards would not vary between editors (no need for checks on more editors)
+    # 3. For default editor version (6000.2) since standards would not vary between editors (no need for checks on more editors)
   
 # TECHNICAL CONSTRAINTS---------------------------------------------------------------
   # Requires .NET SDK installed (should be preinstalled on the image so we just check for version)

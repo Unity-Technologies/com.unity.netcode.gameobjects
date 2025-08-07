@@ -19,7 +19,7 @@
   # Nightly:
     # This test validates same subset as pull_request_trigger with addition of mobile/console tests and webgl builds
     # Runs daily on develop (local configuration)
-    # Includes all test types but only on trunk.
+    # Includes all test types but only on 6000.2 (latest supported editor).
     # Adds platform-specific and APV validation
 
   # Weekly:
@@ -45,17 +45,17 @@ pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   # Run the following tests on a selection of different desktop platforms
   dependencies:
-    # Run package EditMode and Playmode package tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
-    - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
+    # Run package EditMode and Playmode package tests on 6000.2 (latest supported editor) and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    - .yamato/package-tests.yml#package_test_-_ngo_6000.2_mac
     - .yamato/package-tests.yml#package_test_-_ngo_2022.3_win
 
-    # Run testproject EditMode and Playmode project tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
-    - .yamato/project-tests.yml#test_testproject_win_trunk
+    # Run testproject EditMode and Playmode project tests on 6000.2 (latest supported editor) and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    - .yamato/project-tests.yml#test_testproject_win_6000.2
     - .yamato/project-tests.yml#test_testproject_mac_2022.3
 
-    # Run tools integration tests EditMode and Playmode tests on trunk and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
+    # Run tools integration tests EditMode and Playmode tests on 6000.2 (latest supported editor) and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
     - .yamato/project-tests.yml#test_testproject-tools-integration_ubuntu_2022.3
-    - .yamato/project-tests.yml#test_testproject-tools-integration_win_trunk
+    - .yamato/project-tests.yml#test_testproject-tools-integration_win_6000.2
 
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
@@ -71,11 +71,11 @@ pull_request_trigger:
       - drafts: false
 
 
-# Run all tests on trunk on nightly basis.
+# Run all tests on 6000.2 (latest supported editor) on nightly basis.
 # Same subset as pull_request_trigger with addition of mobile/desktop/console tests and webgl builds
-# Those tests are all running on trunk editor (since it's daily and running all of them would add a lot of overhead)
+# Those tests are all running on 6000.2 (latest supported editor) since it's daily and running all of them would add a lot of overhead
 develop_nightly:
-  name: "\U0001F319 [Nightly] Run All Tests [Trunk and 2021]"
+  name: "\U0001F319 [Nightly] Run All Tests [6000.2 and 2022]"
   triggers:
     recurring:
       - branch: develop
@@ -83,31 +83,31 @@ develop_nightly:
         rerun: always
   dependencies:
     # Run project standards to verify package/default project
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_2021.3
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.2
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_2022.3
     # Run APV jobs to make sure the change won't break any dependants
     - .yamato/wrench/preview-a-p-v.yml#all_preview_apv_jobs
-    # Run package EditMode and Playmode tests on desktop platforms on trunk and 2021.3
-    - .yamato/_run-all.yml#run_all_package_tests_trunk
-    - .yamato/_run-all.yml#run_all_package_tests_2021
-    # Run project EditMode and PLaymode tests on desktop platforms on trunk and 2021.3
-    - .yamato/_run-all.yml#run_all_project_tests_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_2021
-    # Run Runtime tests on desktop players on trunk and 2021 editors
-    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_2021
-    # Run Runtime tests on mobile players on trunk and 2021 editors
-    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_2021
-    # Run Runtime tests on console players on trunk and 2021 editors
-    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_trunk
-    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_2021
-    # Build player for webgl platform on trunk and 2021 editors
-    - .yamato/_run-all.yml#run_all_webgl_builds_trunk
-    - .yamato/_run-all.yml#run_all_webgl_builds_2021
-    # Build player for webgl platform on trunk and 2021 editors
-    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_trunk
-    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_2021.3
+    # Run package EditMode and Playmode tests on desktop platforms on 6000.2 (latest supported editor) and 2022.3 (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_package_tests_6000.2
+    - .yamato/_run-all.yml#run_all_package_tests_2022
+    # Run project EditMode and PLaymode tests on desktop platforms on 6000.2 (latest supported editor) and 2022.3 (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_project_tests_6000.2
+    - .yamato/_run-all.yml#run_all_project_tests_2022
+    # Run Runtime tests on desktop players on 6000.2 (latest supported editor) and 2022.3 editors (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_6000.2
+    - .yamato/_run-all.yml#run_all_project_tests_desktop_standalone_2022
+    # Run Runtime tests on mobile players on 6000.2 (latest supported editor) and 2022.3 editors (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_6000.2
+    - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone_2022
+    # Run Runtime tests on console players on 6000.2 (latest supported editor) and 2022.3 editors (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_6000.2
+    - .yamato/_run-all.yml#run_all_project_tests_console_standalone_2022
+    # Build player for webgl platform on 6000.2 (latest supported editor) and 2022.3 editors (2022.3 will soon be a minimum supported editor)
+    - .yamato/_run-all.yml#run_all_webgl_builds_6000.2
+    - .yamato/_run-all.yml#run_all_webgl_builds_2022
+    # Build player for webgl platform on 6000.2 (latest supported editor) and 2022.3 editors (2022.3 will soon be a minimum supported editor)
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_ubuntu_6000.2
+    - .yamato/project-updated-dependencies-test.yml#updated-dependencies_testproject_NGO_win_2022.3
     # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
     - .yamato/vetting-test.yml#vetting_test
 
@@ -115,7 +115,7 @@ develop_nightly:
 # Run all tests on weekly bases
 # Same subset as develop_nightly but runs per all supported editors as well as executes code coverage test and runs project standards per project
 # It's not running wrench jobs since those will run either way in nightly test run
-# This in contrast to nightly checks will run tests on all editors (not only trunk). Running those on weekly basis and trunk tests nightly should be a good balance between making sure that tests are passing and overhead of running lots of tests
+# This in contrast to nightly checks will run tests on all editors (not only 6000.2). Running those on weekly basis and 6000.2 (latest supported editor) tests nightly should be a good balance between making sure that tests are passing and overhead of running lots of tests
 develop_weekly_trunk:
   name: "\U0001F319 [Weekly] Run All Tests"
   triggers:
@@ -136,7 +136,7 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_project_tests_mobile_standalone
     # Run Runtime tests on console players
     - .yamato/_run-all.yml#run_all_project_tests_console_standalone
-    # Build player for webgl platform on trunk
+    # Build player for webgl platform on 6000.2 (latest supported editor)
     - .yamato/_run-all.yml#run_all_webgl_builds
     # Run code coverage test
-    - .yamato/code-coverage.yml#code_coverage_ubuntu_trunk
+    - .yamato/code-coverage.yml#code_coverage_ubuntu_6000.2

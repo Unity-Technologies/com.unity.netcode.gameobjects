@@ -11,7 +11,7 @@
       },
       "InternalOnly": false,
       "NeverPublish": false,
-      "MaxEditorVersion": "",
+      "MaxEditorVersion": "6000.2",
       "coverageEnabled": false,
       "coverageCommands": [
         "generateAdditionalMetrics;generateHtmlReport;assemblyFilters:ASSEMBLY_NAME;pathReplacePatterns:@*,,**/PackageCache/,;sourcePaths:YAMATO_SOURCE_DIR/Packages;"
