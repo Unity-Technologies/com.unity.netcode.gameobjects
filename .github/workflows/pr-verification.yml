@@ -1,0 +1,62 @@
+﻿# This workflow is designed to verify that the pull request description contains a required sections that are important from quality perspective.
+# ## Backport section is important as a reminder to account for backports for anyone that works with NGO repository (to 1.X or 2.X branches respectively).
+# ## Testing & QA section is important to ensure that the PR has appropriate testing coverage and is important when QA will evaluate PRs before Playtesting for the release.
+# ## Documentation section is important to ensure that the documentation is updated with the changes made in the PR.
+
+# If any of the sections is missing, the workflow will fail and block the PR from merging, prompting the developer to add those sections to the PR description.
+# The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
+
+name: "NGO - PR Verification"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - "develop"
+      - "develop-2.0.0"
+      - "/release\/.*/"
+
+jobs:
+  pr-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check PR description
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            // List of mandatory PR sections
+            const requiredSections = [
+              {
+                header: '## Backport',
+                description: 'PR description must include a "## Backport" section. Please add this section and provide information about this PR backport to develop or develop-2.0.0 branch respectively or explain why backport is not needed.'
+              },
+              {
+                header: '## Testing & QA',
+                description: 'PR description must include a "## Testing & QA" section. Please add this section and provide information about the testing performed for this PR. It can range from adding unit tests to full samples and is needed from QA side to analyze PRs while Playtesting for the release.'
+              },
+              {
+                header: '## Documentation',
+                description: 'PR description must include a "## Documentation" section. Please add this section and provide information about the documentation changes made in this PR. It is important to keep the documentation up to date with the code changes.'
+              }
+            ];
+
+            const missing = requiredSections.filter(section => !body.includes(section.header));
+
+            if (missing.length > 0) {
+              let message = 'PR description is missing the following required section(s):\n';
+
+              const missingDescriptions = missing.map(
+                s => `- ${s.header}: ${s.description}`
+              );
+
+              message += missingDescriptions.join('\n');
+              message += '\n\nPlease add them to your PR description.';
+
+              core.setFailed(message);
+            }
