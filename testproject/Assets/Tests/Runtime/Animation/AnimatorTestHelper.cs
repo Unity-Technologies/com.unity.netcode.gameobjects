@@ -108,6 +108,16 @@ namespace TestProject.RuntimeTests
             m_Animator.SetBool("TestBool", parameterValues.BoolValue);
         }
 
+        public void UpdateExcludedParameter(float value)
+        {
+            m_Animator.SetFloat("ExcludeFromSync", value);
+        }
+
+        public float GetExcludedParameter()
+        {
+            return m_Animator.GetFloat("ExcludeFromSync");
+        }
+
         public bool GetCurrentTriggerState()
         {
             return m_Animator.GetBool("TestTrigger");

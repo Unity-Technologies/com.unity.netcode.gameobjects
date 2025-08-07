@@ -221,14 +221,13 @@ namespace Unity.Netcode.Components
             Owner,
         }
 
-
         /// <summary>
         /// Determines whether this <see cref="NetworkAnimator"/> instance will have state updates pushed by the server or the client owner.
         /// <see cref="AuthorityModes"/>
         /// </summary>
 #if MULTIPLAYER_SERVICES_SDK_INSTALLED
-        [Tooltip("Selects who has authority (sends state updates) over the <see cref="NetworkAnimator"/> instance. When the network topology is set to distributed authority, this always defaults to owner authority. If server (the default), then only server-side adjustments to the " +
-            "<see cref="NetworkAnimator"/> instance will be synchronized with clients. If owner (or client), then only the owner-side adjustments to the <see cref="NetworkAnimator"/> instance will be synchronized with both the server and other clients.")]
+        [Tooltip("Selects who has authority(sends state updates) over the<see cref=\"NetworkAnimator\"/> instance.When the network topology is set to distributed authority, this always defaults to owner authority.If server (the default), then only server-side adjustments to the " +
+            "<see cref=\"NetworkAnimator\"> instance will be synchronized with clients. If owner (or client), then only the owner-side adjustments to the <see cref=\"NetworkAnimator\"/> instance will be synchronized with both the server and other clients.")]
 #else
         [Tooltip("Selects who has authority (sends state updates) over the <see cref=\"NetworkAnimator\"/> instance. If server (the default), then only server-side adjustments to the <see cref=\"NetworkAnimator\"/> instance will be synchronized with clients. If owner (or client), " +
             "then only the owner-side adjustments to the <see cref=\"NetworkAnimator\"/> instance will be synchronized with both the server and other clients.")]
@@ -265,8 +264,34 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [Serializable]
+        internal class AnimatorParameterEntry
+        {
+            public bool Synchronize;
+            public int NameHash;
+            public string Name;
+            public AnimatorControllerParameterType ParameterType;
+#if UNITY_EDITOR
+            public AnimatorParameterEntry(AnimatorControllerParameter parameter)
+            {
+                Synchronize = true;
+                NameHash = parameter.nameHash;
+                Name = parameter.name;
+                ParameterType = parameter.type;
+            }
+#endif
+            public AnimatorParameterEntry() { }
+        }
+
+        [HideInInspector]
+        [SerializeField]
+        internal List<AnimatorParameterEntry> AnimatorParameterEntries;
+
+        internal Dictionary<int, AnimatorParameterEntry> AnimatorParameterEntryTable = new Dictionary<int, AnimatorParameterEntry>();
 
 #if UNITY_EDITOR
+        internal bool AnimatorParametersExpanded;
+
         private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
         {
             for (int y = 0; y < stateMachine.states.Length; y++)
@@ -639,6 +664,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            foreach (var parameterEntry in AnimatorParameterEntries)
+            {
+                if (!AnimatorParameterEntryTable.ContainsKey(parameterEntry.NameHash))
+                {
+                    AnimatorParameterEntryTable.Add(parameterEntry.NameHash, parameterEntry);
+                }
+            }
+
             int layers = m_Animator.layerCount;
             // Initializing the below arrays for everyone handles an issue
             // when running in owner authoritative mode and the owner changes.
@@ -682,11 +715,17 @@ namespace Unity.Netcode.Components
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
+                var synchronizeParameter = true;
+                if (AnimatorParameterEntryTable.ContainsKey(parameter.nameHash))
+                {
+                    synchronizeParameter = AnimatorParameterEntryTable[parameter.nameHash].Synchronize;
+                }
 
                 var cacheParam = new AnimatorParamCache
                 {
                     Type = UnsafeUtility.EnumToInt(parameter.type),
-                    Hash = parameter.nameHash
+                    Hash = parameter.nameHash,
+                    Exclude = !synchronizeParameter
                 };
 
                 unsafe
@@ -793,6 +832,10 @@ namespace Unity.Netcode.Components
                 m_ParametersToUpdate.Clear();
                 for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
                 {
+                    if (m_CachedAnimatorParameters[i].Exclude)
+                    {
+                        continue;
+                    }
                     m_ParametersToUpdate.Add(i);
                 }
                 // Write, apply, and serialize
@@ -1184,6 +1227,7 @@ namespace Unity.Netcode.Components
 
                 if (cacheValue.Exclude)
                 {
+                    Debug.LogWarning($"Parameter hash:{cacheValue.Hash} should be excluded but is in the parameters to update list when writing parameter values!");
                     continue;
                 }
 
