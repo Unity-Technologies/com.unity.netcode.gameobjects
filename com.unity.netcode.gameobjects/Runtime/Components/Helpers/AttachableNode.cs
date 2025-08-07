@@ -51,7 +51,7 @@ public class AttachableNode : NetworkBehaviour
             var attachables = NetworkObject.transform.GetComponentsInChildren<AttachableBehaviour>();
             foreach (var attachable in attachables)
             {
-                if (attachable.AttachableNode == this)
+                if (attachable.InternalAttachableNode == this)
                 {
                     m_AttachedBehaviours.Add(attachable);
                 }
@@ -67,7 +67,7 @@ public class AttachableNode : NetworkBehaviour
     /// </remarks>
     public override void OnNetworkPreDespawn()
     {
-        if (IsSpawned && HasAuthority && DetachOnDespawn)
+        if (IsSpawned && DetachOnDespawn)
         {
             for (int i = m_AttachedBehaviours.Count - 1; i >= 0; i--)
             {

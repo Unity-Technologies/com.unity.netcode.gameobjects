@@ -198,7 +198,7 @@ namespace Unity.Netcode.Components
         /// If attached, attaching, or detaching this will be the <see cref="AttachableNode"/> this <see cref="AttachableBehaviour"/> instance is attached to.
         /// </summary>
         protected AttachableNode m_AttachableNode { get; private set; }
-        internal AttachableNode AttachableNode => m_AttachableNode;
+        internal AttachableNode InternalAttachableNode => m_AttachableNode;
 
         private NetworkBehaviourReference m_AttachedNodeReference = new NetworkBehaviourReference(null);
         private Vector3 m_OriginalLocalPosition;
@@ -287,35 +287,36 @@ namespace Unity.Netcode.Components
         private void UpdateAttachedState()
         {
             var attachableNode = (AttachableNode)null;
-            var isAttaching = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
-            var preState = isAttaching ? AttachState.Attaching : AttachState.Detaching;
+            var referenceHasNode = m_AttachedNodeReference.TryGet(out attachableNode, NetworkManager);
 
+            /////////////////////////////////////////////////////////////
             // Exit early if we are already in the correct attached state and the incoming
             // AttachableNode reference is the same as the local AttachableNode property.
             if (attachableNode == m_AttachableNode &&
-                ((isAttaching && m_AttachState == AttachState.Attached) ||
-                (!isAttaching && m_AttachState == AttachState.Detached)))
+                ((referenceHasNode && m_AttachState == AttachState.Attached) ||
+                (!referenceHasNode && m_AttachState == AttachState.Detached)))
             {
                 return;
             }
 
-            var preNode = isAttaching ? attachableNode : m_AttachableNode;
-            isAttaching = isAttaching && attachableNode != null;
+            // If we are in an attaching state but the node is null then we are still not attaching.
+            var isAttaching = referenceHasNode && attachableNode != null;
 
+            // If we are attached to some other AttachableNode, then detach from that before attaching to a new one.
             if (isAttaching && m_AttachableNode != null && m_AttachState == AttachState.Attached)
             {
-                // If we are attached to some other AttachableNode, then detach from that before attaching to a new one.
-                if (m_AttachableNode != attachableNode)
-                {
-                    // Run through the same process without being triggerd by a NetVar update.
-                    UpdateAttachState(AttachState.Detaching, m_AttachableNode);
-                    InternalDetach();
-                    UpdateAttachState(AttachState.Detached, m_AttachableNode);
+                // Run through the same process without being triggerd by a NetVar update.
+                UpdateAttachState(AttachState.Detaching, m_AttachableNode);
+                InternalDetach();
+                UpdateAttachState(AttachState.Detached, m_AttachableNode);
 
-                    m_AttachableNode.Detach(this);
-                    m_AttachableNode = null;
-                }
+                m_AttachableNode.Detach(this);
+                m_AttachableNode = null;
             }
+
+            // Used for attaching or detatching notifications
+            var preNode = referenceHasNode ? attachableNode : m_AttachableNode;
+            var preState = referenceHasNode ? AttachState.Attaching : AttachState.Detaching;
 
             // Change the state to attaching or detaching
             UpdateAttachState(preState, preNode);

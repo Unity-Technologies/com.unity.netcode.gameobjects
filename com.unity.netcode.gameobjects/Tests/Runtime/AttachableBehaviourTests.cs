@@ -387,10 +387,10 @@ namespace Unity.Netcode.RuntimeTests
                     m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}][{attachable.name}] Did not have its event invoked!");
                 }
 
-                if (attachable.AttachableNode != null)
+                if (attachable.InternalAttachableNode != null)
                 {
-                    var nodeHasAttachments = attachable.AttachableNode.HasAttachments ? $" {attachable.AttachableNode.name} still has attachments!" : "";
-                    m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}][{attachable.name}] Still refers to {attachable.AttachableNode.name}!{nodeHasAttachments}");
+                    var nodeHasAttachments = attachable.InternalAttachableNode.HasAttachments ? $" {attachable.InternalAttachableNode.name} still has attachments!" : "";
+                    m_ErrorLog.AppendLine($"[Client-{networkManager.LocalClientId}][{attachable.name}] Still refers to {attachable.InternalAttachableNode.name}!{nodeHasAttachments}");
                 }
             }
             return m_ErrorLog.Length == 0;
