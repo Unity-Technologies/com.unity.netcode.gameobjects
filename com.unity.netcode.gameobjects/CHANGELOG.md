@@ -19,6 +19,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
+
 
 ## [2.5.0] - 2025-08-01
 
