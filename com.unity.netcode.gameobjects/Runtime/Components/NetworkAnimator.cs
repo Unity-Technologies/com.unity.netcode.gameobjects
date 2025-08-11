@@ -1,6 +1,7 @@
 #if COM_UNITY_MODULES_ANIMATION
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -72,6 +73,13 @@ namespace Unity.Netcode.Components
             m_SendTriggerUpdates.Clear();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasAuthority()
+        {
+            var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
+            return (!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && m_NetworkAnimator.IsServer);
+        }
+
         /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
@@ -79,25 +87,32 @@ namespace Unity.Netcode.Components
             {
                 case NetworkUpdateStage.PreUpdate:
                     {
-                        // Only the owner or the server send messages
-                        if (m_NetworkAnimator.IsOwner || m_IsServer)
+                        // NOTE: This script has an order of operations requirement where
+                        // the authority and/or server will flush messages first, parameter updates are applied
+                        // for all instances, and then only the authority will check for animator changes. Changing
+                        // the order could cause timing related issues.
+
+                        var hasAuthority = HasAuthority();
+                        // Only the authority or the server will send messages
+                        if (hasAuthority || m_IsServer)
                         {
                             // Flush any pending messages
                             FlushMessages();
                         }
 
                         // Everyone applies any parameters updated
-                        for (int i = 0; i < m_ProcessParameterUpdates.Count; i++)
+                        if (m_ProcessParameterUpdates.Count > 0)
                         {
-                            var parameterUpdate = m_ProcessParameterUpdates[i];
-                            m_NetworkAnimator.UpdateParameters(ref parameterUpdate);
+                            for (int i = 0; i < m_ProcessParameterUpdates.Count; i++)
+                            {
+                                var parameterUpdate = m_ProcessParameterUpdates[i];
+                                m_NetworkAnimator.UpdateParameters(ref parameterUpdate);
+                            }
+                            m_ProcessParameterUpdates.Clear();
                         }
-                        m_ProcessParameterUpdates.Clear();
-                        var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
 
-                        // owners when owner authoritative or the server when server authoritative are the only instances that
-                        // checks for Animator changes
-                        if ((!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && m_NetworkAnimator.IsServer))
+                        // Only the authority checks for Animator changes
+                        if (hasAuthority)
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
@@ -1511,6 +1526,10 @@ namespace Unity.Netcode.Components
             ProcessAnimStates(animationMessage);
         }
 
+        /// <summary>
+        /// Process incoming <see cref="AnimationMessage"/>.
+        /// </summary>
+        /// <param name="animationMessage">The message to process.</param>
         private void ProcessAnimStates(AnimationMessage animationMessage)
         {
             if (HasAuthority)
@@ -1529,8 +1548,6 @@ namespace Unity.Netcode.Components
                 UpdateAnimationState(animationState);
             }
         }
-
-
 
         /// <summary>
         /// Server-side trigger state update request
@@ -1675,24 +1692,31 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Allows for the enabling or disabling the synchronization of a specific
-        /// <see cref="Animator"/> parameter.
+        /// Allows for the enabling or disabling the synchronization of a specific <see cref="UnityEngine.Animator"/> parameter.
         /// </summary>
-        /// <param name="parameterName">name of the parameter</param>
-        /// <param name="enable">whether to enable or disable synchronizing it</param>
-        public void ToggleParameterSync(string parameterName, bool enable)
+        /// <param name="parameterName">The <see cref="string"/> name of the parameter.</param>
+        /// <param name="isEnabled">Whether to enable or disable the synchronization of the parameter.</param>
+        public void EnableParameterSynchronization(string parameterName, bool isEnabled)
+        {
+            EnableParameterSynchronization(Animator.StringToHash(parameterName), isEnabled);
+        }
+
+        /// <summary>
+        /// Allows for the enabling or disabling the synchronization of a specific <see cref="UnityEngine.Animator"/> parameter.
+        /// </summary>
+        /// <param name="parameterNameHash">The hash value (from using <see cref="Animator.StringToHash(string)"/>) of the parameter name.</param>
+        /// <param name="isEnabled">Whether to enable or disable the synchronization of the parameter.</param>
+        public void EnableParameterSynchronization(int parameterNameHash, bool isEnabled)
         {
             var serverAuthoritative = OnIsServerAuthoritative();
             if (!IsSpawned || serverAuthoritative && IsServer || !serverAuthoritative && IsOwner)
             {
-                var hash32 = Animator.StringToHash(parameterName);
-
                 for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
                 {
                     var cachedParameter = m_CachedAnimatorParameters[i];
-                    if (cachedParameter.Hash == hash32)
+                    if (cachedParameter.Hash == parameterNameHash)
                     {
-                        cachedParameter.Exclude = !enable;
+                        cachedParameter.Exclude = !isEnabled;
                         m_CachedAnimatorParameters[i] = cachedParameter;
                         break;
                     }
