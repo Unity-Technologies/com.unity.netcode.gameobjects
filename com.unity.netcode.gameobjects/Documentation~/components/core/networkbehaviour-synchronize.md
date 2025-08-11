@@ -23,6 +23,7 @@ OnNetworkSpawn               | NetworkObject            | During spawn initializ
 OnNetworkPostSpawn           | NetworkObject            | Post-spawn actions                                     | Client and server
 OnNetworkSessionSynchronized | All NetworkObjects       | New client finished synchronizing                      | Client-side only
 OnInSceneObjectsSpawned      | In-scene NetworkObjects  | New client finished synchronizing or a scene is loaded | Client and server
+OnNetworkPreDespawn          | NetworkObject            | Invoked before de-spawning NetworkObject               | Client and server
 
 In addition to the methods above, there are two special case convenience methods:
 
