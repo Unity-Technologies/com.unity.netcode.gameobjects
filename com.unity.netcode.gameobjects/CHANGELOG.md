@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 
 ### Fixed
 
@@ -20,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Marked `UnityTransport.ConnectionAddressData.ServerEndPoint` as obsolete. It can't work when using hostnames as the server address, and its functionality can easily be replicated using `NetworkEndpoint.Parse`. (#3591)
+- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
 
 ## [2.5.0] - 2025-08-01
 
@@ -32,6 +34,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Removed allocation to the heap in NetworkBehaviourUpdate. (#3573)
 - Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3564)
 - Fixed regression issue in v2.x where `NetworkObject.GetNetworkBehaviourAtOrderIndex` was converted from public to internal. (#3541)
 - Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3539)
