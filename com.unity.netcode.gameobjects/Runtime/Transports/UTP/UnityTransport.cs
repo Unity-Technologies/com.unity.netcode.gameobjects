@@ -7,9 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-#if HOSTNAME_RESOLUTION_AVAILABLE
-using System.Text.RegularExpressions;
-#endif
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
