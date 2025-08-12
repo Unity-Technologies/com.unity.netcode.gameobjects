@@ -68,8 +68,11 @@ cd ./mps-common-multiplayer-backend/runtime
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-# Install ProtoBuffer Compiler
+# Install Protocol Buffer Compiler
 apt-get install -y protobuf-compiler
+
+# Add the Protocol Buffer Compiler install location to the path
+export PATH="$HOME/.local/bin:$PATH"
 
 # Add the cargo bin directory to the PATH
 export PATH="$HOME/.cargo/bin:$PATH"
