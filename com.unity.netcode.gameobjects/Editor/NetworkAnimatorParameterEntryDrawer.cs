@@ -1,14 +1,13 @@
 
+#if COM_UNITY_MODULES_ANIMATION
 using Unity.Netcode.Components;
 using UnityEditor;
-//using UnityEditor.UIElements;
-//using UnityEngine.UIElements;
 using UnityEngine;
 
 namespace Unity.Netcode.Editor
 {
     [CustomPropertyDrawer(typeof(NetworkAnimator.AnimatorParametersListContainer))]
-    internal class NetworkAnimatorParameterEntryEditor : PropertyDrawer
+    internal class NetworkAnimatorParameterEntryDrawer : PropertyDrawer
     {
         // Draw the property inside the given rect
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -94,4 +93,4 @@ namespace Unity.Netcode.Editor
         }
     }
 }
-
+#endif
