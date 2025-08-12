@@ -425,6 +425,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkAnimatorExpanded: 0
   AuthorityMode: 0
+  m_Animator: {fileID: 6515743261518512780}
   TransitionStateInfoList:
   - IsCrossFadeExit: 0
     Layer: 0
@@ -469,51 +470,52 @@ MonoBehaviour:
     TriggerNameHash: 1080829965
     TransitionIndex: 2
   AnimatorParameterEntries:
-  - Synchronize: 1
-    NameHash: 807753530
-    Name: Rotate
-    ParameterType: 4
-  - Synchronize: 1
-    NameHash: -623385122
-    Name: Pulse
-    ParameterType: 9
-  - Synchronize: 1
-    NameHash: -758535706
-    Name: TestFloat
-    ParameterType: 1
-  - Synchronize: 1
-    NameHash: -1682086748
-    Name: TestInt
-    ParameterType: 3
-  - Synchronize: 1
-    NameHash: 953368263
-    Name: TestBool
-    ParameterType: 4
-  - Synchronize: 1
-    NameHash: 1033918907
-    Name: TestTrigger
-    ParameterType: 9
-  - Synchronize: 1
-    NameHash: -1545343146
-    Name: LateJoinTest
-    ParameterType: 4
-  - Synchronize: 1
-    NameHash: 1080829965
-    Name: Attack
-    ParameterType: 9
-  - Synchronize: 1
-    NameHash: -1936256502
-    Name: WeaponType
-    ParameterType: 3
-  - Synchronize: 1
-    NameHash: 1855955664
-    Name: Weapon
-    ParameterType: 3
-  - Synchronize: 0
-    NameHash: -1993481368
-    Name: ExcludeFromSync
-    ParameterType: 1
-  m_Animator: {fileID: 6515743261518512780}
+    ParameterEntries:
+    - name: Rotate
+      NameHash: 807753530
+      Synchronize: 1
+      ParameterType: 4
+    - name: Pulse
+      NameHash: -623385122
+      Synchronize: 1
+      ParameterType: 9
+    - name: TestFloat
+      NameHash: -758535706
+      Synchronize: 1
+      ParameterType: 1
+    - name: TestInt
+      NameHash: -1682086748
+      Synchronize: 1
+      ParameterType: 3
+    - name: TestBool
+      NameHash: 953368263
+      Synchronize: 1
+      ParameterType: 4
+    - name: TestTrigger
+      NameHash: 1033918907
+      Synchronize: 1
+      ParameterType: 9
+    - name: LateJoinTest
+      NameHash: -1545343146
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 9
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Weapon
+      NameHash: 1855955664
+      Synchronize: 1
+      ParameterType: 3
+    - name: ExcludeFromSync
+      NameHash: -1993481368
+      Synchronize: 0
+      ParameterType: 1
+  AnimatorParametersExpanded: 0
 --- !u!114 &-8876216387850298050
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -155,11 +155,11 @@ namespace Unity.Netcode.Editor
     /// <summary>
     /// Internal use. Hides the script field for NetworkAnimator.
     /// </summary>
-    //[CustomEditor(typeof(NetworkAnimator), true)]
-    //public class NetworkAnimatorEditor : HiddenScriptEditor
-    //{
+    [CustomEditor(typeof(NetworkAnimator), true)]
+    public class NetworkAnimatorEditor : HiddenScriptEditor
+    {
 
-    //}
+    }
 #endif
 
 #if COM_UNITY_MODULES_PHYSICS

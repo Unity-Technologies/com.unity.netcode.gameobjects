@@ -380,7 +380,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
   AuthorityMode: 1
+  m_Animator: {fileID: 3078684837575715027}
   TransitionStateInfoList:
   - IsCrossFadeExit: 0
     Layer: 0
@@ -424,7 +426,53 @@ MonoBehaviour:
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 2
-  m_Animator: {fileID: 3078684837575715027}
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Rotate
+      NameHash: 807753530
+      Synchronize: 1
+      ParameterType: 4
+    - name: Pulse
+      NameHash: -623385122
+      Synchronize: 1
+      ParameterType: 9
+    - name: TestFloat
+      NameHash: -758535706
+      Synchronize: 1
+      ParameterType: 1
+    - name: TestInt
+      NameHash: -1682086748
+      Synchronize: 1
+      ParameterType: 3
+    - name: TestBool
+      NameHash: 953368263
+      Synchronize: 1
+      ParameterType: 4
+    - name: TestTrigger
+      NameHash: 1033918907
+      Synchronize: 1
+      ParameterType: 9
+    - name: LateJoinTest
+      NameHash: -1545343146
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 9
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Weapon
+      NameHash: 1855955664
+      Synchronize: 1
+      ParameterType: 3
+    - name: ExcludeFromSync
+      NameHash: -1993481368
+      Synchronize: 0
+      ParameterType: 1
+  AnimatorParametersExpanded: 0
 --- !u!1 &3214090169133903718
 GameObject:
   m_ObjectHideFlags: 0
@@ -736,7 +784,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  NetworkAnimatorExpanded: 0
   AuthorityMode: 0
+  m_Animator: {fileID: 6047057957339659638}
   TransitionStateInfoList:
   - IsCrossFadeExit: 0
     Layer: 0
@@ -780,7 +830,53 @@ MonoBehaviour:
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 2
-  m_Animator: {fileID: 6047057957339659638}
+  AnimatorParameterEntries:
+    ParameterEntries:
+    - name: Rotate
+      NameHash: 807753530
+      Synchronize: 1
+      ParameterType: 4
+    - name: Pulse
+      NameHash: -623385122
+      Synchronize: 1
+      ParameterType: 9
+    - name: TestFloat
+      NameHash: -758535706
+      Synchronize: 1
+      ParameterType: 1
+    - name: TestInt
+      NameHash: -1682086748
+      Synchronize: 1
+      ParameterType: 3
+    - name: TestBool
+      NameHash: 953368263
+      Synchronize: 1
+      ParameterType: 4
+    - name: TestTrigger
+      NameHash: 1033918907
+      Synchronize: 1
+      ParameterType: 9
+    - name: LateJoinTest
+      NameHash: -1545343146
+      Synchronize: 1
+      ParameterType: 4
+    - name: Attack
+      NameHash: 1080829965
+      Synchronize: 1
+      ParameterType: 9
+    - name: WeaponType
+      NameHash: -1936256502
+      Synchronize: 1
+      ParameterType: 3
+    - name: Weapon
+      NameHash: 1855955664
+      Synchronize: 1
+      ParameterType: 3
+    - name: ExcludeFromSync
+      NameHash: -1993481368
+      Synchronize: 0
+      ParameterType: 1
+  AnimatorParametersExpanded: 1
 --- !u!1 &4033769488171516769
 GameObject:
   m_ObjectHideFlags: 0

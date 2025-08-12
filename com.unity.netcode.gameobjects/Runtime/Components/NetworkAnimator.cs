@@ -249,6 +249,21 @@ namespace Unity.Netcode.Components
 #endif
         public AuthorityModes AuthorityMode;
 
+        [Tooltip("The animator that this NetworkAnimator component will be synchronizing.")]
+        [SerializeField] private Animator m_Animator;
+
+        /// <summary>
+        /// The <see cref="Animator"/> associated with this <see cref="NetworkAnimator"/> instance.
+        /// </summary>
+        public Animator Animator
+        {
+            get { return m_Animator; }
+            set
+            {
+                m_Animator = value;
+            }
+        }
+
         /// <summary>
         /// Used to build the destination state to transition info table
         /// </summary>
@@ -282,30 +297,32 @@ namespace Unity.Netcode.Components
         [Serializable]
         internal class AnimatorParameterEntry
         {
-            public bool Synchronize;
+#pragma warning disable IDE1006
+            [HideInInspector]
+            public string name;
+#pragma warning restore IDE1006
             public int NameHash;
-            public string Name;
+            public bool Synchronize;
             public AnimatorControllerParameterType ParameterType;
-#if UNITY_EDITOR
-            public AnimatorParameterEntry(AnimatorControllerParameter parameter)
-            {
-                Synchronize = true;
-                NameHash = parameter.nameHash;
-                Name = parameter.name;
-                ParameterType = parameter.type;
-            }
-#endif
-            public AnimatorParameterEntry() { }
         }
 
-        [HideInInspector]
+        [Serializable]
+        internal class AnimatorParametersListContainer
+        {
+            public List<AnimatorParameterEntry> ParameterEntries = new List<AnimatorParameterEntry>();
+        }
+
         [SerializeField]
-        internal List<AnimatorParameterEntry> AnimatorParameterEntries;
+        internal AnimatorParametersListContainer AnimatorParameterEntries;
 
         internal Dictionary<int, AnimatorParameterEntry> AnimatorParameterEntryTable = new Dictionary<int, AnimatorParameterEntry>();
 
 #if UNITY_EDITOR
+        [HideInInspector]
+        [SerializeField]
         internal bool AnimatorParametersExpanded;
+
+        internal Dictionary<int, AnimatorControllerParameter> ParameterToNameLookup = new Dictionary<int, AnimatorControllerParameter>();
 
         private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
         {
@@ -397,6 +414,73 @@ namespace Unity.Netcode.Components
             }
         }
 
+        internal void ProcessParameterEntries()
+        {
+            if (!Animator)
+            {
+                if (AnimatorParameterEntries != null && AnimatorParameterEntries.ParameterEntries.Count > 0)
+                {
+                    AnimatorParameterEntries.ParameterEntries.Clear();
+                }
+                return;
+            }
+
+            var parameters = Animator.parameters;
+
+            var parametersToRemove = new List<AnimatorParameterEntry>();
+            ParameterToNameLookup.Clear();
+            foreach (var parameter in parameters)
+            {
+                ParameterToNameLookup.Add(parameter.nameHash, parameter);
+            }
+
+            // Rebuild the parameter entry table for the inspector view
+            AnimatorParameterEntryTable.Clear();
+            foreach (var parameterEntry in AnimatorParameterEntries.ParameterEntries)
+            {
+                // Check for removed parameters.
+                if (!ParameterToNameLookup.ContainsKey(parameterEntry.NameHash))
+                {
+                    parametersToRemove.Add(parameterEntry);
+                    // Skip this removed entry
+                    continue;
+                }
+
+                // Build the list of known parameters
+                if (!AnimatorParameterEntryTable.ContainsKey(parameterEntry.NameHash))
+                {
+                    AnimatorParameterEntryTable.Add(parameterEntry.NameHash, parameterEntry);
+                }
+
+                var parameter = ParameterToNameLookup[parameterEntry.NameHash];
+                parameterEntry.name = parameter.name;
+                parameterEntry.ParameterType = parameter.type;
+            }
+
+            // Update for removed parameters
+            foreach (var parameterEntry in parametersToRemove)
+            {
+                AnimatorParameterEntries.ParameterEntries.Remove(parameterEntry);
+            }
+
+            // Update any newly added parameters
+            foreach (var parameterLookUp in ParameterToNameLookup)
+            {
+                if (!AnimatorParameterEntryTable.ContainsKey(parameterLookUp.Value.nameHash))
+                {
+                    var animatorParameterEntry = new AnimatorParameterEntry()
+                    {
+                        name = parameterLookUp.Value.name,
+                        NameHash = parameterLookUp.Value.nameHash,
+                        ParameterType = parameterLookUp.Value.type,
+                        Synchronize = true,
+                    };
+                    AnimatorParameterEntries.ParameterEntries.Add(animatorParameterEntry);
+                    AnimatorParameterEntryTable.Add(parameterLookUp.Value.nameHash, animatorParameterEntry);
+                }
+            }
+        }
+
         /// <summary>
         /// In-Editor Only
         /// Virtual OnValidate method for custom derived NetworkAnimator classes.
@@ -404,6 +488,7 @@ namespace Unity.Netcode.Components
         protected virtual void OnValidate()
         {
             BuildTransitionStateInfoList();
+            ProcessParameterEntries();
         }
 #endif
 
@@ -557,21 +642,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [Tooltip("The animator that this NetworkAnimator component will be synchronizing.")]
-        [SerializeField] private Animator m_Animator;
-
-        /// <summary>
-        /// The <see cref="Animator"/> associated with this <see cref="NetworkAnimator"/> instance.
-        /// </summary>
-        public Animator Animator
-        {
-            get { return m_Animator; }
-            set
-            {
-                m_Animator = value;
-            }
-        }
-
         /// <summary>
         /// Determines whether the <see cref="NetworkAnimator"/> is <see cref="AuthorityModes.Server"/> or <see cref="AuthorityModes.Owner"/> based on the <see cref="AuthorityMode"/> field.
         /// Optionally, you can still derive from <see cref="NetworkAnimator"/> and override the <see cref="OnIsServerAuthoritative"/> method.
@@ -679,7 +749,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            foreach (var parameterEntry in AnimatorParameterEntries)
+            foreach (var parameterEntry in AnimatorParameterEntries.ParameterEntries)
             {
                 if (!AnimatorParameterEntryTable.ContainsKey(parameterEntry.NameHash))
                 {
