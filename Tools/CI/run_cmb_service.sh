@@ -69,7 +69,7 @@ cd ./mps-common-multiplayer-backend/runtime
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 # Install ProtoBuffer Compiler
-apt install -y protobuf-compiler
+apt-get install -y protobuf-compiler
 
 # Add the cargo bin directory to the PATH
 export PATH="$HOME/.cargo/bin:$PATH"
