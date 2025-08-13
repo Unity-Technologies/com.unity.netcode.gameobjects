@@ -60,18 +60,49 @@ echo "Starting with echo server on port: $echo_port and the cmb service on port:
 
 # Setup -------------------------------------------------------------------------
 
+try() {
+   export ThrewError = false
+  "$@" || throw
+}
+
+throw() {
+  echo "An error occurred in: $BASH_COMMAND"
+  export ThrewError = true
+}
+
 # Protocol Buffer Compiler ------------------------------------------------------
 
 echo "Updating modules..."
-apt-get update
+sudo apt-get update
 
 # Install Protocol Buffer Compiler (using apt-get)
+echo "(sudo) Installing protocol bufffer compiler..."
+try sudo apt-get install -y protobuf-compiler
+
+if $ThrewError; then
 echo "Installing protocol bufffer compiler..."
 apt-get install -y protobuf-compiler
+fi
 
 # Add the PROTOC environment variable for Protocol Buffer Compiler
+try sudo export PROTOC="/usr/bin/protoc"
+if $ThrewError; then
 export PROTOC="/usr/bin/protoc"
+fi
 echo "Set PROTOC = $PROTOC"
+
+try $PROTOC/protoc --version
+
+if $ThrewError; then
+export PROTOC=which protoc
+try $PROTOC/protoc --version
+if $ThrewError; then
+echo "Failed to properly run protoc!"
+exit -1
+fi
+echo "PROTOC path is: $PROTOC"
+
+
 
 # Add the Protocol Buffer Compiler install location to the PATH
 export PATH="$PROTOC:$PATH"
