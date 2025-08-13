@@ -60,74 +60,65 @@ echo "Starting with echo server on port: $echo_port and the cmb service on port:
 
 # Setup -------------------------------------------------------------------------
 
+
 ThrewError=false
+
+# Mimics "Try-Catch" where you have to check if an error occurred after invoking
 try() {
    ThrewError=false
   "$@" || throw "$@"
 }
 
+# Invoked by try
 throw() {
-  echo "An error occurred executing this command:$@ \n"
-  ThrewError=true
+    logError "An error occurred executing this command:$@"
+    ThrewError=true
+}
+
+# A way to log messages that are easy to distinguish from the rest of the logs
+logMessage(){
+    printf "\n############################################\n"
+    printf "$@\n"
+    printf "############################################\n"
+}
+
+# A way to log error messages that are easy to distinguish from the rest of the logs
+logError(){
+    printf "\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+    printf "$@\n"
+    printf "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 }
 
 # Protocol Buffer Compiler ------------------------------------------------------
 
 # Apply any updates 
-echo "Updating modules..."
+logMessage "Updating modules..."
 sudo apt-get update
 
 # Install Protocol Buffer Compiler (using apt-get)
-echo "(sudo) Installing protocol bufffer compiler..."
+logMessage "Installing protocol bufffer compiler as SUDO..."
 try sudo apt-get install -y protobuf-compiler
 
 # If the previous command failed, try without sudo
 if $ThrewError; then
-echo "(retry no sudo) Installing protocol bufffer compiler..."
+logMessage "Installing protocol bufffer compiler as shell assigned account..."
 apt-get install -y protobuf-compiler
 else
-echo "Installed using sudo!"
+logMessage "Protocol bufffer compiler was installed as sudo!"
 fi
 
-# Add the PROTOC environment variable for Protocol Buffer Compiler
+# Add the PROTOC environment variable that points to the Protocol Buffer Compiler binary
 export PROTOC="/usr/bin/protoc"
 
-# Use the PROTOC env var to see if it is correct by getting the protoc version
+# Validate the PROTOC env var by getting the protoc version
 try $PROTOC --version
 
 if $ThrewError; then
-echo "Failed to properly run protoc!"
+logError "Failed to properly run protoc!"
 exit -1
 else
-echo "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
+logMessage "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
 fi
-
-# Download the protocol buffer release for linux
-# echo "Downloading protocol bufffer compiler..."
-# PB_REL="https://github.com/protocolbuffers/protobuf/releases"
-# curl -LO $PB_REL/download/v31.1/protoc-31.1-linux-x86_64.zip
-
-# Create target folder to unzip protoc binaries.
-# echo "Creating protocol bufffer folder..."
-# mkdir -p protoc
-# protoc_path="./protoc"
-# folder_path=$(realpath "$protoc_path")
-
-# echo "Unzipping to folder path of protoc: $folder_path"
-
-# extract binaries to protoc folder
-# unzip protoc-31.1-linux-x86_64.zip -d $folder_path
-
-# changing the execute permissions of the protoc folder
-# chmod -R 755 ./protoc
-
-# Add the PROTOC environment variable for Protocol Buffer Compiler
-# export PROTOC="$folder_path/bin"
-# echo "Set PROTOC = $PROTOC"
-
-# Add the Protocol Buffer Compiler install location to the PATH
-# export PATH="$folder_path/bin:$PATH"
-# echo "\n Set PATH = $PATH"
 
 # clone the cmb service repo
 git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
