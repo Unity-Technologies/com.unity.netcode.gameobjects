@@ -60,6 +60,36 @@ echo "Starting with echo server on port: $echo_port and the cmb service on port:
 
 # Setup -------------------------------------------------------------------------
 
+# Protocol Buffer Compiler ------------------------------------------------------
+
+# Install Protocol Buffer Compiler (1st attempt)
+# apt-get install -y protobuf-compiler
+
+# Download the protocol buffer release for linux
+echo "Downloading protocol bufffer compiler..."
+PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+curl -LO $PB_REL/download/v31.1/protoc-31.1-linux-x86_64.zip
+
+# Create target folder to unzip protoc binaries.
+echo "Creating protocol bufffer folder..."
+mkdir -p protoc
+protoc_path="./protoc"
+folder_path=$(realpath "$protoc_path")
+
+echo "Folder path of protoc: $folder_path"
+echo "Unzipping to $folder_path"
+
+# extract binaries to protoc folder
+unzip protoc-31.1-linux-x86_64.zip -d ./protoc
+
+# Add the Protocol Buffer Compiler install PROTOC 
+export PROTOC="$folder_path"
+echo "Set PROTOC = $folder_path"
+
+# Add the Protocol Buffer Compiler install location to the path
+export PATH="$folder_path:$PATH"
+echo "Set PATH = $PATH"
+
 # clone the cmb service repo
 git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
 # navigate to the cmb service directory
@@ -68,18 +98,8 @@ cd ./mps-common-multiplayer-backend/runtime
 # Install rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-# Install Protocol Buffer Compiler
-apt-get install -y protobuf-compiler
-
-# Add the Protocol Buffer Compiler install PROTOC 
-export PROTOC="$HOME/.local/bin/protoc"
-
-# Add the Protocol Buffer Compiler install location to the path
-export PATH="$HOME/.local/bin:$PATH"
-
 # Add the cargo bin directory to the PATH
 export PATH="$HOME/.cargo/bin:$PATH"
-
 
 # Echo server -------------------------------------------------------------------
 
@@ -87,7 +107,6 @@ export PATH="$HOME/.cargo/bin:$PATH"
 cargo build --example ngo_echo_server
 # Run the echo server in the background
 cargo run --example ngo_echo_server -- --port $echo_port &
-
 
 # CMB Service -------------------------------------------------------------------
 
