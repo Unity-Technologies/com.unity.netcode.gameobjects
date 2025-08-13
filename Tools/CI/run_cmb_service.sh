@@ -93,14 +93,7 @@ fi
 export PROTOC="/usr/bin/protoc"
 
 # Use the PROTOC env var to see if it is correct by getting the protoc version
-try $PROTOC/protoc --version
-
-# If that failed, then the path is incorrect. Try using the next possible path
-if $ThrewError; then
-export PROTOC="/usr/bin"
-# Use the PROTOC env var to see if it is correct by getting the protoc version
-try $PROTOC/protoc --version
-fi
+try $PROTOC --version
 
 if $ThrewError; then
 echo "Failed to properly run protoc!"
