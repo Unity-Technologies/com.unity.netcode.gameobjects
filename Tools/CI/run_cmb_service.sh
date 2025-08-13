@@ -71,6 +71,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 # Install Protocol Buffer Compiler
 apt-get install -y protobuf-compiler
 
+# Add the Protocol Buffer Compiler install PROTOC 
+export PROTOC="$HOME/.local/bin/protoc"
+
 # Add the Protocol Buffer Compiler install location to the path
 export PATH="$HOME/.local/bin:$PATH"
 
