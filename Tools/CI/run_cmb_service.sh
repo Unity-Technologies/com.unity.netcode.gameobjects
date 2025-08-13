@@ -61,17 +61,19 @@ echo "Starting with echo server on port: $echo_port and the cmb service on port:
 # Setup -------------------------------------------------------------------------
 
 try() {
-   export ThrewError = false
+   BASH_COMMAND = "$@"
+   ThrewError = false
   "$@" || throw
 }
 
 throw() {
-  echo "An error occurred in: $BASH_COMMAND"
-  export ThrewError = true
+  echo "An error occurred executing this command: $BASH_COMMAND \n"
+  ThrewError = true
 }
 
 # Protocol Buffer Compiler ------------------------------------------------------
 
+# Apply any updates 
 echo "Updating modules..."
 sudo apt-get update
 
@@ -79,34 +81,40 @@ sudo apt-get update
 echo "(sudo) Installing protocol bufffer compiler..."
 try sudo apt-get install -y protobuf-compiler
 
+# If the previous command failed, try without sudo
 if $ThrewError; then
-echo "Installing protocol bufffer compiler..."
+echo "(retry no sudo) Installing protocol bufffer compiler..."
 apt-get install -y protobuf-compiler
+else
+echo "Installed using sudo!"
 fi
 
 # Add the PROTOC environment variable for Protocol Buffer Compiler
-try sudo export PROTOC="/usr/bin/protoc"
+export PROTOC=which protoc
+
+# Use the PROTOC env var to see if it is correct by getting the protoc version
+try $PROTOC/protoc --version
+
+# If that failed, then the path is incorrect. Try using the next possible path
 if $ThrewError; then
 export PROTOC="/usr/bin/protoc"
+# Use the PROTOC env var to see if it is correct by getting the protoc version
+try $PROTOC/protoc --version
 fi
-echo "Set PROTOC = $PROTOC"
 
-try $PROTOC/protoc --version
-
+# If that failed, then the path is incorrect. Try using the next possible path
 if $ThrewError; then
-export PROTOC=which protoc
+export PROTOC="/usr/bin"
+# Use the PROTOC env var to see if it is correct by getting the protoc version
 try $PROTOC/protoc --version
+fi
+
 if $ThrewError; then
 echo "Failed to properly run protoc!"
 exit -1
+else
+echo "Protocol Buffer Compiler Installed & ENV variables verified!\n PROTOC path is: $PROTOC"
 fi
-echo "PROTOC path is: $PROTOC"
-
-
-
-# Add the Protocol Buffer Compiler install location to the PATH
-export PATH="$PROTOC:$PATH"
-echo "\n Set PATH = $PATH"
 
 # Download the protocol buffer release for linux
 # echo "Downloading protocol bufffer compiler..."
