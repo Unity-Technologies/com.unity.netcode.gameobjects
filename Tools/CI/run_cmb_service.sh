@@ -60,15 +60,15 @@ echo "Starting with echo server on port: $echo_port and the cmb service on port:
 
 # Setup -------------------------------------------------------------------------
 
+ThrewError=false
 try() {
-   BASH_COMMAND = "$@"
-   ThrewError = false
-  "$@" || throw
+   ThrewError=false
+  "$@" || throw "$@"
 }
 
 throw() {
-  echo "An error occurred executing this command: $BASH_COMMAND \n"
-  ThrewError = true
+  echo "An error occurred executing this command:$@ \n"
+  ThrewError=true
 }
 
 # Protocol Buffer Compiler ------------------------------------------------------
@@ -90,17 +90,10 @@ echo "Installed using sudo!"
 fi
 
 # Add the PROTOC environment variable for Protocol Buffer Compiler
-export PROTOC=which protoc
-
-# Use the PROTOC env var to see if it is correct by getting the protoc version
-try $PROTOC/protoc --version
-
-# If that failed, then the path is incorrect. Try using the next possible path
-if $ThrewError; then
 export PROTOC="/usr/bin/protoc"
+
 # Use the PROTOC env var to see if it is correct by getting the protoc version
 try $PROTOC/protoc --version
-fi
 
 # If that failed, then the path is incorrect. Try using the next possible path
 if $ThrewError; then
