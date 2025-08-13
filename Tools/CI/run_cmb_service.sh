@@ -133,20 +133,25 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Echo server -------------------------------------------------------------------
-echo "Beginning build..."
+
 # Build the echo server
+logMessage "Beginning echo server build..."
 cargo build --example ngo_echo_server
+
 # Run the echo server in the background
+logMessage "Running echo server tests..."
 cargo run --example ngo_echo_server -- --port $echo_port &
 
 # CMB Service -------------------------------------------------------------------
 
 # Build a release version of the standalone cmb service
+logMessage "Beginning service release build..."
 cargo build --release --locked
 
 # Run the standalone service on an infinite loop in the background.
 # The infinite loop is required as the service will exit each time all connected clients disconnect.
 # This means the service will exit after each test. The infinite loop will immediately restart the service each time it exits.
+logMessage "Running service integration tests..."
 while :; do
   ./target/release/comb-server -l error --metrics-port 5000 standalone --port $service_port -t 60m;
 done & # <- use & to run the entire loop in the background
