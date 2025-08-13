@@ -1,32 +1,34 @@
 # Network prefab handler
 
-The network prefab handler system provides advanced control over how network prefabs are instantiated and destroyed during runtime. This allows overriding the default Netcode for GameObjects [object spawning](../basics/object-spawning.md) behavior by implementing custom prefab handlers.
+The network prefab handler system provides advanced control over how network prefabs are instantiated and destroyed during runtime. You can use it to override the default Netcode for GameObjects [object spawning](../basics/object-spawning.md) behavior by implementing custom prefab handlers.
 
 The network prefab handler system is accessible from the [NetworkManager](../components/networkmanager.md) as `NetworkManager.PrefabHandler`.
 
-## Overview
+## When to use a prefab handler
 
-For an overview of the default object spawning behavior, see the [object spawning](../basics/object-spawning.md) page. The default spawning behavior should cover the majority of spawning use cases, however there are scenarios where you may need more control:
+For an overview of the default object spawning behavior, refer to the [object spawning page](../basics/object-spawning.md). The default spawning behavior is designed to cover the majority of use cases, however there are some scenarios where you may need more control:
 
 - **Object pooling**: Reusing objects to reduce memory allocation and initialization costs.
-- **Performance optimization**: Using different prefab variants on different platforms (e.g. using a simpler object for server simulation).
+- **Performance optimization**: Using different prefab variants on different platforms (such as using a simpler object for server simulation).
 - **Custom initialization**: Setting up objects with game client specific data or configurations.
 - **Conditional spawning**: Initializing different prefab variants based on runtime conditions.
 
-The prefab handler system addresses these needs through a interface-based architecture. The system relies on two key methods, `Instantiate` and `Destroy`. `Instantiate` is called on non-authority clients when an [authority](../terms-concepts/authority.md) spawns a new [NetworkObject](../basics/networkobject.md) that has a registered network prefab handler. `Destroy` is called on all game clients whenever a registered [NetworkObject](../basics/networkobject.md) is destroyed.
+The prefab handler system addresses these needs through an interface-based architecture. The system relies on two key methods: `Instantiate` and `Destroy`. `Instantiate` is called on non-authority clients when an [authority](../terms-concepts/authority.md) spawns a new [NetworkObject](../basics/networkobject.md) that has a registered network prefab handler. `Destroy` is called on all game clients whenever a registered [NetworkObject](../basics/networkobject.md) is destroyed.
 
-## Creating a prefab handler
+## Create a prefab handler
 
-Prefab handlers are classes which implement on of the Netcode for GameObjects prefab handler descriptions. There are currently two such descriptions:
+Prefab handlers are classes that implement one of the Netcode for GameObjects prefab handler descriptions. There are currently two such descriptions:
 
-- **INetworkPrefabInstanceHandler**: This is the simplest interface for custom prefab handlers.
-- **NetworkPrefabInstanceHandlerWithData**: This specialized handler receives custom data from the authority during spawning, enabling dynamic prefab customization.
+- [**INetworkPrefabInstanceHandler**](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.INetworkPrefabInstanceHandler.html): This is the simplest interface for custom prefab handlers.
+- [**NetworkPrefabInstanceHandlerWithData**](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkPrefabInstanceHandlerWithData.html): This specialized handler receives custom data from the authority during spawning, enabling dynamic prefab customization.
 
-Netcode will use the `Instantiate` and `Destroy` methods in place of default spawn handlers for the `NetworkObject` used during spawning and de-spawning. The authority instance will use the traditional spawning approach where it will, via user script, instantiate and spawn a network prefab (even for those registered with a prefab handler). However, all non-authority clients will automatically use the instantiate method defined by the `INetworkPrefabInstanceHandler` implementation if the network prefab spawned has a registered `INetworkPrefabInstanceHandler` implementation with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`).
+When using a prefab handler, Netcode for GameObjects uses the `Instantiate` and `Destroy` methods instead of default spawn handlers for the NetworkObject during spawning and despawning. The authority instance uses the traditional spawning approach where it will, via user script, instantiate and spawn a network prefab (even for those registered with a prefab handler). However, all non-authority clients will automatically use the instantiate method defined by the `INetworkPrefabInstanceHandler` implementation if the network prefab spawned has a registered `INetworkPrefabInstanceHandler` implementation with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`).
 
-### INetworkPrefabInstanceHandler
+### `INetworkPrefabInstanceHandler`
 
-When all you want to do is handle overriding a network prefab, implementing the `INetworkPrefabInstanceHandler` interface and registering an instance of that implementation with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`) is all you would need to do. Use the `INetworkPrefabInstanceHandler` for situations where the prefab override behavior is consistent and known.
+For the simple use case of overriding a network prefab, implement the `INetworkPrefabInstanceHandler` interface and register an instance of that implementation with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`).
+
+Use the `INetworkPrefabInstanceHandler` for situations where the prefab override behavior is consistent and known.
 
 ```csharp
     public interface INetworkPrefabInstanceHandler
@@ -36,9 +38,11 @@ When all you want to do is handle overriding a network prefab, implementing the 
     }
 ```
 
-### NetworkPrefabInstanceHandlerWithData
+### `NetworkPrefabInstanceHandlerWithData`
 
-If you are looking to provide serialized data to be used during the instantiation process, then the `NetworkPrefabInstanceHandlerWithData` class is what you would want to derive from and register with the `NetworkPrefabHandler` (`NetworkManager.PrefabHandler`). The `NetworkPrefabInstanceHandlerWithData` class allows for sending custom data from the authority during object spawning. This extra data can then be used to change the behavior of the `Instantiate` method. An implementation of `NetworkPrefabInstanceHandlerWithData` allows for sending any custom type that is serializable using [INetworkSerializable](advanced-topics/serialization/inetworkserializable.md).
+If you want to provide additional serialized data during the instantiation process, you can derive from the `NetworkPrefabInstanceHandlerWithData` class.
+
+The `NetworkPrefabInstanceHandlerWithData` class allows you to send custom data from the authority during object spawning. This extra data can then be used to change the behavior of the `Instantiate` method. Using `NetworkPrefabInstanceHandlerWithData`, you can send any custom type that is serializable using [`INetworkSerializable`](serialization/inetworkserializable.md).
 
 ```csharp
 public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabInstanceHandlerWithData
@@ -49,9 +53,9 @@ public abstract class NetworkPrefabInstanceHandlerWithData<T> : INetworkPrefabIn
 }
 ```
 
-## Prefab handler registration
+## Register a prefab handler
 
-Once you have created your prefab handler (_derived class or interface implementation_), you will need to register any new instance of your prefab handler with the network prefab handler system using `NetworkManager.PrefabHandler.AddHandler`. Prefab handlers are registered against a NetworkObject's [GlobalObjectIdHash](../basics/networkobject.md#using-networkobjects).
+Once you've [created a prefab handler](#create-a-prefab-handler), whether by implementing or deriving, you need to register any new instance of that handler with the network prefab handler system using `NetworkManager.PrefabHandler.AddHandler`. Prefab handlers are registered against a NetworkObject's [GlobalObjectIdHash](../basics/networkobject.md#using-networkobjects).
 
 ```csharp
 public class GameManager : NetworkBehaviour
@@ -66,21 +70,21 @@ public class GameManager : NetworkBehaviour
 }
 ```
 
-In order to un-register a prefab handler, you can [invoke the `NetworkManager.PrefabHandler.RemoveHandler` method](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.4/api/Unity.Netcode.NetworkPrefabHandler.html#Unity_Netcode_NetworkPrefabHandler_RemoveHandler_System_UInt32_) (_There are several override versions of this method_).
+To un-register a prefab handler, you can [invoke the `NetworkManager.PrefabHandler.RemoveHandler` method](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkPrefabHandler.html#Unity_Netcode_NetworkPrefabHandler_RemoveHandler_System_UInt32_). There are several override versions of this method.
 
 ## Object spawning with prefab handlers
 
-Once a prefab handler is registered Netcode will automatically use the defined `Initialize` and `Destroy` methods to manage the object lifecycle. [Spawn the network prefab as usual](../basics/object-spawning.md#spawning-a-network-prefab-overview) and the `Initialize` method will be called on whichever handler is registered with the spawned network prefab.
+Once a prefab handler is registered, Netcode for GameObjects automatically uses the defined `Initialize` and `Destroy` methods to manage the object lifecycle. [Spawn the network prefab as usual](../basics/object-spawning.md#spawning-a-network-prefab-overview) and the `Initialize` method will be called on whichever handler is registered with the spawned network prefab.
 
 Note that the `Initialize` method is only called on non-authority clients. To customize network prefab behavior on the authority, you can use [prefab overrides](../basics/object-spawning.md#taking-prefab-overrides-into-consideration).
 
 ### Object spawning with custom data
 
-When using a handler derived from `NetworkPrefabInstanceHandlerWithData`, you must manually set the instantiation data after instantiating the instance but before spawning. To do this, invoke the `NetworkPrefabInstanceHandlerWithData.SetInstantiationData` method before invoking the `NetworkObject.Spawn` method. If `SetInstantiationData` is not called, the `default` implementation will be sent to the `Instantiate` call.
+When using a handler derived from `NetworkPrefabInstanceHandlerWithData`, you must manually set the instantiation data after instantiating the instance (but before spawning) by invoking the `NetworkPrefabInstanceHandlerWithData.SetInstantiationData` method before invoking the `NetworkObject.Spawn` method. If `SetInstantiationData` is not called, the `default` implementation will be sent to the `Instantiate` call.
 
-#### Simple Example
+#### Examples
 
-Below we can find a simple "pseudo" example script where the `InstantiateData` structure implements the `INetworkSerializable` interface and it will be used to serialize the instantiation data for the network prefab defined within the below `SpawnPrefabWithColor` NetworkBehaviour.
+The first example here is a pseudo-script where the `InstantiateData` structure implements the `INetworkSerializable` interface and is used to serialize instantiation data for a network prefab defined within the `SpawnPrefabWithColor` NetworkBehaviour.
 
 ```csharp
 /// <summary>
@@ -103,9 +107,9 @@ public struct InstantiateData : INetworkSerializable
 }
 ```
 
-The below `SpawnPrefabWithColor` is an example of a NetworkBehavior component, to be placed on an in-scene placed NetworkObject, that handles the instantiation of a prefab handler (`SpawnWithColorHandler`) and the means to configure the network prefab to register with the handler. It also has a `SpawnWithColorSystem.SpawnObject` method that can be used to instantiate an instance of the assigned network prefab instance that will also have instantiation data associated with it that contains the color to be applied to the instance's `MeshRenderer`s.
+The second example, `SpawnPrefabWithColor`, is an example of a NetworkBehavior component, to be placed on an in-scene placed NetworkObject, that handles the instantiation of a prefab handler (`SpawnWithColorHandler`) and the means to configure the network prefab to register with the handler. It also has a `SpawnWithColorSystem.SpawnObject` method that can instantiate an instance of the assigned network prefab instance that will also have instantiation data associated with it that contains the color to be applied to the instance's MeshRenderers.
 
-_While there are much easier ways to synchronize the color of MeshRenderer instances across clients, this is only for example purposes._
+There are easier ways to synchronize the color of MeshRenderer instances across clients, this is only for example purposes.
 
 ```csharp
 /// <summary>
@@ -146,13 +150,13 @@ public class SpawnPrefabWithColor : NetworkBehaviour
     }
 }
 ```
-Above, we can see the `SpawnWithColorSystem` invokes the `SpawnWithColorHandler.InstantiateSetDataAndSpawn` method to create a new network prefab instance, set the instantiation data, and then spawn the network prefab instance.
+The `SpawnWithColorSystem` invokes the `SpawnWithColorHandler.InstantiateSetDataAndSpawn` method to create a new network prefab instance, set the instantiation data, and then spawn the network prefab instance.
 
-Below we will find the slightly more complex, of the three scripts, `SpawnWithColorHandler` with a constructor that automatically registers itself and the network prefab with the `NetworkManager.PrefabHandler`:
+The third example is the most complex: `SpawnWithColorHandler` with a constructor that automatically registers itself and the network prefab with the `NetworkManager.PrefabHandler`:
 
 ```csharp
 /// <summary>
-/// The prefan instance handler that uses instantiation data to handle updating
+/// The prefab instance handler that uses instantiation data to handle updating
 /// the instance's <see cref="MeshRenderer"/>s material's color. (example purposes only)
 /// </summary>
 public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<InstantiateData>
@@ -219,37 +223,36 @@ public class SpawnWithColorHandler : NetworkPrefabInstanceHandlerWithData<Instan
     }
 }
 ```
-When instantiating from user script for a host, server, or distributed authority client, the above `InstantiateSetDataAndSpawn` method is used. When instantiating on non-authority instances the `GetPrefabInstance` is used since the authority provides the instantiation data.
+When instantiating from user script for a host, server, or distributed authority client, the above `InstantiateSetDataAndSpawn` method is used. When instantiating on non-authority instances, the `GetPrefabInstance` method is used, since the authority provides the instantiation data.
 
-While setting the color of a `MeshRenderer` doesn't really provide a broad spectrum use case scenario for `NetworkPrefabInstanceHandlerWithData`, the above example does provide you with a simple implementation in order to better understand:
+While setting the color of a MeshRenderer doesn't really provide a broad spectrum use case scenario for `NetworkPrefabInstanceHandlerWithData`, the above example does provide you with a simple implementation to understand::
 
 - Creating a serializable structure to be serialized with the spawned network prefab.
-- Creating a component (this case a `NetworkBehaviour`) that is used to instantiate the handler and configure the network prefab to be registered.
+- Creating a component (in this case a NetworkBehaviour) that's used to instantiate the handler and configure the network prefab to be registered.
 - Creating a `NetworkPrefabInstanceHandlerWithData` derived class that:
   - Handles instantiating and destroying instances of the registered prefab.
   - Provides an example of instantiating the network prefab, setting the instantiation data for the instance, and then spawning the instance.
   - Provides an example of taking the de-serialized instantiation data and using one (or more) fields to configure the network prefab instance prior to it being spawned.
 
-### Pre-instantiation data vs spawn data
+### Pre-instantiation data and spawn data
 
-While the `NetworkPrefabInstanceHandlerWithData` feature provides you with the ability to include pre-spawn instantiation data that you can then use to define the instance before the instance is instantiated and/or spawned, there are some subtle differences between pre-spawn serialized data and spawn serialized data.
+You can use `NetworkPrefabInstanceHandlerWithData` to include pre-spawn instantiation data that you can then use to define the instance before the instance is instantiated and/or spawned. However, the are some subtle differences between pre-spawn serialized data and spawn serialized data.
 
 - *Pre-spawn serialized data*:
-  - Is included in the `NetworkObject` serialized data.
+  - Is included in the NetworkObject serialized data.
   - Is extracted and de-serialized prior to invoking the `NetworkPrefabInstanceHandlerWithData.Instantiate` method.
   - Can be used to identify pre-instantiated objects and/or the type of network prefab to be spawned.
-  - Has no context for the "to-be spawned" network prefab, unless you provide that in the instantiation data.
+  - Has no context for the network prefab that's going to be spawned, unless you provide that in the instantiation data.
   - Can include any kind of serialized data types supported by Netcode for GameObjects.
   - Can be used to spawn pre-determined instances that are created prior to connecting to the session or created while synchronizing with a session.
 - *Spawn serialized data*:
-  - Is not available until the network prefab is already instantiated and is in the middle of or has finished the spawn process.
-  - Cannot be used to define what network prefab to instantiate.
-  - Typically will include other netcode related states (NetworkVariables, RPCs, etc.).
+  - Isn't available until the network prefab is already instantiated and is in the middle of or has finished the spawn process.
+  - Can't be used to define what network prefab to instantiate.
+  - Typically will include other netcode related states such as NetworkVariables and RPCs.
 
-When it comes to including instantiation data you should be cautious about including data from already spawned objects. It is not that you are not allowed to do this, but that you need to assure that the serialized information of already spawned objects, like a `NetworkBehaviourReference` or `NetworkObjectReference`, exists prior to being used.
+When it comes to including instantiation data, you should be cautious about including data from already spawned objects. You need to ensure that the serialized information of already spawned objects, like a `NetworkBehaviourReference` or `NetworkObjectReference`, exists prior to being used.
 
-
-## Further Reading
+## Additional resources
 
 - [Object pooling](./object-pooling.md)
 - [Authority prefab overrides](../basics/object-spawning.md#taking-prefab-overrides-into-consideration)
