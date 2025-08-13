@@ -76,19 +76,22 @@ mkdir -p protoc
 protoc_path="./protoc"
 folder_path=$(realpath "$protoc_path")
 
-echo "Folder path of protoc: $folder_path"
-echo "Unzipping to $folder_path"
+echo "Unzipping to folder path of protoc: $folder_path"
 
 # extract binaries to protoc folder
-unzip protoc-31.1-linux-x86_64.zip -d ./protoc
+unzip protoc-31.1-linux-x86_64.zip -d $folder_path
+
+# changing the execute permissions of the protoc folder
+chmod +x ./protoc
+chmod +x ./protoc/bin
 
 # Add the Protocol Buffer Compiler install PROTOC 
-export PROTOC="$folder_path"
-echo "Set PROTOC = $folder_path"
+export PROTOC="$folder_path/bin"
+echo "Set PROTOC = $PROTOC"
 
 # Add the Protocol Buffer Compiler install location to the path
-export PATH="$folder_path:$PATH"
-echo "Set PATH = $PATH"
+export PATH="$folder_path/bin:$PATH"
+echo "\n Set PATH = $PATH"
 
 # clone the cmb service repo
 git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
