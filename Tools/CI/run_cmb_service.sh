@@ -85,16 +85,17 @@ unzip protoc-31.1-linux-x86_64.zip -d $folder_path
 chmod +x ./protoc
 chmod +x ./protoc/bin
 
-# Add the Protocol Buffer Compiler install PROTOC 
+# Add the PROTOC environment variable for Protocol Buffer Compiler
 export PROTOC="$folder_path/bin"
 echo "Set PROTOC = $PROTOC"
 
-# Add the Protocol Buffer Compiler install location to the path
+# Add the Protocol Buffer Compiler install location to the PATH
 export PATH="$folder_path/bin:$PATH"
 echo "\n Set PATH = $PATH"
 
 # clone the cmb service repo
 git clone https://github.com/Unity-Technologies/mps-common-multiplayer-backend.git
+
 # navigate to the cmb service directory
 cd ./mps-common-multiplayer-backend/runtime
 
@@ -105,7 +106,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Echo server -------------------------------------------------------------------
-
+echo "Beginning build..."
 # Build the echo server
 cargo build --example ngo_echo_server
 # Run the echo server in the background
