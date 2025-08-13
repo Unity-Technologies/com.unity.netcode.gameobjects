@@ -82,8 +82,7 @@ echo "Unzipping to folder path of protoc: $folder_path"
 unzip protoc-31.1-linux-x86_64.zip -d $folder_path
 
 # changing the execute permissions of the protoc folder
-chmod +x ./protoc
-chmod +x ./protoc/bin
+chmod -R 755 ./protoc
 
 # Add the PROTOC environment variable for Protocol Buffer Compiler
 export PROTOC="$folder_path/bin"
