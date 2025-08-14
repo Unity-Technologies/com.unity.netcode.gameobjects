@@ -25,40 +25,34 @@ Dynamically spawned | In-scene placed
 `OnNetworkSpawn`      | `Start`
 `Start`               | `OnNetworkSpawn`
 
-### Spawn process & invocation order
+### Spawn process and invocation order
 
-If you are familiar with the [event function execution order](https://docs.unity3d.com/6000.0/Documentation/Manual/execution-order.html) and/or the [script execution order](https://docs.unity3d.com/6000.0/Documentation/Manual/script-execution-order.html), then you already know that the execution order dictates the order of operations for your component scripts and you might have already had to adjust execution order of one component relative to another because your component scripts' order of operations required it. If you are not familiar with event function or script execution order, then it is recommended to read/review over the above two links.
+Unity's [event function execution order](https://docs.unity3d.com/Manual/ExecutionOrder.html) and [script execution order](https://docs.unity3d.com/Manual/script-execution-order.html) dictate the order of operations for your component scripts. When you add multiplayer elements to your project, you also need to consider how netcode scripts affect the overall order of operations and script execution order.
 
-When you make the decision to add a multiplayer element to your project, you will inevitably end up adding netcode scripts. Netcode scripts add an additional dimension to the over-all order of operations and script execution order that you need to consider prior to designing any complex netcode system comprised of several netcode scripts.
+For example, NetworkBehaviour includes several virtual methods that are invoked at different spawn stages of a NetworkObject, as represented in the following diagram:
 
-`NetworkBehaviour` includes several virtual methods that are invoked at different spawn stages of a `NetworkObject` as seen in the diagram below:
+![NetworkBehaviour spawn process and method invocation order](../../images/NetworkBehaviour/NetworkBehaviourSpawnOrder.png)
 
-![NetwrokBehaviour Spawn Process & Method Invocation Order](../../images/NetworkBehaviour/NetworkBehaviourSpawnOrder.png)
+The diagram above represents how the spawn process works for two NetworkBehaviour components, _NetworkBehaviour1_ and _NetworkBehaviour2_. The order of NetworkBehaviour components is defined by their placement in the Inspector view of the Unity Editor, relative to the parent NetworkObject. In this example, _NetworkBehaviour1_ is placed above _NetworkBehaviour2_ in the Inspector view.
 
-After having looked over the diagram above, we can see that "NetworkBehaviour1" always invokes its methods before "NetworkBehaviour2". The order of `NetworkBehaviour` components is determined by their placement/position, within the inspector view of the editor, relative to the `NetworkObject`. So, it would be safe to assume that "NetworkBehaviour1" was placed somewhere above "NetworkBehaviour2". Looking at the above diagram, we can also determine that a `NetworkObject` goes through three states during the spawn process:
+NetworkObjects go through three states during the spawn process:
 
 **Spawn states**
-- Pre-Spawning: Before any netcode relative property has been set.
-- Spawning: Netcode properties have been set.
-- Spawned: All `NetworkBehaviour` components have run through their spawn logic.
+- Prespawning: Before any netcode-related properties have been set.
+- Spawning: Netcode-related properties have been set.
+- Spawned: All NetworkBehaviour components have completed their spawn logic.
 
-For each spawn state there is a corresponding `NetworkBehaviour` virtual method:
+For each spawn state there is a corresponding NetworkBehaviour virtual method:
 
-**Spawn state related methods**
-- Pre-Spawning --> `NetworkBehaviour.OnNetworkPreSpawn`.
-- Spawning --> `NetworkBehaviour.OnNetworkSpawn`
-- Spawned --> `NetworkBehaviour.OnNetworkPostSpawn`
+**Spawn state-related methods**
+- Prespawning: `NetworkBehaviour.OnNetworkPreSpawn`.
+    - Used for any post-serialization configuration that has no dependencies on netcode-related properties. For example, at this stage you don't yet know whether the execution context is a server or client, since `NetworkBehaviour.IsServer` and `NetworkBehaviour.IsClient` have yet to be set. This is why a reference to the NetworkManager is passed into this virtual method.
+- Spawning: `NetworkBehaviour.OnNetworkSpawn`
+    - Used to handle any NetworkBehaviour-related configurations that depend on serialized states that might have been passed in. Order of operations here is important, since the `OnNetworkSpawn` method of _NetworkBehaviour1_ is invoked before _NetworkBehaviour2_. If _NetworkBehaviour1_ tries to access a field or property of _NetworkBehaviour2_ during its `OnNetworkSpawn` method, it could lead to an order of operations issue, because _NetworkBehaviour2_ hasn't yet set those values.
+- Spawned: `NetworkBehaviour.OnNetworkPostSpawn`
+    - Any script logic executed here can assume that all properties and fields configured during `OnNetworkSpawn` have been set. At this stage, order of operations issues are no longer a concern, since all `OnNetworkSpawn` methods have completed.
 
-If you read over the above diagram's notes to the right, you would notice that it provides additional information about what kind of script logic might be pertinent for each specific spawn state. The general rules of thumb for each spawn state method:
-
-- `NetworkBehaviour.OnNetworkPreSpawn`: Used for any post serialization configuration needs that has no dependencies on any of the netcode properties. As an example, you wouldn't know the execution context since `NetworkBehaviour.IsServer` and `NetworkBehaviour.IsClient` have yet to be set (along with any other netcode related property). This is why a reference to the `NetworkManager` is passed into this virtual method.
-
-- `NetworkBehaviour.OnNetworkSpawn`: Used to handle any `NetworkBehaviour` relative configurations based off if any serialized states that might have been passed in (or the like). Since we know each `NetworkBehaviour` component's `OnNetworkSpawn` method has a distinct order of operations relative to the other `NetworkBehaviour` components, we can look at the above diagram and come to the conclusion that trying to access some field/property of "NetworkBehavior2", if configured/set in the `OnNetworkSpawn` method, during the invocation of the `OnNetworkSpawn` method of "NetworkBehaviour1" would lead to an order of operations issue since "NetworkBehaviour2" configures the field/property during its `OnNetworkSpawn` method.
-
-- `NetworkBehaviour.OnNetworkPostSpawn`: Any script logic added here can assume that all fields/properties configured during `OnNetworkSpawn` has completed. Accessing any field/property of "NetworkBehavior2" within `OnNetworkPostSpawn` script in "NetworkBehaviour1" would pose no order of operations issues since we know that "NetworkBehavior2" had already set those values during `OnNetworkSpawn`.
-
-
-*For more information about NetworkBehaviour methods and when they are invoked, see the [Pre-Spawn and MonoBehaviour Methods](networkbehaviour.md#pre-spawn-and-monobehaviour-methods) section.*
+For more information about NetworkBehaviour methods and when they're invoked, refer to the [prespawn and MonoBehaviour methods section](networkbehaviour.md#prespawn-and-monobehaviour-methods).
 
 ### Disabling NetworkBehaviours when spawning
 
@@ -76,9 +70,9 @@ Dynamically spawned | In-scene placed (disabled NetworkBehaviour components)
 > If you have child GameObjects that are not active in the hierarchy but are nested under an active GameObject with an attached NetworkObject component, then the inactive child GameObjects will not be included when the NetworkObject is spawned. This applies for the duration of the NetworkObject's spawned lifetime. If you want all child NetworkBehaviour components to be included in the spawn process, then make sure their respective GameObjects are active in the hierarchy before spawning the NetworkObject. Alternatively, you can just disable the NetworkBehaviour component(s) individually while leaving their associated GameObject active.
 > It's recommended to disable a NetworkBehaviour component rather than the GameObject itself.
 
-### Pre-spawn and MonoBehaviour methods
+### Prespawn and MonoBehaviour methods
 
-Since NetworkBehaviour is derived from MonoBehaviour, the `NetworkBehaviour.OnNetworkSpawn` method is treated similar to the `Awake`, `Start`, `FixedUpdate`, `Update`, and `LateUpdate` MonoBehaviour methods. Different methods are invoked depending on whether the GameObject is active in the hierarchy.
+Because NetworkBehaviour is derived from [MonoBehaviour](https://docs.unity3d.com/ScriptReference/MonoBehaviour.html), the `NetworkBehaviour.OnNetworkSpawn` method is treated similarly to the `Awake`, `Start`, `FixedUpdate`, `Update`, and `LateUpdate` MonoBehaviour methods. Different methods are invoked depending on whether the GameObject is active in the hierarchy.
 
 - When active: `Awake`, `Start`, `FixedUpdate`, `Update`, and `LateUpdate` are invoked.
 - When not active: `Awake`, `Start`, `FixedUpdate`, `Update`, and `LateUpdate` are not invoked.
@@ -87,7 +81,7 @@ For more information about execution order, refer to [Order of execution for eve
 
 The unique behavior of `OnNetworkSpawn`, compared to the previously listed methods, is that it's not invoked until the associated GameObject is active in the hierarchy and its associated NetworkObject is spawned.
 
-Additionally, the `FixedUpdate`, `Update`, and `LateUpdate` methods, if defined and the GameObject is active in the hierarchy, will still be invoked on NetworkBehaviours even when they're not yet spawned. If you want portions or all of your update methods to only execute when the associated NetworkObject component is spawned, you can use the `NetworkBehaviour.IsSpawned` flag to determine the spawned status like the below example:
+Additionally, the `FixedUpdate`, `Update`, and `LateUpdate` methods, if defined and the GameObject is active in the hierarchy, will still be invoked on NetworkBehaviours even when they're not yet spawned. If you want some or all of your update methods to only execute when the associated NetworkObject component is spawned, you can use the `NetworkBehaviour.IsSpawned` flag to determine the spawned status like the below example:
 
 ```csharp
 private void Update()
@@ -101,9 +95,9 @@ private void Update()
 }
 ```
 
-Alternately, you could leverage from the [NetworkUpdateLoop](../../advanced-topics/network-update-loop-system/index.md) system by making a NetworkBehaviour implement the `INetworkUpdateSystem` interface and register each instance for a specific `NetworkUpdateStage` during the `OnNetworkSpawn` or `OnNetworkPreSpawn` invocations and then use your own script logic to determine which instance should be updating.
+Alternatively, you can leverage the [NetworkUpdateLoop](../../advanced-topics/network-update-loop-system/index.md) system by making a NetworkBehaviour implement the `INetworkUpdateSystem` interface and register each instance for a specific `NetworkUpdateStage` during the `OnNetworkSpawn` or `OnNetworkPreSpawn` invocations, and then use your own script logic to determine which instance should be updating.
 
-_This can be useful when you want only the owner, authority, or non-authority to be updating and can help to remove checks like the above. It can also reduce the performance cost of all instances that do not register for the update stage (depending upon how many instances are spawned)._
+This can be useful when you want only the owner, authority, or non-authority to be updating and can help to remove checks like the above. It can also reduce the performance cost of all instances that do not register for the update stage (depending upon how many instances are spawned).
 
 ### Dynamically spawned NetworkObjects
 
@@ -140,30 +134,26 @@ public class MyNetworkBehaviour : NetworkBehaviour
 
 For in-scene placed NetworkObjects, the `OnNetworkSpawn` method is invoked after the `Start` method, because the SceneManager scene loading process controls when NetworkObjects are instantiated. The previous code example shows how you can design a NetworkBehaviour that ensures both in-scene placed and dynamically spawned NetworkObjects will have assigned the required properties before attempting to access them. Of course, you can always make the decision to have in-scene placed `NetworkObjects` contain unique components to that of dynamically spawned `NetworkObjects`. It all depends upon what usage pattern works best for your project.
 
-## De-spawning
+## Despawning
 
-When a NetworkObject is de-spawned, it will first iterate over and invoke `NetworkBehaviour.OnNetworkPreDespawn` and then `NetworkBehaviour.OnNetworkDespawn`for each of its assigned NetworkBehaviours.
+When a NetworkObject is despawned, it will first iterate over and invoke `NetworkBehaviour.OnNetworkPreDespawn` and then `NetworkBehaviour.OnNetworkDespawn`for each of its assigned NetworkBehaviours.
 
-- `NetworkBehaviour.OnNetworkPreDespawn`: This is invoked by the associated `NetworkObject` instance at the very start of the de-spawn process. The associated `NetworkObject` is still considered "spawned" when `OnNetworkPreDespawn` is invoked.
-- `NetworkBehaviour.OnNetworkDespawn`: This is invoked while the `NetworkObject` instance is in the middle of the de-spawn process. The associated `NetworkObject` should not be considered spawned and there is no guarantee that other `NetworkBehaviour` components associated with the `NetworkObject` have valid netcode related state ([see the "De-spawn process & invocation order" section for more information](#de-spawn-process--invocation-order)).
+- `NetworkBehaviour.OnNetworkPreDespawn`: This is invoked by the associated NetworkObject instance at the very start of the despawn process. The associated NetworkObject is still considered to be spawned at the point which `OnNetworkPreDespawn` is invoked.
+- `NetworkBehaviour.OnNetworkDespawn`: This is invoked while the NetworkObject instance is in the middle of the despawn process. The associated NetworkObject is not considered spawned at this stage and there is no guarantee that other NetworkBehaviour components associated with the NetworkObject will have a valid netcode-related state (refer to the [despawn process and invocation order section](#despawn-process-and-invocation-order) for more information).
 
-### De-spawning but not destroying
+### Despawning but not destroying
 
- When de-spawned and not destroyed, the associated `GameObject` instance, and all children of that `GameObject`, will persist until it is destroyed. Under this scenario (_de-spawn but not destroy_), the would de-spawn but not destroy the `NetworkObject` instance with the intention of re-using/re-spawning the instance. In order to de-spawn and not destroy, you must invoke `NetworkObject.Despawn` while passing in `false` to not destroy the associated root `GameObject`.
+To despawn a NetworkObject without destroying the associated GameObject, you can invoke `NetworkObject.Despawn` and pass in `false` for the `destroy` parameter. This is useful when you want to keep the GameObject instance and its children in the scene for later reuse or respawning.
 
-### De-spawning and destroying
+### Despawning and destroying
 
-There are two scenarios where the object instance will be de-spawned and the GameObject destroyed:
+There are two ways to despawn a NetworkObject and destroy the associated GameObject:
 
-- When invoking `NetworkObject.Despawn` and either not passing any parameters (_it defaults to destroy_) or passing in `true` for the `destroy` parameter.
-- When invoking `GameObject.Destroy` on the `GameObject` that the `NetworkObject` component belongs to.
-  - _This will result in `NetworkObject.Despawn` to be invoked first (internally) and then `NetworkObject.OnDestroy`_ is invoked after that.
+- When invoking `NetworkObject.Despawn` and either not passing any parameters (the default setting is `destroy`) or passing in `true` for the `destroy` parameter.
+- When invoking `GameObject.Destroy` on the GameObject that the NetworkObject component belongs to.
+    - This causes `NetworkObject.Despawn` to be invoked first (internally) and then `NetworkObject.OnDestroy` is invoked after that.
 
-Each NetworkBehaviour has a virtual `OnDestroy` method that can be overridden to handle clean up that needs to occur when you know the NetworkBehaviour is being destroyed.
-
-_NetworkBehaviour handles other internal destroy related clean up tasks and requires that you invoke the base `OnDestroy` method to operate properly._
-
-If you override the virtual `OnDestroy` method it's important to always invoke the base `OnDestroy` method at the end of your script like such:
+Each NetworkBehaviour has a virtual `OnDestroy` method that you can override to manage any clean up that needs to occur when the NetworkBehaviour is being destroyed. However, the base `OnDestroy` method also handles other internal destroy-related clean up tasks, so if you override the virtual `OnDestroy` method it's important to always invoke the base `OnDestroy` method at the end of your script as in the following example:
 
 ```csharp
         public override void OnDestroy()
@@ -176,20 +166,25 @@ If you override the virtual `OnDestroy` method it's important to always invoke t
 ```
 
 > [!NOTE] Destroying the GameObject
-> When destroying a NetworkObject from within an associated `NetworkBehaviour` component script, you always want to destroy the `NetworkObject.gameObject` and not the `NetworkBehaviour.gameObject` in the event the NetworkBehaviour is located on a child GameObject nested under the NetworkObject's GameObject.
+> When destroying a NetworkObject from within an associated NetworkBehaviour component script, you should always destroy the `NetworkObject.gameObject` and not the `NetworkBehaviour.gameObject` in case the NetworkBehaviour is located on a child GameObject nested under the NetworkObject's GameObject.
 
-### De-spawn process & invocation order
+### Despawn process and invocation order
 
-![NetwrokBehaviour Spawn Process & Method Invocation Order](../../images/NetworkBehaviour/NetworkBehaviourDeSpawnOrder.png)
+![NetworkBehaviour spawn process and method invocation order](../../images/NetworkBehaviour/NetworkBehaviourDeSpawnOrder.png)
 
-Similar to the [spawn process & invocation order section above](#spawn-process--invocation-order), the NetworkBehaviour breaks up the de-spawn process into three states:
+Similar to the [spawn process and invocation order section above](#spawn-process-and-invocation-order), NetworkBehaviour components break up the despawn process into three states:
 
-**De-spawn states**
-- Spawned: This state exists on the frame that the `NetworkObject` is being de-spawned, but before any internal de-spawn script has been invoked. The de-spawn is inevitable but the NetworkObject and all `NetworkBehaviour` components have their netcode related states intact.
-- De-spawning: The `NetworkObject` has begun the de-spawn process. `NetworkBehaviour` components might have reset or disposed of certain fields and/or properties. Upon the last `NetworkBehaviour` component having invoked its `OnNetworkDespawn` method, the `NetworkObject` is considered de-spawned. If the `NetworkObject` was de-spawned but not destroyed then the instance would persist and if de-spawned to destroy then the `GameObject` instance and all components would be destroyed.
-- De-spawned: The `NetworkObject` has finished the de-spawn process. `NetworkBehaviour` components might have reset or disposed of certain fields and/or properties. Local instance can be re-spawned if de-spawn was not while it was being destroyed.
+**Despawn states**
+- Spawned: The NetworkObject starts the frame in this state before any internal despawn script has been invoked. At this stage, the NetworkObject and all NetworkBehaviour components have their netcode-related states intact.
+- Despawning: The NetworkObject has begun the despawn process. NetworkBehaviour components might have reset or disposed of certain fields or properties. When the last NetworkBehaviour component has invoked its `OnNetworkDespawn` method, the NetworkObject is considered despawned. If the NetworkObject was despawned but not destroyed, then the GameObject instance persists. If the NetworkObject was despawned and destroyed, then the GameObject instance and all related components are destroyed.
+- Despawned: The NetworkObject has finished the despawn process. NetworkBehaviour components might have reset or disposed of certain fields or properties. A local instance can be respawned if the NetworkObject was despawned but not destroyed.
 
-**De-spawn state related methods**
-- Spawned --> `NetworkBehaviour.OnNetworkPreDespawn`.
-- De-spawning --> `NetworkBehaviour.OnNetworkDespawn`
-- De-spawned --> *No state related method*
+**Despawn state-related methods**
+- Spawned: `NetworkBehaviour.OnNetworkPreDespawn`.
+- Despawning: `NetworkBehaviour.OnNetworkDespawn`
+- Despawned: No state-related method.
+
+## Additional resources
+
+- [NetworkObjects](networkobject.md)
+- [NetworkBehaviour synchronization](networkbehaviour-synchronize.md)

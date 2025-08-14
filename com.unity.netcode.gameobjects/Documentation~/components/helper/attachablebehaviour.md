@@ -111,7 +111,7 @@ When a NetworkObject component is spawned, it registers all NetworkBehaviour-bas
 
 There are additional considerations like:
 
-- What happens when one or both of the NetworkObjects is de-spawned?
+- What happens when one or both of the NetworkObjects is despawned?
 - How do you ensure the child attachable will return back to its default parent?
 
 AttachableBehaviour addresses these issues by leveraging the spawn lifetime relationship to provide another type of parenting (attaching) while also taking into consideration edge case scenarios.

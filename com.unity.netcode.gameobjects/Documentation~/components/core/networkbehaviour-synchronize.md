@@ -6,11 +6,11 @@ You can use NetworkBehaviours to synchronize settings before, during, and after 
 
 For more information about spawning and despawning NetworkBehaviours, refer to the [NetworkBehaviour spawning and despawning page](networkbehaviour.md).
 
-## Pre-spawn, spawn, post-spawn and synchronization
+## Prespawn, spawn, post-spawn and synchronization
 
 The NetworkObject spawn process can become complicated when there are multiple NetworkBehaviour components attached to the same GameObject. Additionally, there can be times where you want to be able to handle pre- and post-spawn oriented tasks.
 
-- Pre-spawn example: Instantiating a `NetworkVariable` with owner write permissions and assigning a value to that `NetworkVariable` on the server or host side.
+- Prespawn example: Instantiating a `NetworkVariable` with owner write permissions and assigning a value to that `NetworkVariable` on the server or host side.
 - Spawn example: Applying a local value or setting that may be used during post spawn by another local NetworkBehaviour component.
 - Post-spawn example: Accessing a `NetworkVariable` or other property that is set during the spawn process.
 
@@ -18,12 +18,12 @@ Below are the three virtual methods you can override within a NetworkBehaviour-d
 
 Method                       | Scope                    | Use case                                               | Context
 ---------------------------- | ------------------------ | ------------------------------------------------------ | -------------
-OnNetworkPreSpawn            | NetworkObject            | Pre-spawn initialization                               | Client and server
+OnNetworkPreSpawn            | NetworkObject            | Prespawn initialization                               | Client and server
 OnNetworkSpawn               | NetworkObject            | During spawn initialization                            | Client and server
 OnNetworkPostSpawn           | NetworkObject            | Post-spawn actions                                     | Client and server
 OnNetworkSessionSynchronized | All NetworkObjects       | New client finished synchronizing                      | Client-side only
 OnInSceneObjectsSpawned      | In-scene NetworkObjects  | New client finished synchronizing or a scene is loaded | Client and server
-OnNetworkPreDespawn          | NetworkObject            | Invoked before de-spawning NetworkObject               | Client and server
+OnNetworkPreDespawn          | NetworkObject            | Invoked before despawning NetworkObject               | Client and server
 
 In addition to the methods above, there are two special case convenience methods:
 
@@ -33,7 +33,7 @@ In addition to the methods above, there are two special case convenience methods
     - A client finishes synchronizing.
     - On the server and client side after a scene has been loaded and all newly instantiated in-scene placed NetworkObjects have been spawned.
 
-### Pre-spawn synchronization with `OnSynchronize`
+### Prespawn synchronization with `OnSynchronize`
 
 There can be scenarios where you need to include additional configuration data or use a NetworkBehaviour to configure some non-netcode related component (or the like) before a NetworkObject is spawned. This can be particularly critical if you want specific settings applied before `NetworkBehaviour.OnNetworkSpawn` is invoked. When a client is synchronizing with an existing network session, this can become problematic as messaging requires a client to be fully synchronized before you know "it is safe" to send the message, and even if you send a message there is the latency involved in the whole process that might not be convenient and can require additional specialized code to account for this.
 
