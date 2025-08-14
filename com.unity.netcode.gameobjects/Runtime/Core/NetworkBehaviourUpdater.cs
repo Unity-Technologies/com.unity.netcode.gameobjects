@@ -34,11 +34,11 @@ namespace Unity.Netcode
 #endif
             try
             {
-                if (m_PendingDirtyNetworkObjects.Count > 0)
+                foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
                 {
-                    m_DirtyNetworkObjects.UnionWith(m_PendingDirtyNetworkObjects);
-                    m_PendingDirtyNetworkObjects.Clear();
+                    m_DirtyNetworkObjects.Add(dirtyNetworkObject);
                 }
+                m_PendingDirtyNetworkObjects.Clear();
 
                 // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
                 // trying to process them, even if they were previously marked as dirty.
