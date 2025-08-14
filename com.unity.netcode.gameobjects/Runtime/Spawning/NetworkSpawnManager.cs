@@ -1169,7 +1169,7 @@ namespace Unity.Netcode
 
                         // We keep only the client for which the object is visible
                         // as the other clients have them already despawned
-                        foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                        foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                         {
                             if (networkObject.IsNetworkVisibleTo(clientId))
                             {
