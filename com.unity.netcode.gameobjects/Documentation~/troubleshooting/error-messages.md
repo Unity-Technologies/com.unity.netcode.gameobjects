@@ -15,7 +15,7 @@ Error messages are captured and returned through Unity Editor Diagnostics (requi
 * `Can't find pending soft sync object. Is the projects the same? UnityEngine.Debug:LogError(Object)`
 * `ArgumentNullException: Can't spawn null object  Parameter name: netObject`
 
-This exception should only occur if your scenes aren't the same, for example if the scene of your server has a `NetworkObject` which isn't present in the client scene. Verify the scene objects work correctly by entering playmode in both editors.
+This exception should only occur if your scenes aren't the same, for example if the scene of your server has a NetworkObject which isn't present in the client scene. Verify the scene objects work correctly by entering playmode in both editors.
 
 ## ServerRPC errors
 
@@ -25,4 +25,4 @@ This exception should only occur if your scenes aren't the same, for example if 
 
 The ServerRPC should only be used on the server. Make sure to add `isServer` check before calling.
 
-If the call is added correctly but still returns a `nullreferenceexception`, `NetworkManager.Singleton` may be returning `null`. Verify you created the `GameObject` with a `NetworkManager` component, which handles all initialization. `NetworkManager.Singleton` is a reference to a instance of the `NetworkManager` component.
+If the call is added correctly but still returns a `nullreferenceexception`, `NetworkManager.Singleton` may be returning `null`. Verify you created the GameObject with a NetworkManager component, which handles all initialization. `NetworkManager.Singleton` is a reference to a instance of the NetworkManager component.

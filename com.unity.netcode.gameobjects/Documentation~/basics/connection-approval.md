@@ -134,7 +134,7 @@ The `Payload`, defined by the client-side `NetworkConfig.ConnectionData`, is sen
 
 Netcode for GameObjects uses a callback system to allow for external validation. For example, you might have an authentication ticket sent as the `ConnectionData` that you want to validate against the owning servers. This can take some time, so you want to set the `NetworkManager.ConnectionApprovalResponse.Pending` to true while the server (or other third-party authentication service) validates the incoming ticket.
 
-If the third-party authentication process takes longer than the time specified by the `NetworkConfig.ClientConnectionBufferTimeout`, then the connection is dropped. The timer for this starts when the server is notified of the new inbound client connection. You can set the **Client Connection Buffer Timeout** value via the `NetworkManager` in the Inspector view or with the `NetworkManager.NetworkConfig.ClientConnectionBufferTimeout` property.
+If the third-party authentication process takes longer than the time specified by the `NetworkConfig.ClientConnectionBufferTimeout`, then the connection is dropped. The timer for this starts when the server is notified of the new inbound client connection. You can set the **Client Connection Buffer Timeout** value via the NetworkManager in the Inspector view or with the `NetworkManager.NetworkConfig.ClientConnectionBufferTimeout` property.
 
 ## Security
 

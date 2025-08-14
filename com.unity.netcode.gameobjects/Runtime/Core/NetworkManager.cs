@@ -1562,11 +1562,26 @@ namespace Unity.Netcode
             DeferredMessageManager?.CleanupAllTriggers();
             CustomMessagingManager = null;
 
-            RpcTarget?.Dispose();
-            RpcTarget = null;
-
             BehaviourUpdater?.Shutdown();
             BehaviourUpdater = null;
+
+            /// Despawning upon shutdown
+
+            // We need to clean up NetworkObjects before we reset the IsServer
+            // and IsClient properties. This provides consistency of these two
+            // property values for NetworkObjects that are still spawned when
+            // the shutdown cycle begins.
+
+            // We need to handle despawning prior to shutting down the connection
+            // manager or disposing of the RpcTarget so any final updates can take
+            // place (i.e. sending any last state updates or the like).
+
+            SpawnManager?.DespawnAndDestroyNetworkObjects();
+            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            ////
+
+            RpcTarget?.Dispose();
+            RpcTarget = null;
 
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
@@ -1577,17 +1592,12 @@ namespace Unity.Netcode
                 MessageManager = null;
             }
 
-            // We need to clean up NetworkObjects before we reset the IsServer
-            // and IsClient properties. This provides consistency of these two
-            // property values for NetworkObjects that are still spawned when
-            // the shutdown cycle begins.
-            SpawnManager?.DespawnAndDestroyNetworkObjects();
-            SpawnManager?.ServerResetShudownStateForSceneObjects();
-            SpawnManager = null;
-
             // Let the NetworkSceneManager clean up its two SceneEvenData instances
             SceneManager?.Dispose();
             SceneManager = null;
+
+            SpawnManager = null;
+
             IsListening = false;
             m_ShuttingDown = false;
 
