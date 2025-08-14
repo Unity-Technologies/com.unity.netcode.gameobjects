@@ -374,10 +374,11 @@ namespace Unity.Netcode.Components
 
                 var result = new JobResultStruct()
                 {
-                    ThisInstanceID = PairedHeaders[index].bodyInstanceID,
 #if CONTACTPAIRHEADER_OTHERBODYENTITYID
+                    ThisInstanceID = PairedHeaders[index].bodyEntityId,
                     OtherInstanceID = PairedHeaders[index].otherBodyEntityId,
 #else
+                    ThisInstanceID = PairedHeaders[index].bodyInstanceID,
                     OtherInstanceID = PairedHeaders[index].otherBodyInstanceID,
 #endif
                     AverageNormal = averageNormal,
