@@ -14,8 +14,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Removed allocation to the heap in NetworkBehaviourUpdate. (#3568)
+- Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3601)
+- Fixed issue with allocation to the heap in NetworkBehaviourUpdate when there is nothing to be updated. (#3568)
 - Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
+
 
 ### Changed
 
