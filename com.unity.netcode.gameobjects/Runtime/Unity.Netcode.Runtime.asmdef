@@ -77,7 +77,12 @@
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
-        }
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.3.0a6",
+            "define": "CONTACTPAIRHEADER_OTHERBODYENTITYID"
+        },
     ],
     "noEngineReferences": false
 }

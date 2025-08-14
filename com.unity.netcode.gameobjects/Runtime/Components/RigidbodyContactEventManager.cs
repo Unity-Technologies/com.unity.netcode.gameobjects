@@ -375,7 +375,11 @@ namespace Unity.Netcode.Components
                 var result = new JobResultStruct()
                 {
                     ThisInstanceID = PairedHeaders[index].bodyInstanceID,
+#if CONTACTPAIRHEADER_OTHERBODYENTITYID
+                    OtherInstanceID = PairedHeaders[index].otherBodyEntityId,
+#else
                     OtherInstanceID = PairedHeaders[index].otherBodyInstanceID,
+#endif
                     AverageNormal = averageNormal,
                     HasCollisionStay = collisionStaycount != 0,
                     AverageCollisionStayNormal = averageCollisionStay,
