@@ -6,7 +6,7 @@ Making movements feel responsive while staying consistent over multiple game exe
 
 ## TLDR:
 
-- Use [ClientNetworkTransform](../../components/networktransform.md) to sync client authoritative transform updates to the server and other clients.
+- Use [ClientNetworkTransform](../../components/helper/networktransform.md) to sync client authoritative transform updates to the server and other clients.
 - Make sure ownership is set properly on that NetworkObject to be able to move it.
 - Since your clients live on different timelines (one per player), you have to be careful about who takes decisions and keep some of those decisions centralized on the server.
 - DON'T FORGET to test with latency, as your game will behave differently depending on whether client or server make decisions.

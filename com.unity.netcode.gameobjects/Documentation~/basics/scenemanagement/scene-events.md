@@ -27,27 +27,27 @@ This is automatically happens after a client is connected and approved.<br/>
 **Initiating Scene Event**: `SceneEventType.Synchronize`<br/>
 **Associated Scene Events**:
 - `SceneEventType.SynchronizeComplete`: <br/>
-signifies that the client has finished loading all scenes and locally spawned all Netcode objects.  The client sends this scene event message back to the server.  This message also includes a list of `NetworkObject.NetworkObjectId`s for all of the `NetworkObject`s the client spawned.
+signifies that the client has finished loading all scenes and locally spawned all Netcode objects.  The client sends this scene event message back to the server.  This message also includes a list of `NetworkObject.NetworkObjectId`s for all of the NetworkObjects the client spawned.
 - `SceneEventType.ReSynchronize`: <br/>
-signifies that the server determines the client needs to be "re-synchronized" because one or more `NetworkObject`s were despawned while the client was synchronizing.  This message is sent to the client with a `NetworkObject.NetworkObjectId` list for all `NetworkObject`s the client needs to despawn.
+signifies that the server determines the client needs to be "re-synchronized" because one or more NetworkObjects were despawned while the client was synchronizing.  This message is sent to the client with a `NetworkObject.NetworkObjectId` list for all NetworkObjects the client needs to despawn.
 
 
 ## Client Synchronization Details
 While client synchronization does fall partially outside of the scene management realm, it ended up making more sense to handle the initial client synchronization via the `NetworkSceneManager` since a large part of the synchronization process involves loading scenes and synchronizing (in-scene placed and dynamically spawned) `NetworkObjects`.
 - Scene synchronization is the first thing a client processes.
   - The synchronization message includes a list of all scenes the server has loaded via the `NetworkSceneManager`.
-  - The client will load all of these scenes before proceeding to the `NetworkObject` synchronization.
-    - This approach was used to assure all `GameObject`, `NetworkObject`, and `NetworkBehaviour` dependencies are loaded and instantiated before a client attempts to locally spawn a `NetworkObject`.
+  - The client will load all of these scenes before proceeding to the NetworkObject synchronization.
+    - This approach was used to assure all GameObject, NetworkObject, and NetworkBehaviour dependencies are loaded and instantiated before a client attempts to locally spawn a NetworkObject.
 - Synchronizing with all spawned `NetworkObjects`.
   - Typically this involves both in-scene placed and dynamically spawned `NetworkObjects`.
     - Learn more about [Object Spawning here](..\object-spawning.md).
-  - The `NetworkObject` list sent to the client is pre-ordered, by the server, to account for certain types of dependencies such as when using [Object Pooling](../../advanced-topics/object-pooling.md).
+  - The NetworkObject list sent to the client is pre-ordered, by the server, to account for certain types of dependencies such as when using [Object Pooling](../../advanced-topics/object-pooling.md).
     - Typically object pool managers are in-scene placed and need to be instantiated and spawned before spawning any of its pooled `NetworkObjects` on a client that is synchronizing. As such, `NetworkSceneManager` takes this into account to assure that all `NetworkObjects` spawned via the `NetworkPrefabHandler` will be instantiated and spawned after their object pool manager dependency has been instantiated and spawned locally on the client.
         - You can have parented in-scene placed NetworkObjects (that is, items that are picked up or consumed by players)
-            - `NetworkSceneManager` uses a combination of the `NetworkObject.GlobalObjectIdHash` and the instantiating scene's handle to uniquely identify in-scene placed `NetworkObject`s.
+            - `NetworkSceneManager` uses a combination of the `NetworkObject.GlobalObjectIdHash` and the instantiating scene's handle to uniquely identify in-scene placed NetworkObjects.
 
 > [!NOTE]
-> With additively loaded scenes, you can run into situations where your object pool manager, instantiated when the scene it's defined within is additively loaded by the server, is leaving its spawned `NetworkObject` instances within the [currently active scene](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.GetActiveScene.html).  While assuring that newly connected clients being synchronized have loaded all of the scenes first helps to avoid scene dependency issues, this alone does not resolve issue with the `NetworkObject` spawning order.  The integrated scene management, included in Netcode for GameObjects, takes scenarios such as this into consideration.
+> With additively loaded scenes, you can run into situations where your object pool manager, instantiated when the scene it's defined within is additively loaded by the server, is leaving its spawned NetworkObject instances within the [currently active scene](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.GetActiveScene.html).  While assuring that newly connected clients being synchronized have loaded all of the scenes first helps to avoid scene dependency issues, this alone does not resolve issue with the NetworkObject spawning order.  The integrated scene management, included in Netcode for GameObjects, takes scenarios such as this into consideration.
 
 ### The Client Synchronization Process
 
@@ -57,9 +57,9 @@ While client synchronization does fall partially outside of the scene management
 <br/>
 Below is a diagram of the client connection approval and synchronization process:
 
-![image](../images/scenemanagement_synchronization_overview.png)
+![image](../../images/scenemanagement_synchronization_overview.png)
 
-Starting with the "Player" in the top right part of the above diagram, the client (Player) runs through the connection and approval process first which occurs within the `NetworkManager`.  Once approved, the server-side `NetworkSceneManager` begins the client synchronization process by sending the `SceneEventType.Synchronize` Scene Event message to the approved client.  The client then processes through the synchronization message.  Once the client is finished processing the synchronize message, it responds to the server with a `SceneEventType.SynchronizeComplete` message. At this point the client is considered "synchronized".  If the server determines any `NetworkObject` was despawned during the client-side synchronization message processing period, it will send a list of `NetworkObject` identifiers to the client via the `SceneEventType.ReSynchronize` message and the client will locally despawn the `NetworkObject`s.
+Starting with the "Player" in the top right part of the above diagram, the client (Player) runs through the connection and approval process first which occurs within the NetworkManager.  Once approved, the server-side `NetworkSceneManager` begins the client synchronization process by sending the `SceneEventType.Synchronize` Scene Event message to the approved client.  The client then processes through the synchronization message.  Once the client is finished processing the synchronize message, it responds to the server with a `SceneEventType.SynchronizeComplete` message. At this point the client is considered "synchronized".  If the server determines any NetworkObject was despawned during the client-side synchronization message processing period, it will send a list of NetworkObject identifiers to the client via the `SceneEventType.ReSynchronize` message and the client will locally despawn the NetworkObjects.
 
 > [!NOTE]
 > When the server receives and processes the `SceneEventType.SynchronizeComplete` message, the client is considered connected (that is, `NetworkManager.IsConnectedClient` is set to `true`) and both the `NetworkManager.OnClientConnected` delegate handler and the scene event notification for `SceneEventType.SynchronizeComplete` are invoked locally. This can be useful to know if your server sends any additional messages to the already connected clients about the newly connected client's status (that is, a player's status needs to transition from joining to joined).
@@ -214,8 +214,8 @@ private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
 ```
 
 > [!NOTE]
-> This code can be applied to a component on your `GameObject` that has a `NetworkManager` component attached to it.  Since the `GameObject`, with the  `NetworkManager` component attached to it, is migrated into the DDOL (Dont Destroy on Load) scene, it will remain active for the duration of the network game session.
-> With that in mind, you can cache your scene events that occurred (for debug or reference purposes) and/or add your own events that other game objects can subscribe to. The general idea is that if you want to receive all notifications from the moment you start `NetworkManager` then you will want to subscribe to `NetworkSceneManager.OnSceneEvent` immediately after starting it.
+> This code can be applied to a component on your GameObject that has a NetworkManager component attached to it.  Since the GameObject, with the  NetworkManager component attached to it, is migrated into the DDOL (Dont Destroy on Load) scene, it will remain active for the duration of the network game session.
+> With that in mind, you can cache your scene events that occurred (for debug or reference purposes) and/or add your own events that other game objects can subscribe to. The general idea is that if you want to receive all notifications from the moment you start NetworkManager then you will want to subscribe to `NetworkSceneManager.OnSceneEvent` immediately after starting it.
 
 Scene event notifications provide users with all NetworkSceneManager related scene events (and associated data) through a single event handler. The one exception would be scene loading or unloading progress which users can handle with a coroutine (upon receiving a Load or Unload event) and checking the `SceneEvent.AsyncOperation.progress` value over time.
 
@@ -228,10 +228,10 @@ You can stop the coroutine checking the progress upon receiving any of the follo
 The SceneEvent class has values that may or may not be set depending upon the `SceneEventType`.  Below are two quick lookup tables to determine which property is set for each `SceneEventType`.
 
 **Part-1**<br/>
-![image](../images/SceneEventProperties-1.png)<br/>
+![image](../../images/SceneEventProperties-1.png)<br/>
 
 **Part-2** <br/>
-![image](../images/SceneEventProperties-2.png)<br/>
+![image](../../images/SceneEventProperties-2.png)<br/>
 
 So, the big "take-away" from the above table is that you need to understand the `SceneEventType` context of the `SceneEvent` you are processing to know which properties are valid and you can use.  As an example, it wouldn't make sense to provide the AsyncOperation for the following `SceneEventType`s:
 - LoadComplete or LoadEventCompleted
@@ -250,7 +250,7 @@ Some examples:
 > The general idea was to provide several ways to get scene event notifications. You might have a component that needs to know when a client is finished synchronizing on the client side but you don't want that component to receive notifications for loading or unloading related events.  Under this scenario you would subscribe to the `NetworkManager.OnSynchronizeComplete` event on the client-side.
 
 ### When is it "OK" to Subscribe?
-Possibly the more important aspect of scene event notifications is knowing when/where to subscribe.  The recommended time to subscribe is immediately upon starting your `NetworkManager` as a client, server, or host.  This will avoid problematic scenarios like trying to subscribe to the `SceneEventType.Synchronize` event within an overridden `NetworkBehaviour.OnNetworkSpawn` method of your `NetworkBehaviour` derived child class.  The reason that is "problematic" is that the `NetworkObject` has to be spawned before you can subscribe to and receive events of type `SceneEventType.Synchronize` because that will occur before anything is spawned.  Additionally, you would only receive notifications of any scenes loaded after the scene that has the `NetworkObject` (or the object that spawns it) is loaded.
+Possibly the more important aspect of scene event notifications is knowing when/where to subscribe.  The recommended time to subscribe is immediately upon starting your NetworkManager as a client, server, or host.  This will avoid problematic scenarios like trying to subscribe to the `SceneEventType.Synchronize` event within an overridden `NetworkBehaviour.OnNetworkSpawn` method of your NetworkBehaviour derived child class.  The reason that is "problematic" is that the NetworkObject has to be spawned before you can subscribe to and receive events of type `SceneEventType.Synchronize` because that will occur before anything is spawned.  Additionally, you would only receive notifications of any scenes loaded after the scene that has the NetworkObject (or the object that spawns it) is loaded.
 
 An example of subscribing to `NetworkSceneManager.OnSynchronize` for a client:
 ```csharp
