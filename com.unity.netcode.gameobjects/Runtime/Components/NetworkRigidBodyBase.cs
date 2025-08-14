@@ -416,7 +416,7 @@ namespace Unity.Netcode.Components
             }
 #endif
 #if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
-           return m_InternalRigidbody.angularVelocity;
+            return m_InternalRigidbody.angularVelocity;
 #endif
 #if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             return Vector3.forward * m_InternalRigidbody2D.angularVelocity;
