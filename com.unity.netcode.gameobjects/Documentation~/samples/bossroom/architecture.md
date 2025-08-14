@@ -32,7 +32,7 @@ After Boss Room starts and the initial bootstrap logic completes, the `Applicati
 
 The MainMenu scene only has the `MainMenuClientState`, whereas scenes that contain networked logic also have the server counterparts to the client state components. In the latter case, both the server and client components exist on the same GameObject.
 
-The `NetworkManager` starts when the `CharSelect` scene loads, which happens when a player joins or hosts a game. The host drives game state transitions and controls the set of loaded scenes. Having the host manage the state transitions and scenes indirectly forces all clients to load the same scenes as the server they're connected to (via Netcode's networked scene management).
+The NetworkManager starts when the `CharSelect` scene loads, which happens when a player joins or hosts a game. The host drives game state transitions and controls the set of loaded scenes. Having the host manage the state transitions and scenes indirectly forces all clients to load the same scenes as the server they're connected to (via Netcode's networked scene management).
 
 ### Application Flow Diagram
 
@@ -57,7 +57,7 @@ With the Unity Relay network transport, clients don't need to worry about sharin
 
 See the [Multiplayer over the internet](getting-started-boss-room.md) section of the Boss Room README for more information about using the two network transport mechanisms.
 
-Boss Room uses the Unity Transport package. Boss Room's assigns its instance of Unity Transport to the `transport` field of the `NetworkManager`.
+Boss Room uses the Unity Transport package. Boss Room's assigns its instance of Unity Transport to the `transport` field of the NetworkManager.
 
 The Unity Transport Package is a network transport layer with network simulation tools that help spot networking issues early during development. Boss Room has both buttons to start a game in the two modes and will setup Unity Transport automatically to use either one of them at runtime.
 
@@ -100,7 +100,7 @@ To keep a single source of truth for service access (and avoid scattering of ser
 An `Avatar` is at the same level as an `Imp` and lives in a scene. A `Persistent Player` lives across scenes.
 :::
 
-A `Persistent Player` Prefab goes into the `Player` Prefab slot in the `NetworkManager` of Boss Room. As a result, Boss Room spawns a single `Persistent Player` Prefab per client, and each client owns their respective `Persistent Player` instances.
+A `Persistent Player` Prefab goes into the `Player` Prefab slot in the NetworkManager of Boss Room. As a result, Boss Room spawns a single `Persistent Player` Prefab per client, and each client owns their respective `Persistent Player` instances.
 
 :::note
 There is no need to mark `Persistent Player` instances as `DontDestroyOnLoad`. Netcode for GameObjects automatically keeps these prefabs alive between scene loads while the connections are live.
@@ -117,19 +117,19 @@ Inside the Boss Room scene, `ServerBossRoomState` spawns a `PlayerAvatar` per `P
 The following example of a selected “Archer Boy” class shows the `PlayerAvatar` GameObject hierarchy:
 
 * `PlayerAvatar` is a NetworkObject that Boss Room destroys when the scene unloads.
-* `PlayerGraphics` is a child `GameObject` containing a `NetworkAnimator` component responsible for replicating animations invoked on the server.
+* `PlayerGraphics` is a child GameObject containing a NetworkAnimator component responsible for replicating animations invoked on the server.
 * `PlayerGraphics_Archer_Boy` is a purely graphical representation of the selected avatar class.
 
-`ClientAvatarGuidHandler`, a `NetworkBehaviour` component residing on the `PlayerAvatar` Prefab instance, fetches the validated avatar GUID from `NetworkAvatarGuidState` and spawns a local, non-networked graphics GameObject corresponding to the avatar GUID.
+`ClientAvatarGuidHandler`, a NetworkBehaviour component residing on the `PlayerAvatar` Prefab instance, fetches the validated avatar GUID from `NetworkAvatarGuidState` and spawns a local, non-networked graphics GameObject corresponding to the avatar GUID.
 
 ### Characters
 
 `ServerCharacter` exists on a `PlayerAvatar` (or another NPC character) and has server RPCs and `NetworkVariables` that store the state of a given character. It's responsible for executing the server-side logic for the characters. This server-side logic includes the following:
 
-* Movement and pathfinding via `ServerCharacterMovement` use `NavMeshAgent,` which exists on the server to translate the character's transform (synchronized using the `NetworkTransform` component);
+* Movement and pathfinding via `ServerCharacterMovement` use `NavMeshAgent,` which exists on the server to translate the character's transform (synchronized using the NetworkTransform component);
 * Player action queueing and execution via `ServerActionPlayer`;
 * AI logic via `AIBrain` (applies to NPCs);
-* Character animations via `ServerAnimationHandler`, which uses `NetworkAnimator` to synchronize;
+* Character animations via `ServerAnimationHandler`, which uses NetworkAnimator to synchronize;
 * `ClientCharacter` is primarily a host for the `ClientActionPlayer` class and has the client RPCs for the character gameplay logic.
 
 ### Game config setup
@@ -176,7 +176,7 @@ The following list describes the movement flow of a player character.
 4. There's network latency before the server receives the RPC.
 5. The server receives the RPC (containing the target destination).
 6. The server performs pathfinding calculations.
-7. The server completes the pathfinding, and the server representation of the entity starts updating its `NetworkTransform` at the same cadence as `FixedUpdate`.
+7. The server completes the pathfinding, and the server representation of the entity starts updating its NetworkTransform at the same cadence as `FixedUpdate`.
 8. There's network latency before clients receive replication data.
 9. The client representation of the entity updates its NetworkVariables.
 
@@ -186,7 +186,7 @@ The Visuals GameObject never outpaces the simulation GameObject and is always sl
 
 ### Navigation system
 
-Each scene with navigation (or dynamic navigation objects) should have a `NavigationSystem` component on a scene GameObject. The `GameObject` containing the `NavigationSystem` component must have the `NavigationSystem` tag.
+Each scene with navigation (or dynamic navigation objects) should have a `NavigationSystem` component on a scene GameObject. The GameObject containing the `NavigationSystem` component must have the `NavigationSystem` tag.
 
 #### Building a navigation mesh
 
@@ -202,7 +202,7 @@ You should also ensure each scene has exactly one `navmesh` file. You can find `
 
 Boss Room implements the [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) (DI) pattern using the [`VContainer`](https://vcontainer.hadashikick.jp/) library. DI allows Boss Room to clearly define its dependencies in code instead of using static access, pervasive singletons, or scriptable object references (Scriptable Object Architecture). Code is easy to version-control and comparatively easy to understand for a programmer, unlike Unity YAML-based objects, such as scenes, scriptable object instances, and prefabs.
 
-DI also allows Boss Room to circumvent the problem of cross-scene references to common dependencies, even though it still has to manage the lifecycle of `MonoBehaviour`-based dependencies by marking them with `DontDestroyOnLoad` and destroying them manually when appropriate.
+DI also allows Boss Room to circumvent the problem of cross-scene references to common dependencies, even though it still has to manage the lifecycle of MonoBehaviour-based dependencies by marking them with `DontDestroyOnLoad` and destroying them manually when appropriate.
 
 :::note
 `ApplicationController` inherits from the `VContainer`'s `LifetimeScope`, a class that serves as a dependency injection scope and bootstrapper that facilitates binding dependencies. Scene-specific State classes inherit from `LifetimeScope`, too.
@@ -229,7 +229,7 @@ After investigation, the Boss Room development team determined that client/serve
 * It's not completely necessary to ifdef classes because it's only compile-time insurance that certain parts of client-side code never run. You can still disable the component on Awake at runtime if it's not mean to run on the server or client.
 * The added complexity outweighed the pros that'd help with stripping whole assemblies.
 * Most `Client`/`Server` class pairs are tightly coupled and call one another; they have split implementations of the same logical object. Separating them into different assemblies forces you to create “bridge classes” to avoid circular dependencies between your client and server assemblies. By putting your client and server classes in the same assemblies, you allow those circular dependencies in those tightly coupled classes and remove unnecessary bridging and abstractions.
-* Whole assembly stripping is incompatible with Netcode for GameObjects because Netcode for GameObjects doesn't support NetworkBehaviour stripping. Components related to a NetworkObject must match on the client and server sides. If these components aren't identical, it creates undefined runtime errors (the errors will change from one use to another; they range from no issue, to silent errors, to buffer exceptions) with Netcode for GameObjects' `NetworkBehaviour` indexing.
+* Whole assembly stripping is incompatible with Netcode for GameObjects because Netcode for GameObjects doesn't support NetworkBehaviour stripping. Components related to a NetworkObject must match on the client and server sides. If these components aren't identical, it creates undefined runtime errors (the errors will change from one use to another; they range from no issue, to silent errors, to buffer exceptions) with Netcode for GameObjects' NetworkBehaviour indexing.
 
 After those experiments, the Boss Room development team established new rules for the codebase:
 

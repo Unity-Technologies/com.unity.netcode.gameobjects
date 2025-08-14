@@ -1,6 +1,6 @@
 # NetworkTransform
 
-[NetworkTransform](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkTransform.html) is a concrete class that inherits from [NetworkBehaviour](../basics/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
+[NetworkTransform](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.Components.NetworkTransform.html) is a concrete class that inherits from [NetworkBehaviour](../core/networkbehaviour.md) and synchronizes [Transform](https://docs.unity3d.com/Manual/class-Transform.html) properties across the network, ensuring that the position, rotation, and scale of a [GameObject](https://docs.unity3d.com/Manual/working-with-gameobjects.html) are replicated to other clients.
 
 The synchronization of a GameObject's Transform is a key netcode task, and usually proceeds in the following order:
 
@@ -20,20 +20,20 @@ There are other considerations when synchronizing Transform values, however, suc
 
 ## Add a NetworkTransform component to a GameObject
 
-Because a NetworkTransform component is derived from the NetworkBehaviour class, it has many of the [same requirements](../basics/networkbehaviour.md). For example, when adding a NetworkTransform component to a GameObject, it should be added to the same or any hierarchy generation relative to the `NetworkObject` component.
+Because a NetworkTransform component is derived from the NetworkBehaviour class, it has many of the [same requirements](../core/networkbehaviour.md). For example, when adding a NetworkTransform component to a GameObject, it should be added to the same or any hierarchy generation relative to the NetworkObject component.
 
 In the following image both NetworkTransform and NetworkObject components are on the same GameObject:
 
-![image](../images/networktransform/SingleGeneration.png)
+![image](../../images/networktransform/SingleGeneration.png)
 
 Alternatively, the parent GameObject can have multiple children where any child can have a NetworkTransform:
 
-![image](../images/networktransform/MultiGeneration.png)
+![image](../../images/networktransform/MultiGeneration.png)
 
 Theoretically, you can have a NetworkTransform on every child object of a 100 leaf deep hierarchy. However, it's recommended to exercise caution with the amount of nested NetworkTransforms in a network prefab, particularly if there will be many instances of the network prefab.
 
 > [!NOTE]
-> Generally, as long as there's at least one [NetworkObject](../basics/networkobject.md) at the same GameObject hierarchy level or above, you can attach a NetworkTransform component to a GameObject. You could have a single root-parent GameObject that has a NetworkObject component and under the root-parent several levels of nested child GameObjects that all have NetworkTransform components attached to them. Each child GameObject doesn't require a NetworkObject component in order for the respective NetworkTransform component to synchronize properly.
+> Generally, as long as there's at least one [NetworkObject](../core/networkobject.md) at the same GameObject hierarchy level or above, you can attach a NetworkTransform component to a GameObject. You could have a single root-parent GameObject that has a NetworkObject component and under the root-parent several levels of nested child GameObjects that all have NetworkTransform components attached to them. Each child GameObject doesn't require a NetworkObject component in order for the respective NetworkTransform component to synchronize properly.
 
 ### Nesting NetworkTransforms
 
@@ -48,7 +48,7 @@ For example, if you use a [NetworkAnimator](networkanimator.md) component to syn
 
 When you select a NetworkTransform component, there are the following properties in the inspector view:
 
-![image](../images/networktransform/NetworkTransformProperties.png)
+![image](../../images/networktransform/NetworkTransformProperties.png)
 
 ### Property synchronization
 
@@ -56,7 +56,7 @@ Some NetworkTransform properties are automatically synchronized by the authorita
 
 #### Properties that cause a full state update
 
-The following are a list of `NetworkTransform` properties that will cause a full state update (effectively a teleport) when changed during runtime by the authority instance:
+The following are a list of NetworkTransform properties that will cause a full state update (effectively a teleport) when changed during runtime by the authority instance:
 
 - [UseUnreliableDeltas](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_UseUnreliableDeltas)
 - [InLocalSpace](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.3/api/Unity.Netcode.Components.NetworkTransform.html#Unity_Netcode_Components_NetworkTransform_InLocalSpace)
@@ -77,7 +77,7 @@ The following NetworkTransform properties can cause a full state update when cha
 
 ### Axis to Synchronize
 
-![image](../images/networktransform/AxisToSynchronize.png)
+![image](../../images/networktransform/AxisToSynchronize.png)
 
 You often don't need to synchronize all Transform values of a GameObject over the network. For example, if the scale of the GameObject never changes, you can deactivate it in the __Scale__ row of the __Axis to Synchronize__ area within the Inspector. Deactivating synchronization saves some processing costs and reduces network bandwidth consumption.
 
@@ -89,7 +89,7 @@ You can have [nested NetworkTransforms](#nesting-networktransforms) as long as t
 
 If you don't plan on changing the Transform's scale after the initial synchronization (that occurs when joining a network session or when a network prefab instance is spawned for the first time), then disabling the X, Y, and Z properties for __Scale__ synchronization removes some additional processing overhead per instance. However, if you have a nested NetworkTransform and want to apply a unique scale (per instance) that's applied to that nested NetworkTransform's Transform when it's first spawned, then the adjusted scale won't be synchronized.
 
-Fortunately, the authority of the `NetworkTransform` instance can make changes to any of the __Axis to Synchronize__ properties during runtime and non-authoritative instances will receive updates for the axis marked for synchronization.
+Fortunately, the authority of the NetworkTransform instance can make changes to any of the __Axis to Synchronize__ properties during runtime and non-authoritative instances will receive updates for the axis marked for synchronization.
 
 When disabling an axis to be synchronized for performance purposes, you should always consider that NetworkTransform won't send updates as long as the axis in question doesn't have a change that exceeds its [threshold](#thresholds) value. So, taking the scale example into consideration, it can be simpler to leave those axes enabled if you only ever plan on changing them once or twice because the CPU cost for checking that change isn't as expensive as the serialization and state update sending process. The associated axis threshold values can make the biggest impact on frequency of sending state updates that, in turn, will reduce the number of state updates sent per second at the cost of losing some motion resolution.
 
@@ -99,9 +99,9 @@ The __Axis to Synchronize__ properties that determine which axes are synchronize
 
 ### Authority
 
-![image](../images/networktransform/AuthorityMode.png)
+![image](../../images/networktransform/AuthorityMode.png)
 
-The authority mode of a NetworkTransform determines who is the authority over changes to the Transform state. This setting only applies when using a [client-server network topology](../terms-concepts/client-server.md) because in a [distributed authority network topology](../terms-concepts/distributed-authority.md) Netcode for GameObjects automatically sets the owner authority for every NetworkTransform. If you plan on developing for both network topologies then you can use this setting to preserve authority (whether server or owner) for the client-server network topology.
+The authority mode of a NetworkTransform determines who is the authority over changes to the Transform state. This setting only applies when using a [client-server network topology](../../terms-concepts/client-server.md) because in a [distributed authority network topology](../../terms-concepts/distributed-authority.md) Netcode for GameObjects automatically sets the owner authority for every NetworkTransform. If you plan on developing for both network topologies then you can use this setting to preserve authority (whether server or owner) for the client-server network topology.
 
 By default, NetworkTransform operates in server-authoritative mode. This means that changes to the Transform axis (marked to be synchronized) are detected on the server-side and state updates are pushed to connected clients. This also means any changes to the Transform axis values are overridden by the authoritative state (in this case the server-side Transform state).
 
@@ -120,7 +120,7 @@ When mixing authority motion models and using physics, latency will impact how (
 
 ### Thresholds
 
-![image](../images/networktransform/Thresholds.png)
+![image](../../images/networktransform/Thresholds.png)
 
 You can use the threshold values to set a minimum threshold value for synchronizing changes. This can be help reduce the frequency of synchronization updates by only synchronizing changes above or equal to the threshold values (changes below won't be synchronized).
 
@@ -131,7 +131,7 @@ For example, if your NetworkTransform has [__Interpolate__](#interpolation) enab
 
 ### Delivery
 
-![image](../images/networktransform/Delivery.png)
+![image](../../images/networktransform/Delivery.png)
 
 #### Tick Synchronize Children
 
@@ -160,13 +160,13 @@ When unreliable state updates are enabled, NetworkTransform instances are assign
 
 ### Configurations
 
-![image](../images/networktransform/Configurations.png)
+![image](../../images/networktransform/Configurations.png)
 
 #### In Local Space
 
 By default, NetworkTransform synchronizes the Transform of an object in world space. The __In Local Space__ configuration option allows you to change to synchronizing the transform in local space instead. A child's local space axis values (position and rotation primarily) are always relative offsets from the parent transform, where a child's world space axis values include the parent's axis values. Where a transform with no parent really is "parented" to the root of the scene hierarchy which results in its world and local space positions to always be the same.
 
-Enabling the __In Local Space__ property on a parented NetworkTransform can improve the synchronization of the transform when the object gets re-parented because the re-parenting won't change the local space Transform of the object (but does change the world space position) and you only need to update motion of the parented `NetworkTransform` relative to its parent (if the parent is moving and the child has no motion then there are no delta states to detect for the child but the child moves with the parent).
+Enabling the __In Local Space__ property on a parented NetworkTransform can improve the synchronization of the transform when the object gets re-parented because the re-parenting won't change the local space Transform of the object (but does change the world space position) and you only need to update motion of the parented NetworkTransform relative to its parent (if the parent is moving and the child has no motion then there are no delta states to detect for the child but the child moves with the parent).
 
 :::info
 The authority instance does synchronize changes to the __In Local Space__ property. As such, you can make adjustments to this property on the authoritative side during runtime and the non-authoritative instances will automatically be updated.
@@ -182,7 +182,7 @@ To resolve this issue, you can enable the __Switch Transform Space When Parented
 
 ### Interpolation
 
-![image](../images/networktransform/Interpolation.png)
+![image](../../images/networktransform/Interpolation.png)
 
 Interpolation is enabled by default and is recommended if you desire smooth transitions between Transform updates on non-authoritative instances. Interpolation buffers incoming state updates that can introduce a slight delay between the authority and non-authority instances. When the __Interpolate__ property is disabled, changes to the transform are immediately applied on non-authoritative instances, which can result in visual jitter and/or objects jumping to newly applied state updates when latency is high. Changes to the __Interpolation__ property during runtime on the authoritative instance will be synchronized with all non-authoritative instances. Of course, you can increase the network tick to a higher value in order to get more samples per second, but that still will not yield an over-all smooth motion on the non-authoritative instances and will only consume more bandwidth.
 
@@ -198,7 +198,7 @@ All interpolation types provide you with the ability to enable or disable lerp s
 
 ##### Slerp position
 
-![image](../images/networktransform/PositionSlerp.png)
+![image](../../images/networktransform/PositionSlerp.png)
 
 When this property and __Interpolation__ are both set, non-authoritative instances will [slerp](https://docs.unity3d.com/ScriptReference/Vector3.Slerp.html) towards their destination position rather than [lerping](https://docs.unity3d.com/ScriptReference/Vector3.Lerp.html). Slerping is typically used when your object is following a circular and/or spline-based motion path and you want to preserve the curvature of that path. Since lerping between two points yields a linear progression over a line between two points, there can be scenarios where the frequency of delta position state updates could yield a loss in the curvature of an object's motion.
 
@@ -277,7 +277,7 @@ With quaternion synchronization enabled, the authoritative instance still compar
 
 Quaternion synchronization comes with a price, however. It increases the bandwidth cost, 16 bytes per instance, in exchange for handling the more complex rotation issues that often occur when using nested NetworkTransform (one or more parent transforms with one or more child transforms). However, when you enable the __Use Quaternion Synchronization__ property you will notice a change in both the __Syncing__ axis selection check boxes and a new __Use Quaternion Compression__ property will appear:
 
-![image](../images/networktransform/NetworkTransformQuaternionSynch.png)
+![image](../../images/networktransform/NetworkTransformQuaternionSynch.png)
 
 :::note
 The rotation synchronization axis checkboxes are no longer available when __Use Quaternion Synchronization__ is enabled (since synchronizing the quaternion of a transform always updates all rotation axes) and __Use Quaternion Compression__ becomes a visible option.

@@ -15,7 +15,7 @@ In addition to reduced responsiveness, this approach can also directly interfere
 
 ## With client-side interpolation
 
-When using client-side interpolation, all clients intentionally run slightly behind the server, giving them time to transition smoothly between state updates and conceal the effects of latency from users. To implement client-side interpolation, use the [NetworkTransform](../components/networktransform.md) component.
+When using client-side interpolation, all clients intentionally run slightly behind the server, giving them time to transition smoothly between state updates and conceal the effects of latency from users. To implement client-side interpolation, use the [NetworkTransform](../components/helper/networktransform.md) component.
 
 In a standard client-server [topology](../terms-concepts/network-topologies.md), clients are able to render a state that's approximately half the [round-trip time (RTT)](lagandpacketloss.md#round-trip-time-and-pings) behind the server. When using client-side interpolation, a further intentional delay is added so that by the time the client is rendering state _n_, it's already received state _n+1_, which allows the client to always smoothly transition from one state to another. This is effectively increasing latency, but in a consistent, client-universal way that can be used to reduce the negative impacts of unpredictable network jitter on gameplay.
 
