@@ -109,7 +109,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 if (ImportReferences(mainModule, compiledAssembly.Defines))
                 {
-                    // process `NetworkBehaviour` types
+                    // process NetworkBehaviour types
                     try
                     {
                         mainModule.GetTypes()

@@ -49,7 +49,7 @@ Spawning can always be done on the host/server. If you want to give a client con
 
 ### What are best practices for handing physics with Netcode?
 
-Networked physics is complicated, with many different ways to handle them. Currently, physics can be a little difficult to handle with Netcode and the built-in `NetworkTransform`.
+Networked physics is complicated, with many different ways to handle them. Currently, physics can be a little difficult to handle with Netcode and the built-in NetworkTransform.
 
 The Multiplayer Technology Team recommends the following:
 
@@ -90,7 +90,7 @@ See [Apple Support](https://support.apple.com/guide/mac-help/open-a-mac-app-from
 
 ### Why is there an `InitBootStrap` scene as the startup scene for Boss Room and Bitesize Samples?
 
-The initial reason is that in Netcode the `NetworkManager` is a singleton class. The Bitesize Samples Team initially created it in the main menu, but when the host was leaving the in-game/networked scene, the Network Manager was getting destroyed, which led to not being able to host a game again without restarting the game instance.
+The initial reason is that in Netcode the NetworkManager is a singleton class. The Bitesize Samples Team initially created it in the main menu, but when the host was leaving the in-game/networked scene, the Network Manager was getting destroyed, which led to not being able to host a game again without restarting the game instance.
 
 The Bootstrap scene ensures that the NetworkManager and other singletons are initialized first and will be there when you get back to main menu.
 
