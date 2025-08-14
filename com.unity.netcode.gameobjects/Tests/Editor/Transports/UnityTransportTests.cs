@@ -185,7 +185,7 @@ namespace Unity.Netcode.EditorTests
         }
 
 #if HOSTNAME_RESOLUTION_AVAILABLE
-        private static readonly (string, bool)[] HostnameChecks =
+        private static readonly (string, bool)[] k_HostnameChecks =
         {
             ("localhost", true),
             ("unity3d.com", true),
@@ -197,9 +197,9 @@ namespace Unity.Netcode.EditorTests
 
         [Test]
         [TestCaseSource(nameof(HostnameChecks))]
-        public void UnityTransport_HostnameValidation((string, bool) testCases)
+        public void UnityTransport_HostnameValidation((string, bool) testCase)
         {
-            var (hostname, isValid) = testCases;
+            var (hostname, isValid) = testCase;
 
             UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
