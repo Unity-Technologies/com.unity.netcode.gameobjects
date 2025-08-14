@@ -81,7 +81,7 @@
         {
             "name": "Unity",
             "expression": "6000.3.0a6",
-            "define": "CONTACTPAIRHEADER_OTHERBODYENTITYID"
+            "define": "UNITY_6000_3_0A6_OR_HIGHER"
         }
     ],
     "noEngineReferences": false

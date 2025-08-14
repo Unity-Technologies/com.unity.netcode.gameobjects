@@ -374,7 +374,7 @@ namespace Unity.Netcode.Components
 
                 var result = new JobResultStruct()
                 {
-#if CONTACTPAIRHEADER_OTHERBODYENTITYID
+#if UNITY_6000_3_0A6_OR_HIGHER
                     ThisInstanceID = PairedHeaders[index].bodyEntityId,
                     OtherInstanceID = PairedHeaders[index].otherBodyEntityId,
 #else
