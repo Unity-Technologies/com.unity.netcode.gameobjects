@@ -183,5 +183,37 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
+
+#if HOSTNAME_RESOLUTION_AVAILABLE
+        private static readonly (string, bool)[] HostnameChecks =
+        {
+            ("localhost", true),
+            ("unity3d.com", true),
+            ("unity3d.com.", true),
+            (string.Empty, false),
+            ("unity3d.com/test", false),
+            ("test%123.com", false),
+        };
+
+        [Test]
+        [TestCaseSource(nameof(HostnameChecks))]
+        public void UnityTransport_HostnameValidation((string, bool) testCases)
+        {
+            var (hostname, isValid) = testCases;
+
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+
+            if (!isValid)
+            {
+                LogAssert.Expect(LogType.Error, $"Provided connection address \"{hostname}\" is not a valid hostname.");
+            }
+
+            transport.SetConnectionData(hostname, 4242);
+            Assert.AreEqual(isValid, transport.StartClient());
+
+            transport.Shutdown();
+        }
+#endif
     }
 }

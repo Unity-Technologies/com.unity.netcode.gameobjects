@@ -655,16 +655,24 @@ namespace Unity.Netcode.Transports.UTP
             else
             {
                 // This will result in an invalid endpoint if the address is a hostname.
-                // This is handled later in the Connect method if hostname resolution is available,
+                // This is handled later in the Connect method if hostname resolution is available
+                // (although we still check for hostname validity to error out early if it's not),
                 // but if not then we need to error out here.
                 serverEndpoint = ConnectionAddressData.ParseNetworkEndpoint(ConnectionData.Address, ConnectionData.Port);
-#if !HOSTNAME_RESOLUTION_AVAILABLE
+
                 if (serverEndpoint.Family == NetworkFamily.Invalid)
                 {
+#if HOSTNAME_RESOLUTION_AVAILABLE
+                    if (Uri.CheckHostName(ConnectionData.Address) != UriHostNameType.Dns)
+                    {
+                        Debug.LogError($"Provided connection address \"{ConnectionData.Address}\" is not a valid hostname.");
+                        return false;
+                    }
+#else
                     Debug.LogError($"Invalid server address: {ConnectionData.Address}:{ConnectionData.Port}.");
                     return false;
-                }
 #endif
+                }
             }
 
             InitDriver();
