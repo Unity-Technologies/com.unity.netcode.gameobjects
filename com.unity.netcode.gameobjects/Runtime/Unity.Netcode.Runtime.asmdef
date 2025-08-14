@@ -82,7 +82,7 @@
             "name": "Unity",
             "expression": "6000.3.0a6",
             "define": "CONTACTPAIRHEADER_OTHERBODYENTITYID"
-        },
+        }
     ],
     "noEngineReferences": false
 }
