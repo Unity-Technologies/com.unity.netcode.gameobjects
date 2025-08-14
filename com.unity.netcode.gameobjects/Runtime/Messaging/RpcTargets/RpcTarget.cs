@@ -313,7 +313,7 @@ namespace Unity.Netcode
                 }
             }
             target.Clear();
-            foreach (var clientId in m_NetworkManager.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in m_ConnectionManager.ConnectedClientIds)
             {
                 if (clientId != excludedClientId)
                 {
@@ -496,7 +496,7 @@ namespace Unity.Netcode
                 asASet.Add(clientId);
             }
 
-            foreach (var clientId in m_NetworkManager.ConnectionManager.ConnectedClientIds)
+            foreach (var clientId in m_ConnectionManager.ConnectedClientIds)
             {
                 if (!asASet.Contains(clientId))
                 {
