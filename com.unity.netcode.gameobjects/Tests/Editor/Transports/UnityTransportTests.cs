@@ -196,7 +196,7 @@ namespace Unity.Netcode.EditorTests
         };
 
         [Test]
-        [TestCaseSource(nameof(HostnameChecks))]
+        [TestCaseSource(nameof(k_HostnameChecks))]
         public void UnityTransport_HostnameValidation((string, bool) testCase)
         {
             var (hostname, isValid) = testCase;
