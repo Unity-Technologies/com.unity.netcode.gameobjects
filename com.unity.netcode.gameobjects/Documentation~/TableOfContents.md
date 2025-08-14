@@ -38,6 +38,7 @@
   * [Ownership race conditions](basics/race-conditions.md)
 * [Spawning and despawning](spawn-despawn.md)
   * [Object spawning](basics/object-spawning.md)
+  * [Network prefab handler](advanced-topics/network-prefab-handler.md)
   * [Object pooling](advanced-topics/object-pooling.md)
   * [Object visibility](basics/object-visibility.md)
   * [Spawning synchronization](basics/spawning-synchronization.md)
