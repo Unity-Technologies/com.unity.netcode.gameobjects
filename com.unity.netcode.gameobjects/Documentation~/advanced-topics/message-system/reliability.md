@@ -20,7 +20,7 @@ void MyReliableServerRpc() { /* ... */ }
 void MyUnreliableServerRpc() { /* ... */ }
 ```
 
-Reliable RPCs will be received on the remote end in the same order they are sent, but this in-order guarantee only applies to RPCs on the same `NetworkObject`. Different `NetworkObjects` might have reliable RPCs called but executed in different order compared to each other. To put more simply, **in-order reliable RPC execution is guaranteed per `NetworkObject` basis only**.  If you determine an RPC is being updated often (that is, several times per second), it _might_ be better suited as an unreliable RPC.
+Reliable RPCs will be received on the remote end in the same order they are sent, but this in-order guarantee only applies to RPCs on the same NetworkObject. Different `NetworkObjects` might have reliable RPCs called but executed in different order compared to each other. To put more simply, **in-order reliable RPC execution is guaranteed per NetworkObject basis only**.  If you determine an RPC is being updated often (that is, several times per second), it _might_ be better suited as an unreliable RPC.
 
 > [!NOTE]
 > When testing unreliable RPCs on a local network, the chance of an unreliable packet being dropped is reduced greatly (sometimes never).  As such, you might want to use [`UnityTransport`'s Simulator Pipeline](https://docs-multiplayer.unity3d.com/transport/current/pipelines#simulator-pipeline) to simulate poor network conditions to better determine how dropped unreliable RPC messages impacts your project.

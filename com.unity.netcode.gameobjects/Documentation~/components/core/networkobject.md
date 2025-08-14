@@ -1,11 +1,11 @@
 # NetworkObject
 
-A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode. NetworkObjects are session-mode agnostic and used in both [client-server](../terms-concepts/client-server.md) and [distributed authority](../terms-concepts/distributed-authority.md) contexts.
+A NetworkObject is a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) with a NetworkObject component and at least one [NetworkBehaviour](networkbehaviour.md) component, which enables the GameObject to respond to and interact with netcode. NetworkObjects are session-mode agnostic and used in both [client-server](../../terms-concepts/client-server.md) and [distributed authority](../../terms-concepts/distributed-authority.md) contexts.
 
-Netcode for GameObjects' high level components, [the RPC system](../advanced-topics/messaging-system.md), [object spawning](object-spawning), and [`NetworkVariable`](networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
+Netcode for GameObjects' high level components, [the RPC system](../../advanced-topics/messaging-system.md), [object spawning](../../basics/object-spawning.md), and [`NetworkVariable`](../../basics/networkvariable.md)s all rely on there being at least two Netcode components added to a GameObject:
 
   1. NetworkObject
-  2. [`NetworkBehaviour`](networkbehaviour.md)
+  2. [NetworkBehaviour](networkbehaviour.md)
 
 NetworkObjects require the use of specialized [`NetworkObjectReference`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObjectReference.html) structures before you can serialize and use them with RPCs and `NetworkVariable`s
 
@@ -31,7 +31,7 @@ You can avoid execution order issues in any NetworkBehaviour component scripts t
 
 ## Ownership
 
-Either the server (default) or any connected and approved client owns each NetworkObject. By default, Netcode for GameObjects is [server-authoritative](../terms-concepts/client-server.md), which means only the server can spawn and despawn NetworkObjects, but you can also build [distributed authority](../terms-concepts/distributed-authority.md) games where clients have the authority to spawn and despawn NetworkObjects as well.
+Either the server (default) or any connected and approved client owns each NetworkObject. By default, Netcode for GameObjects is [server-authoritative](../../terms-concepts/client-server.md), which means only the server can spawn and despawn NetworkObjects, but you can also build [distributed authority](../../terms-concepts/distributed-authority.md) games where clients have the authority to spawn and despawn NetworkObjects as well.
 
 If you're creating a client-server game and you want a client to control more than one NetworkObject, use the following ownership methods.
 
@@ -70,37 +70,37 @@ To see if the server owns the NetworkObject, you can check the [`NetworkBehaviou
 
 Network prefabs are registered to a `NetworkPrefabsList` object (a type of `ScriptableObject`). By default, a default prefabs list containing every network prefab in your project.
 
-However, when you want to limit which prefabs are available (for example, to reduce memory usage), you can disable this behavior in **Project Settings** > **Netcode For GameObjects** > **Project Settings**. You can also manually create a `NetworkPrefabsList` by right-clicking in the assets view and selecting **Create** > **Netcode** > **Network Prefabs List** and adding your prefabs to it. That prefab list can then be assigned to a `NetworkManager` to allow that `NetworkManager` to create those prefabs.
+However, when you want to limit which prefabs are available (for example, to reduce memory usage), you can disable this behavior in **Project Settings** > **Netcode For GameObjects** > **Project Settings**. You can also manually create a `NetworkPrefabsList` by right-clicking in the assets view and selecting **Create** > **Netcode** > **Network Prefabs List** and adding your prefabs to it. That prefab list can then be assigned to a NetworkManager to allow that NetworkManager to create those prefabs.
 
 > [!NOTE]
 > You can only have one NetworkObject at the root of a prefab. Don't create prefabs with nested `NetworkObjects`.
 
 ## Spawning with (or without) observers
 
-![image](../images/SpawnWithObservers.png)
+![image](../../images/SpawnWithObservers.png)
 
 The `NetworkObject.SpawnWithObservers` property (default is true) enables you to spawn a NetworkObject with no initial observers. This is the recommended alternative to using `NetworkObject.CheckObjectVisibility` when you just want it to be applied globally to all clients (only when spawning an instance of the NetworkObject in question). If you want more precise per-client control then `NetworkObject.CheckObjectVisibility` is recommended. `NetworkObject.SpawnWithObservers` is only applied upon the initial server-side spawning and once spawned it has no impact on object visibility.
 
 ## Transform synchronization
 
-![image](../images/NetworkObject-TransformSynchronization.png)
+![image](../../images/NetworkObject-TransformSynchronization.png)
 
-There are times when you want to use a NetworkObject for something that doesn't require the synchronization of its transform. You might have an [in-scene placed NetworkObject](./scenemanagement/inscene-placed-networkobjects.md) that's only used to manage game state and it doesn't make sense to incur the initial client synchronization cost of synchronizing its transform. To prevent a NetworkObject from initially synchronizing its transform when spawned, deselect the **Synchronize Transform** property. This property is enabled by default.
+There are times when you want to use a NetworkObject for something that doesn't require the synchronization of its transform. You might have an [in-scene placed NetworkObject](../../basics/scenemanagement/inscene-placed-networkobjects.md) that's only used to manage game state and it doesn't make sense to incur the initial client synchronization cost of synchronizing its transform. To prevent a NetworkObject from initially synchronizing its transform when spawned, deselect the **Synchronize Transform** property. This property is enabled by default.
 
 > [!NOTE]
 > If you're planning to use a NetworkTransform, then you always want to make sure the **Synchronize Transform** property is enabled.
 
 ## Active scene synchronization
 
-![image](../images/ActiveSceneMigration.png)
+![image](../../images/ActiveSceneMigration.png)
 
 When a GameObject is instantiated, it gets instantiated in the current active scene. However, sometimes you might find that you want to change the currently active scene and would like specific NetworkObject instances to automatically migrate to the newly assigned active scene. While you could keep a list or table of the NetworkObject instances and write the code/logic to migrate them into a newly assigned active scene, this can be time consuming and become complicated depending on project size and complexity. The alternate and recommended way to handle this is by enabling the **Active Scene Synchronization** property of each NetworkObject you want to automatically migrate into any newly assigned scene. This property defaults to disabled.
 
-Refer to the [NetworkSceneManager active scene synchronization](scenemanagement/using-networkscenemanager.md#active-scene-synchronization) page for more details.
+Refer to the [NetworkSceneManager active scene synchronization](../../basics/scenemanagement/using-networkscenemanager.md#active-scene-synchronization) page for more details.
 
 ## Scene migration synchronization
 
-![image](../images/SceneMigrationSynchronization.png)
+![image](../../images/SceneMigrationSynchronization.png)
 
 Similar to [`NetworkObject.ActiveSceneSynchronization`](#active-scene-synchronization), [`NetworkObject.SceneMigrationSynchronization`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkObject.html#Unity_Netcode_NetworkObject_SceneMigrationSynchronization) automatically synchronizes client-side NetworkObject instances that are migrated to a scene via [`SceneManager.MoveGameObjectToScene`](https://docs.unity3d.com/ScriptReference/SceneManagement.SceneManager.MoveGameObjectToScene.html) on the host or server side. This can be useful if you have a specific scene you wish to migrate NetworkObject instances to that is not the currently active scene.
 
@@ -113,4 +113,4 @@ Scene migration synchronization is enabled by default. For NetworkObjects that d
 ## Additional resources
 
 - [NetworkBehaviour](networkbehaviour.md)
-- [NetworkVariable](networkvariable.md)
+- [NetworkVariable](../../basics/networkvariable.md)
