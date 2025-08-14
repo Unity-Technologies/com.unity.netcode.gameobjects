@@ -1,6 +1,6 @@
 # Understanding ownership and authority
 
-By default, Netcode for GameObjects assumes a [client-server topology](../terms-concepts/client-server.md), in which the server owns all NetworkObjects (with [some exceptions](networkobject.md#ownership)) and has ultimate authority over [spawning and despawning](object-spawning.md).
+By default, Netcode for GameObjects assumes a [client-server topology](../terms-concepts/client-server.md), in which the server owns all NetworkObjects (with [some exceptions](../components/core/networkobject.md#ownership)) and has ultimate authority over [spawning and despawning](object-spawning.md).
 
 Netcode for GameObjects also supports building games with a [distributed authority topology](../terms-concepts/distributed-authority.md), which provides more options for ownership and authority over NetworkObjects.
 
@@ -29,7 +29,7 @@ The following ownership permission settings, defined by `NetworkObject.Ownership
 You can also use `NetworkObject.SetOwnershipLock` to lock and unlock the permission settings of a NetworkObject for a period of time, preventing ownership changes on a temporary basis.
 
 > [!NOTE]
-> The ownership permissions are only visible when the Multiplayer Services SDK package is installed and you're inspecting a `NetworkObject` within the editor. Ownership permissions have no impact when using a client-server network topology, since the server always has authority. For ownership permissions to be used, you must be using a distributed authority network topology.
+> The ownership permissions are only visible when the Multiplayer Services SDK package is installed and you're inspecting a NetworkObject within the editor. Ownership permissions have no impact when using a client-server network topology, since the server always has authority. For ownership permissions to be used, you must be using a distributed authority network topology.
 
 ## Checking for authority
 

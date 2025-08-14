@@ -1474,16 +1474,8 @@ namespace Unity.Netcode
                             }
                         }
 
-                        // If spawned, then despawn and potentially destroy.
-                        if (networkObjects[i].IsSpawned)
-                        {
-                            OnDespawnObject(networkObjects[i], shouldDestroy);
-                        }
-                        else // Otherwise, if we are not spawned and we should destroy...then destroy.
-                        if (shouldDestroy)
-                        {
-                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                        }
+                        //Despawn and potentially destroy.
+                        OnDespawnObject(networkObjects[i], shouldDestroy);
                     }
                 }
             }

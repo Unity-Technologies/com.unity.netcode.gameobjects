@@ -36,7 +36,7 @@ Refer to [RPC migration and compatibility](message-system/rpc-compatibility.md) 
 
 ## RPC method calls
 
-A typical SDK user (Unity developer) can declare multiple RPCs under a `NetworkBehaviour` and inbound/outbound RPC calls will be replicated as a part of its replication in a network frame.
+A typical SDK user (Unity developer) can declare multiple RPCs under a NetworkBehaviour and inbound/outbound RPC calls will be replicated as a part of its replication in a network frame.
 
 A method turned into an RPC is no longer a regular method; it will have its own implications on direct calls and in the network pipeline.
 
@@ -46,7 +46,7 @@ To use RPCs, make sure:
 
 -  `[Rpc]` attributes are on your method
 - Your method name ends with `Rpc` (for example, `DoSomethingRpc()`)
-- Your method is declared in a class that inherits from `NetworkBehaviour`
+- Your method is declared in a class that inherits from NetworkBehaviour
   - Your GameObject has a NetworkObject component attached
 
 ## Serialization types and RPCs

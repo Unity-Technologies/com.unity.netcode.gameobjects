@@ -105,7 +105,7 @@ For more information about the join code connection process, refer to [Connectio
 
 When an allocation exists, you need to make all traffic that comes from Netcode for GameObjects go through the Relay. To do this, perform the following actions to pass the allocation parameters to UnityTransport:
 
-1. Retrieve Unity transport from your `NetworkManager`:
+1. Retrieve Unity transport from your NetworkManager:
 ```csharp
 //Retrieve the Unity transport used by the NetworkManager
 UnityTransport transport = NetworkManager.Singleton.gameObject.GetComponent<UnityTransport>();
