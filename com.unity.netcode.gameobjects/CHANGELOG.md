@@ -10,17 +10,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 - Added disconnection event notification handling capabilities where `NetworkTransport` derived custom transports can set the current disconnect event type (`NetworkTransport.DisconnectEvents`) that, if implemented, will provide more details on why the transport disconnected. (#3551)
 - Added protected method `NetworkTransport.SetDisconnectEvent` that a `NetworkTransport` derived custom transport can use to provide the disconnect event type that occurred. (#3551)
 - Added protected virtual method `NetworkTransport.OnGetDisconnectEventMessage` that, when overridden, a `NetworkTransport` derived custom transport can use to provide a customized extended message for each `NetworkTransport.DisconnectEvents` value. (#3551)
 
 ### Fixed
 
+- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
+- Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 - Fixed issue where `SendTo.NotMe` could cause an RPC to be delivered to the sender when connected to a live distributed authority session. (#3551)
 
 ### Changed
 
+- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
 - Changed `UnityTransport` now handles setting the current disconnect notification type, via internal `UnityTransportNotificationHandler` class, while also providing extended informational messages for each disconnect event type. (#3551)
 
 ## [2.5.0] - 2025-08-01
@@ -30,10 +34,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added serializer for `Pose` (#3546)
 - Added methods `GetDefaultNetworkSettings` and `GetDefaultPipelineConfigurations` to `UnityTransport`. These can be used to retrieve the default settings and pipeline stages that are used by `UnityTransport`. This is useful when providing a custom driver constructor through `UnityTransport.s_DriverConstructor`, since it allows reusing or tuning the existing configuration instead of trying to recreate it. This means a transport with a custom driver can now easily benefit from most of the features of `UnityTransport`, like integration with the Network Simulator and Network Profiler from the multiplayer tools package. (#3501)
 - Added mappings between `ClientId` and `TransportId`. (#3516)
-- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3430)
+- Added `NetworkPrefabInstanceHandlerWithData<T>`, a variant of `INetworkPrefabInstanceHandler` that provides access to custom instantiation data directly within the `Instantiate()` method. (#3497)
 
 ### Fixed
 
+- Removed allocation to the heap in NetworkBehaviourUpdate. (#3573)
 - Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3564)
 - Fixed regression issue in v2.x where `NetworkObject.GetNetworkBehaviourAtOrderIndex` was converted from public to internal. (#3541)
 - Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3539)

@@ -617,6 +617,13 @@ namespace Unity.Netcode
                 }
 
                 var previousValue = m_List[index];
+
+                // Only trigger an event if the value has changed
+                if (NetworkVariableSerialization<T>.AreEqual(ref previousValue, ref value))
+                {
+                    return;
+                }
+
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
@@ -629,6 +636,24 @@ namespace Unity.Netcode
 
                 HandleAddListEvent(listEvent);
             }
+        }
+
+        /// <summary>
+        /// Gets a **zero‑allocation**, <see cref="NativeArray{T}.ReadOnly"/> view over the current
+        /// elements of this <see cref="NetworkList{T}"/>.
+        /// </summary>
+        /// <remarks>
+        /// The returned array stays valid **only until** the list is mutated (add, remove,
+        /// clear, resize) or <see cref="Dispose()"/> is called on the container.  Continuing to use
+        /// the array after it is invalid will result in undefined behaviour;
+        /// callers are responsible for ensuring a safe lifetime.
+        /// </remarks>
+        /// <returns>
+        /// A <see cref="NativeArray{T}.ReadOnly"/> reference that shares the same backing memory as this list.
+        /// </returns>
+        public NativeArray<T>.ReadOnly AsNativeArray()
+        {
+            return m_List.AsReadOnly();
         }
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
