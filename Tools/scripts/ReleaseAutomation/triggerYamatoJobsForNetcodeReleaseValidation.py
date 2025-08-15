@@ -132,14 +132,6 @@ def trigger_NGO_release_preparation_jobs():
         {
             "name": "BossRoom",
             "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_BossRoom_project",
-        },
-        {
-            "name": "Asteroids",
-            "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_Asteroids_project",
-        },
-        {
-            "name": "SocialHub",
-            "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_SocialHub_project",
         }
     ]
 

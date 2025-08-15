@@ -8,7 +8,7 @@ def getDefaultRepoBranch():
     This will be used to for example push changelog update for the release.
     In general this branch is the default working branch
     """
-    return 'develop-2.0.0'
+    return 'develop'
 
 def getNetcodeGithubRepo():
     """Returns the name of MP Tools repo."""
