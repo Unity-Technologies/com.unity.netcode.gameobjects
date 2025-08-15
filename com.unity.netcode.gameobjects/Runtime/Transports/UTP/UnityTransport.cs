@@ -1518,7 +1518,7 @@ namespace Unity.Netcode.Transports.UTP
         private UnityTransportNotificationHandler m_UnityTransportNotificationHandler;
 
         /// <inheritdoc/>
-        protected override string OnGetDisconnectEventMessage(DisconnectEvents disconnectEvent)
+        protected override string GetDisconnectEventMessage(DisconnectEvents disconnectEvent)
         {
             return m_UnityTransportNotificationHandler.GetDisconnectEventMessage(disconnectEvent);
         }
@@ -1795,19 +1795,20 @@ namespace Unity.Netcode.Transports.UTP
         private Dictionary<int, NetworkTransport.DisconnectEvents> m_DisconnectEventMap = new Dictionary<int, NetworkTransport.DisconnectEvents>();
         private Dictionary<NetworkTransport.DisconnectEvents, string> m_DisconnectEventMessageMap = new Dictionary<NetworkTransport.DisconnectEvents, string>();
 
+        /// <summary>
+        /// Returns the mapped transport disconnect event id to a <see cref="NetworkTransport.DisconnectEvents"/> value.
+        /// </summary>
         internal NetworkTransport.DisconnectEvents GetDisconnectEvent(int disconnectEventId)
         {
             return m_DisconnectEventMap.ContainsKey(disconnectEventId) ? m_DisconnectEventMap[disconnectEventId] : NetworkTransport.DisconnectEvents.Disconnected;
         }
 
+        /// <summary>
+        /// Returns the disconnect event message for the the disconnect event.
+        /// </summary>
         public string GetDisconnectEventMessage(NetworkTransport.DisconnectEvents disconnectEvent)
         {
             return m_DisconnectEventMessageMap.ContainsKey(disconnectEvent) ? m_DisconnectEventMessageMap[disconnectEvent] : string.Empty;
-        }
-
-        public void ClosingRemoteConnection()
-        {
-
         }
 
         private void AddDisconnectEventMap(NetworkTransport.DisconnectEvents disconnectEvent, int disconnectReason, string message)

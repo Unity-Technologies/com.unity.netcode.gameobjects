@@ -233,7 +233,7 @@ namespace Unity.Netcode
             }
             else
             {
-                DisconnectEventMessage = OnGetDisconnectEventMessage(disconnectEvent);
+                DisconnectEventMessage = GetDisconnectEventMessage(disconnectEvent);
             }
         }
 
@@ -242,7 +242,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="disconnectEvent">The disconnect event to get from the <see cref="NetworkTransport"/> derived class.</param>
         /// <returns><see cref="string.Empty"/> as a default or if overridden the <see cref="string"/> returned.</returns>
-        protected virtual string OnGetDisconnectEventMessage(DisconnectEvents disconnectEvent)
+        protected virtual string GetDisconnectEventMessage(DisconnectEvents disconnectEvent)
         {
             return string.Empty;
         }
