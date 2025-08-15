@@ -17,13 +17,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue where `UnityTransport` would not accept single words as valid hostnames (notably "localhost"). (#3591)
 - Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
 - Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 - Fixed issue where `SendTo.NotMe` could cause an RPC to be delivered to the sender when connected to a live distributed authority session. (#3551)
+- Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3527)
 
 ### Changed
 
+- Marked `UnityTransport.ConnectionAddressData.ServerEndPoint` as obsolete. It can't work when using hostnames as the server address, and its functionality can easily be replicated using `NetworkEndpoint.Parse`. (#3591)
 - Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
 - Changed `UnityTransport` now handles setting the current disconnect notification type, via internal `UnityTransportNotificationHandler` class, while also providing extended informational messages for each disconnect event type. (#3551)
 

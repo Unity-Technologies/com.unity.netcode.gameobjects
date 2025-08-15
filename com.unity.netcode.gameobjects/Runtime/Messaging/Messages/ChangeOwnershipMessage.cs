@@ -250,8 +250,9 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    foreach (var clientId in clientList)
+                    for (int i = 0; i < clientList.Count; i++)
                     {
+                        var clientId = clientList[i];
                         if (clientId == networkManager.LocalClientId)
                         {
                             continue;

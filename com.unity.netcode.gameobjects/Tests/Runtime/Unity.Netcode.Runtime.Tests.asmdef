@@ -49,11 +49,6 @@
             "define": "COM_UNITY_MODULES_PHYSICS"
         },
         {
-            "name": "com.unity.transport",
-            "expression": "2.4.0",
-            "define": "UTP_TRANSPORT_2_4_ABOVE"
-        },
-        {
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
