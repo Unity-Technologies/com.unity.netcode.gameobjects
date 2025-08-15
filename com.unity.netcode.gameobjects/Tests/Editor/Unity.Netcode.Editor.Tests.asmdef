@@ -39,11 +39,6 @@
             "define": "UNITY_UNET_PRESENT"
         },
         {
-            "name": "com.unity.transport",
-            "expression": "2.4.0",
-            "define": "UTP_TRANSPORT_2_4_ABOVE"
-        },
-        {
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
