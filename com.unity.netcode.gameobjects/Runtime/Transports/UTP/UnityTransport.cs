@@ -1749,7 +1749,7 @@ namespace Unity.Netcode.Transports.UTP
                 case TransportError.NetworkPacketOverflow:
                     return "packet is too large for the transport (likely need to increase MTU)";
                 case TransportError.NetworkSendQueueFull:
-                    return "send queue full (need to increase 'Max Send Queue Size' parameter)";
+                    return "send queue full (need to increase 'Max Packet Queue Size' parameter)";
                 default:
                     return FixedString.Format("unexpected error code {0}", error);
             }
