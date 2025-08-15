@@ -1859,7 +1859,7 @@ namespace Unity.Netcode.Transports.UTP
 
         public string GetDisconnectEventMessage(NetworkTransport.DisconnectEvents disconnectEvent)
         {
-            return string.Empty;
+            return m_DisconnectEventMessageMap.ContainsKey(disconnectEvent) ? m_DisconnectEventMessageMap[disconnectEvent] : string.Empty;
         }
 
         public void ClosingRemoteConnection()
