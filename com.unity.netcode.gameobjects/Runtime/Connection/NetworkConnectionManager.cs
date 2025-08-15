@@ -526,7 +526,7 @@ namespace Unity.Netcode
 
         private void GenerateDisconnectInformation(ulong clientId, ulong transportClientId, string reason = null)
         {
-            var header = $"[Disconnect Event][Client-{clientId}]";
+            var header = $"[Disconnect Event][Client-{clientId}][TransportClientId-{transportClientId}]";
             var existingDisconnectReason = DisconnectReason;
 
             var defaultMessage = Transport.DisconnectEventMessage;

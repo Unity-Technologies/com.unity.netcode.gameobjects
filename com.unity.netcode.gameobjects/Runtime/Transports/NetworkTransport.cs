@@ -168,9 +168,6 @@ namespace Unity.Netcode
         /// <summary>
         /// The Netcode for GameObjects standardized disconnection event types.
         /// </summary>
-        /// <remarks>
-        /// <see cref="AddDisconnectEventMap"/> provides you with the ability to register the transport's disconnect event types with the local equivalent.
-        /// </remarks>
         public enum DisconnectEvents
         {
             /// <summary>
