@@ -5,8 +5,6 @@ import os
 import re
 import datetime
 
-from config import getPackageChangelogPath
-
 UNRELEASED_CHANGELOG_SECTION_TEMPLATE = r"""
 ## [Unreleased]
 
@@ -108,7 +106,7 @@ def update_validation_exceptions(validation_file, package_version):
         json_file.write("\n")  # Add newline cause Py JSON does not
         print(f"  updated `{validation_file}`")
 
-def update_changelog(new_version, add_unreleased_template=False):
+def update_changelog(changelog_path, new_version, add_unreleased_template=False):
     """
     Cleans the [Unreleased] section of the changelog by removing empty subsections,
     then replaces the '[Unreleased]' tag with the new version and release date.
@@ -123,11 +121,6 @@ def update_changelog(new_version, add_unreleased_template=False):
 
     new_changelog_entry = f'## [{new_version}] - {datetime.date.today().isoformat()}'
     version_header_to_find_if_exists = f'## [{new_version}]'
-    changelog_path = getPackageChangelogPath()
-
-    if not os.path.exists(changelog_path):
-        print("CHANGELOG path is incorrect, the script will terminate without updating the CHANGELOG")
-        return None
 
     with open(changelog_path, 'r', encoding='UTF-8') as f:
         changelog_text = f.read()
@@ -169,5 +162,3 @@ def update_changelog(new_version, add_unreleased_template=False):
     # Write the changes
     with open(changelog_path, 'w', encoding='UTF-8') as file:
         file.write(final_content)
-
-    return final_content

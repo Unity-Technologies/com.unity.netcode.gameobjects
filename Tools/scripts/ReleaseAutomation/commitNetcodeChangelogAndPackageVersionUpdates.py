@@ -69,7 +69,7 @@ def updateNetcodeChangelogAndPackageVersionAndPush():
         repo.git.pull("origin", ngo_default_repo_branch_to_push_to)
 
         # Update the changelog file with adding new [Unreleased] section
-        update_changelog(ngo_package_version, ngo_package_name, add_unreleased_template=True)
+        update_changelog(ngo_changelog_path, ngo_package_version, ngo_package_name, add_unreleased_template=True)
         # Update the package version by patch to represent the "current package state" after release
         update_package_version_by_patch(ngo_manifest_path)
 

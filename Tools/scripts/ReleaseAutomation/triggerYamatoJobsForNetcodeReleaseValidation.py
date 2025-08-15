@@ -126,7 +126,7 @@ def trigger_automated_builds_job_on_yamato(yamato_api_token, project_id, branch_
 
 
 def trigger_NGO_release_preparation_jobs():
-    """Triggers Wrench dry run promotion josb and build automation for anticipation for Playtesting and Packageworks setup for NGO."""
+    """Triggers Wrench dry run promotion jobs and build automation for anticipation for Playtesting and Packageworks setup for NGO."""
 
     samples_to_build = [
         {
