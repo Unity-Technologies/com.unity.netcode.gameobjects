@@ -247,9 +247,9 @@ namespace Unity.Netcode
                     var clientList = hasObserverIdList && !networkObject.IsPlayerObject ? observerIds : networkManager.ConnectedClientsIds;
 
                     // Update the observers for this instance
-                    foreach (var clientId in clientList)
+                    for (int i = 0; i < clientList.Count; i++)
                     {
-                        networkObject.Observers.Add(clientId);
+                        networkObject.Observers.Add(clientList[i]);
                     }
 
                     // Mock CMB Service and forward to all clients

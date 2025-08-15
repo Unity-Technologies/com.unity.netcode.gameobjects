@@ -166,7 +166,7 @@ namespace Unity.Netcode
                 {
                     m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
                     // Track the clients that were connected when we started this event
-                    foreach (var connectedClientId in networkManager.ConnectedClientsIds)
+                    foreach (var connectedClientId in networkManager.ConnectionManager.ConnectedClientIds)
                     {
                         // Ignore the host or session owner
                         if ((!networkManager.DistributedAuthorityMode && NetworkManager.ServerClientId == connectedClientId) || (networkManager.DistributedAuthorityMode && networkManager.CurrentSessionOwner == connectedClientId))

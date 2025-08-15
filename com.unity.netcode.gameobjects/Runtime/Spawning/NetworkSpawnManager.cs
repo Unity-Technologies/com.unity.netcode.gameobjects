@@ -1099,7 +1099,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         // If SpawnWithObservers is enabled, then authority does take networkObject.CheckObjectVisibility into consideration
                         if (networkObject.CheckObjectVisibility != null && !networkObject.CheckObjectVisibility.Invoke(clientId))
@@ -1695,7 +1695,9 @@ namespace Unity.Netcode
                 // Otherwise send to the clients for which the object is visible
                 else
                 {
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    // We keep only the client for which the object is visible
+                    // as the other clients have them already despawned
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if ((distributedAuthority && clientId == networkObject.OwnerClientId) || clientId == NetworkManager.LocalClientId)
                         {

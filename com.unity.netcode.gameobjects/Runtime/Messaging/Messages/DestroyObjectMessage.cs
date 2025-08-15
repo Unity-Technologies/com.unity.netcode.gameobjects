@@ -191,7 +191,7 @@ namespace Unity.Netcode
                 DeferredDespawnTick = DeferredDespawnTick,
             };
             var ownerClientId = networkObject == null ? senderId : networkObject.OwnerClientId;
-            var clientIds = networkObject == null ? networkManager.ConnectedClientsIds.ToList() : networkObject.Observers.ToList();
+            var clientIds = networkObject == null ? networkManager.ConnectionManager.ConnectedClientIds : networkObject.Observers.ToList();
 
             foreach (var clientId in clientIds)
             {
