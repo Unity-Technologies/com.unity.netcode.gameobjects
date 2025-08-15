@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 - Added disconnection event notification handling capabilities where `NetworkTransport` derived custom transports can set the current disconnect event type (`NetworkTransport.DisconnectEvents`) that, if implemented, will provide more details on why the transport disconnected. (#3551)
 - Added protected method `NetworkTransport.SetDisconnectEvent` that a `NetworkTransport` derived custom transport can use to provide the disconnect event type that occurred. (#3551)
-- Added protected virtual method `NetworkTransport.GetDisconnectEventMessage` that, when overridden, a `NetworkTransport` derived custom transport can use to provide a customized extended message for each `NetworkTransport.DisconnectEvents` value. (#3551)
+- Added protected virtual method `NetworkTransport.GetDisconnectEventMessage` that, when overridden, a `NetworkTransport` derived custom transport can use to include additional, runtime, information in the message and/or also provide a customized extended message for each `NetworkTransport.DisconnectEvents` value that may not be part of the lower-layer transport event notifications. (#3551)
 
 ### Fixed
 
@@ -28,7 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Marked `UnityTransport.ConnectionAddressData.ServerEndPoint` as obsolete. It can't work when using hostnames as the server address, and its functionality can easily be replicated using `NetworkEndpoint.Parse`. (#3591)
 - Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
 - Changed `UnityTransport` so that it now handles setting the current disconnect notification type, via internal `UnityTransportNotificationHandler` class, while also providing extended informational messages for each disconnect event type. (#3551)
-- Changed `SendTo.NotMe` so that it doesn't include the server identifier in the target group when connected to a live distributed authority session. (#3551)
+- Changed `SendTo.NotMe` so that it no longer includes the server identifier in the target group when connected to a live distributed authority session. (#3551)
 
 
 ## [2.5.0] - 2025-08-01
