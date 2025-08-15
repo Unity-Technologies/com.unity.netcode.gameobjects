@@ -6,12 +6,8 @@ This python script makes the NGO package release ready. What it does is:
 Note that this script NEEDS TO BE RUN FROM THE ROOT of the project.
 """
 #!/usr/bin/env python3
-import datetime
-import json
 import os
-import re
-import subprocess
-import platform
+import sys
 
 UTILS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), './Utils'))
 sys.path.insert(0, UTILS_DIR)
