@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 - Added disconnection event notification handling capabilities where `NetworkTransport` derived custom transports can set the current disconnect event type (`NetworkTransport.DisconnectEvents`) that, if implemented, will provide more details on why the transport disconnected. (#3551)
 - Added protected method `NetworkTransport.SetDisconnectEvent` that a `NetworkTransport` derived custom transport can use to provide the disconnect event type that occurred. (#3551)
-- Added protected virtual method `NetworkTransport.GetDisconnectEventMessage` that, when overridden, a `NetworkTransport` derived custom transport can use to include additional, runtime, information in the message and/or also provide a customized extended message for each `NetworkTransport.DisconnectEvents` value that may not be part of the lower-layer transport event notifications. (#3551)
+- Added protected virtual method `NetworkTransport.GetDisconnectEventMessage` that can be used to provide a customized message for each `NetworkTransport.DisconnectEvents` value that may or may not be part of the event notifications that the lower-layer transport provides. (#3551)
 
 ### Fixed
 
