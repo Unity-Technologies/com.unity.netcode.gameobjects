@@ -14,15 +14,12 @@ all_preview_apv_jobs:
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_macos
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_ubuntu
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_0_-_windows
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_1_-_macos
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_1_-_ubuntu
-  - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_1_-_windows
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_2_-_macos
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_2_-_ubuntu
   - path: .yamato/wrench/preview-a-p-v.yml#preview_apv_-_6000_2_-_windows
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (MacOS).
 preview_apv_-_2021_3_-_macos:
@@ -73,10 +70,10 @@ preview_apv_-_2021_3_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (Ubuntu).
 preview_apv_-_2021_3_-_ubuntu:
@@ -127,10 +124,10 @@ preview_apv_-_2021_3_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2021.3 manifest (Windows).
 preview_apv_-_2021_3_-_windows:
@@ -182,10 +179,10 @@ preview_apv_-_2021_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (MacOS).
 preview_apv_-_2022_3_-_macos:
@@ -236,10 +233,10 @@ preview_apv_-_2022_3_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Ubuntu).
 preview_apv_-_2022_3_-_ubuntu:
@@ -290,10 +287,10 @@ preview_apv_-_2022_3_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 2022.3 manifest (Windows).
 preview_apv_-_2022_3_-_windows:
@@ -345,10 +342,10 @@ preview_apv_-_2022_3_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (MacOS).
 preview_apv_-_6000_0_-_macos:
@@ -399,16 +396,16 @@ preview_apv_-_6000_0_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Ubuntu).
 preview_apv_-_6000_0_-_ubuntu:
   name: Preview APV - 6000.0 - ubuntu
   agent:
-    image: package-ci/ubuntu-20.04:default
+    image: package-ci/ubuntu-22.04:v4
     type: Unity::VM
     flavor: b1.large
   commands:
@@ -453,10 +450,10 @@ preview_apv_-_6000_0_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.0 manifest (Windows).
 preview_apv_-_6000_0_-_windows:
@@ -508,173 +505,10 @@ preview_apv_-_6000_0_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
-
-# Functional tests for dependents found in the latest 6000.1 manifest (MacOS).
-preview_apv_-_6000_1_-_macos:
-  name: Preview APV - 6000.1 - macos
-  agent:
-    image: package-ci/macos-13:default
-    type: Unity::VM::osx
-    flavor: b1.xlarge
-  commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
-  - command: 7z x -aoa wrench-localapv.zip
-  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
-  - command: python PythonScripts/print_machine_info.py
-  - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    timeout: 20
-    retries: 10
-  - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
-    timeout: 10
-    retries: 3
-  - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
-  - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
-  after:
-  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-mac.sh
-  artifacts:
-    Crash Dumps:
-      paths:
-      - CrashDumps/**
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - upm-ci~/test-results/**/*
-      - upm-ci~/temp/*/Logs/**
-      - upm-ci~/temp/*/Library/*.log
-      - upm-ci~/temp/*/*.log
-      - upm-ci~/temp/Builds/*.log
-    packages:
-      paths:
-      - upm-ci~/packages/**/*
-    PreviewAPVResults:
-      paths:
-      - PreviewApvArtifacts~/**
-      - APVTest/**/manifest.json
-    pvp-results:
-      paths:
-      - upm-ci~/pvp/**/*
-      browsable: onDemand
-  dependencies:
-  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
-  variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
-  metadata:
-    Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
-
-# Functional tests for dependents found in the latest 6000.1 manifest (Ubuntu).
-preview_apv_-_6000_1_-_ubuntu:
-  name: Preview APV - 6000.1 - ubuntu
-  agent:
-    image: package-ci/ubuntu-20.04:default
-    type: Unity::VM
-    flavor: b1.large
-  commands:
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
-  - command: 7z x -aoa wrench-localapv.zip
-  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
-  - command: python PythonScripts/print_machine_info.py
-  - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    timeout: 20
-    retries: 10
-  - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
-    timeout: 10
-    retries: 3
-  - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
-  - command: echo 'Skipping Editor Manifest Validator as it is only supported on Windows'
-  after:
-  - command: bash .yamato/generated-scripts/infrastructure-instability-detection-linux.sh
-  artifacts:
-    Crash Dumps:
-      paths:
-      - CrashDumps/**
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - upm-ci~/test-results/**/*
-      - upm-ci~/temp/*/Logs/**
-      - upm-ci~/temp/*/Library/*.log
-      - upm-ci~/temp/*/*.log
-      - upm-ci~/temp/Builds/*.log
-    packages:
-      paths:
-      - upm-ci~/packages/**/*
-    PreviewAPVResults:
-      paths:
-      - PreviewApvArtifacts~/**
-      - APVTest/**/manifest.json
-    pvp-results:
-      paths:
-      - upm-ci~/pvp/**/*
-      browsable: onDemand
-  dependencies:
-  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
-  variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
-  metadata:
-    Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
-
-# Functional tests for dependents found in the latest 6000.1 manifest (Windows).
-preview_apv_-_6000_1_-_windows:
-  name: Preview APV - 6000.1 - windows
-  agent:
-    image: package-ci/win10:default
-    type: Unity::VM
-    flavor: b1.large
-  commands:
-  - command: gsudo reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-  - command: curl https://artifactory.prd.it.unity3d.com/artifactory/stevedore-unity-internal/wrench-localapv/1-2-68_53c92d3b34ce3f4b652c9785dd1530bdc5885f6523465d6969c3be91f9ccaaf1.zip -o wrench-localapv.zip
-  - command: 7z x -aoa wrench-localapv.zip
-  - command: pip install semver requests --index-url https://artifactory-slo.bf.unity3d.com/artifactory/api/pypi/pypi/simple
-  - command: python PythonScripts/print_machine_info.py
-  - command: npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    timeout: 20
-    retries: 10
-  - command: unity-downloader-cli -u 6000.1/staging -c editor --path .Editor --fast
-    timeout: 10
-    retries: 3
-  - command: python PythonScripts/preview_apv.py --wrench-config=.yamato/wrench/wrench_config.json --editor-version=6000.1 --testsuite=editor,playmode --artifacts-path=PreviewApvArtifacts~
-  - command: python PythonScripts/editor_manifest_validator.py --version=6000.1 --wrench-config=.yamato/wrench/wrench_config.json
-  after:
-  - command: .yamato\generated-scripts\infrastructure-instability-detection-win.cmd
-  artifacts:
-    Crash Dumps:
-      paths:
-      - CrashDumps/**
-    logs:
-      paths:
-      - '*.log'
-      - '*.xml'
-      - upm-ci~/test-results/**/*
-      - upm-ci~/temp/*/Logs/**
-      - upm-ci~/temp/*/Library/*.log
-      - upm-ci~/temp/*/*.log
-      - upm-ci~/temp/Builds/*.log
-    packages:
-      paths:
-      - upm-ci~/packages/**/*
-    PreviewAPVResults:
-      paths:
-      - PreviewApvArtifacts~/**
-      - APVTest/**/manifest.json
-    pvp-results:
-      paths:
-      - upm-ci~/pvp/**/*
-      browsable: onDemand
-  dependencies:
-  - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
-  variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
-  metadata:
-    Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (MacOS).
 preview_apv_-_6000_2_-_macos:
@@ -725,16 +559,16 @@ preview_apv_-_6000_2_-_macos:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Ubuntu).
 preview_apv_-_6000_2_-_ubuntu:
   name: Preview APV - 6000.2 - ubuntu
   agent:
-    image: package-ci/ubuntu-20.04:default
+    image: package-ci/ubuntu-22.04:v4
     type: Unity::VM
     flavor: b1.large
   commands:
@@ -779,10 +613,10 @@ preview_apv_-_6000_2_-_ubuntu:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
 # Functional tests for dependents found in the latest 6000.2 manifest (Windows).
 preview_apv_-_6000_2_-_windows:
@@ -834,8 +668,8 @@ preview_apv_-_6000_2_-_windows:
   dependencies:
   - path: .yamato/wrench/package-pack-jobs.yml#package_pack_-_netcode_gameobjects
   variables:
-    UPMPVP_CONTEXT_WRENCH: 0.12.2.0
+    UPMPVP_CONTEXT_WRENCH: 1.0.0.0
   metadata:
     Job Maintainers: '#rm-packageworks'
-    Wrench: 0.12.2.0
+    Wrench: 1.0.0.0
 
