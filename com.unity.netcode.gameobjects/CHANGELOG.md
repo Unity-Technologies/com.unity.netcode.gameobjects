@@ -8,10 +8,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [1.14.1] - 2025-08-17
 
-### Added
-
-### Added
-
 ### Fixed
 
 - Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3601)
