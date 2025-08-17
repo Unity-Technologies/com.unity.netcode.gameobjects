@@ -10,6 +10,29 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
+### Changed
+
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.5.0] - 2025-08-17
+
+### Added
+
 - Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 - Added serializer for `Pose` (#3546)
 - Added `AttachableBehaviour` helper component to provide an alternate approach to parenting items without using the `NetworkObject` parenting. (#3518)
@@ -330,9 +353,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ## [2.0.0-exp.5] - 2024-06-03
-
-### Added
-
 
 ### Fixed
 
