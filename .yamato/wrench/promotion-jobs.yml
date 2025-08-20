@@ -46,16 +46,6 @@ publish_dry_run_netcode_gameobjects:
         unzip: true
       packages:
         ignore_artifact: true
-  - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_windows
-    specific_options:
-      UTR:
-        location: results/UTR/validate-netcode.gameobjects-2021.3-windows
-        unzip: true
-      pvp-results:
-        location: results/pvp/validate-netcode.gameobjects-2021.3-windows
-        unzip: true
-      packages:
-        ignore_artifact: true
   - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2022_3_-_macos
     specific_options:
       UTR:
@@ -195,16 +185,6 @@ publish_netcode_gameobjects:
         unzip: true
       pvp-results:
         location: results/pvp/validate-netcode.gameobjects-2021.3-ubuntu
-        unzip: true
-      packages:
-        ignore_artifact: true
-  - path: .yamato/wrench/validation-jobs.yml#validate_-_netcode_gameobjects_-_2021_3_-_windows
-    specific_options:
-      UTR:
-        location: results/UTR/validate-netcode.gameobjects-2021.3-windows
-        unzip: true
-      pvp-results:
-        location: results/pvp/validate-netcode.gameobjects-2021.3-windows
         unzip: true
       packages:
         ignore_artifact: true
