@@ -33,10 +33,8 @@ public class NGOSettings : AnnotatedSettingsBase
     {
         Wrench = new WrenchSettings(
             packagesRootPaths,
-            PackageOptions,
-            false,
-            false,
-            @"Tools\CI\NGO.Cookbook.csproj"); // There should be fix soon and there should be no need of specifying the path
+            PackageOptions
+        );
 
         Wrench.PvpProfilesToCheck = new HashSet<string>() { "supported" };
     }
