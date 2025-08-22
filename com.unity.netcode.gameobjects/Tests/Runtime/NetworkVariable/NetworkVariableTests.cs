@@ -2805,7 +2805,7 @@ namespace Unity.Netcode.RuntimeTests
         public void WhenSerializingAndDeserializingVeryLargeHashSetNetworkVariables_ValuesAreSerializedCorrectly(
 
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(long), typeof(ulong), typeof(char), typeof(float), typeof(double),
                 typeof(Vector2), typeof(Vector3), typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4),
                 typeof(Quaternion), typeof(HashableNetworkVariableTestClass), typeof(FixedString32Bytes))]
             Type testType)

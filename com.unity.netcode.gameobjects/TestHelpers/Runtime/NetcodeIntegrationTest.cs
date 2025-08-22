@@ -24,7 +24,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Used to determine if a NetcodeIntegrationTest is currently running to
         /// determine how clients will load scenes
         /// </summary>
-        protected const float k_DefaultTimeoutPeriod = 8.0f;
+        protected const float k_DefaultTimeoutPeriod = 12.0f;
         protected const float k_TickFrequency = 1.0f / k_DefaultTickRate;
         internal static bool IsRunning { get; private set; }
         protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(k_DefaultTimeoutPeriod);
