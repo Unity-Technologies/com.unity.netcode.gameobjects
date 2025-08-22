@@ -4,15 +4,15 @@
     # This provides consistent environment definitions across all CI jobs. It's easier to modify values in central place (for example image reference) than having to modify every job
 
 # VALUE MEANING----------------------------------------------------------------------------------------------------------------------------
-    # Usual fields being defined are
-        # name --> Identifier used to distinguish different configurations in the CI pipeline
-        # type --> Specifies the Bokken agent type (e.g., Unity::VM, Unity::VM::osx, Unity::mobile::shield)
-        # image --> Defines the package-ci Bokken image to use for the environment (e.g., package-ci/ubuntu-22.04:v4). This is basically a device configuration
-        # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
-        # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
-        # model --> Defines specific hardware model requirements (e.g., rtx2080, SE for iPhone SE)
-        # base --> Indicates the base operating system for build operations (e.g., win, mac)
-        # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
+
+    # name --> Identifier used to distinguish different configurations in the CI pipeline
+    # type --> Specifies the Bokken agent type (e.g., Unity::VM, Unity::VM::osx, Unity::mobile::shield)
+    # image --> Defines the package-ci Bokken image to use for the environment (e.g., package-ci/ubuntu-22.04:v4). This is basically a device configuration
+    # flavor --> Determines the VM size/resources (e.g., b1.small, b1.large, m1.mac)
+    # standalone --> Specifies the build target platform (e.g., StandaloneLinux64, Android, IOS)
+    # model --> Defines specific hardware model requirements (e.g., rtx2080, iPhone model 13). Notice that trunk currently (19.08.2025) has 13.0 as minimal iOS version which devices below this are not supporting
+    # base --> Indicates the base operating system for build operations (e.g., win, mac)
+    # architecture --> Specifies the target CPU architecture (e.g., armv7, arm64)
 
 
 # SMALL AGENT CONFIGURATION---------------------------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ test_platforms:
           type: Unity::mobile::iPhone
           image: package-ci/macos-13-arm64:v4
           flavor: m1.mac
-          model: SE
+          model: 13
           standalone: IOS
           base: mac
           architecture: arm64
