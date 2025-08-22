@@ -98,7 +98,8 @@ namespace Unity.Netcode
                     return false;
                 }
 
-                if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage))
+                if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage) &&
+                    !(m_NetworkManager.CMBServiceConnection && m_NetworkManager.LocalClient.IsSessionOwner && m_NetworkManager.NetworkConfig.EnableSceneManagement))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {

@@ -217,7 +217,7 @@ namespace Unity.Netcode
             m_LastAnticipationCounter = m_NetworkBehaviour.NetworkManager.AnticipationSystem.AnticipationCounter;
             m_AnticipatedValue = value;
             NetworkVariableSerialization<T>.Duplicate(m_AnticipatedValue, ref m_PreviousAnticipatedValue);
-            if (CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (CanWrite)
             {
                 AuthoritativeValue = value;
             }

@@ -18,6 +18,7 @@ namespace TestProject.RuntimeTests
         public static NetworkObject ServerNetworkObjectInstance;
         public static List<NetworkObjectTestComponent> SpawnedInstances = new List<NetworkObjectTestComponent>();
         public static List<NetworkObjectTestComponent> DespawnedInstances = new List<NetworkObjectTestComponent>();
+        public static List<NetworkObject> SpawnedObjects = new List<NetworkObject>();
 
         public static void Reset()
         {
@@ -26,6 +27,7 @@ namespace TestProject.RuntimeTests
             ServerNetworkObjectInstance = null;
             SpawnedInstances.Clear();
             DespawnedInstances.Clear();
+            SpawnedObjects.Clear();
         }
 
         private Action<NetworkObject, int, bool, bool, bool> m_ActionClientConnected;
@@ -48,6 +50,8 @@ namespace TestProject.RuntimeTests
         public override void OnNetworkSpawn()
         {
             SpawnedInstances.Add(this);
+            SpawnedObjects.Add(NetworkObject);
+
             if (DisableOnDespawn)
             {
                 if (DespawnedInstances.Contains(this))
@@ -56,7 +60,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            if (IsServer)
+            if (IsServer || IsSessionOwner)
             {
                 ServerNetworkObjectInstance = NetworkObject;
                 if (DisableOnSpawn && !ObjectWasDisabledUponSpawn)

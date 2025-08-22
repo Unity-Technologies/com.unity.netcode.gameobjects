@@ -133,10 +133,11 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         protected override void OnServerAndClientsCreated()
         {
+            var authorityNetworkManager = GetAuthorityNetworkManager();
             // Create a NetworkPrefab with an override
-            var basePrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-base", m_ServerNetworkManager, true);
+            var basePrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-base", authorityNetworkManager, true);
             basePrefab.AddComponent<SpawnDespawnDestroyNotifications>();
-            var targetPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-over", m_ServerNetworkManager, true);
+            var targetPrefab = NetcodeIntegrationTestHelpers.CreateNetworkObject($"{k_PrefabRootName}-over", authorityNetworkManager, true);
             targetPrefab.AddComponent<SpawnDespawnDestroyNotifications>();
             m_PrefabOverride = new NetworkPrefab()
             {
@@ -147,17 +148,21 @@ namespace Unity.Netcode.RuntimeTests
             };
 
             // Add the prefab override handler for instance specific player prefabs to the server side
-            var playerPrefabOverrideHandler = m_ServerNetworkManager.gameObject.AddComponent<TestPrefabOverrideHandler>();
+            var playerPrefabOverrideHandler = authorityNetworkManager.gameObject.AddComponent<TestPrefabOverrideHandler>();
             playerPrefabOverrideHandler.ServerSideInstance = m_PlayerPrefab;
             playerPrefabOverrideHandler.ClientSideInstance = m_ClientSidePlayerPrefab.Prefab;
 
             // Add the NetworkPrefab with override
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabOverride);
+            authorityNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabOverride);
             // Add the client player prefab that will be used on clients (and the host)
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_ClientSidePlayerPrefab);
+            authorityNetworkManager.NetworkConfig.Prefabs.Add(m_ClientSidePlayerPrefab);
 
             foreach (var networkManager in m_ClientNetworkManagers)
             {
+                if (authorityNetworkManager == networkManager)
+                {
+                    continue;
+                }
                 // Add the prefab override handler for instance specific player prefabs to the client side
                 playerPrefabOverrideHandler = networkManager.gameObject.AddComponent<TestPrefabOverrideHandler>();
                 playerPrefabOverrideHandler.ServerSideInstance = m_PlayerPrefab;
@@ -208,7 +213,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private GameObject GetPlayerNetworkPrefabObject(NetworkManager networkManager)
         {
-            return networkManager.IsClient ? m_ClientSidePlayerPrefab.Prefab : m_PlayerPrefab;
+            return networkManager != GetAuthorityNetworkManager() ? m_ClientSidePlayerPrefab.Prefab : m_PlayerPrefab;
         }
 
         [UnityTest]
@@ -217,11 +222,13 @@ namespace Unity.Netcode.RuntimeTests
             var prefabNetworkObject = (NetworkObject)null;
             var spawnedGlobalObjectId = (uint)0;
 
+            var authorityNetworkManager = GetAuthorityNetworkManager();
+
             if (!m_UseHost)
             {
                 // If running as just a server, validate that all player prefab clone instances are the server side version
-                prefabNetworkObject = GetPlayerNetworkPrefabObject(m_ServerNetworkManager).GetComponent<NetworkObject>();
-                foreach (var playerEntry in m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId])
+                prefabNetworkObject = GetPlayerNetworkPrefabObject(authorityNetworkManager).GetComponent<NetworkObject>();
+                foreach (var playerEntry in m_PlayerNetworkObjects[authorityNetworkManager.LocalClientId])
                 {
                     spawnedGlobalObjectId = playerEntry.Value.GlobalObjectIdHash;
                     Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash == spawnedGlobalObjectId, $"Server-Side {playerEntry.Value.name} was spawned as prefab ({spawnedGlobalObjectId}) but we expected ({prefabNetworkObject.GlobalObjectIdHash})!");
@@ -254,7 +261,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validates prefab overrides via NetworkPrefab configuration.
             var spawnedInstance = (NetworkObject)null;
-            var networkManagerOwner = m_ServerNetworkManager;
+            var networkManagerOwner = authorityNetworkManager;
 
             if (m_DistributedAuthority)
             {
@@ -291,15 +298,17 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(ObjectSpawnedOnAllNetworkMangers);
             AssertOnTimeout($"The spawned prefab override validation failed!\n {builder}");
 
+            var nonAuthorityInstance = GetNonAuthorityNetworkManager();
+
             // Verify that the despawn and destroy order of operations is correct for client owned NetworkObjects and the nunmber of times each is invoked is correct
-            spawnedInstance = NetworkObject.InstantiateAndSpawn(m_PrefabOverride.SourcePrefabToOverride, networkManagerOwner, m_ClientNetworkManagers[0].LocalClientId);
+            spawnedInstance = NetworkObject.InstantiateAndSpawn(m_PrefabOverride.SourcePrefabToOverride, networkManagerOwner, nonAuthorityInstance.LocalClientId);
 
 
             yield return WaitForConditionOrTimeOut(ObjectSpawnedOnAllNetworkMangers);
             AssertOnTimeout($"The spawned prefab override validation failed!\n {builder}");
 
-            var clientId = m_ClientNetworkManagers[0].LocalClientId;
-            m_ClientNetworkManagers[0].Shutdown();
+            var clientId = nonAuthorityInstance.LocalClientId;
+            nonAuthorityInstance.Shutdown();
 
             // Wait until all of the client's owned objects are destroyed
             // If no asserts occur, then the despawn & destroy order of operations and invocation count is correct
@@ -312,9 +321,12 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         continue;
                     }
-
+                    if (manager.SpawnManager == null)
+                    {
+                        continue;
+                    }
                     var clientOwnedObjects = manager.SpawnManager.SpawnedObjects.Where((c) => c.Value.OwnerClientId == clientId).ToList();
-                    if (clientOwnedObjects.Count > 0)
+                    if (clientOwnedObjects != null && clientOwnedObjects.Count > 0)
                     {
                         return false;
                     }

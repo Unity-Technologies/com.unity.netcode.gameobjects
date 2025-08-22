@@ -129,6 +129,12 @@ namespace TestProject.RuntimeTests
 
         }
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         protected override void OnOneTimeSetup()
         {
             m_OriginalVarianceThreshold = base.GetDeltaVarianceThreshold();

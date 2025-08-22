@@ -1,6 +1,7 @@
 #if !MULTIPLAYER_TOOLS
 using NUnit.Framework;
 using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 
 
@@ -76,6 +77,13 @@ namespace Unity.Netcode.RuntimeTests
         private TransformSpace m_TransformSpace;
         private Precision m_Precision;
         private Rotation m_Rotation;
+
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // This test does not need to run against the Rust server.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
 
         public NetworkTransformStateTests(TransformSpace transformSpace, Precision precision, Rotation rotation)
         {

@@ -17,6 +17,8 @@ run_quick_checks:
   dependencies:
     - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
 
 
 # Runs all package tests
@@ -110,11 +112,9 @@ run_all_webgl_builds:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.all -%}
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 
@@ -125,11 +125,9 @@ run_all_webgl_builds_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
 {% for editor in validation_editors.default -%}
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 
@@ -139,9 +137,7 @@ run_all_webgl_builds_6000:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.desktop -%}
-{% if platform.name != "mac" -%} # There is an error about "Light baking could not be started because no valid OpenCL device could be found". Tracked in MTT-11726
     - .yamato/webgl-build.yml#webgl_build_{{ project.name }}_{{ platform.name }}_6000.0
-{% endif -%}
 {% endfor -%}
 {% endfor -%}
 

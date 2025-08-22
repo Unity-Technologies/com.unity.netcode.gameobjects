@@ -250,8 +250,9 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    foreach (var clientId in clientList)
+                    for (int i = 0; i < clientList.Count; i++)
                     {
+                        var clientId = clientList[i];
                         if (clientId == networkManager.LocalClientId)
                         {
                             continue;
@@ -333,7 +334,7 @@ namespace Unity.Netcode
             if (networkObject.OwnerClientId == OwnerClientId)
             {
                 // Log error and then ignore the message
-                UnityEngine.Debug.LogError($"Client-{context.SenderId} ({RequestClientId}) sent unnecessary ownership changed message for {NetworkObjectId}.");
+                NetworkLog.LogError($"[Receiver: Client-{networkManager.LocalClientId}][Sender: Client-{context.SenderId}][RID: {RequestClientId}] Detected unnecessary ownership changed message for {networkObject.name} (NID:{NetworkObjectId}).");
                 return;
             }
 
@@ -381,7 +382,7 @@ namespace Unity.Netcode
 
             if (originalOwner == networkManager.LocalClientId && !networkManager.DistributedAuthorityMode)
             {
-                // Fully synchronize NetworkVariables with either read or write ownership permissions. 
+                // Fully synchronize NetworkVariables with either read or write ownership permissions.
                 networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId);
             }
 

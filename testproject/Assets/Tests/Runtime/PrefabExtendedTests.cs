@@ -36,6 +36,12 @@ namespace TestProject.RuntimeTests
 
         private StringBuilder m_ErrorLog = new StringBuilder();
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public PrefabExtendedTests(SceneManagementTypes sceneManagementType)
         {
             m_SceneManagementEnabled = sceneManagementType == SceneManagementTypes.SceneManagementEnabled;

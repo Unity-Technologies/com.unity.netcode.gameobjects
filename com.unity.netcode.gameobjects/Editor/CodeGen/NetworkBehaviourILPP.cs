@@ -109,7 +109,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 if (ImportReferences(mainModule, compiledAssembly.Defines))
                 {
-                    // process `NetworkBehaviour` types
+                    // process NetworkBehaviour types
                     try
                     {
                         mainModule.GetTypes()
@@ -563,6 +563,7 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(Vector3Int),
             typeof(Vector4),
             typeof(Quaternion),
+            typeof(Pose),
             typeof(Color),
             typeof(Color32),
             typeof(Ray),

@@ -12,7 +12,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Server)]
     [TestFixture(NetworkTopologyTypes.ClientServer, HostOrServer.Host)]
     [TestFixture(NetworkTopologyTypes.DistributedAuthority, HostOrServer.DAHost)]
-    public class NetworkVariableBaseInitializesWhenPersisted : NetcodeIntegrationTest
+    internal class NetworkVariableBaseInitializesWhenPersisted : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 

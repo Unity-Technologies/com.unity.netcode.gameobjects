@@ -124,7 +124,7 @@ namespace Unity.Netcode
             {
                 // If we are the host, then add the host-client to the list
                 // of clients that completed if the AsyncOperation is done.
-                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
+                if ((m_NetworkManager.IsHost || m_NetworkManager.LocalClient.IsSessionOwner) && m_AsyncOperation.isDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
@@ -166,7 +166,7 @@ namespace Unity.Netcode
                 {
                     m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
                     // Track the clients that were connected when we started this event
-                    foreach (var connectedClientId in networkManager.ConnectedClientsIds)
+                    foreach (var connectedClientId in networkManager.ConnectionManager.ConnectedClientIds)
                     {
                         // Ignore the host or session owner
                         if ((!networkManager.DistributedAuthorityMode && NetworkManager.ServerClientId == connectedClientId) || (networkManager.DistributedAuthorityMode && networkManager.CurrentSessionOwner == connectedClientId))
@@ -221,6 +221,14 @@ namespace Unity.Netcode
                 ClientsProcessingSceneEvent[clientId] = true;
                 TryFinishingSceneEventProgress();
             }
+        }
+
+        /// <summary>
+        /// Returns whether the SceneEventType is related to an unloading event.
+        /// </summary>
+        internal bool IsUnloading()
+        {
+            return SceneEventType is SceneEventType.Unload or SceneEventType.UnloadComplete or SceneEventType.UnloadEventCompleted;
         }
 
         /// <summary>

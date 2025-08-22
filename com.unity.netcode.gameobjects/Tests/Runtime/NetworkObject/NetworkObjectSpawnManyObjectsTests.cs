@@ -18,12 +18,12 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObjectSpawnManyObjectsTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
         // Using this component assures we will know precisely how many prefabs were spawned on the client
-        internal class SpawnObjecTrackingComponent : NetworkBehaviour
+        internal class SpawnObjectTrackingComponent : NetworkBehaviour
         {
             public static int SpawnedObjects;
             public override void OnNetworkSpawn()
             {
-                if (!IsServer)
+                if (!IsOwner)
                 {
                     SpawnedObjects++;
                 }
@@ -32,13 +32,13 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            SpawnObjecTrackingComponent.SpawnedObjects = 0;
+            SpawnObjectTrackingComponent.SpawnedObjects = 0;
             // create prefab
             var gameObject = new GameObject("TestObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             networkObject.IsSceneObject = false;
-            gameObject.AddComponent<SpawnObjecTrackingComponent>();
+            gameObject.AddComponent<SpawnObjectTrackingComponent>();
 
             m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };
 
@@ -57,6 +57,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
                 serverObject.NetworkManagerOwner = authority;
+                serverObject.SpawnWithObservers = true;
                 serverObject.Spawn();
             }
 
@@ -64,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
             // Provide plenty of time to spawn all 1500 objects in case the CI VM is running slow
             var timeoutHelper = new TimeoutHelper(30);
             // ensure all objects are replicated
-            yield return WaitForConditionOrTimeOut(() => SpawnObjecTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
+            yield return WaitForConditionOrTimeOut(() => SpawnObjectTrackingComponent.SpawnedObjects == k_SpawnedObjects, timeoutHelper);
 
             AssertOnTimeout($"Timed out waiting for the client to spawn {k_SpawnedObjects} objects! Time to spawn: {timeSpawned} | Time to timeout: {timeStarted - Time.realtimeSinceStartup}", timeoutHelper);
         }

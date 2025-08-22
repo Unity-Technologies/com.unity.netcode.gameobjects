@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using UnityEngine;
@@ -34,6 +35,13 @@ namespace Unity.Netcode.RuntimeTests
         private UnityTransport m_Server, m_Client1, m_Client2;
         private List<TransportEvent> m_ServerEvents, m_Client1Events, m_Client2Events;
 
+        [OneTimeSetUp]
+        public void OneTimeSetup()
+        {
+            // TODO: [CmbServiceTests] if this test is deemed needed to test against the CMB server then update this test.
+            NetcodeIntegrationTestHelpers.IgnoreIfServiceEnviromentVariableSet();
+        }
+
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
@@ -43,6 +51,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Server.gameObject);
+                m_Server = null;
             }
 
             if (m_Client1)
@@ -51,6 +60,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client1.gameObject);
+                m_Client1 = null;
             }
 
             if (m_Client2)
@@ -59,6 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Need to destroy the GameObject (all assigned components will get destroyed too)
                 UnityEngine.Object.DestroyImmediate(m_Client2.gameObject);
+                m_Client2 = null;
             }
             m_ServerEvents?.Clear();
             m_Client1Events?.Clear();
@@ -309,7 +320,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Server.StartServer();
             m_Client1.StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events, 5.0f);
 
             var serverClientId = m_Client1.ServerClientId;
 

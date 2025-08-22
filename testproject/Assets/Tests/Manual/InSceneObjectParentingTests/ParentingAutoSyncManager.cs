@@ -11,7 +11,7 @@ namespace TestProject.ManualTests
     /// </summary>
     public class ParentingAutoSyncManager : NetworkBehaviour
     {
-        public static ParentingAutoSyncManager ServerInstance;
+        public static ParentingAutoSyncManager AuthorityInstance;
         public static Dictionary<ulong, ParentingAutoSyncManager> ClientInstances = new Dictionary<ulong, ParentingAutoSyncManager>();
 
         public GameObject WithNetworkObjectAutoSyncOn;
@@ -26,15 +26,15 @@ namespace TestProject.ManualTests
 
         public static void Reset()
         {
-            ServerInstance = null;
+            AuthorityInstance = null;
             ClientInstances.Clear();
         }
 
         public override void OnNetworkSpawn()
         {
-            if (IsServer)
+            if (IsServer || IsSessionOwner)
             {
-                ServerInstance = this;
+                AuthorityInstance = this;
             }
             else
             {

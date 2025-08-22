@@ -6,17 +6,13 @@ namespace Unity.Netcode
     internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         private const int k_OptimizeDestroyObjectMessage = 1;
-        public int Version => k_OptimizeDestroyObjectMessage;
+        private const int k_AllowDestroyGameInPlaced = 2;
+        public int Version => k_AllowDestroyGameInPlaced;
 
         private const string k_Name = "DestroyObjectMessage";
 
         public ulong NetworkObjectId;
 
-        /// <summary>
-        /// Used to communicate whether to destroy the associated game object.
-        /// Should be false if the object is InScenePlaced and true otherwise
-        /// </summary>
-        public bool DestroyGameObject;
         private byte m_DestroyFlags;
 
         internal int DeferredDespawnTick;
@@ -25,32 +21,29 @@ namespace Unity.Netcode
 
         internal bool IsDistributedAuthority;
 
-        private const byte k_ClientTargetedDestroy = 0x01;
-        private const byte k_DeferredDespawn = 0x02;
-
         internal bool IsTargetedDestroy
         {
-            get => GetFlag(k_ClientTargetedDestroy);
+            get => ByteUtility.GetBit(m_DestroyFlags, 0);
 
-            set => SetFlag(value, k_ClientTargetedDestroy);
+            set => ByteUtility.SetBit(ref m_DestroyFlags, 0, value);
         }
 
         private bool IsDeferredDespawn
         {
-            get => GetFlag(k_DeferredDespawn);
+            get => ByteUtility.GetBit(m_DestroyFlags, 1);
 
-            set => SetFlag(value, k_DeferredDespawn);
+            set => ByteUtility.SetBit(ref m_DestroyFlags, 1, value);
         }
 
-        private bool GetFlag(int flag)
+        /// <summary>
+        /// Used to communicate whether to destroy the associated game object.
+        /// Should be false if the object is InScenePlaced and true otherwise
+        /// </summary>
+        public bool DestroyGameObject
         {
-            return (m_DestroyFlags & flag) != 0;
-        }
+            get => ByteUtility.GetBit(m_DestroyFlags, 2);
 
-        private void SetFlag(bool set, byte flag)
-        {
-            if (set) { m_DestroyFlags = (byte)(m_DestroyFlags | flag); }
-            else { m_DestroyFlags = (byte)(m_DestroyFlags & ~flag); }
+            set => ByteUtility.SetBit(ref m_DestroyFlags, 2, value);
         }
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
@@ -73,6 +66,10 @@ namespace Unity.Netcode
                 {
                     BytePacker.WriteValueBitPacked(writer, DeferredDespawnTick);
                 }
+            }
+            else if (targetVersion >= k_AllowDestroyGameInPlaced)
+            {
+                writer.WriteByteSafe(m_DestroyFlags);
             }
 
             if (targetVersion < k_OptimizeDestroyObjectMessage)
@@ -103,10 +100,15 @@ namespace Unity.Netcode
                     ByteUnpacker.ReadValueBitPacked(reader, out DeferredDespawnTick);
                 }
             }
+            else if (receivedMessageVersion >= k_AllowDestroyGameInPlaced)
+            {
+                reader.ReadByteSafe(out m_DestroyFlags);
+            }
 
             if (receivedMessageVersion < k_OptimizeDestroyObjectMessage)
             {
-                reader.ReadValueSafe(out DestroyGameObject);
+                reader.ReadValueSafe(out bool destroyGameObject);
+                DestroyGameObject = destroyGameObject;
             }
 
             if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
@@ -169,7 +171,7 @@ namespace Unity.Netcode
             }
 
             // Otherwise just despawn the NetworkObject right now
-            networkManager.SpawnManager.OnDespawnNonAuthorityObject(networkObject);
+            networkManager.SpawnManager.OnDespawnNonAuthorityObject(networkObject, DestroyGameObject);
             networkManager.NetworkMetrics.TrackObjectDestroyReceived(context.SenderId, networkObject, context.MessageSize);
         }
 
@@ -189,7 +191,7 @@ namespace Unity.Netcode
                 DeferredDespawnTick = DeferredDespawnTick,
             };
             var ownerClientId = networkObject == null ? senderId : networkObject.OwnerClientId;
-            var clientIds = networkObject == null ? networkManager.ConnectedClientsIds.ToList() : networkObject.Observers.ToList();
+            var clientIds = networkObject == null ? networkManager.ConnectionManager.ConnectedClientIds : networkObject.Observers.ToList();
 
             foreach (var clientId in clientIds)
             {
@@ -208,7 +210,7 @@ namespace Unity.Netcode
         {
             networkObject.DeferredDespawnTick = DeferredDespawnTick;
             var hasCallback = networkObject.OnDeferredDespawnComplete != null;
-            networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback);
+            networkManager.SpawnManager.DeferDespawnNetworkObject(NetworkObjectId, DeferredDespawnTick, hasCallback, DestroyGameObject);
         }
     }
 }

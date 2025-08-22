@@ -1,4 +1,4 @@
-#if COM_UNITY_MODULES_PHYSICS
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -340,7 +340,6 @@ namespace Unity.Netcode.RuntimeTests
     internal class RigidbodyContactEventManagerTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 1;
-
 
         private GameObject m_RigidbodyContactEventManager;
 

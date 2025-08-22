@@ -1,35 +1,19 @@
-# About Netcode for GameObjects
+# Netcode for GameObjects
 
-Netcode for GameObjects is a Unity package that provides networking capabilities to GameObject & MonoBehaviour workflows.
+Netcode for GameObjects is a high-level networking library built for Unity for you to abstract networking logic. You can send GameObjects and world data across a networking session to many players at once. With Netcode for GameObjects, you can focus on building your game instead of low-level protocols and networking frameworks.
 
-## Guides
+## Before you begin
 
-See guides below to install Unity Netcode for GameObjects, set up your project, and get started with your first networked game:
+Netcode for GameObjects supports the following versions:
 
-- [Documentation](https://docs-multiplayer.unity3d.com/netcode/current/about)
-- [Installation](https://docs-multiplayer.unity3d.com/netcode/current/installation)
-- [First Steps](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/get-started-ngo)
-- [API Reference](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.2/api/index.html)
+- Unity 6.0+ and later
+- Mono and IL2CPP [Scripting Backends](https://docs.unity3d.com/Manual/scripting-backends.html)
 
-# Technical details
+Netcode for GameObjects supports the following platforms:
 
-## Requirements
-
-Netcode for GameObjects targets the following Unity versions:
-- Unity 2021.3 (LTS), 2022.3 (LTS) and 2023.2
-
-On the following runtime platforms:
-- Windows, MacOS, and Linux
+- Windows, macOS, and Linux
 - iOS and Android
-- Most closed platforms, such as consoles. Contact us for more information about specific closed platforms.
-
-## Document revision history
-
-|Date|Reason|
-|---|---|
-|March 10, 2021|Document created. Matches package version 0.1.0|
-|June 1, 2021|Update and add links for additional content. Matches patch version 0.1.0 and hotfixes.|
-|June 3, 2021|Update document to acknowledge Unity min version change. Matches package version 0.2.0|
-|August 5, 2021|Update product/package name|
-|September 9,2021|Updated the links and name of the file.|
-|April 20, 2022|Updated links|
+- XR platforms running on Windows, Android, and iOS operating systems
+- Most [**closed platforms**](https://unity.com/platform-installation), such as consoles. Contact us for more information about specific closed platforms.
+  - When working with consoles (such as PlayStation, Xbox, or Nintendo Switch), there may be Netcode-specific policies you should be aware of while testing and before launching your game live. Refer to the console's internal documentation for more information. This content is typically protected by NDA.
+- WebGL (requires Netcode for GameObjects 1.2.0+ and Unity Transport 2.0.0+)

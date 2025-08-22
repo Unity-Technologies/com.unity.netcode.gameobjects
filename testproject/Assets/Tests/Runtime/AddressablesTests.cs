@@ -39,6 +39,12 @@ namespace TestProject.RuntimeTests
             ShutdownAndCleanUp();
         }
 
+        // TODO: [CmbServiceTests] Adapt to run with the service
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         private IEnumerator LoadAsset(AssetReferenceGameObject asset, NetcodeIntegrationTestHelpers.ResultWrapper<GameObject> prefab)
         {
             var handle = asset.LoadAssetAsync();

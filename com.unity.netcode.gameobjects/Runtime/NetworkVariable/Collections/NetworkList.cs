@@ -428,7 +428,7 @@ namespace Unity.Netcode
         public void Add(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 LogWritePermissionError();
                 return;
@@ -455,7 +455,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 LogWritePermissionError();
                 return;
@@ -493,7 +493,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 LogWritePermissionError();
                 return false;
@@ -542,7 +542,7 @@ namespace Unity.Netcode
         public void Insert(int index, T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 LogWritePermissionError();
                 return;
@@ -578,7 +578,7 @@ namespace Unity.Netcode
         public void RemoveAt(int index)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkManager.LocalClientId))
+            if (CannotWrite)
             {
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
@@ -610,13 +610,20 @@ namespace Unity.Netcode
             set
             {
                 // check write permissions
-                if (!CanClientWrite(m_NetworkManager.LocalClientId))
+                if (CannotWrite)
                 {
                     LogWritePermissionError();
                     return;
                 }
 
                 var previousValue = m_List[index];
+
+                // Only trigger an event if the value has changed
+                if (NetworkVariableSerialization<T>.AreEqual(ref previousValue, ref value))
+                {
+                    return;
+                }
+
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
@@ -629,6 +636,24 @@ namespace Unity.Netcode
 
                 HandleAddListEvent(listEvent);
             }
+        }
+
+        /// <summary>
+        /// Gets a **zero‑allocation**, <see cref="NativeArray{T}.ReadOnly"/> view over the current
+        /// elements of this <see cref="NetworkList{T}"/>.
+        /// </summary>
+        /// <remarks>
+        /// The returned array stays valid **only until** the list is mutated (add, remove,
+        /// clear, resize) or <see cref="Dispose()"/> is called on the container.  Continuing to use
+        /// the array after it is invalid will result in undefined behaviour;
+        /// callers are responsible for ensuring a safe lifetime.
+        /// </remarks>
+        /// <returns>
+        /// A <see cref="NativeArray{T}.ReadOnly"/> reference that shares the same backing memory as this list.
+        /// </returns>
+        public NativeArray<T>.ReadOnly AsNativeArray()
+        {
+            return m_List.AsReadOnly();
         }
 
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)

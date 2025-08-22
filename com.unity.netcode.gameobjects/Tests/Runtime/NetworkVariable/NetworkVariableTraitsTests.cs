@@ -1,138 +1,180 @@
+using System.Collections;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using Object = UnityEngine.Object;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
     internal class NetworkVariableTraitsComponent : NetworkBehaviour
     {
         public NetworkVariable<float> TheVariable = new NetworkVariable<float>();
+        public NetworkVariable<float> AnotherVariable = new NetworkVariable<float>();
     }
 
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.DAHost)]
     internal class NetworkVariableTraitsTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 2;
+        protected override int NumberOfClients => 3;
 
-        protected override bool m_EnableTimeTravel => true;
-        protected override bool m_SetupIsACoroutine => false;
-        protected override bool m_TearDownIsACoroutine => false;
+        private StringBuilder m_ErrorLog = new StringBuilder();
+
+        public NetworkVariableTraitsTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         protected override void OnPlayerPrefabGameObjectCreated()
         {
             m_PlayerPrefab.AddComponent<NetworkVariableTraitsComponent>();
         }
 
-        public NetworkVariableTraitsComponent GetTestComponent()
+        public NetworkVariableTraitsComponent GetAuthorityComponent()
         {
-            return m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<NetworkVariableTraitsComponent>();
+            return GetAuthorityNetworkManager().LocalClient.PlayerObject.GetComponent<NetworkVariableTraitsComponent>();
         }
 
-        public NetworkVariableTraitsComponent GetServerComponent()
+        private bool AllAuthorityInstanceValuesMatch(float firstValue, float secondValue = 0.0f)
         {
-            foreach (var obj in Object.FindObjectsByType<NetworkVariableTraitsComponent>(FindObjectsSortMode.None))
+            m_ErrorLog.Clear();
+            var authorityComponent = GetAuthorityComponent();
+            if (authorityComponent.TheVariable.Value != firstValue || authorityComponent.AnotherVariable.Value != secondValue)
             {
-                if (obj.NetworkManager == m_ServerNetworkManager && obj.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
+                m_ErrorLog.Append($"[Client-{authorityComponent.OwnerClientId}][{authorityComponent.name}] Authority values did not match ({firstValue} | {secondValue})! " +
+                    $"TheVariable: {authorityComponent.TheVariable.Value} | AnotherVariable: {authorityComponent.AnotherVariable.Value}");
+                return false;
+            }
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (client.LocalClient.IsSessionOwner)
                 {
-                    return obj;
+                    continue;
+                }
+                if (!client.SpawnManager.SpawnedObjects.ContainsKey(authorityComponent.NetworkObjectId))
+                {
+                    m_ErrorLog.Append($"Failed to find {authorityComponent.name} instance on Client-{client.LocalClientId}!");
+                    return false;
+                }
+                var testComponent = client.SpawnManager.SpawnedObjects[authorityComponent.NetworkObjectId].GetComponent<NetworkVariableTraitsComponent>();
+                if (testComponent.TheVariable.Value != firstValue || testComponent.AnotherVariable.Value != secondValue)
+                {
+                    m_ErrorLog.Append($"[Client-{client.LocalClientId}][{testComponent.name}] Authority values did not match ({firstValue} | {secondValue})! " +
+                        $"TheVariable: {testComponent.TheVariable.Value} | AnotherVariable: {testComponent.AnotherVariable.Value}");
+                    return false;
                 }
             }
-
-            return null;
+            return true;
         }
 
-        [Test]
-        public void WhenNewValueIsLessThanThreshold_VariableIsNotSerialized()
+        [UnityTest]
+        public IEnumerator WhenNewValueIsLessThanThreshold_VariableIsNotSerialized()
         {
-            var serverComponent = GetServerComponent();
-            var testComponent = GetTestComponent();
-            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
 
-            serverComponent.TheVariable.Value = 0.05f;
-
-            TimeTravel(2, 120);
-
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
-        }
-        [Test]
-        public void WhenNewValueIsGreaterThanThreshold_VariableIsSerialized()
-        {
-            var serverComponent = GetServerComponent();
-            var testComponent = GetTestComponent();
-            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
-
-            serverComponent.TheVariable.Value = 0.15f;
-
-            TimeTravel(2, 120);
-
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
+            var timeoutHelper = new TimeoutHelper(1.0f);
+            var newValue = 0.05f;
+            authorityComponent.TheVariable.Value = newValue;
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
         }
 
-        [Test]
-        public void WhenNewValueIsLessThanThresholdButMaxTimeHasPassed_VariableIsSerialized()
+        [UnityTest]
+        public IEnumerator WhenNewValueIsGreaterThanThreshold_VariableIsSerialized()
         {
-            var serverComponent = GetServerComponent();
-            var testComponent = GetTestComponent();
-            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MaxSecondsBetweenUpdates = 2 });
-            serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
 
-            serverComponent.TheVariable.Value = 0.05f;
-
-            TimeTravel(1 / 60f * 119, 119);
-
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
-
-            TimeTravel(1 / 60f * 4, 4);
-
-            Assert.AreEqual(0.05f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0.05f, testComponent.TheVariable.Value); ;
+            var timeoutHelper = new TimeoutHelper(1.0f);
+            var newValue = 0.15f;
+            authorityComponent.TheVariable.Value = newValue;
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            AssertOnTimeout($"{m_ErrorLog}", timeoutHelper);
         }
 
-        [Test]
-        public void WhenNewValueIsGreaterThanThresholdButMinTimeHasNotPassed_VariableIsNotSerialized()
+        [UnityTest]
+        public IEnumerator WhenNewValueIsLessThanThresholdButMaxTimeHasPassed_VariableIsSerialized()
         {
-            var serverComponent = GetServerComponent();
-            var testComponent = GetTestComponent();
-            serverComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 2 });
-            serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
+            authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MaxSecondsBetweenUpdates = 1.0f });
+            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
 
-            serverComponent.TheVariable.Value = 0.15f;
+            var timeoutHelper = new TimeoutHelper(0.62f);
+            var newValue = 0.05f;
+            authorityComponent.TheVariable.Value = newValue;
+            // We expect a timeout for this condition
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
 
-            TimeTravel(1 / 60f * 119, 119);
-
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
-
-            TimeTravel(1 / 60f * 4, 4);
-
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
+            // Now we expect this to not timeout
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            AssertOnTimeout($"{m_ErrorLog}", timeoutHelper);
         }
 
-        [Test]
-        public void WhenNoThresholdIsSetButMinTimeHasNotPassed_VariableIsNotSerialized()
+        [UnityTest]
+        public IEnumerator WhenNewValueIsGreaterThanThresholdButMinTimeHasNotPassed_VariableIsNotSerialized()
         {
-            var serverComponent = GetServerComponent();
-            var testComponent = GetTestComponent();
-            serverComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 2 });
-            serverComponent.TheVariable.LastUpdateSent = m_ServerNetworkManager.NetworkTimeSystem.LocalTime;
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.CheckExceedsDirtinessThreshold = (in float value, in float newValue) => Mathf.Abs(newValue - value) >= 0.1;
+            authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
+            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
 
-            serverComponent.TheVariable.Value = 0.15f;
+            var timeoutHelper = new TimeoutHelper(0.62f);
+            var newValue = 0.15f;
+            authorityComponent.TheVariable.Value = newValue;
+            // We expect a timeout for this condition
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
 
-            TimeTravel(1 / 60f * 119, 119);
+            // Now we expect this to not timeout
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            AssertOnTimeout($"{m_ErrorLog}", timeoutHelper);
+        }
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0, testComponent.TheVariable.Value); ;
+        [UnityTest]
+        public IEnumerator WhenNoThresholdIsSetButMinTimeHasNotPassed_VariableIsNotSerialized()
+        {
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
+            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
 
-            TimeTravel(1 / 60f * 4, 4);
+            var timeoutHelper = new TimeoutHelper(0.62f);
+            var newValue = 0.15f;
+            authorityComponent.TheVariable.Value = newValue;
+            // We expect a timeout for this condition
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
 
-            Assert.AreEqual(0.15f, serverComponent.TheVariable.Value); ;
-            Assert.AreEqual(0.15f, testComponent.TheVariable.Value); ;
+            // Now we expect this to not timeout
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(newValue), timeoutHelper);
+            AssertOnTimeout($"{m_ErrorLog}", timeoutHelper);
+        }
+
+        /// <summary>
+        /// Integration test to validate that a <see cref="NetworkVariable{T}"/> with <see cref="NetworkVariableUpdateTraits"/>
+        /// does not cause other <see cref="NetworkVariable{T}"/>s to miss an update when they are dirty but the one with
+        /// traits is not ready to send an update.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator WhenNonTraitsIsDirtyButTraitsIsNotReadyToSend()
+        {
+            var authorityComponent = GetAuthorityComponent();
+            authorityComponent.TheVariable.SetUpdateTraits(new NetworkVariableUpdateTraits { MinSecondsBetweenUpdates = 1 });
+            authorityComponent.TheVariable.LastUpdateSent = authorityComponent.NetworkManager.NetworkTimeSystem.LocalTime;
+
+            var timeoutHelper = new TimeoutHelper(0.62f);
+            var firstValue = 0.15f;
+            var secondValue = 0.15f;
+            authorityComponent.TheVariable.Value = firstValue;
+            // We expect a timeout for this condition
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(firstValue, secondValue), timeoutHelper);
+            Assert.True(timeoutHelper.TimedOut, $"Non-authority instances recieved changes when they should not have!");
+
+            secondValue = 1.5f;
+            authorityComponent.AnotherVariable.Value = secondValue;
+            // Now we expect this to not timeout
+            yield return WaitForConditionOrTimeOut(() => AllAuthorityInstanceValuesMatch(firstValue, secondValue), timeoutHelper);
+            AssertOnTimeout($"{m_ErrorLog}", timeoutHelper);
         }
     }
 }
