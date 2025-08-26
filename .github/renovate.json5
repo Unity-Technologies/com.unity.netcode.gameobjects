@@ -16,8 +16,7 @@
     "com.unity.netcode.gameobjects/**/*",
     "Examples/**/*",
     "testproject/**/*",
-    "minimalproject/**/*",
-    "testproject-tools-integration/**/*"
+    "minimalproject/**/*"
   ],
   "packageRules": [
     // Run unity-upm-project and unity-upm-package only on weekends to reduce PR noise
