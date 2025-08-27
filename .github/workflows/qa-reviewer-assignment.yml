@@ -15,7 +15,8 @@ jobs:
     # This job only runs if the checkbox in the PR description exist and is checked.
     if: >
       contains(github.event.pull_request.body, '- [x] `Review automated tests`') ||
-      contains(github.event.pull_request.body, '- [x] `Execute manual tests`')
+      contains(github.event.pull_request.body, '- [x] `Execute manual tests`') ||
+      contains(github.event.pull_request.body, '- [x] `Provide feedback about the PR`')
     runs-on: unity-linux-runner
 
 
