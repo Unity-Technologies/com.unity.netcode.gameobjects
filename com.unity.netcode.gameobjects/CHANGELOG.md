@@ -22,6 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
+
 
 ### Security
 
