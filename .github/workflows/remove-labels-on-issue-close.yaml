@@ -10,7 +10,7 @@ jobs:
   remove_labels:
     name: Calculate and remove issue labels
     if: ${{ !github.event.issue.pull_request  }} # This is needed to distinguish from PRs (which we don't want to affect)
-    runs-on: ubuntu-latest
+    runs-on: unity-linux-runner
     permissions:
       issues: write
 
