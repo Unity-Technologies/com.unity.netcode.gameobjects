@@ -52,6 +52,7 @@ _Does the change require QA team to:_
 
 - [ ] `Review automated tests`?
 - [ ] `Execute manual tests`?
+- [ ] `Provide feedback about the PR`?
 
 If any boxes above are checked the QA team will be automatically added as a PR reviewer.
 
