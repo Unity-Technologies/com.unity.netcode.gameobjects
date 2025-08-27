@@ -13,7 +13,7 @@ on:
 
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on: unity-linux-runner
     permissions:
       issues: write
     
