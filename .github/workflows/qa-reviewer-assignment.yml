@@ -24,7 +24,7 @@ jobs:
       - name: 'Assign QA Team'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_COM_TOKEN }}
+          github-token: ${{ secrets.GH_TOKEN }}
           script: |
             github.rest.pulls.requestReviewers({
               owner: context.repo.owner,
