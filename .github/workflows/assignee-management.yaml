@@ -22,7 +22,7 @@ jobs:
   handle_assignment:
     name: Handle Issue Assignment Changes
     if: ${{ !github.event.issue.pull_request && github.event.issue.state == 'open' }}
-    runs-on: unity-linux-runner
+    runs-on: ubuntu-latest
     permissions:
       issues: write
 
@@ -54,7 +54,7 @@ jobs:
   handle_investigating_label:
     name: Handle Investigating Label Addition
     if: ${{ github.event.action == 'labeled' && github.event.label.name == 'stat:Investigating' && !github.event.issue.pull_request && github.event.issue.state == 'open' }}
-    runs-on: unity-linux-runner
+    runs-on: ubuntu-latest
     permissions:
       issues: write
 

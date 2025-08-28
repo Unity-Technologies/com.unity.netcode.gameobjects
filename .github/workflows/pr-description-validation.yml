@@ -18,7 +18,7 @@ on:
 
 jobs:
   pr-description-validation:
-    runs-on: unity-linux-runner
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
