@@ -17,7 +17,7 @@ jobs:
       contains(github.event.pull_request.body, '- [x] `Review automated tests`') ||
       contains(github.event.pull_request.body, '- [x] `Execute manual tests`') ||
       contains(github.event.pull_request.body, '- [x] `Provide feedback about the PR`')
-    runs-on: unity-linux-runner
+    runs-on: ubuntu-latest
 
 
     steps:
