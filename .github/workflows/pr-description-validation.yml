@@ -6,7 +6,7 @@
 # If any of the sections is missing, the workflow will fail and block the PR from merging, prompting the developer to add those sections to the PR description.
 # The workflow is configured to run when PR is created as well as when it is edited which also counts simple description edits.
 
-name: "NGO - PR Verification"
+name: "NGO - PR description validation"
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ on:
       - release/*
 
 jobs:
-  pr-verification:
+  pr-description-validation:
     runs-on: unity-linux-runner
     steps:
       - name: Checkout code

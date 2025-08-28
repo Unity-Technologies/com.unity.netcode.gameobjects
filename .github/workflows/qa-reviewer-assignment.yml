@@ -1,6 +1,6 @@
 # This workflow depend on the content of .github/pull_request_template.md file, which should contain the required sections that the script checks for
-# This also works in parallel with .github/workflows/pr-verification.yml which validates PR format
-# In contrast to .github/workflows/pr-verification.yml, this workflow is conditional and aims to ease the process of requesting QA review by automatically assigning the QA team  whenever a checkbox is marked
+# This also works in parallel with .github/workflows/pr-description-validation.yml which validates PR format
+# In contrast to .github/workflows/pr-description-validation.yml, this workflow is conditional and aims to ease the process of requesting QA review by automatically assigning the QA team  whenever a checkbox is marked
 
 # In case that the given checkboxes are marked the script will automatically add netcode-qa team as a reviewer.
 
