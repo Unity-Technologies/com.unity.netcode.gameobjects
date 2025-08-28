@@ -4,7 +4,7 @@ Replace this block with what this PR does and why. Describe what you'd like revi
 )
 
 ### Jira ticket
-_Link to related jira ticket ([Use the smart commits](https://support.atlassian.com/bitbucket-cloud/docs/use-smart-commits/)). Short version (e.g. DOTS-123) also works and gets auto-linked_
+_Link to related jira ticket ([Use the smart commits](https://support.atlassian.com/bitbucket-cloud/docs/use-smart-commits/)). Short version (e.g. MTT-123) also works and gets auto-linked_
 
 ### Changelog
 [//]: # (updated with all public facing changes  - API changes, UI/UX changes, behaviour changes, bug fixes. Remove if not relevant.)
