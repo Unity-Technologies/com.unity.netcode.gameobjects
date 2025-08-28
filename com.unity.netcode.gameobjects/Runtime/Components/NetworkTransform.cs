@@ -3003,7 +3003,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only non-authoritative instances should invoke this
         /// </remarks>
-        private void ApplyUpdatedState(NetworkTransformState newState)
+        internal void ApplyUpdatedState(NetworkTransformState newState)
         {
             // Set the transforms's synchronization modes
             InLocalSpace = newState.InLocalSpace;
@@ -3052,6 +3052,7 @@ namespace Unity.Netcode.Components
 
             if (!Interpolate)
             {
+                ApplyAuthoritativeState();
                 return;
             }
 
