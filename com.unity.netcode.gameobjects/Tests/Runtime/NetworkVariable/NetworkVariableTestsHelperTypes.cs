@@ -187,14 +187,13 @@ namespace Unity.Netcode.RuntimeTests
         public uint E;
         public long F;
         public ulong G;
-        public bool H;
-        public char I;
-        public float J;
-        public double K;
+        public char H;
+        public float I;
+        public double J;
 
         public bool Equals(HashableNetworkVariableTestStruct other)
         {
-            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I == other.I && J.Equals(other.J) && K.Equals(other.K);
+            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I.Equals(other.I) && J.Equals(other.J);
         }
 
         public override bool Equals(object obj)
@@ -215,7 +214,6 @@ namespace Unity.Netcode.RuntimeTests
             hashCode.Add(H);
             hashCode.Add(I);
             hashCode.Add(J);
-            hashCode.Add(K);
             return hashCode.ToHashCode();
         }
     }
@@ -229,14 +227,18 @@ namespace Unity.Netcode.RuntimeTests
         public uint E;
         public long F;
         public ulong G;
-        public bool H;
-        public char I;
-        public float J;
-        public double K;
+        public char H;
+        public float I;
+        public double J;
 
         public bool Equals(HashMapKeyStruct other)
         {
-            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I == other.I && J.Equals(other.J) && K.Equals(other.K);
+            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I.Equals(other.I) && J.Equals(other.J);
+        }
+
+        public override string ToString()
+        {
+            return $"{{A: {A}, B: {B}, C:{C}, D:{D}, E:{E}, F:{F}, G:{G}, H:{H}, I:{I}, J:{J}}}";
         }
 
         public override bool Equals(object obj)
@@ -257,7 +259,6 @@ namespace Unity.Netcode.RuntimeTests
             hashCode.Add(H);
             hashCode.Add(I);
             hashCode.Add(J);
-            hashCode.Add(K);
             return hashCode.ToHashCode();
         }
     }
@@ -271,14 +272,18 @@ namespace Unity.Netcode.RuntimeTests
         public uint E;
         public long F;
         public ulong G;
-        public bool H;
-        public char I;
-        public float J;
-        public double K;
+        public char H;
+        public float I;
+        public double J;
 
         public bool Equals(HashMapValStruct other)
         {
-            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I == other.I && J.Equals(other.J) && K.Equals(other.K);
+            return A == other.A && B == other.B && C == other.C && D == other.D && E == other.E && F == other.F && G == other.G && H == other.H && I.Equals(other.I) && J.Equals(other.J);
+        }
+
+        public override string ToString()
+        {
+            return $"{{A: {A}, B: {B}, C:{C}, D:{D}, E:{E}, F:{F}, G:{G}, H:{H}, I:{I}, J:{J}}}";
         }
 
         public override bool Equals(object obj)
@@ -299,7 +304,6 @@ namespace Unity.Netcode.RuntimeTests
             hashCode.Add(H);
             hashCode.Add(I);
             hashCode.Add(J);
-            hashCode.Add(K);
             return hashCode.ToHashCode();
         }
     }
@@ -381,6 +385,11 @@ namespace Unity.Netcode.RuntimeTests
             return obj is HashMapKeyClass other && Equals(other);
         }
 
+        public override string ToString()
+        {
+            return Data.ToString();
+        }
+
         public override int GetHashCode()
         {
             return Data.GetHashCode();
@@ -399,6 +408,11 @@ namespace Unity.Netcode.RuntimeTests
         public bool Equals(HashMapValClass other)
         {
             return Data.Equals(other.Data);
+        }
+
+        public override string ToString()
+        {
+            return Data.ToString();
         }
 
         public override bool Equals(object obj)

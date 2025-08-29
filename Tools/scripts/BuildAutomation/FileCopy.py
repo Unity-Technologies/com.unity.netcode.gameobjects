@@ -21,8 +21,8 @@ def main():
     target_dir = os.path.join(project_root, 'Assets', 'Scripts', 'Editor')
 
     # The source files for build automation
-    source_asmdef = 'Tools/CI/scripts/BuildAutomation/Unity.ProjectBuild.Editor.asmdef'
-    source_script = 'Tools/CI/scripts/BuildAutomation/BuilderScripts.cs'
+    source_asmdef = 'Tools/scripts/BuildAutomation/Unity.ProjectBuild.Editor.asmdef'
+    source_script = 'Tools/scripts/BuildAutomation/BuilderScripts.cs'
 
     print(f"Preparing build scripts for project at: {project_root}")
     print(f"Target editor script directory: {target_dir}")

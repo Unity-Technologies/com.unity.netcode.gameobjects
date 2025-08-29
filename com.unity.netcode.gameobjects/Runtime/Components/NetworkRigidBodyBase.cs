@@ -416,7 +416,7 @@ namespace Unity.Netcode.Components
             }
 #endif
 #if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
-           return m_InternalRigidbody.angularVelocity;
+            return m_InternalRigidbody.angularVelocity;
 #endif
 #if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
             return Vector3.forward * m_InternalRigidbody2D.angularVelocity;
@@ -1121,7 +1121,7 @@ namespace Unity.Netcode.Components
         /// - This instance can be viewed as the child.
         /// - The <param name="objectToConnectTo"/> can be viewed as the parent.
         /// <br/>
-        /// This is the recommended way, as opposed to parenting, to attached/detatch two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
+        /// This is the recommended way, as opposed to parenting, to attached/detach two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
         /// For more details on using <see cref="UnityEngine.FixedJoint"/> and <see cref="UnityEngine.FixedJoint2D"/>.
         /// <br/>
         /// This provides a simple joint solution between two rigid bodies and serves as an example. You can add different joint types by creating a customized/derived
@@ -1187,7 +1187,7 @@ namespace Unity.Netcode.Components
 
 #if COM_UNITY_MODULES_PHYSICS2D
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DetatchFromFixedJoint2D()
+        private void DetachFromFixedJoint2D()
         {
             if (FixedJoint2D == null)
             {
@@ -1206,7 +1206,7 @@ namespace Unity.Netcode.Components
 #endif
 #if COM_UNITY_MODULES_PHYSICS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DetatchFromFixedJoint3D()
+        private void DetachFromFixedJoint3D()
         {
             if (FixedJoint == null)
             {
@@ -1227,7 +1227,7 @@ namespace Unity.Netcode.Components
         /// this will detach from the fixed joint and destroy the fixed joint component.
         /// </summary>
         /// <remarks>
-        /// This is the recommended way, as opposed to parenting, to attached/detatch two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
+        /// This is the recommended way, as opposed to parenting, to attached/detach two rigid bodies to one another when <see cref="UseRigidBodyForMotion"/> is enabled.
         /// </remarks>
         public void DetachFromFixedJoint()
         {
@@ -1240,18 +1240,18 @@ namespace Unity.Netcode.Components
 #if COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
                 if (m_IsRigidbody2D)
                 {
-                    DetatchFromFixedJoint2D();
+                    DetachFromFixedJoint2D();
                 }
                 else
                 {
-                    DetatchFromFixedJoint3D();
+                    DetachFromFixedJoint3D();
                 }
 #endif
 #if COM_UNITY_MODULES_PHYSICS && !COM_UNITY_MODULES_PHYSICS2D
-                DetatchFromFixedJoint3D();
+                DetachFromFixedJoint3D();
 #endif
 #if !COM_UNITY_MODULES_PHYSICS && COM_UNITY_MODULES_PHYSICS2D
-                DetatchFromFixedJoint2D();
+                DetachFromFixedJoint2D();
 #endif
             }
         }

@@ -16,7 +16,7 @@ Boss Room wants the full history of inputs sent, not just the latest value. Ther
 
 ## Arrow's GameObject vs Fireball's VFX
 
-The archer's arrows use a standalone `GameObject` that's replicated over time. Since this object's movements are slow, the Boss Room development team decided to use state (via the `NetworkTransform`) to replicate the ability's status (in case a client connected while the arrow was flying).
+The archer's arrows use a standalone GameObject that's replicated over time. Since this object's movements are slow, the Boss Room development team decided to use state (via the NetworkTransform) to replicate the ability's status (in case a client connected while the arrow was flying).
 
 ```csharp reference
 https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2.2.0/Assets/Scripts/Gameplay/GameplayObjects/Projectiles/PhysicsProjectile.cs
@@ -32,7 +32,7 @@ https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/v2
 
 ## Breakable state
 
-Boss Room might have used a "break" `RPC` to set a breakable object as broken and play the appropriate visual effects. Applying the "replicate information when a player joins the game mid-game" rule of thumb, the Boss Room development team used `NetworkVariable`s instead. Boss Room uses the `OnValueChanged` callback on those values to play the visual effects (and an initial check when spawning the `NetworkBehaviour`).
+Boss Room might have used a "break" `RPC` to set a breakable object as broken and play the appropriate visual effects. Applying the "replicate information when a player joins the game mid-game" rule of thumb, the Boss Room development team used `NetworkVariable`s instead. Boss Room uses the `OnValueChanged` callback on those values to play the visual effects (and an initial check when spawning the NetworkBehaviour).
 
 ```csharp reference
 

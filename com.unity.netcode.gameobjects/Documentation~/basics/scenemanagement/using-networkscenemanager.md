@@ -17,19 +17,19 @@
  - In-Scene placed NetworkObject synchronization
 
 > [!NOTE]
-> In-Scene placed `NetworkObject`s can be used in many ways and are treated uniquely from that of dynamically spawned `NetworkObject`s.  An in-scene placed `NetworkObject` is a GameObject with a `NetworkObject` and typically at least one `NetworkBehaviour` component attached to a child of or the same `GameObject`.  it's recommended to read through all integrated scene management materials (this document, [Scene Events](scene-events.md), and [Timing Considerations](timing-considerations.md)) before learning about more advanced [In-Scene (placed) NetworkObjects](inscene-placed-networkobjects.md) topics.
+> In-Scene placed NetworkObjects can be used in many ways and are treated uniquely from that of dynamically spawned NetworkObjects.  An in-scene placed NetworkObject is a GameObject with a NetworkObject and typically at least one NetworkBehaviour component attached to a child of or the same GameObject.  it's recommended to read through all integrated scene management materials (this document, [Scene Events](scene-events.md), and [Timing Considerations](timing-considerations.md)) before learning about more advanced [In-Scene (placed) NetworkObjects](inscene-placed-networkobjects.md) topics.
 
 All of these scene management features (and more) are handled by the [`NetworkSceneManager`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkSceneManager.html).
 
 ### Accessing `NetworkSceneManager`
-The `NetworkSceneManager` lives within the `NetworkManager` and is instantiated when the `NetworkManager` is started.
+The `NetworkSceneManager` lives within the NetworkManager and is instantiated when the NetworkManager is started.
 `NetworkSceneManager` can be accessed in the following ways:
--  From within a `NetworkBehaviour` derived component, you can access it by using `NetworkManager.SceneManager`
--  From anything else that does not already have a reference to `NetworkManager`, you can access it using `NetworkManager.Singleton.SceneManager`.
+-  From within a NetworkBehaviour derived component, you can access it by using `NetworkManager.SceneManager`
+-  From anything else that does not already have a reference to NetworkManager, you can access it using `NetworkManager.Singleton.SceneManager`.
 
 **Here are some genral rules about accessing and using `NetworkSceneManager`:**
-- Don't try to access the `NetworkSceneManager` when the `NetworkManager` is shutdown (it won't exist).
-  - The `NetworkSceneManager` is only instantiated when a `NetworkManager` is started.
+- Don't try to access the `NetworkSceneManager` when the NetworkManager is shutdown (it won't exist).
+  - The `NetworkSceneManager` is only instantiated when a NetworkManager is started.
 - As a server:
   -  Any scene you want synchronized with currently connected or late joining clients **must** be loaded via the `NetworkSceneManager`
     - If you use the `UnityEngine.SceneManagement.SceneManager` during a netcode enabled game session, then those scenes won't be synchronized with currently connected clients.
@@ -42,11 +42,11 @@ The `NetworkSceneManager` lives within the `NetworkManager` and is instantiated 
       - _Scene validation is explained later in this document._
 
 > [!NOTE]
-> Don't try to access the `NetworkSceneManager` when the `NetworkManager` is shutdown.  The `NetworkSceneManager` is only instantiated when a `NetworkManager` is started. _This same rule is true for all Netcode systems that reside within the `NetworkManager`_.
+> Don't try to access the `NetworkSceneManager` when the NetworkManager is shutdown.  The `NetworkSceneManager` is only instantiated when a NetworkManager is started. _This same rule is true for all Netcode systems that reside within the NetworkManager_.
 
 ### Loading a Scene
 In order to load a scene, there are four requirements:
-1. The `NetworkManager` instance loading the scene must be a host or server.
+1. The NetworkManager instance loading the scene must be a host or server.
 2. The `NetworkSceneManager.Load` method is used to load the scene.
 3. The scene being loaded must be registered with your project's [build settings scenes in build list](https://docs.unity3d.com/Manual/BuildSettings.html)
 4. A Scene Event can't already be in progress.
@@ -87,7 +87,7 @@ public class ProjectSceneManager : NetworkBehaviour
   }
 }
 ```
-In the above code snippet, we have a `NetworkBehaviour` derived class, `ProjectSceneManager`, that has a public `SceneAsset` property (editor only property) that specifies the scene to load. In the `OnNetworkSpawn` method, we make sure that only the server loads the scene and we compare the `SceneEventProgressStatus` returned by the `NetworkSceneManager.Load` method to the `SceneEventProgressStatus.Started` status.  If we received any other status, then typically the name of the status provides you with a reasonable clue as to what the issue might be.
+In the above code snippet, we have a NetworkBehaviour derived class, `ProjectSceneManager`, that has a public `SceneAsset` property (editor only property) that specifies the scene to load. In the `OnNetworkSpawn` method, we make sure that only the server loads the scene and we compare the `SceneEventProgressStatus` returned by the `NetworkSceneManager.Load` method to the `SceneEventProgressStatus.Started` status.  If we received any other status, then typically the name of the status provides you with a reasonable clue as to what the issue might be.
 
 ### Scene Events and Scene Event Progress
 The term "Scene Event" refers to all subsequent scene events that transpire over time after a server has started a `SceneEventType.Load` ("load") or `SceneEventType.Unload` ("unload") Scene Event. For example, a server might load a scene additively while clients are connected. The following high-level overview provides you with a glimpse into the events that transpire during a load Scene Event(_it assumes both the server and clients have registered for scene event notifications_):
@@ -95,7 +95,7 @@ The term "Scene Event" refers to all subsequent scene events that transpire over
   - The server begins asynchronously loading the scene additively
     - The server will receive a local notification that the scene load event has started
   - Once the scene is loaded, the server spawns any in-scene placed `NetworkObjects` locally
-    - After spawning, the server will send the `SceneEventType.Load` message to all connected clients along with information about the newly instantiated and spawned `NetworkObject`s.
+    - After spawning, the server will send the `SceneEventType.Load` message to all connected clients along with information about the newly instantiated and spawned NetworkObjects.
     - The server will receive a local `SceneEventType.LoadComplete` event
       - This only means the server is done loading and spawning `NetworkObjects` instantiated by the scene being loaded.
 - The clients receive the scene event message for the `SceneEventType.Load` event and begin processing it.
@@ -134,7 +134,7 @@ Typically, this is used on the server side to receive notifications for every sc
 Typically, this is used with clients or components that might only need to be notified of a specific scene event type.  There are 9 scene event types and each one has a corresponding "single event type" callback handler in `NetworkSceneManager`.
 
 **As an example:**
-You might want to register for the `SceneEventType.LoadEventCompleted` scene event type to know, from a client perspective, that the server and all other clients have finished loading a scene.  This notification lets you know when you can start performing other netcode related actions on the newly loaded and spawned `NetworkObject`s.
+You might want to register for the `SceneEventType.LoadEventCompleted` scene event type to know, from a client perspective, that the server and all other clients have finished loading a scene.  This notification lets you know when you can start performing other netcode related actions on the newly loaded and spawned NetworkObjects.
 
 #### Scene Event Progress Status
 As we discussed in the earlier code example, it's important to check the status returned by `NetworkSceneManager.Load` to make sure your scene loading event has started.  The following is a list of all [SceneEventProgressStatus](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.SceneEventProgressStatus.html) `enum` values with some additional helpful information:
@@ -155,7 +155,7 @@ As we discussed in the earlier code example, it's important to check the status 
 
 ### Unloading a Scene
 Now that we understand the loading process, scene events, and can load a scene additively, the next step is understanding the integrated scene management scene unloading process.  to unload a scene, here are the requirements:
-1. The `NetworkManager` instance unloading the scene should have already been started in host or server mode and already loaded least one scene additively.<br/>
+1. The NetworkManager instance unloading the scene should have already been started in host or server mode and already loaded least one scene additively.<br/>
   1.1 Only additively loaded scenes can be unloaded.
   1.2 You can't unload the currently active scene (see info dialog below)
 2. The `NetworkSceneManager.Unload` method is used to unload the scene
@@ -347,7 +347,7 @@ You might find yourself in a scenario where you just need to dynamically generat
   - For this example we would return false any time `VerifySceneBeforeLoading` was invoked with the scene name "WorldCollisionGeometry".
 
  > [!NOTE]
- > This only works under the scenario where the dynamically generated scene is a server-host side only scene unless you write server-side code that sends enough information to a newly connected client to replicate the dynamically generated scene via RPC, a custom message, a `NetworkVariable`, or an in-scene placed NetworkObject that is in a scene, other than the dynamically generated one, and has a `NetworkBehaviour` component with an overridden `OnSynchronize` method that includes additional serialization information about how to construct the dynamically generated scene.  The limitation on this approach is that the scene should not contain already spawned `NetworkObject`s as those won't get automatically synchronized when a client first connects.
+ > This only works under the scenario where the dynamically generated scene is a server-host side only scene unless you write server-side code that sends enough information to a newly connected client to replicate the dynamically generated scene via RPC, a custom message, a `NetworkVariable`, or an in-scene placed NetworkObject that is in a scene, other than the dynamically generated one, and has a NetworkBehaviour component with an overridden `OnSynchronize` method that includes additional serialization information about how to construct the dynamically generated scene.  The limitation on this approach is that the scene should not contain already spawned NetworkObjects as those won't get automatically synchronized when a client first connects.
 
 ### Active Scene Synchronization
 Setting `NetworkSceneManager.ActiveSceneSynchronizationEnabled` to true on the host or server instance will automatically synchronize both connected and late joining clients with changes in the active scene by the server or host. When enabled, the server or host instance subscribes to the `SceneManager.activeSceneChanged` event and generates `SceneEventType.ActiveSceneChanged` messages when the active scene is changed. Disabling this property just means the server or host instance unsubscribes from the event and will no longer send `SceneEventType.ActiveSceneChanged` messages to keep client's synchronized with the server or host's currently active scene.
@@ -358,7 +358,7 @@ See Also: [Client Synchronization Mode](client-synchronization-mode.md)
 
 
 ### What Next?
-We have covered how to access the `NetworkSceneManager`, how to load and unload a scene, provided a basic overview on scene events and notifications, and even briefly discussed in-scene placed `NetworkObject`s.  You now have the fundamental building-blocks one needs to learn more advanced integrated scene management topics.
+We have covered how to access the `NetworkSceneManager`, how to load and unload a scene, provided a basic overview on scene events and notifications, and even briefly discussed in-scene placed NetworkObjects.  You now have the fundamental building-blocks one needs to learn more advanced integrated scene management topics.
 _We recommend proceeding to the next integrated scene management topic, "Client Synchronization Mode", in the link below._
 
 <!-- Explore the [Netcode Scene Management Golden Path](link) for step-by-step examples of additive scene loading and management. -->

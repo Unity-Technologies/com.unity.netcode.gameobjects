@@ -34,14 +34,14 @@ sequenceDiagram
 
 `ServerTime`:
 - For player objects with server authority (For example, by sending inputs to the server via RPCs)
-- In sync with position updates of `NetworkTransform` for all `NetworkObjects` where the client isn't authoritative over the transform.
+- In sync with position updates of NetworkTransform for all `NetworkObjects` where the client isn't authoritative over the transform.
 - For everything on non client controlled `NetworkObjects`.
 
 ## Examples
 
 ### Example 1: Using network time to synchronize environments
 
-Many games have environmental objects which move in a fixed pattern. By using network time these objects can be moved without having to synchronize their positions with a `NetworkTransform`.
+Many games have environmental objects which move in a fixed pattern. By using network time these objects can be moved without having to synchronize their positions with a NetworkTransform.
 
 For instance the following code can be used to create a moving elevator platform for a client authoritative game:
 
@@ -136,11 +136,11 @@ sequenceDiagram
 `}/>
 
 > [!NOTE]
-> Some components such as `NetworkTransform` add additional buffering. When trying to align an RPC event like in this example, an additional delay would need to be added.
+> Some components such as NetworkTransform add additional buffering. When trying to align an RPC event like in this example, an additional delay would need to be added.
 
 ## Network Ticks
 
-Network ticks are run at a fixed rate. The 'Tick Rate' field on the `NetworkManager` can be used to set the tick rate.
+Network ticks are run at a fixed rate. The 'Tick Rate' field on the NetworkManager can be used to set the tick rate.
 
 What does changing the network tick affect? Changes to `NetworkVariables` aren't sent immediately. Instead during each network tick changes to `NetworkVariables` are collected and sent out to other peers.
 

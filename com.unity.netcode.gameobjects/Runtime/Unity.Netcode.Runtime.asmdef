@@ -69,14 +69,14 @@
             "define": "COM_UNITY_MODULES_PHYSICS2D_LINEAR"
         },
         {
-            "name": "com.unity.transport",
-            "expression": "2.4.0",
-            "define": "UTP_TRANSPORT_2_4_ABOVE"
-        },
-        {
             "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.3.0a6",
+            "define": "UNITY_6000_3_0A6_OR_HIGHER"
         }
     ],
     "noEngineReferences": false

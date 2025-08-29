@@ -8,7 +8,7 @@ When a player Prefab has a script that dynamically adds a parent to its transfor
 
 Steps to reproduce the behavior:
 
-1. Set up basic networking game with at least one `GameObject` in a scene that isn't the player.
+1. Set up basic networking game with at least one GameObject in a scene that isn't the player.
 1. Add a script to the player Prefab that adds parenting to its transform via `gameObject.transform.SetParent()` in the `Start()` method.
 1. Launch one instance of the game as Host.
 1. Launch another instance and try to join as Client.
@@ -75,8 +75,8 @@ public class ParentPlayerToInSceneNetworkObject : NetworkBehaviour
 }
 ```
 
-You should place this script on your in-scene placed `NetworkObject` (that is, the first `GameObject`) and do the parenting from it to avoid any timing issues of when it's spawned or the like. It only runs the script on the server-host side since parenting is server authoritative.
+You should place this script on your in-scene placed NetworkObject (that is, the first GameObject) and do the parenting from it to avoid any timing issues of when it's spawned or the like. It only runs the script on the server-host side since parenting is server authoritative.
 
 
 > [!NOTE]
-> Remove any parenting code you might have had from your player Prefab before using the above script. Depending upon your project's goals, you might be parenting all players under the same in-scene placed `NetworkObject` or you might intend to have each player parenting unique.  If you want each player to be parented under a unique in-scene placed `NetworkObject` then you will need to have the same number of in-scene placed `NetworkObject`s as your maximum allowed players per game session.  The above example will only parent all players under the same in-scene placed `NetworkObject`.  You can extend the above example by migrating the scene event code into an in-scene placed `NetworkObject` that manages the parenting of players (i,e. name it something like `PlayerSpawnManager`) as they connect, make the `SetPlayerParent` method public, and add all in-scene placed `NetworkObject`s to a public list of GameObjects that the `PlayerSpawnManager` will reference and assign player's to as they connect while also freeing in-scene placed `NetworkObject`s as players disconnect during a game session.
+> Remove any parenting code you might have had from your player Prefab before using the above script. Depending upon your project's goals, you might be parenting all players under the same in-scene placed NetworkObject or you might intend to have each player parenting unique.  If you want each player to be parented under a unique in-scene placed NetworkObject then you will need to have the same number of in-scene placed NetworkObjects as your maximum allowed players per game session.  The above example will only parent all players under the same in-scene placed NetworkObject.  You can extend the above example by migrating the scene event code into an in-scene placed NetworkObject that manages the parenting of players (i,e. name it something like `PlayerSpawnManager`) as they connect, make the `SetPlayerParent` method public, and add all in-scene placed NetworkObjects to a public list of GameObjects that the `PlayerSpawnManager` will reference and assign player's to as they connect while also freeing in-scene placed NetworkObjects as players disconnect during a game session.
