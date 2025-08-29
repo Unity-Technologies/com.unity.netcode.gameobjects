@@ -66,7 +66,7 @@ For dynamically-allocated types with a value that isn't `null` (for example, man
 
 You can use `AreEqual` to determine if a value is different from the value that `Duplicate` cached. This avoids sending the same value multiple times. You can also use the previous value that `Duplicate` cached to calculate deltas to use in `ReadDelta` and `WriteDelta`.
 
-The type you use must be serializable according to the [support types list above](#supported-types). Each type needs its own serializer instantiated, so this step tells the codegen which types to create serializers for. Unity's code generator assumes that all `NetworkVariable` types exist as fields inside `NetworkBehaviour` types. This means that Unity only inspects fields inside `NetworkBehaviour` types to identify the types to create serializers for.
+The type you use must be serializable according to the [support types list above](#supported-types). Each type needs its own serializer instantiated, so this step tells the codegen which types to create serializers for. Unity's code generator assumes that all `NetworkVariable` types exist as fields inside NetworkBehaviour types. This means that Unity only inspects fields inside NetworkBehaviour types to identify the types to create serializers for.
 
 ## Custom NetworkVariable example
 
@@ -235,12 +235,12 @@ While the above example isn't the recommended way to synchronize a list where th
 
 You can test the code above by:
 - Using the above code with a project that includes Netcode for GameObjects v1.0 (or higher).
-- Adding the `TestMyCustomNetworkVariable` component to an in-scene placed `NetworkObject`.
+- Adding the `TestMyCustomNetworkVariable` component to an in-scene placed NetworkObject.
 - Creating a stand alone build and running that as a host or server.
 - Running the same scene within the Editor and connecting as a client.
-    - Once connected, you can then select the `GameObject` with the attached `NetworkObject` and `TestMyCustomNetworkVariable` components so it appears in the inspector view. There you can verify the `TestMyCustomNetworkVariable.CustomNetworkVariable` property was synchronized with the client (like in the screenshot below):
+    - Once connected, you can then select the GameObject with the attached NetworkObject and `TestMyCustomNetworkVariable` components so it appears in the inspector view. There you can verify the `TestMyCustomNetworkVariable.CustomNetworkVariable` property was synchronized with the client (like in the screenshot below):
     ![ScreenShot](../images/MyCustomNetworkVariableInspectorView.png)
 
 > [!NOTE]
-> You can't nest `NetworkVariable`s inside other `NetworkVariable` classes. This is because Netcode for GameObjects performs a code generation step to define serialization callbacks for each type it finds in a `NetworkVariable`. The code generation step looks for variables as fields of `NetworkBehaviour` types; it misses any `NetworkVariable`s declared anywhere else.
-> Instead of nesting `NetworkVariable`s inside other `NetworkVariable` classes, declare `NetworkVariable` or `NetworkList` properties within the same `NetworkBehaviour` within which you have declared your custom `NetworkVariableBase` implementation.
+> You can't nest `NetworkVariable`s inside other `NetworkVariable` classes. This is because Netcode for GameObjects performs a code generation step to define serialization callbacks for each type it finds in a `NetworkVariable`. The code generation step looks for variables as fields of NetworkBehaviour types; it misses any `NetworkVariable`s declared anywhere else.
+> Instead of nesting `NetworkVariable`s inside other `NetworkVariable` classes, declare `NetworkVariable` or `NetworkList` properties within the same NetworkBehaviour within which you have declared your custom `NetworkVariableBase` implementation.

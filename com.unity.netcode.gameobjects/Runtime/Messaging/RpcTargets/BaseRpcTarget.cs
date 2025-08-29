@@ -11,6 +11,8 @@ namespace Unity.Netcode
         /// The <see cref="NetworkManager"/> instance which can be used to handle sending and receiving the specific target(s)
         /// </summary>
         protected NetworkManager m_NetworkManager;
+
+        internal NetworkConnectionManager ConnectionManager;
         private bool m_Locked;
 
         internal void Lock()
@@ -26,6 +28,7 @@ namespace Unity.Netcode
         internal BaseRpcTarget(NetworkManager manager)
         {
             m_NetworkManager = manager;
+            ConnectionManager = m_NetworkManager.ConnectionManager;
         }
 
         /// <summary>

@@ -218,7 +218,7 @@ namespace Unity.Netcode
                     s_PrefabAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(s_PrefabStage.assetPath);
                 }
 
-                if (s_PrefabInstance.GlobalObjectIdHash != s_PrefabAsset.GlobalObjectIdHash)
+                if (s_PrefabAsset && s_PrefabInstance.GlobalObjectIdHash != s_PrefabAsset.GlobalObjectIdHash)
                 {
                     s_PrefabInstance.GlobalObjectIdHash = s_PrefabAsset.GlobalObjectIdHash;
                     // For InContext mode, we don't want to record these modifications (the in-scene GlobalObjectIdHash is serialized with the scene).
@@ -1616,7 +1616,7 @@ namespace Unity.Netcode
                         // Send destroy call
                         size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                         // Broadcast the destroy to all clients so they can update their observers list
-                        foreach (var client in NetworkManager.ConnectedClientsIds)
+                        foreach (var client in NetworkManager.ConnectionManager.ConnectedClientIds)
                         {
                             if (client == clientId || client == NetworkManager.LocalClientId)
                             {
@@ -2363,7 +2363,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.ServerClientId)
                         {
@@ -2382,7 +2382,7 @@ namespace Unity.Netcode
                     var maxCount = NetworkManager.ConnectedClientsIds.Count;
                     ulong* clientIds = stackalloc ulong[maxCount];
                     int idx = 0;
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.ServerClientId)
                         {
@@ -2604,6 +2604,12 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            // Invoke OnNetworkPreDespawn on all child behaviours
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                ChildNetworkBehaviours[i].InternalOnNetworkPreDespawn();
+            }
+
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
             NetworkManager.SpawnManager.RemoveNetworkObjectFromSceneChangedUpdates(this);
 

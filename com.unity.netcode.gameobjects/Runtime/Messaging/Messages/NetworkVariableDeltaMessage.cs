@@ -228,7 +228,7 @@ namespace Unity.Netcode
                     if (isServerAndDeltaForwarding)
                     {
                         m_ForwardUpdates = new Dictionary<ulong, List<int>>();
-                        foreach (var clientId in networkManager.ConnectedClientsIds)
+                        foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
                         {
                             if (clientId == context.SenderId || clientId == networkManager.LocalClientId || !networkObject.Observers.Contains(clientId))
                             {
