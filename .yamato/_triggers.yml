@@ -77,9 +77,13 @@ pull_request_trigger:
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_2022.3
   triggers:
+    # Note that PR tests will run ONLY if we are changing package/sample code. If changes are let's say docs only no tests will be triggered
+    # TODO: consider setting up and running tests from Examples/
+    # TODO: or docs only changes are spelling/link check
     expression: |-
       pull_request.comment eq "ngo" AND
-      NOT pull_request.changes.all match "**/Documentation~/**"
+      (pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
+      pull_request.changes.any match "testproject/**")
     cancel_old_ci: true
 
 # Run all tests on trunk on nightly basis.
