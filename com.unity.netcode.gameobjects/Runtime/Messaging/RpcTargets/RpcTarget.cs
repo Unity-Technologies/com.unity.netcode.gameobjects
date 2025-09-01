@@ -107,9 +107,11 @@ namespace Unity.Netcode
     public class RpcTarget
     {
         private NetworkManager m_NetworkManager;
+        private NetworkConnectionManager m_ConnectionManager;
         internal RpcTarget(NetworkManager manager)
         {
             m_NetworkManager = manager;
+            m_ConnectionManager = manager.ConnectionManager;
 
             Everyone = new EveryoneRpcTarget(manager);
             Owner = new OwnerRpcTarget(manager);
@@ -284,8 +286,9 @@ namespace Unity.Netcode
                     target = m_CachedProxyRpcTargetGroup;
                 }
             }
+
             target.Clear();
-            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in m_ConnectionManager.ConnectedClientIds)
             {
                 if (clientId != excludedClientId)
                 {
@@ -468,7 +471,7 @@ namespace Unity.Netcode
                 asASet.Add(clientId);
             }
 
-            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in m_ConnectionManager.ConnectedClientIds)
             {
                 if (!asASet.Contains(clientId))
                 {
@@ -557,13 +560,13 @@ namespace Unity.Netcode
             }
             target.Clear();
 
-            using var asASet = new NativeHashSet<ulong>(m_NetworkManager.ConnectedClientsIds.Count, Allocator.Temp);
+            using var asASet = new NativeHashSet<ulong>(m_ConnectionManager.ConnectedClientIds.Count, Allocator.Temp);
             foreach (var clientId in excludedClientIds)
             {
                 asASet.Add(clientId);
             }
 
-            foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in m_ConnectionManager.ConnectedClientIds)
             {
                 if (!asASet.Contains(clientId))
                 {

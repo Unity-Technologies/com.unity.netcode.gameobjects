@@ -1252,10 +1252,10 @@ namespace Unity.Netcode
 
             unsafe
             {
-                var maxCount = NetworkManager.ConnectedClientsIds.Count;
+                var maxCount = NetworkManager.ConnectionManager.ConnectedClientIds.Count;
                 ulong* clientIds = stackalloc ulong[maxCount];
                 int idx = 0;
-                foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                 {
                     if (Observers.Contains(clientId))
                     {

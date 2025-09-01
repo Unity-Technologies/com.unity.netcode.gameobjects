@@ -11,7 +11,7 @@
       },
       "InternalOnly": false,
       "NeverPublish": false,
-      "MaxEditorVersion": "",
+      "MaxEditorVersion": "6000.2",
       "coverageEnabled": false,
       "coverageCommands": [
         "generateAdditionalMetrics;generateHtmlReport;assemblyFilters:ASSEMBLY_NAME;pathReplacePatterns:@*,,**/PackageCache/,;sourcePaths:YAMATO_SOURCE_DIR/Packages;"
@@ -31,7 +31,7 @@
   },
   "publishing_job": ".yamato/wrench/promotion-jobs.yml#publish_netcode_gameobjects",
   "branch_pattern": "ReleaseSlash",
-  "wrench_version": "0.12.2.0",
+  "wrench_version": "1.1.0.0",
   "pvp_exemption_path": ".yamato/wrench/pvp-exemptions.json",
   "cs_project_path": "Tools/CI/NGO.Cookbook.csproj"
 }

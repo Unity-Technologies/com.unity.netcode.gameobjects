@@ -134,12 +134,12 @@ namespace Unity.Netcode
 
             if (!NetworkManager.IsServer)
             {
-                var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+                var peerClientIds = new NativeArray<ulong>(Math.Max(ConnectedClientIds.Count - 1, 0), Allocator.Temp);
                 // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
                 using var sentinel = peerClientIds;
 
                 var idx = 0;
-                foreach (var peerId in NetworkManager.ConnectedClientsIds)
+                foreach (var peerId in ConnectedClientIds)
                 {
                     if (peerId == NetworkManager.LocalClientId)
                     {

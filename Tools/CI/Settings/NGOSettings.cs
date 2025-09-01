@@ -23,6 +23,7 @@ public class NGOSettings : AnnotatedSettingsBase
             new PackageOptions()
             {
                 ReleaseOptions = new ReleaseOptions() { IsReleasing = true },
+                MaximumEditorVersion = "6000.2", // NGOv1.X will be deprecated in 6000.3+ so we won't run tests on higher editor versions
                 ValidationOptions = validationOptions
             }
         }
@@ -32,10 +33,8 @@ public class NGOSettings : AnnotatedSettingsBase
     {
         Wrench = new WrenchSettings(
             packagesRootPaths,
-            PackageOptions,
-            false,
-            false,
-            @"Tools\CI\NGO.Cookbook.csproj"); // There should be fix soon and there should be no need of specifying the path
+            PackageOptions
+        );
 
         Wrench.PvpProfilesToCheck = new HashSet<string>() { "supported" };
     }

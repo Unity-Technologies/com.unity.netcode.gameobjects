@@ -10,15 +10,32 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-### Added
-
-### Fixed
-
-- Removed allocation to the heap in NetworkBehaviourUpdate. (#3568)
-- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
 
 ### Changed
 
+
+### Deprecated
+
+
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [1.14.1] - 2025-08-17
+
+### Fixed
+
+- Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3601)
+- Fixed issue with allocation to the heap in NetworkBehaviourUpdate when there is nothing to be updated. (#3568)
+- Fixed issue where NetworkConfig.ConnectionData could cause the ConnectionRequestMessage to exceed the transport's MTU size and would result in a buffer overflow error. (#3565)
 
 ## [1.14.0] - 2025-07-21
 
@@ -156,9 +173,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where `NetworkRigidbody2D` would not properly change body type based on the instance's authority when spawned. (#2916)
 - Fixed issue where a `NetworkObject` component's associated `NetworkBehaviour` components would not be detected if scene loading is disabled in the editor and the currently loaded scene has in-scene placed `NetworkObject`s. (#2906)
 - Fixed issue where an in-scene placed `NetworkObject` with `NetworkTransform` that is also parented under a `GameObject` would not properly synchronize when the parent `GameObject` had a world space position other than 0,0,0. (#2895)
-
-### Changed
-
 
 ## [1.9.1] - 2024-04-18
 
