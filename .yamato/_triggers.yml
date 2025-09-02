@@ -46,8 +46,9 @@
 check_pr_issue_comments_for_trigger_keywords:
   name: Check PR for trigger comments of ngo or ignore. For example /ci ngo
   agent:
-    type: Unity::github::action
-    action_source: pr-keyword-check.yml
+    type: shell
+    commands:
+        - echo "This is a placeholder job. It exists only to gate PR merges based on issue comments"
   triggers:
     expression: |-
       pull_request.comment eq "ngo" OR
