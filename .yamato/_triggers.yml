@@ -41,20 +41,6 @@
 
 #-----------------------------------------------------------------------------------
 
-# Gates the merger of PRs as a pre-requisite. Runs when `/ci ngo` or `/ci ignore` is present as an issue comment
-# Notice that I needed this job to do "something" and that's why there is a placeholder GitHub action used
-# TODO: In the future we could have comment like "docs" or "project" to run a specific subset of tests
-check_pr_issue_comments_for_trigger_keywords:
-  name: Check PR for trigger comments of ngo or ignore. For example /ci ngo
-  agent:
-    type: shell
-    commands:
-        - echo "This is a placeholder job. It exists only to gate PR merges based on issue comments"
-  triggers:
-    expression: |-
-      pull_request.comment eq "ngo" OR
-      pull_request.comment eq "ignore"
-
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
 # In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
@@ -82,9 +68,8 @@ pull_request_trigger:
     # TODO: consider setting up and running tests from Examples/
     # TODO: or docs only changes are spelling/link check
     expression: |-
-      pull_request.comment eq "ngo" AND
-      (pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
-      pull_request.changes.any match "testproject/**")
+      pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
+      pull_request.changes.any match "testproject/**"
     cancel_old_ci: true
 
 # Run all tests on trunk on nightly basis.
