@@ -11,11 +11,13 @@
 # TRIGGER PATTERNS-------------------------------------------------------------------
   # Pull Request:
     # This test validates Standards, Package tests, Project tests and Desktop standalone tests to ensure that main platforms are covered
-    # Triggers on PRs to develop, develop, and release branches
-    # Focuses on critical validation paths that we should validate before merging PRs
-    # Cancels previous runs on new commits
-    # Excludes draft PRs
-    # Excludes running when changes are not touching package or testproject code (e.g. docs only changes)
+    # Focuses on critical validation paths that we should validate before merging PRs. It also cancels previous runs on new commits
+    # By default it's triggered if
+      # 1) PR targets develop, develop-2.0.0 or release branches
+      # 2) PR is not a draft
+      # 3) PR changes files in package or testproject folders (doesn't run on for example DOCS only changes)
+  
+    # Note that in other cases you can trigger it by writing a comment "/ci ngo" in the PR thread
 
   # Nightly:
     # This test validates same subset as pull_request_trigger with addition of mobile/console tests and webgl builds
@@ -67,12 +69,13 @@ pull_request_trigger:
     # TODO: consider setting up and running tests from Examples/
     # TODO: or docs only changes are spelling/link check
     expression: |-
-      (pull_request.target eq "develop" OR
+      pull_request.comment eq "ngo" OR
+      ((pull_request.target eq "develop" OR
       pull_request.target eq "develop-2.0.0" OR
       pull_request.target match "release/*") AND
       NOT pull_request.draft AND
       (pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
-      pull_request.changes.any match "testproject/**")
+      pull_request.changes.any match "testproject/**"))
     cancel_old_ci: true
 
 # Run all tests on 6000.2 (latest supported editor) on nightly basis.
