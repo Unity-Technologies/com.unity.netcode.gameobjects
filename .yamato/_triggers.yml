@@ -15,8 +15,7 @@
     # Focuses on critical validation paths that we should validate before merging PRs
     # Cancels previous runs on new commits
     # Excludes draft PRs
-    # Excludes running when changes ONLY touching documentation files
-    # Requires `/ci ngo` or `/ci ignore` comment to trigger the job. This was implemented and explained in https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/pull/3577
+    # Excludes running when changes are not touching package or testproject code (e.g. docs only changes)
 
   # Nightly:
     # This test validates same subset as pull_request_trigger with addition of mobile/console tests and webgl builds
