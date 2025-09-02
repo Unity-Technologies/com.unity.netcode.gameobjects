@@ -67,8 +67,12 @@ pull_request_trigger:
     # TODO: consider setting up and running tests from Examples/
     # TODO: or docs only changes are spelling/link check
     expression: |-
-      pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
-      pull_request.changes.any match "testproject/**"
+      (pull_request.target eq "develop" OR
+      pull_request.target eq "develop-2.0.0" OR
+      pull_request.target match "release/*") AND
+      NOT pull_request.draft AND
+      (pull_request.changes.any match "com.unity.netcode.gameobjects/**" OR
+      pull_request.changes.any match "testproject/**")
     cancel_old_ci: true
 
 # Run all tests on 6000.2 (latest supported editor) on nightly basis.
