@@ -572,11 +572,10 @@ namespace Unity.Netcode
             {
                 var message = new ChangeOwnershipMessage
                 {
+                    ChangeMessageType = isRequestApproval ? ChangeOwnershipMessage.ChangeType.RequestApproved : ChangeOwnershipMessage.ChangeType.OwnershipChanging,
                     NetworkObjectId = networkObject.NetworkObjectId,
                     OwnerClientId = networkObject.OwnerClientId,
                     DistributedAuthorityMode = NetworkManager.DistributedAuthorityMode,
-                    RequestApproved = isRequestApproval,
-                    OwnershipIsChanging = true,
                     RequestClientId = networkObject.PreviousOwnerId,
                     OwnershipFlags = (ushort)networkObject.Ownership,
                 };
@@ -618,6 +617,7 @@ namespace Unity.Netcode
             {
                 var message = new ChangeOwnershipMessage
                 {
+                    ChangeMessageType = ChangeOwnershipMessage.ChangeType.OwnershipChanging,
                     NetworkObjectId = networkObject.NetworkObjectId,
                     OwnerClientId = networkObject.OwnerClientId,
                 };
