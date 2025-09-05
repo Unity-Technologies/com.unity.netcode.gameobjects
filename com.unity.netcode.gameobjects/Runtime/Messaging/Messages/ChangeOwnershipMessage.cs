@@ -1,4 +1,3 @@
-
 using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
@@ -31,11 +30,11 @@ namespace Unity.Netcode
 
         internal enum ChangeType : byte
         {
-            OwnershipChanging = 1,
-            OwnershipFlagsUpdate = 2,
-            RequestOwnership = 4,
-            RequestApproved = 8,
-            RequestDenied = 10,
+            OwnershipChanging = 0x01,
+            OwnershipFlagsUpdate = 0x02,
+            RequestOwnership = 0x04,
+            RequestApproved = 0x08,
+            RequestDenied = 0x10,
         }
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
@@ -57,9 +56,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                writer.WriteValueSafe(ChangeMessageType);
-
-                if (ChangeMessageType is ChangeType.OwnershipFlagsUpdate or ChangeType.OwnershipChanging or ChangeType.RequestApproved)
+                if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate || ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved)
                 {
                     writer.WriteValueSafe(OwnershipFlags);
                 }
@@ -67,7 +64,7 @@ namespace Unity.Netcode
                 // When requesting, RequestClientId is the requestor
                 // When approving, RequestClientId is the owner that approved
                 // When denied, RequestClientId is the requestor
-                if (ChangeMessageType is ChangeType.RequestOwnership or ChangeType.RequestApproved or ChangeType.RequestDenied)
+                if (ChangeMessageType == ChangeType.RequestOwnership || ChangeMessageType == ChangeType.RequestApproved || ChangeMessageType == ChangeType.RequestDenied)
                 {
                     writer.WriteValueSafe(RequestClientId);
 
@@ -95,16 +92,15 @@ namespace Unity.Netcode
                 if (ClientIdCount > 0)
                 {
                     ClientIds = new ulong[ClientIdCount];
-                    var clientId = (ulong)0;
                     for (int i = 0; i < ClientIdCount; i++)
                     {
-                        ByteUnpacker.ReadValueBitPacked(reader, out clientId);
+                        ByteUnpacker.ReadValueBitPacked(reader, out ulong clientId);
                         ClientIds[i] = clientId;
                     }
                 }
 
                 reader.ReadValueSafe(out ChangeMessageType);
-                if (ChangeMessageType is ChangeType.OwnershipFlagsUpdate or ChangeType.OwnershipChanging or ChangeType.RequestApproved)
+                if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate || ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved)
                 {
                     reader.ReadValueSafe(out OwnershipFlags);
                 }
@@ -112,12 +108,12 @@ namespace Unity.Netcode
                 // When requesting, RequestClientId is the requestor
                 // When approving, RequestClientId is the owner that approved
                 // When denied, RequestClientId is the requestor
-                if (ChangeMessageType is ChangeType.RequestOwnership or ChangeType.RequestApproved or ChangeType.RequestDenied)
+                if (ChangeMessageType == ChangeType.RequestOwnership || ChangeMessageType == ChangeType.RequestApproved || ChangeMessageType == ChangeType.RequestDenied)
                 {
                     // We are receiving a request for ownership, or an approval or denial of our request.
                     reader.ReadValueSafe(out RequestClientId);
 
-                    if (ChangeMessageType is ChangeType.RequestDenied)
+                    if (ChangeMessageType == ChangeType.RequestDenied)
                     {
                         reader.ReadValueSafe(out OwnershipRequestResponseStatus);
                     }
@@ -159,7 +155,7 @@ namespace Unity.Netcode
             // If ownership is changing (either a straight change or a request approval), then run through the ownership changed sequence
             // Note: There is some extended ownership script at the bottom of HandleOwnershipChange
             // If not in distributed authority mode, ChangeMessageType will always be OwnershipChanging.
-            if (ChangeMessageType is ChangeType.OwnershipChanging or ChangeType.RequestApproved)
+            if (ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved)
             {
                 HandleOwnershipChange(ref context);
             }
@@ -181,17 +177,17 @@ namespace Unity.Netcode
             // Handle the extended ownership message types
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
 
-            if (ChangeMessageType is ChangeType.OwnershipFlagsUpdate)
+            if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate)
             {
                 // Just update the ownership flags
                 networkObject.Ownership = (NetworkObject.OwnershipStatus)OwnershipFlags;
             }
-            else if (ChangeMessageType is ChangeType.RequestOwnership)
+            else if (ChangeMessageType == ChangeType.RequestOwnership)
             {
                 // Requesting ownership, if allowed it will automatically send the ownership change message
                 networkObject.OwnershipRequest(RequestClientId);
             }
-            else if (ChangeMessageType is ChangeType.RequestDenied)
+            else if (ChangeMessageType == ChangeType.RequestDenied)
             {
                 networkObject.OwnershipRequestResponse((NetworkObject.OwnershipRequestResponseStatus)OwnershipRequestResponseStatus);
             }
@@ -201,7 +197,6 @@ namespace Unity.Netcode
         /// Handle the traditional change in ownership message type logic
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
         private void HandleOwnershipChange(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
@@ -244,9 +239,9 @@ namespace Unity.Netcode
                 // For all other clients that are neither the former or current owner, update the behaviours' properties
                 if (OwnerClientId != networkManager.LocalClientId && originalOwner != networkManager.LocalClientId)
                 {
-                    for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                    foreach (var childBehaviour in networkObject.ChildNetworkBehaviours)
                     {
-                        networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
+                        childBehaviour.UpdateNetworkProperties();
                     }
                 }
 
