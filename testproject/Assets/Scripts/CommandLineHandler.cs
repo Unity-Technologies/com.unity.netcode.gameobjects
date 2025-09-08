@@ -154,7 +154,7 @@ public class CommandLineProcessor
 
     private void SceneManager_sceneLoaded(Scene sceneLoaded, LoadSceneMode sceneLoadingMode)
     {
-        if (sceneLoaded.name.ToLower() == m_SceneToLoad)
+        if (string.Equals(sceneLoaded.name, m_SceneToLoad, StringComparison.OrdinalIgnoreCase))
         {
             SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
             var connectionModeButtons = GameObject.Find("ConnectionModeButtons");
