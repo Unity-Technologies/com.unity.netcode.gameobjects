@@ -1891,7 +1891,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// Waits until the specified condition returns true or a timeout occurs.
         /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
         /// </summary>
         /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
@@ -1905,6 +1905,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_InternalErrorLog.Clear();
                 return checkForCondition(m_InternalErrorLog);
             }, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="instanceNetworkObject">The <see cref="NetworkObject"/> to watch for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject instanceNetworkObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = instanceNetworkObject.GetComponent<NetworkObject>().NetworkObjectId;
+
+            bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObjectId}!");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients, timeOutHelper);
         }
 
         /// <summary>
@@ -2205,6 +2231,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             return gameObjectsSpawned;
         }
+
 
         /// <summary>
         /// Default constructor
