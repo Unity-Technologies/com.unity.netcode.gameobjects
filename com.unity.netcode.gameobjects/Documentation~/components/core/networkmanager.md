@@ -155,14 +155,16 @@ void DisconnectPlayer(NetworkObject player)
 
 ### Client disconnection notifications
 
-Both the client and the server can subscribe to the `NetworkManager.OnClientDisconnectCallback` event to be notified when a client is disconnected.
+Subscribe to the `NetworkManager.OnClientDisconnectCallback` event to receive notifications when a client is disconnected.
 
 **When disconnect notifications are triggered:**
-- Clients are notified when they're disconnected by the server.
+
+- Clients are notified when they're disconnected by the server or from the distributed authority session.
 - The server is notified when any client disconnects from the server, whether the server disconnects the client or the client disconnects itself.
 - Both the server and clients are notified when their network connection is unexpectedly disconnected (network interruption).
 
 **Client notification identifiers**
+
 - On the server-side, the client identifier parameter is the identifier of the client that disconnects.
 - On the client-side, the client identifier parameter is the identifier assigned to the client.
   - _The exception to this is when a client is disconnected before its connection is approved._
@@ -170,6 +172,7 @@ Both the client and the server can subscribe to the `NetworkManager.OnClientDisc
 You can also use the `NetworkManager.OnServerStopped` and `NetworkManager.OnClientStopped` callbacks to get local notifications when the server or client stops respectively.
 
 ### Connection notification manager example
+
 Below is one example of how you can provide client connect and disconnect notifications to any type of NetworkBehaviour or MonoBehaviour derived component.
 
 > [!NOTE]
