@@ -17,6 +17,12 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
+        // TODO: [CmbServiceTests] Remove this once MTTB-1570 is resolved.
+        protected override bool UseCMBService()
+        {
+            return false;
+        }
+
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
         }

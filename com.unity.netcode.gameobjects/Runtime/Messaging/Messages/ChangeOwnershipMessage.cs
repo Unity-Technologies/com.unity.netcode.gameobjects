@@ -56,6 +56,8 @@ namespace Unity.Netcode
                     }
                 }
 
+                writer.WriteValueSafe(ChangeMessageType);
+
                 if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate || ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved)
                 {
                     writer.WriteValueSafe(OwnershipFlags);
@@ -155,7 +157,7 @@ namespace Unity.Netcode
             // If ownership is changing (either a straight change or a request approval), then run through the ownership changed sequence
             // Note: There is some extended ownership script at the bottom of HandleOwnershipChange
             // If not in distributed authority mode, ChangeMessageType will always be OwnershipChanging.
-            if (ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved)
+            if (ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved || !networkManager.DistributedAuthorityMode)
             {
                 HandleOwnershipChange(ref context);
             }
@@ -312,7 +314,8 @@ namespace Unity.Netcode
                 {
                     message.OwnershipRequestResponseStatus = OwnershipRequestResponseStatus;
                     networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, RequestClientId);
-                    // We don't want the local DAHost's client to process this message, so exit early
+
+                    // We don't want the local DAHost's client to process this message
                     return false;
                 }
             }
@@ -322,29 +325,19 @@ namespace Unity.Netcode
                 if (OwnerClientId != networkManager.LocalClientId)
                 {
                     networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, OwnerClientId);
-                    // We don't want the local DAHost's client to process this message, so exit early
+
+                    // We don't want the local DAHost's client to process this message
                     return false;
                 }
-                // Otherwise, fall through and process the request.
             }
             else
             {
                 foreach (var clientId in clientList)
                 {
-                    if (clientId == networkManager.LocalClientId)
+                    // Don't forward to self or originating client
+                    if (clientId == networkManager.LocalClientId || clientId == senderId)
                     {
                         continue;
-                    }
-
-                    switch (ChangeMessageType)
-                    {
-                        // If ownership is changing and this is not an ownership request approval then ignore the SenderId
-                        case ChangeType.OwnershipChanging when senderId == clientId:
-                        // If it is just updating flags then ignore sending to the owner
-                        case ChangeType.OwnershipFlagsUpdate when clientId == OwnerClientId:
-                        // If it is a request approval, then ignore the RequestClientId
-                        case ChangeType.RequestApproved when clientId == RequestClientId:
-                            continue;
                     }
 
                     networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, clientId);
