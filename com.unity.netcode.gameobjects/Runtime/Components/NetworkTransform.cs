@@ -2074,6 +2074,10 @@ namespace Unity.Netcode.Components
                 // When SwitchTransformSpaceWhenParented is set we automatically set our local space based on whether
                 // we are parented or not.
                 networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
+                if (SwitchTransformSpaceWhenParented)
+                {
+                    InLocalSpace = networkState.InLocalSpace;
+                }
                 isDirty = true;
                 // If SwitchTransformSpaceWhenParented is not set, then we will want to teleport
                 networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
