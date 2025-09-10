@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode.Runtime;
-using UnityEditor;
 using UnityEngine;
 
 namespace Unity.Netcode.Transports.SinglePlayer
