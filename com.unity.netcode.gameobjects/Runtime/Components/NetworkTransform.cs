@@ -1895,10 +1895,6 @@ namespace Unity.Netcode.Components
                 // Mark the last tick and the old state (for next ticks)
                 m_OldState = m_LocalAuthoritativeNetworkState;
 
-                // Reset the teleport and explicit state flags after we have sent the state update.
-                // These could be set again in the below OnAuthorityPushTransformState virtual method
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-                m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 try
                 {
@@ -1909,6 +1905,12 @@ namespace Unity.Netcode.Components
                 {
                     Debug.LogException(ex);
                 }
+
+
+                // Reset the teleport and explicit state flags after we have sent the state update.
+                // These could be set again in the below OnAuthorityPushTransformState virtual method
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+                m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if
                 // we have already sent at least one unreliable delta state update. At this point in the callstack,
@@ -3598,12 +3600,13 @@ namespace Unity.Netcode.Components
 
             if (SwitchTransformSpaceWhenParented)
             {
-                if (CanCommitToTransform)
+                if (NetworkObject.HasParentNetworkObject(transform))
                 {
-                    if (NetworkObject.HasParentNetworkObject(transform))
-                    {
-                        InLocalSpace = true;
-                    }
+                    InLocalSpace = true;
+                }
+                else
+                {
+                    InLocalSpace = false;
                 }
                 // Always apply this if SwitchTransformSpaceWhenParented is set.
                 TickSyncChildren = true;
