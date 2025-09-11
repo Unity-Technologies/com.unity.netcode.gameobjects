@@ -33,7 +33,7 @@ class ReleaseConfig:
         self.changelog_path = 'com.unity.netcode.gameobjects/CHANGELOG.md'
         self.validation_exceptions_path = 'com.unity.netcode.gameobjects/ValidationExceptions.json'
         self.github_repo = 'Unity-Technologies/com.unity.netcode.gameobjects'
-        self.default_repo_branch = 'develop-2.0.0' # Changelog and package version change will be pushed to this branch
+        self.default_repo_branch = 'develop' # Changelog and package version change will be pushed to this branch
         self.yamato_project_id = '1201'
         self.command_to_run_on_release_branch = make_package_release_ready
 
@@ -56,14 +56,6 @@ class ReleaseConfig:
             {
                 "name": "BossRoom",
                 "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_BossRoom_project",
-            },
-            {
-                "name": "Asteroids",
-                "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_Asteroids_project",
-            },
-            {
-                "name": "SocialHub",
-                "jobDefinition": f".yamato%2Fproject-builders%2Fproject-builders.yml%23build_SocialHub_project",
             }
         ]
 
@@ -87,15 +79,6 @@ class ReleaseConfig:
                 ]
             },
             {
-                "job_name": "Build Sample for Windows with latest editor (trunk), burst ON, IL2CPP",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "on" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "win64" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "trunk" } # latest editor
-                ]
-            },
-            {
                 "job_name": "Build Sample for MacOS with minimal supported editor (2022.3), burst OFF, Mono",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "off" },
@@ -114,15 +97,6 @@ class ReleaseConfig:
                 ]
             },
             {
-                "job_name": "Build Sample for MacOS with latest editor (trunk), burst OFF, Mono",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "off" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "mac" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "mono" },
-                    { "key": "UNITY_VERSION", "value": "trunk" } # latest editor
-                ]
-            },
-            {
                 "job_name": "Build Sample for Android with minimal supported editor (2022.3), burst ON, IL2CPP",
                 "variables": [
                     { "key": "BURST_ON_OFF", "value": "on" },
@@ -138,15 +112,6 @@ class ReleaseConfig:
                     { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "android" },
                     { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
                     { "key": "UNITY_VERSION", "value": "6000.2" } # Editor that most our users will use (not alpha). Sometimes when testing on trunk we have weird editor issues not caused by us so the preference will be to test on latest editor that our users will use.
-                ]
-            },
-            {
-                "job_name": "Build Sample for Android with latest editor (trunk), burst ON, IL2CPP",
-                "variables": [
-                    { "key": "BURST_ON_OFF", "value": "on" },
-                    { "key": "PLATFORM_WIN64_MAC_ANDROID", "value": "android" },
-                    { "key": "SCRIPTING_BACKEND_IL2CPP_MONO", "value": "il2cpp" },
-                    { "key": "UNITY_VERSION", "value": "trunk" } # latest editor
                 ]
             }
         ]
