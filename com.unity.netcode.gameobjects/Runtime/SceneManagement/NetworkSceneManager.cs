@@ -829,7 +829,7 @@ namespace Unity.Netcode
         private void SceneManager_ActiveSceneChanged(Scene current, Scene next)
         {
             // If no clients are connected, then don't worry about notifications
-            if (!(NetworkManager.ConnectedClientsIds.Count > (NetworkManager.IsHost ? 1 : 0)))
+            if (!(NetworkManager.ConnectionManager.ConnectedClientIds.Count > (NetworkManager.IsHost ? 1 : 0)))
             {
                 return;
             }
@@ -850,7 +850,7 @@ namespace Unity.Netcode
                 var sceneEvent = BeginSceneEvent();
                 sceneEvent.SceneEventType = SceneEventType.ActiveSceneChanged;
                 sceneEvent.ActiveSceneHash = BuildIndexToHash[next.buildIndex];
-                SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
+                SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectionManager.ConnectedClientIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
                 EndSceneEvent(sceneEvent.SceneEventId);
             }
         }
@@ -1139,10 +1139,10 @@ namespace Unity.Netcode
             {
                 EventData = sceneEventData
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ConnectedClientsIds);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ConnectionManager.ConnectedClientIds);
 
             NetworkManager.NetworkMetrics.TrackSceneEventSent(
-                NetworkManager.ConnectedClientsIds,
+                NetworkManager.ConnectionManager.ConnectedClientIds,
                 (uint)sceneEventProgress.SceneEventType,
                 SceneNameFromHash(sceneEventProgress.SceneHash),
                 size);
@@ -1291,7 +1291,7 @@ namespace Unity.Netcode
                 // Server sends the unload scene notification after unloading because it will despawn all scene relative in-scene NetworkObjects
                 // If we send this event to all clients before the server is finished unloading they will get warning about an object being
                 // despawned that no longer exists
-                SendSceneEventData(sceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
+                SendSceneEventData(sceneEventId, NetworkManager.ConnectionManager.ConnectedClientIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
 
                 //Only if we are a host do we want register having loaded for the associated SceneEventProgress
                 if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && NetworkManager.IsHost)
@@ -2515,7 +2515,7 @@ namespace Unity.Netcode
             // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
-            SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
+            SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectionManager.ConnectedClientIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
             EndSceneEvent(sceneEvent.SceneEventId);
         }
 

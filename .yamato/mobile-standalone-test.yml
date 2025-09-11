@@ -48,6 +48,11 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% if platform.model %}
       model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
+  # Automatic UI interruption handling is available for iPhones running iOS 15 and above (models SE-Gen3 and 13). 
+  # It is enabled by default when using those devices. Otherwise, system alerts (e.g. “Local Network Access” permission alert, introduced in iOS 14) might cause disruptions during test execution.
+  # If building of the test app is done on a separate (“Build”) job, please make sure that that job has environment variable UNITY_HANDLEUIINTERRUPTIONS set to 1.
+  variables:
+    UNITY_HANDLEUIINTERRUPTIONS: 1
   commands:
     - unity-downloader-cli -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %} --wait
     - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library-on-rerun --build-only --timeout=1800
@@ -96,7 +101,7 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
 {% else %}
   
     # Run tests for non-Android devices
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --clean-library-on-rerun --timeout=3600 --device-id=%BOKKEN_DEVICE_ID%
 {% endif %}
   artifacts:
     logs:

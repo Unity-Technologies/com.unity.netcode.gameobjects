@@ -3,8 +3,9 @@
 NetcodeProjects:
     # Note that we are using internal Unity repo. This means that we may test with newest changes that are not yet released to our users (there are also public versions)
     # Note that for BossRoom 'main' branch supports NGOv1.X and 'develop' branch supports NGOv2.X
+    # Recently (19.08.2025) BossRoom got an update to 3.0.0 version which updated everything to U6 and NGOv2.X. Because of that I branched out from last commit that was supporting NGOv1.X for our playtest usage
     BossRoom:
         GithubRepo: "https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git"
-        branch: main
+        branch: playtest/ngo-1.x
         manifestPath: Packages/manifest.json
         projectPath: '.'
