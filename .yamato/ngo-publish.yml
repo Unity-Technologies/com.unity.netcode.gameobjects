@@ -9,14 +9,4 @@ ngo_release_preparation:
   commands:
     - pip install PyGithub
     - pip install GitPython
-    # This script checks if requirements for automated release preparations are fulfilled.
-    # It checks if it's the correct time to run the release automation (every 4th week, end of Netcode sprint), if there is anything in the CHANGELOG to release and if the release branch wasnb't already created.
-    - python Tools/scripts/ReleaseAutomation/verifyNetcodeReleaseConditions.py
-    # If the conditions are met, this script branches off, runs release.py that will set up Wrench, regenerate recipes, clean changelog etc and pushes the new release branch.
-    # By doing this we ensure that package is potentially release ready. Note that package version is already always corresponding to current package state
-    - python Tools/scripts/ReleaseAutomation/netcodeReleaseBranchCreation.py
-    # We still need to manually set up Packageworks but this script will already trigger required jobs so we don't need to wait for them.
-    # Additionally it will also trigger multiple builds with different configurations that we can use for Playtesting
-    - python Tools/scripts/ReleaseAutomation/triggerYamatoJobsForNetcodeReleaseValidation.py
-    # If the conditions are met, it will commit changelog update and patch package version bump (to reflect current state of the package on main branch)
-    - python Tools/scripts/ReleaseAutomation/commitNetcodeChangelogAndPackageVersionUpdates.py
+    - python Tools/CI/Netcode/ReleaseAutomation/run_release_preparation.py
