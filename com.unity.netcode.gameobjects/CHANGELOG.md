@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
 
 ### Changed
 
