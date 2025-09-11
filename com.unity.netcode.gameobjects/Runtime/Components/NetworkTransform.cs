@@ -1762,10 +1762,12 @@ namespace Unity.Netcode.Components
                 // for the non-authority side to be able to properly synchronize delta position updates.
                 CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
                 SynchronizeState.NetworkSerialize(serializer);
+                OnAuthorityPushTransformState(ref SynchronizeState);
             }
             else
             {
                 SynchronizeState.NetworkSerialize(serializer);
+                OnNetworkTransformStateUpdated(ref SynchronizeState, ref SynchronizeState);
             }
         }
 
