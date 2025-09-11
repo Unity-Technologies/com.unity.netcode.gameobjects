@@ -9,4 +9,4 @@ ngo_release_preparation:
   commands:
     - pip install PyGithub
     - pip install GitPython
-    - python Tools/CI/Netcode/ReleaseAutomation/run_release_preparation.py
+    - python Tools/scripts/ReleaseAutomation/run_release_preparation.py
