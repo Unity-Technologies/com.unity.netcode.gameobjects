@@ -29,23 +29,23 @@ UNRELEASED_CHANGELOG_SECTION_TEMPLATE = r"""
 ### Obsolete
 """
 
-def get_package_version_from_manifest(filepath):
+def get_package_version_from_manifest(package_manifest_path):
     """
     Reads the package.json file and returns the version specified in it.
     """
 
-    if not os.path.exists(filepath):
-        print("get_manifest_json_version function couldn't find a specified filepath")
+    if not os.path.exists(package_manifest_path):
+        print("get_manifest_json_version function couldn't find a specified manifest_path")
         return None
 
-    with open(filepath, 'rb') as f:
+    with open(package_manifest_path, 'rb') as f:
         json_text = f.read()
         data = json.loads(json_text)
 
     return data['version']
 
 
-def update_package_version_by_patch(changelog_file):
+def update_package_version_by_patch(package_manifest_path):
     """
     Updates the package version in the package.json file.
     This function will bump the package version by a patch.
@@ -53,26 +53,27 @@ def update_package_version_by_patch(changelog_file):
     The usual usage would be to bump package version during/after release to represent the "current package state" which progresses since the release branch was created
     """
 
-    if not os.path.exists(changelog_file):
-        raise FileNotFoundError(f"The file {changelog_file} does not exist.")
+    if not os.path.exists(package_manifest_path):
+        raise FileNotFoundError(f"The file {package_manifest_path} does not exist.")
 
-    with open(changelog_file, 'r', encoding='UTF-8') as f:
-        package_json = json.load(f)
+    with open(package_manifest_path, 'r', encoding='UTF-8') as f:
+        package_manifest = json.load(f)
 
-    version_parts = package_json['version'].split('.')
+    version_parts = get_package_version_from_manifest(package_manifest_path).split('.')
     if len(version_parts) != 3:
         raise ValueError("Version format is not valid. Expected format: 'major.minor.patch'.")
 
     # Increment the patch version
     version_parts[2] = str(int(version_parts[2]) + 1)
-    new_version = '.'.join(version_parts)
+    new_package_version = '.'.join(version_parts)
 
-    package_json['version'] = new_version
+    package_manifest['version'] = new_package_version
 
-    with open(changelog_file, 'w', encoding='UTF-8') as f:
-        json.dump(package_json, f, indent=4)
+    with open(package_manifest_path, 'w', encoding='UTF-8') as f:
+        json.dump(package_manifest, f, indent=4)
 
-    return new_version
+    return new_package_version
+
 
 def update_validation_exceptions(validation_file, package_version):
     """
@@ -99,12 +100,15 @@ def update_validation_exceptions(validation_file, package_version):
 
     # If no exceptions were updated, we do not need to write the file
     if not updated:
+        print(f"No validation exceptions were updated in {validation_file}.")
         return
 
     with open(validation_file, 'w', encoding='UTF-8', newline='\n') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=2)
         json_file.write("\n")  # Add newline cause Py JSON does not
-        print(f"  updated `{validation_file}`")
+        print(f"updated `{validation_file}`")
+
+
 
 def update_changelog(changelog_path, new_version, add_unreleased_template=False):
     """
