@@ -2,7 +2,7 @@
 name: Feature Request
 about: Suggest an idea for this project
 title: ''
-labels: stat:awaiting triage, type:feature
+labels: stat:awaiting-triage, stat:reply-needed, type:feature
 assignees: ''
 
 ---
