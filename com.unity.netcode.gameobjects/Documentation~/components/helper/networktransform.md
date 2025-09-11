@@ -178,7 +178,191 @@ When changing from world space to local space and vice versa, NetworkTransform c
 
 This means that non-authority instances could still have state updates pending to be processed when a NetworkObject is parented (or de-parented) and those buffered state values are still expressed as world (or local) space values. Since parenting is not network tick synchronized, the non-authority instances could still have the previous (world or local space) state updates remaining to be processed. This can create a visual "popping" result on the non-authority instance because it has been placed in a different Transform space while processing the previous Transform space state updates.
 
-To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and the NetworkTransform will automatically detect when its NetworkObject has changed parented status and convert the pending states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) when parenting.
+To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and the NetworkTransform will automatically detect when its associated NetworkObject has changed its parented status, automatically switch to local or world space (parented or not parented), and converts the pending interpolator(s) states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) space when parenting.
+
+Things to consider when using __Switch Transform Space When Parented__:
+
+- This property is not synchronized by the authority instance. This means that if you disable it on the authority instance but the default setting in your network prefab is to be enabled, the non-authority instances will still remain enabled. 
+  - You can opt to synchronize this setting via custom script or enabling and disabling it under other certain logical conditions in script (i.e. based on a condition and not synchronized by the authority).
+    - If you disable __Switch Transform Space When Parented__ and the associated NetworkObject gets parented and you manually switch from world to local space, then you will get the original parenting behavior where the interpolator is not updated when the switch occurs.
+    - You can opt to disable it while spawning and then make the default to enable it once finished spawning (i.e. within OnNetworkPostSpawn would be one way to handle this).
+- While you can still change  __In Local Space__ directly via script while  __Switch Transform Space When Parented__ is enabled, depending upon when you do this could impact the end results if you then proceed to parent the NetworkObject. 
+- When using __Switch Transform Space When Parented__, it is best to not make adjustments to the __NetworkTransform.InLocalSpace__ field and let the NetworkTransform handle this for you.
+
+
+> [!NOTE]
+> This feature's intended usage is handling smooth transitions between world and local space after the NetworkObject has been spawned and is moving around. It is not intended to solve any issues you might run across if parenting while in the middle of the spawn process.
+
+
+### Parenting
+
+NetworkObject parenting can become a complex when:
+- You are parenting a NetworkObject while it is in a state of motion.
+- You are parenting a NetworkObject while spawning (depending upon network topology and the desired authority motion model).
+
+#### When in a state of motion
+
+We just covered the __Switch Transform Space When Parented__ field and how it can help to smooth the transition between world and local spaces. This setting is specifically designed to handle converting all of the non-authority instance's currently queued __NetworkTransformState__ to the appropriate transform space. When parenting, the transform space is automatically switched to local (transform) space on the authority instance that will then send this change in the transform space on the next network tick.
+
+> [!NOTE]
+> __Switch Transform Space When Parented__ is designd to work with the Unity transform's world and local space capabilities. However, when using a __Rigidbody__ and setting the __NetworkRigidbody__ to use the rigid body for motion the position and rotation values being synchronized are based on the rigid body's position and rotation values and not the Unity transform values. The rigid body position and rotation values are separate PhysX values that are adjusted during the FixedUpdate update loop stage. Because PhysX has no concept of local space, it is not recommended to enable this field under the condition that the authority is synchronizing the rigid body's position and rotation values.
+
+#### When spawning
+
+If you would like to handle parenting during the spawn sequence of a NetworkObject, then it is highly recommended to create a custom __NetworkTransform__ that handles this prior to the __base.OnNetworkSpawn__ method being invoked. This assures that before the __NetworkTransform__ has initialized you have already applied the modifications (parenting and transform adjustments) so that when it does initialize the values are already been applied.
+
+```c#
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
+
+public class ParentAndAdjustOffset : NetworkTransform
+{
+    public GameObject ParentObject;
+    public Vector3 Offset;
+
+    /// <summary>
+    /// Prior to being initialized in OnNetworkSpawn, <see cref="NetworkTransform.CanCommitToTransform"/>
+    /// is not yet initialized. We can determine who is going to be the motion authority this way.
+    /// </summary>
+    private bool IsMotionAuthority()
+    {
+        return OnIsServerAuthoritative() && !NetworkManager.DistributedAuthorityMode ? IsServer : IsOwner;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        // Handle parenting and applying offset prior to 
+        // invoking the base OnNetworkSpawn method
+        if (IsMotionAuthority())
+        {
+            NetworkObject.TrySetParent(ParentObject, false);
+            if (!SwitchTransformSpaceWhenParented)
+            {
+                InLocalSpace = true;
+            }
+            transform.localPosition = Offset;
+        }
+        // NetworkTransform initializes
+        base.OnNetworkSpawn();
+    }
+}
+```
+The above works under most conditions, but it can have unexpected results when using:
+- A client-server network topology.
+- An owner authority motion model (when __Authority Mode__ is set to owner).
+- You are spawning with ownership.
+
+Since a client-server network topology requires the server (or host) to spawn the object, while the network prefab is spawning on the server side the authority will already have been applied to the NetworkTransform. To avoid issues with this particular scenario, it is recommended that you spawn the network prefab initially with the server as the motion authority and upon finishing the spawn sequence on the server changing ownership to the intended client like this:
+
+```c#
+using Unity.Netcode;
+using UnityEngine;
+
+public class ObjectSpawner : NetworkBehaviour
+{
+    public NetworkObject ObjectToSpawn;
+    // Consider the ParentObject as having already been spawned.
+    public NetworkObject ParentObject;
+
+    public Vector3 Offset;
+
+    public void SpawnObject(ulong ownerId)
+    {
+        var instance = Instantiate(ObjectToSpawn.gameObject).GetComponent<NetworkObject>();
+        var parentAndAdjustOffset = GetComponent<ParentAndAdjustOffset>();
+        parentAndAdjustOffset.ParentObject = ParentObject;
+        parentAndAdjustOffset.Offset = Offset;
+        // Both of these calls are collapsed into a single CreateObjectMessage
+        instance.Spawn();
+        instance.ChangeOwnership(ownerId);
+    }
+}
+```
+This results in the spawnd object running through the spawn sequence with the server as the authority to assure any changes are properly applied, and then immediately after invoking the __Spawn__ method it changes ownership. The net-result of these two scripts will generate a single __CreateObjectMessage__.
+
+Alternately, when working with an owner authority motion model the inclination might be to handle all of the parenting on the intended owning client side and so it might feel convenient to use __NetworkObject.SpawnWithOwnerhsip__. This results in a series of events that not only could end up with visual anomalies on the host side (if you are using a host vs a server) where the instance on the host side will have an initial spawn position and then after a period of time, driven by the latency between the owning client and the host, the parenting and offset values will be applied to the host-side instance. To further complicate matters, the host then forwards these messages to any other connected client that increases the latency from the moment the object was spawned to the moment it has been parented and an offset applied.
+
+The messages generated (under this specific scenario) would be:
+- (Server) 
+  - Spawns the object
+    - One __CreateObjectMessage__ is sent to all connected clients.
+- (Authority Client)
+  - Parents the object.
+    - One __ParentSyncMessage__ is sent to the host.
+      - The host then forwards this to the other clients.
+  - Applies an offset.
+    - At the end of the current tick when the parenting and offset was applied, a __NetworkTransformMessage__ is generated to update the object's transform values with the offset applied. The delay between the parenting message and this message could be close to the tick frequency (default would be ~33ms)
+      - Upon receiving this message, the host forwards it to the rest of the clients.
+
+As you can see, not only could you run into visual anomalies due to the time delta between when the object is spawned and the object is both parented and an offset applied which is all dependent upon the latency between the owning client and the host as well as the latency between the host and non-owning clients.
+
+To avoid this kind of timing issue, it is recommended (_in a client-server network topology when using an owner authoritative motion model_) to spawn with the server as the initial owner and then changing ownership aftwards where all of the actions (spawning, parenting, and applying a local space offset) are included in the single `CreateObjectMessage`. It reduces the bandwidth cost per spawn and avoids having to deal with the above latency driven timing issues.
+
+#### Other options
+
+A more recent addition to Netcode for GameObjects is the [AttachableBehaviour](../helper/attachablebehaviour.md) component that provides an alternate way to handle parenting without having to use the traditional __NetworkObject__ parenting approach. Additionally, you might contemplate using the distributed authority network topology since that allows clients to spawn objects locally where they can apply modifications (like they were the host) prior to the `CreateObjectMessage` being sent to all of the other connected clients.
+
+### Teleport and SetState
+_(__Teleport__ invokes __SetState__)_
+
+There are times when you might want to move an object over a reasonable distance but not have non-authority instances interpolate between the current transform's state and a modified transform state. You can use either __NetworkTransform.Teleport__ or __NetworkTransform.SetState__ to accomplish this. However, it is important to understand the intended usage for both of these methods.
+
+#### Intended usage
+- Invoke on already spawned objects.
+  - You can invoke these methods during the spawn process, but it is recommended to diretly apply the transform settings when spawning.
+- Invoking either of these methods consumes state updates for the current tick.
+  - This means that if you invoke either of these two methods multiple times in a single tick you will only get the current values of the transform. Calls to these two methods __do not__ stack!
+
+However, let's say you have a valid reason to do multiple Teleports in a short period of time. How would you do this? Since the the calls to these methods do not stack, you would need some way to be able to handle this.
+
+Once again, by creating a custom derived NetworkTransform class the authority side can be notified when it has pushed a state update (like a teleport) by deriving from __NetworkTransform.OnAuthorityPushTransformState__ lets you know when a __NetworkTransformState__ has been pushed on the authority instance.
+
+Here is an example of how you could teleport to multiple locations over a short period of time (with 1 network tick between each teleport):
+
+```c#
+using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
+
+public class TeleportMultiplePoints : NetworkTransform
+{
+    private List<Vector3> m_TeleportPositions = new List<Vector3>();
+
+    public void SetTeleportPoint(Vector3 point)
+    {
+        var teleportInProgress = m_TeleportPositions.Count > 0;
+        m_TeleportPositions.Add(point);
+        if (!teleportInProgress)
+        {
+            TeleportToNextPoint();
+        }
+    }
+
+    private void TeleportToNextPoint()
+    {
+        var position = m_TeleportPositions.First();
+        m_TeleportPositions.RemoveAt(0);
+        SetState(posIn: position, teleportDisabled: false);
+    }
+
+    /// <summary>
+    /// Invoked only on the authority side when a NetworkTransformState
+    /// has been pushed (sent).
+    /// </summary>
+    protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+    {
+        if (networkTransformState.WasTeleported && m_TeleportPositions.Count > 0)
+        {
+            TeleportToNextPoint();
+        }
+        base.OnAuthorityPushTransformState(ref networkTransformState);
+    }
+}
+```
+The over-all idea is that you should only perform 1 teleport (set state) per tick on an already spawned __NetworkObject__.
+
 
 ### Interpolation
 
