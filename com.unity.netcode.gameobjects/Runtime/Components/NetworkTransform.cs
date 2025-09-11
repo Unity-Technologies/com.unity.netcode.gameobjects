@@ -322,6 +322,16 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
+            /// When overriding <see cref="OnAuthorityPushTransformState(ref NetworkTransformState)"/>, if the state that was
+            /// pushed was a teleport then this will be set to true.
+            /// </summary>
+            /// <remarks>
+            /// Note that <see cref="IsTeleportingNextFrame"/> will be reset in the event you need to do
+            /// multiple teleports spread out accoss multiple ticks.
+            /// </remarks>
+            public bool WasTeleported { get; internal set; }
+
+            /// <summary>
             /// When set the <see cref="NetworkTransform"/> is uses interpolation.
             /// </summary>
             /// <remarks>
@@ -1897,6 +1907,13 @@ namespace Unity.Netcode.Components
                 // Mark the last tick and the old state (for next ticks)
                 m_OldState = m_LocalAuthoritativeNetworkState;
 
+                // Preserve our teleporting flag in order to know if the state pushed was a teleport
+                m_LocalAuthoritativeNetworkState.WasTeleported = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame;
+
+                // Reset the teleport and explicit state flags after we have sent the state update.
+                // These could be set again in the below OnAuthorityPushTransformState virtual method
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+                m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 try
                 {
@@ -1907,12 +1924,6 @@ namespace Unity.Netcode.Components
                 {
                     Debug.LogException(ex);
                 }
-
-
-                // Reset the teleport and explicit state flags after we have sent the state update.
-                // These could be set again in the below OnAuthorityPushTransformState virtual method
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-                m_LocalAuthoritativeNetworkState.ExplicitSet = false;
 
                 // The below is part of assuring we only send a frame synch, when sending unreliable deltas, if
                 // we have already sent at least one unreliable delta state update. At this point in the callstack,
