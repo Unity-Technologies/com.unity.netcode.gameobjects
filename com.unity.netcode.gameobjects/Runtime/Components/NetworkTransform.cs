@@ -1444,6 +1444,10 @@ namespace Unity.Netcode.Components
         /// This is synchronized by authority. During runtime, this should only be changed by the
         /// authoritative side. Non-authoritative instances will be overridden by the next
         /// authoritative state update.
+        ///
+        /// !! Note !! <br />
+        /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically
+        /// adjusted. It is not recommended adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> is enabled.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
@@ -1457,7 +1461,9 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
         /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
-        /// Does not auto-synchronize clients if changed on the authority instance during runtime (i.e. apply this setting in-editor).
+        /// This field is not auto-synchronize with non-authority clients if changed on the authority instance during runtime (i.e. apply this setting in-editor).
+        /// !! Note !! <br />
+        /// It is highly recommended to read the companion NetworkTransform documentation regarding this feature to avoid improper usage.
         /// </remarks>
         public bool SwitchTransformSpaceWhenParented = false;
 
@@ -3896,7 +3902,9 @@ namespace Unity.Netcode.Components
         /// This will override any changes made previously to the transform
         /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
-        ///  just the desired one(s)
+        ///  just the desired one(s).
+        /// !! Note !! <br />
+        /// It is not recommended to use this method during the spawn sequence. Refer to the NetworkTransform documentation for more information on the recommended usage.
         /// </summary>
         /// <param name="posIn">new position to move to. Can be null</param>
         /// <param name="rotIn">new rotation to rotate to. Can be null</param>
@@ -4033,10 +4041,12 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Teleport an already spawned object to the given values without interpolating.
+        /// !! Note !! <br />
+        /// It is not recommended to use this method during the spawn sequence. Refer to the NetworkTransform documentation for more information on the recommended usage.
         /// </summary>
         /// <remarks>
         /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
-        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
+        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn. <br />
         /// </remarks>
         /// <param name="newPosition">new position to move to.</param>
         /// <param name="newRotation">new rotation to rotate to.</param>
