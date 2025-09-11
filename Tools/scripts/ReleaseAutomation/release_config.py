@@ -45,7 +45,7 @@ class ReleaseConfig:
         self.release_branch_name = f"release/{self.package_version}" # Branch from which we want to release
         self.commit_message = f"Updated changelog and package version for Netcode in anticipation of v{self.package_version} release"
 
-        GITHUB_TOKEN_NAME = "NETCODE_GITHUB_CDS_TOKEN"
+        GITHUB_TOKEN_NAME = "NETCODE_GITHUB_TOKEN"
         YAMATO_API_KEY_NAME = "NETCODE_YAMATO_API_KEY"
         self.github_token = os.environ.get(GITHUB_TOKEN_NAME)
         self.yamato_api_token = os.environ.get(YAMATO_API_KEY_NAME)
