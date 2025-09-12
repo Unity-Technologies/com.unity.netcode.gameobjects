@@ -1943,7 +1943,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// When using a client-server or distributed authority network topology, you should take into consideration any components
-        /// that might require ownership checks while running through the spawn process. To avoid issues that could arise by initialy spawning
+        /// that might require ownership checks while running through the spawn process. To avoid issues that could arise by initially spawning
         /// without ownership, it is recommended to use <see cref="Spawn"/> first, so it is spawned as both the owner and the authority, and then use <see cref="ChangeOwnership(ulong)"/>
         /// to change the ownership to the intended client.<br />
         /// </remarks>
