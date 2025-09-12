@@ -1,10 +1,11 @@
 ﻿"""Automation for package release process."""
 
+import sys
+import os
+
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
-import sys
-import os
 from ReleaseAutomation.release_config import ReleaseConfig
 from Utils.git_utils import create_branch_execute_commands_and_push
 from Utils.verifyReleaseConditions import verifyReleaseConditions

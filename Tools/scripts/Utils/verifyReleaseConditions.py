@@ -11,13 +11,14 @@ The script will check the following conditions:
 """
 #!/usr/bin/env python3
 
+import sys
+import os
+
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ReleaseAutomation'))
 sys.path.insert(0, PARENT_DIR)
 
 import datetime
 import re
-import sys
-import os
 from release_config import ReleaseConfig
 
 def is_release_date(weekday, release_week_cycle, anchor_date):
