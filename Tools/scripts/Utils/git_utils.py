@@ -1,11 +1,12 @@
 """Helper class for Git repo operations."""
 
+import sys
+import os
+
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ReleaseAutomation'))
 sys.path.insert(0, PARENT_DIR)
 
 import subprocess
-import sys
-import os
 from git import Repo, Actor
 from github import GithubException
 from release_config import ReleaseConfig

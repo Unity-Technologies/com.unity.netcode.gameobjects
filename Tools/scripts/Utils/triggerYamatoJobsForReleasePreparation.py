@@ -7,11 +7,12 @@ Additionally the job also triggers build automation job that will prepare builds
 """
 #!/usr/bin/env python3
 
+import os
+import sys
+
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
-import os
-import sys
 import requests
 from ReleaseAutomation.release_config import ReleaseConfig
 from Utils.git_utils import get_latest_git_revision
