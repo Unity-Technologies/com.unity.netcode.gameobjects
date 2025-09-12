@@ -92,11 +92,13 @@ def update_validation_exceptions(validation_file, package_version):
         for exceptionElements in ["WarningExceptions", "ErrorExceptions"]:
             exceptions = data.get(exceptionElements)
 
-            if exceptions is not None:
-                for exception in exceptions:
-                    if 'PackageVersion' in exception:
-                        exception['PackageVersion'] = package_version
-                        updated = True
+            if exceptions is None:
+                continue
+
+            for exception in exceptions:
+                if 'PackageVersion' in exception:
+                    exception['PackageVersion'] = package_version
+                    updated = True
 
     # If no exceptions were updated, we do not need to write the file
     if not updated:
