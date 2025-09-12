@@ -146,7 +146,7 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
         changelog_text = re.sub(r'## \[Unreleased\]', new_changelog_entry, cleaned_content)
 
     # Accounting for the very top of the changelog format
-    header_end_pos = changelog_text.find('---', 1)
+    header_end_pos = changelog_text.find('(https://docs-multiplayer.unity3d.com).', 1)
     insertion_point = changelog_text.find('\n', header_end_pos)
 
     final_content = ""
