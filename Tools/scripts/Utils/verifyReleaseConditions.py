@@ -10,14 +10,14 @@ The script will check the following conditions:
     - If the release branch for the target release already exists, the script will not run.
 """
 #!/usr/bin/env python3
-import datetime
-import re
-import sys
-import os
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ReleaseAutomation'))
 sys.path.insert(0, PARENT_DIR)
 
+import datetime
+import re
+import sys
+import os
 from release_config import ReleaseConfig
 
 def is_release_date(weekday, release_week_cycle, anchor_date):
@@ -90,6 +90,6 @@ def verifyReleaseConditions(config: ReleaseConfig):
             sys.exit(1)
 
     except Exception as e:
-        print(f"\n--- ERROR: Release Verification failed ---", file=sys.stderr)
+        print("\n--- ERROR: Release Verification failed ---", file=sys.stderr)
         print(f"Reason: {e}", file=sys.stderr)
         sys.exit(1)

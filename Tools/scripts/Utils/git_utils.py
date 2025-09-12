@@ -1,13 +1,13 @@
 """Helper class for Git repo operations."""
+
+PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ReleaseAutomation'))
+sys.path.insert(0, PARENT_DIR)
+
 import subprocess
 import sys
 import os
 from git import Repo, Actor
 from github import GithubException
-
-PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../ReleaseAutomation'))
-sys.path.insert(0, PARENT_DIR)
-
 from release_config import ReleaseConfig
 
 def get_local_repo():
@@ -35,10 +35,10 @@ def get_latest_git_revision(branch_name):
         )
         return result.stdout.strip()
 
-    except FileNotFoundError:
-        raise Exception("Git command not found. Please ensure Git is installed and available in your PATH.")
+    except FileNotFoundError as exc:
+        raise Exception("Git command not found. Please ensure Git is installed and available in your PATH.") from exc
     except subprocess.CalledProcessError as e:
-        raise Exception(f"Failed to get the latest revision for branch '{branch_name}'.")
+        raise Exception(f"Failed to get the latest revision for branch '{branch_name}'.") from e
 
 def create_branch_execute_commands_and_push(config: ReleaseConfig):
     """
@@ -57,7 +57,7 @@ def create_branch_execute_commands_and_push(config: ReleaseConfig):
 
         if config.command_to_run_on_release_branch:
             print(f"\nExecuting command on branch '{config.release_branch_name}': {' '.join(config.command_to_run_on_release_branch.__name__)}")
-            config.command_to_run_on_release_branch(config.manifest_path, config.changelog_path, config.validation_exceptions_path, config.package_version)
+            config.command_to_run_on_release_branch(config.manifest_path, config.changelog_path, config.validation_exceptions_path, config.package_version, config.package_name_regex)
 
         repo.git.add('.yamato/') # regenerated jobs
         repo.git.add('Packages/') # for example changelog and package.json updates
@@ -72,6 +72,6 @@ def create_branch_execute_commands_and_push(config: ReleaseConfig):
         print(f"Successfully created, updated and pushed new branch: {config.release_branch_name}")
 
     except GithubException as e:
-        raise GithubException(f"An error occurred with the GitHub API: {e.status}", data=e.data)
+        raise GithubException(f"An error occurred with the GitHub API: {e.status}", data=e.data) from e
     except Exception as e:
-        raise Exception(f"An unexpected error occurred: {e}")
+        raise Exception(f"An unexpected error occurred: {e}") from e
