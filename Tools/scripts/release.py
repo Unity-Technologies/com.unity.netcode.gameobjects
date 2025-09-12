@@ -41,7 +41,7 @@ def make_package_release_ready(manifest_path, changelog_path, validation_excepti
 if __name__ == '__main__':
     manifest_path = 'com.unity.netcode.gameobjects/package.json'
     changelog_path = 'com.unity.netcode.gameobjects/CHANGELOG.md'
-    validation_exceptions_path = 'com.unity.netcode.gameobjects/ValidationExceptions.json'
+    validation_exceptions_path = './ValidationExceptions.json'
     package_version = get_package_version_from_manifest(manifest_path)
 
     make_package_release_ready(manifest_path, changelog_path, validation_exceptions_path, package_version)

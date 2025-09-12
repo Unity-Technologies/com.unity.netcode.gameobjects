@@ -58,11 +58,11 @@ def create_branch_execute_commands_and_push(config: ReleaseConfig):
 
         if config.command_to_run_on_release_branch:
             print(f"\nExecuting command on branch '{config.release_branch_name}': {' '.join(config.command_to_run_on_release_branch.__name__)}")
-            config.command_to_run_on_release_branch(config.manifest_path, config.changelog_path, config.validation_exceptions_path, config.package_version, config.package_name_regex)
+            config.command_to_run_on_release_branch(config.manifest_path, config.changelog_path, config.validation_exceptions_path, config.package_version)
 
-        repo.git.add('.yamato/') # regenerated jobs
-        repo.git.add('Packages/') # for example changelog and package.json updates
-        repo.git.add('Tools/CI/Monorepo.Cookbook/Settings') # Modified WrenchSettings
+        repo.git.add(config.changelog_path)
+        repo.git.add(config.manifest_path)
+        repo.git.add(config.validation_exceptions_path)
 
         author = Actor(config.commiter_name, config.commiter_email)
         committer = Actor(config.commiter_name, config.commiter_email)
