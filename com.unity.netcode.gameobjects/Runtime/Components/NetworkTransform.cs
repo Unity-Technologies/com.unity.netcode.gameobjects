@@ -4066,8 +4066,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Teleport an already spawned object to the given values without interpolating.
-        /// !! Note !! <br />
-        /// It is not recommended to use this method during the spawn sequence. Refer to the NetworkTransform documentation for more information on the recommended usage.
+        /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage.
         /// </summary>
         /// <remarks>
         /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
