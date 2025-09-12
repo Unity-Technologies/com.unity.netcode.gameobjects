@@ -3928,8 +3928,7 @@ namespace Unity.Netcode.Components
         /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
         ///  just the desired one(s).
-        /// !! Note !! <br />
-        /// It is not recommended to use this method during the spawn sequence. Refer to the NetworkTransform documentation for more information on the recommended usage.
+        /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage.
         /// </summary>
         /// <param name="posIn">new position to move to. Can be null</param>
         /// <param name="rotIn">new rotation to rotate to. Can be null</param>
