@@ -1,14 +1,15 @@
-﻿import sys
-import os
+﻿"""Automation for package release process."""
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
-from ReleaseAutomation.release_config import ReleaseConfig # nopep8
-from Utils.git_utils import create_branch_execute_commands_and_push # nopep8
-from Utils.verifyReleaseConditions import verifyReleaseConditions # nopep8
-from Utils.commitChangelogAndPackageVersionUpdates import commitChangelogAndPackageVersionUpdates # nopep8
-from Utils.triggerYamatoJobsForReleasePreparation import trigger_release_preparation_jobs # nopep8
+import sys
+import os
+from ReleaseAutomation.release_config import ReleaseConfig
+from Utils.git_utils import create_branch_execute_commands_and_push
+from Utils.verifyReleaseConditions import verifyReleaseConditions
+from Utils.commitChangelogAndPackageVersionUpdates import commitChangelogAndPackageVersionUpdates
+from Utils.triggerYamatoJobsForReleasePreparation import trigger_release_preparation_jobs
 
 def PrepareNetcodePackageForRelease():
     try:
@@ -27,7 +28,7 @@ def PrepareNetcodePackageForRelease():
         commitChangelogAndPackageVersionUpdates(config)
 
     except Exception as e:
-        print(f"\n--- ERROR: Netcode release process failed ---", file=sys.stderr)
+        print("\n--- ERROR: Netcode release process failed ---", file=sys.stderr)
         print(f"Reason: {e}", file=sys.stderr)
         sys.exit(1)
 

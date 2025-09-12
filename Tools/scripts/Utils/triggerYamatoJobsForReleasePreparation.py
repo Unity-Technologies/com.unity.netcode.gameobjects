@@ -6,13 +6,13 @@ The goal is to already trigger those when release branch is being created so aft
 Additionally the job also triggers build automation job that will prepare builds for the Playtest.
 """
 #!/usr/bin/env python3
-import os
-import sys
-import requests
 
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
+import os
+import sys
+import requests
 from ReleaseAutomation.release_config import ReleaseConfig
 from Utils.git_utils import get_latest_git_revision
 
@@ -44,7 +44,7 @@ def trigger_wrench_promotion_job_on_yamato(yamato_api_token, project_id, branch_
     }
 
     print(f"Triggering job on branch {branch_name}...\n")
-    response = requests.post(YAMATO_API_URL, headers=headers, json=data)
+    response = requests.post(YAMATO_API_URL, headers=headers, json=data, timeout=10)
 
     if response.status_code in [200, 201]:
         data = response.json()
@@ -109,7 +109,7 @@ def trigger_automated_builds_job_on_yamato(yamato_api_token, project_id, branch_
             }
 
             print(f"Triggering the build of {sample['name']} with a configuration '{config['job_name']}' on branch {branch_name}...\n")
-            response = requests.post(YAMATO_API_URL, headers=headers, json=data)
+            response = requests.post(YAMATO_API_URL, headers=headers, json=data, timeout=10)
 
             if not response.status_code in [200, 201]:
                 print(f"Failed to trigger job. Status: {response.status_code}", file=sys.stderr)
@@ -128,6 +128,6 @@ def trigger_release_preparation_jobs(config: ReleaseConfig):
         trigger_automated_builds_job_on_yamato(config.yamato_api_token, config.yamato_project_id, config.release_branch_name, revision_sha, config.yamato_samples_to_build, config.yamato_build_automation_configs)
 
     except Exception as e:
-        print(f"\n--- ERROR: Job failed ---", file=sys.stderr)
+        print("\n--- ERROR: Job failed ---", file=sys.stderr)
         print(f"Reason: {e}", file=sys.stderr)
         sys.exit(1)

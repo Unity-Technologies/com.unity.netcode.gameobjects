@@ -1,4 +1,6 @@
-﻿import datetime
+﻿"""Netcode configuration for the release process automation."""
+
+import datetime
 import sys
 import os
 from github import Github
@@ -7,8 +9,8 @@ from github import GithubException
 PARENT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 sys.path.insert(0, PARENT_DIR)
 
-from Utils.general_utils import get_package_version_from_manifest # nopep8
-from release import make_package_release_ready # nopep8
+from Utils.general_utils import get_package_version_from_manifest
+from release import make_package_release_ready
 
 class GithubUtils:
     def __init__(self, access_token, repo):
