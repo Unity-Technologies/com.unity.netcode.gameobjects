@@ -59,6 +59,7 @@ namespace Unity.Netcode.Components
             private const int k_ReliableSequenced = 0x00080000;
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
+            private const int k_SwitchTransformSpaceWhenParented = 0x0400000;
             // (Internal Debugging) When set each state update will contain a state identifier
             private const int k_TrackStateId = 0x10000000;
 
@@ -122,6 +123,19 @@ namespace Unity.Netcode.Components
             // Used during serialization
             private FastBufferReader m_Reader;
             private FastBufferWriter m_Writer;
+
+            /// <summary>
+            /// When set, non-authority instances will smoothly transition between
+            /// world and local space.
+            /// </summary>
+            public bool SwitchTransformSpaceWhenParented
+            {
+                get => GetFlag(k_SwitchTransformSpaceWhenParented);
+                internal set
+                {
+                    SetFlag(value, k_SwitchTransformSpaceWhenParented);
+                }
+            }
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> is operates in local space
@@ -518,7 +532,7 @@ namespace Unity.Netcode.Components
             internal void ClearBitSetForNextTick()
             {
                 // Clear everything but flags that should persist between state updates until changed by authority
-                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp | k_UseUnreliableDeltas;
+                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp | k_UseUnreliableDeltas | k_SwitchTransformSpaceWhenParented;
                 IsDirty = false;
             }
 
@@ -2059,30 +2073,15 @@ namespace Unity.Netcode.Components
             var isPositionDirty = isTeleportingAndNotSynchronizing ? networkState.HasPositionChange : false;
             var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
             var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
+            if (SwitchTransformSpaceWhenParented != networkState.SwitchTransformSpaceWhenParented)
+            {
+                //isDirty = true;
+                //forceState = true;
+                //networkState.IsTeleportingNextFrame = SwitchTransformSpaceWhenParented;
 
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
-
-            var positionThreshold = Vector3.one * PositionThreshold;
-            var rotationThreshold = Vector3.one * RotAngleThreshold;
-
-            // NSS: Disabling this for the time being
-            // TODO: Determine if we actually need this and if not remove this from NetworkRigidBodyBase
-            //if (m_UseRigidbodyForMotion)
-            //{
-            //    positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
-            //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
-            //}
-#else
-            var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
-            var positionThreshold = Vector3.one * PositionThreshold;
-            var rotationThreshold = Vector3.one * RotAngleThreshold;
-#endif
-            var rotAngles = rotation.eulerAngles;
-            var scale = transformToUse.localScale;
-            networkState.IsSynchronizing = isSynchronization;
+                networkState.InLocalSpace = SwitchTransformSpaceWhenParented ? transform.parent != null : InLocalSpace;
+            }
+            networkState.SwitchTransformSpaceWhenParented = SwitchTransformSpaceWhenParented;
 
             // All of the checks below, up to the delta position checking portion, are to determine if the
             // authority changed a property during runtime that requires a full synchronizing.
@@ -2107,6 +2106,31 @@ namespace Unity.Netcode.Components
                 // buffered values to the correct world or local space values.
                 forceState = SwitchTransformSpaceWhenParented;
             }
+
+
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+            var position = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : InLocalSpace ? transformToUse.localPosition : transformToUse.position;
+            var rotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+
+            var positionThreshold = Vector3.one * PositionThreshold;
+            var rotationThreshold = Vector3.one * RotAngleThreshold;
+
+            // NSS: Disabling this for the time being
+            // TODO: Determine if we actually need this and if not remove this from NetworkRigidBodyBase
+            //if (m_UseRigidbodyForMotion)
+            //{
+            //    positionThreshold = m_NetworkRigidbodyInternal.GetAdjustedPositionThreshold();
+            //    rotationThreshold = m_NetworkRigidbodyInternal.GetAdjustedRotationThreshold();
+            //}
+#else
+            var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
+            var rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            var positionThreshold = Vector3.one * PositionThreshold;
+            var rotationThreshold = Vector3.one * RotAngleThreshold;
+#endif
+            var rotAngles = rotation.eulerAngles;
+            var scale = transformToUse.localScale;
+            networkState.IsSynchronizing = isSynchronization;
 
             // Check for parenting when synchronizing and/or teleporting
             if (isSynchronization || networkState.IsTeleportingNextFrame)
@@ -3038,6 +3062,8 @@ namespace Unity.Netcode.Components
             UseHalfFloatPrecision = newState.UseHalfFloatPrecision;
             UseUnreliableDeltas = newState.UseUnreliableDeltas;
 
+            SwitchTransformSpaceWhenParented = newState.SwitchTransformSpaceWhenParented;
+
             if (SlerpPosition != newState.UsePositionSlerp)
             {
                 SlerpPosition = newState.UsePositionSlerp;
@@ -3827,7 +3853,6 @@ namespace Unity.Netcode.Components
         {
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
-
 
         internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
@@ -4781,6 +4806,6 @@ namespace Unity.Netcode.Components
 
     internal interface INetworkTransformLogStateEntry
     {
-        void AddLogEntry(NetworkTransform.NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
+        public void AddLogEntry(NetworkTransform.NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
     }
 }
