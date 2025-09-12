@@ -173,7 +173,7 @@ class ReleaseConfig:
             error_messages.append(f"Error: {GITHUB_TOKEN_NAME} environment variable not set.")
 
         if not self.yamato_api_token:
-            error_messages.append("Error: {YAMATO_API_KEY_NAME} environment variable not set.")
+            error_messages.append(f"Error: {YAMATO_API_KEY_NAME} environment variable not set.")
 
         # Initialize PyGithub and get the repository object
         self.github_manager = GithubUtils(self.github_token, self.github_repo)

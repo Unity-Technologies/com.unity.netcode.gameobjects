@@ -57,7 +57,7 @@ def create_branch_execute_commands_and_push(config: ReleaseConfig):
         new_branch.checkout()
 
         if config.command_to_run_on_release_branch:
-            print(f"\nExecuting command on branch '{config.release_branch_name}': {' '.join(config.command_to_run_on_release_branch.__name__)}")
+            print(f"\nExecuting command on branch '{config.release_branch_name}': {config.command_to_run_on_release_branch.__name__}")
             config.command_to_run_on_release_branch(config.manifest_path, config.changelog_path, config.validation_exceptions_path, config.package_version)
 
         repo.git.add(config.changelog_path)
