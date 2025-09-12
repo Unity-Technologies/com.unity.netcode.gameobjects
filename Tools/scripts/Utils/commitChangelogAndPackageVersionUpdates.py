@@ -37,7 +37,7 @@ def commitChangelogAndPackageVersionUpdates(config: ReleaseConfig):
             sys.exit(1)
 
         repo = get_local_repo()
-        repo.git.fetch()
+        repo.git.fetch('--prune', '--prune-tags')
         repo.git.checkout(config.default_repo_branch)
         repo.git.pull("origin", config.default_repo_branch)
 
