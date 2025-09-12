@@ -1,0 +1,12 @@
+ngo_release_preparation:
+  name: "NGO release preparation"
+  agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
+  triggers:
+    recurring:
+      - branch: develop-2.0.0 # We make new releases from this branch
+        frequency: weekly # Run at some point every Saturday. Note that it's restricted to every 4th Saturday inside the script
+  rerun: always
+  commands:
+    - pip install PyGithub
+    - pip install GitPython
+    - python Tools/scripts/ReleaseAutomation/run_release_preparation.py
