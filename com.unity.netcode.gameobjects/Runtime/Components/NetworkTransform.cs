@@ -336,12 +336,10 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When overriding <see cref="OnAuthorityPushTransformState(ref NetworkTransformState)"/>, if the state that was
-            /// pushed was a teleport then this will be set to true.
+            /// When overriding <see cref="OnAuthorityPushTransformState(ref NetworkTransformState)"/>, if the state that was pushed was a teleport then this will be set to true.
             /// </summary>
             /// <remarks>
-            /// Note that <see cref="IsTeleportingNextFrame"/> will be reset in the event you need to do
-            /// multiple teleports spread out accoss multiple ticks.
+            /// Note that <see cref="IsTeleportingNextFrame"/> will be reset in the event you need to do multiple teleports spread out accoss multiple ticks.
             /// </remarks>
             public bool WasTeleported { get; internal set; }
 
@@ -1457,11 +1455,10 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// This is synchronized by authority. During runtime, this should only be changed by the
         /// authoritative side. Non-authoritative instances will be overridden by the next
-        /// authoritative state update.
-        ///
-        /// !! Note !! <br />
-        /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically
-        /// adjusted. It is not recommended adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> is enabled.
+        /// authoritative state update.<br />
+        /// Note:<br />
+        /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically adjusted.
+        /// It is not recommended adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> is enabled.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
@@ -1907,7 +1904,6 @@ namespace Unity.Netcode.Components
                 m_UseRigidbodyForMotion = m_NetworkRigidbodyInternal.UseRigidBodyForMotion;
             }
 #endif
-
             // If the transform has deltas (returns dirty) or if an explicitly set state is pending
             if (m_LocalAuthoritativeNetworkState.ExplicitSet || CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize, forceState: settingState))
             {
@@ -3702,7 +3698,6 @@ namespace Unity.Netcode.Components
                 m_TargetScale = transform.localScale;
                 m_InternalCurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
-                Debug.Log($"[InternalInitialization][NonAuthority] m_InternalCurrentPosition {m_InternalCurrentPosition}");
             }
             OnInitialize(ref m_LocalAuthoritativeNetworkState);
         }
@@ -3974,8 +3969,8 @@ namespace Unity.Netcode.Components
         /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage.
         /// </summary>
         /// <remarks>
-        /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning. <br />
-        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn. <br />
+        /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning.<br />
+        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
         /// </remarks>
         /// <param name="newPosition">new position to move to.</param>
         /// <param name="newRotation">new rotation to rotate to.</param>
