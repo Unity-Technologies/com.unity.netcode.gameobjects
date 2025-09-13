@@ -1910,13 +1910,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
         /// </summary>
-        /// <param name="instanceNetworkObject">The <see cref="NetworkObject"/> to watch for.</param>
+        /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
         /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
-        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject instanceNetworkObject, TimeoutHelper timeOutHelper = null)
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ulong networkObjectId, TimeoutHelper timeOutHelper = null)
         {
-            var networkObjectId = instanceNetworkObject.GetComponent<NetworkObject>().NetworkObjectId;
-
             bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
             {
                 foreach (var client in m_NetworkManagers)
@@ -1931,6 +1929,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject networkObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = networkObject.GetComponent<NetworkObject>().NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
         }
 
         /// <summary>
