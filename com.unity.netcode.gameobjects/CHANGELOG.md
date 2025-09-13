@@ -6,30 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.5.1] - 2025-09-13
 
 ### Added
 
 - Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
 
-### Changed
-
-
-### Deprecated
-
-
-### Removed
-
-
 ### Fixed
 
 - Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.5.0] - 2025-08-17
 
