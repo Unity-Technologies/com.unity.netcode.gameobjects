@@ -4470,7 +4470,7 @@ namespace Unity.Netcode.Components
                 // If we had a previous parent...
                 if (m_PreviousParent && InLocalSpace)
                 {
-                    // Convert the queues to world space relative to the previous parent 
+                    // Convert the queues to world space relative to the previous parent
                     // so when we convert back to local space relative to the new parent
                     // the are all already in world space.
                     m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
