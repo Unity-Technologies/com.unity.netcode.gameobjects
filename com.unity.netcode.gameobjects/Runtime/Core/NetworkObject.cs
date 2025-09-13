@@ -2240,6 +2240,19 @@ namespace Unity.Netcode
             return true;
         }
 
+        /// <summary>
+        /// The root NetworkTransform is either the first one discovered or the one on the root
+        /// prefab GameObject instance that has the NetworkObject component attached to it.
+        ///
+        /// This is primarily used for the NetworkTransform parent directive update that allows
+        /// for as many parenting sequences to occur as can be pushed out to the maximum number of
+        /// in-flight messages (i.e. dozens upon dozens of parenting messages can be back-to-back).
+        /// </summary>
+        /// <remarks>
+        /// *** Requires <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/> to be enabled.
+        /// </remarks>
+        internal NetworkTransform RootNetworkTransform;
+
         private void OnTransformParentChanged()
         {
             if (!AutoObjectParentSync || NetworkManager.ShutdownInProgress)
@@ -2309,9 +2322,10 @@ namespace Unity.Netcode
             }
             var removeParent = false;
             var parentTransform = transform.parent;
+            var parentObject = (NetworkObject)null;
             if (parentTransform != null)
             {
-                if (!transform.parent.TryGetComponent<NetworkObject>(out var parentObject))
+                if (!transform.parent.TryGetComponent(out parentObject))
                 {
                     transform.parent = m_CachedParent;
                     AuthorityAppliedParenting = false;
@@ -2337,6 +2351,18 @@ namespace Unity.Netcode
             // This can be reset within ApplyNetworkParenting
             var authorityApplied = AuthorityAppliedParenting;
             ApplyNetworkParenting(removeParent);
+
+
+            /// If a root NetworkTransform is registered and this is the motion authority instance, then use the NetworkTransform to handle parenting.
+            /// Note: Using an owner authoritative motion model and enabling <see cref="NetworkObject.AllowOwnerToParent"/> allows clients to leverage
+            /// from the NetworkTransform parenting directive using a client-server network topology.
+            if (RootNetworkTransform != null && RootNetworkTransform.SwitchTransformSpaceWhenParented && RootNetworkTransform.CanCommitToTransform)
+            {
+                // Just let the root NetworkTransform know about the parenting action and it immediately queues the message to be sent.
+                // ** This is a NetworkTransform full synchronization event that does not require being tick synchronized. **
+                RootNetworkTransform.ParentingUpdate(parentObject, m_CachedWorldPositionStays);
+                return;
+            }
 
             var message = new ParentSyncMessage
             {
