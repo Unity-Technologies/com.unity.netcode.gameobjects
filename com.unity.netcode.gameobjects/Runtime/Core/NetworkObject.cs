@@ -2354,7 +2354,7 @@ namespace Unity.Netcode
 
 
             /// If a root NetworkTransform is registered and this is the motion authority instance, then use the NetworkTransform to handle parenting.
-            /// Note: Using an owner authoritative motion model and enabling <see cref="NetworkObject.AllowOwnerToParent"/> allows clients to leverage
+            /// Note: Using an owner authoritative motion model and enabling <see cref="AllowOwnerToParent"/> allows clients to leverage
             /// from the NetworkTransform parenting directive using a client-server network topology.
             if (RootNetworkTransform != null && RootNetworkTransform.SwitchTransformSpaceWhenParented && RootNetworkTransform.CanCommitToTransform)
             {
