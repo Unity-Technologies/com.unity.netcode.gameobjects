@@ -73,7 +73,15 @@ namespace Unity.Netcode
             else
             {
                 var position = writer.Position;
-                NetworkTransform.SerializeMessage(writer, targetVersion);
+                // Provides the source of the message (NetworkObject-->NetworkTransform : NetworkBehaviour).
+                BytePacker.WriteValueBitPacked(writer, NetworkTransform.NetworkObjectId);
+                BytePacker.WriteValueBitPacked(writer, (int)NetworkTransform.NetworkBehaviourId);
+
+                // Serialize the current local state.
+                writer.WriteNetworkSerializable(NetworkTransform.LocalAuthoritativeNetworkState);
+
+                // Write out any parenting directive associated with this update.
+                SerializeParent(writer);
                 BytesWritten = writer.Position - position;
             }
         }
@@ -163,22 +171,22 @@ namespace Unity.Netcode
             {
                 if (ownerAuthoritativeServerSide)
                 {
-                    var targetCount = 1;
-
-                    if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
-                    {
-                        ByteUnpacker.ReadValueBitPacked(reader, out targetCount);
-                    }
+                    var targetCount = networkObject.Observers.Count;
 
                     var targetIds = stackalloc ulong[targetCount];
 
                     if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
                     {
-                        var targetId = (ulong)0;
-                        for (int i = 0; i < targetCount; i++)
+                        var count = 0;
+                        foreach (var targetId in networkObject.Observers)
                         {
-                            ByteUnpacker.ReadValueBitPacked(reader, out targetId);
-                            targetIds[i] = targetId;
+                            targetIds[count] = targetId;
+                            count++;
+                            // Sanity check, this should never happen.
+                            if (count >= targetCount)
+                            {
+                                Debug.LogError($"[{nameof(NetworkTransformMessage)}] Exceeded total number of observers!");
+                            }
                         }
                     }
 

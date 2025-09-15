@@ -4493,38 +4493,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal void SerializeMessage(FastBufferWriter writer, int targetVersion)
-        {
-            var networkObject = NetworkObject;
-
-            // Provides the source of the message (NetworkObject-->NetworkTransform : NetworkBehaviour)
-            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
-            BytePacker.WriteValueBitPacked(writer, (int)NetworkBehaviourId);
-
-            // Serialzie the state
-            writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
-
-            // DA TODO: Update the CMB Service NetworkTransform protocol to
-            // handle this varying payload after the NetworkTransformState
-            // Serialzie any parenting directive
-            m_OutboundMessage.SerializeParent(writer);
-
-            if (m_CachedNetworkManager.DistributedAuthorityMode)
-            {
-                BytePacker.WriteValuePacked(writer, networkObject.Observers.Count - 1);
-
-                foreach (var targetId in networkObject.Observers)
-                {
-                    if (OwnerClientId == targetId)
-                    {
-                        continue;
-                    }
-                    BytePacker.WriteValuePacked(writer, targetId);
-                }
-            }
-
-        }
-
         /// <summary>
         /// Invoked by the authoritative instance to sends a <see cref="NetworkTransformMessage"/> containing the <see cref="NetworkTransformState"/>
         /// </summary>
