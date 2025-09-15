@@ -180,13 +180,13 @@ namespace Unity.Netcode
                         var count = 0;
                         foreach (var targetId in networkObject.Observers)
                         {
-                            targetIds[count] = targetId;
-                            count++;
+                            targetIds[count] = targetId;                            
                             // Sanity check, this should never happen.
                             if (count >= targetCount)
                             {
                                 Debug.LogError($"[{nameof(NetworkTransformMessage)}] Exceeded total number of observers!");
                             }
+                            count++;
                         }
                     }
 
