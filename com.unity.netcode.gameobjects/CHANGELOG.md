@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 
 ### Security
 
