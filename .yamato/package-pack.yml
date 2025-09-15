@@ -22,7 +22,7 @@
   # TODO: we should aim to replace target PVP profile from supported to gold
 
 #------------------------------------------------------------------------------------
-  
+
 {% for platform in test_platforms.desktop -%}
 package_pack_-_ngo_{{ platform.name }}:
   name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
@@ -37,7 +37,6 @@ package_pack_-_ngo_{{ platform.name }}:
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
   commands:
-    - python Tools/scripts/release.py # Needed to ensure that CHANGELOG is properly formatted for this test due to the fact that we have bumped package version (to properly perform vetting tests)
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
