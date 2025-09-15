@@ -10,7 +10,6 @@ vetting_test:
   name: MP Tools - Vetting Test (Win, {{editor}} LTS)
   agent: { type: Unity::VM, flavor: b1.large, image: package-ci/win11:v4 }
   commands:
-    - python Tools/scripts/release.py # Needed to ensure that CHANGELOG is properly formatted for this test
     - npm install -g "upm-ci-utils@stable" --registry https://artifactory.prd.it.unity3d.com/artifactory/api/npm/upm-npm
     - unity-downloader-cli --fast --wait --unity-version {{ editor }} --components editor --arch x64
     - upm-ci package pack --package-path com.unity.netcode.gameobjects
