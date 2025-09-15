@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor.Animations;
@@ -164,6 +165,7 @@ namespace Unity.Netcode.Components
     /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
     [AddComponentMenu("Netcode/Network Animator")]
+    [HelpURL(HelpUrls.NetworkAnimator)]
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
     {
         [Serializable]
