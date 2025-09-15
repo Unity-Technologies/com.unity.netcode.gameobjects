@@ -180,7 +180,7 @@ namespace Unity.Netcode
                         var count = 0;
                         foreach (var targetId in networkObject.Observers)
                         {
-                            targetIds[count] = targetId;                            
+                            targetIds[count] = targetId;
                             // Sanity check, this should never happen.
                             if (count >= targetCount)
                             {
