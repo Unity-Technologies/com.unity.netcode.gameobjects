@@ -1,4 +1,4 @@
-﻿"""Helper class for common operations."""
+"""Helper class for common operations."""
 #!/usr/bin/env python3
 import json
 import os
@@ -166,5 +166,5 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
         )
 
     # Write the changes
-    with open(changelog_path, 'w', encoding='UTF-8') as file:
+    with open(changelog_path, 'wb', encoding='UTF-8') as file:
         file.write(final_content)
