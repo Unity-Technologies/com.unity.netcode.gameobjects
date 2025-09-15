@@ -47,7 +47,7 @@ To spawn NetworkObjects with ownership use the following:
 GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 ```
 > [!NOTE]
-> When using `SpawnWithOwnership` method in a client-server network topology you must be aware that during the spawn sequence any component that has owner specific checks to perform specific actions will not be invoked on the server side. This can impact things like [NetworkTransform](../helper/networktransform.md) when set to an owner authority motion model. To avoid issues pertaining to this it is recommended to use `Spawn` where the server is the owner during the spawn sequence and then immediately following that with a call to `ChangeOwnership`. The two actions will get combined into a single `CreateObjectMessage` and will avoid potential, latency driven, issues.
+> When using the `SpawnWithOwnership` method in a client-server network topology, be aware that any component that has owner-specific checks to perform specific actions will not be invoked on the server side during the spawn sequence. This can impact things like [NetworkTransform](../helper/networktransform.md) when set to an owner authority motion model. To avoid issues, it's recommended to use `Spawn` where the server is the owner during the spawn sequence and then immediately follow with a call to `ChangeOwnership`. These two actions will get combined into a single `CreateObjectMessage` and avoid potential latency-driven issues.
 
 To change ownership, use the `ChangeOwnership` method:
 
@@ -61,7 +61,7 @@ To give ownership back to the server use the `RemoveOwnership` method:
 GetComponent<NetworkObject>().RemoveOwnership();
 ```
 > [!NOTE]
-> It is not recommended to use `RemoveOwnership` when using a distributed authority network topology.
+> Using `RemoveOwnership` in a distributed authority network topology isn't recommended.
 
 
 To see if the local client is the owner of a NetworkObject, you can check the [`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwner.html) property.
