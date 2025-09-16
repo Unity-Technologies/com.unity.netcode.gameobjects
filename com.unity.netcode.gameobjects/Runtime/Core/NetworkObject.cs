@@ -9,6 +9,7 @@ using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
 #endif
 #endif
+using Unity.Netcode.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -20,6 +21,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
+    [HelpURL(HelpUrls.NetworkObject)]
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]

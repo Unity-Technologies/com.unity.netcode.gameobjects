@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,6 +15,7 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/Network Manager", -100)]
+    [HelpURL(HelpUrls.NetworkManager)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
         /// <summary>
