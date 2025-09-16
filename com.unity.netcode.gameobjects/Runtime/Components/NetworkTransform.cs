@@ -1453,7 +1453,7 @@ namespace Unity.Netcode.Components
         /// Sets whether the transform should be treated as local (true) or world (false) space.
         /// </summary>
         /// <remarks>
-        /// This is synchronized by authority. During runtime, this should only be changed by the
+        /// This is synchronized by the authority. During runtime, this should only be changed by the
         /// authoritative side. Non-authoritative instances will be overridden by the next
         /// authoritative state update.<br />
         /// Note:<br />

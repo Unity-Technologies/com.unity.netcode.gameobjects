@@ -147,7 +147,7 @@ Sometimes network conditions are poor, with packets experiencing latency and pot
 Of course, you might wonder what would happen if 5% of the end of a jumping motion were dropped and how NetworkTransform might recover since each state update sent is only based on axial deltas defined by each axis threshold setting. The answer is that there is a small bandwidth penalty for sending standard delta state updates unreliably,  full axial frame synchronization, which assures that in the event there is loss each NetworkTransform will be "auto-corrected" once per second.
 
 > [!NOTE]
-> When using a NetworkRigidbody or NetworkRigidbody2D component with the __Use Rigidbody for Motion__ property enabled, you should avoid using the __UseUnreliableDeltas____ NetworkTransform property because it can impact the overall interpolation result when you have multiple Rigidbody-based objects that need to keep relatively synchronized with each other.
+> When using a NetworkRigidbody or NetworkRigidbody2D component with the __Use Rigidbody for Motion__ property enabled, you should avoid using the __UseUnreliableDeltas____ NetworkTransform property because it can impact the overall interpolation result when you have multiple Rigidbody-based objects that need to keep relatively synchronized with each other. 
 
 #### Unreliable State Updates
 
@@ -175,19 +175,13 @@ When changing from world space to local space and vice versa, NetworkTransform c
 
 This means that non-authority instances could still have state updates pending to be processed when a NetworkObject is parented (or de-parented) and those buffered state values are still expressed as world (or local) space values. Since parenting is not network tick synchronized, the non-authority instances could still have the previous (world or local space) state updates remaining to be processed. This can create a visual "popping" result on the non-authority instance because it has been placed in a different Transform space while processing the previous Transform space state updates.
 
-To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and the NetworkTransform will automatically detect when its associated NetworkObject has changed its parented status, automatically switch to local or world space (parented or not parented), and convert the pending interpolator(s) states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) space when parenting.
+To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and let NetworkTransform automatically detect when its associated NetworkObject has changed its parented status, automatically switch to local or world space (parented or not parented), and convert the pending interpolator(s) states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) space when parenting. This is the recommended way to handle smooth transitions between world and local space when parenting.
 
 Things to consider when using __Switch Transform Space When Parented__:
 
-- This property isn't synchronized by the authority instance. If you disable it on the authority instance but the default setting in your network prefab is for it to be enabled, non-authority instances will remain enabled.
-  - You can opt to synchronize this setting via custom script or enabling and disabling it under other certain logical conditions in script (such as having it based on a condition and not synchronized by the authority).
-    - If you disable __Switch Transform Space When Parented__ and the associated NetworkObject gets parented and you manually switch from world to local space, then you will get the original parenting behavior where the interpolator is not updated when the switch occurs.
-    - You can opt to disable it while spawning and then make the default to enable it once finished spawning (within `OnNetworkPostSpawn` would be one way to handle this, for example).
-- While you can still change  __In Local Space__ directly via script while  __Switch Transform Space When Parented__ is enabled, this could impact the end results if you then proceed to parent the NetworkObject.
+- This property is synchronized by the authority instance. If you disable it on the authority instance then it will synchronize this adjustment on all non-authority instances.
 - When using __Switch Transform Space When Parented__, it's best to not make adjustments to the __NetworkTransform.InLocalSpace__ field and let the NetworkTransform handle this for you.
-
-> [!NOTE]
-> This feature's intended use is handling smooth transitions between world and local space after the NetworkObject has been spawned and is moving around. It's not intended to solve any issues you might run across if parenting in the middle of the spawn process.
+  - While you can still change __In Local Space__ directly via script while __Switch Transform Space When Parented__ is enabled, this could impact the end results. It is recommended to not adjust __In Local Space__ when __Switch Transform Space When Parented__ is enabled.
 
 ### Parenting
 
@@ -196,12 +190,15 @@ NetworkObject parenting can become complex when:
 - You are parenting a NetworkObject while it's [in motion](#in-motion).
 - You are parenting a NetworkObject [while spawning](#when-spawning) (depending upon network topology and the desired authority motion model).
 
-#### In motion
+#### Spawning or in motion
 
-The __Switch Transform Space When Parented__ field is intended to smooth the transition between world and local spaces. This setting is specifically designed to handle converting all of the non-authority instance's currently queued `NetworkTransformState`s to the appropriate transform space. When parenting, the transform space is automatically switched to local (transform) space on the authority instance that will then send this change in the transform space on the next network tick.
+The __Switch Transform Space When Parented__ field is intended to smooth the transition between world and local spaces. This setting is specifically designed to handle converting all of the non-authority instance's currently queued `NetworkTransformState`s to the appropriate transform space. When parenting, the transform space is automatically switched to local (transform) space on the authority instance that will then send this change in the transform space on the next network tick. This feature can also handle multiple parenting actions that occur on the same frame or over a few frames that are all within the normal network tick update period.
+
+When __Switch Transform Space When Parented__ is enabled, each parenting action will generate a unique transform message that is immediately added to the outbound message queued to preserve the order of operations. This means for each parenting event that occurs, a transform message will be generated. As such, it is recommended to not parent the same object dozens of times within the same frame to keep message traffic minimalized.
+
 
 > [!NOTE]
-> __Switch Transform Space When Parented__ is designed to work with the Unity transform's world and local space capabilities. However, when using a Rigidbody component and setting the NetworkRigidbody to use the Rigidbody for motion, the position and rotation values being synchronized are based on the Rigidbody's position and rotation values and not the Unity transform values. The Rigidbody position and rotation values are separate PhysX values that are adjusted during the `FixedUpdate` update loop stage. Because PhysX has no concept of local space, it's not recommended to enable this field when the authority is synchronizing the Rigidbody's position and rotation values.
+> __Switch Transform Space When Parented__ is designed to work with the Unity transform's world and local space capabilities. However, when using a Rigidbody component and setting the NetworkRigidbody to use the Rigidbody for motion, the position and rotation values being synchronized are based on the Rigidbody's position and rotation values and not the Unity transform values. The Rigidbody position and rotation values are separate PhysX values that are adjusted during the `FixedUpdate` update loop stage. Because PhysX has no concept of local space, it's not recommended to enable this field when the authority is synchronizing the Rigidbody's position and rotation values. [You can read more about parenting rigid bodies here](../../advanced-topics//physics.md).
 
 #### When spawning
 
