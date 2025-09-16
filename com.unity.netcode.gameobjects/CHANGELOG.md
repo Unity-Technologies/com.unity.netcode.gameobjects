@@ -10,9 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added: NetworkRigidbody documentation section. (#3664)
 
 ### Changed
 
+- Changed: NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
+- Changed: NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 
 ### Deprecated
 
@@ -23,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
+- Fixed issue when spawning, parenting, and immediately re-parenting. (#3664)
 
 ### Security
 
