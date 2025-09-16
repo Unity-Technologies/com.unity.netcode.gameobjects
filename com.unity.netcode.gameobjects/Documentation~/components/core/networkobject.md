@@ -47,7 +47,8 @@ To spawn NetworkObjects with ownership use the following:
 GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 ```
 > [!NOTE]
-> When using the `SpawnWithOwnership` method in a client-server network topology, be aware that any component that has owner-specific checks to perform specific actions will not be invoked on the server side during the spawn sequence. This can impact things like [NetworkTransform](../helper/networktransform.md) when set to an owner authority motion model. To avoid issues, it's recommended to use `Spawn` where the server is the owner during the spawn sequence and then immediately follow with a call to `ChangeOwnership`. These two actions will get combined into a single `CreateObjectMessage` and avoid potential latency-driven issues.
+> When using the `SpawnWithOwnership` method, be aware that any component that has owner-specific checks to perform specific actions will not be invoked on the spawn authority  side during the spawn sequence. The spawn authority is the server when using a client-server network topology and can be any client when using a distributed authority network topology. Using `SpawnWithOwnership` can impact things like [NetworkTransform](../helper/networktransform.md), when using to an owner authority motion model, and potentially provide undesired parenting artifacts and/or impact your own scripts if you are planning to have the spawn authority make any further post-spawn adjustments within the same frame. 
+>To avoid potential issues, it's recommended to use `Spawn`, where the spawn authority starts as the owner throughout the spawn sequence, makes adjustments post-spawn, and then immediately follow with a call to `ChangeOwnership`.
 
 To change ownership, use the `ChangeOwnership` method:
 
