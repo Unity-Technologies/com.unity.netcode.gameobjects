@@ -787,13 +787,13 @@ namespace Unity.Netcode
             // Otherwise, send the request ownership message
             var changeOwnership = new ChangeOwnershipMessage
             {
+                ChangeMessageType = ChangeOwnershipMessage.ChangeType.RequestOwnership,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 ClientIdCount = 1,
                 RequestClientId = NetworkManager.LocalClientId,
                 ClientIds = new ulong[1] { OwnerClientId },
                 DistributedAuthorityMode = true,
-                RequestOwnership = true,
                 OwnershipFlags = (ushort)Ownership,
             };
 
@@ -868,18 +868,18 @@ namespace Unity.Netcode
             else
             {
                 // Otherwise, send back the reason why the ownership request was denied for the clientRequestingOwnership
-                /// Notes:
-                /// We always apply the <see cref="NetworkManager.LocalClientId"/> as opposed to <see cref="OwnerClientId"/> to the
-                /// <see cref="ChangeOwnershipMessage.OwnerClientId"/> value as ownership could have changed and the denied requests
-                /// targeting this instance are because there is a request pending.
-                /// DANGO-TODO: What happens if the client requesting disconnects prior to responding with the update in request pending?
+                // Notes:
+                // We always apply the <see cref="NetworkManager.LocalClientId"/> as opposed to <see cref="OwnerClientId"/> to the
+                // <see cref="ChangeOwnershipMessage.OwnerClientId"/> value as ownership could have changed and the denied requests
+                // targeting this instance are because there is a request pending.
+                // DANGO-TODO: What happens if the client requesting disconnects prior to responding with the update in request pending?
                 var changeOwnership = new ChangeOwnershipMessage
                 {
+                    ChangeMessageType = ChangeOwnershipMessage.ChangeType.RequestDenied,
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = NetworkManager.LocalClientId, // Always use the local clientId (see above notes)
                     RequestClientId = clientRequestingOwnership,
                     DistributedAuthorityMode = true,
-                    RequestDenied = true,
                     OwnershipRequestResponseStatus = (byte)response,
                     OwnershipFlags = (ushort)Ownership,
                 };
@@ -1065,10 +1065,10 @@ namespace Unity.Netcode
 
             var changeOwnership = new ChangeOwnershipMessage
             {
+                ChangeMessageType = ChangeOwnershipMessage.ChangeType.OwnershipFlagsUpdate,
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 DistributedAuthorityMode = true,
-                OwnershipFlagsUpdate = true,
                 OwnershipFlags = (ushort)Ownership,
             };
 
