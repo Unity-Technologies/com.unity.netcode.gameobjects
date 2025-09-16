@@ -1458,7 +1458,7 @@ namespace Unity.Netcode.Components
         /// authoritative state update.<br />
         /// Note:<br />
         /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically adjusted.
-        /// It is not recommended adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> is enabled.
+        /// Adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> isn't enabled.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
