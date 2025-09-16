@@ -4492,6 +4492,11 @@ namespace Unity.Netcode.Components
                 m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
                 m_PreviousParent = null;
             }
+
+            if (UseHalfFloatPrecision)
+            {
+                m_HalfPositionState.UpdateFrom(ref m_InternalCurrentPosition, m_CachedNetworkManager.LocalTime.Tick);
+            }
         }
 
         /// <summary>
