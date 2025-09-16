@@ -572,16 +572,15 @@ namespace Unity.Netcode
             {
                 var message = new ChangeOwnershipMessage
                 {
+                    ChangeMessageType = isRequestApproval ? ChangeOwnershipMessage.ChangeType.RequestApproved : ChangeOwnershipMessage.ChangeType.OwnershipChanging,
                     NetworkObjectId = networkObject.NetworkObjectId,
                     OwnerClientId = networkObject.OwnerClientId,
-                    DistributedAuthorityMode = NetworkManager.DistributedAuthorityMode,
-                    RequestApproved = isRequestApproval,
-                    OwnershipIsChanging = true,
+                    DistributedAuthorityMode = true,
                     RequestClientId = networkObject.PreviousOwnerId,
                     OwnershipFlags = (ushort)networkObject.Ownership,
                 };
-                // If we are connected to the CMB service or not the DAHost (i.e. pure DA-Clients only)
 
+                // If we are connected to the CMB service or not the DAHost (i.e. pure DA-Clients only)
                 if (NetworkManager.CMBServiceConnection || !NetworkManager.DAHost)
                 {
                     // Always update the network properties in distributed authority mode for the client gaining ownership
@@ -618,6 +617,7 @@ namespace Unity.Netcode
             {
                 var message = new ChangeOwnershipMessage
                 {
+                    ChangeMessageType = ChangeOwnershipMessage.ChangeType.OwnershipChanging,
                     NetworkObjectId = networkObject.NetworkObjectId,
                     OwnerClientId = networkObject.OwnerClientId,
                 };
