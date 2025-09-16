@@ -34,13 +34,13 @@ Since PhysX has no concept of local space, it can become a challenge to  synchro
   - While this does require some initial prefab hierarchical organization, this approach will yield faster and more consistent results, but does not cover all physics based parenting scenarios (_but does cover a lot of them_).
 
 ## AttachableBehaviour vs Joint
-  
+
 _How does one determine which approach to take?_
 
 With physics things can become a bit more complicated as there are certain features you might use one way when making a single player project but will want to avoid using with a netcode enabled project. This is especially true if using `NetworkTransform` and `NetworkRigidbody` that has [NetworkRigidbody.UseRigidBodyForMotion](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.5/api/Unity.Netcode.Components.NetworkRigidbodyBase.html#Unity_Netcode_Components_NetworkRigidbodyBase_UseRigidBodyForMotion) enabled. As such, it might be best to start out with a project design requirement and walk through the logical steps one might take to prototype the required feature while discussing some of the common pitfalls one could encounter.
 
 ### The world item example (AttachableBehaviour)
-Your project's game design includes world items that players can pick up. 
+Your project's game design includes world items that players can pick up.
 The world item's design requirements are:
 - Each world item should be impacted by physics when picked up or not.
 - When not picked up, the world item acts like a normal physics object.
@@ -50,7 +50,7 @@ The world item's design requirements are:
    - The design requires the picked up item to ignore the item's colliders but cause the player's rigid body to react (collide) based on any iteractions the item might have with other physics world objects.
 - The implmentation should be modular and easy to customize by both level designers and scripting programmers.
 
-As the team's netcode engineer, your first instinct might be to use __NetworkObject__ parenting and just parent the world item under the player at the desired child generation level within the player's over-all root-child hierarchy. However, when prototyping this approach you quickly discover that the player's rigid body fights with the (picked up / parented) world item's rigid body causing a strange "jitter" on the world item when the player moves and perhaps animates. 
+As the team's netcode engineer, your first instinct might be to use __NetworkObject__ parenting and just parent the world item under the player at the desired child generation level within the player's over-all root-child hierarchy. However, when prototyping this approach you quickly discover that the player's rigid body fights with the (picked up / parented) world item's rigid body causing a strange "jitter" on the world item when the player moves and perhaps animates.
 
 After investigating the issue further, you discover this same kind of fighting between two rigid bodies can also happen when making a single player game and trying to synchronize multiple rigid bodies under a single root rigid body. In order to provide some form of constraint on the child rigid body you might use something like a physics [Joint](https://docs.unity3d.com/6000.2/Documentation/ScriptReference/FixedJoint.html).
 
@@ -180,7 +180,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Placed on the world item, this will attempt to attach the AttachedView to the 
+/// Placed on the world item, this will attempt to attach the AttachedView to the
 /// player's AttachableNode.
 /// </summary>
 public class AttachTrigger : NetworkBehaviour
@@ -424,7 +424,7 @@ public class AttachableNodeLogic : AttachableNode, INetworkUpdateSystem
         if (EnableTestMode)
         {
             NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
-        }        
+        }
         base.OnNetworkDespawn();
     }
 
@@ -460,7 +460,7 @@ public class AttachableNodeLogic : AttachableNode, INetworkUpdateSystem
     protected override void OnAttached(AttachableBehaviour attachableBehaviour)
     {
         var attachableLogic = attachableBehaviour as AttachableLogic;
-        
+
         // Set the mass based off of the default mass plus the attachable's mass
         m_PlayerRigidbody.mass = m_DefaultMass + attachableLogic.Rigidbody.mass;
 

@@ -19,7 +19,7 @@ When looking at a __NetworkRigidbody__ within the inspector view, you have three
 
 Some collision events aren't fired when using NetworkRigidBody.
 - On the `server`, all collision and trigger events (such as `OnCollisionEnter`) fire as expected and you can access (and change) values of the `Rigidbody` (such as velocity).
-- On the `clients`, the `Rigidbody` is kinematic. Trigger events still fire but collision events won't fire when colliding with other networked `Rigidbody` instances if your project's physics settings is set the default contact pairs. 
+- On the `clients`, the `Rigidbody` is kinematic. Trigger events still fire but collision events won't fire when colliding with other networked `Rigidbody` instances if your project's physics settings is set the default contact pairs.
 ![image](../../images/networktransform/ProjectPhysicsSettings.png)
   - You can adjust the __Contact Pairs Mode__ to use kinematic and non-kinematic by setting it to __Enable All Contact Pairs__.
 ![image](../../images/networktransform/ProjectPhysicsSettings2.png)

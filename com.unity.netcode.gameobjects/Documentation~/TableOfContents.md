@@ -33,7 +33,7 @@
     * [NetworkAnimator](components/helper/networkanimator.md)
     * [NetworkRigidbody](components/helper/networkrigidbody.md)
     * [NetworkTransform](components/helper/networktransform.md)
-  * [Physics](advanced-topics/physics.md)      
+  * [Physics](advanced-topics/physics.md)
 * [Ownership and authority](ownership-authority.md)
   * [Understanding ownership and authority](basics/ownership.md)
   * [Ownership race conditions](basics/race-conditions.md)

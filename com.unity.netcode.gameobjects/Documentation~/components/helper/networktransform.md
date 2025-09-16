@@ -147,7 +147,7 @@ Sometimes network conditions are poor, with packets experiencing latency and pot
 Of course, you might wonder what would happen if 5% of the end of a jumping motion were dropped and how NetworkTransform might recover since each state update sent is only based on axial deltas defined by each axis threshold setting. The answer is that there is a small bandwidth penalty for sending standard delta state updates unreliably,  full axial frame synchronization, which assures that in the event there is loss each NetworkTransform will be "auto-corrected" once per second.
 
 > [!NOTE]
-> When using a NetworkRigidbody or NetworkRigidbody2D component with the __Use Rigidbody for Motion__ property enabled, you should avoid using the __UseUnreliableDeltas____ NetworkTransform property because it can impact the overall interpolation result when you have multiple Rigidbody-based objects that need to keep relatively synchronized with each other. 
+> When using a NetworkRigidbody or NetworkRigidbody2D component with the __Use Rigidbody for Motion__ property enabled, you should avoid using the __UseUnreliableDeltas____ NetworkTransform property because it can impact the overall interpolation result when you have multiple Rigidbody-based objects that need to keep relatively synchronized with each other.
 
 #### Unreliable State Updates
 
