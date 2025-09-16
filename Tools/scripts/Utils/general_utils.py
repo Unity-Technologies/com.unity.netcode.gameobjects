@@ -69,7 +69,7 @@ def update_package_version_by_patch(package_manifest_path):
 
     package_manifest['version'] = new_package_version
 
-    with open(package_manifest_path, 'w', encoding='UTF-8') as f:
+    with open(package_manifest_path, 'w', encoding='UTF-8', newline='\n') as f:
         json.dump(package_manifest, f, indent=4)
 
     return new_package_version
@@ -166,5 +166,5 @@ def update_changelog(changelog_path, new_version, add_unreleased_template=False)
         )
 
     # Write the changes
-    with open(changelog_path, 'w', encoding='UTF-8') as file:
+    with open(changelog_path, 'w', encoding='UTF-8', newline='\n') as file:
         file.write(final_content)

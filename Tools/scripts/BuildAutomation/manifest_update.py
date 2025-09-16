@@ -30,7 +30,7 @@ def main():
         local_path_normalized = args.local_package_path.replace(os.sep, '/')
         manifest_data["dependencies"][args.package_name] = f"file:{local_path_normalized}"
 
-        with open(args.manifest_path, 'w') as f:
+        with open(args.manifest_path, 'w', encoding='UTF-8', newline='\n') as f:
             json.dump(manifest_data, f, indent=4)
 
         print(f"Successfully updated manifest at '{args.manifest_path}'")
