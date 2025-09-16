@@ -4,18 +4,15 @@ using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
-
 using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.DAHost, TransformSpace.World)]
-    [TestFixture(HostOrServer.DAHost, TransformSpace.Local)]
-    [TestFixture(HostOrServer.Host, TransformSpace.World)]
-    [TestFixture(HostOrServer.Host, TransformSpace.Local)]
-    [TestFixture(HostOrServer.Server, TransformSpace.World)]
-    [TestFixture(HostOrServer.Server, TransformSpace.Local)]
+
+    [TestFixture(HostOrServer.DAHost)]
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     internal class NetworkTransformAutoParenting : IntegrationTestWithApproximation
     {
         public enum TransformSpace
@@ -26,20 +23,20 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
-        private NetworkObject m_PrefabToSpawn;
+        private List<NetworkObject> m_PrefabsToSpawn = new List<NetworkObject>();
         private NetworkObject m_ParentToSpawn;
 
         private List<NetworkObject> m_ParentInstances = new List<NetworkObject>();
+        private List<NetworkObject> m_ChildInstances = new List<NetworkObject>();
         private NetworkObject m_ChildInstance;
         private NetworkObject m_FinalParent;
         private ulong m_NetworkObjectIdToValidate;
 
-        private TransformSpace m_TransformSpace;
+        private TransformSpace m_ParentWorldOrLocal;
 
 
-        public NetworkTransformAutoParenting(HostOrServer host, TransformSpace transformSpace) : base(host)
+        public NetworkTransformAutoParenting(HostOrServer host) : base(host)
         {
-            m_TransformSpace = transformSpace;
         }
 
 
@@ -134,16 +131,46 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        protected override IEnumerator OnTearDown()
+        {
+            m_PrefabsToSpawn.Clear();
+            return base.OnTearDown();
+        }
 
+        private NetworkObject CreatePrefabToSpawn(TransformSpace transformSpace, bool useHalfPrecision, bool useQuaternion, bool compressQuaternion)
+        {
+            var prefabToSpawn = CreateNetworkObjectPrefab($"SeqObj[{m_PrefabsToSpawn.Count}]").GetComponent<NetworkObject>();
+            var networkTransform = prefabToSpawn.gameObject.AddComponent<NetworkTransformStateMonitor>();
+            networkTransform.SwitchTransformSpaceWhenParented = true;
+            // Validates that even if you try to set local space it will be reset to world when 1st spawned
+            networkTransform.InLocalSpace = transformSpace == TransformSpace.Local;
+            networkTransform.UseHalfFloatPrecision = useHalfPrecision;
+            networkTransform.UseQuaternionSynchronization = useQuaternion;
+            networkTransform.UseQuaternionCompression = compressQuaternion;
+            var spawnSequenceController = prefabToSpawn.gameObject.AddComponent<SpawnSequenceController>();
+            spawnSequenceController.Offset = GetRandomVector3(-20.0f, 20.0f);
+            return prefabToSpawn;
+        }
+
+        /// <summary>
+        /// Generates objects to spawn.
+        /// </summary>
         protected override void OnServerAndClientsCreated()
         {
             m_ParentToSpawn = CreateNetworkObjectPrefab("SeqParent").GetComponent<NetworkObject>();
-            m_PrefabToSpawn = CreateNetworkObjectPrefab("SeqObj").GetComponent<NetworkObject>();
-            var networkTransform = m_PrefabToSpawn.gameObject.AddComponent<NetworkTransformStateMonitor>();
-            networkTransform.SwitchTransformSpaceWhenParented = true;
-            networkTransform.InLocalSpace = m_TransformSpace == TransformSpace.Local;
-            var spawnSequenceController = m_PrefabToSpawn.gameObject.AddComponent<SpawnSequenceController>();
-            spawnSequenceController.Offset = GetRandomVector3(-20.0f, 20.0f);
+
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.World, false, false, false));
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.Local, false, false, false));
+
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.World, true, false, false));
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.Local, true, false, false));
+
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.World, true, true, false));
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.Local, true, true, false));
+
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.World, true, true, true));
+            m_PrefabsToSpawn.Add(CreatePrefabToSpawn(TransformSpace.Local, true, true, true));
+
             base.OnServerAndClientsCreated();
         }
 
@@ -169,6 +196,18 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var networkManager in m_NetworkManagers)
             {
                 if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_NetworkObjectIdToValidate))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool AllClientsDespawnedObject()
+        {
+            foreach (var networkManager in m_NetworkManagers)
+            {
+                if (networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_NetworkObjectIdToValidate))
                 {
                     return false;
                 }
@@ -206,7 +245,6 @@ namespace Unity.Netcode.RuntimeTests
         /// that all non-authority instances are properly synchronized with parenting and their final transform values.
         /// </summary>
         [UnityTest]
-
         public IEnumerator SwitchTransformSpaceWhenParented()
         {
             var authority = GetAuthorityNetworkManager();
@@ -217,7 +255,29 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(AllClientsSpawnedParentObject);
             AssertOnTimeout($"Timed out waiting for all clients to spawn parent instances!");
 
-            m_ChildInstance = SpawnObject(m_PrefabToSpawn.gameObject, authority).GetComponent<NetworkObject>();
+            foreach (var prefabToSpawn in m_PrefabsToSpawn)
+            {
+                yield return SpawnAndTest(prefabToSpawn, true);
+                yield return SpawnAndTest(prefabToSpawn, false);
+            }
+        }
+
+        /// <summary>
+        /// This runs through the entire spawn and parenting validation tests
+        /// for the prefab passed in while also adjusting whether to parent
+        /// with world position stays enabled or disabled.
+        /// </summary>
+        private IEnumerator SpawnAndTest(NetworkObject prefabToSpawn, bool worldPositionStays)
+        {
+            var authority = GetAuthorityNetworkManager();
+            m_ChildInstance = SpawnObject(prefabToSpawn.gameObject, authority).GetComponent<NetworkObject>();
+            var networkTransform = m_ChildInstance.GetComponent<NetworkTransformStateMonitor>();
+            m_ParentWorldOrLocal = worldPositionStays ? TransformSpace.World : TransformSpace.Local;
+            Assert.False(networkTransform.InLocalSpace, $"{m_ChildInstance.name} should never be in local space when not parented and SwitchTransformSpaceWhenParented is enabled!");
+
+            m_EnableVerboseDebug = true;
+            VerboseDebug($"[Testing][Parenting: {m_ParentWorldOrLocal}][HalfFloat: {networkTransform.UseHalfFloatPrecision}][Quaternion: {networkTransform.UseQuaternionSynchronization}][Compressed Quaternion: {networkTransform.UseQuaternionCompression}]");
+            m_EnableVerboseDebug = false;
             m_NetworkObjectIdToValidate = m_ChildInstance.NetworkObjectId;
 
             var startingParentIndex = Random.Range(0, k_ParentsToSpawn - 1);
@@ -235,7 +295,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     var parentIndex = (j + startingParentIndex) % k_ParentsToSpawn;
                     var parent = m_ParentInstances[parentIndex];
-                    m_ChildInstance.TrySetParent(parent, m_TransformSpace == TransformSpace.World);
+                    m_ChildInstance.TrySetParent(parent, m_ParentWorldOrLocal == TransformSpace.World);
                     m_FinalParent = parent;
                 }
             }
@@ -247,8 +307,13 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(TransformsMatch);
             AssertOnTimeout($"Timed out waiting for all non-authority transforms of the child to match the authority transform of the child {m_ChildInstance.name}!");
-        }
 
+            var name = m_ChildInstance.name;
+            m_ChildInstance.Despawn();
+
+            yield return WaitForConditionOrTimeOut(AllClientsDespawnedObject);
+            AssertOnTimeout($"Timed out waiting for all clients to despawn {name}!");
+        }
 
 
         protected bool TransformsMatch(StringBuilder errorLog)
