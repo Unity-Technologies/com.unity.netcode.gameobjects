@@ -35,7 +35,7 @@ def main():
     # Ensure the project is marked as connected
     content = re.sub(r"cloudEnabled:.*", "cloudEnabled: 1", content)
 
-    with open(args.project_settings_path, 'w') as f:
+    with open(args.project_settings_path, 'w', encoding='UTF-8', newline='\n') as f:
         f.write(content)
 
     print(f"[Linker] Successfully updated {args.project_settings_path} with Project ID: {args.cloud_project_ID}, Org ID: {args.organization_ID}, Project Name: {args.project_name}")
