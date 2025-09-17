@@ -11,6 +11,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Netcode.Runtime;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
@@ -28,6 +29,7 @@ namespace Unity.Netcode.Transports.UTP
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
     [AddComponentMenu("Netcode/Unity Transport")]
+    [HelpURL(HelpUrls.UnityTransport)]
     public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         /// <summary>
