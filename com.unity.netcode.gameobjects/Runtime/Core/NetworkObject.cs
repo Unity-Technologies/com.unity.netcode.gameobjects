@@ -364,7 +364,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Useful to know if we should or should not send a message
         /// </summary>
-        internal bool HasRemoteObservers => !(Observers.Count() == 0 || (Observers.Contains(NetworkManager.LocalClientId) && Observers.Count() == 1));
+        internal bool HasRemoteObservers => !(Observers.Count == 0 || (Observers.Contains(NetworkManager.LocalClientId) && Observers.Count == 1));
 
         /// <summary>
         /// Distributed Authority Mode Only
@@ -1085,7 +1085,7 @@ namespace Unity.Netcode
             }
             else
             {
-                changeOwnership.ClientIdCount = Observers.Count();
+                changeOwnership.ClientIdCount = Observers.Count;
                 changeOwnership.ClientIds = Observers.ToArray();
                 NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, NetworkDelivery.Reliable, NetworkManager.ServerClientId);
             }

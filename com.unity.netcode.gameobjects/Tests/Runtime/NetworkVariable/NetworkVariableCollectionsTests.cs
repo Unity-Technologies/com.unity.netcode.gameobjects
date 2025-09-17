@@ -726,7 +726,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (initialize)
                 {
-                    clientsInitialized.Add(client.LocalClientId, ownerInitialized & serverInitialized);
+                    clientsInitialized.Add(client.LocalClientId, ownerInitialized && serverInitialized);
                 }
             }
 
