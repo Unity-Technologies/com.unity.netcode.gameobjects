@@ -251,7 +251,7 @@ namespace Unity.Netcode.Editor
                         // Default directory
                         var directory = "Assets/";
                         var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
-                        if (assetPath == "")
+                        if (assetPath?.Length == 0)
                         {
                             assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
                         }

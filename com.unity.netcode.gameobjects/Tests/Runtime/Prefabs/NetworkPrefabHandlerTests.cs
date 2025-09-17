@@ -225,8 +225,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
             var networkObjectInstance = UnityEngine.Object.Instantiate(m_NetworkObject.gameObject).GetComponent<NetworkObject>();
-            networkObjectInstance.transform.position = position;
-            networkObjectInstance.transform.rotation = rotation;
+            networkObjectInstance.transform.SetPositionAndRotation(position, rotation);
             m_Instances.Add(networkObjectInstance);
             return networkObjectInstance;
         }

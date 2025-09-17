@@ -1432,10 +1432,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     if (typeDefinition.HasGenericParameters)
                     {
                         var genericTypes = new List<TypeReference>();
-                        foreach (var parameter in typeDefinition.GenericParameters)
-                        {
-                            genericTypes.Add(parameter);
-                        }
+                        genericTypes.AddRange(typeDefinition.GenericParameters);
                         callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
                     }
 
@@ -3102,10 +3099,7 @@ namespace Unity.Netcode.Editor.CodeGen
             if (castType.HasGenericParameters)
             {
                 var genericTypes = new List<TypeReference>();
-                foreach (var parameter in castType.GenericParameters)
-                {
-                    genericTypes.Add(parameter);
-                }
+                genericTypes.AddRange(castType.GenericParameters);
                 castType = castType.MakeGenericInstanceType(genericTypes.ToArray());
                 callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
             }

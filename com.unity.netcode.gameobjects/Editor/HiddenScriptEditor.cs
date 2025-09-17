@@ -129,7 +129,7 @@ namespace Unity.Netcode.Editor
                 overrideIp = EditorGUILayout.TextField("Override Bind IP (optional)", overrideIp);
                 if (allowRemoteConnections)
                 {
-                    if (overrideIp == "")
+                    if (overrideIp?.Length == 0)
                     {
                         if (isIpV6)
                         {

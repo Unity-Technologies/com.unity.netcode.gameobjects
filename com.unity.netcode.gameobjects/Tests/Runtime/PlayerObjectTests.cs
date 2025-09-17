@@ -141,8 +141,7 @@ namespace Unity.Netcode.RuntimeTests
             var playerNetworkObject = m_PlayerPrefab.GetComponent<NetworkObject>();
             m_PlayerPosition = GetRandomVector3(-10.0f, 10.0f);
             m_PlayerRotation = Quaternion.Euler(GetRandomVector3(-180.0f, 180.0f));
-            playerNetworkObject.transform.position = m_PlayerPosition;
-            playerNetworkObject.transform.rotation = m_PlayerRotation;
+            playerNetworkObject.transform.SetPositionAndRotation(m_PlayerPosition, m_PlayerRotation);
             base.OnCreatePlayerPrefab();
         }
 
