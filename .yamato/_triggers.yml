@@ -42,6 +42,20 @@
 
 #-----------------------------------------------------------------------------------
 
+# After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
+# This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
+minimal_required_checks_trigger:
+  name: Minimal PR check (develop, develop-2.0.0 & release branches)
+  dependencies:
+    - .yamato/package-pack.yml#package_pack_-_ngo_win
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
+  triggers:
+    expression: |-
+      (pull_request.target eq "develop" OR
+      pull_request.target eq "develop-2.0.0" OR
+      pull_request.target match "release/*") AND
+      NOT pull_request.draft
+    cancel_old_ci: true
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
 # In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
