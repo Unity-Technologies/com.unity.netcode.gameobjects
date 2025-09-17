@@ -128,10 +128,10 @@ namespace Unity.Netcode.Components
             /// When set, non-authority instances will smoothly transition between
             /// world and local space.
             /// </summary>
-            public bool SwitchTransformSpaceWhenParented
+            internal bool SwitchTransformSpaceWhenParented
             {
                 get => GetFlag(k_SwitchTransformSpaceWhenParented);
-                internal set
+                set
                 {
                     SetFlag(value, k_SwitchTransformSpaceWhenParented);
                 }
