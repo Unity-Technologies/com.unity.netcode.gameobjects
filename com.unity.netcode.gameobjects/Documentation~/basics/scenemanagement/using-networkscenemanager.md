@@ -339,6 +339,9 @@ The callback is the first thing invoked on the server-side when invoking the `Ne
 > **Client-Side Scene Validation**<br/>
 > This is where you need to be cautious with scene validation, because any scene that you don't validate on the client side should not contain Netcode objects that are considered required dependencies for a connecting client to properly synchronize with the current netcode (game) session state.
 
+### Don't destroy on load (DDOL) scene
+This scene is used by the NetworkSceneManager to handle preserving NetworkObjects spawned with the don't destroy with scene flag parameter set to true (default is false). Since the DDOL scene is dynamically created during runtime, it is not synchronized. As such, it is not recommended to migrate in-scene placed NetworkObjects into the DDOL. The recommended way to handle persisting in-scene placed NetworkObjects is placing them in a separate scene that is additively loaded for the duration of the network session.
+
 ### Dynamically Generated Scenes
 You might find yourself in a scenario where you just need to dynamically generate a scene.  A common use for dynamically generated scenes is when you need to dynamically generate collision geometry that you wish to only create on the server-host side. For this scenario you most likely would only want the server to have this scene loaded, but you might run into issues when synchronizing clients.  For single player games, you can just create a new scene at runtime, dynamically generate the collision geometry, add the collision geometry to the newly created scene, and everything works out.  With Netcode for GameObjects there are two extra steps you need to take to assure you don't run into any issues:
 - Create an empty scene for each scene you plan on dynamically generating and add them to the "Scenes in Build" list found within the "Build Settings".
