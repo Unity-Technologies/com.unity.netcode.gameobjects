@@ -4,6 +4,55 @@ By default, Netcode for GameObjects assumes a [client-server topology](../terms-
 
 Netcode for GameObjects also supports building games with a [distributed authority topology](../terms-concepts/distributed-authority.md), which provides more options for ownership and authority over NetworkObjects.
 
+### Authority
+
+There are several areas pertaining to Authority:
+- NetworkObject
+  - Spawning and de-spawning
+  - Changing ownership
+  - Parenting
+- Scene Management
+  - Client synchronization
+  - Loading and unloading scenes
+- NetworkTransform
+  - Authority mode
+    - The authority mode determines whether the server or the owner has the authority to push transform updates.
+- NetworkManager
+  - Defines the authority models used based on the network topology configuration.
+
+__Client-Server__
+- The server or host is the authority over:
+  - NetworkObject
+    - Spawning and de-spawning
+    - Ownership.
+    - Parenting
+      - The server or host always has authority.
+      - If `NetworkObject.AllowOwnerToParent` is enabled, then both the server and the owner has parenting authority.
+  - Scene management
+  - NetworkTransform
+    - Can be the authority of a NetworkTransform based on the authority mode used.
+- Clients can be the authority over:
+  - NetworkObject
+    - Parenting
+      - If `NetworkObject.AllowOwnerToParent` is enabled, then both the server and the owner has parenting authority (_really the authority is shared between the server and the client_).
+  - NetworkTransform
+    - Can be the authority of a NetworkTransform only if the owner authority is used and the client is the owner.
+
+__Distributed Authority__
+
+- The client/owner is the authority over:
+  - NetworkObject
+    - Spawning and de-spawning
+    - Changing ownership
+      - Depending upon the NetworkObject's [ownership permissions](#ownership-and-distributed-authority).
+    - Parenting
+      - The NetworkObject being parented must be owned by the client performing the parenting. The parent NetworkObjet can be owned by another client.
+  - NetworkTransform
+    -  Always uses the owner authority mode in distributed authority.
+- The session owner is the authority over:
+  - Scene Management
+  - All NetworkObjects with the session owner permission set.
+
 ## Ownership and distributed authority
 
 In a distributed authority setting, authority over NetworkObjects isn't bound to a single server, but distributed across clients depending on a NetworkObject's [ownership permission settings](#ownership-permission-settings-distributed-authority-only). NetworkObjects with the distributable permission set are automatically distributed amongst clients as they connect and disconnect.
