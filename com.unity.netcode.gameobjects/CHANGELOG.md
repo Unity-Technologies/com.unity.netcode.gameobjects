@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
 
 ### Changed
 

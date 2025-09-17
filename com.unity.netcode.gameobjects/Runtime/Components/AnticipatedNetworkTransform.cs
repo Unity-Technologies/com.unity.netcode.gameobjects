@@ -1,4 +1,5 @@
 using Unity.Mathematics;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -43,6 +44,7 @@ namespace Unity.Netcode.Components
 #pragma warning restore IDE0001
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Anticipated Network Transform")]
+    [HelpURL(HelpUrls.AnticipatedNetworkTransform)]
     public class AnticipatedNetworkTransform : NetworkTransform
     {
 

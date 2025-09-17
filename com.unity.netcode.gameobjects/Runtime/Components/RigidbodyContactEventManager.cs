@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -71,6 +72,7 @@ namespace Unity.Netcode.Components
     /// <see cref="ContactEventHandlerInfo"/><br />
     /// </summary>
     [AddComponentMenu("Netcode/Rigidbody Contact Event Manager")]
+    [HelpURL(HelpUrls.RigidbodyContactEventManager)]
     public class RigidbodyContactEventManager : MonoBehaviour
     {
         public static RigidbodyContactEventManager Instance { get; private set; }
