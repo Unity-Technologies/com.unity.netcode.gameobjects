@@ -9,13 +9,13 @@ NetworkBehaviours can use `NetworkVariable`s and RPCs to synchronize states and 
 For more information about serializing and synchronizing NetworkBehaviours, refer to the [NetworkBehaviour synchronization page](networkbehaviour-synchronize.md).
 
 > [!NOTE]
-> It's important that the NetworkBehaviours on each NetworkObject remain the same for the server and any client connected. When using multiple projects, this becomes especially important so the server doesn't try to call a client RPC on a NetworkBehaviour that might not exist on a specific client type (or set a `NetworkVariable` that doesn't exist, and so on).
+> It's important that the NetworkBehaviours on each NetworkObject remain the same for the network session authority (server or session owner) and any client connected. When using multiple projects, this becomes especially important so the server doesn't try to call a client RPC on a NetworkBehaviour that might not exist on a specific client type (or set a `NetworkVariable` that doesn't exist, and so on).
 
 ## Spawning
 
 `OnNetworkSpawn` is invoked on each NetworkBehaviour associated with a NetworkObject when it's spawned. This is where all netcode-related initialization should occur.
 
-You can still use `Awake` and `Start` to do things like finding components and assigning them to local properties, but if `NetworkBehaviour.IsSpawned` is false then don't expect netcode-distinguishing properties (like `IsClient`, `IsServer`, `IsHost`, for example) to be accurate within `Awake` and `Start` methods.
+You can still use `Awake` and `Start` to do things like finding components and assigning them to local properties, but if `NetworkBehaviour.IsSpawned` is false then don't expect netcode-distinguishing properties (like `IsClient`, `IsServer`, `IsHost`, `HasAuthority` for example) to be accurate within `Awake` and `Start` methods.
 
 For reference purposes, below is a table of when `NetworkBehaviour.OnNetworkSpawn` is invoked relative to the NetworkObject type:
 
@@ -46,7 +46,7 @@ For each spawn state there is a corresponding NetworkBehaviour virtual method:
 
 **Spawn state-related methods**
 - Prespawning: `NetworkBehaviour.OnNetworkPreSpawn`.
-    - Used for any post-serialization configuration that has no dependencies on netcode-related properties. For example, at this stage you don't yet know whether the execution context is a server or client, since `NetworkBehaviour.IsServer` and `NetworkBehaviour.IsClient` have yet to be set. This is why a reference to the NetworkManager is passed into this virtual method.
+    - Used for any post-serialization configuration that has no dependencies on netcode-related properties. For example, at this stage the NetworkBehaviour doesn't have all of the spawned specific properties set. Trying to determine the NetworkObject assigned, what the `NetworkBehaviour.NetworkBehaviourId` assigned is, who is the owner, and other spawned related properties will yield invalid/inacurate results since they are not set at this point in time. This is why a reference to the NetworkManager is passed into this virtual method.
 - Spawning: `NetworkBehaviour.OnNetworkSpawn`
     - Used to handle any NetworkBehaviour-related configurations that depend on serialized states that might have been passed in. Order of operations here is important, since the `OnNetworkSpawn` method of _NetworkBehaviour1_ is invoked before _NetworkBehaviour2_. If _NetworkBehaviour1_ tries to access a field or property of _NetworkBehaviour2_ during its `OnNetworkSpawn` method, it could lead to an order of operations issue, because _NetworkBehaviour2_ hasn't yet set those values.
 - Spawned: `NetworkBehaviour.OnNetworkPostSpawn`

@@ -78,6 +78,32 @@ private void Start()
 > [!NOTE]
 > Once migrated into the DDoL, migrating the in-scene placed NetworkObject back into a different scene after it has already been spawned will cause soft synchronization errors with late-joining clients. Once in the DDoL it should stay in the DDoL. This is only for scene switching. If you aren't using scene switching, then it's recommended to use an additively loaded scene and keep that scene loaded for as long as you wish to persist the in-scene placed NetworkObject(s) being used for state management purposes.
 
+## When to use in-scene placed NetworkObjects
+
+The following is not meant to be a completely comprehensive list. It intended to be used as a general reference to the most common uses and most common improper uses:
+
+**Examples of when to use an in-scene placed NetworkObject:**
+- Any form of management related system:
+  - An object pool manager.
+  - Global game state manager.
+    - This includes updating UI components.
+  - Environment related management (weather, time of day, etc).
+- Any form of object pooling system.
+- As a [hybrid "one-shot" spawner](#hybrid-approach).
+- Any form of world environment state synchronization:
+  - Tracking a door's open, closed, locked, or unlocked status.
+  - Moving platforms that don't get destroyed
+    - If you need to destroy it, then it might be better dynamically spawned.
+  - Collider trigger handlers for entering into a specific area of the scene.
+  - If there are specific behaviors you want to associate with some form of scene specific geometry, then making it an in-scene placed NetworkObject might be a good path to take.
+
+**Examples of when not to use an in-scene placed NetworkObject:**
+- Creating a static number of players as in-scene placed NetworkObjects and trying to assign them to clients as they join.
+  - Dynamically spawn the player prefab or allow the NetworkManager handle this.
+- Creating a bunch of in-scene placed NetworkObjects and using them like an object pool.
+  - Create an object pool manager that registers with the [NetworkPrefabHandler](../../advanced-topics/network-prefab-handler.md) uses the recommended way to [create an object pool](https://learn.unity.com/tutorial/introduction-to-object-pooling).
+- If you want to de-spawn and re-spawn a NetworkObject multiple times, it is recommended to use the object pool approach as opposed to using a bunch of in-scene placed NetworkObjects.
+
 ## Complex in-scene NetworkObjects
 
 The most common mistake when using an in-scene placed NetworkObject is to try and use it like a dynamically spawned NetworkObject. When trying to decide if you should use an in-scene placed or dynamically spawned NetworkObject, you should ask yourself the following questions:
@@ -112,7 +138,33 @@ Using this approach allows you to:
 
 By default, an in-scene placed NetworkObject is spawned when the scene it's placed in is loaded and a network session is in progress. In-scene placed NetworkObjects differ from dynamically spawned NetworkObjects when it comes to spawning and despawning: when despawning a dynamically spawned NetworkObject, you can always spawn a new instance of the NetworkObject's associated network prefab. So, whether you decide to destroy a dynamically spawned NetworkObject or not, you can always make another clone of the same network prefab, unless you want to preserve the current state of the instance being despawned.
 
-With in-scene placed NetworkObjects, the scene it's placed in is similar to the network prefab used to dynamically spawn a NetworkObject, in that both are used to uniquely identify the spawned NetworkObject. The primary difference is that where you use a network prefab to create a new dynamically spawned instance, for in-scene placed objects you need to additively load the same scene to create another in-scene placed NetworkObject instance.
+With in-scene placed NetworkObjects, the scene itself is similar to a network prefab used to dynamically spawn a NetworkObject with the primary difference being each new in-scene placed NetworkObject created in the same scene will have a unique GlobalObjectIdHash value. If you drag and drop a network prefab asset into a scene, it will assign a completely new GlobalObjectIdHash value to each instance of the network prefab you create in any scene when in the editor.
+
+
+### Dynamic vs In-scene placed spawning
+
+There are distinct differences between a network prefab and an in-scene placed NetworkObject:
+- A network prefab only defines a single NetworkObject.
+- A scene can define many NetworkObjects.
+  - Some might be network prefabs and some might be defined in the scene itself.
+
+NetworkObjects are uniquely identified by the `NetworkObject.GlobalObjectIdHash` value generated. The `NetworkObject.GlobalObjectIdHash` value generated is relative to the asset that defines the NetworkObject (network prefab or in-scene placed).
+
+__Identification differences:__
+- You will not have two network prefab assets in the same project with the same GlobalObjectIdHash value assigned.
+  - This is because each network prefab is considered a unique asset in Unity.
+- You can have two in-scene placed NetworkObjects with the same GlobalObjectIdHash value.
+  - It requires loading the same scene additively more than once.
+  - The only distinguishing difference between the duplicate instances is the instance of the scene loaded (`Scene.handle`).
+
+When integrated scene management is enabled clients will be synchronized with the current network session state when they first connect. In order to assure that everything needed by any spawned NetworkObject, which could be in one of (n) scenes loaded, the connecting client will first load all of the scenes currently loaded and synchronized in the network session. Upon finishing the loading process it will then begin the spawning of in-scene placed NetworkObjects and then after all in-scene palced NetworkObjects are spawned it will spawn the remaining dynamically spawned NetworkObjects.
+
+The end result is that under the condition of more than one scene being loaded and sychronized (additively loaded) it is possible that a scene could be loaded additvely multiple times. Each duplicated in-scene placed NetworkObject instantiated in each of the scene instances will still have the same GlobalObjectIdHash value (it was generated based on the scene asset and the root GameObject of the NetworkObject). Since none of those instance are spawned, all of the duplicate in-scene placed NetworkObjects will not have their NetworkObjectId assigned yet. The issue at hand here is knowing "which instance" a specific spawn command (included in the synchronization message) should be applied.
+
+To solve this issue, the NetworkSceneManager uses the `Scene.handle` associated with each in-scene placed NetworkObject's scene to uniquely identify each instance.
+
+It is important to understand this unique coupling of a scene and in-scene placed NetworkObjects when thinking about the spawn sequence and the despawn sequence.
+
 
 ### Identifying spawned NetworkObjects
 

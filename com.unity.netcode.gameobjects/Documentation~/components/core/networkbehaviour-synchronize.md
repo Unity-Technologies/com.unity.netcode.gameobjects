@@ -178,8 +178,10 @@ using UnityEngine;
 using Unity.Netcode;
 
 /// <summary>
-/// Simple RPC driven state that shows one
-/// form of NetworkBehaviour.OnSynchronize usage
+/// Synchronized RPC driven field
+/// (Network topology agnostic example)
+/// This example demonstrates how you can set one or more fields
+/// using RPCs while also synchronizing late joining clients.
 /// </summary>
 public class SimpleRpcState : NetworkBehaviour
 {
@@ -187,7 +189,7 @@ public class SimpleRpcState : NetworkBehaviour
 
     /// <summary>
     /// Late joining clients will be synchronized
-    /// to the most current m_ToggleState.
+    /// to the most current m_ToggleState by the authority.
     /// </summary>
     protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
     {
@@ -195,25 +197,36 @@ public class SimpleRpcState : NetworkBehaviour
         base.OnSynchronize(ref serializer);
     }
 
+    /// <summary>
+    /// Sets the toggle state.
+    /// (Authority only)
+    /// </summary>
     public void ToggleState(bool stateIsSet)
     {
+        if (!HasAuthority)
+        {
+            return;
+        }
         m_ToggleState = stateIsSet;
+        ToggleStateRpc(m_ToggleState);
     }
 
     /// <summary>
-    /// Synchronizes connected clients with the
-    /// server-side m_ToggleState.
+    /// Synchronizes non-authority instances with the
+    /// change in <see cref="m_ToggleState"/>.
     /// </summary>
-    /// <param name="stateIsSet"></param>
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ToggleStateClientRpc(bool stateIsSet)
+    /// <param name="stateIsSet">updated toggle state</param>
+    [Rpc(SendTo.NotMe)]
+    private void ToggleStateRpc(bool stateIsSet)
     {
         m_ToggleState = stateIsSet;
     }
 }
 ```
 > [!NOTE]
-> `NetworkBehaviour.OnSynchronize` is only invoked on the server side during the write part of serialization and only invoked on the client side during the read part of serialization. When running a host, `NetworkBehaviour.OnSynchronize` is still only invoked once (server-side) during the write part of serialization.
+> `NetworkBehaviour.OnSynchronize` is only invoked on the authority side during the write part of serialization and only invoked on the non-authority side during the read part of serialization. When using a client-server network topology and running a host, `NetworkBehaviour.OnSynchronize` is still only invoked once (server-side) during the write part of serialization. 
+>
+> When using a distributed authority network topology, the session-owner handles the initial synchronization which could be potentially out of synch with the owner/authority of the spawned NetworkObject. Because of this potential edge case scenario, you it is recommended to either keep 
 
 ### Debugging `OnSynchronize` serialization
 

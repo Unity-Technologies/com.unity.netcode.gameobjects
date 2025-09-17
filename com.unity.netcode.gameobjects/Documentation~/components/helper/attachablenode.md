@@ -2,7 +2,7 @@
 
 Use an AttachableNode component to provide an attachment point for an [AttachableBehaviour](attachablebehaviour.md) component.
 
-AttachableNodes include a **Detach On Despawn** field that, when enabled (the default setting), automatically detaches and destroys any attached AttachableBehaviour instances when the associated NetworkObject of the AttachableNode is despawned.
+AttachableNodes include a **Detach On Despawn** field that, when enabled (the default setting), automatically detaches any attached AttachableBehaviour instances when the associated NetworkObject of the AttachableNode is despawned.
 
 ![Inspector view UI with details of AttachableNode component](../../images/attachable/AttachableNode_InspectorView-1.png)
 
