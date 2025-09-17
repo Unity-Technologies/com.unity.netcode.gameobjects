@@ -14,6 +14,6 @@ jobs:
     steps:
       - uses: wechuli/allcheckspassed@v1
         with:
-          delay: '1'
-          retries: '48'
-          polling_interval: '5'
+          delay: '0'
+          retries: '100'
+          polling_interval: '3'
