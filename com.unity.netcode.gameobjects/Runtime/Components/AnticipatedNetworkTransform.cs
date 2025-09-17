@@ -277,9 +277,8 @@ namespace Unity.Netcode.Components
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
                 if (!CanCommitToTransform)
                 {
-                    transform_.position = m_AnticipatedTransform.Position;
+                    transform_.SetPositionAndRotation(m_AnticipatedTransform.Position, m_AnticipatedTransform.Rotation);
                     transform_.localScale = m_AnticipatedTransform.Scale;
-                    transform_.rotation = m_AnticipatedTransform.Rotation;
                 }
             }
         }
@@ -549,18 +548,16 @@ namespace Unity.Netcode.Components
             if (!m_OutstandingAuthorityChange)
             {
                 // Keep the anticipated value unchanged, we have no updates from the server at all.
-                transform_.position = previousAnticipatedTransform.Position;
+                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
                 transform_.localScale = previousAnticipatedTransform.Scale;
-                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
 
             if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipaionCounter > m_LastAuthorityUpdateCounter)
             {
                 // Keep the anticipated value unchanged because it is more recent than the authoritative one.
-                transform_.position = previousAnticipatedTransform.Position;
+                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
                 transform_.localScale = previousAnticipatedTransform.Scale;
-                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
 
