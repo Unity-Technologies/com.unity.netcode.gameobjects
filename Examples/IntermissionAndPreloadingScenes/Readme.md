@@ -1,6 +1,25 @@
 # Netcode for GameObjects <br /> Pre-loading scenes and scene intermissions
 _Supports using the client-server and distributed authority network topologies._
 
+## Netcode components used
+
+- NetworkSceneManager (Advanced)
+  - Areas used:
+    - OnSceneEvent processing
+      - Using and adjusting SceneEvent.AsyncOperation
+    - Client synchronization 
+    - Scene loading and unloading.
+- NetworkObject
+  - Areas used:
+    - Spawning & De-spawning
+    - Active scene synchronization
+    - Scene migration synchronization
+- ExtendedNetworkManager : NetworkManager
+  - Includes runtime menu selection based on selected network topology.
+- Includes dynamically spawned and in-scene placed NetworkObjects.
+
+## Getting Started
+
 When you first open the project, you will want to load the BootStrapScene and then take a look at the ExtendedNetworkManager:
 ![image](Images/ExtendedNetworkManager.png)
 

@@ -1,9 +1,25 @@
 # Netcode for GameObjects <br /> Spawning without observers
 _Supports using the client-server and distributed authority network topologies._
 
+## Netcode components used
+
+- NetworkObject
+  - Areas used:
+    - Observers    
+    - Spawning & De-spawning
+- NetworkSceneManager
+  - Areas used:
+    - Client synchronization 
+    - Scene loading and unloading.
+- ExtendedNetworkManager : NetworkManager
+  - Includes runtime menu selection based on selected network topology.
+- Includes dynamically spawned and in-scene placed NetworkObjects.
+
+
+## Getting Started (wip)
+
 When you first open the project, you will want to load the BootStrapScene scene:
 ![image](Images/BootstrapScene.png)
-
 
 Then find the ExtendedNetworkManager.
 The ExtendedNetworkManager in-scene placed object has two components of interest:
