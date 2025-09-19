@@ -1,2 +1,5 @@
-com.unity.netcode.gameobjects/**
+com.unity.netcode.gameobjects/Editor/**
+com.unity.netcode.gameobjects/Runtime/**
+com.unity.netcode.gameobjects/Tests/**
+com.unity.netcode.gameobjects/package.json
 testproject/**
