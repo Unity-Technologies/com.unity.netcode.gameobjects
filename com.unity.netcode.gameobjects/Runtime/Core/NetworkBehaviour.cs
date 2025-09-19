@@ -633,6 +633,16 @@ namespace Unity.Netcode
         internal ushort NetworkBehaviourIdCache = 0;
 
         /// <summary>
+        /// Returns the NetworkBehaviour with a given BehaviourId for the current NetworkObject.
+        /// </summary>
+        /// <param name="behaviourId">The behaviourId to return</param>
+        /// <returns>Returns NetworkBehaviour with given behaviourId</returns>
+        protected NetworkBehaviour GetNetworkBehaviour(ushort behaviourId)
+        {
+            return NetworkObject.GetNetworkBehaviourAtOrderIndex(behaviourId);
+        }
+
+        /// <summary>
         /// Gets the ClientId that owns this NetworkObject.
         /// </summary>
         public ulong OwnerClientId { get; internal set; }
