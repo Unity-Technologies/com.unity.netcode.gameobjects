@@ -53,10 +53,10 @@ pull_request_trigger:
     # TODO: consider setting up and running tests from Examples/
     # TODO: or docs only changes are spelling/link check
     expression: |-
-      pull_request.comment eq "ngo" OR
-      ((pull_request.target eq "develop" OR
+      (pull_request.comment eq "ngo" OR
+      (pull_request.target eq "develop" OR
       pull_request.target eq "develop-2.0.0" OR
-      pull_request.target match "release/*") AND
+      pull_request.target match "release/*")) AND
       NOT pull_request.draft
     cancel_old_ci: true
 
