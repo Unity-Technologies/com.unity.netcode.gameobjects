@@ -142,7 +142,7 @@ When __Tick Sync Children__ is enabled, the top-most parent NetworkTransform aut
 
 #### Network conditions to consider
 
-Sometimes network conditions are poor, with packets experiencing latency and potentially packet loss. When NetworkTransform [interpolation](#interpolation) is enabled, packet loss can mean undesirable visual artifacts such as stutter. To try and mitigate these issues, NetworkTransform defaults to sending delta state updates (such as position, rotation, or scale changes) as unreliable sequenced network-delivered messages. This ensures that if one state is lost then the `BufferedLinearInterpolator` can recover easily, because it doesn't have to wait precisely for the next state update and can just lose a small portion of the overall interpolated path. For example, with a `TickRate` setting of 30, you could lose 5 to 10% of the overall state updates over one second and still have a relatively similar interpolated path to that of a perfectly delivered 30 delta state updates generated path. The [__UseUnreliableDeltas__](#use-unreliable-deltas) NetworkTransform property, which defaults to disabled, controls whether you send your delta state updates unreliably or reliably.
+Sometimes network conditions are poor, with packets experiencing latency and potentially packet loss. When NetworkTransform [interpolation](#interpolation) is enabled, packet loss can mean undesirable visual artifacts such as stutter. To try and mitigate these issues, NetworkTransform defaults to sending delta state updates (such as position, rotation, or scale changes) as unreliable sequenced network-delivered messages. This ensures that if one state is lost then the `BufferedLinearInterpolator` can recover easily, because it doesn't have to wait precisely for the next state update and can just lose a small portion of the overall interpolated path. For example, with a `TickRate` setting of 30, you could lose 5 to 10% of the overall state updates over one second and still have a relatively similar interpolated path to that of a perfectly delivered 30 delta state updates generated path. The [__UseUnreliableDeltas__](#unreliable-state-updates) NetworkTransform property, which defaults to disabled, controls whether you send your delta state updates unreliably or reliably.
 
 Of course, you might wonder what would happen if 5% of the end of a jumping motion were dropped and how NetworkTransform might recover since each state update sent is only based on axial deltas defined by each axis threshold setting. The answer is that there is a small bandwidth penalty for sending standard delta state updates unreliably,  full axial frame synchronization, which assures that in the event there is loss each NetworkTransform will be "auto-corrected" once per second.
 
@@ -187,7 +187,7 @@ Things to consider when using __Switch Transform Space When Parented__:
 
 NetworkObject parenting can become complex when:
 
-- You are parenting a NetworkObject while it's [in motion](#in-motion).
+- You are parenting a NetworkObject while it's [in motion](#spawning-or-in-motion).
 - You are parenting a NetworkObject [while spawning](#when-spawning) (depending upon network topology and the desired authority motion model).
 
 #### Spawning or in motion
