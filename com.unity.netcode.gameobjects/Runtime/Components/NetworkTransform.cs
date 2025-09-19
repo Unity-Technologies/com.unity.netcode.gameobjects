@@ -2529,6 +2529,7 @@ namespace Unity.Netcode.Components
             {
                 if (resetInterpolator)
                 {
+                    m_PositionInterpolator.InLocalSpace = InLocalSpace;
                     m_PositionInterpolator.ResetTo(position, time);
                 }
                 else
@@ -2999,6 +3000,7 @@ namespace Unity.Netcode.Components
 
                 if (Interpolate)
                 {
+                    m_RotationInterpolator.InLocalSpace = InLocalSpace;
                     m_RotationInterpolator.ResetTo(currentRotation, sentTime);
                 }
             }
@@ -3195,11 +3197,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
-            if (!NetworkObject.IsSpawned || CanCommitToTransform)
-            {
-                return;
-            }
-
             // If we are using UseUnreliableDeltas and our old state tick is greater than the new state tick,
             // then just ignore the newstate. This avoids any scenario where the new state is out of order
             // from the old state (with unreliable traffic and/or mixed unreliable and reliable)
@@ -4419,12 +4416,13 @@ namespace Unity.Netcode.Components
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
         /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ulong senderId, bool parentUpdated)
+        internal void TransformStateUpdate(ulong senderId, bool isParentingDirective)
         {
-            if (CanCommitToTransform)
+            if (!IsSpawned || (CanCommitToTransform && !isParentingDirective))
             {
                 // TODO: Investigate where this state should be applied or just discarded.
                 // For now, discard the state if we assumed ownership.
+                Debug.LogError($"[Client-{NetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
                 return;
             }
             // Store the previous/old state
@@ -4440,10 +4438,22 @@ namespace Unity.Netcode.Components
         // Used to send outbound messages
         private NetworkTransformMessage m_OutboundMessage = new NetworkTransformMessage();
 
+        /// <summary>
+        /// Only invoked by the authority.
+        /// (motion or server)
+        /// </summary>
         internal void ParentingUpdate(NetworkObject parent, bool worldPositionStays)
         {
+            // Super-edge case when spawning an object with ownership and then immeidatley
+            // parenting. If so, update the current position and rotation values.
+            if (!CanCommitToTransform && IsServer)
+            {
+                m_InternalCurrentPosition = transform.localPosition;
+                m_InternalCurrentRotation = transform.localRotation;
+            }
             InLocalSpace = parent;
             m_OutboundMessage.SetParent(new NetworkObjectReference(parent), worldPositionStays);
+
             var transformToCommit = transform;
             CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, false, forceState: true);
             UpdateTransformState();
@@ -4465,8 +4475,14 @@ namespace Unity.Netcode.Components
             if (!removeParent)
             {
                 // Convert the world space transform values to the local space of the new transform
-                m_InternalCurrentPosition = parentObject.transform.InverseTransformPoint(transform.position);
-                m_InternalCurrentRotation = Quaternion.Inverse(parentObject.transform.rotation) * m_InternalCurrentRotation;
+                if (SynchronizePosition)
+                {
+                    m_InternalCurrentPosition = parentObject.transform.InverseTransformPoint(transform.position);
+                }
+                if (SynchronizeRotation)
+                {
+                    m_InternalCurrentRotation = Quaternion.Inverse(parentObject.transform.rotation) * m_InternalCurrentRotation;
+                }
 
                 // If we had a previous parent...
                 if (m_PreviousParent && InLocalSpace)
@@ -4474,22 +4490,41 @@ namespace Unity.Netcode.Components
                     // Convert the queues to world space relative to the previous parent
                     // so when we convert back to local space relative to the new parent
                     // the are all already in world space.
-                    m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
-                    m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                    if (SynchronizePosition)
+                    {
+                        m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                    }
+                    if (SynchronizeRotation)
+                    {
+                        m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                    }
                 }
+                InLocalSpace = true;
                 // Convert the world space values of the interpolators to local space
-                m_PositionInterpolator.ConvertTransformSpace(parentObject.transform, true);
-                m_RotationInterpolator.ConvertTransformSpace(parentObject.transform, true);
+                if (SynchronizePosition)
+                {
+                    m_PositionInterpolator.ConvertTransformSpace(parentObject.transform, true);
+                }
+                if (SynchronizeRotation)
+                {
+                    m_RotationInterpolator.ConvertTransformSpace(parentObject.transform, true);
+                }
                 m_PreviousParent = parentObject;
             }
             else if (m_PreviousParent)
             {
                 InLocalSpace = false;
                 // Convert everything back to world space values
-                m_InternalCurrentPosition = m_PreviousParent.transform.TransformPoint(transform.localPosition);
-                m_InternalCurrentRotation = m_PreviousParent.transform.localRotation * m_InternalCurrentRotation;
-                m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
-                m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                if (SynchronizePosition)
+                {
+                    m_InternalCurrentPosition = m_PreviousParent.transform.TransformPoint(transform.localPosition);
+                    m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                }
+                if (SynchronizeRotation)
+                {
+                    m_InternalCurrentRotation = m_PreviousParent.transform.localRotation * m_InternalCurrentRotation;
+                    m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
+                }
                 m_PreviousParent = null;
             }
 
@@ -4528,7 +4563,7 @@ namespace Unity.Netcode.Components
             // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
             var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
                 | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
-                ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
+                ? MessageDelivery.GetDelivery(NetworkMessageTypes.NetworkTransformMessage) : NetworkDelivery.UnreliableSequenced;
 
             // Server-host-dahost always sends updates to all clients (but itself)
             if (IsServer)

@@ -27,11 +27,12 @@ namespace Unity.Netcode
         /// Sends NetworkVariable deltas
         /// </summary>
         /// <param name="forceSend">internal only, when changing ownership we want to send this before the change in ownership message</param>
-        internal void NetworkBehaviourUpdate(bool forceSend = false)
+        internal bool NetworkBehaviourUpdate(bool forceSend = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_NetworkBehaviourUpdate.Begin();
 #endif
+            var sentMessages = false;
             try
             {
                 foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
@@ -62,6 +63,7 @@ namespace Unity.Netcode
                                 for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                                 {
                                     dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
+                                    sentMessages = true;
                                 }
                             }
                         }
@@ -81,6 +83,7 @@ namespace Unity.Netcode
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
                                 sobj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
+                                sentMessages = true;
                             }
                         }
                     }
@@ -124,6 +127,7 @@ namespace Unity.Netcode
                 m_NetworkBehaviourUpdate.End();
 #endif
             }
+            return sentMessages;
         }
 
         internal void Initialize(NetworkManager networkManager)
@@ -141,11 +145,12 @@ namespace Unity.Netcode
         // Order of operations requires NetworkVariable updates first then showing NetworkObjects
         private void NetworkBehaviourUpdater_Tick()
         {
-            // First update NetworkVariables
-            NetworkBehaviourUpdate();
-
-            // Then show any NetworkObjects queued to be made visible/shown
-            m_NetworkManager.SpawnManager.HandleNetworkObjectShow();
+            // Handle showing NetworkObjects on the next network tick
+            if (NetworkBehaviourUpdate())
+            {
+                // Then show any NetworkObjects queued to be made visible/shown
+                m_NetworkManager.SpawnManager.HandleNetworkObjectShow();
+            }
 
             // Handle object redistribution (DA + disabled scene management only)
             m_NetworkManager.HandleRedistributionToClients();

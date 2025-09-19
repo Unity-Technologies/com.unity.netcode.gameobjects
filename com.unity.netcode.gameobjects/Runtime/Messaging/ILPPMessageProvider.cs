@@ -6,6 +6,44 @@ using UnityEditor;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Enum representing the different types of messages that can be sent over the network.
+    /// The values cannot be changed, as they are used to serialize and deserialize messages.
+    /// Adding new messages should be done by adding new values to the end of the enum
+    /// using the next free value.
+    /// </summary>
+    /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    /// Add any new Message types to this table at the END with incremented index value
+    /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    internal enum NetworkMessageTypes : uint
+    {
+        ConnectionApproved = 0,
+        ConnectionRequest = 1,
+        ChangeOwnership = 2,
+        ClientConnected = 3,
+        ClientDisconnected = 4,
+        ClientRpc = 5,
+        CreateObject = 6,
+        DestroyObject = 7,
+        DisconnectReason = 8,
+        ForwardClientRpc = 9,
+        ForwardServerRpc = 10,
+        NamedMessage = 11,
+        NetworkTransformMessage = 12,
+        NetworkVariableDelta = 13,
+        ParentSync = 14,
+        Proxy = 15,
+        Rpc = 16,
+        SceneEvent = 17,
+        ServerLog = 18,
+        ServerRpc = 19,
+        SessionOwner = 20,
+        TimeSync = 21,
+        Unnamed = 22,
+        AnticipationCounterSyncPingMessage = 23,
+        AnticipationCounterSyncPongMessage = 24,
+    }
+
     internal struct ILPPMessageProvider : INetworkMessageProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
@@ -13,70 +51,15 @@ namespace Unity.Netcode
         internal static readonly List<NetworkMessageManager.MessageWithHandler> __network_message_types = new List<NetworkMessageManager.MessageWithHandler>();
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-        /// <summary>
-        /// Enum representing the different types of messages that can be sent over the network.
-        /// The values cannot be changed, as they are used to serialize and deserialize messages.
-        /// Adding new messages should be done by adding new values to the end of the enum
-        /// using the next free value.
-        /// </summary>
-        /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        /// Add any new Message types to this table at the END with incremented index value
-        /// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        internal enum NetworkMessageTypes : uint
-        {
-            ConnectionApproved = 0,
-            ConnectionRequest = 1,
-            ChangeOwnership = 2,
-            ClientConnected = 3,
-            ClientDisconnected = 4,
-            ClientRpc = 5,
-            CreateObject = 6,
-            DestroyObject = 7,
-            DisconnectReason = 8,
-            ForwardClientRpc = 9,
-            ForwardServerRpc = 10,
-            NamedMessage = 11,
-            NetworkTransformMessage = 12,
-            NetworkVariableDelta = 13,
-            ParentSync = 14,
-            Proxy = 15,
-            Rpc = 16,
-            SceneEvent = 17,
-            ServerLog = 18,
-            ServerRpc = 19,
-            SessionOwner = 20,
-            TimeSync = 21,
-            Unnamed = 22,
-            AnticipationCounterSyncPingMessage = 23,
-            AnticipationCounterSyncPongMessage = 24,
-        }
-
-
         // Enable this for integration tests that need no message types defined
         internal static bool IntegrationTestNoMessages;
 
-        public List<NetworkMessageManager.MessageWithHandler> GetMessages()
+        /// <summary>
+        /// Returns a table of message type to NetworkMessageTypes enum value
+        /// </summary>
+        /// <returns>Dictionary<Type, NetworkMessageTypes></returns>
+        internal static Dictionary<Type, NetworkMessageTypes> GetMessageTypesMap()
         {
-            // return no message types when defined for integration tests
-            if (IntegrationTestNoMessages)
-            {
-                return new List<NetworkMessageManager.MessageWithHandler>();
-            }
-            var messageTypeCount = Enum.GetValues(typeof(NetworkMessageTypes)).Length;
-            // Assure the allowed types count is the same as our NetworkMessageType enum count
-            if (__network_message_types.Count != messageTypeCount)
-            {
-                throw new Exception($"Allowed types is not equal to the number of message type indices! Allowed Count: {__network_message_types.Count} | Index Count: {messageTypeCount}");
-            }
-
-            // Populate with blanks to be replaced later
-            var adjustedMessageTypes = new List<NetworkMessageManager.MessageWithHandler>();
-            var blank = new NetworkMessageManager.MessageWithHandler();
-            for (int i = 0; i < messageTypeCount; i++)
-            {
-                adjustedMessageTypes.Add(blank);
-            }
-
             // Create a type to enum index lookup table
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // Add new Message types to this table paired with its new NetworkMessageTypes enum
@@ -109,6 +92,33 @@ namespace Unity.Netcode
                 { typeof(AnticipationCounterSyncPingMessage), NetworkMessageTypes.AnticipationCounterSyncPingMessage},
                 { typeof(AnticipationCounterSyncPongMessage), NetworkMessageTypes.AnticipationCounterSyncPongMessage},
             };
+            return messageTypes;
+        }
+
+        public List<NetworkMessageManager.MessageWithHandler> GetMessages()
+        {
+            // return no message types when defined for integration tests
+            if (IntegrationTestNoMessages)
+            {
+                return new List<NetworkMessageManager.MessageWithHandler>();
+            }
+            var messageTypeCount = Enum.GetValues(typeof(NetworkMessageTypes)).Length;
+            // Assure the allowed types count is the same as our NetworkMessageType enum count
+            if (__network_message_types.Count != messageTypeCount)
+            {
+                throw new Exception($"Allowed types is not equal to the number of message type indices! Allowed Count: {__network_message_types.Count} | Index Count: {messageTypeCount}");
+            }
+
+            // Populate with blanks to be replaced later
+            var adjustedMessageTypes = new List<NetworkMessageManager.MessageWithHandler>();
+            var blank = new NetworkMessageManager.MessageWithHandler();
+            for (int i = 0; i < messageTypeCount; i++)
+            {
+                adjustedMessageTypes.Add(blank);
+            }
+
+            // Get the message type to NetworkMessageTypes enum value table
+            var messageTypes = GetMessageTypesMap();
 
             // Assure the type to lookup table count and NetworkMessageType enum count matches (i.e. to catch human error when adding new messages)
             if (messageTypes.Count != messageTypeCount)

@@ -259,7 +259,7 @@ namespace Unity.Netcode
             var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
             foreach (var targetClient in clients)
             {
-                ConnectionManager.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableSequenced, targetClient);
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, MessageDelivery.GetDelivery(NetworkMessageTypes.SessionOwner), targetClient);
             }
         }
 
@@ -438,6 +438,9 @@ namespace Unity.Netcode
                         {
                             SpawnManager.DeferredDespawnUpdate(ServerTime);
                         }
+
+                        // Send any pending objects to be shown (in-between ticks)
+                        SpawnManager.HandleNetworkObjectShow();
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
                         SpawnManager.UpdateNetworkObjectSceneChanges();

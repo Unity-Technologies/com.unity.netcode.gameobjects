@@ -635,7 +635,7 @@ namespace Unity.Netcode
                 }
             }
 
-            SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
+            SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionRequest), NetworkManager.ServerClientId);
             message.MessageVersions.Dispose();
         }
 
@@ -857,7 +857,7 @@ namespace Unity.Netcode
                     }
                     if (!MockSkippingApproval)
                     {
-                        SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                        SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionApproved), ownerClientId);
                     }
                     else
                     {
@@ -987,7 +987,7 @@ namespace Unity.Netcode
                 message.ObjectInfo.HasParent = false;
                 message.ObjectInfo.IsPlayerObject = true;
                 message.ObjectInfo.OwnerClientId = clientId;
-                var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.CreateObject), clientPair.Key);
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
@@ -1021,14 +1021,14 @@ namespace Unity.Netcode
             {
                 ConnectedClientsList.Add(networkClient);
             }
-
+            var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ClientConnected);
             if (NetworkManager.LocalClientId != clientId)
             {
                 if ((!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer) ||
                     (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.DAHost && NetworkManager.LocalClient.IsSessionOwner))
                 {
                     var message = new ClientConnectedMessage { ClientId = clientId };
-                    NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, ConnectedClientIds.Where((c) => c != NetworkManager.LocalClientId).ToArray());
+                    NetworkManager.MessageManager.SendMessage(ref message, networkDelivery, ConnectedClientIds.Where((c) => c != NetworkManager.LocalClientId).ToArray());
                 }
                 else if (NetworkManager.DistributedAuthorityMode && NetworkManager.NetworkConfig.EnableSceneManagement && NetworkManager.DAHost && !NetworkManager.LocalClient.IsSessionOwner)
                 {
@@ -1037,7 +1037,7 @@ namespace Unity.Netcode
                         ShouldSynchronize = true,
                         ClientId = clientId
                     };
-                    NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.CurrentSessionOwner);
+                    NetworkManager.MessageManager.SendMessage(ref message, networkDelivery, NetworkManager.CurrentSessionOwner);
                 }
             }
             if (!ConnectedClientIds.Contains(clientId))
@@ -1286,7 +1286,7 @@ namespace Unity.Netcode
 
                 ConnectedClientIds.Remove(clientId);
                 var message = new ClientDisconnectedMessage { ClientId = clientId };
-                MessageManager?.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ConnectedClientIds);
+                MessageManager?.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ClientDisconnected), ConnectedClientIds);
 
                 // Used for testing/validation purposes only
 #if ENABLE_DAHOST_AUTOPROMOTE_SESSION_OWNER

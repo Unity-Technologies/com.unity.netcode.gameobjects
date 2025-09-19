@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 
@@ -665,7 +666,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId">the client to check</param>
         /// <param name="networkObject">the <see cref="NetworkObject"/> to check if it is pending show</param>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal bool IsObjectVisibilityPending(ulong clientId, ref NetworkObject networkObject)
         {
             if (NetworkManager.DistributedAuthorityMode && ClientsToShowObject.ContainsKey(networkObject))
@@ -1312,7 +1313,6 @@ namespace Unity.Netcode
             {
                 return;
             }
-
             var message = new CreateObjectMessage
             {
                 ObjectInfo = networkObject.GetMessageSceneObject(clientId, NetworkManager.DistributedAuthorityMode),
@@ -1320,7 +1320,7 @@ namespace Unity.Netcode
                 UpdateObservers = NetworkManager.DistributedAuthorityMode,
                 ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.CreateObject), clientId);
             NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
         }
 
@@ -1344,7 +1344,7 @@ namespace Unity.Netcode
                 UpdateObservers = true,
                 UpdateNewObservers = true,
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.CreateObject), NetworkManager.ServerClientId);
             foreach (var clientId in newObservers)
             {
                 // TODO: We might want to track observer update sent as well?
@@ -1722,9 +1722,10 @@ namespace Unity.Netcode
                         IsTargetedDestroy = false,
                         IsDistributedAuthority = distributedAuthority,
                     };
+                    var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.DestroyObject);
                     foreach (var clientId in m_TargetClientIds)
                     {
-                        var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                        var size = NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
                         NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, networkObject, size);
                     }
                 }
@@ -1798,10 +1799,18 @@ namespace Unity.Netcode
         /// </summary>
         internal void HandleNetworkObjectShow()
         {
+            // Covers any distributed authority client that is not the DAHost
+            var isDistributedAuthorityClient = NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost;
+            // Exit early if there is nothing to be shown
+            if ((isDistributedAuthorityClient && ClientsToShowObject.Count == 0) || (!isDistributedAuthorityClient && ObjectsToShowToClient.Count == 0))
+            {
+                return;
+            }
+
             // In distributed authority mode, we send a single message that is broadcasted to all clients
             // that will be shown the object (i.e. 1 message to service that then broadcasts that to the
             // targeted clients). When using a DAHost, we skip this and send like we do in client-server
-            if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
+            if (isDistributedAuthorityClient)
             {
                 foreach (var entry in ClientsToShowObject)
                 {

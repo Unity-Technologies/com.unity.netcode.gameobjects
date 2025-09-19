@@ -99,7 +99,7 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
+                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ServerRpc);
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
@@ -180,7 +180,7 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
+                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ClientRpc);
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
@@ -344,14 +344,14 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
+                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.Rpc);
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > NetworkManager.MessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
-                    networkDelivery = NetworkDelivery.Unreliable;
+                    networkDelivery = NetworkDelivery.UnreliableSequenced;
                     break;
             }
 
@@ -1011,7 +1011,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    var networkDelivery = NetworkVariableBase.Delivery;
+                    var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.NetworkVariableDelta);
                     if (!firstLevelIndex.ContainsKey(networkDelivery))
                     {
                         firstLevelIndex.Add(networkDelivery, secondLevelCounter);
