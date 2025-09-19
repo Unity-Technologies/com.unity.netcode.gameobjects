@@ -10,6 +10,7 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using Unity.Netcode.Components;
+using Unity.Netcode.Runtime;
 
 namespace Unity.Netcode
 {
@@ -17,6 +18,7 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/Network Manager", -100)]
+    [HelpURL(HelpUrls.NetworkManager)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
         /// <summary>

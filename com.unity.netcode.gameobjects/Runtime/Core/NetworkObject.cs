@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Netcode.Components;
+using Unity.Netcode.Runtime;
 #if UNITY_EDITOR
 using UnityEditor;
 #if UNITY_2021_2_OR_NEWER
@@ -24,6 +25,7 @@ namespace Unity.Netcode
     /// </summary>
     [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
+    [HelpURL(HelpUrls.NetworkObject)]
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]

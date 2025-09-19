@@ -10,12 +10,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added: NetworkRigidbody documentation section. (#3664)
+- Added NetworkRigidbody documentation section. (#3664)
+- Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
 
 ### Changed
 
-- Changed: NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
-- Changed: NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
+- Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
+- Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 
 ### Deprecated
 
