@@ -1999,46 +1999,44 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.ChangeOwnership(this, newOwnerClientId, HasAuthority);
         }
 
-        internal void InvokeBehaviourOnLostOwnership()
+        /// <summary>
+        /// Invokes the <see cref="ChildNetworkBehaviours"/> <see cref="NetworkBehaviour.OnLostOwnership"/> and <see cref="NetworkBehaviour.OnGainedOwnership"/> events.
+        /// <see cref="NetworkSpawnManager.UpdateOwnershipTable"/> is called to update the ownership in-between the two callbacks.
+        /// </summary>
+        internal void InvokeBehaviourOnOwnershipChanged(ulong originalOwnerClientId, ulong newOwnerClientId)
         {
-            // Always update the ownership table in distributed authority mode
-            if (NetworkManager.DistributedAuthorityMode)
-            {
-                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
-            }
-            else // Server already handles this earlier, hosts should ignore and only client owners should update
-            if (!NetworkManager.IsServer)
-            {
-                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
-            }
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                ChildNetworkBehaviours[i].InternalOnLostOwnership();
-            }
-        }
+            var distributedAuthorityMode = NetworkManager.DistributedAuthorityMode;
+            var isServer = NetworkManager.IsServer;
+            var isPreviousOwner = originalOwnerClientId == NetworkManager.LocalClientId;
+            var isNewOwner = newOwnerClientId == NetworkManager.LocalClientId;
 
-        internal void InvokeBehaviourOnGainedOwnership()
-        {
-            // Always update the ownership table in distributed authority mode
-            if (NetworkManager.DistributedAuthorityMode)
+            if (distributedAuthorityMode || isPreviousOwner)
             {
-                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
-            }
-            else // Server already handles this earlier, hosts should ignore and only client owners should update
-            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
-            {
-                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, originalOwnerClientId, true);
             }
 
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                childBehaviour.UpdateNetworkProperties();
+                if (distributedAuthorityMode || isServer || isPreviousOwner)
                 {
-                    ChildNetworkBehaviours[i].InternalOnGainedOwnership();
+                    childBehaviour.OnLostOwnership();
                 }
-                else
+            }
+
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, newOwnerClientId);
+
+            if (distributedAuthorityMode || isServer || isNewOwner)
+            {
+                foreach (var childBehaviour in ChildNetworkBehaviours)
                 {
-                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                    if (!childBehaviour.gameObject.activeInHierarchy)
+                    {
+                        Debug.LogWarning($"{childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
+                        continue;
+                    }
+
+                    childBehaviour.InternalOnGainedOwnership();
                 }
             }
         }
@@ -2550,23 +2548,15 @@ namespace Unity.Netcode
         {
             NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
 
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            foreach (var childBehaviour in ChildNetworkBehaviours)
             {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                if (!childBehaviour.gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+                    Debug.LogWarning($"{childBehaviour.gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
+                    continue;
                 }
-                else
-                {
-                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during spawn!");
-                }
-            }
-            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
-            {
-                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
-                {
-                    ChildNetworkBehaviours[i].VisibleOnNetworkSpawn();
-                }
+
+                childBehaviour.InternalOnNetworkSpawn();
             }
         }
 
@@ -3292,7 +3282,13 @@ namespace Unity.Netcode
             }
 
             // Spawn the NetworkObject
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
+            if (networkObject.IsSpawned)
+            {
+                throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
+            }
+
+            // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
+            networkManager.SpawnManager.SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, sceneObject.DestroyWithScene);
 
             if (sceneObject.SyncObservers)
             {

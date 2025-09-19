@@ -644,43 +644,32 @@ namespace Unity.Netcode
         /// </summary>
         internal void UpdateNetworkProperties()
         {
-            var networkObject = NetworkObject;
-            // Set NetworkObject dependent properties
-            if (networkObject != null)
+            var networkObject = m_NetworkObject;
+            var networkManager = NetworkManager;
+
+            // Set identification related properties
+            NetworkObjectId = networkObject.NetworkObjectId;
+            IsLocalPlayer = networkObject.IsLocalPlayer;
+
+            // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
+            // NetworkObject.ChildNetworkBehaviours which is set once when first
+            // accessed.
+            NetworkBehaviourId = networkObject.GetNetworkBehaviourOrderIndex(this);
+
+            // Set ownership related properties
+            IsOwnedByServer = networkObject.IsOwnedByServer;
+            IsOwner = networkObject.IsOwner;
+            OwnerClientId = networkObject.OwnerClientId;
+
+            // Set NetworkManager dependent properties
+            if (networkManager != null)
             {
-                var networkManager = NetworkManager;
-                // Set identification related properties
-                NetworkObjectId = networkObject.NetworkObjectId;
-                IsLocalPlayer = networkObject.IsLocalPlayer;
-
-                // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
-                // NetworkObject.ChildNetworkBehaviours which is set once when first
-                // accessed.
-                NetworkBehaviourId = networkObject.GetNetworkBehaviourOrderIndex(this);
-
-                // Set ownership related properties
-                IsOwnedByServer = networkObject.IsOwnedByServer;
-                IsOwner = networkObject.IsOwner;
-                OwnerClientId = networkObject.OwnerClientId;
-
-                // Set NetworkManager dependent properties
-                if (networkManager != null)
-                {
-                    IsHost = networkManager.IsListening && networkManager.IsHost;
-                    IsClient = networkManager.IsListening && networkManager.IsClient;
-                    IsServer = networkManager.IsListening && networkManager.IsServer;
-                    LocalClient = networkManager.LocalClient;
-                    HasAuthority = networkObject.HasAuthority;
-                    ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
-                }
-            }
-            else // Shouldn't happen, but if so then set the properties to their default value;
-            {
-                OwnerClientId = NetworkObjectId = default;
-                IsOwnedByServer = IsOwner = IsHost = IsClient = IsServer = ServerIsHost = default;
-                NetworkBehaviourId = default;
-                LocalClient = default;
-                HasAuthority = default;
+                IsHost = networkManager.IsListening && networkManager.IsHost;
+                IsClient = networkManager.IsListening && networkManager.IsClient;
+                IsServer = networkManager.IsListening && networkManager.IsServer;
+                LocalClient = networkManager.LocalClient;
+                HasAuthority = networkObject.HasAuthority;
+                ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
             }
         }
 
@@ -764,6 +753,7 @@ namespace Unity.Netcode
         internal void NetworkPreSpawn(ref NetworkManager networkManager, NetworkObject networkObject)
         {
             m_NetworkObject = networkObject;
+            UpdateNetworkProperties();
 
             try
             {
@@ -778,12 +768,10 @@ namespace Unity.Netcode
         internal void InternalOnNetworkSpawn()
         {
             IsSpawned = true;
+            // Initialize the NetworkVariables so they are accessible in OnNetworkSpawn;
             InitializeVariables();
             UpdateNetworkProperties();
-        }
 
-        internal void VisibleOnNetworkSpawn()
-        {
             try
             {
                 OnNetworkSpawn();
@@ -793,6 +781,7 @@ namespace Unity.Netcode
                 Debug.LogException(e);
             }
 
+            // Initialize again in case the user's OnNetworkSpawn changed something
             InitializeVariables();
 
             if (m_NetworkObject.HasAuthority)
@@ -883,11 +872,10 @@ namespace Unity.Netcode
 
         internal void InternalOnGainedOwnership()
         {
-            UpdateNetworkProperties();
             // New owners need to assure any NetworkVariables they have write permissions
             // to are updated so the previous and original values are aligned with the
             // current value (primarily for collections).
-            if (OwnerClientId == NetworkManager.LocalClientId)
+            if (IsOwner)
             {
                 UpdateNetworkVariableOnOwnershipChanged();
             }
@@ -917,12 +905,6 @@ namespace Unity.Netcode
         /// In distributed authority contexts, this method is invoked on all clients connected to the session.
         /// </summary>
         public virtual void OnLostOwnership() { }
-
-        internal void InternalOnLostOwnership()
-        {
-            UpdateNetworkProperties();
-            OnLostOwnership();
-        }
 
         /// <summary>
         /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed.
