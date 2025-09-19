@@ -53,6 +53,9 @@ In most cases, it's recommended to [use an AttachableBehaviour component](#using
   - Does each child, under the same parent, require having physics-driven velocities independent of, but relative to, the parent?
   - Were you planning on using a physics joint (like a [SpringJoint](https://docs.unity3d.com/Documentation/Manual/class-SpringJoint.html)) anyway?
 
+> [!NOTE]
+> Netcode for GameObjects uses the kinematic feature of Unity's Rigidbody and Rigidbody2d to dictate who has physics authority. The authority is non-kinematic which allows physics to impact the object's velocities, collide with other bodies, and have various forces applied (frictional or otherwise). Non-authority instances are kinematic and synchronize the motion of the authority's non-kinematic body via [NetworkTransform](../components/helper/networktransform.md) or writing your own custom transform synchronizing NetworkBehaviour based script.
+
 ### Using AttachableBehaviour for parenting physics objects
 
 > [!NOTE]
