@@ -4450,6 +4450,10 @@ namespace Unity.Netcode.Components
             {
                 m_InternalCurrentPosition = transform.localPosition;
                 m_InternalCurrentRotation = transform.localRotation;
+                if (UseHalfFloatPrecision)
+                {
+                    m_HalfPositionState.UpdateFrom(ref m_InternalCurrentPosition, m_CachedNetworkManager.LocalTime.Tick);
+                }
             }
             InLocalSpace = parent;
             m_OutboundMessage.SetParent(new NetworkObjectReference(parent), worldPositionStays);
