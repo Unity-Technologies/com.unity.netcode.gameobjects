@@ -91,7 +91,7 @@ code_changes_check:
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_trunk
   source:
     files:
-      sparse_checkout_rules: .sparse-checkout-rules/pr-triger.patterns
+      sparse_checkout_rules: .sparse-checkout-rules/pr-trigger.patterns
       
       
       
