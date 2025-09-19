@@ -46,8 +46,8 @@ pull_request_trigger:
   name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
   # Run the following tests on a selection of different desktop platforms
   dependencies:
-    - .yamato/_triggers#minimal_required_checks
-    - .yamato/_triggers#code_changes_check
+    - .yamato/_triggers.yml#minimal_required_checks
+    - .yamato/_triggers.yml#code_changes_check
   triggers:
     # Note that PR tests will run ONLY if we are changing package/sample code. If changes are let's say docs only no tests will be triggered
     # TODO: consider setting up and running tests from Examples/
