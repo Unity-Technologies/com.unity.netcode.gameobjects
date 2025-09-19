@@ -37,9 +37,3 @@ Before you begin, you need the following:
 1. From the Unity Editor, select **Window** > **Package Manager**.
 1. From the Package Manager, select **Add** ![add symbol](images/add.png) > **Add package by git URL…**
 1. Type (or copy and paste) `https://github.com/Unity-Technologies/com.unity.netcode.gameobjects` into the git URL field, then select **Add**.
-
-## Next Steps
-
-After installing Netcode for GameObjects, see the following content to continue your journey:
-
-* Use the [Get started with Netcode for GameObjects tutorial](./tutorials/get-started-with-ngo.md) to create a project, test your installation, and learn how to use the basic features of Netcode for GameObjects.
