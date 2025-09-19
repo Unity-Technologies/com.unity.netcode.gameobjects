@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improved performance of the NetworkVariable. (#3683)
 
 ### Deprecated
 

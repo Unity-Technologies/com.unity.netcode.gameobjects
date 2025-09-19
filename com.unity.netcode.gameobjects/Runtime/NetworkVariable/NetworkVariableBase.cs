@@ -155,7 +155,6 @@ namespace Unity.Netcode
             // When despawned, reset the HasBeenInitialized so if the associated NetworkObject instance
             // is recylced (i.e. in-scene placed or pooled) it will re-initialize the LastUpdateSent time.
             HasBeenInitialized = false;
-            m_UseServerTime = false;
         }
 
         /// <summary>
