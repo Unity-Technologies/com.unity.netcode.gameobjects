@@ -2541,7 +2541,7 @@ namespace Unity.Netcode
             {
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
                 {
-                    ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager);
+                    ChildNetworkBehaviours[i].NetworkPreSpawn(ref networkManager, this);
                 }
             }
         }
@@ -2636,31 +2636,39 @@ namespace Unity.Netcode
                 var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
                 for (int i = 0; i < networkBehaviours.Length; i++)
                 {
-                    if (networkBehaviours[i].NetworkObject == this)
+                    // Find the first parent NetworkObject of this child
+                    // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.
+                    var networkObj = networkBehaviours[i].GetComponentInParent<NetworkObject>();
+                    if (networkObj != this)
                     {
-                        m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
-                        var type = networkBehaviours[i].GetType();
-                        if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
-                        {
-                            if (NetworkTransforms == null)
-                            {
-                                NetworkTransforms = new List<NetworkTransform>();
-                            }
-                            var networkTransform = networkBehaviours[i] as NetworkTransform;
-                            networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
-                            NetworkTransforms.Add(networkTransform);
-                        }
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                        else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
-                        {
-                            if (NetworkRigidbodies == null)
-                            {
-                                NetworkRigidbodies = new List<NetworkRigidbodyBase>();
-                            }
-                            NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
-                        }
-#endif
+                        continue;
                     }
+
+                    // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
+                    networkBehaviours[i].SetNetworkObject(this);
+                    m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
+
+                    var type = networkBehaviours[i].GetType();
+                    if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                    {
+                        if (NetworkTransforms == null)
+                        {
+                            NetworkTransforms = new List<NetworkTransform>();
+                        }
+                        var networkTransform = networkBehaviours[i] as NetworkTransform;
+                        networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
+                        NetworkTransforms.Add(networkTransform);
+                    }
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                    else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
+                    {
+                        if (NetworkRigidbodies == null)
+                        {
+                            NetworkRigidbodies = new List<NetworkRigidbodyBase>();
+                        }
+                        NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
+                    }
+#endif
                 }
 
                 return m_ChildNetworkBehaviours;
