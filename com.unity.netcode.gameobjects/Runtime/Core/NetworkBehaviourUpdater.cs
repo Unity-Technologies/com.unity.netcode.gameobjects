@@ -104,7 +104,6 @@ namespace Unity.Netcode
         /// Temporary work-around for assuring any pending dirty states are pushed out prior to showing the object
         /// TODO: We need to send all messages that are specific to a NetworkObject along with a NetworkObject event header
         /// such that messages will be processed after spawned.
-        /// 
         /// </summary>
         /// <param name="networkObject"></param>
         internal void ForceSendIfDirtyOnNetworkShow(NetworkObject networkObject)
