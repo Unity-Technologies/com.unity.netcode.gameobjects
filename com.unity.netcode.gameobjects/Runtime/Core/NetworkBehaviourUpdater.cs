@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Unity.Profiling;
 
 namespace Unity.Netcode
@@ -21,6 +22,115 @@ namespace Unity.Netcode
         {
             // Since this is a HashSet, we don't need to worry about duplicate entries
             m_PendingDirtyNetworkObjects.Add(networkObject);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ProcessDirtyObjectServer(NetworkObject dirtyObj, bool forceSend)
+        {
+            var sentMessages = false;
+            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+            {
+                dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
+            }
+
+            for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
+            {
+                var client = m_ConnectionManager.ConnectedClientsList[i];
+                if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
+                {
+                    // Sync just the variables for just the objects this client sees
+                    for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                    {
+                        dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
+                        sentMessages = true;
+                    }
+                }
+            }
+            return sentMessages;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
+        {
+            var sentMessages = false;
+            if (dirtyObj.IsOwner)
+            {
+                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                {
+                    dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
+                }
+                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                {
+                    dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
+                    sentMessages = true;
+                }
+            }
+            return sentMessages;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void PostProcessDirtyObject(NetworkObject dirtyObj)
+        {
+            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+            {
+                var behaviour = dirtyObj.ChildNetworkBehaviours[k];
+                for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
+                {
+                    // Set to true for NetworkVariable to ignore duplication of the
+                    // "internal original value" for collections support.
+                    behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = true;
+                    if (behaviour.NetworkVariableFields[i].IsDirty() &&
+                        !behaviour.NetworkVariableIndexesToResetSet.Contains(i))
+                    {
+                        behaviour.NetworkVariableIndexesToResetSet.Add(i);
+                        behaviour.NetworkVariableIndexesToReset.Add(i);
+                    }
+                    // Reset back to false when done
+                    behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = false;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void ResetDirtyObject(NetworkObject dirtyObj, bool forceSend)
+        {
+            foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
+            {
+                behaviour.PostNetworkVariableWrite(forceSend);
+            }
+        }
+
+        /// <summary>
+        /// Temporary work-around for assuring any pending dirty states are pushed out prior to showing the object
+        /// TODO: We need to send all messages that are specific to a NetworkObject along with a NetworkObject event header
+        /// such that messages will be processed after spawned.
+        /// 
+        /// </summary>
+        /// <param name="networkObject"></param>
+        internal void ForceSendIfDirtyOnNetworkShow(NetworkObject networkObject)
+        {
+            // Exit early if no pending dirty NetworkVariables.
+            if (!m_PendingDirtyNetworkObjects.Contains(networkObject))
+            {
+                return;
+            }
+
+            // Process a bit differently whether client or server
+            if (m_NetworkManager.IsServer)
+            {
+                ProcessDirtyObjectServer(networkObject, true);
+            }
+            else
+            {
+                ProcessDirtyObjectClient(networkObject, true);
+            }
+
+            // Handle post processing and resetting of the NetworkObject
+            PostProcessDirtyObject(networkObject);
+            ResetDirtyObject(networkObject, true);
+
+            // Remove it from the pending dirty objects list
+            m_PendingDirtyNetworkObjects.Remove(networkObject);
         }
 
         /// <summary>
@@ -49,76 +159,29 @@ namespace Unity.Netcode
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
-                        for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
-                        }
-
-                        for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
-                        {
-                            var client = m_ConnectionManager.ConnectedClientsList[i];
-                            if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
-                            {
-                                // Sync just the variables for just the objects this client sees
-                                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                                {
-                                    dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
-                                    sentMessages = true;
-                                }
-                            }
-                        }
+                        sentMessages = sentMessages || ProcessDirtyObjectServer(dirtyObj, forceSend);
                     }
                 }
                 else
                 {
                     // when client updates the server, it tells it about all its objects
-                    foreach (var sobj in m_DirtyNetworkObjects)
+                    foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
-                        if (sobj.IsOwner)
-                        {
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                            {
-                                sobj.ChildNetworkBehaviours[k].PreVariableUpdate();
-                            }
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                            {
-                                sobj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
-                                sentMessages = true;
-                            }
-                        }
+                        sentMessages = sentMessages || ProcessDirtyObjectClient(dirtyObj, forceSend);
                     }
                 }
 
                 foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                    {
-                        var behaviour = dirtyObj.ChildNetworkBehaviours[k];
-                        for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
-                        {
-                            // Set to true for NetworkVariable to ignore duplication of the
-                            // "internal original value" for collections support.
-                            behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = true;
-                            if (behaviour.NetworkVariableFields[i].IsDirty() &&
-                                !behaviour.NetworkVariableIndexesToResetSet.Contains(i))
-                            {
-                                behaviour.NetworkVariableIndexesToResetSet.Add(i);
-                                behaviour.NetworkVariableIndexesToReset.Add(i);
-                            }
-                            // Reset back to false when done
-                            behaviour.NetworkVariableFields[i].NetworkUpdaterCheck = false;
-                        }
-                    }
+                    PostProcessDirtyObject(dirtyObj);
                 }
 
                 // Now, reset all the no-longer-dirty variables
                 foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
-                    {
-                        behaviour.PostNetworkVariableWrite(forceSend);
-                    }
+                    ResetDirtyObject(dirtyObj, forceSend);
                 }
+
                 m_DirtyNetworkObjects.Clear();
             }
             finally

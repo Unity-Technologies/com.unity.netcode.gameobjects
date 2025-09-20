@@ -1796,8 +1796,9 @@ namespace Unity.Netcode
 
         /// <summary>
         /// See <see cref="NetworkBehaviourUpdater.NetworkBehaviourUpdater_Tick"/>
+        /// See <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/> during the <see cref="NetworkUpdateStage.PostLateUpdate"/> stage.
         /// </summary>
-        internal void HandleNetworkObjectShow()
+        internal void HandleNetworkObjectShow(bool forceSend = false)
         {
             // Covers any distributed authority client that is not the DAHost
             var isDistributedAuthorityClient = NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost;
@@ -1818,6 +1819,10 @@ namespace Unity.Netcode
                     {
                         try
                         {
+                            if (forceSend)
+                            {
+                                NetworkManager.BehaviourUpdater.ForceSendIfDirtyOnNetworkShow(entry.Key);
+                            }
                             SendSpawnCallForObserverUpdate(entry.Value.ToArray(), entry.Key);
                         }
                         catch (Exception ex)
@@ -1844,6 +1849,10 @@ namespace Unity.Netcode
                     {
                         try
                         {
+                            if (forceSend)
+                            {
+                                NetworkManager.BehaviourUpdater.ForceSendIfDirtyOnNetworkShow(networkObject);
+                            }
                             SendSpawnCallForObject(clientId, networkObject);
                         }
                         catch (Exception ex)

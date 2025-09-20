@@ -442,7 +442,7 @@ namespace Unity.Netcode
                         }
 
                         // Send any pending objects to be shown (in-between ticks)
-                        SpawnManager.HandleNetworkObjectShow();
+                        SpawnManager.HandleNetworkObjectShow(true);
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
                         SpawnManager.UpdateNetworkObjectSceneChanges();
