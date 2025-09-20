@@ -192,7 +192,10 @@ namespace Unity.Netcode.Editor
             {
                 m_TickSyncChildren.boolValue = true;
             }
-            EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            else
+            {
+                EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
+            }
             if (!networkTransform.HideInterpolateValue)
             {
                 if (networkTransform.Interpolate)
