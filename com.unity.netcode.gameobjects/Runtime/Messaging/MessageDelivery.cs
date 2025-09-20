@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
+using UnityEditor;
 using UnityEngine;
 
 internal static class MessageDelivery
@@ -20,6 +21,12 @@ internal static class MessageDelivery
     [RuntimeInitializeOnLoadMethod]
     private static void OnApplicationStart()
     {
+        UpdateMessageTypes();
+    }
+
+    private static void UpdateMessageTypes()
+    {
+        s_MessageToDelivery.Clear();
         var networkMessageTypes = Enum.GetValues(typeof(NetworkMessageTypes));
         foreach (var messageTypeObject in networkMessageTypes)
         {
@@ -32,6 +39,15 @@ internal static class MessageDelivery
         }
         s_MessageToMessageType = ILPPMessageProvider.GetMessageTypesMap();
     }
+
+#if UNITY_EDITOR
+    [InitializeOnLoadMethod]
+    [InitializeOnEnterPlayMode]
+    private static void OnEnterPlayMode()
+    {
+        UpdateMessageTypes();
+    }
+#endif
 
     internal static NetworkMessageTypes GetMessageTypeEnum(Type type)
     {
