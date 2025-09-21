@@ -1813,16 +1813,16 @@ namespace Unity.Netcode
             // targeted clients). When using a DAHost, we skip this and send like we do in client-server
             if (isDistributedAuthorityClient)
             {
+                var behaviourUpdater = NetworkManager.BehaviourUpdater;
                 foreach (var entry in ClientsToShowObject)
                 {
                     if (entry.Key != null && entry.Key.IsSpawned)
                     {
                         try
                         {
-                            if (forceSend)
-                            {
-                                NetworkManager.BehaviourUpdater.ForceSendIfDirtyOnNetworkShow(entry.Key);
-                            }
+                            // Always push the most recent deltas when showing a NetworkObject
+                            // to another client.
+                            behaviourUpdater.ForceSendIfDirtyOnNetworkShow(entry.Key);
                             SendSpawnCallForObserverUpdate(entry.Value.ToArray(), entry.Key);
                         }
                         catch (Exception ex)

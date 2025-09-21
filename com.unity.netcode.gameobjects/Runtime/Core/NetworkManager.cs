@@ -188,11 +188,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void HandleRedistributionToClients()
         {
-            if (!DistributedAuthorityMode || !RedistributeToClients || NetworkConfig.EnableSceneManagement || ShutdownInProgress)
-            {
-                return;
-            }
-
             foreach (var clientId in ClientsToRedistribute)
             {
                 SpawnManager.DistributeNetworkObjects(clientId);
@@ -443,6 +438,14 @@ namespace Unity.Netcode
 
                         // Send any pending objects to be shown (in-between ticks)
                         SpawnManager.HandleNetworkObjectShow(true);
+
+                        // Handles object redistribution when scene management is disabled and
+                        // using a distributed authority network topology. Only set specific to
+                        // this configuration and when a client connects.
+                        if (RedistributeToClients)
+                        {
+                            HandleRedistributionToClients();
+                        }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
                         SpawnManager.UpdateNetworkObjectSceneChanges();

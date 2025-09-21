@@ -25,14 +25,8 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool ProcessDirtyObjectServer(NetworkObject dirtyObj, bool forceSend)
+        internal void ProcessDirtyObjectServer(NetworkObject dirtyObj, bool forceSend)
         {
-            var sentMessages = false;
-            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-            {
-                dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
-            }
-
             for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
             {
                 var client = m_ConnectionManager.ConnectedClientsList[i];
@@ -42,30 +36,18 @@ namespace Unity.Netcode
                     for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                     {
                         dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
-                        sentMessages = true;
                     }
                 }
             }
-            return sentMessages;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
+        internal void ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
         {
-            var sentMessages = false;
-            if (dirtyObj.IsOwner)
+            for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
             {
-                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                {
-                    dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
-                }
-                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                {
-                    dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
-                    sentMessages = true;
-                }
+                dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
             }
-            return sentMessages;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -103,45 +85,65 @@ namespace Unity.Netcode
         /// <summary>
         /// Temporary work-around for assuring any pending dirty states are pushed out prior to showing the object
         /// TODO: We need to send all messages that are specific to a NetworkObject along with a NetworkObject event header
-        /// such that messages will be processed after spawned.
+        /// and grouped together such that all directed messages will be processed after spawned.
         /// </summary>
         /// <param name="networkObject"></param>
         internal void ForceSendIfDirtyOnNetworkShow(NetworkObject networkObject)
         {
             // Exit early if no pending dirty NetworkVariables.
-            if (!m_PendingDirtyNetworkObjects.Contains(networkObject))
+            if (!m_PendingDirtyNetworkObjects.Contains(networkObject) && !m_DirtyNetworkObjects.Contains(networkObject))
             {
                 return;
             }
 
-            // Process a bit differently whether client or server
+            ProcessDirtyObject(networkObject, true);
+
+            // Remove it from the pending and queued dirty objects lists
+            m_PendingDirtyNetworkObjects.Remove(networkObject);
+            m_DirtyNetworkObjects.Remove(networkObject);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void ProcessDirtyObject(NetworkObject networkObject, bool forceSend)
+        {
+            // Only the server or the owner of the NetworkObject will send
+            // delta state updates. Otherwise, exit early.
+            if (!m_NetworkManager.IsServer || !networkObject.IsOwner)
+            {
+                return;
+            }
+
+            // Pre-variable update
+            for (int k = 0; k < networkObject.ChildNetworkBehaviours.Count; k++)
+            {
+                networkObject.ChildNetworkBehaviours[k].PreVariableUpdate();
+            }
+
+            // Server sends updates to all clients where a client sends updates
+            // to the server or DA service.
             if (m_NetworkManager.IsServer)
             {
-                ProcessDirtyObjectServer(networkObject, true);
+                ProcessDirtyObjectServer(networkObject, forceSend);
             }
             else
             {
-                ProcessDirtyObjectClient(networkObject, true);
+                ProcessDirtyObjectClient(networkObject, forceSend);
             }
 
             // Handle post processing and resetting of the NetworkObject
             PostProcessDirtyObject(networkObject);
-            ResetDirtyObject(networkObject, true);
-
-            // Remove it from the pending dirty objects list
-            m_PendingDirtyNetworkObjects.Remove(networkObject);
+            ResetDirtyObject(networkObject, forceSend);
         }
 
         /// <summary>
         /// Sends NetworkVariable deltas
         /// </summary>
         /// <param name="forceSend">internal only, when changing ownership we want to send this before the change in ownership message</param>
-        internal bool NetworkBehaviourUpdate(bool forceSend = false)
+        internal void NetworkBehaviourUpdate(bool forceSend = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_NetworkBehaviourUpdate.Begin();
 #endif
-            var sentMessages = false;
             try
             {
                 foreach (var dirtyNetworkObject in m_PendingDirtyNetworkObjects)
@@ -154,31 +156,9 @@ namespace Unity.Netcode
                 // trying to process them, even if they were previously marked as dirty.
                 m_DirtyNetworkObjects.RemoveWhere((sobj) => sobj == null);
 
-                if (m_ConnectionManager.LocalClient.IsServer)
-                {
-                    foreach (var dirtyObj in m_DirtyNetworkObjects)
-                    {
-                        sentMessages = sentMessages || ProcessDirtyObjectServer(dirtyObj, forceSend);
-                    }
-                }
-                else
-                {
-                    // when client updates the server, it tells it about all its objects
-                    foreach (var dirtyObj in m_DirtyNetworkObjects)
-                    {
-                        sentMessages = sentMessages || ProcessDirtyObjectClient(dirtyObj, forceSend);
-                    }
-                }
-
                 foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    PostProcessDirtyObject(dirtyObj);
-                }
-
-                // Now, reset all the no-longer-dirty variables
-                foreach (var dirtyObj in m_DirtyNetworkObjects)
-                {
-                    ResetDirtyObject(dirtyObj, forceSend);
+                    ProcessDirtyObject(dirtyObj, forceSend);
                 }
 
                 m_DirtyNetworkObjects.Clear();
@@ -189,7 +169,6 @@ namespace Unity.Netcode
                 m_NetworkBehaviourUpdate.End();
 #endif
             }
-            return sentMessages;
         }
 
         internal void Initialize(NetworkManager networkManager)
@@ -207,15 +186,8 @@ namespace Unity.Netcode
         // Order of operations requires NetworkVariable updates first then showing NetworkObjects
         private void NetworkBehaviourUpdater_Tick()
         {
-            // Handle showing NetworkObjects on the next network tick
-            if (NetworkBehaviourUpdate())
-            {
-                // Then show any NetworkObjects queued to be made visible/shown
-                m_NetworkManager.SpawnManager.HandleNetworkObjectShow();
-            }
-
-            // Handle object redistribution (DA + disabled scene management only)
-            m_NetworkManager.HandleRedistributionToClients();
+            // Handle showing NetworkObjects on the next network tick, and only if we sent
+            NetworkBehaviourUpdate();
         }
     }
 }
