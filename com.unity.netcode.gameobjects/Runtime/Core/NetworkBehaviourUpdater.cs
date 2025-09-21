@@ -107,8 +107,8 @@ namespace Unity.Netcode
         internal void ProcessDirtyObject(NetworkObject networkObject, bool forceSend)
         {
             // Only the server or the owner of the NetworkObject will send
-            // delta state updates. Otherwise, exit early.
-            if (!m_NetworkManager.IsServer || !networkObject.IsOwner)
+            // delta state updates. Otherwise, if neither are true we exit early.
+            if (!(m_NetworkManager.IsServer || networkObject.IsOwner))
             {
                 return;
             }
