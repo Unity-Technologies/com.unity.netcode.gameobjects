@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # The name of the Yamato check to monitor
-      CHECK_NAME: "Code changes PR checks"
+      CHECK_NAME: "[Yamato] Code changes PR checks"
       # How long to wait for the check to appear before assuming it won't run
       GRACE_PERIOD_SECONDS: 120 # 2 minutes
       # How often to poll the GitHub API to see if job has finished (fail or succeeded)
@@ -43,7 +43,6 @@ jobs:
             checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state | jq ".[] | select(.name == \"$CHECK_NAME\")")
           
             if [ -z "$check_status" ]; then
-              # Case 1: The check has not appeared yet.
               if [ $elapsed_seconds -gt $GRACE_PERIOD_SECONDS ]; then
                 echo "Grace period of $GRACE_PERIOD_SECONDS seconds has passed and the check '$CHECK_NAME' was not found."
                 echo "Assuming it was not triggered (e.g., docs-only change). Success!"
@@ -52,10 +51,8 @@ jobs:
                 echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
               fi
             elif [ "$check_status" == "pending" ]; then
-              # Case 2: The check is running.
               echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
             elif [ "$check_status" == "pass" ]; then
-              # Case 3: The check has finished.
               echo "Check '$CHECK_NAME' completed with conclusion: 'success'."
               exit 0
             else
