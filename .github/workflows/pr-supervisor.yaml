@@ -1,4 +1,4 @@
-﻿""" GitHub Actions workflow to monitor Yamato CI job status on pull requests."""
+﻿# GitHub Actions workflow to monitor Yamato CI job status on pull requests
 
 name: Yamato PR Supervisor
 
