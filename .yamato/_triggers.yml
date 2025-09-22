@@ -40,18 +40,16 @@
   # It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
 
 
-#-----------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------  
 
-pull_request_trigger:
-  name: Pull Request Trigger (develop, develop-2.0.0, & release branches)
-  # Run the following tests on a selection of different desktop platforms
+# After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
+# This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
+minimal_required_checks:
+  name: Minimal PR checks
   dependencies:
-    - .yamato/_triggers.yml#minimal_required_checks
-    - .yamato/_triggers.yml#code_changes_check
+    - .yamato/package-pack.yml#package_pack_-_ngo_win
+    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
   triggers:
-    # Note that PR tests will run ONLY if we are changing package/sample code. If changes are let's say docs only no tests will be triggered
-    # TODO: consider setting up and running tests from Examples/
-    # TODO: or docs only changes are spelling/link check
     expression: |-
       (pull_request.comment eq "ngo" OR
       (pull_request.target eq "develop" OR
@@ -60,21 +58,14 @@ pull_request_trigger:
       NOT pull_request.draft
     cancel_old_ci: true
 
-# After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
-# This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
-minimal_required_checks:
-  name: Minimal PR check (develop, develop-2.0.0 & release branches)
-  dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo_win
-    - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
 
 # Run all relevant tasks when a pull request targeting the develop or release branch is created or updated.
 # In order to have better coverage we run desktop standalone tests with different configurations which allows to mostly cover for different platforms, scripting backends and editor versions.
 # This job will FIRST run "run_quick_checks" jobs (defined in _run-all.yml) since it's the dependency of project pack jobs which is on the lowest dependency tier. This runs the fastest checks (like PVP or code standards) and ONLY IF those pass it will run the rest of the tests.
 # This optimization allows to speed up feedback look for any "obvious" errors and save resources.
 # Since standards job is a part of initial checks it's not present as direct dependency here!!!!!!!!!!!!!!!!!!!!
-code_changes_check:
-  name: Package/Project Changes Trigger (develop, develop-2.0.0, & release branches)
+code_changes_checks:
+  name: Code changes PR checks
   # Run the following tests on a selection of different desktop platforms
   dependencies:
     # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.0)
@@ -89,10 +80,26 @@ code_changes_check:
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
     - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_6000.0
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_trunk
-  source:
-    checkout_mode: sparse
-    files:
-      sparse_checkout_rules: .sparse-checkout-rules/pr-trigger.patterns
+  triggers:
+    expression: |-
+      (pull_request.comment eq "ngo" OR
+      (pull_request.target eq "develop" OR
+      pull_request.target eq "develop-2.0.0" OR
+      pull_request.target match "release/*")) AND
+      NOT pull_request.draft AND
+      pull_request.changes.any match [
+        "com.unity.netcode.gameobjects/Editor/**",
+        "com.unity.netcode.gameobjects/Runtime/**",
+        "com.unity.netcode.gameobjects/Tests/**",
+        "testproject/**",
+        "com.unity.netcode.gameobjects/package.json"
+      ] AND
+      NOT pull_request.changes.all match [
+        "**/Documentation~/**",
+        "**/InternalDocs~/**".
+        "**/*.md",
+      ]
+    cancel_old_ci: true
       
       
       

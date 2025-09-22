@@ -1,0 +1,88 @@
+﻿""" GitHub Actions workflow to monitor Yamato CI job status on pull requests."""
+
+name: Yamato PR Supervisor
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - develop
+      - develop-2.0.0
+      - release/*
+
+jobs:
+  yamato-supervisor:
+    runs-on: ubuntu-latest
+    env:
+      # The name of the Yamato check to monitor
+      CHECK_NAME: "Code changes PR checks"
+      # How long to wait for the check to appear before assuming it won't run
+      GRACE_PERIOD_SECONDS: 120 # 2 minutes
+      # How often to poll the GitHub API to see if job has finished (fail or succeeded)
+      POLLING_INTERVAL_SECONDS: 30
+      # Max time to wait for the job to finish
+      TIMEOUT_MINUTES: 360
+
+    steps:
+      - name: Wait and Verify Yamato Job Status
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Give Yamato a moment to trigger its jobs
+          echo "Waiting for 2 minutes to allow Yamato jobs to start..."
+          sleep 120
+
+          start_time=$(date +%s)
+          timeout_seconds=$((TIMEOUT_MINUTES * 60))
+
+          echo "Starting to monitor for the status of check: '$CHECK_NAME'"
+
+          while true; do
+            current_time=$(date +%s)
+            elapsed_seconds=$((current_time - start_time))
+
+          # --- Timeout Check ---
+               if [ $elapsed_seconds -gt $timeout_seconds ]; then
+               echo "::error::Timeout of $TIMEOUT_MINUTES minutes reached. The Yamato job '$CHECK_NAME' did not complete in time."
+               exit 1
+               fi
+          
+          # --- Get PR Checks using GitHub CLI ---
+          # This command gets all checks for the current PR in JSON format
+               checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,status,conclusion)
+          
+          # --- Find our specific check using jq ---
+               check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .status")
+               check_conclusion=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .conclusion")
+          
+          # --- Main Logic ---
+               if [ -z "$check_status" ]; then
+          # Case 1: The check has not appeared yet.
+               if [ $elapsed_seconds -gt $GRACE_PERIOD_SECONDS ]; then
+               echo "Grace period of $GRACE_PERIOD_SECONDS seconds has passed and the check '$CHECK_NAME' was not found."
+               echo "Assuming it was not triggered (e.g., docs-only change). Success!"
+               exit 0
+               else
+               echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
+               fi
+               elif [ "$check_status" == "in_progress" ] || [ "$check_status" == "queued" ]; then
+          # Case 2: The check is running.
+               echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
+               elif [ "$check_status" == "completed" ]; then
+          # Case 3: The check has finished.
+               if [ "$check_conclusion" == "success" ]; then
+               echo "Check '$CHECK_NAME' completed with conclusion: 'success'. Great!"
+               exit 0
+               else
+               echo "::error::Check '$CHECK_NAME' completed with conclusion: '$check_conclusion'."
+               exit 1
+               fi
+               else
+          # Case 4: Something unexpected happened.
+               echo "::error::Unknown status for check '$CHECK_NAME': '$check_status'."
+               exit 1
+               fi
+          
+          # Wait before the next poll
+               sleep $POLLING_INTERVAL_SECONDS
+               done
