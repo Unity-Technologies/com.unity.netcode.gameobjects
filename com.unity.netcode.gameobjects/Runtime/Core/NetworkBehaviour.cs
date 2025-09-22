@@ -1369,6 +1369,16 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Gets the local instance of a NetworkObject with a given NetworkId.
+        /// </summary>
+        /// <param name="networkId">The unique network identifier of the NetworkObject to retrieve</param>
+        /// <returns>The NetworkObject instance if found, null if no object exists with the specified networkId</returns>
+        protected NetworkObject GetNetworkObject(ulong networkId)
+        {
+            return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
+        }
+
+        /// <summary>
         /// Override this method if your derived NetworkBehaviour requires custom synchronization data.
         /// Use of this method is only for the initial client synchronization of NetworkBehaviours
         /// and will increase the payload size for client synchronization and dynamically spawned

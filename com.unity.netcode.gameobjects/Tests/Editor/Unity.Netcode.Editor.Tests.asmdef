@@ -12,7 +12,8 @@
         "Unity.Networking.Transport",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"
