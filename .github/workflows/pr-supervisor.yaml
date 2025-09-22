@@ -15,14 +15,6 @@ on:
 jobs:
   yamato-supervisor:
     runs-on: ubuntu-latest
-    env:
-      # The name of the Yamato check to monitor
-      CHECK_NAME: "[Yamato] Code changes PR checks"
-      # How long to wait for the check to appear before assuming it won't run
-      GRACE_PERIOD_SECONDS: 120 # 2 minutes
-      # How often to poll the GitHub API to see if job has finished (fail or succeeded)
-      POLLING_INTERVAL_SECONDS: 30
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,35 +23,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          start_time=$(date +%s)
-          timeout_seconds=$((TIMEOUT_MINUTES * 60))
-
-          echo "Starting to monitor for the state of check: '$CHECK_NAME'"
-
-          while true; do
-            current_time=$(date +%s)
-            elapsed_seconds=$((current_time - start_time))
-          
-            checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state | jq ".[] | select(.name == \"$CHECK_NAME\")")
-          
-            if [ -z "$check_status" ]; then
-              if [ $elapsed_seconds -gt $GRACE_PERIOD_SECONDS ]; then
-                echo "Grace period of $GRACE_PERIOD_SECONDS seconds has passed and the check '$CHECK_NAME' was not found."
-                echo "Assuming it was not triggered (e.g., docs-only change). Success!"
-                exit 0
-              else
-                echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
-              fi
-            elif [ "$check_status" == "pending" ]; then
-              echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
-            elif [ "$check_status" == "pass" ]; then
-              echo "Check '$CHECK_NAME' completed with conclusion: 'success'."
-              exit 0
-            else
-              echo "::error::Check '$CHECK_NAME' completed with conclusion: '$check_status'."
-              exit 1
-            fi
-          
-          # Wait before the next poll
-          sleep $POLLING_INTERVAL_SECONDS
-          done
+          sleep 30 
+          gh pr checks ${{ github.event.pull_request.number }} --watch --fail-fast --interval 30
