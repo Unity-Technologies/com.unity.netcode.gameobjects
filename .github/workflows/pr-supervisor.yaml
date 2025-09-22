@@ -24,4 +24,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           sleep 30 
-          gh pr checks ${{ github.event.pull_request.number }} --watch --fail-fast --interval 30
+          gh pr checks ${{ github.event.pull_request.number }} --watch --fail-fast --interval 60
