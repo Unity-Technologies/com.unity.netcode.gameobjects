@@ -44,47 +44,41 @@ jobs:
             current_time=$(date +%s)
             elapsed_seconds=$((current_time - start_time))
 
-          # --- Timeout Check ---
-               if [ $elapsed_seconds -gt $timeout_seconds ]; then
-               echo "::error::Timeout of $TIMEOUT_MINUTES minutes reached. The Yamato job '$CHECK_NAME' did not complete in time."
-               exit 1
-               fi
+            # --- Timeout Check ---
+            if [ $elapsed_seconds -gt $timeout_seconds ]; then
+              echo "::error::Timeout of $TIMEOUT_MINUTES minutes reached. The Yamato job '$CHECK_NAME' did not complete in time."
+              exit 1
+            fi
           
-          # --- Get PR Checks using GitHub CLI ---
-          # https://cli.github.com/manual/gh_pr_checks
-          # This command gets all checks for the current PR in JSON format
-               checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state)
+            # --- Get PR Checks using GitHub CLI ---
+            # https://cli.github.com/manual/gh_pr_checks
+            # This command gets all checks for the current PR in JSON format
+            checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state)
           
-          # --- Find our specific check using jq ---
-               check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .state")
+            # --- Find our specific check using jq ---
+            check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .state")
           
-          # --- Main Logic ---
-               if [ -z "$check_status" ]; then
-          # Case 1: The check has not appeared yet.
-               if [ $elapsed_seconds -gt $GRACE_PERIOD_SECONDS ]; then
-               echo "Grace period of $GRACE_PERIOD_SECONDS seconds has passed and the check '$CHECK_NAME' was not found."
-               echo "Assuming it was not triggered (e.g., docs-only change). Success!"
-               exit 0
-               else
-               echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
-               fi
-               elif [ "$check_status" == "pending" ]; then
-          # Case 2: The check is running.
-               echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
-               elif [ "$check_status" == "pass" ]; then
-          # Case 3: The check has finished.
-               echo "Check '$CHECK_NAME' completed with conclusion: 'success'. Great!"
-               exit 0
-               else
-               echo "::error::Check '$CHECK_NAME' completed with conclusion: '$check_status'."
-               exit 1
-               fi
-               else
-          # Case 4: Something unexpected happened.
-               echo "::error::Unknown state for check '$CHECK_NAME': '$check_status'."
-               exit 1
-               fi
+            if [ -z "$check_status" ]; then
+              # Case 1: The check has not appeared yet.
+              if [ $elapsed_seconds -gt $GRACE_PERIOD_SECONDS ]; then
+                echo "Grace period of $GRACE_PERIOD_SECONDS seconds has passed and the check '$CHECK_NAME' was not found."
+                echo "Assuming it was not triggered (e.g., docs-only change). Success!"
+                exit 0
+              else
+                echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
+              fi
+            elif [ "$check_status" == "pending" ]; then
+              # Case 2: The check is running.
+              echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
+            elif [ "$check_status" == "pass" ]; then
+              # Case 3: The check has finished.
+              echo "Check '$CHECK_NAME' completed with conclusion: 'success'. Great!"
+              exit 0
+            else
+              echo "::error::Check '$CHECK_NAME' completed with conclusion: '$check_status'."
+              exit 1
+            fi
           
           # Wait before the next poll
-               sleep $POLLING_INTERVAL_SECONDS
-               done
+          sleep $POLLING_INTERVAL_SECONDS
+          done
