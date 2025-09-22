@@ -1,4 +1,4 @@
-﻿# GitHub Actions workflow to monitor Yamato CI job status on pull requests
+﻿# GitHub Actions workflow to monitor Yamato CI job state on pull requests
 
 name: Yamato PR Supervisor
 
@@ -35,7 +35,7 @@ jobs:
           start_time=$(date +%s)
           timeout_seconds=$((TIMEOUT_MINUTES * 60))
 
-          echo "Starting to monitor for the status of check: '$CHECK_NAME'"
+          echo "Starting to monitor for the state of check: '$CHECK_NAME'"
 
           while true; do
             current_time=$(date +%s)
@@ -49,10 +49,10 @@ jobs:
           
           # --- Get PR Checks using GitHub CLI ---
           # This command gets all checks for the current PR in JSON format
-               checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,status,conclusion)
+               checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state,conclusion)
           
           # --- Find our specific check using jq ---
-               check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .status")
+               check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .state")
                check_conclusion=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .conclusion")
           
           # --- Main Logic ---
@@ -79,7 +79,7 @@ jobs:
                fi
                else
           # Case 4: Something unexpected happened.
-               echo "::error::Unknown status for check '$CHECK_NAME': '$check_status'."
+               echo "::error::Unknown state for check '$CHECK_NAME': '$check_status'."
                exit 1
                fi
           
