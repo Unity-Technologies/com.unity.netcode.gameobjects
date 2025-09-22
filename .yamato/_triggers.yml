@@ -96,8 +96,8 @@ code_changes_checks:
       ] AND
       NOT pull_request.changes.all match [
         "**/Documentation~/**",
-        "**/InternalDocs~/**".
-        "**/*.md",
+        "**/InternalDocs~/**",
+        "**/*.md"
       ]
     cancel_old_ci: true
       
