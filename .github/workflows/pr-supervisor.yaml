@@ -1,4 +1,6 @@
 ﻿# GitHub Actions workflow to monitor Yamato CI job state on pull requests
+# We are using https://cli.github.com/manual/gh_pr_checks
+# The aim is to ensure that conditionally triggered Yamato jobs are completed successfully before allowing merges
 
 name: Yamato PR Supervisor
 
@@ -20,8 +22,6 @@ jobs:
       GRACE_PERIOD_SECONDS: 120 # 2 minutes
       # How often to poll the GitHub API to see if job has finished (fail or succeeded)
       POLLING_INTERVAL_SECONDS: 30
-      # Max time to wait for the job to finish
-      TIMEOUT_MINUTES: 360
 
     steps:
       - name: Checkout repository
@@ -31,10 +31,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          # Give Yamato a moment to trigger its jobs
-          echo "Waiting for 2 minutes to allow Yamato jobs to start..."
-          sleep 120
-
           start_time=$(date +%s)
           timeout_seconds=$((TIMEOUT_MINUTES * 60))
 
@@ -43,20 +39,8 @@ jobs:
           while true; do
             current_time=$(date +%s)
             elapsed_seconds=$((current_time - start_time))
-
-            # --- Timeout Check ---
-            if [ $elapsed_seconds -gt $timeout_seconds ]; then
-              echo "::error::Timeout of $TIMEOUT_MINUTES minutes reached. The Yamato job '$CHECK_NAME' did not complete in time."
-              exit 1
-            fi
           
-            # --- Get PR Checks using GitHub CLI ---
-            # https://cli.github.com/manual/gh_pr_checks
-            # This command gets all checks for the current PR in JSON format
-            checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state)
-          
-            # --- Find our specific check using jq ---
-            check_status=$(echo "$checks_json" | jq -r ".[] | select(.name == \"$CHECK_NAME\") | .state")
+            checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state | jq ".[] | select(.name == \"$CHECK_NAME\")")
           
             if [ -z "$check_status" ]; then
               # Case 1: The check has not appeared yet.
@@ -72,7 +56,7 @@ jobs:
               echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
             elif [ "$check_status" == "pass" ]; then
               # Case 3: The check has finished.
-              echo "Check '$CHECK_NAME' completed with conclusion: 'success'. Great!"
+              echo "Check '$CHECK_NAME' completed with conclusion: 'success'."
               exit 0
             else
               echo "::error::Check '$CHECK_NAME' completed with conclusion: '$check_status'."
