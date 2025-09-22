@@ -24,6 +24,9 @@ jobs:
       TIMEOUT_MINUTES: 360
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
       - name: Wait and Verify Yamato Job Status
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -48,6 +51,7 @@ jobs:
                fi
           
           # --- Get PR Checks using GitHub CLI ---
+          # https://cli.github.com/manual/gh_pr_checks
           # This command gets all checks for the current PR in JSON format
                checks_json=$(gh pr checks ${{ github.event.pull_request.number }} --json name,state)
           
@@ -64,12 +68,11 @@ jobs:
                else
                echo "Check '$CHECK_NAME' not found yet. Continuing to poll..."
                fi
-               elif [ "$check_status" == "in_progress" ] || [ "$check_status" == "queued" ]; then
+               elif [ "$check_status" == "pending" ]; then
           # Case 2: The check is running.
                echo "Check '$CHECK_NAME' is currently '$check_status'. Waiting..."
-               elif [ "$check_status" == "completed" ]; then
+               elif [ "$check_status" == "pass" ]; then
           # Case 3: The check has finished.
-               if [ "$check_status" == "success" ]; then
                echo "Check '$CHECK_NAME' completed with conclusion: 'success'. Great!"
                exit 0
                else
