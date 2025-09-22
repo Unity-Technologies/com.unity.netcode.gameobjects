@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Unity.Netcode.Editor
 {
     /// <summary>
-    /// Internal use. Hides the script field for the given component.
+    /// Internal use
     /// </summary>
     public class HiddenScriptEditor : UnityEditor.Editor
     {
