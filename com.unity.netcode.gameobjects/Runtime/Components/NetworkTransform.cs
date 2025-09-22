@@ -4432,7 +4432,7 @@ namespace Unity.Netcode.Components
             {
                 // TODO: Investigate where this state should be applied or just discarded.
                 // For now, discard the state if we assumed ownership.
-                Debug.LogError($"[Client-{NetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
+                // Debug.Log($"[Client-{NetworkManager.LocalClientId}] Ignoring inbound update from Client-{0} and parentUpdated:{isParentingDirective}!");
                 return;
             }
             // Store the previous/old state

@@ -48,21 +48,14 @@ internal static class MessageDelivery
         UpdateMessageTypes();
     }
 #endif
-
-    internal static NetworkMessageTypes GetMessageTypeEnum(Type type)
-    {
-        if (type == null || !s_MessageToMessageType.ContainsKey(type))
-        {
-            var name = type == null ? "null" : type.Name;
-            throw new Exception($"{name} is not registered in the message to {nameof(NetworkMessageTypes)} table!");
-        }
-        return s_MessageToMessageType[type];
-    }
-
     internal static NetworkDelivery GetDelivery(Type type)
     {
-        var messageType = GetMessageTypeEnum(type);
-        return GetDelivery(messageType);
+        // Return the default if not registered or null
+        if (type == null || !s_MessageToMessageType.ContainsKey(type))
+        {
+            return NetworkDelivery.ReliableFragmentedSequenced;
+        }
+        return GetDelivery(s_MessageToMessageType[type]);
     }
 
     internal static NetworkDelivery GetDelivery(NetworkMessageTypes messageType)
