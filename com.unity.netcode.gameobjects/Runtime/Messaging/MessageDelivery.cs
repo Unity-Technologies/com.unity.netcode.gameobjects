@@ -51,7 +51,7 @@ internal static class MessageDelivery
     internal static NetworkDelivery GetDelivery(Type type)
     {
         // Return the default if not registered or null
-        if (type == null || !s_MessageToMessageType.ContainsKey(type))
+        if (type == null || s_SkipMessageTypes.Contains(s_MessageToMessageType[type]))
         {
             return NetworkDelivery.ReliableFragmentedSequenced;
         }
