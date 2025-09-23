@@ -37,7 +37,12 @@ jobs:
           for ((i=1;i<=MAX_ATTEMPTS;i++)); do
             echo "Polling PR checks (attempt $i/$MAX_ATTEMPTS)..."
             # We want to watch for pending checks beside this check
+            echo "Raw checks:"
+            gh pr checks $PR_NUMBER --json name,state
             checks=$(gh pr checks $PR_NUMBER --json name,state --jq '[ .[] | select(.name != "yamato-supervisor") ]')
+          
+            checks=$(gh pr checks $PR_NUMBER --json name,state)
+            echo "$checks" | jq .
             
             pending=$(echo "$checks" | jq '[.[] | select(.state == "pending")] | length')
             skipping=$(echo "$checks" | jq '[.[] | select(.state == "skipping")] | length')
