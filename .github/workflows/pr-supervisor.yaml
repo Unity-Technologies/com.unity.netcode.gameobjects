@@ -42,15 +42,16 @@ jobs:
             pending=$(echo "$checks" | jq '[.[] | select(.state == "pending")] | length')
             skipping=$(echo "$checks" | jq '[.[] | select(.state == "skipping")] | length')
             failed=$(echo "$checks" | jq '[.[] | select(.state == "fail")] | length')
+            passed=$(echo "$checks" | jq '[.[] | select(.state == "pass")] | length')
+          
+            echo "Pending checks: $pending, Skipping checks: $skipping", Passed checks: $passed, Failed checks: $failed
           
             if [[ "$failed" -gt 0 ]]; then
               echo "A check has failed! Failing fast."
               exit 1
             fi
 
-            echo "Pending checks: $pending, Skipping checks: $skipping"
-
-            if [[ "$pending" -eq 0 ]]; then
+            if [[ "$pending" -eq 0 ]] && [[ "$passed" -gt 0 ]]; then
               echo "All non-supervisor checks are completed!"
               exit 0
             fi
