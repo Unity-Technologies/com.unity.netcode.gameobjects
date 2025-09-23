@@ -44,10 +44,10 @@ jobs:
             checks=$(gh pr checks $PR_NUMBER --json name,state)
             echo "$checks" | jq .
             
-            pending=$(echo "$checks" | jq '[.[] | select(.state == "pending")] | length')
-            skipping=$(echo "$checks" | jq '[.[] | select(.state == "skipping")] | length')
-            failed=$(echo "$checks" | jq '[.[] | select(.state == "fail")] | length')
-            passed=$(echo "$checks" | jq '[.[] | select(.state == "pass")] | length')
+            pending=$(echo "$checks" | jq '[.[] | select(.state == "IN_PROGRESS")] | length')
+            skipping=$(echo "$checks" | jq '[.[] | select(.state == "SKIPPED")] | length')
+            passed=$(echo "$checks" | jq '[.[] | select(.state == "SUCCESS")] | length')
+            failed=$(echo "$checks" | jq '[.[] | select(.state == "FAILURE")] | length')
           
             echo "Pending checks: $pending, Skipping checks: $skipping", Passed checks: $passed, Failed checks: $failed
           
