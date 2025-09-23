@@ -1546,13 +1546,18 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             EndNetworkSession();
 #endif
-
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
-
-            OnPreShutdown?.Invoke();
+            try
+            {
+                OnPreShutdown?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             this.UnregisterAllNetworkUpdates();
 
@@ -1639,30 +1644,56 @@ namespace Unity.Netcode
             NetworkTickSystem = null;
         }
 
-
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            this.UnregisterAllNetworkUpdates();
+
             // Make sure ShutdownInProgress returns true during this time
             m_ShuttingDown = true;
             OnDestroy();
+#if UNITY_EDITOR
+            if (Singleton != null)
+            {
+                Debug.LogWarning($"[nameof({nameof(OnApplicationQuit)}][{nameof(NetworkManager)}][{name}] Singleton is not null after invoking OnDestroy. Singleton instance name is {Singleton.name}. Do you have more than one {nameof(NetworkManager)} instance in the DDOL scene?");
+            }
+#endif
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            ShutdownInternal();
+            // Exit early if this is invoked and the Singleton has yet to be set.
+            if (Singleton == null)
+            {
+                return;
+            }
+
+            try
+            {
+                ShutdownInternal();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
-            // Notify we are destroying NetworkManager
-            OnDestroying?.Invoke(this);
+            try
+            {
+                // Notify we are destroying NetworkManager
+                OnDestroying?.Invoke(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             if (Singleton == this)
             {
                 Singleton = null;
             }
-
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= ModeChanged;
 #endif

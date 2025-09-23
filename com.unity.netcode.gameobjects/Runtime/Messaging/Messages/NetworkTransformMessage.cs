@@ -20,7 +20,6 @@ namespace Unity.Netcode
         {
             ParentReference = parentReference;
             WorldPositionStays = worldPositionStays;
-            HasParentReference = true;
         }
 
         internal void ResetParent()
@@ -29,28 +28,21 @@ namespace Unity.Netcode
             HasParentReference = false;
         }
 
-
         internal void SerializeParent(FastBufferWriter writer)
         {
-            writer.WriteValueSafe(HasParentReference);
+            HasParentReference = true;
             // NetworkTransform synchronized parenting only occurs when NetworkTransform.SwitchTransformSpaceWhenParented is enabled.
-            if (HasParentReference)
-            {
-                writer.WriteValueSafe(WorldPositionStays);
-                writer.WriteValueSafe(ParentReference);
-            }
+            writer.WriteValueSafe(WorldPositionStays);
+            writer.WriteValueSafe(ParentReference);
         }
 
 
         internal void DeserializeParent(FastBufferReader reader)
         {
-            reader.ReadValueSafe(out HasParentReference);
+            HasParentReference = true;
             // NetworkTransform synchronized parenting only occurs when NetworkTransform.SwitchTransformSpaceWhenParented is enabled.
-            if (HasParentReference)
-            {
-                reader.ReadValueSafe(out WorldPositionStays);
-                reader.ReadValueSafe(out ParentReference);
-            }
+            reader.ReadValueSafe(out WorldPositionStays);
+            reader.ReadValueSafe(out ParentReference);
         }
 
         // Only used for DAHost
@@ -75,14 +67,31 @@ namespace Unity.Netcode
                 var position = writer.Position;
                 // Provides the source of the message (NetworkObject-->NetworkTransform : NetworkBehaviour).
                 BytePacker.WriteValueBitPacked(writer, NetworkTransform.NetworkObjectId);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkObjectIdSize = writer.Position - position;
+#endif
                 BytePacker.WriteValueBitPacked(writer, (int)NetworkTransform.NetworkBehaviourId);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkBehaviourIdSize = writer.Position - position - networkObjectIdSize;
+#endif
 
                 // Serialize the current local state.
                 writer.WriteNetworkSerializable(NetworkTransform.LocalAuthoritativeNetworkState);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkTransformStateSize = writer.Position - position - networkObjectIdSize - networkBehaviourIdSize;
+#endif
 
                 // Write out any parenting directive associated with this update.
-                SerializeParent(writer);
+                if (NetworkTransform.LocalAuthoritativeNetworkState.ParentingDirective)
+                {
+                    SerializeParent(writer);
+                }
                 BytesWritten = writer.Position - position;
+
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var parentInfo = writer.Position - position - networkObjectIdSize - networkBehaviourIdSize - networkTransformStateSize;
+                Debug.Log($"[NO-ID: {networkObjectIdSize}][NB-ID: {networkBehaviourIdSize}][NTState: {networkTransformStateSize}][PINFO: {parentInfo}][Total: {BytesWritten}]");
+#endif
             }
         }
 
@@ -141,10 +150,11 @@ namespace Unity.Netcode
 
                 // Deserialize the inbound NetworkTransformState
                 reader.ReadNetworkSerializableInPlace(ref NetworkTransform.InboundState);
-
-                // Deserialize the parent directive
-                DeserializeParent(reader);
-
+                if (NetworkTransform.InboundState.ParentingDirective)
+                {
+                    // Deserialize the parent directive
+                    DeserializeParent(reader);
+                }
                 NetworkTransform.InboundState.LastSerializedSize = reader.Position - currentPosition;
             }
             else
@@ -155,8 +165,11 @@ namespace Unity.Netcode
                 {
                     // We need to deserialize the state to our local State property so we can extract the reliability used.
                     reader.ReadNetworkSerializableInPlace(ref State);
-                    // Deserialize the parent
-                    DeserializeParent(reader);
+                    if (NetworkTransform.InboundState.ParentingDirective)
+                    {
+                        // Deserialize the parent directive
+                        DeserializeParent(reader);
+                    }
                     // Fall through to act like a proxy for this message.
                 }
                 else
@@ -266,6 +279,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            var processTransformState = true;
             // For better NetworkTransform synchronization when NetworkTransform.SwitchTransformSpaceWhenParented is enabled, we
             // bypass the original parenting approach and allow the NetworkTransform to handle both parenting and handling the
             // world to local, local to world, or local to local space transformations.
@@ -273,11 +287,14 @@ namespace Unity.Netcode
             {
                 // Handle updating the parent and converting the current transform values as well as any queued interpolator
                 // entries to the new transform space.
-                NetworkTransform.UpdateParenting(ParentReference, WorldPositionStays);
+                processTransformState = NetworkTransform.UpdateParenting(ParentReference, WorldPositionStays);
             }
 
-            // Update the state
-            NetworkTransform.TransformStateUpdate(context.SenderId, HasParentReference);
+            if (processTransformState)
+            {
+                // Update the state
+                NetworkTransform.TransformStateUpdate(context.SenderId, HasParentReference);
+            }
         }
     }
 }

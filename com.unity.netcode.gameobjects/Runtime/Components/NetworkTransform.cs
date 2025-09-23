@@ -62,6 +62,7 @@ namespace Unity.Netcode.Components
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
             private const int k_SwitchTransformSpaceWhenParented = 0x0400000;
+            private const int k_IncludesParentingDirective = 0x0800000;
             // (Internal Debugging) When set each state update will contain a state identifier
             private const int k_TrackStateId = 0x10000000;
 
@@ -516,6 +517,20 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// Determines if parenting was included in the NetworkTransform
+            /// message. Only happens when <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
+            /// is enabled.
+            /// </summary>
+            internal bool ParentingDirective
+            {
+                get => GetFlag(k_IncludesParentingDirective);
+                set
+                {
+                    SetFlag(value, k_IncludesParentingDirective);
+                }
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private bool GetFlag(int flag)
             {
@@ -657,6 +672,13 @@ namespace Unity.Netcode.Components
                     positionStart = m_Reader.Position;
                 }
 
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var bitSetAndTickSize = 0;
+                var positionSize = 0;
+                var rotationSize = 0;
+                var scaleSize = 0;
+                var lastPosition = 0;
+#endif
                 // Synchronize State Flags and Network Tick
                 {
                     if (isWriting)
@@ -692,6 +714,14 @@ namespace Unity.Netcode.Components
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
                     }
                 }
+
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                if (isWriting)
+                {
+                    bitSetAndTickSize = m_Writer.Position - positionStart;
+                    lastPosition = m_Writer.Position;
+                }
+#endif
 
                 // If debugging states and track by state identifier is enabled, serialize the current state identifier
                 if (TrackByStateId)
@@ -761,6 +791,14 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
+
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                if (isWriting)
+                {
+                    positionSize = m_Writer.Position - lastPosition;
+                    lastPosition = m_Writer.Position;
+                }
+#endif
 
                 // Synchronize Rotation
                 if (HasRotAngleChange)
@@ -872,6 +910,14 @@ namespace Unity.Netcode.Components
                     }
                 }
 
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                if (isWriting)
+                {
+                    rotationSize = m_Writer.Position - lastPosition;
+                    lastPosition = m_Writer.Position;
+                }
+#endif
+
                 // Synchronize Scale
                 if (HasScaleChange)
                 {
@@ -942,6 +988,14 @@ namespace Unity.Netcode.Components
                     }
                 }
 
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                if (isWriting)
+                {
+                    scaleSize = m_Writer.Position - lastPosition;
+                    lastPosition = m_Writer.Position;
+                }
+#endif
+
                 // Only if we are receiving state
                 if (!isWriting)
                 {
@@ -952,6 +1006,9 @@ namespace Unity.Netcode.Components
                 else
                 {
                     LastSerializedSize = m_Writer.Position - positionStart;
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                    Debug.Log($"[NT-WriteSize][BitsAndTick: {bitSetAndTickSize}][position: {positionSize}][rotation: {rotationSize}][scale: {scaleSize}]");
+#endif
                 }
             }
         }
@@ -2097,7 +2154,7 @@ namespace Unity.Netcode.Components
                 }
                 isDirty = true;
                 // If SwitchTransformSpaceWhenParented is not set, then we will want to teleport
-                networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented;
+                networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented || isSynchronization;
                 // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
                 // If interpolation is enabled, then any non-authority instance will update any pending
                 // buffered values to the correct world or local space values.
@@ -3513,7 +3570,7 @@ namespace Unity.Netcode.Components
 
             Initialize();
 
-            if (CanCommitToTransform)
+            if (CanCommitToTransform && !SwitchTransformSpaceWhenParented)
             {
                 SetState(GetSpaceRelativePosition(), GetSpaceRelativeRotation(), GetScale(), false);
             }
@@ -3820,10 +3877,31 @@ namespace Unity.Netcode.Components
 
         internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            if (!SwitchTransformSpaceWhenParented && !CanCommitToTransform)
+            // Motion authority doesn't need to adjust anything
+            if (CanCommitToTransform)
+            {
+                return;
+            }
+            if (!SwitchTransformSpaceWhenParented)
             {
                 // Keep the same legacy behaviour for compatibility purposes
                 DefaultParentChanged(parentNetworkObject);
+            }
+            else if (m_LocalAuthoritativeNetworkState.IsSynchronizing && parentNetworkObject != null)
+            {
+                // If we are synchronizing and parented, then make adjustments to assure we are in the correct transform space
+                m_InternalCurrentPosition = transform.localPosition;
+                m_InternalCurrentRotation = transform.localRotation;
+                InLocalSpace = true;
+
+                if (SynchronizePosition)
+                {
+                    m_PositionInterpolator.ResetTo(m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                }
+                if (SynchronizeRotation)
+                {
+                    m_RotationInterpolator.ResetTo(m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                }
             }
             base.InternalOnNetworkObjectParentChanged(parentNetworkObject);
         }
@@ -4467,18 +4545,20 @@ namespace Unity.Netcode.Components
                 }
             }
             m_OutboundMessage.SetParent(new NetworkObjectReference(parent), worldPositionStays);
-
+            m_LocalAuthoritativeNetworkState.ParentingDirective = true;
+            m_LocalAuthoritativeNetworkState.IsParented = true;
             var transformToCommit = transform;
             CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, false, forceState: true);
             UpdateTransformState();
             // Reset the parent state for next state update that might not have a parent directive included
             m_OutboundMessage.ResetParent();
+            m_LocalAuthoritativeNetworkState.ParentingDirective = false;
             m_PreviousParent = parent;
         }
 
         private NetworkObject m_PreviousParent;
 
-        internal void UpdateParenting(NetworkObjectReference parent, bool worldPositionStays)
+        internal bool UpdateParenting(NetworkObjectReference parent, bool worldPositionStays)
         {
             var parentObject = (NetworkObject)null;
             var isParenting = parent.TryGet(out parentObject);
@@ -4487,6 +4567,27 @@ namespace Unity.Netcode.Components
             {
                 Debug.LogError($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive Mismatch] Inbound state " +
                     $"{nameof(NetworkTransformState.IsParented)} is {InboundState.IsParented} and isParenting is {isParenting}!");
+                return false;
+            }
+            var parentName = "none";
+            if (isParenting)
+            {
+                parentName = parentObject.name;
+            }
+
+            if (isParenting && transform.parent == parentObject.transform)
+            {
+                var knownParent = NetworkObject.GetNetworkParenting();
+                if (knownParent == parentObject.NetworkObjectId)
+                {
+                    // Since we haven't processed the InboundState yet, go ahead and clear this out at this time.
+                    InboundState.ParentingDirective = false;
+                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    {
+                        Debug.Log($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive] Ignoring parenting directive for {parentName} since it is already {name}'s parent.");
+                    }
+                    return false;
+                }
             }
 
             // Parent
@@ -4560,6 +4661,9 @@ namespace Unity.Netcode.Components
             {
                 m_HalfPositionState.UpdateFrom(ref m_InternalCurrentPosition, m_CachedNetworkManager.LocalTime.Tick);
             }
+            // Since we haven't processed the InboundState yet, go ahead and clear this out at this time.
+            InboundState.ParentingDirective = false;
+            return true;
         }
 
         /// <summary>
