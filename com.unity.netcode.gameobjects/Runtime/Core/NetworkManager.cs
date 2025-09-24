@@ -1651,6 +1651,11 @@ namespace Unity.Netcode
 
             // Make sure ShutdownInProgress returns true during this time
             m_ShuttingDown = true;
+            // Exit early if this is invoked and the Singleton has yet to be set.
+            if (Singleton == null)
+            {
+                return;
+            }
             OnDestroy();
 #if UNITY_EDITOR
             if (Singleton != null)
@@ -1663,12 +1668,6 @@ namespace Unity.Netcode
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            // Exit early if this is invoked and the Singleton has yet to be set.
-            if (Singleton == null)
-            {
-                return;
-            }
-
             try
             {
                 ShutdownInternal();
