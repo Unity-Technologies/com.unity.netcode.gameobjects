@@ -4536,7 +4536,7 @@ namespace Unity.Netcode.Components
             // If we are the server but not the motion authority, then treat this as if
             // it was a parenting directive but the parent is already applied.
             // Example: Server spawn with ownership, server parents, client parents shortly after it spawns on client side.
-            if (!CanCommitToTransform && IsServer && InLocalSpace)
+            if (IsServer && !CanCommitToTransform)
             {
                 UpdateParentingProcess(parent, parent != null, worldPositionStays, false);
             }
@@ -4552,6 +4552,11 @@ namespace Unity.Netcode.Components
             m_OutboundMessage.ResetParent();
             m_LocalAuthoritativeNetworkState.ParentingDirective = false;
 
+            // If we are the motion authority, then set the previous parent
+            if (CanCommitToTransform)
+            {
+                m_PreviousParent = parent;
+            }
         }
 
         private NetworkObject m_PreviousParent;
