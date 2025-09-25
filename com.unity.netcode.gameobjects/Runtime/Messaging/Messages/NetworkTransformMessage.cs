@@ -103,6 +103,10 @@ namespace Unity.Netcode
                 Debug.LogError($"[{nameof(NetworkTransformMessage)}] System owner context was not of type {nameof(NetworkManager)}!");
                 return false;
             }
+            if (networkManager.ShutdownInProgress)
+            {
+                return false;
+            }
             var currentPosition = reader.Position;
             var networkObjectId = (ulong)0;
             var networkBehaviourId = 0;
