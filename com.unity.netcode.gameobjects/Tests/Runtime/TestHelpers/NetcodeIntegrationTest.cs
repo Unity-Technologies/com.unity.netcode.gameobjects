@@ -1939,7 +1939,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
         protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject networkObject, TimeoutHelper timeOutHelper = null)
         {
-            var networkObjectId = networkObject.GetComponent<NetworkObject>().NetworkObjectId;
+            var networkObjectId = networkObject.NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(GameObject gameObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
             yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
         }
 
