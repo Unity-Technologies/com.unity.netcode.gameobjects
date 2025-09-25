@@ -4852,6 +4852,11 @@ namespace Unity.Netcode.Components
                 {
                     return;
                 }
+                if (m_NetworkManager == null || m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+                {
+                    Remove();
+                    return;
+                }
                 foreach (var networkTransform in NetworkTransforms)
                 {
                     if (networkTransform.IsSpawned)
