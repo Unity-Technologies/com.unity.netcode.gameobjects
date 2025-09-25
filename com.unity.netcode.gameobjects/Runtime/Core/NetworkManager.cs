@@ -1652,7 +1652,7 @@ namespace Unity.Netcode
             // Make sure ShutdownInProgress returns true during this time
             m_ShuttingDown = true;
             // Exit early if this is invoked and the Singleton has yet to be set.
-            if (Singleton == null)
+            if (Singleton == null && !IsListening)
             {
                 return;
             }
