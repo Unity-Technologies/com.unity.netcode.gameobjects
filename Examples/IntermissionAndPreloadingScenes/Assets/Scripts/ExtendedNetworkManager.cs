@@ -124,11 +124,7 @@ public class ExtendedNetworkManager : NetworkManager
     private void Awake()
     {
 #if UNITY_EDITOR
-
-        if (!EditorApplication.isPlaying)
-        {
-            CheckServiceStatus();
-        }
+        CheckServiceStatus();
 #endif
 
         Screen.SetResolution((int)(Screen.currentResolution.width * 0.40f), (int)(Screen.currentResolution.height * 0.40f), FullScreenMode.Windowed);

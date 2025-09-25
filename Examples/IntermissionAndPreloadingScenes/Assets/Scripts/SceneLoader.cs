@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -8,37 +10,60 @@ using UnityEngine.SceneManagement;
 
 public class SceneLoader : MonoBehaviour
 {
+    [Serializable]
+    public class SceneEntry : IEquatable<SceneEntry>
+    {
 #if UNITY_EDITOR
-    public SceneAsset MainMenu;
-    public List<SceneAsset> NetworkScenesToLoad;
+        public SceneAsset Scene;
+#endif
+        public bool UseSceneLoadDelay;
+        [HideInInspector]
+        public string SceneName;
+
+        public void OnValidate()
+        {
+            if (Scene)
+            {
+                SceneName = Scene.name;
+            }
+        }
+
+        public bool Equals(SceneEntry other)
+        {
+            if (other.SceneName == SceneName)
+            {
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public SceneEntry MainMenu;
+    public List<SceneEntry> NetworkScenesToLoad;
+
+#if UNITY_EDITOR
     private void OnValidate()
     {
         if (NetworkScenesToLoad != null)
         {
-            foreach (SceneAsset sceneAsset in NetworkScenesToLoad)
+            foreach (SceneEntry sceneEntry in NetworkScenesToLoad)
             {
-                if (sceneAsset == null) continue;
-                m_SceneNamesToLoad.Add(sceneAsset.name);
+                sceneEntry.OnValidate();
             }
         }
-        if (MainMenu)
-        {
-            m_MainMenuScene = MainMenu.name;
-        }
+
+        MainMenu?.OnValidate();
     }
 #endif
     public bool UseIntermissionWhileLoading;
+
+    [SerializeField]
+    private SceneIntermission m_SceneIntermission;
+
     public bool SceneLoadingInProgress { get; private set; }
 
-    [HideInInspector]
-    [SerializeField]
-    private string m_MainMenuScene;
-    [HideInInspector]
-    [SerializeField]
-    private List<string> m_SceneNamesToLoad = new List<string>();
 
     private ExtendedNetworkManager m_NetworkManager;
-    private SceneIntermission m_SceneIntermission;
     private Scene m_CurrentLoadedScene;
     private int m_NextSceneNameIndex = 0;
 
@@ -50,9 +75,12 @@ public class SceneLoader : MonoBehaviour
     public void SetCurrentScene()
     {
         m_CurrentLoadedScene = SceneManager.GetActiveScene();
-        if (m_SceneNamesToLoad.Contains(m_CurrentLoadedScene.name))
+        var validEntries = NetworkScenesToLoad.Where((c) => c.SceneName == m_CurrentLoadedScene.name); xa
+        if (validEntries.Any())
         {
-            m_NextSceneNameIndex = (m_SceneNamesToLoad.IndexOf(m_CurrentLoadedScene.name) + 1) % m_SceneNamesToLoad.Count;
+            var validScene = validEntries.First();
+            m_NextSceneNameIndex = (NetworkScenesToLoad.IndexOf(validScene) + 1) % NetworkScenesToLoad.Count;
+
         }
         else
         {
@@ -119,15 +147,15 @@ public class SceneLoader : MonoBehaviour
 
     public void LoadMainMenu()
     {
-        if (m_MainMenuScene != string.Empty)
+        if (MainMenu != null && MainMenu.SceneName != string.Empty)
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.LoadScene(m_MainMenuScene, LoadSceneMode.Single);
+            SceneManager.LoadScene(MainMenu.SceneName, LoadSceneMode.Single);
         }
     }
     private void OnSceneLoaded(Scene sceneLoaded, LoadSceneMode loadSceneMode)
     {
-        if (sceneLoaded.name == m_MainMenuScene)
+        if (sceneLoaded.name == MainMenu.SceneName)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
             m_NetworkManager.OnServerStopped -= OnServerStopped;
@@ -209,6 +237,16 @@ public class SceneLoader : MonoBehaviour
 
     public string GetNextSceneNameToLoad()
     {
-        return m_SceneNamesToLoad[m_NextSceneNameIndex];
+        return NetworkScenesToLoad[m_NextSceneNameIndex].SceneName;
+    }
+
+    public bool ShouldDelayFinalSceneLoad(string sceneName)
+    {
+        var validScene = NetworkScenesToLoad.Where((c) => c.SceneName == sceneName).First();
+        if (validScene != null)
+        {
+            return validScene.UseSceneLoadDelay;
+        }
+        return false;
     }
 }

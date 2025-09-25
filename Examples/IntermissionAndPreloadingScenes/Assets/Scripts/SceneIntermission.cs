@@ -9,6 +9,8 @@ public class SceneIntermission : NetworkBehaviour
 {
     public Text SceneLoadingProgress;
     public Button ActivateSceneButton;
+    public SceneLoader SceneLoader;
+
     public bool IntermissionIsActive { get; private set; }
     public event Action<bool> OnIntermissionActiveUpdate;
     private const float k_ByteRatio = 1.0f / 255.0f;
@@ -69,10 +71,21 @@ public class SceneIntermission : NetworkBehaviour
         {
             NetworkManager.SceneManager.OnSceneEvent -= OnSceneEvent;
             NetworkManager.SceneManager.OnLoadEventCompleted += OnLoadEventCompleted;
-            sceneEvent.AsyncOperation.allowSceneActivation = false;
-            m_ShouldActivateScene = false;
-            m_LoadingProgress.Value = 0;
-            StartCoroutine(DelaySceneActivation(sceneEvent));
+            if (SceneLoader)
+            {
+                sceneEvent.AsyncOperation.allowSceneActivation = !SceneLoader.ShouldDelayFinalSceneLoad(sceneEvent.SceneName);
+            }
+            else
+            {
+                sceneEvent.AsyncOperation.allowSceneActivation = true;
+            }
+
+            if (!sceneEvent.AsyncOperation.allowSceneActivation)
+            {
+                m_ShouldActivateScene = false;
+                m_LoadingProgress.Value = 0;
+                StartCoroutine(DelaySceneActivation(sceneEvent));
+            }
         }
     }
 

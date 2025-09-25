@@ -1,7 +1,6 @@
-using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
-using System.Runtime.CompilerServices;
+
 
 #if UNITY_EDITOR
 using Unity.Netcode.Editor;
@@ -66,6 +65,7 @@ public class PlayerMotion : NetworkTransform
         m_RigidBody = GetComponent<Rigidbody>();
         if (CanCommitToTransform)
         {
+            m_RigidBody.useGravity = !ExtendedNetworkManager.Instance.IsSceneEventInProgress();
             m_CurrentPi = Random.Range(-Mathf.PI, Mathf.PI);
             m_ClockWise = Random.Range(-1.0f, 1.0f);
             m_ClockWise = m_ClockWise / Mathf.Abs(m_ClockWise);
