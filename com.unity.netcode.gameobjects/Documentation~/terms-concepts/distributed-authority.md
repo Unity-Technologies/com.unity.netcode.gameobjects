@@ -22,6 +22,36 @@ When using the distributed authority topology, it's necessary to have a single d
 
 The initial session owner is the first client that joins when the session is created. If this client disconnects during the game, a new session owner is automatically selected and promoted from within the clients that are currently connected.
 
+### `IsSessionOwner`
+
+To determine if the current client is the session owner, use the `IsSessionOwner` property provided by Netcode for GameObjects. This property is available on the `NetworkManager.Singleton` instance and returns `true` if the local client is the session owner.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (!IsSessionOwner)
+        {
+            return;
+        }
+        // Global monster init behaviour here
+        base.OnNetworkSpawn();
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !IsSessionOwner)
+        {
+            return;
+        }
+        // Global monster AI updates here
+    }
+}
+```
+
+You can use this property to conditionally execute logic that should only run on the session owner, such as managing global game state or handling session-wide events.
+
 ## More information about distributed authority
 
 For more information about how distributed authority works in Netcode for GameObjects, see the following pages in the documentation:

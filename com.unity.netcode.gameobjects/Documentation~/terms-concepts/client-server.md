@@ -4,9 +4,107 @@ Client-server is one possible [network topology](network-topologies.md) you can 
 
 ## Defining client-server
 
-In a client-server topology, a central server is responsible for running the main simulation and managing all aspects of running the networked game, including simulating physics, spawning and despawning objects, and authorizing client requests. Players connect to the server using separate client programs to see and interact with the game.
+The client-server topology is made up of two distinct types of game instances. There is one server game instance, and many client game instances. The server is always the [authority](./authority.md) and is responsible for running the main simulation of the game. The server is responsible for simulating physics, spawning and despawning objects, authorizing client requests along with any other responsibilities. Client game instances can then connect to the server to interact with and respond the the server's game simulation.
 
-Client-server encompasses a number of potential network arrangements. The most common is a dedicated game server, in which a specialized server manages the game and exists solely for that purpose. An alternative client-server arrangement is to have a [listen server](../learn/listenserverhostarchitecture.md), in which the game server runs on the same machine as a client.
+Client-server encompasses a number of potential network arrangements. The most common is a dedicated game server, in which a specialized server manages the game and exists solely for that purpose.
+
+An alternative client-server arrangement is to have a [listen server](../learn/listenserverhostarchitecture.md), in which the game server runs on the same machine as a client. In this arrangement, the server game instance is referred to as a host. A host game instance runs as both a server and a client simultaneously.
+
+## Checking for game instance type
+
+### `IsServer`
+
+`IsServer` or `!IsServer` is the traditional client-server method of checking whether the current game instance is running as a server instance. This is useful for ensuring that the server instance is the only instance running authoritative game logic, such as spawning objects, processing game rules, and validating client actions.
+
+You should use `IsServer` to ensure that only the server executes code that should be authoritative or global. For example, spawning enemies, handling core game logic, or updating shared state should only happen on the server. This prevents clients from making unauthorized changes and helps maintain a consistent game state across all connected players.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+        // Server-side monster init script here
+        base.OnNetworkSpawn();
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !IsServer)
+        {
+            return;
+        }
+        // Server-side updates monster AI here
+    }
+}
+```
+
+### `IsHost`
+
+The `IsHost` property is used to determine if the current game instance is running as both a server and a client simultaneously—a configuration known as a host. In Unity's Netcode for GameObjects, this is common when using a listen server, where the server and one client share the same process.
+
+`IsHost` could be useful for branching resource heavy logic so that a game running as a listen-server can use code-paths optimized for running on end devices.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+        // Server-side monster init script here
+        base.OnNetworkSpawn();
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !IsServer)
+        {
+            return;
+        }
+        if (IsHost)
+        {
+          // Monster AI that is optimized for user devices using a listen-server here.
+          return
+        }
+
+        // Monster AI that is optimized for the dedicated game server here.
+    }
+}
+```
+
+### `IsClient`
+
+The `IsClient` property is used to check if the current game instance is running as a client. This is helpful for executing logic that should only run on client machines, such as updating UI elements, handling local input, or playing client-specific effects. Use `IsClient` to ensure that code only runs on the client side, preventing unintended execution on the server or in non-client contexts.
+
+`IsClient` will be `true` for host instances as a host game instance is running as both a server and a client simultaneously.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (IsClient)
+        {
+            // Play client side effects here
+
+            if (!IsHost)
+            {
+               // exit early if the game instance is only a client
+               return;
+            }
+        }
+
+        // Server-side monster init script here
+        base.OnNetworkSpawn();
+    }
+}
+```
 
 ## Use cases for client-server
 

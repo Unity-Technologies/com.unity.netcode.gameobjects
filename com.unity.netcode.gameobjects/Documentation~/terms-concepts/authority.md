@@ -29,3 +29,35 @@ The authority of each networked object is responsible for simulating the behavio
 Because distributed authority games share the simulation between each connected client, they are less resource intensive. Each machine connected to the game processes a subdivision of the simulation, so no single machine needs to have the capacity to process the entire simulation. This results in a multiplayer game experience that can run on cheaper machines and is less resource intensive.
 
 The distributed authority model is the authority model used for [distributed authority games](distributed-authority.md).
+
+## Checking for authority
+
+The `HasAuthority` property, which is available on both NetworkObjects and NetworkBehaviours, is session-mode agnostic and works in both distributed authority and client-server contexts. It's recommended to use `HasAuthority` whenever you're working with individual objects, regardless of whether you're using a distributed authority or client-server topology.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (!HasAuthority)
+        {
+            return;
+        }
+        // Authority monster init script here
+        base.OnNetworkSpawn();
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !HasAuthority)
+        {
+            return;
+        }
+        // Authority updates monster AI here
+    }
+}
+```
+
+Using distributed authority with Netcode for GameObjects requires a shift in the understanding of authority: instead of authority belonging to the server in all cases, it belongs to whichever client instance currently has authority. This necessitates a shift away from using local, non-replicated properties to store pertinent states; instead, [NetworkVariables](networkvariable.md) should be used to keep states synchronized and saved when all clients disconnect from a session or ownership is transferred to another client.
+
+Distributed authority supports all built-in NetworkVariable data types. Since there's no concept of an authoritative server in a distributed authority session, all NetworkVariables are automatically configured with owner write and everyone read permissions.
