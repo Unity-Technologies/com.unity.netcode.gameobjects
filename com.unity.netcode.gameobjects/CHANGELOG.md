@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improved performance around the NetworkBehaviour component. (#3687)
 
 ### Deprecated
 
