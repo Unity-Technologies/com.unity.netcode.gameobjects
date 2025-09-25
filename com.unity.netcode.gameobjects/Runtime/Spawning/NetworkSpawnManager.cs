@@ -552,14 +552,8 @@ namespace Unity.Netcode
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
 
-            // Always notify locally on the server when ownership is lost
-            networkObject.InvokeBehaviourOnLostOwnership();
-
-            // Authority adds entries for all client ownership
-            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
-
-            // Always notify locally on the server when a new owner is assigned
-            networkObject.InvokeBehaviourOnGainedOwnership();
+            // Notify lost ownership, update the ownership, then notify gained ownership for the network behaviours
+            networkObject.InvokeBehaviourOnOwnershipChanged(originalOwner, clientId);
 
             // If we are the original owner, then we want to synchronize owner read & write NetworkVariables.
             if (originalOwner == NetworkManager.LocalClientId)
@@ -584,12 +578,6 @@ namespace Unity.Netcode
                 // If we are connected to the CMB service or not the DAHost (i.e. pure DA-Clients only)
                 if (NetworkManager.CMBServiceConnection || !NetworkManager.DAHost)
                 {
-                    // Always update the network properties in distributed authority mode for the client gaining ownership
-                    for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
-                    {
-                        networkObject.ChildNetworkBehaviours[i].UpdateNetworkProperties();
-                    }
-
                     // Populate valid target client identifiers that should receive this change in ownership message.
                     message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => !IsObjectVisibilityPending(c, ref networkObject) && networkObject.IsNetworkVisibleTo(c)).ToArray();
                     message.ClientIdCount = message.ClientIds.Length;
@@ -781,7 +769,7 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
         {
-            var networkObject = networkPrefab;
+            NetworkObject networkObject;
             // - Host and clients always instantiate the override if one exists.
             // - Server instantiates the original prefab unless:
             // -- forceOverride is set to true =or=
@@ -822,66 +810,62 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkObject GetNetworkObjectToSpawn(uint globalObjectIdHash, ulong ownerId, Vector3? position, Quaternion? rotation, bool isScenePlaced = false, byte[] instantiationData = null)
         {
-            NetworkObject networkObject = null;
             // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
             if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
             {
                 // Let the handler spawn the NetworkObject
-                networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationData);
-                networkObject.NetworkManagerOwner = NetworkManager;
+                var prefabHandlerObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationData);
+                prefabHandlerObject.NetworkManagerOwner = NetworkManager;
+                return prefabHandlerObject;
             }
-            else
+
+            // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
+            var networkPrefabReference = (GameObject)null;
+            var inScenePlacedWithNoSceneManagement = !NetworkManager.NetworkConfig.EnableSceneManagement && isScenePlaced;
+
+            if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
             {
-                // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
-                var networkPrefabReference = (GameObject)null;
-                var inScenePlacedWithNoSceneManagement = !NetworkManager.NetworkConfig.EnableSceneManagement && isScenePlaced;
+                var networkPrefab = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash];
 
-                if (NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                switch (networkPrefab.Override)
                 {
-                    var networkPrefab = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash];
-
-                    switch (networkPrefab.Override)
-                    {
-                        default:
-                        case NetworkPrefabOverride.None:
-                            networkPrefabReference = networkPrefab.Prefab;
-                            break;
-                        case NetworkPrefabOverride.Hash:
-                        case NetworkPrefabOverride.Prefab:
+                    default:
+                    case NetworkPrefabOverride.None:
+                        networkPrefabReference = networkPrefab.Prefab;
+                        break;
+                    case NetworkPrefabOverride.Hash:
+                    case NetworkPrefabOverride.Prefab:
+                        {
+                            // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
+                            // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
+                            // but might want to use the same source network prefab as an in-scene placed NetworkObject.
+                            // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
+                            // spawning them so the original prefab placed is preserved and this is not needed)
+                            if (inScenePlacedWithNoSceneManagement)
                             {
-                                // When scene management is disabled and this is an in-scene placed NetworkObject, we want to always use the
-                                // SourcePrefabToOverride and not any possible prefab override as a user might want to spawn overrides dynamically
-                                // but might want to use the same source network prefab as an in-scene placed NetworkObject.
-                                // (When scene management is enabled, clients don't delete their in-scene placed NetworkObjects prior to dynamically
-                                // spawning them so the original prefab placed is preserved and this is not needed)
-                                if (inScenePlacedWithNoSceneManagement)
-                                {
-                                    networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
-                                }
-                                else
-                                {
-                                    networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                                }
-                                break;
+                                networkPrefabReference = networkPrefab.SourcePrefabToOverride ? networkPrefab.SourcePrefabToOverride : networkPrefab.Prefab;
                             }
-                    }
-                }
-
-                // If not, then there is an issue (user possibly didn't register the prefab properly?)
-                if (networkPrefabReference == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    {
-                        NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
-                    }
-                }
-                else
-                {
-                    // Create prefab instance while applying any pre-assigned position and rotation values
-                    networkObject = InstantiateNetworkPrefab(networkPrefabReference, globalObjectIdHash, position, rotation);
+                            else
+                            {
+                                networkPrefabReference = NetworkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                            }
+                            break;
+                        }
                 }
             }
-            return networkObject;
+
+            // If not, then there is an issue (user possibly didn't register the prefab properly?)
+            if (networkPrefabReference == null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError($"Failed to create object locally. [{nameof(globalObjectIdHash)}={globalObjectIdHash}]. {nameof(NetworkPrefab)} could not be found. Is the prefab registered with {NetworkManager.name}?");
+                }
+                return null;
+            }
+
+            // Create prefab instance while applying any pre-assigned position and rotation values
+            return InstantiateNetworkPrefab(networkPrefabReference, globalObjectIdHash, position, rotation);
         }
 
         /// <summary>
@@ -1079,6 +1063,7 @@ namespace Unity.Netcode
                 }
             }
             // Invoke NetworkBehaviour.OnPreSpawn methods
+            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
@@ -1119,10 +1104,8 @@ namespace Unity.Netcode
                     }
                 }
             }
-            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
 
-            // Invoke NetworkBehaviour.OnPostSpawn methods
-            networkObject.InvokeBehaviourNetworkPostSpawn();
+            SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
         }
 
         /// <summary>
@@ -1257,6 +1240,9 @@ namespace Unity.Netcode
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
+
+            // It is now ok to invoke NetworkBehaviour.OnPostSpawn methods
+            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();

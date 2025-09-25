@@ -203,6 +203,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
+            var distributedAuthorityMode = networkManager.DistributedAuthorityMode;
 
             // Sanity check that we are not sending duplicated change ownership messages
             if (networkObject.OwnerClientId == OwnerClientId)
@@ -215,49 +216,18 @@ namespace Unity.Netcode
             var originalOwner = networkObject.OwnerClientId;
             networkObject.OwnerClientId = OwnerClientId;
 
-            // If in distributed authority mode
-            if (networkManager.DistributedAuthorityMode)
+            if (distributedAuthorityMode)
             {
                 networkObject.Ownership = (NetworkObject.OwnershipStatus)OwnershipFlags;
-
-                networkObject.InvokeBehaviourOnLostOwnership();
-
-                // Always update the network properties in distributed authority mode
-                foreach (var child in networkObject.ChildNetworkBehaviours)
-                {
-                    child.UpdateNetworkProperties();
-                }
-
-                networkObject.InvokeBehaviourOnGainedOwnership();
             }
-            else
+
+            // Notify lost ownership, update the ownership, then notify gained ownership for the network behaviours
+            networkObject.InvokeBehaviourOnOwnershipChanged(originalOwner, OwnerClientId);
+
+            if (!distributedAuthorityMode && originalOwner == networkManager.LocalClientId)
             {
-                // We are initial owner
-                if (originalOwner == networkManager.LocalClientId)
-                {
-                    networkObject.InvokeBehaviourOnLostOwnership();
-                }
-
-                // For all other clients that are neither the former or current owner, update the behaviours' properties
-                if (OwnerClientId != networkManager.LocalClientId && originalOwner != networkManager.LocalClientId)
-                {
-                    foreach (var childBehaviour in networkObject.ChildNetworkBehaviours)
-                    {
-                        childBehaviour.UpdateNetworkProperties();
-                    }
-                }
-
-                // We are new owner
-                if (OwnerClientId == networkManager.LocalClientId)
-                {
-                    networkObject.InvokeBehaviourOnGainedOwnership();
-                }
-
-                if (originalOwner == networkManager.LocalClientId)
-                {
-                    // Fully synchronize NetworkVariables with either read or write ownership permissions.
-                    networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId);
-                }
+                // Fully synchronize NetworkVariables with either read or write ownership permissions.
+                networkObject.SynchronizeOwnerNetworkVariables(originalOwner, networkObject.PreviousOwnerId);
             }
 
             // Always invoke ownership change notifications
@@ -265,7 +235,7 @@ namespace Unity.Netcode
 
             // If this change was requested, then notify that the request was approved (doing this last so all ownership
             // changes have already been applied if the callback is invoked)
-            if (networkManager.DistributedAuthorityMode && networkManager.LocalClientId == OwnerClientId)
+            if (distributedAuthorityMode && networkManager.LocalClientId == OwnerClientId)
             {
                 if (ChangeMessageType is ChangeType.RequestApproved)
                 {
