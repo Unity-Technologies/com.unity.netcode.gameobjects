@@ -3328,8 +3328,9 @@ namespace Unity.Netcode
                 throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
             }
 
-            // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)
-            networkManager.SpawnManager.SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, sceneObject.DestroyWithScene);
+            // Invoke the version of this method that takes a SceneObject to avoid invoking pre-spawn
+            // (It also invokes post spawn and handles processing derferred messages)
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
 
             if (sceneObject.SyncObservers)
             {
