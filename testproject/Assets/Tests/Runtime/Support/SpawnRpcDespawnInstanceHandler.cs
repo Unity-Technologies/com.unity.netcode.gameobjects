@@ -68,7 +68,7 @@ namespace TestProject.RuntimeTests.Support
             if (!networkObject.NetworkManager.IsServer)
             {
                 Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, NetworkUpdateLoop.UpdateStage);
-            }            
+            }
             Object.Destroy(networkObject.gameObject);
         }
     }
