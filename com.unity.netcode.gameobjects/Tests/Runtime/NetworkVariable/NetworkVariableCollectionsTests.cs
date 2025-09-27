@@ -781,36 +781,37 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             m_CurrentKey = 1000;
-
-            VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Values <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-            foreach (var client in m_Clients)
+            if (m_EnableDebug)
             {
-                compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
-                compDictionary.InitValues();
-                compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
-                compDictionaryServer.InitValues();
-            }
-            VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Check <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-            var count = 0;
-            while (count < 3)
-            {
-                m_InitializedStatus.Clear();
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Values <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                 foreach (var client in m_Clients)
                 {
-                    yield return ValidateClients(client, true);
+                    compDictionary = client.LocalClient.PlayerObject.GetComponent<DictionaryTestHelper>();
+                    compDictionary.InitValues();
+                    compDictionaryServer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][client.LocalClientId].GetComponent<DictionaryTestHelper>();
+                    compDictionaryServer.InitValues();
                 }
-                if (m_IsInitialized)
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Check <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+                var count = 0;
+                while (count < 3)
                 {
-                    break;
+                    m_InitializedStatus.Clear();
+                    foreach (var client in m_Clients)
+                    {
+                        yield return ValidateClients(client, true);
+                    }
+                    if (m_IsInitialized)
+                    {
+                        break;
+                    }
+                    count++;
+                    m_Stage = 0;
                 }
-                count++;
-                m_Stage = 0;
+                Assert.IsTrue(m_IsInitialized, $"Not all clients synchronized properly!\n {m_InitializedStatus.ToString()}");
+                VerboseDebug(m_InitializedStatus.ToString());
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
             }
 
-            Assert.IsTrue(m_IsInitialized, $"Not all clients synchronized properly!\n {m_InitializedStatus.ToString()}");
-            VerboseDebug(m_InitializedStatus.ToString());
-
-            VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
             foreach (var client in m_Clients)
             {
                 ///////////////////////////////////////////////////////////////////////////
