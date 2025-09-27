@@ -692,7 +692,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (VerboseMode)
             {
-                Debug.Log($"[Frame: {Time.frameCount}][Tick: {((uint)(NetworkManager.LocalTime.TickWithPartial * 1000))*0.001f}][{name}] {msg}");
+                Debug.Log($"[Frame: {Time.frameCount}][Tick: {((uint)(NetworkManager.LocalTime.TickWithPartial * 1000)) * 0.001f}][{name}] {msg}");
             }
         }
     }
