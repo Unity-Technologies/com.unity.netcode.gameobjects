@@ -196,6 +196,12 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
+            var networkManager = (NetworkManager)context.SystemOwner;
+            if (networkManager.IsServer)
+            {
+                SenderClientId = context.SenderId;
+            }
+            
             var rpcParams = new __RpcParams
             {
                 Ext = new RpcParams
