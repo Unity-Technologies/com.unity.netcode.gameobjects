@@ -1833,7 +1833,7 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.AuthorityLocalSpawn(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
             {
@@ -3328,9 +3328,9 @@ namespace Unity.Netcode
                 throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
             }
 
-            // Invoke the version of this method that takes a SceneObject to avoid invoking pre-spawn
+            // Invoke the non-authority local spawn method 
             // (It also invokes post spawn and handles processing derferred messages)
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
+            networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, sceneObject, sceneObject.DestroyWithScene);
 
             if (sceneObject.SyncObservers)
             {

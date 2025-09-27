@@ -1041,7 +1041,7 @@ namespace Unity.Netcode
         /// Distributed Authority:
         /// DAHost client and standard DA clients invoke this method.
         /// </summary>
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal void AuthorityLocalSpawn(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -1106,6 +1106,11 @@ namespace Unity.Netcode
             }
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
+
+            // When done spawning invoke post spawn
+            networkObject.InvokeBehaviourNetworkPostSpawn();
+
+            // No need to check for deferred messages since this method is used for authority spawning.
         }
 
         /// <summary>
@@ -1115,7 +1120,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
         /// </remarks>
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
+        internal void NonAuthorityLocalSpawn(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -1240,9 +1245,6 @@ namespace Unity.Netcode
             {
                 networkObject.PrefabGlobalObjectIdHash = networkObject.InScenePlacedSourceGlobalObjectIdHash;
             }
-
-            // It is now ok to invoke NetworkBehaviour.OnPostSpawn methods
-            networkObject.InvokeBehaviourNetworkPostSpawn();
         }
 
         internal Dictionary<ulong, NetworkObject> NetworkObjectsToSynchronizeSceneChanges = new Dictionary<ulong, NetworkObject>();
@@ -1526,7 +1528,7 @@ namespace Unity.Netcode
                             ownerId = NetworkManager.LocalClientId;
                         }
 
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        AuthorityLocalSpawn(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
                         networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
