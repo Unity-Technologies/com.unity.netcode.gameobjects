@@ -3328,7 +3328,7 @@ namespace Unity.Netcode
                 throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
             }
 
-            // Invoke the non-authority local spawn method 
+            // Invoke the non-authority local spawn method
             // (It also invokes post spawn and handles processing derferred messages)
             networkManager.SpawnManager.NonAuthorityLocalSpawn(networkObject, sceneObject, sceneObject.DestroyWithScene);
 
