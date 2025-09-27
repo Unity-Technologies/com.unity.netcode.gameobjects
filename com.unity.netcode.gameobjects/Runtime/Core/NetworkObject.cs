@@ -2253,13 +2253,11 @@ namespace Unity.Netcode
         /// <summary>
         /// The root NetworkTransform is either the first one discovered or the one on the root
         /// prefab GameObject instance that has the NetworkObject component attached to it.
-        ///
-        /// This is primarily used for the NetworkTransform parent directive update that allows
-        /// for as many parenting sequences to occur as can be pushed out to the maximum number of
-        /// in-flight messages (i.e. dozens upon dozens of parenting messages can be back-to-back).
         /// </summary>
         /// <remarks>
-        /// *** Requires <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/> to be enabled.
+        /// Used when <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/> is enabled
+        /// on the root network transform for sending an <see cref="NetworkTransformMessage"/> with
+        /// a parenting directive included.
         /// </remarks>
         internal NetworkTransform RootNetworkTransform;
 
