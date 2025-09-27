@@ -814,7 +814,7 @@ namespace Unity.Netcode
         {
             NetworkManager = networkManager;
             SceneEventDataStore = new Dictionary<uint, SceneEventData>();
-            m_NetworkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.SceneEvent);
+            m_NetworkDelivery = MessageDeliveryType<SceneEventMessage>.DefaultDelivery;
 
             // Generates the scene name to hash value
             GenerateScenesInBuild();

@@ -798,7 +798,7 @@ namespace Unity.Netcode
             };
 
             var sendTarget = NetworkManager.DAHost ? OwnerClientId : NetworkManager.ServerClientId;
-            NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDelivery.GetDelivery(NetworkMessageTypes.ChangeOwnership), sendTarget);
+            NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
 
             return OwnershipRequestStatus.RequestSent;
         }
@@ -885,7 +885,7 @@ namespace Unity.Netcode
                 };
 
                 var sendTarget = NetworkManager.DAHost ? clientRequestingOwnership : NetworkManager.ServerClientId;
-                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDelivery.GetDelivery(NetworkMessageTypes.ChangeOwnership), sendTarget);
+                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, sendTarget);
             }
         }
 
@@ -1071,7 +1071,7 @@ namespace Unity.Netcode
                 DistributedAuthorityMode = true,
                 OwnershipFlags = (ushort)Ownership,
             };
-            var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ChangeOwnership);
+
             if (NetworkManager.DAHost)
             {
                 foreach (var clientId in Observers)
@@ -1080,14 +1080,14 @@ namespace Unity.Netcode
                     {
                         continue;
                     }
-                    NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, networkDelivery, clientId);
+                    NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, clientId);
                 }
             }
             else
             {
                 changeOwnership.ClientIdCount = Observers.Count();
                 changeOwnership.ClientIds = Observers.ToArray();
-                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, networkDelivery, NetworkManager.ServerClientId);
+                NetworkManager.ConnectionManager.SendMessage(ref changeOwnership, MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery, NetworkManager.ServerClientId);
             }
         }
 
@@ -1605,19 +1605,18 @@ namespace Unity.Netcode
                     DeferredDespawnTick = DeferredDespawnTick,
                 };
 
-                var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.DestroyObject);
                 var size = 0;
                 if (NetworkManager.DistributedAuthorityMode)
                 {
                     if (!NetworkManager.DAHost)
                     {
                         // Send destroy call to service or DAHost
-                        size = NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, NetworkManager.ServerClientId);
+                        size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                     }
                     else // DAHost mocking service
                     {
                         // Send destroy call
-                        size = NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
+                        size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
                         // Broadcast the destroy to all clients so they can update their observers list
                         foreach (var client in NetworkManager.ConnectionManager.ConnectedClientIds)
                         {
@@ -1625,14 +1624,14 @@ namespace Unity.Netcode
                             {
                                 continue;
                             }
-                            size += NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, client);
+                            size += NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, client);
                         }
                     }
                 }
                 else
                 {
                     // Send destroy call
-                    size = NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
+                    size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery, clientId);
                 }
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
@@ -2393,13 +2392,13 @@ namespace Unity.Netcode
             {
                 m_CachedWorldPositionStays = true;
             }
-            var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ParentSync);
+
             // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
             if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
             {
                 if (!NetworkManager.DAHost)
                 {
-                    NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, 0);
+                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, 0);
                     return;
                 }
                 else
@@ -2410,7 +2409,7 @@ namespace Unity.Netcode
                         {
                             continue;
                         }
-                        NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
+                        NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                     }
                 }
             }
@@ -2434,7 +2433,7 @@ namespace Unity.Netcode
                             clientIds[idx++] = clientId;
                         }
                     }
-                    NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientIds, idx);
+                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientIds, idx);
                 }
             }
         }

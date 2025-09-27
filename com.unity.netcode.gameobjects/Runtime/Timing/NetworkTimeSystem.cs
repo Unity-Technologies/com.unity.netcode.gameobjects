@@ -124,7 +124,7 @@ namespace Unity.Netcode
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
             m_TickLatencyAverage = 2;
-            m_NetworkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.TimeSync);
+            m_NetworkDelivery = MessageDeliveryType<TimeSyncMessage>.DefaultDelivery;
         }
 
         /// <summary>

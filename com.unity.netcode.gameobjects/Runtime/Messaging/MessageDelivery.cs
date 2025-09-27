@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
 
@@ -24,6 +25,15 @@ internal static class MessageDelivery
         UpdateMessageTypes();
     }
 
+    /// <summary>
+    /// FIrst pass at providing an easier path to configuring the network
+    /// delivery type for the message type.
+    /// TODO: Once <see cref="NetworkMessageManager"/> coalesces all reliable messages
+    /// and/or organizes by a more unified order of operation tracking built into the
+    /// buffer and/or converts all places that would normally generate a message to
+    /// commands that will, eventually, generate messages.
+    /// For now, we are sending all reliable fragmented sequenced.
+    /// </summary>
     private static void UpdateMessageTypes()
     {
         s_MessageToDelivery.Clear();
@@ -38,6 +48,28 @@ internal static class MessageDelivery
             s_MessageToDelivery.Add(messageType, NetworkDelivery.ReliableFragmentedSequenced);
         }
         s_MessageToMessageType = ILPPMessageProvider.GetMessageTypesMap();
+
+        // Fast path look-ups
+        MessageDeliveryType<ChangeOwnershipMessage>.Initialize();
+        MessageDeliveryType<ClientConnectedMessage>.Initialize();
+        MessageDeliveryType<ClientDisconnectedMessage>.Initialize();
+        MessageDeliveryType<ConnectionRequestMessage>.Initialize();
+        MessageDeliveryType<ConnectionApprovedMessage>.Initialize();
+        MessageDeliveryType<CreateObjectMessage>.Initialize();
+        MessageDeliveryType<DestroyObjectMessage>.Initialize();
+        MessageDeliveryType<NetworkTransformMessage>.Initialize();
+        MessageDeliveryType<NetworkVariableDeltaMessage>.Initialize();
+        MessageDeliveryType<ParentSyncMessage>.Initialize();
+        // RpcMessage.cs
+        {
+            MessageDeliveryType<RpcMessage>.Initialize();
+            MessageDeliveryType<ClientRpcMessage>.Initialize();
+            MessageDeliveryType<ServerRpcMessage>.Initialize();
+        }
+        MessageDeliveryType<SceneEventMessage>.Initialize();
+        MessageDeliveryType<ServerLogMessage>.Initialize();
+        MessageDeliveryType<SessionOwnerMessage>.Initialize();
+        MessageDeliveryType<TimeSyncMessage>.Initialize();
     }
 
 #if UNITY_EDITOR

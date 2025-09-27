@@ -276,7 +276,7 @@ namespace Unity.Netcode
                 ClientIdCount = 0,
                 ChangeMessageType = ChangeMessageType,
             };
-            var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ChangeOwnership);
+            var networkDelivery = MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery;
             if (ChangeMessageType == ChangeType.RequestDenied)
             {
                 // If the local DAHost's client is not the target, then forward to the target

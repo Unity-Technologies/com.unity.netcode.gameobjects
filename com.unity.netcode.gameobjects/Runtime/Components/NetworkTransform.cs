@@ -1335,7 +1335,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         [Tooltip("When set, NetworkTransform will send common state updates using unreliable network delivery " +
             "to provide a higher tolerance to poor network conditions (especially packet loss). When disabled, all state updates are " +
-            "sent using reliable fragmented sequenced network delivery.")]
+            "sent using reliable fragmented sequenced network delivery. Note: This will change the order of operations between transform state updates and other messages sent reliably.")]
         public bool UseUnreliableDeltas = false;
 
         /// <summary>
@@ -4722,7 +4722,7 @@ namespace Unity.Netcode.Components
             // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
             var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
                 | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
-                ? MessageDelivery.GetDelivery(NetworkMessageTypes.NetworkTransformMessage) : NetworkDelivery.UnreliableSequenced;
+                ? MessageDeliveryType<NetworkTransformMessage>.DefaultDelivery : NetworkDelivery.UnreliableSequenced;
 
             // Server-host-dahost always sends updates to all clients (but itself)
             if (IsServer)

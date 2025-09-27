@@ -256,7 +256,7 @@ namespace Unity.Netcode
             var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
             foreach (var targetClient in clients)
             {
-                ConnectionManager.SendMessage(ref sessionOwnerMessage, MessageDelivery.GetDelivery(NetworkMessageTypes.SessionOwner), targetClient);
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, MessageDeliveryType<SessionOwnerMessage>.DefaultDelivery, targetClient);
             }
         }
 

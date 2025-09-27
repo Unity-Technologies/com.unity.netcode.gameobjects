@@ -104,7 +104,7 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ServerRpc);
+                    networkDelivery = MessageDeliveryType<ServerRpcMessage>.DefaultDelivery;
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
@@ -190,7 +190,7 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ClientRpc);
+                    networkDelivery = MessageDeliveryType<ClientRpcMessage>.DefaultDelivery;
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > networkManager.MessageManager.NonFragmentedMessageMaxSize)
@@ -358,7 +358,7 @@ namespace Unity.Netcode
             {
                 default:
                 case RpcDelivery.Reliable:
-                    networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.Rpc);
+                    networkDelivery = MessageDeliveryType<RpcMessage>.DefaultDelivery;
                     break;
                 case RpcDelivery.Unreliable:
                     if (bufferWriter.Length > NetworkManager.MessageManager.NonFragmentedMessageMaxSize)
@@ -1014,7 +1014,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < NetworkVariableFields.Count; i++)
                 {
-                    var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.NetworkVariableDelta);
+                    var networkDelivery = MessageDeliveryType<NetworkVariableDeltaMessage>.DefaultDelivery;
                     if (!firstLevelIndex.ContainsKey(networkDelivery))
                     {
                         firstLevelIndex.Add(networkDelivery, secondLevelCounter);

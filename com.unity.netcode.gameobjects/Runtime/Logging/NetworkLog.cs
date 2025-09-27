@@ -102,14 +102,13 @@ namespace Unity.Netcode
 
             if (!isServer && networkManager.NetworkConfig.EnableNetworkLogs)
             {
-                var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.ServerLog);
                 var networkMessage = new ServerLogMessage
                 {
                     LogType = logType,
                     Message = message,
                     SenderId = localId
                 };
-                var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, networkDelivery, NetworkManager.ServerClientId);
+                var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, MessageDeliveryType<ServerLogMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 networkManager.NetworkMetrics.TrackServerLogSent(NetworkManager.ServerClientId, (uint)logType, size);
             }
         }

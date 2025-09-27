@@ -1308,7 +1308,7 @@ namespace Unity.Netcode
                 UpdateObservers = NetworkManager.DistributedAuthorityMode,
                 ObserverIds = NetworkManager.DistributedAuthorityMode ? networkObject.Observers.ToArray() : null,
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.CreateObject), clientId);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<CreateObjectMessage>.DefaultDelivery, clientId);
             NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
         }
 
@@ -1332,7 +1332,7 @@ namespace Unity.Netcode
                 UpdateObservers = true,
                 UpdateNewObservers = true,
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.CreateObject), NetworkManager.ServerClientId);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<CreateObjectMessage>.DefaultDelivery, NetworkManager.ServerClientId);
             foreach (var clientId in newObservers)
             {
                 // TODO: We might want to track observer update sent as well?
@@ -1710,7 +1710,7 @@ namespace Unity.Netcode
                         IsTargetedDestroy = false,
                         IsDistributedAuthority = distributedAuthority,
                     };
-                    var networkDelivery = MessageDelivery.GetDelivery(NetworkMessageTypes.DestroyObject);
+                    var networkDelivery = MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery;
                     foreach (var clientId in m_TargetClientIds)
                     {
                         var size = NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
