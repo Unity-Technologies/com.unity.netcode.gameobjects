@@ -365,7 +365,7 @@ namespace Unity.Netcode
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
-                    networkDelivery = NetworkDelivery.UnreliableSequenced;
+                    networkDelivery = NetworkDelivery.Unreliable;
                     break;
             }
 

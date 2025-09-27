@@ -194,6 +194,7 @@ namespace Unity.Netcode.Editor
             }
             else
             {
+                // Should only be visible when SwitchTransformSpaceWhenParented is disabled.
                 EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             }
             if (!networkTransform.HideInterpolateValue)

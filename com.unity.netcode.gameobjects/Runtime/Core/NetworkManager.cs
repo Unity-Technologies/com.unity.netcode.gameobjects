@@ -1550,6 +1550,15 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
+
+            // Always wrap events that can invoke user script in a
+            // try-catch to assure any proceeding script is still
+            // executed.
+            // Example:
+            // In editor some script registered to OnPreShutdown
+            // throws and exception. The UnregisterAllNetworkUpdates
+            // will never be invoked which means it will continue to
+            // be invoked outside of play mode.
             try
             {
                 OnPreShutdown?.Invoke();
@@ -1647,6 +1656,8 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Abrupt shutdown (or immediate exit of play mode).
+            // Assure we unregister from network updates.
             this.UnregisterAllNetworkUpdates();
 
             // Make sure ShutdownInProgress returns true during this time
@@ -1679,6 +1690,8 @@ namespace Unity.Netcode
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
+            // try-catch to assure we reset the Singleton and, if in the editor,
+            // unscubscribe from playModeStateChanged.
             try
             {
                 // Notify we are destroying NetworkManager

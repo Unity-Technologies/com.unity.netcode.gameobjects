@@ -11,19 +11,43 @@ namespace Unity.Netcode
     {
         private NetworkManager m_NetworkManager;
         private NetworkConnectionManager m_ConnectionManager;
+
+        /// <summary>
+        /// Contains the current dirty <see cref="NetworkObject"/>s that are proccessed each new network tick.
+        /// Under most cases, dirty <see cref="NetworkObject"/>s are fully processed on the next network tick.
+        /// Under certain conditions, like user script invoking <see cref="NetworkVariableBase.SetUpdateTraits(NetworkVariableUpdateTraits)"/>
+        /// to define <see cref="NetworkVariableUpdateTraits"/>, a <see cref="NetworkObject"/> can remain in the
+        /// <see cref="m_DirtyNetworkObjects"/> list until the configured traits' conditions have been met.
+        /// </summary>
         private HashSet<NetworkObject> m_DirtyNetworkObjects = new HashSet<NetworkObject>();
+
+        /// <summary>
+        /// Contains any dirty <see cref="NetworkObject"/>s that will be added to the <see cref="m_DirtyNetworkObjects"/>
+        /// list on the next network tick (<see cref="OnNetworkTick"/>).
+        /// </summary>
         private HashSet<NetworkObject> m_PendingDirtyNetworkObjects = new HashSet<NetworkObject>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private ProfilerMarker m_NetworkBehaviourUpdate = new ProfilerMarker($"{nameof(NetworkBehaviour)}.{nameof(NetworkBehaviourUpdate)}");
 #endif
 
+        /// <summary>
+        /// Adds a <see cref="NetworkObject"/> to the prending dirty list.
+        /// The <see cref="m_PendingDirtyNetworkObjects"/> list is merged into the <see cref="m_DirtyNetworkObjects"/> list
+        /// when processed.
+        /// </summary>
         internal void AddForUpdate(NetworkObject networkObject)
         {
             // Since this is a HashSet, we don't need to worry about duplicate entries
             m_PendingDirtyNetworkObjects.Add(networkObject);
         }
 
+        /// <summary>
+        /// (Client-server network topology only)
+        /// The server handles processing network variables the same way as a client
+        /// with the primary difference being that the server sends updates to all
+        /// observers.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectServer(NetworkObject dirtyObj, bool forceSend)
         {
@@ -41,6 +65,12 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Clients handle processing dirty objects relative to the client.
+        /// The <see cref="NetworkVariableDeltaMessage"/> is client to server.
+        /// With distributed authority live service sessions, this is sent to
+        /// the Rust server.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
         {
@@ -50,6 +80,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handle house cleaning on the child <see cref="NetworkBehaviour"/>s.
+        /// This includes some collections specific checks and updates.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void PostProcessDirtyObject(NetworkObject dirtyObj)
         {
@@ -73,6 +107,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Invokes <see cref="NetworkBehaviour.PostNetworkVariableWrite(bool)"/> on all child <see cref="NetworkBehaviour"/>s.
+        /// </summary>
+        /// <param name="dirtyObj"></param>
+        /// <param name="forceSend">Refer to the <see cref="ProcessDirtyObject(NetworkObject, bool)"/> definition.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ResetDirtyObject(NetworkObject dirtyObj, bool forceSend)
         {
@@ -103,6 +142,18 @@ namespace Unity.Netcode
             m_DirtyNetworkObjects.Remove(networkObject);
         }
 
+        /// <summary>
+        /// The primary "dirty" <see cref="NetworkObject"/> processor.
+        /// Invokes:
+        /// - <see cref="NetworkBehaviour.PreVariableUpdate"/> on all properties that derive from <see cref="NetworkVariableBase"/>.
+        /// - <see cref="ProcessDirtyObjectServer(NetworkObject, bool)"/> (if the server).
+        /// - <see cref="ProcessDirtyObjectClient(NetworkObject, bool)"/> (if the client).
+        /// - <see cref="PostProcessDirtyObject"/> to handle the post processing of network variables.
+        /// - <see cref="ResetDirtyObject"/> which cleans up and removes the <see cref="NetworkObject"/> from the dirty list.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to process.</param>
+        /// <param name="forceSend">When enabled, any dirty network variables will be added to a
+        /// <see cref="NetworkVariableDeltaMessage"/> and added to the outbound queue.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObject(NetworkObject networkObject, bool forceSend)
         {
@@ -138,7 +189,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Sends NetworkVariable deltas
         /// </summary>
-        /// <param name="forceSend">internal only, when changing ownership we want to send this before the change in ownership message</param>
+        /// <param name="forceSend"> Refer to the <see cref="ProcessDirtyObject(NetworkObject, bool)"/> definition.</param>
         internal void NetworkBehaviourUpdate(bool forceSend = false)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -175,18 +226,20 @@ namespace Unity.Netcode
         {
             m_NetworkManager = networkManager;
             m_ConnectionManager = networkManager.ConnectionManager;
-            m_NetworkManager.NetworkTickSystem.Tick += NetworkBehaviourUpdater_Tick;
+            m_NetworkManager.NetworkTickSystem.Tick += OnNetworkTick;
         }
 
         internal void Shutdown()
         {
-            m_NetworkManager.NetworkTickSystem.Tick -= NetworkBehaviourUpdater_Tick;
+            m_NetworkManager.NetworkTickSystem.Tick -= OnNetworkTick;
         }
 
-        // Order of operations requires NetworkVariable updates first then showing NetworkObjects
-        private void NetworkBehaviourUpdater_Tick()
+        /// <summary>
+        /// Process any dirty <see cref="NetworkObject"/>s on each new
+        /// network tick.
+        /// </summary>
+        private void OnNetworkTick()
         {
-            // Handle showing NetworkObjects on the next network tick, and only if we sent
             NetworkBehaviourUpdate();
         }
     }

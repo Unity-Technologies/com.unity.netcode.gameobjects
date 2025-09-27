@@ -1029,6 +1029,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Only spawn authority <see cref="NetworkManager"/> instances should invoke this.
         /// Invoked from:
         /// - ConnectionManager after instantiating a player prefab when running in client-server.
         /// - NetworkObject when spawning a newly instantiated NetworkObject for the first time.
@@ -1114,8 +1115,9 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This is only invoked to instantiate a serialized NetworkObject via
-        /// <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>
+        /// Only spawn non-authority <see cref="NetworkManager"/> instances should invoke this.
+        /// This is invoked to instantiate an authority spawned <see cref="NetworkObject"/>, and
+        /// is only invoked by: <see cref="NetworkObject.AddSceneObject(in NetworkObject.SceneObject, FastBufferReader, NetworkManager, bool)"/>
         /// </summary>
         /// <remarks>
         /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
@@ -1783,8 +1785,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// See <see cref="NetworkBehaviourUpdater.NetworkBehaviourUpdater_Tick"/>
-        /// See <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/> during the <see cref="NetworkUpdateStage.PostLateUpdate"/> stage.
+        /// This is only invoked by <see cref="NetworkManager.NetworkUpdate(NetworkUpdateStage)"/> during the <see cref="NetworkUpdateStage.PostLateUpdate"/> stage.
         /// </summary>
         internal void HandleNetworkObjectShow(bool forceSend = false)
         {
