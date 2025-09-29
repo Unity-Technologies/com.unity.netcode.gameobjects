@@ -75,7 +75,6 @@ namespace Unity.Netcode.Editor
 
             m_ServerAddressProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Address));
             m_ServerPortProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Port));
-            connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.ServerListenAddress));
         }
 
         /// <summary>
