@@ -4,7 +4,7 @@ The [2D Space Shooter Project](https://github.com/Unity-Technologies/com.unity.m
 
 ## Server Authoritative Physics Movement
 
-The movement in 2DSpaceShooter is physics based. The player object is a [dynamic Rigidbody](https://docs.unity3d.com/6000.2/Documentation/Manual/2d-physics/rigidbody/body-types/dynamic/dynamic-body-type-reference.html) and can collide with other players or asteroids. Physics in multiplayer games can be hard to get right. For simplicity, 2DSpaceShooter runs all movement and physics just on the server-side.
+The movement in 2DSpaceShooter is physics based. The player object is a [dynamic Rigidbody](https://docs.unity3d.com/Documentation/Manual/2d-physics/rigidbody/body-types/dynamic/dynamic-body-type-reference.html) and can collide with other players or asteroids. Physics in multiplayer games can be hard to get right. For simplicity, 2DSpaceShooter runs all movement and physics just on the server-side.
 
 The client sends inputs in the form of RPCs to the server. The server then uses those inputs to adjust the throttle and turn values of the player.
 
