@@ -87,8 +87,6 @@ namespace Unity.Netcode
         /// </summary>
         protected internal struct BufferedItem
         {
-            internal Transform Parent;
-
             /// <summary>
             /// The item identifier
             /// </summary>
@@ -113,7 +111,6 @@ namespace Unity.Netcode
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
-                Parent = null;
             }
 
             /// <summary>
@@ -127,7 +124,6 @@ namespace Unity.Netcode
                 TimeSent = timeSent;
                 // Generate a unique item id based on the time to the 2nd decimal place
                 ItemId = (int)(timeSent * 100);
-                Parent = null;
             }
         }
 
@@ -637,10 +633,7 @@ namespace Unity.Netcode
                     // Reset to the new value but don't automatically add the measurement (prevents recursion)
                     InternalReset(parent, newMeasurement, sentTime, false);
                     m_LastMeasurementAddedTime = sentTime;
-                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
-                    {
-                        Parent = parent,
-                    };
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
                     m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 }
@@ -651,10 +644,7 @@ namespace Unity.Netcode
             if (sentTime > m_LastMeasurementAddedTime || m_BufferCount == 0)
             {
                 m_BufferCount++;
-                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
-                {
-                    Parent = parent,
-                };
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
                 m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
