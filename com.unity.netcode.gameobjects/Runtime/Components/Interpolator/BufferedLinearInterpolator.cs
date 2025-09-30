@@ -87,7 +87,7 @@ namespace Unity.Netcode
         /// </summary>
         protected internal struct BufferedItem
         {
-            public Transform Parent;
+            internal Transform Parent;
 
             /// <summary>
             /// The item identifier
