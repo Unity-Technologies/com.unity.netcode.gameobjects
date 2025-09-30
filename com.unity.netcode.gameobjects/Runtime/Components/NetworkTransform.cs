@@ -62,7 +62,6 @@ namespace Unity.Netcode.Components
             private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_UnreliableFrameSync = 0x00200000;
             private const int k_SwitchTransformSpaceWhenParented = 0x0400000;
-            private const int k_IncludesParentingDirective = 0x0800000;
             // (Internal Debugging) When set each state update will contain a state identifier
             private const int k_TrackStateId = 0x10000000;
 
@@ -514,20 +513,6 @@ namespace Unity.Netcode.Components
                 set
                 {
                     SetFlag(value, k_TrackStateId);
-                }
-            }
-
-            /// <summary>
-            /// Determines if parenting was included in the NetworkTransform
-            /// message. Only happens when <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
-            /// is enabled.
-            /// </summary>
-            internal bool ParentingDirective
-            {
-                get => GetFlag(k_IncludesParentingDirective);
-                set
-                {
-                    SetFlag(value, k_IncludesParentingDirective);
                 }
             }
 
@@ -1849,11 +1834,13 @@ namespace Unity.Netcode.Components
                 // for the non-authority side to be able to properly synchronize delta position updates.
                 CheckForStateChange(ref SynchronizeState, ref transformToCommit, true, targetClientId);
                 SynchronizeState.NetworkSerialize(serializer);
+                LastTickSync = SynchronizeState.GetNetworkTick();
                 OnAuthorityPushTransformState(ref SynchronizeState);
             }
             else
             {
                 SynchronizeState.NetworkSerialize(serializer);
+                LastTickSync = SynchronizeState.GetNetworkTick();
                 OnNetworkTransformStateUpdated(ref SynchronizeState, ref SynchronizeState);
             }
         }
@@ -2569,6 +2556,8 @@ namespace Unity.Netcode.Components
                 OnUpdateAuthoritativeState(ref transformSource, isCalledFromParent);
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
                 m_InternalCurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                m_InternalCurrentRotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
+                m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
 #else
                 m_InternalCurrentPosition = GetSpaceRelativePosition();
                 m_TargetPosition = GetSpaceRelativePosition();
@@ -2590,12 +2579,13 @@ namespace Unity.Netcode.Components
             {
                 if (resetInterpolator)
                 {
+                    m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
                     m_PositionInterpolator.InLocalSpace = InLocalSpace;
-                    m_PositionInterpolator.ResetTo(position, time);
+                    m_PositionInterpolator.ResetTo(transform.parent, position, time);
                 }
                 else
                 {
-                    m_PositionInterpolator.AddMeasurement(position, time);
+                    m_PositionInterpolator.AddMeasurement(transform.parent, position, time);
                 }
             }
         }
@@ -2628,10 +2618,10 @@ namespace Unity.Netcode.Components
             // at the end of this method and assure that when not interpolating the non-authoritative side
             // cannot make adjustments to any portions the transform not being synchronized.
             var adjustedPosition = m_InternalCurrentPosition;
-            var currentPosistion = GetSpaceRelativePosition();
-            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosistion.x;
-            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosistion.y;
-            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosistion.z;
+            var currentPosition = GetSpaceRelativePosition();
+            adjustedPosition.x = SyncPositionX ? m_InternalCurrentPosition.x : currentPosition.x;
+            adjustedPosition.y = SyncPositionY ? m_InternalCurrentPosition.y : currentPosition.y;
+            adjustedPosition.z = SyncPositionZ ? m_InternalCurrentPosition.z : currentPosition.z;
 
             var adjustedRotation = m_InternalCurrentRotation;
             var adjustedRotAngles = adjustedRotation.eulerAngles;
@@ -2648,8 +2638,15 @@ namespace Unity.Netcode.Components
             adjustedScale.y = SyncScaleY ? adjustedScale.y : currentScale.y;
             adjustedScale.z = SyncScaleZ ? adjustedScale.z : currentScale.z;
 
+            // Only if SwitchTransformSpaceWhenParented is not enabled should
+            // non-authority instances preserve the current state's local space
+            // setting.
+            if (!SwitchTransformSpaceWhenParented)
+            {
+                InLocalSpace = networkState.InLocalSpace;
+            }
+
             // Non-Authority Preservers the authority's transform state update modes
-            InLocalSpace = networkState.InLocalSpace;
             Interpolate = networkState.UseInterpolation;
             UseHalfFloatPrecision = networkState.UseHalfFloatPrecision;
             UseQuaternionSynchronization = networkState.QuaternionSync;
@@ -3061,8 +3058,9 @@ namespace Unity.Netcode.Components
 
                 if (Interpolate)
                 {
-                    m_RotationInterpolator.InLocalSpace = InLocalSpace;
-                    m_RotationInterpolator.ResetTo(currentRotation, sentTime);
+                    m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_RotationInterpolator.InLocalSpace = newState.InLocalSpace;
+                    m_RotationInterpolator.ResetTo(transform.parent, currentRotation, sentTime);
                 }
             }
 
@@ -3075,6 +3073,8 @@ namespace Unity.Netcode.Components
             OnTransformUpdated();
         }
 
+
+        internal int LastTickSync = 0;
         /// <summary>
         /// Adds the new state's values to their respective interpolator
         /// </summary>
@@ -3102,8 +3102,13 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState = newState;
             if (m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
+                LastTickSync = m_LocalAuthoritativeNetworkState.GetNetworkTick();
                 ApplyTeleportingState(m_LocalAuthoritativeNetworkState);
                 return;
+            }
+            else if (m_LocalAuthoritativeNetworkState.IsSynchronizing)
+            {
+                LastTickSync = m_LocalAuthoritativeNetworkState.GetNetworkTick();
             }
 
             var sentTime = newState.SentTime;
@@ -3195,7 +3200,7 @@ namespace Unity.Netcode.Components
                     }
                 }
                 m_TargetScale = currentScale;
-                m_ScaleInterpolator.AddMeasurement(currentScale, sentTime);
+                m_ScaleInterpolator.AddMeasurement(transform.parent, currentScale, sentTime);
             }
 
             // With rotation, we check if there are any changes first and
@@ -3230,7 +3235,7 @@ namespace Unity.Netcode.Components
                     currentRotation.eulerAngles = currentEulerAngles;
                 }
 
-                m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
+                m_RotationInterpolator.AddMeasurement(transform.parent, currentRotation, sentTime);
             }
         }
 
@@ -3640,14 +3645,17 @@ namespace Unity.Netcode.Components
             var position = GetSpaceRelativePosition();
             var rotation = GetSpaceRelativeRotation();
 #endif
+            // Reset interpolators to the current state of the NetworkTransform
+            m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
             m_PositionInterpolator.InLocalSpace = InLocalSpace;
-            m_RotationInterpolator.InLocalSpace = InLocalSpace;
-
             UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
 
-            m_ScaleInterpolator.ResetTo(transform.localScale, serverTime);
-            m_RotationInterpolator.ResetTo(rotation, serverTime);
+            m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+            m_RotationInterpolator.InLocalSpace = InLocalSpace;
+            m_RotationInterpolator.ResetTo(transform.parent, rotation, serverTime);
+
+            m_ScaleInterpolator.ResetTo(transform.parent, transform.localScale, serverTime);
         }
         private NetworkObject m_CachedNetworkObject;
         /// <summary>
@@ -3664,10 +3672,6 @@ namespace Unity.Netcode.Components
 
             // Determine if this is the first NetworkTransform in the associated NetworkObject's list
             m_IsFirstNetworkTransform = NetworkObject.NetworkTransforms[0] == this;
-            if (m_IsFirstNetworkTransform)
-            {
-                NetworkObject.RootNetworkTransform = this;
-            }
 
             if (m_CachedNetworkManager && m_CachedNetworkManager.DistributedAuthorityMode)
             {
@@ -3877,30 +3881,70 @@ namespace Unity.Netcode.Components
 
         internal override void InternalOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            // Motion authority doesn't need to adjust anything
-            if (CanCommitToTransform)
-            {
-                return;
-            }
             if (!SwitchTransformSpaceWhenParented)
             {
+                // Motion authority doesn't need to adjust anything
+                if (CanCommitToTransform)
+                {
+                    return;
+                }
                 // Keep the same legacy behaviour for compatibility purposes
                 DefaultParentChanged(parentNetworkObject);
             }
-            else if (m_LocalAuthoritativeNetworkState.IsSynchronizing && parentNetworkObject != null)
+            else
             {
-                // If we are synchronizing and parented, then make adjustments to assure we are in the correct transform space
-                m_InternalCurrentPosition = transform.localPosition;
-                m_InternalCurrentRotation = transform.localRotation;
-                InLocalSpace = true;
+                InLocalSpace = parentNetworkObject != null;
 
                 if (SynchronizePosition)
                 {
-                    m_PositionInterpolator.ResetTo(m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                    m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_PositionInterpolator.InLocalSpace = InLocalSpace;
+                    m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
+                    var parentName = InLocalSpace ? parentNetworkObject.name : "root";
+
+                    if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                    {
+                        m_InternalCurrentPosition = m_TargetPosition = GetSpaceRelativePosition();
+                        m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
+                        if (InLocalSpace)
+                        {
+                            transform.localPosition = m_InternalCurrentPosition;
+                        }
+                        else
+                        {
+                            transform.position = m_InternalCurrentPosition;
+                        }
+                    }
+                    else
+                    {
+                        m_InternalCurrentPosition = m_TargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
+                    }
                 }
+
                 if (SynchronizeRotation)
                 {
-                    m_RotationInterpolator.ResetTo(m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                    m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_RotationInterpolator.InLocalSpace = InLocalSpace;
+                    m_RotationInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
+                    if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
+                    {
+                        m_InternalCurrentRotation = GetSpaceRelativeRotation();
+                        m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
+                        m_RotationInterpolator.ResetTo(m_RotationInterpolator.Parent, m_InternalCurrentRotation, NetworkManager.ServerTime.Time);
+                        if (InLocalSpace)
+                        {
+                            transform.localRotation = m_InternalCurrentRotation;
+                        }
+                        else
+                        {
+                            transform.rotation = m_InternalCurrentRotation;
+                        }
+                    }
+                    else
+                    {
+                        m_InternalCurrentRotation = Interpolate ? m_RotationInterpolator.GetInterpolatedValue() : GetSpaceRelativeRotation();
+                        m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
+                    }
                 }
             }
             base.InternalOnNetworkObjectParentChanged(parentNetworkObject);
@@ -4443,7 +4487,6 @@ namespace Unity.Netcode.Components
             m_FixedFrameCount++;
             m_FixedUpdatesPerFrameCount++;
 #endif
-
             // Update interpolation when enabled
             if (Interpolate)
             {
@@ -4504,9 +4547,9 @@ namespace Unity.Netcode.Components
         /// Invoked by <see cref="NetworkTransformMessage"/> to update the transform state
         /// </summary>
         /// <param name="networkTransformState"></param>
-        internal void TransformStateUpdate(ulong senderId, bool isParentingDirective)
+        internal void TransformStateUpdate(ulong senderId)
         {
-            if (!IsSpawned || (CanCommitToTransform && !isParentingDirective))
+            if (!IsSpawned || CanCommitToTransform)
             {
                 // TODO: Investigate where this state should be applied or just discarded.
                 // For now, discard the state if we assumed ownership.
@@ -4525,173 +4568,6 @@ namespace Unity.Netcode.Components
 
         // Used to send outbound messages
         private NetworkTransformMessage m_OutboundMessage = new NetworkTransformMessage();
-
-        /// <summary>
-        /// Only invoked by the authority.
-        /// (motion or server)
-        /// </summary>
-        internal void ParentingUpdate(NetworkObject parent, bool worldPositionStays)
-        {
-            InLocalSpace = parent;
-            // If we are the server but not the motion authority, then treat this as if
-            // it was a parenting directive but the parent is already applied.
-            // Example: Server spawn with ownership, server parents, client parents shortly after it spawns on client side.
-            if (IsServer && !CanCommitToTransform)
-            {
-                UpdateParentingProcess(parent, parent != null, worldPositionStays, false);
-            }
-
-            m_OutboundMessage.SetParent(new NetworkObjectReference(parent), worldPositionStays);
-            m_LocalAuthoritativeNetworkState.ParentingDirective = true;
-            m_LocalAuthoritativeNetworkState.IsParented = true;
-            var transformToCommit = transform;
-            CheckForStateChange(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, false, forceState: true);
-            UpdateTransformState();
-            OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
-            // Reset the parent state for next state update that might not have a parent directive included
-            m_OutboundMessage.ResetParent();
-            m_LocalAuthoritativeNetworkState.ParentingDirective = false;
-
-            // If we are the motion authority, then set the previous parent
-            if (CanCommitToTransform)
-            {
-                m_PreviousParent = parent;
-            }
-        }
-
-        private NetworkObject m_PreviousParent;
-
-        // TODO:
-        // Add additional NetworkTransform developer logging capabilities to be able to enabled or disabled
-        // specific log messages.
-        internal bool EnableSwitchTransformSpaceParentLogging = false;
-
-        internal void DeveloperLog(string message)
-        {
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                Debug.Log($"[Frame: {Time.frameCount}][Tick: {m_CachedNetworkManager.ServerTime.TickWithPartial}]{message}");
-            }
-        }
-
-        internal bool UpdateParenting(NetworkObjectReference parent, bool worldPositionStays)
-        {
-            var parentObject = (NetworkObject)null;
-            var isParenting = parent.TryGet(out parentObject);
-
-            if (m_PreviousParent && InboundState.IsParented != isParenting)
-            {
-                Debug.LogError($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive Mismatch] Inbound state " +
-                    $"{nameof(NetworkTransformState.IsParented)} is {InboundState.IsParented} and isParenting is {isParenting}!");
-                return false;
-            }
-            var parentName = "none";
-            if (isParenting)
-            {
-                parentName = parentObject.name;
-            }
-
-            if (isParenting && transform.parent == parentObject.transform)
-            {
-                var knownParent = NetworkObject.GetNetworkParenting();
-                if (knownParent == parentObject.NetworkObjectId)
-                {
-                    // Since we haven't processed the InboundState yet, go ahead and clear this out at this time.
-                    InboundState.ParentingDirective = false;
-                    if (EnableSwitchTransformSpaceParentLogging)
-                    {
-                        DeveloperLog($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive] Ignoring parenting directive for {parentName} since it is already {name}'s parent.");
-                    }
-                    m_PreviousParent = parentObject;
-                    return false;
-                }
-            }
-            if (EnableSwitchTransformSpaceParentLogging)
-            {
-                DeveloperLog($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive] Processing parenting directive. {name} is being parented under {parentName}.");
-            }
-            return UpdateParentingProcess(parentObject, isParenting, worldPositionStays);
-        }
-
-        internal bool UpdateParentingProcess(NetworkObject parentObject, bool isParenting, bool worldPositionStays, bool applyParenting = true)
-        {
-            // If we had a previous parent (whether re-parenting or de-parenting)
-            if (m_PreviousParent && InLocalSpace)
-            {
-                // Convert everything back to world space values
-                if (SynchronizePosition)
-                {
-                    if (EnableSwitchTransformSpaceParentLogging)
-                    {
-                        DeveloperLog($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive][PreviousParent][Pre][{nameof(SynchronizePosition)}] " +
-                            $"InternalPosition {m_InternalCurrentPosition} | Interpolator Position: {m_PositionInterpolator.GetInterpolatedValue()} | localPosition: {transform.localPosition}.");
-                    }
-
-                    m_InternalCurrentPosition = m_PreviousParent.transform.TransformPoint(m_InternalCurrentPosition);
-                    m_PositionInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
-                    if (EnableSwitchTransformSpaceParentLogging)
-                    {
-                        DeveloperLog($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive][PreviousParent][post][{nameof(SynchronizePosition)}] " +
-                            $"InternalPosition {m_InternalCurrentPosition} | Interpolator Position: {m_PositionInterpolator.GetInterpolatedValue()}.");
-                    }
-                }
-                if (SynchronizeRotation)
-                {
-                    m_InternalCurrentRotation = m_PreviousParent.transform.localRotation * transform.localRotation;
-                    m_RotationInterpolator.ConvertTransformSpace(m_PreviousParent.transform, false);
-                }
-            }
-            else if (m_PreviousParent && !InLocalSpace)
-            {
-                Debug.LogError($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive Mismatch] {nameof(m_PreviousParent)} is not null but {nameof(InLocalSpace)} is {InLocalSpace}!");
-            }
-
-            if (applyParenting)
-            {
-                // Parent
-                NetworkObject.AuthorityAppliedParenting = true;
-                ulong? parentObjectId = parentObject ? parentObject.NetworkObjectId : null;
-                NetworkObject.SetNetworkParenting(parentObjectId, worldPositionStays);
-                NetworkObject.ApplyNetworkParenting(removeParent: !isParenting);
-            }
-
-            if (isParenting)
-            {
-                // Convert the world space values to local space of the new parent
-                if (SynchronizePosition)
-                {
-                    m_InternalCurrentPosition = parentObject.transform.InverseTransformPoint(transform.position);
-                    m_PositionInterpolator.ConvertTransformSpace(parentObject.transform, true);
-                    if (EnableSwitchTransformSpaceParentLogging)
-                    {
-                        DeveloperLog($"[Client-{NetworkManager.LocalClientId}][{name}][Parenting Directive][{nameof(SynchronizePosition)}] " +
-                            $"InternalPosition {m_InternalCurrentPosition} | Interpolator Position: {m_PositionInterpolator.GetInterpolatedValue()}.");
-                    }
-                }
-                if (SynchronizeRotation)
-                {
-                    m_InternalCurrentRotation = Quaternion.Inverse(parentObject.transform.rotation) * transform.rotation;
-                    m_RotationInterpolator.ConvertTransformSpace(parentObject.transform, true);
-                }
-                m_PreviousParent = parentObject;
-                // Always assure this is true
-                InLocalSpace = true;
-            }
-            else if (m_PreviousParent)
-            {
-                m_PreviousParent = null;
-                // Always assure this is false
-                InLocalSpace = false;
-            }
-
-            if (SynchronizePosition && UseHalfFloatPrecision)
-            {
-                m_HalfPositionState.UpdateFrom(ref m_InternalCurrentPosition, m_CachedNetworkManager.LocalTime.Tick);
-            }
-            // Since we haven't processed the InboundState yet, go ahead and clear this out at this time.
-            InboundState.ParentingDirective = false;
-            return true;
-        }
 
         /// <summary>
         /// Invoked by the authoritative instance to sends a <see cref="NetworkTransformMessage"/> containing the <see cref="NetworkTransformState"/>
@@ -4748,7 +4624,6 @@ namespace Unity.Netcode.Components
                 NetworkManager.MessageManager.SendMessage(ref m_OutboundMessage, networkDelivery, NetworkManager.ServerClientId);
             }
             m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OutboundMessage.BytesWritten;
-            m_OutboundMessage.ResetParent();
         }
         #endregion
 

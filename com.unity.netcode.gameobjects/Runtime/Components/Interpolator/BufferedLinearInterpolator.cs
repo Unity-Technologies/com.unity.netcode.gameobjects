@@ -87,8 +87,10 @@ namespace Unity.Netcode
         /// </summary>
         protected internal struct BufferedItem
         {
+            public Transform Parent;
+
             /// <summary>
-            /// THe item identifier
+            /// The item identifier
             /// </summary>
             public int ItemId;
             /// <summary>
@@ -111,6 +113,7 @@ namespace Unity.Netcode
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
+                Parent = null;
             }
 
             /// <summary>
@@ -124,6 +127,7 @@ namespace Unity.Netcode
                 TimeSent = timeSent;
                 // Generate a unique item id based on the time to the 2nd decimal place
                 ItemId = (int)(timeSent * 100);
+                Parent = null;
             }
         }
 
@@ -225,7 +229,9 @@ namespace Unity.Netcode
         /// </summary>
         internal float MaxInterpolationBound = 3.0f;
         internal bool EndOfBuffer => m_BufferQueue.Count == 0;
+        internal bool StoreAsWorldSpace;
         internal bool InLocalSpace;
+        internal Transform Parent;
 
         private double m_LastMeasurementAddedTime = 0.0f;
         private int m_BufferCount;
@@ -258,22 +264,41 @@ namespace Unity.Netcode
         /// <param name="serverTime">The current server time</param>
         public void ResetTo(T targetValue, double serverTime)
         {
+            ResetTo(null, targetValue, serverTime);
+        }
+
+        internal void ResetTo(Transform parent, T targetValue, double serverTime)
+        {
             // Clear the interpolator
             Clear();
-            InternalReset(targetValue, serverTime);
+            InternalReset(parent, targetValue, serverTime);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void InternalReset(T targetValue, double serverTime, bool addMeasurement = true)
+        private bool ConvertTransformSpace(Transform parent)
+        {
+            return StoreAsWorldSpace && parent != null && InLocalSpace;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void InternalReset(Transform parent, T targetValue, double serverTime, bool addMeasurement = true)
         {
             m_RateOfChange = default;
-            // Set our initial value
-            InterpolateState.Reset(targetValue);
+            var currentValue = targetValue;
+            if (ConvertTransformSpace(parent))
+            {
+                // Keep everything in world space
+                currentValue = OnConvertTransformSpace(parent, targetValue, false);
+            }
+
+            // Set our initial value (what we will interpolate from relative to the next state update received)
+            InterpolateState.Reset(currentValue);
 
             if (addMeasurement)
             {
                 // Add the first measurement for our baseline
-                AddMeasurement(targetValue, serverTime);
+                AddMeasurement(parent, targetValue, serverTime);
             }
         }
 
@@ -587,7 +612,19 @@ namespace Unity.Netcode
         /// <param name="sentTime">The time to record for measurement</param>
         public void AddMeasurement(T newMeasurement, double sentTime)
         {
+            AddMeasurement(null, newMeasurement, sentTime);
+        }
+
+        internal void AddMeasurement(Transform parent, T newMeasurement, double sentTime)
+        {
             m_NbItemsReceivedThisFrame++;
+            var previousMeasurement = newMeasurement;
+            // If enabled, convert everything to world space if in local space.
+            if (ConvertTransformSpace(parent))
+            {
+                // Keep everything in world space
+                newMeasurement = OnConvertTransformSpace(parent, newMeasurement, false);
+            }
 
             // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
             // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
@@ -598,9 +635,12 @@ namespace Unity.Netcode
                     // Clear the interpolator
                     Clear();
                     // Reset to the new value but don't automatically add the measurement (prevents recursion)
-                    InternalReset(newMeasurement, sentTime, false);
+                    InternalReset(parent, newMeasurement, sentTime, false);
                     m_LastMeasurementAddedTime = sentTime;
-                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
+                    {
+                        Parent = parent,
+                    };
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
                     m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 }
@@ -611,7 +651,10 @@ namespace Unity.Netcode
             if (sentTime > m_LastMeasurementAddedTime || m_BufferCount == 0)
             {
                 m_BufferCount++;
-                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
+                {
+                    Parent = parent,
+                };
                 m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
@@ -624,7 +667,14 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetInterpolatedValue()
         {
-            return InterpolateState.CurrentValue;
+            var currentValue = InterpolateState.CurrentValue;
+            // If we are auto adjusting the value from world to local
+            if (ConvertTransformSpace(Parent))
+            {
+                // Convert to local space
+                currentValue = OnConvertTransformSpace(Parent, currentValue, true);
+            }
+            return currentValue;
         }
 
         /// <summary>

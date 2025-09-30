@@ -2250,17 +2250,6 @@ namespace Unity.Netcode
             return true;
         }
 
-        /// <summary>
-        /// The root NetworkTransform is either the first one discovered or the one on the root
-        /// prefab GameObject instance that has the NetworkObject component attached to it.
-        /// </summary>
-        /// <remarks>
-        /// Used when <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/> is enabled
-        /// on the root network transform for sending an <see cref="NetworkTransformMessage"/> with
-        /// a parenting directive included.
-        /// </remarks>
-        internal NetworkTransform RootNetworkTransform;
-
         private void OnTransformParentChanged()
         {
             if (!AutoObjectParentSync || NetworkManager.ShutdownInProgress)
@@ -2359,19 +2348,6 @@ namespace Unity.Netcode
             // This can be reset within ApplyNetworkParenting
             var authorityApplied = AuthorityAppliedParenting;
             ApplyNetworkParenting(removeParent);
-
-
-            /// If a root NetworkTransform is registered and this is the motion authority instance, then use the NetworkTransform to handle parenting.
-            /// Note: Using an owner authoritative motion model and enabling <see cref="AllowOwnerToParent"/> allows clients to leverage
-            /// from the NetworkTransform parenting directive using a client-server network topology.
-            if (RootNetworkTransform != null && RootNetworkTransform.SwitchTransformSpaceWhenParented &&
-                (RootNetworkTransform.CanCommitToTransform || NetworkManager.IsServer))
-            {
-                // Just let the root NetworkTransform know about the parenting action and it immediately queues the message to be sent.
-                // ** This is a NetworkTransform full synchronization event that does not require being tick synchronized. **
-                RootNetworkTransform.ParentingUpdate(parentObject, m_CachedWorldPositionStays);
-                return;
-            }
 
             var message = new ParentSyncMessage
             {
