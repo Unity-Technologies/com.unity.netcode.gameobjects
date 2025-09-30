@@ -88,6 +88,10 @@ namespace Unity.Netcode
         protected internal struct BufferedItem
         {
             /// <summary>
+            /// The transform parent for this specific value measurement.
+            /// </summary>
+            internal Transform MeasurementParent;
+            /// <summary>
             /// The item identifier
             /// </summary>
             public int ItemId;
@@ -111,6 +115,7 @@ namespace Unity.Netcode
                 Item = item;
                 TimeSent = timeSent;
                 ItemId = itemId;
+                MeasurementParent = default;
             }
 
             /// <summary>
@@ -124,6 +129,7 @@ namespace Unity.Netcode
                 TimeSent = timeSent;
                 // Generate a unique item id based on the time to the 2nd decimal place
                 ItemId = (int)(timeSent * 100);
+                MeasurementParent = default;
             }
         }
 
@@ -135,6 +141,7 @@ namespace Unity.Netcode
         /// </remarks>
         internal struct CurrentState
         {
+            public Transform TargetParent;
             public BufferedItem? Target;
             public double StartTime;
             public double EndTime;
@@ -225,7 +232,7 @@ namespace Unity.Netcode
         /// </summary>
         internal float MaxInterpolationBound = 3.0f;
         internal bool EndOfBuffer => m_BufferQueue.Count == 0;
-        internal bool StoreAsWorldSpace;
+        internal bool AutoConvertTransformSpace;
         internal bool InLocalSpace;
         internal Transform Parent;
 
@@ -271,22 +278,41 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool ConvertTransformSpace(Transform parent)
+        private void ConvertInterpolateStateValues(Transform parent, bool inLocalSpace)
         {
-            return StoreAsWorldSpace && parent != null && InLocalSpace;
+            InterpolateState.CurrentValue = OnConvertTransformSpace(parent, InterpolateState.CurrentValue, inLocalSpace);
+            InterpolateState.NextValue = OnConvertTransformSpace(parent, InterpolateState.NextValue, inLocalSpace);
+            InterpolateState.PreviousValue = OnConvertTransformSpace(parent, InterpolateState.PreviousValue, inLocalSpace);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ConvertTransformSpace()
+        {
+            if (!AutoConvertTransformSpace)
+            {
+                return;
+            }
+            if (InterpolateState.TargetParent != Parent)
+            {
+                if (InterpolateState.TargetParent != null)
+                {
+                    // Convert to world space.
+                    ConvertInterpolateStateValues(InterpolateState.TargetParent, false);
+                }
+
+                if (Parent != null)
+                {
+                    // Convert to local space.
+                    ConvertInterpolateStateValues(Parent, true);
+                }
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void InternalReset(Transform parent, T targetValue, double serverTime, bool addMeasurement = true)
         {
             m_RateOfChange = default;
             var currentValue = targetValue;
-            if (ConvertTransformSpace(parent))
-            {
-                // Keep everything in world space
-                currentValue = OnConvertTransformSpace(parent, targetValue, false);
-            }
 
             // Set our initial value (what we will interpolate from relative to the next state update received)
             InterpolateState.Reset(currentValue);
@@ -340,6 +366,8 @@ namespace Unity.Netcode
                 {
                     if (m_BufferQueue.TryDequeue(out BufferedItem target))
                     {
+                        ConvertTransformSpace();
+
                         if (!InterpolateState.Target.HasValue)
                         {
                             InterpolateState.Target = target;
@@ -365,6 +393,7 @@ namespace Unity.Netcode
                             InterpolateState.SetTimeToTarget(Math.Max(target.TimeSent - startTime, minDeltaTime));
                             InterpolateState.Target = target;
                         }
+                        InterpolateState.TargetParent = target.MeasurementParent;
                     }
                 }
                 else
@@ -487,6 +516,7 @@ namespace Unity.Netcode
                     {
                         if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
+                            ConvertTransformSpace();
                             if (!InterpolateState.Target.HasValue)
                             {
                                 InterpolateState.Target = target;
@@ -509,6 +539,7 @@ namespace Unity.Netcode
                                 InterpolateState.TimeToTargetValue = InterpolateState.EndTime - InterpolateState.StartTime;
                                 InterpolateState.Target = target;
                             }
+                            InterpolateState.TargetParent = target.MeasurementParent;
                         }
                     }
 
@@ -535,7 +566,7 @@ namespace Unity.Netcode
         {
             TryConsumeFromBuffer(renderTime, serverTime);
             // Only interpolate when there is a start and end point and we have not already reached the end value
-            if (InterpolateState.Target.HasValue && !InterpolateState.TargetReached)
+            if (!InterpolateState.TargetReached && InterpolateState.Target.HasValue)
             {
                 // The original BufferedLinearInterpolator lerping script to assure the Smooth Dampening updates do not impact
                 // this specific behavior.
@@ -561,7 +592,7 @@ namespace Unity.Netcode
                 InterpolateState.TargetReached = IsApproximately(InterpolateState.CurrentValue, InterpolateState.Target.Value.Item, GetPrecision());
             }
             else // If the target is reached and we have no more state updates, we want to check to see if we need to reset.
-            if (m_BufferQueue.Count == 0 && InterpolateState.TargetReached)
+            if (InterpolateState.TargetReached && m_BufferQueue.Count == 0)
             {
                 // When the delta between the time sent and the current tick latency time-window is greater than the max delta time
                 // plus the minimum delta time (a rough estimate of time to wait before we consider rate of change equal to zero),
@@ -614,14 +645,6 @@ namespace Unity.Netcode
         internal void AddMeasurement(Transform parent, T newMeasurement, double sentTime)
         {
             m_NbItemsReceivedThisFrame++;
-            var previousMeasurement = newMeasurement;
-            // If enabled, convert everything to world space if in local space.
-            if (ConvertTransformSpace(parent))
-            {
-                // Keep everything in world space
-                newMeasurement = OnConvertTransformSpace(parent, newMeasurement, false);
-            }
-
             // This situation can happen after a game is paused. When starting to receive again, the server will have sent a bunch of messages in the meantime
             // instead of going through thousands of value updates just to get a big teleport, we're giving up on interpolation and teleporting to the latest value
             if (m_NbItemsReceivedThisFrame > k_BufferCountLimit)
@@ -633,7 +656,10 @@ namespace Unity.Netcode
                     // Reset to the new value but don't automatically add the measurement (prevents recursion)
                     InternalReset(parent, newMeasurement, sentTime, false);
                     m_LastMeasurementAddedTime = sentTime;
-                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                    m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
+                    {
+                        MeasurementParent = parent,
+                    };
                     // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
                     m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 }
@@ -644,7 +670,10 @@ namespace Unity.Netcode
             if (sentTime > m_LastMeasurementAddedTime || m_BufferCount == 0)
             {
                 m_BufferCount++;
-                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount);
+                m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime, m_BufferCount)
+                {
+                    MeasurementParent = parent,
+                };
                 m_BufferQueue.Enqueue(m_LastBufferedItemReceived);
                 m_LastMeasurementAddedTime = sentTime;
             }
@@ -657,14 +686,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetInterpolatedValue()
         {
-            var currentValue = InterpolateState.CurrentValue;
-            // If we are auto adjusting the value from world to local
-            if (ConvertTransformSpace(Parent))
-            {
-                // Convert to local space
-                currentValue = OnConvertTransformSpace(Parent, currentValue, true);
-            }
-            return currentValue;
+            return InterpolateState.CurrentValue;
         }
 
         /// <summary>

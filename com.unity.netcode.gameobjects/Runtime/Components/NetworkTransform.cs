@@ -2579,7 +2579,7 @@ namespace Unity.Netcode.Components
             {
                 if (resetInterpolator)
                 {
-                    m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                     m_PositionInterpolator.InLocalSpace = InLocalSpace;
                     m_PositionInterpolator.ResetTo(transform.parent, position, time);
                 }
@@ -3058,7 +3058,7 @@ namespace Unity.Netcode.Components
 
                 if (Interpolate)
                 {
-                    m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                     m_RotationInterpolator.InLocalSpace = newState.InLocalSpace;
                     m_RotationInterpolator.ResetTo(transform.parent, currentRotation, sentTime);
                 }
@@ -3646,12 +3646,12 @@ namespace Unity.Netcode.Components
             var rotation = GetSpaceRelativeRotation();
 #endif
             // Reset interpolators to the current state of the NetworkTransform
-            m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+            m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
             m_PositionInterpolator.InLocalSpace = InLocalSpace;
             UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
 
-            m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+            m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
             m_RotationInterpolator.InLocalSpace = InLocalSpace;
             m_RotationInterpolator.ResetTo(transform.parent, rotation, serverTime);
 
@@ -3897,7 +3897,7 @@ namespace Unity.Netcode.Components
 
                 if (SynchronizePosition)
                 {
-                    m_PositionInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                     m_PositionInterpolator.InLocalSpace = InLocalSpace;
                     m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
                     var parentName = InLocalSpace ? parentNetworkObject.name : "root";
@@ -3923,7 +3923,7 @@ namespace Unity.Netcode.Components
 
                 if (SynchronizeRotation)
                 {
-                    m_RotationInterpolator.StoreAsWorldSpace = SwitchTransformSpaceWhenParented;
+                    m_RotationInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                     m_RotationInterpolator.InLocalSpace = InLocalSpace;
                     m_RotationInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
                     if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
