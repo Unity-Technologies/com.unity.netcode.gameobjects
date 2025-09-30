@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added NetworkRigidbody documentation section. (#3664)
 - Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
+- Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
 
 ### Changed
 
