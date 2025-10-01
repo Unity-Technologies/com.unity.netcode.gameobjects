@@ -296,7 +296,7 @@ namespace Unity.Netcode
             {
                 if (InterpolateState.TargetParent != null)
                 {
-                    // Convert to world space.
+                    // Convert to world space or local space depending upon what our current parent is.
                     ConvertInterpolateStateValues(InterpolateState.TargetParent, false);
                 }
 
@@ -316,7 +316,7 @@ namespace Unity.Netcode
 
             // Set our initial value (what we will interpolate from relative to the next state update received)
             InterpolateState.Reset(currentValue);
-
+            InterpolateState.TargetParent = parent;
             if (addMeasurement)
             {
                 // Add the first measurement for our baseline
@@ -686,7 +686,22 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetInterpolatedValue()
         {
-            return InterpolateState.CurrentValue;
+            var currentValue = InterpolateState.CurrentValue;
+            if (AutoConvertTransformSpace && InterpolateState.TargetParent != Parent)
+            {
+                // Just convert on the fly until the next state is reached where it will do a full
+                // conversion when popped from the queue.
+                if (InterpolateState.TargetParent != null)
+                {
+                    currentValue = OnConvertTransformSpace(InterpolateState.TargetParent, currentValue, false);
+                }
+
+                if (Parent != null)
+                {
+                    currentValue = OnConvertTransformSpace(Parent, currentValue, true);
+                }
+            }
+            return currentValue;
         }
 
         /// <summary>
