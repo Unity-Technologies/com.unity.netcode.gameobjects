@@ -45,8 +45,7 @@ public class NetworkPrefabOverrideHandler : MonoBehaviour, INetworkPrefabInstanc
         var gameObject = m_NetworkManager.IsClient ? Instantiate(NetworkPrefabOverride) : Instantiate(NetworkPrefab);
         // You could integrate spawn locations here and on the server side apply the spawn position at
         // this stage of the spawn process.
-        gameObject.transform.position = position;
-        gameObject.transform.rotation = rotation;
+        gameObject.transform.SetPositionAndRotation(position, rotation);
         return gameObject.GetComponent<NetworkObject>();
     }
 
@@ -64,4 +63,3 @@ public class NetworkPrefabOverrideHandler : MonoBehaviour, INetworkPrefabInstanc
         Destroy(networkObject.gameObject);
     }
 }
-
