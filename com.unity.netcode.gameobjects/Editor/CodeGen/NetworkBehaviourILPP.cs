@@ -1441,6 +1441,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
 
                     var invokePermission = RpcInvokePermission.Anyone;
+
                     foreach (var attrField in rpcAttribute.Fields)
                     {
                         switch (attrField.Name)
@@ -1537,6 +1538,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
         {
             CustomAttribute rpcAttribute = null;
+
             foreach (var customAttribute in methodDefinition.CustomAttributes)
             {
                 var customAttributeType_FullName = customAttribute.AttributeType.FullName;
@@ -1620,6 +1622,30 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 return null;
             }
+
+            bool hasRequireOwnership = false, hasInvokePermission = false;
+
+            foreach (var argument in rpcAttribute.Fields)
+            {
+                switch (argument.Name)
+                {
+                    case k_ServerRpcAttribute_RequireOwnership:
+                        hasRequireOwnership = true;
+                        break;
+                    case k_RpcAttribute_InvokePermission:
+                        hasInvokePermission = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            if (hasRequireOwnership && hasInvokePermission)
+            {
+                m_Diagnostics.AddError("Rpc attribute cannot declare both RequireOwnership and InvokePermission!");
+                return null;
+            }
+
             // Checks for IsSerializable are moved to later as the check is now done by dynamically seeing if any valid
             // serializer OR extension method exists for it.
             return rpcAttribute;
@@ -2366,6 +2392,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             m_Diagnostics.AddError($"{nameof(RpcAttribute)} contains field {field} which is not present in {nameof(RpcAttribute.RpcAttributeParams)}.");
                         }
                     }
+
                     instructions.Add(processor.Create(OpCodes.Ldloc, rpcAttributeParamsIdx));
 
                     // defaultTarget

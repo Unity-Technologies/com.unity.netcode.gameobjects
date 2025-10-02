@@ -330,12 +330,13 @@ namespace Unity.Netcode
             {   
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
-            if (attributeParams.InvokePermission == RpcInvokePermission.Owner && !IsOwner)
-            {
-                throw new RpcException("This RPC can only be sent by its owner.");
-            } else if (attributeParams.InvokePermission == RpcInvokePermission.Server && !IsServer)
+            else if (attributeParams.InvokePermission == RpcInvokePermission.Server && !IsServer)
             {
                 throw new RpcException("This RPC can only be sent by the server.");
+            }
+            else if ((attributeParams.RequireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
+            {
+                throw new RpcException("This RPC can only be sent by its owner.");
             }
             return new FastBufferWriter(k_RpcMessageDefaultSize, Allocator.Temp, k_RpcMessageMaximumSize);
         }
