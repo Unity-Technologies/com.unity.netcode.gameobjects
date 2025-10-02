@@ -21,7 +21,9 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_VerboseLogging = false;
 
+        // IOS platform can't run this test for some reason.
         [UnityTest]
+        [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer })]
         public IEnumerator ValidateUrlsAreValid()
         {
             var names = new List<string>();

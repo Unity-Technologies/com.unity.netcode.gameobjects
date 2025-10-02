@@ -5,7 +5,9 @@ using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
+#if HOSTNAME_RESOLUTION_AVAILABLE
 using Unity.Networking.Transport;
+#endif
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;

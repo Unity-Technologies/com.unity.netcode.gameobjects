@@ -195,7 +195,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasPositionX | HasPositionY | HasPositionZ;
+                    return HasPositionX || HasPositionY || HasPositionZ;
                 }
             }
 
@@ -255,7 +255,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasRotAngleX | HasRotAngleY | HasRotAngleZ;
+                    return HasRotAngleX || HasRotAngleY || HasRotAngleZ;
                 }
             }
 
@@ -315,7 +315,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasScaleX | HasScaleY | HasScaleZ;
+                    return HasScaleX || HasScaleY || HasScaleZ;
                 }
             }
 
@@ -4046,8 +4046,7 @@ namespace Unity.Netcode.Components
             {
                 if (InLocalSpace)
                 {
-                    transform.localPosition = pos;
-                    transform.localRotation = rot;
+                    transform.SetLocalPositionAndRotation(pos, rot);
                 }
                 else
                 {

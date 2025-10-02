@@ -55,7 +55,6 @@ namespace Unity.Netcode.Editor
 
         private SerializedProperty m_ServerAddressProperty;
         private SerializedProperty m_ServerPortProperty;
-        private SerializedProperty m_OverrideBindIpProperty;
 
         private const string k_LoopbackIpv4 = "127.0.0.1";
         private const string k_LoopbackIpv6 = "::1";
@@ -76,7 +75,6 @@ namespace Unity.Netcode.Editor
 
             m_ServerAddressProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Address));
             m_ServerPortProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.Port));
-            m_OverrideBindIpProperty = connectionDataProperty.FindPropertyRelative(nameof(UnityTransport.ConnectionAddressData.ServerListenAddress));
         }
 
         /// <summary>
@@ -129,7 +127,7 @@ namespace Unity.Netcode.Editor
                 overrideIp = EditorGUILayout.TextField("Override Bind IP (optional)", overrideIp);
                 if (allowRemoteConnections)
                 {
-                    if (overrideIp == "")
+                    if (overrideIp.Length == 0)
                     {
                         if (isIpV6)
                         {
