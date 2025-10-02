@@ -286,13 +286,13 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ConvertTransformSpace()
+        private void ConvertTransformSpace(BufferedItem newTarget)
         {
             if (!AutoConvertTransformSpace)
             {
                 return;
             }
-            if (InterpolateState.TargetParent != Parent)
+            if (InterpolateState.TargetParent != newTarget.MeasurementParent)
             {
                 if (InterpolateState.TargetParent != null)
                 {
@@ -300,10 +300,10 @@ namespace Unity.Netcode
                     ConvertInterpolateStateValues(InterpolateState.TargetParent, false);
                 }
 
-                if (Parent != null)
+                if (newTarget.MeasurementParent != null)
                 {
                     // Convert to local space.
-                    ConvertInterpolateStateValues(Parent, true);
+                    ConvertInterpolateStateValues(newTarget.MeasurementParent, true);
                 }
             }
         }
@@ -366,7 +366,7 @@ namespace Unity.Netcode
                 {
                     if (m_BufferQueue.TryDequeue(out BufferedItem target))
                     {
-                        ConvertTransformSpace();
+                        ConvertTransformSpace(target);
 
                         if (!InterpolateState.Target.HasValue)
                         {
@@ -516,7 +516,7 @@ namespace Unity.Netcode
                     {
                         if (m_BufferQueue.TryDequeue(out BufferedItem target))
                         {
-                            ConvertTransformSpace();
+                            ConvertTransformSpace(target);
                             if (!InterpolateState.Target.HasValue)
                             {
                                 InterpolateState.Target = target;
@@ -679,6 +679,29 @@ namespace Unity.Netcode
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private T GetParentRelativeValue(T currentValue)
+        {
+            if (!AutoConvertTransformSpace || InterpolateState.TargetParent == Parent)
+            {
+                return currentValue;
+            }
+
+            // Just convert on the fly until the next state is reached where it will do a full
+            // conversion when popped from the queue.
+            if (InterpolateState.TargetParent)
+            {
+                currentValue = OnConvertTransformSpace(InterpolateState.TargetParent, currentValue, false);
+            }
+
+            if (Parent != null)
+            {
+                var previousCurrent = currentValue.ToString();
+                currentValue = OnConvertTransformSpace(Parent, currentValue, true);
+            }
+            return currentValue;
+        }
+
         /// <summary>
         /// Gets latest value from the interpolator. This is updated every update as time goes by.
         /// </summary>
@@ -689,16 +712,17 @@ namespace Unity.Netcode
             var currentValue = InterpolateState.CurrentValue;
             if (AutoConvertTransformSpace && InterpolateState.TargetParent != Parent)
             {
-                // Just convert on the fly until the next state is reached where it will do a full
-                // conversion when popped from the queue.
-                if (InterpolateState.TargetParent != null)
-                {
-                    currentValue = OnConvertTransformSpace(InterpolateState.TargetParent, currentValue, false);
-                }
+                currentValue = GetParentRelativeValue(currentValue);
 
-                if (Parent != null)
+                // When there are no more states and we have reached our target,
+                // hijack the last state as if it was submitted by the current
+                // parent.
+                if (m_BufferQueue.Count == 0 && (InterpolateState.TargetReached || !InterpolateState.Target.HasValue))
                 {
-                    currentValue = OnConvertTransformSpace(Parent, currentValue, true);
+                    InterpolateState.CurrentValue = currentValue;
+                    InterpolateState.NextValue = currentValue;
+                    InterpolateState.PreviousValue = currentValue;
+                    InterpolateState.TargetParent = Parent;
                 }
             }
             return currentValue;

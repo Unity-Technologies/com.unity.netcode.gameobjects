@@ -1526,12 +1526,12 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Returns true if position is currently in local space and false if it is in world space.
         /// </summary>
-        protected bool PositionInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_PositionInterpolator != null && m_PositionInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+        protected bool PositionInLocalSpace => InLocalSpace;
 
         /// <summary>
         /// Returns true if rotation is currently in local space and false if it is in world space.
         /// </summary>
-        protected bool RotationInLocalSpace => (!SwitchTransformSpaceWhenParented && InLocalSpace) || (m_RotationInterpolator != null && m_RotationInterpolator.InLocalSpace && SwitchTransformSpaceWhenParented);
+        protected bool RotationInLocalSpace => InLocalSpace;
 
         /// <summary>
         /// When enabled (default) interpolation is applied.
@@ -3146,10 +3146,12 @@ namespace Unity.Netcode.Components
             // depending upon whether UsePositionDeltaCompression is enabled
             if (m_LocalAuthoritativeNetworkState.HasPositionChange)
             {
+                // If interpolating, get the current value as the final next position or current position
+                // depending upon if the interpolator is still processing a state or not.
+                var newTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : m_TargetPosition;
                 if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
                     var position = m_LocalAuthoritativeNetworkState.GetPosition();
-                    var newTargetPosition = m_TargetPosition;
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
                         newTargetPosition.x = position.x;
@@ -3164,8 +3166,8 @@ namespace Unity.Netcode.Components
                     {
                         newTargetPosition.z = position.z;
                     }
-                    m_TargetPosition = newTargetPosition;
                 }
+                m_TargetPosition = newTargetPosition;
                 UpdatePositionInterpolator(m_TargetPosition, sentTime);
             }
 
@@ -3900,7 +3902,6 @@ namespace Unity.Netcode.Components
                     m_PositionInterpolator.AutoConvertTransformSpace = SwitchTransformSpaceWhenParented;
                     m_PositionInterpolator.InLocalSpace = InLocalSpace;
                     m_PositionInterpolator.Parent = InLocalSpace ? parentNetworkObject.transform : null;
-                    var parentName = InLocalSpace ? parentNetworkObject.name : "root";
 
                     if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
                     {
@@ -3917,7 +3918,14 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        m_InternalCurrentPosition = m_TargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
+                        if (CanCommitToTransform)
+                        {
+                            m_InternalCurrentPosition = GetSpaceRelativePosition();
+                        }
+                        else
+                        {
+                            m_InternalCurrentPosition = m_TargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
+                        }
                     }
                 }
 
@@ -3942,7 +3950,14 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        m_InternalCurrentRotation = Interpolate ? m_RotationInterpolator.GetInterpolatedValue() : GetSpaceRelativeRotation();
+                        if (CanCommitToTransform)
+                        {
+                            m_InternalCurrentRotation = GetSpaceRelativeRotation();
+                        }
+                        else
+                        {
+                            m_InternalCurrentRotation = Interpolate ? m_RotationInterpolator.GetInterpolatedValue() : GetSpaceRelativeRotation();
+                        }
                         m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
                     }
                 }
@@ -4207,7 +4222,7 @@ namespace Unity.Netcode.Components
         private void UpdateInterpolation()
         {
             // Select the time system relative to the type of NetworkManager instance.
-            var timeSystem = m_CachedNetworkManager.IsServer ? m_CachedNetworkManager.ServerTime : m_CachedNetworkManager.LocalTime;
+            var timeSystem = m_CachedNetworkManager.IsServer ? m_CachedNetworkManager.LocalTime : m_CachedNetworkManager.ServerTime;
             var currentTime = timeSystem.Time;
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
             var cachedDeltaTime = m_UseRigidbodyForMotion ? m_CachedNetworkManager.RealTimeProvider.FixedDeltaTime : m_CachedNetworkManager.RealTimeProvider.DeltaTime;
