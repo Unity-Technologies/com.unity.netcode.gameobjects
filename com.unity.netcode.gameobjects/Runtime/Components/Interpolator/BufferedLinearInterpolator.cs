@@ -696,7 +696,6 @@ namespace Unity.Netcode
 
             if (Parent != null)
             {
-                var previousCurrent = currentValue.ToString();
                 currentValue = OnConvertTransformSpace(Parent, currentValue, true);
             }
             return currentValue;
