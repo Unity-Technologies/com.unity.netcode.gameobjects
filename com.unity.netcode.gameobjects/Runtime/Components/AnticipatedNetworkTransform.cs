@@ -240,8 +240,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             var transform_ = transform;
-            transform_.position = newState.Position;
-            transform_.rotation = newState.Rotation;
+            transform_.SetPositionAndRotation(newState.Position, newState.Rotation);
             transform_.localScale = newState.Scale;
             m_AnticipatedTransform = newState;
             if (CanCommitToTransform)
@@ -278,9 +277,8 @@ namespace Unity.Netcode.Components
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
                 if (!CanCommitToTransform)
                 {
-                    transform_.position = m_AnticipatedTransform.Position;
+                    transform_.SetPositionAndRotation(m_AnticipatedTransform.Position, m_AnticipatedTransform.Rotation);
                     transform_.localScale = m_AnticipatedTransform.Scale;
-                    transform_.rotation = m_AnticipatedTransform.Rotation;
                 }
             }
         }
@@ -336,8 +334,7 @@ namespace Unity.Netcode.Components
                         Transform.m_AnticipatedTransform = Transform.m_AuthoritativeTransform;
                     }
 
-                    transform_.position = Transform.m_AnticipatedTransform.Position;
-                    transform_.rotation = Transform.m_AnticipatedTransform.Rotation;
+                    transform_.SetPositionAndRotation(Transform.m_AnticipatedTransform.Position, Transform.m_AnticipatedTransform.Rotation);
                     transform_.localScale = Transform.m_AnticipatedTransform.Scale;
                 }
             }
@@ -347,8 +344,7 @@ namespace Unity.Netcode.Components
                 if (Transform.CanCommitToTransform)
                 {
                     var transform_ = Transform.transform;
-                    transform_.position = Transform.m_AuthoritativeTransform.Position;
-                    transform_.rotation = Transform.m_AuthoritativeTransform.Rotation;
+                    transform_.SetPositionAndRotation(Transform.m_AuthoritativeTransform.Position, Transform.m_AuthoritativeTransform.Rotation);
                     transform_.localScale = Transform.m_AuthoritativeTransform.Scale;
                 }
             }
@@ -493,8 +489,7 @@ namespace Unity.Netcode.Components
             {
                 m_AnticipatedTransform = to;
                 m_PreviousAnticipatedTransform = m_AnticipatedTransform;
-                transform_.position = to.Position;
-                transform_.rotation = to.Rotation;
+                transform_.SetPositionAndRotation(to.Position, to.Rotation);
                 transform_.localScale = to.Scale;
                 m_SmoothDuration = 0;
                 m_CurrentSmoothTime = 0;
@@ -505,8 +500,7 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                transform_.position = from.Position;
-                transform_.rotation = from.Rotation;
+                transform_.SetPositionAndRotation(from.Position, from.Rotation);
                 transform_.localScale = from.Scale;
             }
 
@@ -554,18 +548,16 @@ namespace Unity.Netcode.Components
             if (!m_OutstandingAuthorityChange)
             {
                 // Keep the anticipated value unchanged, we have no updates from the server at all.
-                transform_.position = previousAnticipatedTransform.Position;
+                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
                 transform_.localScale = previousAnticipatedTransform.Scale;
-                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
 
             if (StaleDataHandling == StaleDataHandling.Ignore && m_LastAnticipaionCounter > m_LastAuthorityUpdateCounter)
             {
                 // Keep the anticipated value unchanged because it is more recent than the authoritative one.
-                transform_.position = previousAnticipatedTransform.Position;
+                transform_.SetPositionAndRotation(previousAnticipatedTransform.Position, previousAnticipatedTransform.Rotation);
                 transform_.localScale = previousAnticipatedTransform.Scale;
-                transform_.rotation = previousAnticipatedTransform.Rotation;
                 return;
             }
 
