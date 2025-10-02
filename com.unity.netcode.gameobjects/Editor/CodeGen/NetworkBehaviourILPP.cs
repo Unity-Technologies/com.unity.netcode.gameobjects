@@ -1440,12 +1440,14 @@ namespace Unity.Netcode.Editor.CodeGen
                         callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
                     }
 
-                    RpcInvokePermission invokePermission = RpcInvokePermission.Anyone;
-                    
+                    var invokePermission = RpcInvokePermission.Anyone;
                     foreach (var attrField in rpcAttribute.Fields)
                     {
                         switch (attrField.Name)
                         {
+                            case k_ServerRpcAttribute_RequireOwnership:
+                                invokePermission = (attrField.Argument.Type == rpcHandler.Module.TypeSystem.Boolean && (bool)attrField.Argument.Value) ? RpcInvokePermission.Owner : RpcInvokePermission.Anyone;
+                                break;
                             case k_RpcAttribute_InvokePermission:
                                 invokePermission = (RpcInvokePermission)attrField.Argument.Value;
                                 break;
