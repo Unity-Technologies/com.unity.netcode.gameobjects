@@ -66,12 +66,29 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning($"[{metadata.NetworkObjectId}, {metadata.NetworkBehaviourId}, {metadata.NetworkRpcMethodId}] An RPC called on a {nameof(NetworkObject)} that is not in the spawned objects list. Please make sure the {nameof(NetworkObject)} is spawned before calling RPCs.");
                 }
-                return;
             }
             var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(metadata.NetworkBehaviourId);
 
             try
             {
+                Type type = networkBehaviour.GetType();
+                if (networkManager.IsServer)
+                {
+                    RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId];
+                    bool hasPermission = permission switch
+                    {
+                        RpcInvokePermission.Anyone => true,
+                        RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
+                        RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
+                        _ => false,
+                    };
+
+                    // Do not handle the message if the sender does not have permission to do so.
+                    if (!hasPermission)
+                    {
+                        return;
+                    }
+                }    
                 NetworkBehaviour.__rpc_func_table[networkBehaviour.GetType()][metadata.NetworkRpcMethodId](networkBehaviour, payload, rpcParams);
             }
             catch (Exception ex)

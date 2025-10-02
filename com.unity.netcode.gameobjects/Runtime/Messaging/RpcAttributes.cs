@@ -19,6 +19,25 @@ namespace Unity.Netcode
     }
 
     /// <summary>
+    /// RPC invoke permissions
+    /// </summary>
+    public enum RpcInvokePermission
+    {
+        /// <summary>
+        /// Anyone can invoke the Rpc.
+        /// </summary>
+        Anyone = 0,
+        /// <summary>
+        /// Rpc can only be invoked by the server.
+        /// </summary>
+        Server,
+        /// <summary>
+        /// Rpc can only be invoked by the owner of the NetworkBehaviour.
+        /// </summary>
+        Owner,
+    }
+
+    /// <summary>
     /// <para>Represents the common base class for Rpc attributes.</para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
@@ -35,9 +54,9 @@ namespace Unity.Netcode
             public RpcDelivery Delivery;
 
             /// <summary>
-            /// When true, only the owner of the object can execute this RPC
+            /// Who has network permission to invoke this RPC
             /// </summary>
-            public bool RequireOwnership;
+            public RpcInvokePermission InvokePermission;
 
             /// <summary>
             /// When true, local execution of the RPC is deferred until the next network tick
@@ -57,9 +76,9 @@ namespace Unity.Netcode
         public RpcDelivery Delivery = RpcDelivery.Reliable;
 
         /// <summary>
-        /// When true, only the owner of the object can execute this RPC
+        /// Who has network permission to invoke this RPC
         /// </summary>
-        public bool RequireOwnership;
+        public RpcInvokePermission InvokePermission;
 
         /// <summary>
         /// When true, local execution of the RPC is deferred until the next network tick
@@ -97,7 +116,7 @@ namespace Unity.Netcode
         /// When true, only the owner of the NetworkObject can invoke this ServerRpc.
         /// This property overrides the base RpcAttribute.RequireOwnership.
         /// </summary>
-        public new bool RequireOwnership;
+        public bool RequireOwnership;
 
         /// <summary>
         /// Initializes a new instance of ServerRpcAttribute that targets the server

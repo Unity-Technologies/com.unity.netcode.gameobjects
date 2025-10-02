@@ -41,8 +41,30 @@ namespace Unity.Netcode
                 }
                 return;
             }
-
             var observers = networkObject.Observers;
+
+            var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(WrappedMessage.Metadata.NetworkBehaviourId);
+
+            RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][WrappedMessage.Metadata.NetworkRpcMethodId];
+            bool hasPermission = permission switch
+            {
+                RpcInvokePermission.Anyone => true,
+                RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
+                RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
+                _ => false,
+            };
+
+            // Do not handle the message if the sender does not have permission to do so.
+            if (!hasPermission)
+            {
+                return;
+            }
+
+            if (networkManager.IsServer)
+            {
+                WrappedMessage.SenderClientId = context.SenderId;
+            }
+
 
             var nonServerIds = new NativeList<ulong>(Allocator.Temp);
             for (var i = 0; i < TargetClientIds.Length; ++i)
