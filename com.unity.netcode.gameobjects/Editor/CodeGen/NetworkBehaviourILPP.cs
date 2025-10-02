@@ -2865,13 +2865,16 @@ namespace Unity.Netcode.Editor.CodeGen
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
             var isCientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
             var isGenericRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.RpcAttribute_FullName;
-            var invokePermission = RpcInvokePermission.Anyone; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
+            var invokePermission = RpcInvokePermission.Anyone;
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
                     case k_ServerRpcAttribute_RequireOwnership:
                         invokePermission = (attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value) ? RpcInvokePermission.Owner : RpcInvokePermission.Anyone;
+                        break;
+                    case k_RpcAttribute_InvokePermission:
+                        invokePermission = (RpcInvokePermission)attrField.Argument.Value;
                         break;
                 }
             }
