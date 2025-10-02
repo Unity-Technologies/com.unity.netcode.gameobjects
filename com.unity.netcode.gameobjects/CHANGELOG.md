@@ -25,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Made a variety of small performance improvements. (#3683)
 
 ### Security
 

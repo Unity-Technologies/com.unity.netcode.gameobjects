@@ -109,10 +109,7 @@ namespace Unity.Netcode
             {
                 foreach (var list in NetworkPrefabsLists)
                 {
-                    foreach (var networkPrefab in list.PrefabList)
-                    {
-                        prefabs.Add(networkPrefab);
-                    }
+                    prefabs.AddRange(list.PrefabList);
                 }
             }
 
@@ -154,7 +151,7 @@ namespace Unity.Netcode
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
                     var sb = new StringBuilder("Removing invalid prefabs from Network Prefab registration: ");
-                    sb.Append(string.Join(", ", removeList));
+                    sb.AppendJoin(", ", removeList);
                     NetworkLog.LogWarning(sb.ToString());
                 }
             }

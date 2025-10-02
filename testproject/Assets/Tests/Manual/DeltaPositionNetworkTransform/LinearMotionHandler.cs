@@ -396,8 +396,8 @@ namespace TestProject.ManualTests
                 SetNextDirection();
             }
 
-            ClientPositionVisual.transform.position = m_ClientPosition;
-            ClientPositionVisual.transform.rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            ClientPositionVisual.transform.SetPositionAndRotation(m_ClientPosition, rotation);
         }
 
         private Vector3 m_ServerPosition;
