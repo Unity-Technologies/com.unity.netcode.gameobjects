@@ -43,25 +43,26 @@ namespace Unity.Netcode
             }
             var observers = networkObject.Observers;
 
-            var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(WrappedMessage.Metadata.NetworkBehaviourId);
-
-            RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][WrappedMessage.Metadata.NetworkRpcMethodId];
-            bool hasPermission = permission switch
-            {
-                RpcInvokePermission.Anyone => true,
-                RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
-                RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
-                _ => false,
-            };
-
-            // Do not handle the message if the sender does not have permission to do so.
-            if (!hasPermission)
-            {
-                return;
-            }
-
+            // Validate message if server
             if (networkManager.IsServer)
             {
+                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(WrappedMessage.Metadata.NetworkBehaviourId);
+
+                RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][WrappedMessage.Metadata.NetworkRpcMethodId];
+                bool hasPermission = permission switch
+                {
+                    RpcInvokePermission.Anyone => true,
+                    RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
+                    RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
+                    _ => false,
+                };
+
+                // Do not handle the message if the sender does not have permission to do so.
+                if (!hasPermission)
+                {
+                    return;
+                }
+
                 WrappedMessage.SenderClientId = context.SenderId;
             }
 
