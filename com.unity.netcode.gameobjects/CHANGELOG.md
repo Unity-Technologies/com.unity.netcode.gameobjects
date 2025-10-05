@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+
+### Fixed
+
+- Fixed issue where root level in-scene placed `NetworkObject`s would only allow the ownership permission to be no less than distributable or sessionowner. (#3407)
+
+### Changed
+
+
 ## [2.3.1] - 2025-04-14
 
 ### Fixed
