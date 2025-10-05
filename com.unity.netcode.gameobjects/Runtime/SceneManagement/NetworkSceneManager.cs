@@ -473,7 +473,7 @@ namespace Unity.Netcode
         {
             if (!ServerSceneHandleToClientSceneHandle.ContainsKey(serverHandle))
             {
-                Log.Info(() => $"Adding Server Scene Handle {clientHandle} {localScene.name}");
+                Log.Debug(() => $"Adding Server Scene Handle {clientHandle} {localScene.name}");
                 ServerSceneHandleToClientSceneHandle.Add(serverHandle, clientHandle);
             }
             else if (!IsRestoringSession)
@@ -483,7 +483,7 @@ namespace Unity.Netcode
 
             if (!ClientSceneHandleToServerSceneHandle.ContainsKey(clientHandle))
             {
-                Log.Info(() => $"Adding Client Scene Handle {clientHandle} {localScene.name}");
+                Log.Debug(() => $"Adding Client Scene Handle {clientHandle} {localScene.name}");
                 ClientSceneHandleToServerSceneHandle.Add(clientHandle, serverHandle);
             }
             else if (!IsRestoringSession)
@@ -508,7 +508,7 @@ namespace Unity.Netcode
         {
             if (ServerSceneHandleToClientSceneHandle.ContainsKey(serverHandle))
             {
-                Log.Info(() => $"Remove ServerSceneHandleToClientSceneHandle {clientHandle} {serverHandle}");
+                Log.Debug(() => $"Remove ServerSceneHandleToClientSceneHandle {clientHandle} {serverHandle}");
                 ServerSceneHandleToClientSceneHandle.Remove(serverHandle);
             }
             else
@@ -518,7 +518,7 @@ namespace Unity.Netcode
 
             if (ClientSceneHandleToServerSceneHandle.ContainsKey(clientHandle))
             {
-                Log.Info(() => $"Remove ClientSceneHandleToServerSceneHandle {clientHandle} {serverHandle}");
+                Log.Debug(() => $"Remove ClientSceneHandleToServerSceneHandle {clientHandle} {serverHandle}");
                 ClientSceneHandleToServerSceneHandle.Remove(clientHandle);
             }
             else
@@ -528,7 +528,7 @@ namespace Unity.Netcode
 
             if (ScenesLoaded.ContainsKey(clientHandle))
             {
-                Log.Info(() => $"Remove ScenesLoaded {clientHandle} {serverHandle}");
+                Log.Debug(() => $"Remove ScenesLoaded {clientHandle} {serverHandle}");
                 ScenesLoaded.Remove(clientHandle);
             }
             else
@@ -1459,7 +1459,7 @@ namespace Unity.Netcode
                     {
                         ServerSceneHandleToClientSceneHandle.Remove(serverSceneHandle);
                     }
-                    Log.Info(() => $"Remove ClientSceneHandleToServerSceneHandle {keyHandleEntry.Value.SceneReference.handle}");
+                    Log.Debug(() => $"Remove ClientSceneHandleToServerSceneHandle {keyHandleEntry.Value.SceneReference.handle}");
                     ClientSceneHandleToServerSceneHandle.Remove(keyHandleEntry.Value.SceneReference.handle);
 
                     var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value, sceneEventProgress);
@@ -1875,7 +1875,7 @@ namespace Unity.Netcode
                 }
             }
 
-			Log.Info(() => "<color=orange>OnSceneLoaded</color>");
+            Log.Debug(() => "<color=orange>OnSceneLoaded</color>");
 
             //Get all NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene);
@@ -2302,7 +2302,7 @@ namespace Unity.Netcode
                 throw new Exception($"Server Scene Handle ({sceneEventData.SceneHandle}) already exist!  Happened during scene load of {nextScene.name} with Client Handle ({nextScene.handle})");
             }
 
-			Log.Info(() => $"<color=orange>ClientLoadedSynchronization</color> sceneName={sceneName}");
+            Log.Debug(() => $"<color=orange>ClientLoadedSynchronization</color> sceneName={sceneName}");
 
             // Apply all in-scene placed NetworkObjects loaded by the scene
             PopulateScenePlacedObjects(nextScene, false);
@@ -2431,7 +2431,7 @@ namespace Unity.Netcode
                         }
                         else
                         {
-							Log.Info(() => $"<color=orange>SceneEventType.Synchronize</color> sceneName={sceneEventData.ClientSceneName}");
+                            Log.Debug(() => $"<color=orange>SceneEventType.Synchronize</color> sceneName={sceneEventData.ClientSceneName}");
 
                             // Include anything in the DDOL scene
                             PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
@@ -2936,7 +2936,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
-            Log.Info(() => "<color=orange>PopulateScenePlacedObjects</color>");
+            Log.Debug(() => $"<color=orange>PopulateScenePlacedObjects</color> Scene={sceneToFilterBy.name} clearScenePlacedObjects={clearScenePlacedObjects}");
             if (clearScenePlacedObjects)
             {
                 ScenePlacedObjects.Clear();
@@ -2956,7 +2956,7 @@ namespace Unity.Netcode
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.gameObject.scene.handle;
-                Log.Info(() => $"PopulateScenePlacedObjects object={networkObjectInstance.gameObject} sceneHandle={sceneHandle} hash={globalObjectIdHash}");
+                Log.Debug(() => $"PopulateScenePlacedObjects object={networkObjectInstance.gameObject} sceneHandle={sceneHandle} hash={globalObjectIdHash}");
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
                 if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
                     networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
@@ -2974,8 +2974,9 @@ namespace Unity.Netcode
                     {
                         Log.Error(() => $"Duplicate hash ids from object={ScenePlacedObjects[globalObjectIdHash][sceneHandle].gameObject.NetworkGetScenePath()}");
                         var exitingEntryName = ScenePlacedObjects[globalObjectIdHash][sceneHandle] != null ? ScenePlacedObjects[globalObjectIdHash][sceneHandle].name : "Null Entry";
-                        throw new Exception($"{networkObjectInstance.name} tried to registered with {nameof(ScenePlacedObjects)} which already contains " +
+                        string expStr = ($"{networkObjectInstance.name} tried to registered with {nameof(ScenePlacedObjects)} which already contains " +
                             $"the same {nameof(NetworkObject.GlobalObjectIdHash)} value {globalObjectIdHash} for {exitingEntryName}!");
+                        Log.Error(() => expStr);
                     }
                 }
             }
