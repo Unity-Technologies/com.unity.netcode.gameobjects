@@ -139,7 +139,6 @@ namespace TestProject.RuntimeTests
                 });
             }
 
-            m_EnableVerboseDebug = true;
             //////////////////////////////////////////
             // Testing event notifications
             yield return CreateAndStartNewClient();

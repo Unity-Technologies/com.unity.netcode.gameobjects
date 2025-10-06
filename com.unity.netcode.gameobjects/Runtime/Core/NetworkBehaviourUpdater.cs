@@ -48,20 +48,19 @@ namespace Unity.Netcode
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
-                        for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                        foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
                         {
-                            dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
+                            behaviour.PreVariableUpdate();
                         }
 
-                        for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
+                        foreach (var client in m_ConnectionManager.ConnectedClientsList)
                         {
-                            var client = m_ConnectionManager.ConnectedClientsList[i];
                             if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
                             {
                                 // Sync just the variables for just the objects this client sees
-                                for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                                foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
                                 {
-                                    dirtyObj.ChildNetworkBehaviours[k].NetworkVariableUpdate(client.ClientId, forceSend);
+                                    behaviour.NetworkVariableUpdate(client.ClientId, forceSend);
                                 }
                             }
                         }
@@ -74,13 +73,14 @@ namespace Unity.Netcode
                     {
                         if (sobj.IsOwner)
                         {
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            foreach (var behaviour in sobj.ChildNetworkBehaviours)
                             {
-                                sobj.ChildNetworkBehaviours[k].PreVariableUpdate();
+                                behaviour.PreVariableUpdate();
                             }
-                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+
+                            foreach (var behaviour in sobj.ChildNetworkBehaviours)
                             {
-                                sobj.ChildNetworkBehaviours[k].NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
+                                behaviour.NetworkVariableUpdate(NetworkManager.ServerClientId, forceSend);
                             }
                         }
                     }
@@ -88,9 +88,8 @@ namespace Unity.Netcode
 
                 foreach (var dirtyObj in m_DirtyNetworkObjects)
                 {
-                    for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                    foreach (var behaviour in dirtyObj.ChildNetworkBehaviours)
                     {
-                        var behaviour = dirtyObj.ChildNetworkBehaviours[k];
                         for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                         {
                             // Set to true for NetworkVariable to ignore duplication of the

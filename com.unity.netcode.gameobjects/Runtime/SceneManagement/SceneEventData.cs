@@ -937,7 +937,7 @@ namespace Unity.Netcode
                         var networkObject = networkObjectIdToNetworkObject[networkObjectId];
                         networkObjectIdToNetworkObject.Remove(networkObjectId);
 
-                        networkObject.IsSpawned = false;
+                        networkObject.ResetOnDespawn();
                         if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                         {
                             if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))

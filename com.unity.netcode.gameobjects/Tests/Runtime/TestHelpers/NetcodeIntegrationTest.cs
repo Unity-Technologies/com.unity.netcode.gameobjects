@@ -576,6 +576,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
+            NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
@@ -2560,6 +2561,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(obj, new object[] { });
+                        if (obj.ChildNetworkBehaviours == null)
+                        {
+                            continue;
+                        }
+
                         foreach (var behaviour in obj.ChildNetworkBehaviours)
                         {
                             var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);

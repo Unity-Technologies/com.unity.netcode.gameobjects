@@ -560,9 +560,10 @@ namespace Unity.Netcode
                 ((networkManager.DistributedAuthorityMode && m_NetworkObject.IsOwner) || (!networkManager.DistributedAuthorityMode && networkManager.IsServer));
         }
 
-        internal void SetNetworkObject(NetworkObject networkObject)
+        internal void SetNetworkObject(NetworkObject networkObject, ushort behaviourId)
         {
             m_NetworkObject = networkObject;
+            NetworkBehaviourId = behaviourId;
         }
 
         //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
@@ -628,11 +629,6 @@ namespace Unity.Netcode
         public ushort NetworkBehaviourId { get; internal set; }
 
         /// <summary>
-        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
-        /// </summary>
-        internal ushort NetworkBehaviourIdCache = 0;
-
-        /// <summary>
         /// Returns the NetworkBehaviour with a given BehaviourId for the current NetworkObject.
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
@@ -660,11 +656,6 @@ namespace Unity.Netcode
             // Set identification related properties
             NetworkObjectId = networkObject.NetworkObjectId;
             IsLocalPlayer = networkObject.IsLocalPlayer;
-
-            // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
-            // NetworkObject.ChildNetworkBehaviours which is set once when first
-            // accessed.
-            NetworkBehaviourId = networkObject.GetNetworkBehaviourOrderIndex(this);
 
             // Set ownership related properties
             IsOwnedByServer = networkObject.IsOwnedByServer;
@@ -1108,7 +1099,6 @@ namespace Unity.Netcode
             // Getting these ahead of time actually improves performance
             var networkManager = NetworkManager;
             var networkObject = m_NetworkObject;
-            var behaviourIndex = networkObject.GetNetworkBehaviourOrderIndex(this);
             var messageManager = networkManager.MessageManager;
             var connectionManager = networkManager.ConnectionManager;
 
@@ -1148,7 +1138,7 @@ namespace Unity.Netcode
                 var message = new NetworkVariableDeltaMessage
                 {
                     NetworkObjectId = NetworkObjectId,
-                    NetworkBehaviourIndex = behaviourIndex,
+                    NetworkBehaviourIndex = NetworkBehaviourId,
                     NetworkBehaviour = this,
                     TargetClientId = targetClientId,
                     DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j],

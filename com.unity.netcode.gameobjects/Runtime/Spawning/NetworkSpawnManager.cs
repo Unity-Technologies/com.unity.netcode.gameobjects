@@ -179,7 +179,12 @@ namespace Unity.Netcode
             }
         }
 
-        // returns whether any matching objects would have become visible and were returned to hidden state
+        /// <summary>
+        /// returns whether any matching objects would have become visible and were returned to hidden state
+        /// </summary>
+        /// <param name="networkObject"></param>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
         internal bool RemoveObjectFromShowingTo(NetworkObject networkObject, ulong clientId)
         {
             if (NetworkManager.DistributedAuthorityMode)
@@ -434,6 +439,11 @@ namespace Unity.Netcode
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId, bool isAuthorized, bool isRequestApproval = false)
         {
+            if (!networkObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+
             if (clientId == networkObject.OwnerClientId)
             {
                 if (NetworkManager.LogLevel <= LogLevel.Developer)
@@ -448,9 +458,9 @@ namespace Unity.Netcode
             // then notify the user they could potentially lose state updates if developer logging is enabled.
             if (NetworkManager.LogLevel == LogLevel.Developer && !NetworkManager.DistributedAuthorityMode && m_LastChangeInOwnership.ContainsKey(networkObject.NetworkObjectId) && m_LastChangeInOwnership[networkObject.NetworkObjectId] > Time.realtimeSinceStartup)
             {
-                for (int i = 0; i < networkObject.ChildNetworkBehaviours.Count; i++)
+                foreach (var behaviour in networkObject.ChildNetworkBehaviours)
                 {
-                    if (networkObject.ChildNetworkBehaviours[i].NetworkVariableFields.Count > 0)
+                    if (behaviour.NetworkVariableFields.Count > 0)
                     {
                         NetworkLog.LogWarningServer($"[Rapid Ownership Change Detected][Potential Loss in State] Detected a rapid change in ownership that exceeds a frequency less than {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate! Provide at least {k_MaximumTickOwnershipChangeMultiplier}x the current network tick rate between ownership changes to avoid NetworkVariable state loss.");
                         break;
@@ -516,11 +526,6 @@ namespace Unity.Netcode
             else if (!isAuthorized)
             {
                 throw new NotServerException("Only the server can change ownership");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is not spawned");
             }
 
             if (networkObject.OwnerClientId == clientId && networkObject.PreviousOwnerId == clientId)
@@ -1126,10 +1131,7 @@ namespace Unity.Netcode
 
             // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
             // the NetworkObject since it uses the NetworkManager.Singleton when not set
-            if (networkObject.NetworkManagerOwner != NetworkManager)
-            {
-                networkObject.NetworkManagerOwner = NetworkManager;
-            }
+            networkObject.NetworkManagerOwner = NetworkManager;
 
             networkObject.NetworkObjectId = networkId;
 
@@ -1330,12 +1332,6 @@ namespace Unity.Netcode
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false, bool authorityOverride = false)
         {
-            if (!networkObject.IsSpawned)
-            {
-                NetworkLog.LogErrorServer("Object is not spawned!");
-                return;
-            }
-
             if (!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode)
             {
                 NetworkLog.LogErrorServer("Only server can despawn objects");
@@ -1363,7 +1359,7 @@ namespace Unity.Netcode
 #endif
             foreach (var sobj in networkObjects)
             {
-                sobj.IsSpawned = false;
+                sobj.ResetOnDespawn();
                 sobj.DestroyWithScene = false;
                 sobj.IsSceneObject = null;
             }
