@@ -1720,7 +1720,15 @@ namespace Unity.Netcode.Components
         // Non-Authoritative's current position, scale, and rotation that is used to assure the non-authoritative side cannot make adjustments to
         // the portions of the transform being synchronized.
         private Vector3 m_InternalCurrentPosition;
-        private Vector3 m_TargetPosition;
+
+        /// <summary>
+        /// Used primarily to track the last state received that had a change in position.
+        /// When interpolation is disabled, this value is applied immediately to the transform.
+        /// When interpolation is enabled, this value is only updated in the event that if
+        /// interpolation is disabled the last known state position update will be continually applied.
+        /// This might not be the exact
+        /// </summary>
+        private Vector3 m_LastStateTargetPosition;
         private Vector3 m_InternalCurrentScale;
         private Vector3 m_TargetScale;
         private Quaternion m_InternalCurrentRotation;
@@ -2555,12 +2563,12 @@ namespace Unity.Netcode.Components
                 var transformSource = transform;
                 OnUpdateAuthoritativeState(ref transformSource, isCalledFromParent);
 #if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                m_InternalCurrentPosition = m_TargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
+                m_InternalCurrentPosition = m_LastStateTargetPosition = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetPosition() : GetSpaceRelativePosition();
                 m_InternalCurrentRotation = m_UseRigidbodyForMotion ? m_NetworkRigidbodyInternal.GetRotation() : GetSpaceRelativeRotation();
                 m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
 #else
                 m_InternalCurrentPosition = GetSpaceRelativePosition();
-                m_TargetPosition = GetSpaceRelativePosition();
+                m_LastStateTargetPosition = GetSpaceRelativePosition();
 #endif
             }
             else // If we are no longer authority, unsubscribe to the tick event
@@ -2719,7 +2727,7 @@ namespace Unity.Netcode.Components
                 {
                     if (networkState.HasPositionChange && SynchronizePosition)
                     {
-                        adjustedPosition = m_TargetPosition;
+                        adjustedPosition = m_LastStateTargetPosition;
                     }
 
                     if (networkState.HasScaleChange && SynchronizeScale)
@@ -2947,7 +2955,7 @@ namespace Unity.Netcode.Components
                 }
 
                 m_InternalCurrentPosition = currentPosition;
-                m_TargetPosition = currentPosition;
+                m_LastStateTargetPosition = currentPosition;
 
                 // Apply the position
                 if (newState.InLocalSpace)
@@ -3117,6 +3125,7 @@ namespace Unity.Netcode.Components
             // Only if using half float precision and our position had changed last update then
             if (UseHalfFloatPrecision && m_LocalAuthoritativeNetworkState.HasPositionChange)
             {
+                // Do a full precision synchronization to apply the base position and offset.
                 if (m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat)
                 {
                     m_HalfPositionState = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition;
@@ -3130,9 +3139,10 @@ namespace Unity.Netcode.Components
                     // This is to assure when you get the position of the state it is the correct position
                     m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.ToVector3(0);
                 }
-                // Update our target position
-                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
-                m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
+                // Update the target position for this incoming state.
+                // This becomes the last known received state position (unlike interpolators that will have a queue).
+                m_LastStateTargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
+                m_LocalAuthoritativeNetworkState.CurrentPosition = m_LastStateTargetPosition;
             }
 
             if (!Interpolate)
@@ -3148,9 +3158,9 @@ namespace Unity.Netcode.Components
             {
                 // If interpolating, get the current value as the final next position or current position
                 // depending upon if the interpolator is still processing a state or not.
-                var newTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : m_TargetPosition;
                 if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
+                    var newTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : m_LastStateTargetPosition;
                     var position = m_LocalAuthoritativeNetworkState.GetPosition();
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
@@ -3166,9 +3176,10 @@ namespace Unity.Netcode.Components
                     {
                         newTargetPosition.z = position.z;
                     }
+                    m_LastStateTargetPosition = newTargetPosition;
                 }
-                m_TargetPosition = newTargetPosition;
-                UpdatePositionInterpolator(m_TargetPosition, sentTime);
+                
+                UpdatePositionInterpolator(m_LastStateTargetPosition, sentTime);
             }
 
             if (m_LocalAuthoritativeNetworkState.HasScaleChange)
@@ -3739,7 +3750,7 @@ namespace Unity.Netcode.Components
                 }
 
                 m_InternalCurrentPosition = currentPosition;
-                m_TargetPosition = currentPosition;
+                m_LastStateTargetPosition = currentPosition;
 
                 RegisterForTickUpdate(this);
 
@@ -3764,7 +3775,7 @@ namespace Unity.Netcode.Components
                 DeregisterForTickUpdate(this);
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_InternalCurrentPosition = currentPosition;
-                m_TargetPosition = currentPosition;
+                m_LastStateTargetPosition = currentPosition;
                 m_InternalCurrentScale = transform.localScale;
                 m_TargetScale = transform.localScale;
                 m_InternalCurrentRotation = currentRotation;
@@ -3857,7 +3868,7 @@ namespace Unity.Netcode.Components
             var position = GetSpaceRelativePosition();
             var rotation = GetSpaceRelativeRotation();
 #endif
-            m_TargetPosition = m_InternalCurrentPosition = position;
+            m_LastStateTargetPosition = m_InternalCurrentPosition = position;
             m_InternalCurrentRotation = rotation;
             m_TargetRotation = m_InternalCurrentRotation.eulerAngles;
             m_TargetScale = m_InternalCurrentScale = GetScale();
@@ -3905,7 +3916,7 @@ namespace Unity.Netcode.Components
 
                     if (LastTickSync == m_LocalAuthoritativeNetworkState.GetNetworkTick())
                     {
-                        m_InternalCurrentPosition = m_TargetPosition = GetSpaceRelativePosition();
+                        m_InternalCurrentPosition = m_LastStateTargetPosition = GetSpaceRelativePosition();
                         m_PositionInterpolator.ResetTo(m_PositionInterpolator.Parent, m_InternalCurrentPosition, NetworkManager.ServerTime.Time);
                         if (InLocalSpace)
                         {
@@ -3924,7 +3935,7 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
-                            m_InternalCurrentPosition = m_TargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
+                            m_InternalCurrentPosition = m_LastStateTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : GetSpaceRelativePosition();
                         }
                     }
                 }
