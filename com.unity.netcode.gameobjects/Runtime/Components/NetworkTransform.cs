@@ -3160,7 +3160,7 @@ namespace Unity.Netcode.Components
                 // depending upon if the interpolator is still processing a state or not.
                 if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
-                    var newTargetPosition = Interpolate ? m_PositionInterpolator.GetInterpolatedValue() : m_LastStateTargetPosition;
+                    var newTargetPosition = (Interpolate && SwitchTransformSpaceWhenParented) ? m_PositionInterpolator.GetInterpolatedValue() : m_LastStateTargetPosition;
                     var position = m_LocalAuthoritativeNetworkState.GetPosition();
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
@@ -3178,7 +3178,7 @@ namespace Unity.Netcode.Components
                     }
                     m_LastStateTargetPosition = newTargetPosition;
                 }
-                
+
                 UpdatePositionInterpolator(m_LastStateTargetPosition, sentTime);
             }
 
