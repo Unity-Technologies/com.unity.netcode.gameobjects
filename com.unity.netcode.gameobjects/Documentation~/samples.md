@@ -4,5 +4,4 @@ Use the samples in this section to learn how to use Netcode for GameObjects in y
 
 | **Topic**                       | **Description**                  |
 | :------------------------------ | :------------------------------- |
-| **[NetworkBehaviour](components/core/networkbehaviour.md)** | [NetworkBehaviour](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.html) is an abstract class that derives from [MonoBehaviour](https://docs.unity3d.com/ScriptReference/MonoBehaviour.html) and is primarily used to create unique netcode or game logic. To replicate any netcode-aware properties or send and receive RPCs, a [GameObject](https://docs.unity3d.com/Manual/GameObjects.html) must have a [NetworkObject](components/core/networkobject.md) component and at least one NetworkBehaviour component. |
-| **[Synchronize](components/core/networkbehaviour-synchronize.md)** | You can use NetworkBehaviours to synchronize settings before, during, and after spawning NetworkObjects. |
+| **[Bossroom](samples/bossroom/bossroom-landing.md)** | The Boss Room sample is a multiplayer game that demonstrates how to use Netcode for GameObjects to create a networked game. It provides a complete example of how to implement various features such as player movement, combat, and game state management in a multiplayer environment. |

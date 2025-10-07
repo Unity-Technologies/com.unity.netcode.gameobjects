@@ -130,13 +130,11 @@ namespace Unity.Netcode
                 // the values of the server-side post-parenting transform values
                 if (!WorldPositionStays)
                 {
-                    networkObject.transform.localPosition = Position;
-                    networkObject.transform.localRotation = Rotation;
+                    networkObject.transform.SetLocalPositionAndRotation(Position, Rotation);
                 }
                 else
                 {
-                    networkObject.transform.position = Position;
-                    networkObject.transform.rotation = Rotation;
+                    networkObject.transform.SetPositionAndRotation(Position, Rotation);
                 }
                 networkObject.transform.localScale = Scale;
             }
