@@ -4,7 +4,7 @@ The [2D Space Shooter Project](https://github.com/Unity-Technologies/com.unity.m
 
 ## Server Authoritative Physics Movement
 
-The movement in 2DSpaceShooter is physics based. The player object is a dynamic rigidbody and can collide with other players or asteroids. Physics in multiplayer games can be hard to get right. For simplicity, 2DSpaceShooter runs all movement and physics just on the server-side.
+The movement in 2DSpaceShooter is physics based. The player object is a [dynamic Rigidbody](https://docs.unity3d.com/Documentation/Manual/2d-physics/rigidbody/body-types/dynamic/dynamic-body-type-reference.html) and can collide with other players or asteroids. Physics in multiplayer games can be hard to get right. For simplicity, 2DSpaceShooter runs all movement and physics just on the server-side.
 
 The client sends inputs in the form of RPCs to the server. The server then uses those inputs to adjust the throttle and turn values of the player.
 
@@ -12,7 +12,7 @@ This method of running physics makes sure that there are no desyncs or other phy
 
 ## Player Health
 
-2DSpaceShooter uses `NetworkVariable`s to track the players health and energy. Both variables are server authoritative, only the host or server can make changes to them. The client draws the player's health bar simply by accessing the value of the `NetworkVariable`.
+2DSpaceShooter uses [NetworkVariables](../../basics/networkvariable.md) to track the players health and energy. Both variables are server authoritative, only the host or server can make changes to them. The client draws the player's health bar simply by accessing the value of the `NetworkVariable`.
 
 For example:
 
@@ -34,9 +34,9 @@ https://github.com/Unity-Technologies/com.unity.multiplayer.samples.bitesize/blo
 
 ## NetworkObject Pooling
 
-The `2DSpaceShooter` object creates many objects dynamically at runtime including bullets, asteroids, and pickups. 2DSpaceShooter uses object pooling to avoid performance issues of instantiating and destroying Unity Objects all the time and creating allocations in the process.
+The `2DSpaceShooter` object creates many objects dynamically at runtime including bullets, asteroids, and pickups. 2DSpaceShooter uses [object pooling](../../advanced-topics/object-pooling.md) to avoid performance issues of instantiating and destroying Unity Objects all the time and creating allocations in the process.
 
-2DSpaceShooter uses the NetworkObjectPool script, which can be found in the Community Contributions Repository.
+2DSpaceShooter uses the NetworkObjectPool script, which can be found in the [Community Contributions Repository](https://github.com/Unity-Technologies/multiplayer-community-contributions).
 
 ![pool img](../../images/bitesize/invader-networkobjectpool.png)
 

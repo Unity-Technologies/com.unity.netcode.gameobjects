@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -42,7 +43,11 @@ namespace Unity.Netcode
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
 
-        private NetworkManager m_InternalNetworkManager;
+        private protected NetworkManager m_NetworkManager;
+
+        private protected NetworkObject m_NetworkObject;
+
+        private bool m_UseServerTime;
 
         // Determines if this NetworkVariable has been "initialized" to prevent initializing more than once which can happen when first
         // instantiated and spawned. If this NetworkVariable instance is on an in-scene placed NetworkObject =or= a pooled NetworkObject
@@ -59,8 +64,6 @@ namespace Unity.Netcode
         {
             Debug.LogError(GetWritePermissionError());
         }
-
-        private protected NetworkManager m_NetworkManager => m_InternalNetworkManager;
 
         /// <summary>
         /// Gets the NetworkBehaviour instance associated with this network variable
@@ -108,23 +111,27 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!m_NetworkBehaviour.NetworkObject.NetworkManagerOwner)
+            m_NetworkObject = m_NetworkBehaviour.NetworkObject;
+
+            if (!m_NetworkObject.NetworkManagerOwner)
             {
                 // Exit early if there has yet to be a NetworkManagerOwner assigned
                 // to the NetworkObject. This is ok because Initialize is invoked
                 // multiple times until it is considered "initialized".
                 return;
             }
-            m_InternalNetworkManager = m_NetworkBehaviour.NetworkObject.NetworkManagerOwner;
+            m_NetworkManager = m_NetworkObject.NetworkManagerOwner;
+
+            m_UseServerTime = m_NetworkManager.CMBServiceConnection || !m_NetworkManager.IsServer;
 
             // When in distributed authority mode, there is no such thing as server write permissions
-            InternalWritePerm = m_InternalNetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
+            InternalWritePerm = m_NetworkManager.DistributedAuthorityMode ? NetworkVariableWritePermission.Owner : InternalWritePerm;
 
             OnInitialize();
 
             // Some unit tests don't operate with a running NetworkManager.
             // Only update the last time if there is a NetworkTimeSystem.
-            if (m_InternalNetworkManager.NetworkTimeSystem != null)
+            if (m_NetworkManager.NetworkTimeSystem != null)
             {
                 // Update our last sent time relative to when this was initialized
                 UpdateLastSentTime();
@@ -132,7 +139,7 @@ namespace Unity.Netcode
                 // At this point, this instance is considered initialized
                 HasBeenInitialized = true;
             }
-            else if (m_InternalNetworkManager.LogLevel == LogLevel.Developer)
+            else if (m_NetworkManager.LogLevel == LogLevel.Developer)
             {
                 Debug.LogWarning($"[{m_NetworkBehaviour.name}][{m_NetworkBehaviour.GetType().Name}][{GetType().Name}][Initialize] {nameof(NetworkManager)} has no {nameof(NetworkTimeSystem)} assigned!");
             }
@@ -251,7 +258,7 @@ namespace Unity.Netcode
         internal bool CanSend()
         {
             // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
-            var time = m_InternalNetworkManager.CMBServiceConnection || !m_InternalNetworkManager.IsServer ? m_NetworkBehaviour.NetworkManager.ServerTime.Time : m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
+            var time = m_UseServerTime ? m_NetworkManager.ServerTime.Time : m_NetworkManager.NetworkTimeSystem.LocalTime;
             var timeSinceLastUpdate = time - LastUpdateSent;
             return
                 (
@@ -267,7 +274,7 @@ namespace Unity.Netcode
         internal void UpdateLastSentTime()
         {
             // When connected to a service or not the server, always use the synchronized server time as opposed to the local time
-            LastUpdateSent = m_InternalNetworkManager.CMBServiceConnection || !m_InternalNetworkManager.IsServer ? m_NetworkBehaviour.NetworkManager.ServerTime.Time : m_NetworkBehaviour.NetworkManager.NetworkTimeSystem.LocalTime;
+            LastUpdateSent = m_UseServerTime ? m_NetworkManager.ServerTime.Time : m_NetworkManager.NetworkTimeSystem.LocalTime;
         }
 
         internal static bool IgnoreInitializeWarning;
@@ -286,9 +293,9 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            if (m_NetworkBehaviour.NetworkManager.ShutdownInProgress)
+            if (m_NetworkManager.ShutdownInProgress)
             {
-                if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
+                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
                 {
                     Debug.LogWarning($"NetworkVariable is written to during the NetworkManager shutdown! " +
                  "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
@@ -296,9 +303,9 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (!m_NetworkBehaviour.NetworkManager.IsListening)
+            if (!m_NetworkManager.IsListening)
             {
-                if (m_NetworkBehaviour.NetworkManager.LogLevel <= LogLevel.Developer)
+                if (m_NetworkManager.LogLevel <= LogLevel.Developer)
                 {
                     Debug.LogWarning($"NetworkVariable is written to after the NetworkManager has already shutdown! " +
                      "Are you modifying a NetworkVariable within a NetworkBehaviour.OnDestroy or NetworkBehaviour.OnDespawn method?");
@@ -306,7 +313,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            m_NetworkBehaviour.NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+            m_NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkObject);
         }
 
         /// <summary>
@@ -345,7 +352,7 @@ namespace Unity.Netcode
             }
 
             // When in distributed authority mode, everyone can read (but only the owner can write)
-            if (m_NetworkManager != null && m_NetworkManager.DistributedAuthorityMode)
+            if (m_NetworkManager.DistributedAuthorityMode)
             {
                 return true;
             }
@@ -355,7 +362,7 @@ namespace Unity.Netcode
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.Owner:
-                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId || NetworkManager.ServerClientId == clientId;
+                    return clientId == m_NetworkObject.OwnerClientId || NetworkManager.ServerClientId == clientId;
             }
         }
 
@@ -377,26 +384,26 @@ namespace Unity.Netcode
                 case NetworkVariableWritePermission.Server:
                     return clientId == NetworkManager.ServerClientId;
                 case NetworkVariableWritePermission.Owner:
-                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
+                    return clientId == m_NetworkObject.OwnerClientId;
             }
         }
 
         /// <summary>
         /// Returns true if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise false.
         /// </summary>
-        internal bool CanWrite => m_NetworkManager && CanClientWrite(m_NetworkManager.LocalClientId);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool CanWrite()
+        {
+            return m_NetworkManager && CanClientWrite(m_NetworkManager.LocalClientId);
+        }
 
         /// <summary>
         /// Returns false if the current <see cref="NetworkManager.LocalClientId"/> can write to this variable; otherwise true.
         /// </summary>
-        internal bool CannotWrite => m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
-
-        /// <summary>
-        /// Returns the ClientId of the owning client
-        /// </summary>
-        internal ulong OwnerClientId()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool CannotWrite()
         {
-            return m_NetworkBehaviour.NetworkObject.OwnerClientId;
+            return m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId);
         }
 
         /// <summary>
@@ -467,7 +474,10 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void Dispose()
         {
-            m_InternalNetworkManager = null;
+            HasBeenInitialized = false;
+            m_NetworkBehaviour = null;
+            m_NetworkObject = null;
+            m_NetworkManager = null;
         }
     }
 }

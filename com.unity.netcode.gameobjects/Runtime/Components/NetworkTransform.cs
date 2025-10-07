@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Mathematics;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -14,6 +15,7 @@ namespace Unity.Netcode.Components
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/Network Transform")]
+    [HelpURL(HelpUrls.NetworkTransform)]
     public class NetworkTransform : NetworkBehaviour
     {
 #if UNITY_EDITOR
@@ -179,7 +181,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasPositionX | HasPositionY | HasPositionZ;
+                    return HasPositionX || HasPositionY || HasPositionZ;
                 }
             }
 
@@ -239,7 +241,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasRotAngleX | HasRotAngleY | HasRotAngleZ;
+                    return HasRotAngleX || HasRotAngleY || HasRotAngleZ;
                 }
             }
 
@@ -299,7 +301,7 @@ namespace Unity.Netcode.Components
             {
                 get
                 {
-                    return HasScaleX | HasScaleY | HasScaleZ;
+                    return HasScaleX || HasScaleY || HasScaleZ;
                 }
             }
 
@@ -3948,8 +3950,7 @@ namespace Unity.Netcode.Components
             {
                 if (InLocalSpace)
                 {
-                    transform.localPosition = pos;
-                    transform.localRotation = rot;
+                    transform.SetLocalPositionAndRotation(pos, rot);
                 }
                 else
                 {
@@ -4537,8 +4538,8 @@ namespace Unity.Netcode.Components
             // - If UsUnrealiable is not enabled
             // - If teleporting or synchronizing
             // - If sending an UnrealiableFrameSync or synchronizing the base position of the NetworkDeltaPosition
-            var networkDelivery = !UseUnreliableDeltas | m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing
-                | m_LocalAuthoritativeNetworkState.UnreliableFrameSync | m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
+            var networkDelivery = !UseUnreliableDeltas || m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame || m_LocalAuthoritativeNetworkState.IsSynchronizing
+                || m_LocalAuthoritativeNetworkState.UnreliableFrameSync || m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat
                 ? NetworkDelivery.ReliableSequenced : NetworkDelivery.UnreliableSequenced;
 
             // Server-host-dahost always sends updates to all clients (but itself)

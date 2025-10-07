@@ -612,8 +612,7 @@ namespace TestProject.ManualTests
             var obj = GetObject();
             if (obj != null)
             {
-                obj.transform.position = position;
-                obj.transform.rotation = rotation;
+                obj.transform.SetPositionAndRotation(position, rotation);
                 return obj.GetComponent<NetworkObject>();
             }
             return null;

@@ -475,7 +475,7 @@ Looking closely at the read and write segments of code within `AreaWeaponBooster
 
 ## Custom NetworkVariable Implementations
 
-> [!NOTE] Disclaimer
+> [!NOTE]
 > The `NetworkVariable` and `NetworkList` classes were created as `NetworkVariableBase` class implementation examples. While the `NetworkVariable<T>` class is considered production ready, you might run into scenarios where you have a more advanced implementation in mind. In this case, we encourage you to create your own custom implementation.
 
 To create your own `NetworkVariableBase` derived container, you should:

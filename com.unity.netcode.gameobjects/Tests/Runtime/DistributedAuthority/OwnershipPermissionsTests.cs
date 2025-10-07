@@ -448,7 +448,7 @@ namespace Unity.Netcode.RuntimeTests
 
             }
 
-            // We expect the  request should be able to be sent at this time as well (i.e. creates the race condition between request and permissions change)
+            // We expect the request should be able to be sent at this time as well (i.e. creates the race condition between request and permissions change)
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"[{newStatus}] Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             yield return WaitForConditionOrTimeOut(() => secondInstanceHelper.OwnershipRequestResponseStatus == expectedResponseStatus);

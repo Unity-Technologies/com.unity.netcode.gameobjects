@@ -43,7 +43,7 @@ def create_config(settings_path):
     }
 
     data = {'MonoBehaviour': monobehaviour}
-    with open(config_name, 'w') as f:
+    with open(config_name, 'w', encoding='UTF-8', newline='\n') as f:
         json.dump(data, f)
     return config_name
 
@@ -87,7 +87,7 @@ def set_burst_AOT(config_file, status):
     assert config is not None, 'AOT settings not found; did the burst-enabled build finish successfully?'
 
     config['MonoBehaviour']['EnableBurstCompilation'] = status
-    with open(config_file, 'w') as f:
+    with open(config_file, 'w', encoding='UTF-8', newline='\n') as f:
         json.dump(config, f)
 
 
