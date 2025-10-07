@@ -576,6 +576,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
+            NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
