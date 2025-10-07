@@ -2149,6 +2149,11 @@ namespace Unity.Netcode.Components
                 }
                 isDirty = true;
 
+                // If we are already teleporting preserve the teleport flag.
+                // If we don't have SwitchTransformSpaceWhenParented set or we are synchronizing,
+                // then set the teleport flag.
+                networkState.IsTeleportingNextFrame |= !SwitchTransformSpaceWhenParented || isSynchronization;
+
                 // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
                 // If interpolation is enabled, then any non-authority instance will update any pending
                 // buffered values to the correct world or local space values.
