@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -577,12 +578,30 @@ namespace Unity.Netcode
                 // If we are connected to the CMB service or not the DAHost (i.e. pure DA-Clients only)
                 if (NetworkManager.CMBServiceConnection || !NetworkManager.DAHost)
                 {
-                    // Populate valid target client identifiers that should receive this change in ownership message.
-                    message.ClientIds = NetworkManager.ConnectedClientsIds.Where((c) => !IsObjectVisibilityPending(c, ref networkObject) && networkObject.IsNetworkVisibleTo(c)).ToArray();
-                    message.ClientIdCount = message.ClientIds.Length;
+                    // Calculate valid target client identifiers that should receive this change in ownership message.
+                    var clientIds = new List<ulong>(NetworkManager.ConnectedClientsIds.Count);
+                    foreach (var id in NetworkManager.ConnectedClientsIds)
+                    {
+                        if (id == NetworkManager.LocalClientId)
+                        {
+                            continue;
+                        }
 
-                    size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
-                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(NetworkManager.LocalClientId, networkObject, size);
+                        if (networkObject.IsNetworkVisibleTo(id) && !IsObjectVisibilityPending(id, ref networkObject))
+                        {
+                            clientIds.Add(id);
+                        }
+                    }
+
+                    // Don't send the message if there are no valid receivers
+                    if (clientIds.Count > 0)
+                    {
+                        message.ClientIds = clientIds.ToArray();
+                        message.ClientIdCount = clientIds.Count;
+
+                        size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
+                        NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(NetworkManager.LocalClientId, networkObject, size);
+                    }
                 }
                 else // We are the DAHost so broadcast the ownership change
                 {
