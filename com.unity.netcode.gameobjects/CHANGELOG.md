@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Improved performance of the NetworkVariable. (#3683)
 - Improved performance around the NetworkBehaviour component. (#3687)
 - Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
 - Changed when NetworkObjects pending to be shown to clients can now occur on partial network ticks. If any pending NetworkObjects pending to be shown to clients happens to be ready on a new network tick they still are shown after network variable deltas have been processed. (#3664)
