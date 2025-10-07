@@ -2148,8 +2148,7 @@ namespace Unity.Netcode.Components
                     InLocalSpace = networkState.InLocalSpace;
                 }
                 isDirty = true;
-                // If SwitchTransformSpaceWhenParented is not set, then we will want to teleport
-                networkState.IsTeleportingNextFrame = !SwitchTransformSpaceWhenParented || isSynchronization;
+
                 // Otherwise, if SwitchTransformSpaceWhenParented is set we force a full state update.
                 // If interpolation is enabled, then any non-authority instance will update any pending
                 // buffered values to the correct world or local space values.
