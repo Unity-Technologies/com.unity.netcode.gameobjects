@@ -502,23 +502,11 @@ namespace Unity.Netcode
         /// </summary>
         public bool HasAuthority { get; internal set; }
 
-        internal NetworkClient LocalClient { get; private set; }
 
         /// <summary>
         /// Gets whether the client is the distributed authority mode session owner.
         /// </summary>
-        public bool IsSessionOwner
-        {
-            get
-            {
-                if (LocalClient == null)
-                {
-                    return false;
-                }
-
-                return LocalClient.IsSessionOwner;
-            }
-        }
+        public bool IsSessionOwner { get; private set; }
 
         /// <summary>
         /// Gets whether the server (local or remote) is a host.
@@ -675,10 +663,39 @@ namespace Unity.Netcode
                 IsHost = networkManager.IsListening && networkManager.IsHost;
                 IsClient = networkManager.IsListening && networkManager.IsClient;
                 IsServer = networkManager.IsListening && networkManager.IsServer;
-                LocalClient = networkManager.LocalClient;
+                IsSessionOwner = networkManager.IsListening && networkManager.LocalClient.IsSessionOwner;
                 HasAuthority = networkObject.HasAuthority;
                 ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
             }
+        }
+
+        private void ResetAllFields()
+        {
+            m_NetworkObject = null;
+            m_NetworkManager = null;
+            RpcTarget = null;
+
+            // Set identification related properties
+            NetworkObjectId = default;
+            IsLocalPlayer = false;
+
+            // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
+            // NetworkObject.ChildNetworkBehaviours which is set once when first
+            // accessed.
+            NetworkBehaviourId = default;
+
+            // Set ownership related properties
+            IsOwnedByServer = false;
+            IsOwner = false;
+            OwnerClientId = default;
+
+            // Set NetworkManager dependent properties
+            IsHost = false;
+            IsClient = false;
+            IsServer = false;
+            IsSessionOwner = false;
+            HasAuthority = false;
+            ServerIsHost = false;
         }
 
         /// <summary>
@@ -762,6 +779,7 @@ namespace Unity.Netcode
         {
             m_NetworkObject = networkObject;
             m_NetworkManager = networkManager;
+            RpcTarget = networkManager.RpcTarget;
 
             UpdateNetworkProperties();
 
@@ -872,6 +890,8 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[i].Deinitialize();
             }
+
+            ResetAllFields();
         }
 
         /// <summary>
@@ -1553,7 +1573,15 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnDestroy()
         {
-            InternalOnDestroy();
+            try
+            {
+                InternalOnDestroy();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+
             if (m_NetworkObject != null && m_NetworkObject.IsSpawned && IsSpawned)
             {
                 // If the associated NetworkObject is still spawned then this
@@ -1574,12 +1602,12 @@ namespace Unity.Netcode
             }
 
 
-            for (int i = 0; i < NetworkVariableFields.Count; i++)
+            foreach (var networkVar in NetworkVariableFields)
             {
-                NetworkVariableFields[i].Dispose();
+                networkVar.Dispose();
             }
 
-            m_NetworkObject = null;
+            ResetAllFields();
         }
     }
 }
