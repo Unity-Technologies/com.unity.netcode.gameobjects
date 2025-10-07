@@ -444,7 +444,6 @@ namespace Unity.Netcode
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
-                    Debug.Log("Handling connection event");
                     ConnectEventHandler(transportClientId);
                     break;
                 case NetworkEvent.Data:
@@ -493,7 +492,6 @@ namespace Unity.Netcode
                     var hostServer = NetworkManager.IsHost ? "Host" : "Server";
                     NetworkLog.LogInfo($"[{hostServer}-Side] Transport connection established with pending Client-{clientId}.");
                 }
-                Debug.Log("adding pending client");
                 AddPendingClient(clientId);
             }
             else
@@ -504,7 +502,6 @@ namespace Unity.Netcode
                     NetworkLog.LogInfo($"[Approval Pending][Client] Transport connection with {serverOrService} established! Awaiting connection approval...");
                 }
 
-                Debug.Log("Sending connection request");
                 SendConnectionRequest();
                 StartClientApprovalCoroutine(clientId);
             }
@@ -538,14 +535,16 @@ namespace Unity.Netcode
         /// </summary>
         internal void DisconnectEventHandler(ulong transportClientId)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_TransportDisconnect.Begin();
-#endif
             var (clientId, wasConnectedClient) = TransportIdCleanUp(transportClientId);
             if (!wasConnectedClient)
             {
                 return;
             }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportDisconnect.Begin();
+#endif
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"Disconnect Event From {clientId}");
@@ -1085,12 +1084,7 @@ namespace Unity.Netcode
 
             if (!ConnectedClientIds.Contains(clientId))
             {
-                Debug.Log($"[Client-{NetworkManager.LocalClientId}] Adding newly added client {clientId} to ConnectedClientIds");
                 ConnectedClientIds.Add(clientId);
-            }
-            else
-            {
-                Debug.Log($"[Client-{NetworkManager.LocalClientId}] Newly added client {clientId} was already in ConnectedClientIds");
             }
 
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;

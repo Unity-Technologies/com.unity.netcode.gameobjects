@@ -1468,10 +1468,12 @@ namespace Unity.Netcode
         /// Get the TransportId from the associated ClientId.
         /// </summary>
         /// <param name="clientId">The ClientId to get the TransportId from</param>
-        /// <returns>The TransportId associated with the given ClientId</returns>
+        /// <returns>
+        /// The TransportId associated with the given ClientId if the given clientId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
         public ulong GetTransportIdFromClientId(ulong clientId)
         {
-            var (id, success) = ConnectionManager.TransportIdToClientId(clientId);
+            var (id, success) = ConnectionManager.ClientIdToTransportId(clientId);
             return success ? id : ulong.MaxValue;
         }
 
@@ -1479,7 +1481,9 @@ namespace Unity.Netcode
         /// Get the ClientId from the associated TransportId.
         /// </summary>
         /// <param name="transportId">The TransportId to get the ClientId from</param>
-        /// <returns>The ClientId from the associated TransportId</returns>
+        /// <returns>
+        /// The ClientId from the associated TransportId if the given transportId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
         public ulong GetClientIdFromTransportId(ulong transportId)
         {
             var (id, success) = ConnectionManager.TransportIdToClientId(transportId);

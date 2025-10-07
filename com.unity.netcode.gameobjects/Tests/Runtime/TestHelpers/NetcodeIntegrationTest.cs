@@ -484,6 +484,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected virtual bool m_EnableTimeTravel => false;
 
+        /// <summary>
+        /// When true, <see cref="CreateServerAndClients()"/> and <see cref="CreateNewClient"/> will use a <see cref="MockTransport"/>
+        /// as the <see cref="NetworkConfig.NetworkTransport"/> on the created server and/or clients.
+        /// When false, a <see cref="UnityTransport"/> is used.
+        /// </summary>
+        /// <remarks>
+        /// This defaults to, and is required to be true when <see cref="m_EnableTimeTravel"/> is true.
+        /// <see cref="m_EnableTimeTravel"/> will not work with the <see cref="UnityTransport"/> component.
+        /// </remarks>
         protected virtual bool m_UseMockTransport => m_EnableTimeTravel;
 
         /// <summary>
@@ -649,12 +658,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     MockTransport.Reset();
                 }
+            }
 
-                // Setup the frames per tick for time travel advance to next tick
-                if (m_EnableTimeTravel)
-                {
-                    ConfigureFramesPerTick();
-                }
+            // Setup the frames per tick for time travel advance to next tick
+            if (m_EnableTimeTravel)
+            {
+                ConfigureFramesPerTick();
             }
 
             if (m_SetupIsACoroutine)

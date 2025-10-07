@@ -327,7 +327,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
+        /// <summary>
+        /// Creates a new <see cref="NetworkManager"/> and configures it for use in a multi instance setting.
+        /// </summary>
+        /// <param name="identifier">The ClientId representation that is used in the name of the NetworkManager</param>
+        /// <param name="mockTransport">
+        /// When true, the client is created with a <see cref="MockTransport"/>; otherwise a <see cref="UnityTransport"/> is added
+        /// </param>
+        /// <param name="useCmbService">
+        /// Whether to configure the client to run against a hosted build of the CMB Service. Only applies if mockTransport is set to false.
+        /// </param>
+        /// <returns>The newly created <see cref="NetworkManager"/> component.</returns>
+        public static NetworkManager CreateNewClient(int identifier, bool mockTransport = false, bool useCmbService = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
@@ -351,7 +362,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">Output array containing the created NetworkManager instances</param>
         /// <param name="useMockTransport">When true, uses mock transport for testing, otherwise uses real transport. Default value is false</param>
         /// <param name="useCmbService">If true, each client will be created with transport configured to connect to a locally hosted da service</param>
-        /// <returns> Returns <see cref="true"/> if the clients were successfully created and configured, otherwise <see cref="false"/>.</returns>
+        /// <returns> Returns true if the clients were successfully created and configured, otherwise false.</returns>
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false, bool useCmbService = false)
         {
             clients = new NetworkManager[clientCount];
