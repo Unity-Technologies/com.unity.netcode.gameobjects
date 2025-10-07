@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
 - Improved performance around the NetworkBehaviour component. (#3687)
 
 ### Deprecated
@@ -25,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
 - Made a variety of small performance improvements. (#3683)
 
 ### Security
