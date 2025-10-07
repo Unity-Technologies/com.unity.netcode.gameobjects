@@ -9,7 +9,7 @@
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
-    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2021.3+ editors)
+    # 2. For all supported Unity Editor versions (for NGOv1.X this means 2022.3+ editors)
   
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------
   # This job runs in Editor context only (no player builds required)
