@@ -789,8 +789,7 @@ namespace Unity.Netcode
                 return null;
             }
             networkObject.IsPlayerObject = isPlayerObject;
-            networkObject.transform.position = position;
-            networkObject.transform.rotation = rotation;
+            networkObject.transform.SetPositionAndRotation(position, rotation);
             // If spawning as a player, then invoke SpawnAsPlayerObject
             if (isPlayerObject)
             {
@@ -885,8 +884,7 @@ namespace Unity.Netcode
         internal NetworkObject InstantiateNetworkPrefab(GameObject networkPrefab, uint prefabGlobalObjectIdHash, Vector3? position, Quaternion? rotation)
         {
             var networkObject = UnityEngine.Object.Instantiate(networkPrefab).GetComponent<NetworkObject>();
-            networkObject.transform.position = position ?? networkObject.transform.position;
-            networkObject.transform.rotation = rotation ?? networkObject.transform.rotation;
+            networkObject.transform.SetPositionAndRotation(position ?? networkObject.transform.position, rotation ?? networkObject.transform.rotation);
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.PrefabGlobalObjectIdHash = prefabGlobalObjectIdHash;
             return networkObject;
@@ -980,13 +978,11 @@ namespace Unity.Netcode
                     // then we want to apply the position and rotation values world space relative
                     if ((worldPositionStays && !nonNetworkObjectParent) || !networkObject.AutoObjectParentSync)
                     {
-                        networkObject.transform.position = position;
-                        networkObject.transform.rotation = rotation;
+                        networkObject.transform.SetPositionAndRotation(position, rotation);
                     }
                     else
                     {
-                        networkObject.transform.localPosition = position;
-                        networkObject.transform.localRotation = rotation;
+                        networkObject.transform.SetLocalPositionAndRotation(position, rotation);
                     }
 
                     // SPECIAL CASE:
