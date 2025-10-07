@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
@@ -28,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests
             clientTransport.DisconnectLocalClient();
             clientTransport.DisconnectLocalClient();
 
-            // completely stop and clean up the client 
+            // completely stop and clean up the client
             yield return StopOneClient(clientToDisconnect);
 
             var expectedConnectedClients = m_UseHost ? NumberOfClients : NumberOfClients - 1;

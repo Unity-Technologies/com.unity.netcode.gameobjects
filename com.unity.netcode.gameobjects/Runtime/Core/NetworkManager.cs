@@ -1471,7 +1471,7 @@ namespace Unity.Netcode
         /// <returns>The TransportId associated with the given ClientId</returns>
         public ulong GetTransportIdFromClientId(ulong clientId)
         {
-            var (id, success) =  ConnectionManager.TransportIdToClientId(clientId);
+            var (id, success) = ConnectionManager.TransportIdToClientId(clientId);
             return success ? id : ulong.MaxValue;
         }
 
@@ -1482,7 +1482,7 @@ namespace Unity.Netcode
         /// <returns>The ClientId from the associated TransportId</returns>
         public ulong GetClientIdFromTransportId(ulong transportId)
         {
-            var (id, success) =  ConnectionManager.TransportIdToClientId(transportId);
+            var (id, success) = ConnectionManager.TransportIdToClientId(transportId);
             return success ? id : ulong.MaxValue;
         }
 
