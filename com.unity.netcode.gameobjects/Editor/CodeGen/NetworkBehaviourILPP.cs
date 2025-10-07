@@ -1440,6 +1440,8 @@ namespace Unity.Netcode.Editor.CodeGen
                         callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
                     }
 
+                    var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
+
                     var invokePermission = RpcInvokePermission.Anyone;
 
                     foreach (var attrField in rpcAttribute.Fields)
@@ -1455,7 +1457,12 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                     }
 
-                    // __registerRpc(RpcMethodId, HandleFunc, methodName);
+                    if (isClientRpc)
+                    {
+                        invokePermission = RpcInvokePermission.Server;
+                    }
+
+                    // __registerRpc(RpcMethodId, HandleFunc, invokePermission, methodName);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)rpcMethodId)));
                     instructions.Add(processor.Create(OpCodes.Ldnull));
@@ -2892,7 +2899,7 @@ namespace Unity.Netcode.Editor.CodeGen
             var processor = rpcHandler.Body.GetILProcessor();
 
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            var isCientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
+            var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
             var isGenericRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.RpcAttribute_FullName;
             var invokePermission = RpcInvokePermission.Anyone;
             foreach (var attrField in rpcAttribute.Fields)
@@ -2906,6 +2913,12 @@ namespace Unity.Netcode.Editor.CodeGen
                         invokePermission = (RpcInvokePermission)attrField.Argument.Value;
                         break;
                 }
+            }
+
+            // legacy ClientRpc should always be RpcInvokePermission.Server
+            if (isClientRpc)
+            {
+                invokePermission = RpcInvokePermission.Server;
             }
 
             rpcHandler.Body.InitLocals = true;

@@ -150,7 +150,6 @@ namespace Unity.Netcode
         /// </summary>
         public ClientRpcAttribute() : base(SendTo.NotServer)
         {
-            InvokePermission = RpcInvokePermission.Server;
         }
     }
 }
