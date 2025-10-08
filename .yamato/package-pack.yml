@@ -23,16 +23,12 @@
 
 #------------------------------------------------------------------------------------
 
-{% for platform in test_platforms.desktop -%}
+# Note that a package pack job on ubuntu will return the same tarball as windows or macOS based job
+# It may be confusing that a mac package test job depends on ubuntu pack, but it simplifies the configuration so this comment should help clarifying
+# This also reduces overhead since there is no point of running essentially 2 same jobs
 package_pack_-_ngo_{{ platform.name }}:
   name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
-{% if platform.model %}
-    model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
-{% endif %}
+  agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
   timeout: 0.25
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
@@ -43,7 +39,7 @@ package_pack_-_ngo_{{ platform.name }}:
 
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
-    - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing
+    - upm-pvp require "$XRAY_PROFILE" --results pvp-results --allow-missing
   artifacts:
     logs:
       paths:
@@ -51,4 +47,3 @@ package_pack_-_ngo_{{ platform.name }}:
     packages:
       paths:
         - "upm-ci~/**"
-{% endfor -%}
