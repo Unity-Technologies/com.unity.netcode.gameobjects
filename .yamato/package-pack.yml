@@ -27,15 +27,15 @@
 # It may be confusing that a mac package test job depends on ubuntu pack, but it simplifies the configuration so this comment should help clarifying
 # This also reduces overhead since there is no point of running essentially 2 same jobs
 package_pack_-_ngo_ubuntu:
-  name: Package Pack (and x-ray) - NGO [{{ platform.name }}]
+  name: Package Pack (and x-ray) - NGO [ubuntu]
   agent: { type: Unity::VM, flavor: b1.small, image: package-ci/ubuntu-22.04:v4 }
   timeout: 0.25
   variables:
     XRAY_PROFILE: "supported ./pvpExceptions.json"
   commands:
     # Remove ValidationExceptions.json and its .meta file if they exist. For this specific test it's necessary (otherwise we want to keep them since we use those for release).
-    - rm -f Packages/com.unity.netcode.gameobjects/ValidationExceptions.json
-    - rm -f Packages/com.unity.netcode.gameobjects/ValidationExceptions.json.meta
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json
+    - rm -f com.unity.netcode.gameobjects/ValidationExceptions.json.meta
 
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
