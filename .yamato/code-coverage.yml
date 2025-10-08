@@ -44,6 +44,6 @@ code_coverage_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
+    - .yamato/package-pack.yml#package_pack_-_ngo_ubuntu
 {% endfor -%}
 {% endfor -%}
