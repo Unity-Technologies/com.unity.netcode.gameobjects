@@ -844,7 +844,7 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                SceneHandle v = SceneHandle.FromRawData(random.Next());
+                SceneHandle v = SceneHandle.FromRawData((ulong)random.Next());
 #else
                 SceneHandle v = random.Next();
 #endif
