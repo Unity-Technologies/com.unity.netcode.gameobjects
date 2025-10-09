@@ -10,9 +10,6 @@ using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 using Object = System.Object;
 
 namespace Unity.Netcode.Editor.CodeGen
@@ -50,7 +47,6 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string UnityPose_FullName = typeof(Pose).FullName;
         public static readonly string UnityRay_FullName = typeof(Ray).FullName;
         public static readonly string UnityRay2D_FullName = typeof(Ray2D).FullName;
-        public static readonly string UnitySceneHandle_FullName = typeof(SceneHandle).FullName;
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
@@ -324,11 +320,6 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             if (typeReference.FullName == UnityRay2D_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnitySceneHandle_FullName)
             {
                 return true;
             }

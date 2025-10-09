@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
 #endif
 
 namespace Unity.Netcode
@@ -1112,7 +1111,7 @@ namespace Unity.Netcode
 
             // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
             // Note: Always check SceneOriginHandle directly at this specific location.
-            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle == SceneHandle.None)
+            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle.IsEmpty())
             {
                 networkObject.SceneOrigin = networkObject.gameObject.scene;
             }

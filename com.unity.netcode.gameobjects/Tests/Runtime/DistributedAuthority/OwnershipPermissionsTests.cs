@@ -57,6 +57,25 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private bool WaitForOneClientToBeApproved(OwnershipPermissionsTestHelper[] clients)
+        {
+            var approvedClients = 0;
+            var requestInProgressClients = 0;
+            foreach (var helper in clients)
+            {
+                if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
+                {
+                    approvedClients++;
+                }
+                else if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress)
+                {
+                    requestInProgressClients++;
+                }
+            }
+
+            return approvedClients == 1 && requestInProgressClients == clients.Length - 1;
+        }
+
         private bool ValidateAllInstancesAreOwnedByClient(ulong clientId)
         {
             m_ErrorLog.Clear();
@@ -130,7 +149,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}");
 
             // Remove multiple flags at the same time
             multipleFlags = NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.RequestRequired;
@@ -211,6 +230,8 @@ namespace Unity.Netcode.RuntimeTests
             requestStatus = firstInstance.RequestOwnership();
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
+            yield return null;
+
             // Get the 3rd client to send a request at the "relatively" same time
             var thirdClient = GetNonAuthorityNetworkManager(2);
             var thirdInstance = thirdClient.SpawnManager.SpawnedObjects[networkObjectId];
@@ -268,15 +289,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // The 2nd and 3rd client should be denied and the 4th client should be approved
-            yield return WaitForConditionOrTimeOut(() =>
-            (fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
-            (thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
-            (secondInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
-            );
-            AssertOnTimeout($"[Targeted Owner] A client received an incorrect response."
-                + $"\n Client-{fourthClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress}, and got {fourthInstanceHelper.OwnershipRequestResponseStatus}!"
-                + $"\n Client-{thirdClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress}, and got {thirdInstanceHelper.OwnershipRequestResponseStatus}!"
-                + $"\n Client-{secondClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.Denied}, and got {secondInstanceHelper.OwnershipRequestResponseStatus}!");
+            yield return WaitForConditionOrTimeOut(() => WaitForOneClientToBeApproved(new[] { secondInstanceHelper, thirdInstanceHelper, fourthInstanceHelper }));
+            AssertOnTimeout("[Targeted Owner] A client received an incorrect response. " +
+                            $"Expected one client to have {NetworkObject.OwnershipRequestResponseStatus.Approved} and the others to have {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress}!."
+                            + $"\n Client-{fourthClient.LocalClientId}: has {fourthInstanceHelper.OwnershipRequestResponseStatus}!"
+                            + $"\n Client-{thirdClient.LocalClientId}: has {thirdInstanceHelper.OwnershipRequestResponseStatus}!"
+                            + $"\n Client-{secondClient.LocalClientId}: has {secondInstanceHelper.OwnershipRequestResponseStatus}!");
 
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
             // Just do a sanity check to assure ownership has changed on all clients.

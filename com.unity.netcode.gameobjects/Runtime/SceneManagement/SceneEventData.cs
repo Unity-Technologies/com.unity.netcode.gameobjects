@@ -107,11 +107,11 @@ namespace Unity.Netcode
 
         internal uint ActiveSceneHash;
         internal uint SceneHash;
-        internal SceneHandle SceneHandle;
+        internal NetworkSceneHandle SceneHandle;
 
         // Used by the client during synchronization
         internal uint ClientSceneHash;
-        internal SceneHandle NetworkSceneHandle;
+        internal NetworkSceneHandle NetworkSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
         /// NetworkVariable information.  If that process changes, then we need to update this
@@ -151,7 +151,7 @@ namespace Unity.Netcode
         internal List<ulong> ClientsTimedOut;
 
         internal Queue<uint> ScenesToSynchronize;
-        internal Queue<SceneHandle> SceneHandlesToSynchronize;
+        internal Queue<NetworkSceneHandle> SceneHandlesToSynchronize;
 
         internal LoadSceneMode ClientSynchronizationMode;
 
@@ -170,7 +170,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="sceneHandle"></param>
-        internal void AddSceneToSynchronize(uint sceneHash, SceneHandle sceneHandle)
+        internal void AddSceneToSynchronize(uint sceneHash, NetworkSceneHandle sceneHandle)
         {
             ScenesToSynchronize.Enqueue(sceneHash);
             SceneHandlesToSynchronize.Enqueue(sceneHandle);
@@ -191,7 +191,7 @@ namespace Unity.Netcode
         /// Gets the next scene handle to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        internal SceneHandle GetNextSceneSynchronizationHandle()
+        internal NetworkSceneHandle GetNextSceneSynchronizationHandle()
         {
             return SceneHandlesToSynchronize.Dequeue();
         }
@@ -241,7 +241,7 @@ namespace Unity.Netcode
 
             if (SceneHandlesToSynchronize == null)
             {
-                SceneHandlesToSynchronize = new Queue<SceneHandle>();
+                SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>();
             }
             else
             {
@@ -831,9 +831,9 @@ namespace Unity.Netcode
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
-            reader.ReadValueSafe(out SceneHandle[] sceneHandlesToSynchronize);
+            reader.ReadValueSafe(out NetworkSceneHandle[] sceneHandlesToSynchronize);
             ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
-            SceneHandlesToSynchronize = new Queue<SceneHandle>(sceneHandlesToSynchronize);
+            SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>(sceneHandlesToSynchronize);
 
             // is not packed!
             reader.ReadValueSafe(out int sizeToCopy);
@@ -1030,12 +1030,12 @@ namespace Unity.Netcode
             // Process all de-spawned in-scene NetworkObjects for this network session
             m_DespawnedInSceneObjects.Clear();
             InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
-            var sceneCache = new Dictionary<SceneHandle, Dictionary<uint, NetworkObject>>();
+            var sceneCache = new Dictionary<NetworkSceneHandle, Dictionary<uint, NetworkObject>>();
 
             for (int i = 0; i < despawnedObjectsCount; i++)
             {
                 // We just need to get the scene
-                InternalBuffer.ReadValueSafe(out SceneHandle networkSceneHandle);
+                InternalBuffer.ReadValueSafe(out NetworkSceneHandle networkSceneHandle);
                 InternalBuffer.ReadValueSafe(out uint globalObjectIdHash);
                 var sceneRelativeNetworkObjects = new Dictionary<uint, NetworkObject>();
                 if (!sceneCache.ContainsKey(networkSceneHandle))
@@ -1090,7 +1090,7 @@ namespace Unity.Netcode
                     sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
                     if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<SceneHandle, NetworkObject>());
+                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
                     }
 
                     if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
@@ -1277,7 +1277,7 @@ namespace Unity.Netcode
             var spawnManager = m_NetworkManager.SpawnManager;
 
             var numberOfScenes = 0;
-            SceneHandle sceneHandle;
+            NetworkSceneHandle sceneHandle;
             var objectCount = 0;
             var networkObjectId = (ulong)0;
 
@@ -1329,7 +1329,7 @@ namespace Unity.Netcode
             var spawnManager = m_NetworkManager.SpawnManager;
             var ownerId = (ulong)0;
             var numberOfScenes = 0;
-            SceneHandle sceneHandle;
+            NetworkSceneHandle sceneHandle;
             var objectCount = 0;
             var networkObjectId = (ulong)0;
 
@@ -1339,7 +1339,7 @@ namespace Unity.Netcode
             var deferredObjectsMovedEvent = new NetworkSceneManager.DeferredObjectsMovedEvent()
             {
                 OwnerId = ownerId,
-                ObjectsMigratedTable = new Dictionary<SceneHandle, List<ulong>>(),
+                ObjectsMigratedTable = new Dictionary<NetworkSceneHandle, List<ulong>>(),
             };
 
 

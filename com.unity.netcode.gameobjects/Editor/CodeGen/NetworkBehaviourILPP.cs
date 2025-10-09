@@ -12,9 +12,6 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEditor;
 #endif
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
@@ -571,7 +568,6 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(Color32),
             typeof(Ray),
             typeof(Ray2D),
-            typeof(SceneHandle)
         };
         internal static readonly Type[] SpecialCaseTypes = new[]
         {
