@@ -1431,11 +1431,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     MethodReference callMethod = rpcHandler;
                     if (typeDefinition.HasGenericParameters)
                     {
-                        var genericTypes = new List<TypeReference>();
-                        foreach (var parameter in typeDefinition.GenericParameters)
-                        {
-                            genericTypes.Add(parameter);
-                        }
+                        var genericTypes = new List<TypeReference>(typeDefinition.GenericParameters);
                         callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
                     }
 
@@ -3101,11 +3097,7 @@ namespace Unity.Netcode.Editor.CodeGen
             var callMethod = (MethodReference)methodDefinition;
             if (castType.HasGenericParameters)
             {
-                var genericTypes = new List<TypeReference>();
-                foreach (var parameter in castType.GenericParameters)
-                {
-                    genericTypes.Add(parameter);
-                }
+                var genericTypes = new List<TypeReference>(castType.GenericParameters);
                 castType = castType.MakeGenericInstanceType(genericTypes.ToArray());
                 callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
             }

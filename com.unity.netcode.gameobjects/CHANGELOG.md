@@ -11,9 +11,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
+- Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
 
 ### Changed
 
+- Improved performance of the NetworkVariable. (#3683)
 - Improved performance around the NetworkBehaviour component. (#3687)
 
 ### Deprecated
@@ -24,6 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Made a variety of small performance improvements. (#3683)
 
 ### Security
 
