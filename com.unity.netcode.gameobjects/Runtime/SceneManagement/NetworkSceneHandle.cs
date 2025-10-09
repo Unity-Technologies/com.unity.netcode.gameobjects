@@ -41,7 +41,7 @@ namespace Unity.Netcode
                 m_Handle = SceneHandle.FromRawData(rawData);
 #elif SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                 reader.ReadValueSafe(out int rawData);
-                m_Handle = SceneHandle.FromRawData((ulong) rawData);
+                m_Handle = SceneHandle.FromRawData((ulong)rawData);
 #else
                 reader.ReadValueSafe(out int rawData);
                 m_Handle = rawData;
@@ -49,12 +49,12 @@ namespace Unity.Netcode
             }
         }
 
-
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
         internal NetworkSceneHandle(SceneHandle handle)
         {
             m_Handle = handle;
         }
+
 #else
         internal NetworkSceneHandle(int handle)
         {
@@ -159,6 +159,5 @@ namespace Unity.Netcode
         public static bool operator !=(NetworkSceneHandle left, int right) => !left.Equals(right);
 #endif
         #endregion
-
     }
 }
