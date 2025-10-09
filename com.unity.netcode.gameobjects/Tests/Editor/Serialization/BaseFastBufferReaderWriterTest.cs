@@ -269,7 +269,7 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                SceneHandle handle = SceneHandle.FromRawData((ulong)random.Next());
+                var handle = SceneHandle.FromRawData((ulong)random.Next());
 #else
                 SceneHandle handle = random.Next();
 #endif
@@ -631,9 +631,9 @@ namespace Unity.Netcode.EditorTests
             {
 
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                SceneHandle[] testArray = new[]{ SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
+                SceneHandle[] testArray = { SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
 #else
-                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+                SceneHandle[] testArray = { random.Next(), random.Next(), random.Next() };
 #endif
                 RunTypeTestLocal(testArray, writeType);
             }
@@ -997,9 +997,9 @@ namespace Unity.Netcode.EditorTests
             {
 
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                SceneHandle[] testArray = new[]{ SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
+                SceneHandle[] testArray = { SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
 #else
-                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+                SceneHandle[] testArray = { random.Next(), random.Next(), random.Next() };
 #endif
                 RunTypeTestLocal(new NativeArray<SceneHandle>(testArray, Allocator.Temp), writeType);
             }
@@ -1367,9 +1367,9 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                SceneHandle[] testArray = new[]{ SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
+                SceneHandle[] testArray = { SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()), SceneHandle.FromRawData((ulong)random.Next()) };
 #else
-                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+                SceneHandle[] testArray = { random.Next(), random.Next(), random.Next() };
 #endif
                 RunTypeTestLocal(new NativeArray<SceneHandle>(testArray, Allocator.Temp), writeType);
             }
