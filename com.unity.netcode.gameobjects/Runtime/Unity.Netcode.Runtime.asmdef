@@ -77,6 +77,16 @@
             "name": "Unity",
             "expression": "6000.3.0a6",
             "define": "UNITY_6000_3_0A6_OR_HIGHER"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.3.0a2",
+            "define": "SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE"
+        },
+        {
+            "name": "Unity",
+            "expression": "6000.4.0a3",
+            "define": "SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION"
         }
     ],
     "noEngineReferences": false

@@ -2,6 +2,9 @@ using System;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
@@ -262,6 +265,15 @@ namespace Unity.Netcode.EditorTests
                 RunTestWithWriteType(new Ray2D(
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble())), writeType);
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                SceneHandle handle = SceneHandle.FromRawData(random.Next());
+#else
+                SceneHandle handle = random.Next();
+#endif
+                RunTestWithWriteType(handle, writeType);
             }
             else if (testType == typeof(TestStruct))
             {
@@ -614,6 +626,16 @@ namespace Unity.Netcode.EditorTests
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
                 }, writeType);
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                SceneHandle[] testArray = new[]{SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next())};
+#else
+                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+#endif
+                RunTypeTestLocal(testArray, writeType);
             }
             else if (testType == typeof(TestStruct))
             {
@@ -970,6 +992,16 @@ namespace Unity.Netcode.EditorTests
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
                 }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                SceneHandle[] testArray = new[]{SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next())};
+#else
+                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+#endif
+                RunTypeTestLocal(new NativeArray<SceneHandle>(testArray, Allocator.Temp), writeType);
             }
             else if (testType == typeof(TestStruct))
             {
@@ -1331,6 +1363,15 @@ namespace Unity.Netcode.EditorTests
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
                 }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                SceneHandle[] testArray = new[]{SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next()), SceneHandle.FromRawData(random.Next())};
+#else
+                SceneHandle[] testArray = new[] { (SceneHandle)random.Next(), (SceneHandle)random.Next(), (SceneHandle)random.Next() };
+#endif
+                RunTypeTestLocal(new NativeArray<SceneHandle>(testArray, Allocator.Temp), writeType);
             }
             else if (testType == typeof(TestStruct))
             {

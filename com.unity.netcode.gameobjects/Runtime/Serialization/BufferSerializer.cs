@@ -1,6 +1,9 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 
 namespace Unity.Netcode
 {
@@ -290,6 +293,20 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The values to read/write</param>
         public void SerializeValue(ref Ray2D[] value) => m_Implementation.SerializeValue(ref value);
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        /// <summary>
+        /// Read or write a SceneHandle value
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValue(ref SceneHandle value) => m_Implementation.SerializeValue(ref value);
+
+        /// <summary>
+        /// Read or write an array of SceneHandle values
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        public void SerializeValue(ref SceneHandle[] value) => m_Implementation.SerializeValue(ref value);
+#endif
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
@@ -654,6 +671,26 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        /// <summary>
+        /// Serialize a SceneHandle, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref SceneHandle value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        /// <summary>
+        /// Serialize a SceneHandle array, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        public void SerializeValuePreChecked(ref SceneHandle[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+#endif
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

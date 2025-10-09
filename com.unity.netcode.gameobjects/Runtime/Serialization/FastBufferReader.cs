@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 
 namespace Unity.Netcode
 {
@@ -1429,6 +1432,28 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
 
+        /// <summary>
+        /// Read a SceneHandle
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void ReadValue(out SceneHandle value) => ReadUnmanaged(out value);
+#else
+        internal void ReadValue(out SceneHandle value) => ReadUnmanaged(out value);
+#endif
+
+        /// <summary>
+        /// Read a SceneHandle array
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void ReadValue(out SceneHandle[] value) => ReadUnmanaged(out value);
+#else
+        internal void ReadValue(out SceneHandle[] value) => ReadUnmanaged(out value);
+#endif
+
 
         /// <summary>
         /// Read a Vector2
@@ -1649,6 +1674,34 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a SceneHandle
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void ReadValueSafe(out SceneHandle value) => ReadUnmanagedSafe(out value);
+#else
+        internal void ReadValueSafe(out SceneHandle value) => ReadUnmanagedSafe(out value);
+#endif
+
+        /// <summary>
+        /// Read a SceneHandle array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void ReadValueSafe(out SceneHandle[] value) => ReadUnmanagedSafe(out value);
+#else
+        internal void ReadValueSafe(out SceneHandle[] value) => ReadUnmanagedSafe(out value);
+#endif
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

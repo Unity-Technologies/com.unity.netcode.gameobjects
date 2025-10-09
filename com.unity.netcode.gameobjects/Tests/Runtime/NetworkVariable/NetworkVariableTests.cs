@@ -7,6 +7,9 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
@@ -1354,16 +1357,22 @@ namespace Unity.Netcode.RuntimeTests
             clientVariable.Dispose();
         }
 #endif
+
+        private static readonly object[] k_TypesToTest = {
+            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+            typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+            typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+            typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+            typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+            typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes)
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+            , typeof(SceneHandle)
+#endif
+        };
+
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNetworkVariables_ValuesAreSerializedCorrectly(
-
-            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
-            Type testType)
+            [ValueSource(nameof(k_TypesToTest))] Type testType)
         {
             if (testType == typeof(byte))
             {
@@ -1511,6 +1520,14 @@ namespace Unity.Netcode.RuntimeTests
                     new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
                     new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
             }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                    TestValueType(SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue));
+#else
+                TestValueType(int.MinValue + 5, int.MaxValue);
+#endif
+            }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
                 TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
@@ -1523,14 +1540,7 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
-
-            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
-            Type testType)
+            [ValueSource(nameof(k_TypesToTest))] Type testType)
         {
             if (testType == typeof(byte))
             {
@@ -1735,6 +1745,18 @@ namespace Unity.Netcode.RuntimeTests
                         new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
                         new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
                     }, Allocator.Temp));
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                    TestValueTypeNativeArray(
+                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue) }, Allocator.Temp),
+                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(0), SceneHandle.FromRawData(int.MinValue + 10), SceneHandle.FromRawData(int.MaxValue - 10) }, Allocator.Temp));
+#else
+                TestValueTypeNativeArray(
+                    new NativeArray<SceneHandle>(new SceneHandle[] { int.MinValue + 5, int.MaxValue }, Allocator.Temp),
+                    new NativeArray<SceneHandle>(new SceneHandle[] { 0, int.MinValue + 10, int.MaxValue - 10 }, Allocator.Temp));
+#endif
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
@@ -3310,14 +3332,7 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
-
-            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
-            Type testType)
+            [ValueSource(nameof(k_TypesToTest))] Type testType)
         {
             if (testType == typeof(byte))
             {
@@ -3522,6 +3537,19 @@ namespace Unity.Netcode.RuntimeTests
                         new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
                         new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
                     });
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                TestValueTypeNativeList(
+                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue) },
+                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(0), SceneHandle.FromRawData(int.MinValue + 10), SceneHandle.FromRawData(int.MaxValue - 10) });
+#else
+                TestValueTypeNativeList(
+                    new NativeList<SceneHandle>(Allocator.Temp) { int.MinValue + 5, int.MaxValue },
+                    new NativeList<SceneHandle>(Allocator.Temp) { 0, int.MinValue + 10, int.MaxValue - 10 });
+
+#endif
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {

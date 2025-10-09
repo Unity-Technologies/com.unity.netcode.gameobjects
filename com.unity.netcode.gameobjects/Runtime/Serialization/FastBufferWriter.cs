@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 
 namespace Unity.Netcode
 {
@@ -1559,6 +1562,28 @@ namespace Unity.Netcode
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
 
         /// <summary>
+        /// Write a SceneHandle
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void WriteValue(SceneHandle value) => WriteUnmanaged(value);
+#else
+        internal void WriteValue(SceneHandle value) => WriteUnmanaged(value);
+#endif
+
+        /// <summary>
+        /// Write a SceneHandle array
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void WriteValue(SceneHandle[] value) => WriteUnmanaged(value);
+#else
+        internal void WriteValue(SceneHandle[] value) => WriteUnmanaged(value);
+#endif
+
+        /// <summary>
         /// Write a Vector2
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1777,6 +1802,34 @@ namespace Unity.Netcode
         /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a SceneHandle
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void WriteValueSafe(SceneHandle value) => WriteUnmanagedSafe(value);
+#else
+        internal void WriteValueSafe(SceneHandle value) => WriteUnmanagedSafe(value);
+#endif
+
+        /// <summary>
+        /// Write a SceneHandle array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+        public void WriteValueSafe(SceneHandle[] value) => WriteUnmanagedSafe(value);
+#else
+        internal void WriteValueSafe(SceneHandle[] value) => WriteUnmanagedSafe(value);
+#endif
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

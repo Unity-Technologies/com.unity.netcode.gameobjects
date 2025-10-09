@@ -4,6 +4,9 @@ using System.Reflection;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+using UnityEngine.SceneManagement;
+#endif
 using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
@@ -555,7 +558,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Pose), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D))]
+                typeof(Quaternion), typeof(Pose), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(SceneHandle))]
             Type testType,
             [Values] WriteType writeType)
         {
@@ -836,6 +839,18 @@ namespace Unity.Netcode.EditorTests
                             }
                         }
                     }
+                }
+            }
+            else if (testType == typeof(SceneHandle))
+            {
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                SceneHandle v = SceneHandle.FromRawData(random.Next());
+#else
+                SceneHandle v = random.Next();
+#endif
+                if (writeType == WriteType.WriteDirect)
+                {
+                    RunTypeTest(v);
                 }
             }
             else
