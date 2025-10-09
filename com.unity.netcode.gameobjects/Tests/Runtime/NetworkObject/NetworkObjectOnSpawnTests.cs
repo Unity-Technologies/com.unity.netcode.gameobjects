@@ -214,8 +214,8 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator InstantiateDestroySpawnNotCalled()
         {
             m_TestNetworkObjectPrefab = new GameObject("InstantiateDestroySpawnNotCalled_Object");
-            var networkObject = m_TestNetworkObjectPrefab.AddComponent<NetworkObject>();
-            var fail = m_TestNetworkObjectPrefab.AddComponent<FailWhenSpawned>();
+            m_TestNetworkObjectPrefab.AddComponent<NetworkObject>();
+            m_TestNetworkObjectPrefab.AddComponent<FailWhenSpawned>();
 
             // instantiate
             m_TestNetworkObjectInstance = Object.Instantiate(m_TestNetworkObjectPrefab);
@@ -233,7 +233,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkDespawn()
             {
-                Assert.Fail("Depawn should not be called on not spawned object");
+                Assert.Fail("Despawn should not be called on not spawned object");
             }
         }
 
@@ -261,7 +261,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return base.OnTearDown();
         }
 
-        private List<TrackOnSpawnFunctions> m_ClientTrackOnSpawnInstances = new List<TrackOnSpawnFunctions>();
+        private List<TrackOnSpawnFunctions> m_ClientTrackOnSpawnInstances = new();
 
         /// <summary>
         /// Test that callbacks are run for playerobject spawn, despawn, regular spawn, destroy on server.

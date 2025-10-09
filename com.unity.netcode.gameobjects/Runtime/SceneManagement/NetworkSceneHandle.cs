@@ -33,6 +33,9 @@ namespace Unity.Netcode
 #if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
                 reader.ReadValue(out ulong rawData);
                 m_Handle = SceneHandle.FromRawData(rawData);
+#elif SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+                reader.ReadValueSafe(out int rawData);
+                m_Handle = SceneHandle.FromRawData((ulong) rawData);
 #else
                 reader.ReadValueSafe(out int rawData);
                 m_Handle = rawData;
