@@ -1,9 +1,6 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -88,11 +85,6 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray2D value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Ray2D[] value) => m_Writer.WriteValueSafe(value);
 
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-        public void SerializeValue(ref SceneHandle value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref SceneHandle[] value) => m_Writer.WriteValueSafe(value);
-#endif
-
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Writer.WriteNetworkSerializable(value);
@@ -153,9 +145,5 @@ namespace Unity.Netcode
 
         public void SerializeValuePreChecked(ref Ray2D value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Writer.WriteValue(value);
-
-        public void SerializeValuePreChecked(ref SceneHandle value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref SceneHandle[] value) => m_Writer.WriteValue(value);
-
     }
 }

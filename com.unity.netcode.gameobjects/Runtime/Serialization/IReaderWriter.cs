@@ -1,9 +1,6 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -293,20 +290,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The values to read/write</param>
         void SerializeValue(ref Ray2D[] value);
-
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-        /// <summary>
-        /// Read or write a SceneHandle value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValue(ref SceneHandle value);
-
-        /// <summary>
-        /// Read or write an array of SceneHandle values
-        /// </summary>
-        /// <param name="value">The values to read/write</param>
-        public void SerializeValue(ref SceneHandle[] value);
-#endif
 
         /// <summary>
         /// Read or write a NetworkSerializable value.
@@ -648,25 +631,5 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked(ref Ray2D[] value);
-
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-        /// <param name="value">The value to read/write</param>
-        /// <summary>
-        /// Serialize a SceneHandle, "pre-checked", which skips buffer checks.
-        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
-        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
-        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        public void SerializeValuePreChecked(ref SceneHandle value);
-
-        /// <summary>
-        /// Serialize a SceneHandle array, "pre-checked", which skips buffer checks.
-        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
-        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
-        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValuePreChecked(ref SceneHandle[] value);
-#endif
     }
 }

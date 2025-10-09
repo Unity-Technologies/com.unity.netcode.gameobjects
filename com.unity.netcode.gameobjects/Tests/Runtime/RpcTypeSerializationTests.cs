@@ -5,9 +5,6 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 using UnityEngine.TestTools;
 using Quaternion = UnityEngine.Quaternion;
 using Vector2 = UnityEngine.Vector2;
@@ -836,32 +833,6 @@ namespace Unity.Netcode.RuntimeTests
 #endif
 
             [ClientRpc]
-            public void SceneHandleClientRpc(SceneHandle value)
-            {
-                OnReceived(value);
-            }
-
-            [ClientRpc]
-            public void SceneHandleArrayClientRpc(SceneHandle[] value)
-            {
-                OnReceived(value);
-            }
-
-            [ClientRpc]
-            public void SceneHandleNativeArrayClientRpc(NativeArray<SceneHandle> value)
-            {
-                OnReceived(value);
-            }
-
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-            [ClientRpc]
-            public void SceneHandleNativeListClientRpc(NativeList<SceneHandle> value)
-            {
-                OnReceived(value);
-            }
-#endif
-
-            [ClientRpc]
             public void NetworkVariableTestStructClientRpc(NetworkVariableTestStruct value)
             {
                 OnReceived(value);
@@ -1153,448 +1124,430 @@ namespace Unity.Netcode.RuntimeTests
         }
 #endif
 
-
-        private static readonly object[] k_TypesToTest = {
-            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-            typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-            typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-            typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-            typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
-            typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct)
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-            , typeof(SceneHandle)
-#endif
-        };
-
         [UnityTest]
-        public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly()
+        public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
         {
-            foreach (Type testType in k_TypesToTest)
+            if (testType == typeof(byte))
             {
-                if (testType == typeof(byte))
-                {
-                    yield return TestValueType<byte>(byte.MinValue + 5, byte.MaxValue);
-                }
-                else if (testType == typeof(sbyte))
-                {
-                    yield return TestValueType<sbyte>(sbyte.MinValue + 5, sbyte.MaxValue);
-                }
-                else if (testType == typeof(short))
-                {
-                    yield return TestValueType<short>(short.MinValue + 5, short.MaxValue);
-                }
-                else if (testType == typeof(ushort))
-                {
-                    yield return TestValueType<ushort>(ushort.MinValue + 5, ushort.MaxValue);
-                }
-                else if (testType == typeof(int))
-                {
-                    yield return TestValueType(int.MinValue + 5, int.MaxValue);
-                }
-                else if (testType == typeof(uint))
-                {
-                    yield return TestValueType(uint.MinValue + 5, uint.MaxValue);
-                }
-                else if (testType == typeof(long))
-                {
-                    yield return TestValueType(long.MinValue + 5, long.MaxValue);
-                }
-                else if (testType == typeof(ulong))
-                {
-                    yield return TestValueType(ulong.MinValue + 5, ulong.MaxValue);
-                }
-                else if (testType == typeof(bool))
-                {
-                    yield return TestValueType(true, false);
-                }
-                else if (testType == typeof(char))
-                {
-                    yield return TestValueType('z', ' ');
-                }
-                else if (testType == typeof(float))
-                {
-                    yield return TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
-                }
-                else if (testType == typeof(double))
-                {
-                    yield return TestValueType(double.MinValue + 5.12345678, double.MaxValue);
-                }
-                else if (testType == typeof(ByteEnum))
-                {
-                    yield return TestValueType(ByteEnum.B, ByteEnum.C);
-                }
-                else if (testType == typeof(SByteEnum))
-                {
-                    yield return TestValueType(SByteEnum.B, SByteEnum.C);
-                }
-                else if (testType == typeof(ShortEnum))
-                {
-                    yield return TestValueType(ShortEnum.B, ShortEnum.C);
-                }
-                else if (testType == typeof(UShortEnum))
-                {
-                    yield return TestValueType(UShortEnum.B, UShortEnum.C);
-                }
-                else if (testType == typeof(IntEnum))
-                {
-                    yield return TestValueType(IntEnum.B, IntEnum.C);
-                }
-                else if (testType == typeof(UIntEnum))
-                {
-                    yield return TestValueType(UIntEnum.B, UIntEnum.C);
-                }
-                else if (testType == typeof(LongEnum))
-                {
-                    yield return TestValueType(LongEnum.B, LongEnum.C);
-                }
-                else if (testType == typeof(ULongEnum))
-                {
-                    yield return TestValueType(ULongEnum.B, ULongEnum.C);
-                }
-                else if (testType == typeof(Vector2))
-                {
-                    yield return TestValueType(
-                        new Vector2(5, 10),
-                        new Vector2(15, 20));
-                }
-                else if (testType == typeof(Vector3))
-                {
-                    yield return TestValueType(
-                        new Vector3(5, 10, 15),
-                        new Vector3(20, 25, 30));
-                }
-                else if (testType == typeof(Vector2Int))
-                {
-                    yield return TestValueType(
-                        new Vector2Int(5, 10),
-                        new Vector2Int(15, 20));
-                }
-                else if (testType == typeof(Vector3Int))
-                {
-                    yield return TestValueType(
-                        new Vector3Int(5, 10, 15),
-                        new Vector3Int(20, 25, 30));
-                }
-                else if (testType == typeof(Vector4))
-                {
-                    yield return TestValueType(
-                        new Vector4(5, 10, 15, 20),
-                        new Vector4(25, 30, 35, 40));
-                }
-                else if (testType == typeof(Quaternion))
-                {
-                    yield return TestValueType(
-                        new Quaternion(5, 10, 15, 20),
-                        new Quaternion(25, 30, 35, 40));
-                }
-                else if (testType == typeof(Pose))
-                {
-                    yield return (
-                        new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)),
-                        new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)));
-                }
-                else if (testType == typeof(Color))
-                {
-                    yield return TestValueType(
-                        new Color(1, 0, 0),
-                        new Color(0, 1, 1));
-                }
-                else if (testType == typeof(Color32))
-                {
-                    yield return TestValueType(
-                        new Color32(255, 0, 0, 128),
-                        new Color32(0, 255, 255, 255));
-                }
-                else if (testType == typeof(Ray))
-                {
-                    yield return TestValueType(
-                        new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
-                        new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)));
-                }
-                else if (testType == typeof(Ray2D))
-                {
-                    yield return TestValueType(
-                        new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
-                        new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
-                }
-                else if (testType == typeof(SceneHandle))
-                {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                    yield return TestValueType(SceneHandle.FromRawData(1), SceneHandle.FromRawData(2));
-#else
-                    yield return TestValueType((SceneHandle)1, (SceneHandle)2);
-#endif
-                }
-                else if (testType == typeof(NetworkVariableTestStruct))
-                {
-                    yield return TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
-                }
-                else if (testType == typeof(FixedString32Bytes))
-                {
-                    yield return TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
-                }
+                yield return TestValueType<byte>(byte.MinValue + 5, byte.MaxValue);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                yield return TestValueType<sbyte>(sbyte.MinValue + 5, sbyte.MaxValue);
+            }
+            else if (testType == typeof(short))
+            {
+                yield return TestValueType<short>(short.MinValue + 5, short.MaxValue);
+            }
+            else if (testType == typeof(ushort))
+            {
+                yield return TestValueType<ushort>(ushort.MinValue + 5, ushort.MaxValue);
+            }
+            else if (testType == typeof(int))
+            {
+                yield return TestValueType(int.MinValue + 5, int.MaxValue);
+            }
+            else if (testType == typeof(uint))
+            {
+                yield return TestValueType(uint.MinValue + 5, uint.MaxValue);
+            }
+            else if (testType == typeof(long))
+            {
+                yield return TestValueType(long.MinValue + 5, long.MaxValue);
+            }
+            else if (testType == typeof(ulong))
+            {
+                yield return TestValueType(ulong.MinValue + 5, ulong.MaxValue);
+            }
+            else if (testType == typeof(bool))
+            {
+                yield return TestValueType(true, false);
+            }
+            else if (testType == typeof(char))
+            {
+                yield return TestValueType('z', ' ');
+            }
+            else if (testType == typeof(float))
+            {
+                yield return TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
+            }
+            else if (testType == typeof(double))
+            {
+                yield return TestValueType(double.MinValue + 5.12345678, double.MaxValue);
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                yield return TestValueType(ByteEnum.B, ByteEnum.C);
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                yield return TestValueType(SByteEnum.B, SByteEnum.C);
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                yield return TestValueType(ShortEnum.B, ShortEnum.C);
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                yield return TestValueType(UShortEnum.B, UShortEnum.C);
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                yield return TestValueType(IntEnum.B, IntEnum.C);
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                yield return TestValueType(UIntEnum.B, UIntEnum.C);
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                yield return TestValueType(LongEnum.B, LongEnum.C);
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                yield return TestValueType(ULongEnum.B, ULongEnum.C);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                yield return TestValueType(
+                    new Vector2(5, 10),
+                    new Vector2(15, 20));
+            }
+            else if (testType == typeof(Vector3))
+            {
+                yield return TestValueType(
+                    new Vector3(5, 10, 15),
+                    new Vector3(20, 25, 30));
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                yield return TestValueType(
+                    new Vector2Int(5, 10),
+                    new Vector2Int(15, 20));
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                yield return TestValueType(
+                    new Vector3Int(5, 10, 15),
+                    new Vector3Int(20, 25, 30));
+            }
+            else if (testType == typeof(Vector4))
+            {
+                yield return TestValueType(
+                    new Vector4(5, 10, 15, 20),
+                    new Vector4(25, 30, 35, 40));
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                yield return TestValueType(
+                    new Quaternion(5, 10, 15, 20),
+                    new Quaternion(25, 30, 35, 40));
+            }
+            else if (testType == typeof(Pose))
+            {
+                TestValueType(
+                    new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)),
+                    new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)));
+            }
+            else if (testType == typeof(Color))
+            {
+                yield return TestValueType(
+                    new Color(1, 0, 0),
+                    new Color(0, 1, 1));
+            }
+            else if (testType == typeof(Color32))
+            {
+                yield return TestValueType(
+                    new Color32(255, 0, 0, 128),
+                    new Color32(0, 255, 255, 255));
+            }
+            else if (testType == typeof(Ray))
+            {
+                yield return TestValueType(
+                    new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
+                    new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)));
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                yield return TestValueType(
+                    new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
+                    new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                yield return TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                yield return TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
             }
         }
 
         [UnityTest]
-        public IEnumerator WhenSendingAnArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly()
+        public IEnumerator WhenSendingAnArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
         {
-            foreach (Type testType in k_TypesToTest)
+            if (testType == typeof(byte))
             {
-                if (testType == typeof(byte))
-                {
-                    yield return TestValueTypeArray(
-                        new byte[] { byte.MinValue + 5, byte.MaxValue },
-                        new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 });
-                }
-                else if (testType == typeof(sbyte))
-                {
-                    yield return TestValueTypeArray(
-                        new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue },
-                        new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
-                }
-                else if (testType == typeof(short))
-                {
-                    yield return TestValueTypeArray(
-                        new short[] { short.MinValue + 5, short.MaxValue },
-                        new short[] { 0, short.MinValue + 10, short.MaxValue - 10 });
-                }
-                else if (testType == typeof(ushort))
-                {
-                    yield return TestValueTypeArray(
-                        new ushort[] { ushort.MinValue + 5, ushort.MaxValue },
-                        new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
-                }
-                else if (testType == typeof(int))
-                {
-                    yield return TestValueTypeArray(
-                        new int[] { int.MinValue + 5, int.MaxValue },
-                        new int[] { 0, int.MinValue + 10, int.MaxValue - 10 });
-                }
-                else if (testType == typeof(uint))
-                {
-                    yield return TestValueTypeArray(
-                        new uint[] { uint.MinValue + 5, uint.MaxValue },
-                        new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 });
-                }
-                else if (testType == typeof(long))
-                {
-                    yield return TestValueTypeArray(
-                        new long[] { long.MinValue + 5, long.MaxValue },
-                        new long[] { 0, long.MinValue + 10, long.MaxValue - 10 });
-                }
-                else if (testType == typeof(ulong))
-                {
-                    yield return TestValueTypeArray(
-                        new ulong[] { ulong.MinValue + 5, ulong.MaxValue },
-                        new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
-                }
-                else if (testType == typeof(bool))
-                {
-                    yield return TestValueTypeArray(
-                        new bool[] { true, false, true },
-                        new bool[] { false, true, false, true, false });
-                }
-                else if (testType == typeof(char))
-                {
-                    yield return TestValueTypeArray(
-                        new char[] { 'z', ' ', '?' },
-                        new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
-                }
-                else if (testType == typeof(float))
-                {
-                    yield return TestValueTypeArray(
-                        new float[] { float.MinValue + 5.12345678f, float.MaxValue },
-                        new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
-                }
-                else if (testType == typeof(double))
-                {
-                    yield return TestValueTypeArray(
-                        new double[] { double.MinValue + 5.12345678, double.MaxValue },
-                        new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
-                }
-                else if (testType == typeof(ByteEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A },
-                        new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
-                }
-                else if (testType == typeof(SByteEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A },
-                        new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
-                }
-                else if (testType == typeof(ShortEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A },
-                        new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
-                }
-                else if (testType == typeof(UShortEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A },
-                        new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
-                }
-                else if (testType == typeof(IntEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A },
-                        new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
-                }
-                else if (testType == typeof(UIntEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A },
-                        new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
-                }
-                else if (testType == typeof(LongEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A },
-                        new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
-                }
-                else if (testType == typeof(ULongEnum))
-                {
-                    yield return TestValueTypeArray(
-                        new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A },
-                        new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
-                }
-                else if (testType == typeof(Vector2))
-                {
-                    yield return TestValueTypeArray(
-                        new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) },
-                        new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
-                }
-                else if (testType == typeof(Vector3))
-                {
-                    yield return TestValueTypeArray(
-                        new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
-                        new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
-                }
-                else if (testType == typeof(Vector2Int))
-                {
-                    yield return TestValueTypeArray(
-                        new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) },
-                        new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
-                }
-                else if (testType == typeof(Vector3Int))
-                {
-                    yield return TestValueTypeArray(
-                        new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
-                        new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
-                }
-                else if (testType == typeof(Vector4))
-                {
-                    yield return TestValueTypeArray(
-                        new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
-                        new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
-                }
-                else if (testType == typeof(Quaternion))
-                {
-                    yield return TestValueTypeArray(
-                        new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
-                        new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
-                }
-                else if (testType == typeof(Pose))
-                {
-                    yield return TestValueTypeArray(
-                        new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
-                        new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
-                }
-                else if (testType == typeof(Color))
-                {
-                    yield return TestValueTypeArray(
-                        new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
-                        new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
-                }
-                else if (testType == typeof(Color32))
-                {
-                    yield return TestValueTypeArray(
-                        new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
-                        new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
-                }
-                else if (testType == typeof(Ray))
-                {
-                    yield return TestValueTypeArray(
-                        new Ray[]
-                        {
-                            new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
-                            new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)),
-                        },
-                        new Ray[]
-                        {
-                            new Ray(new Vector3(12, 13, 14), new Vector3(15, 16, 17)),
-                            new Ray(new Vector3(18, 19, 20), new Vector3(21, 22, 23)),
-                            new Ray(new Vector3(24, 25, 26), new Vector3(27, 28, 29)),
-                        });
-                }
-                else if (testType == typeof(Ray2D))
-                {
-                    yield return TestValueTypeArray(
-                        new Ray2D[]
-                        {
-                            new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
-                            new Ray2D(new Vector2(6, 7), new Vector2(9, 10)),
-                        },
-                        new Ray2D[]
-                        {
-                            new Ray2D(new Vector2(12, 13), new Vector2(15, 16)),
-                            new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
-                            new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
-                        });
-                }
-                else if (testType == typeof(SceneHandle))
-                {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                    yield return TestValueTypeArray(
-                        new SceneHandle[] { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) },
-                        new SceneHandle[] { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }
-                    );
-#else
-                    yield return TestValueTypeArray(
-                        new SceneHandle[] { 1, 2 },
-                        new SceneHandle[] { 3, 4, 5 }
-                    );
-#endif
-                }
-                else if (testType == typeof(NetworkVariableTestStruct))
-                {
-                    yield return TestValueTypeArray(
-                        new NetworkVariableTestStruct[]
-                        {
-                            NetworkVariableTestStruct.GetTestStruct(),
-                            NetworkVariableTestStruct.GetTestStruct()
-                        },
-                        new NetworkVariableTestStruct[]
-                        {
-                            NetworkVariableTestStruct.GetTestStruct(),
-                            NetworkVariableTestStruct.GetTestStruct(),
-                            NetworkVariableTestStruct.GetTestStruct()
-                        });
-                }
-                else if (testType == typeof(FixedString32Bytes))
-                {
-                    yield return TestValueTypeArray(
-                        new FixedString32Bytes[]
-                        {
-                            new FixedString32Bytes("foobar"),
-                            new FixedString32Bytes("12345678901234567890123456789")
-                        },
-                        new FixedString32Bytes[]
-                        {
-                            new FixedString32Bytes("BazQux"),
-                            new FixedString32Bytes("98765432109876543210987654321"),
-                            new FixedString32Bytes("FixedString32Bytes")
-                        });
-                }
+                yield return TestValueTypeArray(
+                    new byte[] { byte.MinValue + 5, byte.MaxValue },
+                    new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 });
+            }
+            else if (testType == typeof(sbyte))
+            {
+                yield return TestValueTypeArray(
+                    new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue },
+                    new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
+            }
+            else if (testType == typeof(short))
+            {
+                yield return TestValueTypeArray(
+                    new short[] { short.MinValue + 5, short.MaxValue },
+                    new short[] { 0, short.MinValue + 10, short.MaxValue - 10 });
+            }
+            else if (testType == typeof(ushort))
+            {
+                yield return TestValueTypeArray(
+                    new ushort[] { ushort.MinValue + 5, ushort.MaxValue },
+                    new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
+            }
+            else if (testType == typeof(int))
+            {
+                yield return TestValueTypeArray(
+                    new int[] { int.MinValue + 5, int.MaxValue },
+                    new int[] { 0, int.MinValue + 10, int.MaxValue - 10 });
+            }
+            else if (testType == typeof(uint))
+            {
+                yield return TestValueTypeArray(
+                    new uint[] { uint.MinValue + 5, uint.MaxValue },
+                    new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 });
+            }
+            else if (testType == typeof(long))
+            {
+                yield return TestValueTypeArray(
+                    new long[] { long.MinValue + 5, long.MaxValue },
+                    new long[] { 0, long.MinValue + 10, long.MaxValue - 10 });
+            }
+            else if (testType == typeof(ulong))
+            {
+                yield return TestValueTypeArray(
+                    new ulong[] { ulong.MinValue + 5, ulong.MaxValue },
+                    new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
+            }
+            else if (testType == typeof(bool))
+            {
+                yield return TestValueTypeArray(
+                    new bool[] { true, false, true },
+                    new bool[] { false, true, false, true, false });
+            }
+            else if (testType == typeof(char))
+            {
+                yield return TestValueTypeArray(
+                    new char[] { 'z', ' ', '?' },
+                    new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
+            }
+            else if (testType == typeof(float))
+            {
+                yield return TestValueTypeArray(
+                    new float[] { float.MinValue + 5.12345678f, float.MaxValue },
+                    new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
+            }
+            else if (testType == typeof(double))
+            {
+                yield return TestValueTypeArray(
+                    new double[] { double.MinValue + 5.12345678, double.MaxValue },
+                    new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                yield return TestValueTypeArray(
+                    new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A },
+                    new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                yield return TestValueTypeArray(
+                    new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A },
+                    new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                yield return TestValueTypeArray(
+                    new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A },
+                    new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                yield return TestValueTypeArray(
+                    new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A },
+                    new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                yield return TestValueTypeArray(
+                    new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A },
+                    new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                yield return TestValueTypeArray(
+                    new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A },
+                    new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                yield return TestValueTypeArray(
+                    new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A },
+                    new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                yield return TestValueTypeArray(
+                    new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A },
+                    new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
+            }
+            else if (testType == typeof(Vector2))
+            {
+                yield return TestValueTypeArray(
+                    new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) },
+                    new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
+            }
+            else if (testType == typeof(Vector3))
+            {
+                yield return TestValueTypeArray(
+                    new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
+                    new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                yield return TestValueTypeArray(
+                    new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) },
+                    new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                yield return TestValueTypeArray(
+                    new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
+                    new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
+            }
+            else if (testType == typeof(Vector4))
+            {
+                yield return TestValueTypeArray(
+                    new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
+                    new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                yield return TestValueTypeArray(
+                    new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
+                    new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Pose))
+            {
+                TestValueTypeArray(
+                    new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
+                    new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
+            }
+            else if (testType == typeof(Color))
+            {
+                yield return TestValueTypeArray(
+                    new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
+                    new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
+            }
+            else if (testType == typeof(Color32))
+            {
+                yield return TestValueTypeArray(
+                    new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
+                    new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Ray))
+            {
+                yield return TestValueTypeArray(
+                    new Ray[]
+                    {
+                        new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
+                        new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)),
+                    },
+                    new Ray[]
+                    {
+                        new Ray(new Vector3(12, 13, 14), new Vector3(15, 16, 17)),
+                        new Ray(new Vector3(18, 19, 20), new Vector3(21, 22, 23)),
+                        new Ray(new Vector3(24, 25, 26), new Vector3(27, 28, 29)),
+                    });
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                yield return TestValueTypeArray(
+                    new Ray2D[]
+                    {
+                        new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
+                        new Ray2D(new Vector2(6, 7), new Vector2(9, 10)),
+                    },
+                    new Ray2D[]
+                    {
+                        new Ray2D(new Vector2(12, 13), new Vector2(15, 16)),
+                        new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
+                        new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
+                    });
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                yield return TestValueTypeArray(
+                    new NetworkVariableTestStruct[]
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    },
+                    new NetworkVariableTestStruct[]
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    });
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                yield return TestValueTypeArray(
+                    new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("foobar"),
+                        new FixedString32Bytes("12345678901234567890123456789")
+                    },
+                    new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("BazQux"),
+                        new FixedString32Bytes("98765432109876543210987654321"),
+                        new FixedString32Bytes("FixedString32Bytes")
+                    });
             }
         }
 
         [UnityTest]
         public IEnumerator WhenSendingANativeArrayOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
         {
             if (testType == typeof(byte))
             {
@@ -1754,7 +1707,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                yield return TestValueTypeNativeArray(
+                TestValueTypeNativeArray(
                     new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) }, Allocator.Persistent),
                     new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) }, Allocator.Persistent));
             }
@@ -1800,20 +1753,6 @@ namespace Unity.Netcode.RuntimeTests
                         new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
                     }, Allocator.Persistent));
             }
-            else if (testType == typeof(SceneHandle))
-            {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                yield return TestValueTypeNativeArray(
-                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) }, Allocator.Persistent),
-                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }, Allocator.Persistent)
-                );
-#else
-                yield return TestValueTypeNativeArray(
-                    new NativeArray<SceneHandle>(new SceneHandle[] { 1, 2 }, Allocator.Persistent),
-                    new NativeArray<SceneHandle>(new SceneHandle[] { 3, 4, 5 }, Allocator.Persistent)
-                );
-#endif
-            }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
                 yield return TestValueTypeNativeArray(
@@ -1849,7 +1788,14 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [UnityTest]
         public IEnumerator WhenSendingANativeListOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
         {
             if (testType == typeof(byte))
             {
@@ -2009,7 +1955,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Pose))
             {
-                yield return TestValueTypeNativeList(
+                TestValueTypeNativeList(
                     new NativeList<Pose>(Allocator.Persistent) { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
                     new NativeList<Pose>(Allocator.Persistent) { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
             }
@@ -2054,19 +2000,6 @@ namespace Unity.Netcode.RuntimeTests
                         new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
                         new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
                     });
-            }
-            else if (testType == typeof(SceneHandle))
-            {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                yield return TestValueTypeNativeList(
-                    new NativeList<SceneHandle>(Allocator.Persistent) { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) },
-                    new NativeList<SceneHandle>(Allocator.Persistent) { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }
-                );
-#else
-                yield return TestValueTypeNativeList(
-                    new NativeList<SceneHandle>(Allocator.Persistent) { int.MinValue + 5, int.MaxValue },
-                    new NativeList<SceneHandle>(Allocator.Persistent) { 0, int.MinValue + 10, int.MaxValue - 10 });
-#endif
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {

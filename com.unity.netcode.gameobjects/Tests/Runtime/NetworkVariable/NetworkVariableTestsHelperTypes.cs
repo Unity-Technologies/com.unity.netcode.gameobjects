@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -860,14 +857,6 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Ray2D>> Ray2DListVar;
 #endif
-
-        public NetworkVariable<SceneHandle> SceneHandleVar;
-        public NetworkVariable<NativeArray<SceneHandle>> SceneHandleArrayVar;
-        public NetworkVariable<List<SceneHandle>> SceneHandleManagedListVar;
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-        public NetworkVariable<NativeList<SceneHandle>> SceneHandleListVar;
-#endif
-
         public NetworkVariable<NetworkVariableTestStruct> TestStructVar;
         public NetworkVariable<NativeArray<NetworkVariableTestStruct>> TestStructArrayVar;
         public NetworkVariable<List<NetworkVariableTestClass>> TestStructManagedListVar;

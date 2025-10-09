@@ -677,50 +677,61 @@ namespace Unity.Netcode.EditorTests
         }
 #endif
 
-        private static readonly object[] k_TypesToTest = {
-            typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-            typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-            typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-            typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-            typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
-            typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct)
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-            , typeof(UnityEngine.SceneManagement.SceneHandle)
-#endif
-        };
-
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingUnmanagedType_ValueMatchesWhatWasWritten(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
         {
-            BaseTypeTest(testType, WriteType.WriteDirect);
-            BaseTypeTest(testType, WriteType.WriteSafe);
+            BaseTypeTest(testType, writeType);
         }
 
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingArrayOfUnmanagedElementType_ValueMatchesWhatWasWritten(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
-
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
         {
-            BaseArrayTypeTest(testType, WriteType.WriteDirect);
-            BaseArrayTypeTest(testType, WriteType.WriteSafe);
+            BaseArrayTypeTest(testType, writeType);
         }
 
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingNativeArrayOfUnmanagedElementType_ValueMatchesWhatWasWritten(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
         {
-            BaseNativeArrayTypeTest(testType, WriteType.WriteDirect);
-            BaseNativeArrayTypeTest(testType, WriteType.WriteSafe);
+            BaseNativeArrayTypeTest(testType, writeType);
         }
 
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingNativeListOfUnmanagedElementType_ValueMatchesWhatWasWritten(
-            [ValueSource(nameof(k_TypesToTest))] Type testType)
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
         {
-            BaseNativeListTypeTest(testType, WriteType.WriteDirect);
-            BaseNativeListTypeTest(testType, WriteType.WriteSafe);
+            BaseNativeListTypeTest(testType, writeType);
         }
 #endif
 

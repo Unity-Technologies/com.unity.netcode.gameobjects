@@ -1,9 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -272,25 +269,6 @@ namespace Unity.Netcode
         {
             WriteValuePacked(writer, pose.position);
             WriteValuePacked(writer, pose.rotation);
-        }
-
-        /// <summary>
-        /// Writes the sceneHandle to the buffer.
-        /// </summary>
-        /// <param name="writer">The writer to write to</param>
-        /// <param name="handle">SceneHandle to write</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-        public static void WriteValuePacked(FastBufferWriter writer, SceneHandle handle)
-#else
-        internal static void WriteValuePacked(FastBufferWriter writer, SceneHandle handle)
-#endif
-        {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-            WriteValuePacked(writer, handle.GetRawData());
-#else
-            WriteValuePacked(writer, (int)handle);
-#endif
         }
 
         /// <summary>

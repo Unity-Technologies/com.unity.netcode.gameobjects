@@ -1,9 +1,6 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -89,9 +86,6 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray2D value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Ray2D[] value) => m_Reader.ReadValueSafe(out value);
 
-        public void SerializeValue(ref SceneHandle value) => m_Reader.ReadValueSafe(out value);
-        public void SerializeValue(ref SceneHandle[] value) => m_Reader.ReadValueSafe(out value);
-
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new() => m_Reader.ReadNetworkSerializable(out value);
 
         public bool PreCheck(int amount)
@@ -150,8 +144,5 @@ namespace Unity.Netcode
 
         public void SerializeValuePreChecked(ref Ray2D value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Reader.ReadValue(out value);
-
-        public void SerializeValuePreChecked(ref SceneHandle value) => m_Reader.ReadValue(out value);
-        public void SerializeValuePreChecked(ref SceneHandle[] value) => m_Reader.ReadValue(out value);
     }
 }

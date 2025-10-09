@@ -1,9 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
@@ -292,27 +289,6 @@ namespace Unity.Netcode
             ReadValuePacked(reader, out Vector3 position);
             ReadValuePacked(reader, out Quaternion rotation);
             pose = new Pose(position, rotation);
-        }
-
-        /// <summary>
-        /// Reads the sceneHandle from the stream.
-        /// </summary>
-        /// <param name="reader">The reader to read from</param>
-        /// <param name="sceneHandle">SceneHandle to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
-        public static void ReadValuePacked(FastBufferReader reader, out SceneHandle sceneHandle)
-#else
-        internal static void ReadValuePacked(FastBufferReader reader, out SceneHandle sceneHandle)
-#endif
-        {
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-            ReadValuePacked(reader, out ulong rawHandle);
-            sceneHandle = SceneHandle.FromRawData(rawHandle);
-#else
-            ReadValuePacked(reader, out int rawHandle);
-            sceneHandle = rawHandle;
-#endif
         }
 
         /// <summary>
