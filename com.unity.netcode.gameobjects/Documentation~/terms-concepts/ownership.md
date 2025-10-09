@@ -46,7 +46,7 @@ When requesting ownership of a NetworkObject using [`NetworkObject.RequestOwners
 | **Ownership status of NetworkObject** | **Response** | **Description** |
 |--------------------------|--------------|---------------------|
 | `OwnershipStatus.Transferable` | `OwnershipRequestStatus.RequestSent` | Ownership is transferred immediately, as long as a request isn't already in progress and the NetworkObject's ownership isn't locked. Ownership isn't locked after the transfer. |
-| `OwnershipStatus.RequestRequired` | `OwnershipRequestStatus.RequestSent` | Request granted, as long as a request isn't already in progress and the NetworkObject's ownership isn't locked. Ownership is locked after the request is granted. |
+| `OwnershipStatus.RequestRequired` | `OwnershipRequestStatus.RequestSent` | Request granted, as long as a request isn't already in progress and the NetworkObject's ownership isn't locked. |
 | `OwnershipStatus.RequestRequired` but `IsOwner` is `true`for the requesting client | `OwnershipRequestStatus.AlreadyOwner` | No action taken. The current client is already the owner. |
 | `OwnershipStatus.RequestRequired` but `IsOwnershipLocked` is `true` | `OwnershipRequestStatus.Locked` | Request denied. The current owner has locked ownership which means requests can't be made at this time. |
 | `OwnershipStatus.RequestRequired` but `IsRequestInProgress` is `true` | `OwnershipRequestStatus.RequestInProgress` | Request denied. A known request is already in progress. You can scan for ownership changes and try again after a specific period of time or no longer attempt to request ownership. |
