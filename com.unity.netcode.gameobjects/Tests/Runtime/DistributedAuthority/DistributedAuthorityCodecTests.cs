@@ -376,7 +376,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
 
-            m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<int, NetworkObject>()
+            m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<SceneHandle, NetworkObject>()
             {
                 { 1, prefabNetworkObject }
             });
@@ -514,7 +514,7 @@ namespace Unity.Netcode.RuntimeTests
                 ScenesToSynchronize = new Queue<uint>()
             };
             eventData.ScenesToSynchronize.Enqueue(101);
-            eventData.SceneHandlesToSynchronize = new Queue<uint>();
+            eventData.SceneHandlesToSynchronize = new Queue<SceneHandle>();
             eventData.SceneHandlesToSynchronize.Enqueue(202);
 
 
@@ -587,7 +587,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
-            m_Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<int, Dictionary<ulong, List<NetworkObject>>>
+            m_Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<SceneHandle, Dictionary<ulong, List<NetworkObject>>>
             {
                 { 0, new Dictionary<ulong, List<NetworkObject>>()}
             };

@@ -1367,12 +1367,12 @@ namespace Unity.Netcode
         ///  the most important part to uniquely identify in-scene
         ///  placed NetworkObjects
         /// </summary>
-        internal int SceneOriginHandle = 0;
+        internal SceneHandle SceneOriginHandle;
 
         /// <summary>
         /// The server-side scene origin handle
         /// </summary>
-        internal int NetworkSceneHandle = 0;
+        internal SceneHandle NetworkSceneHandle;
 
         private Scene m_SceneOrigin;
         /// <summary>
@@ -1393,7 +1393,7 @@ namespace Unity.Netcode
             {
                 // The scene origin should only be set once.
                 // Once set, it should never change.
-                if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
+                if (SceneOriginHandle == SceneHandle.None && value.IsValid() && value.isLoaded)
                 {
                     m_SceneOrigin = value;
                     SceneOriginHandle = value.handle;
@@ -1405,13 +1405,13 @@ namespace Unity.Netcode
         /// Helper method to return the correct scene handle
         /// Note: Do not use this within NetworkSpawnManager.SpawnNetworkObjectLocallyCommon
         /// </summary>
-        internal int GetSceneOriginHandle()
+        internal SceneHandle GetSceneOriginHandle()
         {
-            if (SceneOriginHandle == 0 && IsSpawned && IsSceneObject != false)
+            if (SceneOriginHandle == SceneHandle.None && IsSpawned && IsSceneObject != false)
             {
                 throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
             }
-            return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
+            return SceneOriginHandle != SceneHandle.None ? SceneOriginHandle : gameObject.scene.handle;
         }
 
         /// <summary>
@@ -2907,7 +2907,7 @@ namespace Unity.Netcode
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
 
-            public int NetworkSceneHandle;
+            public SceneHandle NetworkSceneHandle;
 
             internal int SynchronizationDataSize;
 
