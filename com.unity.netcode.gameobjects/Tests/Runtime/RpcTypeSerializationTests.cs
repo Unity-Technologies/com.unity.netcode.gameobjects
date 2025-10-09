@@ -1549,8 +1549,8 @@ namespace Unity.Netcode.RuntimeTests
                 {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                     yield return TestValueTypeArray(
-                        new SceneHandle[] {SceneHandle.FromRawData(1), SceneHandle.FromRawData(2)},
-                        new SceneHandle[] {SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5)}
+                        new SceneHandle[] { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) },
+                        new SceneHandle[] { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }
                     );
 #else
                     yield return TestValueTypeArray(
@@ -1804,8 +1804,8 @@ namespace Unity.Netcode.RuntimeTests
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                 yield return TestValueTypeNativeArray(
-                    new NativeArray<SceneHandle>(new SceneHandle[] {SceneHandle.FromRawData(1), SceneHandle.FromRawData(2)}, Allocator.Persistent),
-                    new NativeArray<SceneHandle>(new SceneHandle[] {SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5)}, Allocator.Persistent)
+                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) }, Allocator.Persistent),
+                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }, Allocator.Persistent)
                 );
 #else
                 yield return TestValueTypeNativeArray(
@@ -2059,8 +2059,8 @@ namespace Unity.Netcode.RuntimeTests
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                 yield return TestValueTypeNativeList(
-                    new NativeList<SceneHandle>(Allocator.Persistent) {SceneHandle.FromRawData(1), SceneHandle.FromRawData(2)},
-                    new NativeList<SceneHandle>(Allocator.Persistent) {SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5)}
+                    new NativeList<SceneHandle>(Allocator.Persistent) { SceneHandle.FromRawData(1), SceneHandle.FromRawData(2) },
+                    new NativeList<SceneHandle>(Allocator.Persistent) { SceneHandle.FromRawData(3), SceneHandle.FromRawData(4), SceneHandle.FromRawData(5) }
                 );
 #else
                 yield return TestValueTypeNativeList(

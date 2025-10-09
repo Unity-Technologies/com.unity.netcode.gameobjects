@@ -1749,9 +1749,9 @@ namespace Unity.Netcode.RuntimeTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                    TestValueTypeNativeArray(
-                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(5), SceneHandle.FromRawData(12) }, Allocator.Temp),
-                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(0), SceneHandle.FromRawData(30), SceneHandle.FromRawData(45) }, Allocator.Temp));
+                TestValueTypeNativeArray(
+                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(5), SceneHandle.FromRawData(12) }, Allocator.Temp),
+                    new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(0), SceneHandle.FromRawData(30), SceneHandle.FromRawData(45) }, Allocator.Temp));
 #else
                 TestValueTypeNativeArray(
                     new NativeArray<SceneHandle>(new SceneHandle[] { int.MinValue + 5, int.MaxValue }, Allocator.Temp),
