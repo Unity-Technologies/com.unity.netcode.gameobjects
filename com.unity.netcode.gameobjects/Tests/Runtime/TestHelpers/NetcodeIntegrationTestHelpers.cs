@@ -197,7 +197,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if USE_CMB_SERVICE
             return "true";
 #else
-            return Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "true";
+            return Environment.GetEnvironmentVariable("USE_CMB_SERVICE") ?? "false";
 #endif
         }
 

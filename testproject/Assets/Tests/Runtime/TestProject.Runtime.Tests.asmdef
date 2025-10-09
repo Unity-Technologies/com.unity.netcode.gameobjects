@@ -38,11 +38,6 @@
             "name": "com.unity.addressables",
             "expression": "",
             "define": "TESTPROJECT_USE_ADDRESSABLES"
-        },
-        {
-          "name": "Unity",
-          "expression": "6000.4.0a3",
-          "define": "SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION"
         }
     ],
     "noEngineReferences": false

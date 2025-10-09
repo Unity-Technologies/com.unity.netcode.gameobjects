@@ -567,7 +567,7 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(Color),
             typeof(Color32),
             typeof(Ray),
-            typeof(Ray2D),
+            typeof(Ray2D)
         };
         internal static readonly Type[] SpecialCaseTypes = new[]
         {
