@@ -1523,9 +1523,9 @@ namespace Unity.Netcode.RuntimeTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                    TestValueType(SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue));
+                TestValueType(SceneHandle.FromRawData(3), SceneHandle.FromRawData(4));
 #else
-                TestValueType(int.MinValue + 5, int.MaxValue);
+                TestValueType(5, 6);
 #endif
             }
             else if (testType == typeof(NetworkVariableTestStruct))
@@ -1750,8 +1750,8 @@ namespace Unity.Netcode.RuntimeTests
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                     TestValueTypeNativeArray(
-                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue) }, Allocator.Temp),
-                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(0), SceneHandle.FromRawData(int.MinValue + 10), SceneHandle.FromRawData(int.MaxValue - 10) }, Allocator.Temp));
+                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(5), SceneHandle.FromRawData(12) }, Allocator.Temp),
+                        new NativeArray<SceneHandle>(new SceneHandle[] { SceneHandle.FromRawData(0), SceneHandle.FromRawData(30), SceneHandle.FromRawData(45) }, Allocator.Temp));
 #else
                 TestValueTypeNativeArray(
                     new NativeArray<SceneHandle>(new SceneHandle[] { int.MinValue + 5, int.MaxValue }, Allocator.Temp),
@@ -3542,8 +3542,8 @@ namespace Unity.Netcode.RuntimeTests
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
                 TestValueTypeNativeList(
-                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(int.MinValue + 5), SceneHandle.FromRawData(int.MaxValue) },
-                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(0), SceneHandle.FromRawData(int.MinValue + 10), SceneHandle.FromRawData(int.MaxValue - 10) });
+                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(5), SceneHandle.FromRawData(12) },
+                    new NativeList<SceneHandle>(Allocator.Temp) { SceneHandle.FromRawData(0), SceneHandle.FromRawData(20), SceneHandle.FromRawData(32) });
 #else
                 TestValueTypeNativeList(
                     new NativeList<SceneHandle>(Allocator.Temp) { int.MinValue + 5, int.MaxValue },

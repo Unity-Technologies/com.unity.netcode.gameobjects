@@ -350,6 +350,12 @@ namespace Unity.Netcode.RuntimeTests
             yield return SendMessage(ref message);
         }
 
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+        private readonly SceneHandle m_TestSceneHandle = SceneHandle.FromRawData(23456);
+#else
+        private readonly SceneHandle m_TestSceneHandle = 23456;
+#endif
+
         [UnityTest]
         public IEnumerator SceneEventMessageLoad()
         {
@@ -360,7 +366,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -386,7 +392,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -406,7 +412,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -426,7 +432,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -446,7 +452,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -466,7 +472,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
                 ClientsCompleted = new List<ulong>() { k_ClientId },
                 ClientsTimedOut = new List<ulong>() { 123456789 },
             };
@@ -488,7 +494,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
                 ClientsCompleted = new List<ulong>() { k_ClientId },
                 ClientsTimedOut = new List<ulong>() { 123456789 },
             };
@@ -510,7 +516,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
                 ScenesToSynchronize = new Queue<uint>()
             };
             eventData.ScenesToSynchronize.Enqueue(101);
@@ -535,7 +541,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
@@ -555,7 +561,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = m_TestSceneHandle,
             };
 
             var message = new SceneEventMessage()
