@@ -71,7 +71,7 @@ namespace Unity.Netcode
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
         internal NetworkSceneHandle(ulong handle, bool asMock)
         {
-            m_Handle = handle.FromRawData(handle);
+            m_Handle = SceneHandle.FromRawData(handle);
         }
 #else
         internal NetworkSceneHandle(int handle, bool asMock)
