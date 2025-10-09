@@ -1,16 +1,15 @@
 using System;
 using System.Runtime.CompilerServices;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
 using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode
 {
     /// <summary>
-    /// An internal to NGO representation of a scene <see cref="UnityEngine.SceneManagement.Scene.handle"/>
-    /// The underlying representation of the scene handle is changing in 6.3
-    /// This allows us to wrap the change and hide it from the rest of the package.
+    /// An internal to NGO representation of the Scene <see cref="Scene.handle"/>.
     /// </summary>
+    //
+    // The underlying representation of the scene handle is changing in 6.3
+    // This allows us to wrap the change and hide it from the rest of the package.
     internal struct NetworkSceneHandle : IEquatable<NetworkSceneHandle>, INetworkSerializable
     {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
