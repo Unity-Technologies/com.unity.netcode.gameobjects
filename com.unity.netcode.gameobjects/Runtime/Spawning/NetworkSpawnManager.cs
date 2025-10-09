@@ -1109,7 +1109,7 @@ namespace Unity.Netcode
 
             // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
             // Note: Always check SceneOriginHandle directly at this specific location.
-            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle == 0)
+            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle == SceneHandle.None)
             {
                 networkObject.SceneOrigin = networkObject.gameObject.scene;
             }

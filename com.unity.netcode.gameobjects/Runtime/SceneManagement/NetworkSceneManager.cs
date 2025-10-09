@@ -3168,9 +3168,9 @@ namespace Unity.Netcode
                     {
                         MapType = mapType,
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                        ServerHandle = entry.Key.GetRawData(),
-                        MappedLocalHandle = entry.Value.GetRawData(),
-                        LocalHandle = scene.handle.GetRawData(),
+                        ServerHandle = (int)entry.Key.GetRawData(),
+                        MappedLocalHandle = (int)entry.Value.GetRawData(),
+                        LocalHandle = (int)scene.handle.GetRawData(),
 #else
                         ServerHandle = entry.Key,
                         MappedLocalHandle = entry.Value,
@@ -3193,9 +3193,9 @@ namespace Unity.Netcode
                     {
                         MapType = mapType,
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                        ServerHandle = entry.Key,
-                        MappedLocalHandle = entry.Value,
-                        LocalHandle = scene.handle,
+                        ServerHandle = (int)entry.Key.GetRawData(),
+                        MappedLocalHandle = (int)entry.Value.GetRawData(),
+                        LocalHandle = (int)scene.handle.GetRawData(),
 #else
                         ServerHandle = entry.Key,
                         MappedLocalHandle = entry.Value,

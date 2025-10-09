@@ -289,7 +289,7 @@ namespace Unity.Netcode
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
             WriteValuePacked(writer, handle.GetRawData());
 #else
-            WriteValuePacked(writer, handle);
+            WriteValuePacked(writer, (int)handle);
 #endif
         }
 
