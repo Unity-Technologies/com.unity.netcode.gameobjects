@@ -269,11 +269,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(SceneHandle))
             {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-                var handle = SceneHandle.FromRawData((ulong)random.Next());
+                RunTestWithWriteType(SceneHandle.FromRawData((ulong)random.Next()), writeType);
 #else
-                SceneHandle handle = random.Next();
+                RunTestWithWriteType(random.Next(), writeType);
 #endif
-                RunTestWithWriteType(handle, writeType);
             }
             else if (testType == typeof(TestStruct))
             {
