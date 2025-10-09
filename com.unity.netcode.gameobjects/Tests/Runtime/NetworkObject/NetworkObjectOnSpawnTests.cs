@@ -5,9 +5,7 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
 using UnityEngine.SceneManagement;
-#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -381,7 +379,7 @@ namespace Unity.Netcode.RuntimeTests
             var sceneOriginHandle = networkObject.GetSceneOriginHandle();
 
             // This validates that GetSceneOriginHandle will return the GameObject's scene handle that should be the currently active scene
-            var activeSceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+            var activeSceneHandle = SceneManager.GetActiveScene().handle;
             Assert.IsTrue(sceneOriginHandle == activeSceneHandle, $"{nameof(NetworkObject)} should have returned the active scene handle of {activeSceneHandle} but returned {sceneOriginHandle}");
         }
 
