@@ -6,6 +6,11 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// An internal to NGO representation of a scene <see cref="UnityEngine.SceneManagement.Scene.handle"/>
+    /// The underlying representation of the scene handle is changing in 6.3
+    /// This allows us to wrap the change and hide it from the rest of the package.
+    /// </summary>
     internal struct NetworkSceneHandle : IEquatable<NetworkSceneHandle>, INetworkSerializable
     {
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
@@ -30,6 +35,7 @@ namespace Unity.Netcode
             else
             {
                 var reader = serializer.GetFastBufferReader();
+                // DANGO-TODO Rust needs to be updated to either handle this ulong or to remove the scene store.
 #if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
                 reader.ReadValue(out ulong rawData);
                 m_Handle = SceneHandle.FromRawData(rawData);
@@ -43,20 +49,32 @@ namespace Unity.Netcode
             }
         }
 
+
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
         internal NetworkSceneHandle(SceneHandle handle)
         {
             m_Handle = handle;
         }
-#endif
-
-#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
-        internal NetworkSceneHandle(ulong handle)
-        {
-            m_Handle = SceneHandle.FromRawData(handle);
-        }
 #else
         internal NetworkSceneHandle(int handle)
+        {
+            m_Handle = handle;
+        }
+#endif
+
+        /// <summary>
+        /// A separate constructor for using during tests.
+        /// This is required as the tests need to be able to create NetworkSceneHandles that represent only mock data.
+        /// </summary>
+        /// <param name="handle">The number to use as the underlying sceneHandle representation</param>
+        /// <param name="asMock">Empty parameter that ensures the tests use the mock constructor.</param>
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
+        internal NetworkSceneHandle(ulong handle, bool asMock)
+        {
+            m_Handle = handle.FromRawData(handle);
+        }
+#else
+        internal NetworkSceneHandle(int handle, bool asMock)
         {
             m_Handle = handle;
         }
@@ -99,7 +117,7 @@ namespace Unity.Netcode
         private bool Equals(SceneHandle other) => m_Handle == other;
 #else
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(int other) => m_Handle == other;
+        private bool Equals(int other) => m_Handle == other;
 #endif
 
 #if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
