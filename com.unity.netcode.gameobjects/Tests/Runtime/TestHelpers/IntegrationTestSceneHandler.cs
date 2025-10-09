@@ -630,10 +630,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         Scene = scene
                     };
                     SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
-                    if (!scenesLoaded.ContainsKey(scene.handle))
-                    {
-                        scenesLoaded.Add(scene.handle, scene);
-                    }
+                    scenesLoaded.TryAdd(scene.handle, scene);
                 }
                 else
                 {
@@ -678,10 +675,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 SceneManager.UnloadSceneAsync(sceneToUnload.Key);
                 // Update the ScenesLoaded when we unload scenes
-                if (sceneManager.ScenesLoaded.ContainsKey(sceneToUnload.Key.handle))
-                {
-                    sceneManager.ScenesLoaded.Remove(sceneToUnload.Key.handle);
-                }
+                sceneManager.ScenesLoaded.Remove(sceneToUnload.Key.handle);
             }
         }
 
@@ -696,11 +690,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
                 if (relativeSceneNameToSceneHandles.ContainsKey(scene.name))
                 {
-                    var scenHandleEntries = relativeSceneNameToSceneHandles[scene.name];
-                    if (scenHandleEntries.ContainsKey(scene.handle))
+                    var sceneHandleEntries = relativeSceneNameToSceneHandles[scene.name];
+                    if (sceneHandleEntries.Remove(scene.handle))
                     {
-                        scenHandleEntries.Remove(scene.handle);
-                        if (scenHandleEntries.Count == 0)
+                        if (sceneHandleEntries.Count == 0)
                         {
                             relativeSceneNameToSceneHandles.Remove(scene.name);
                         }
@@ -870,10 +863,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
 
                     // If the scene is not already in the ScenesLoaded list, then add it
-                    if (!sceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                    if (sceneManager.ScenesLoaded.TryAdd(scene.handle, scene))
                     {
                         StartTrackingScene(scene, true, networkManager);
-                        sceneManager.ScenesLoaded.Add(scene.handle, scene);
                     }
                 }
             }
