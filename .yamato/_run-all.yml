@@ -253,3 +253,44 @@ run_all_project_tests_console_standalone_6000:
     - .yamato/console-standalone-test.yml#console_standalone_test_{{ project.name }}_{{ platform.name }}_6000.0
 {% endfor -%}
 {% endfor -%}
+
+
+# Runs all CMB service tests
+run_all_project_tests_cmb_service:
+  name: Run All CMB Service Tests
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.all -%}
+{% for backend in scripting_backends -%}
+    - .yamato/cmb_service_standalone_tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all CMB service tests on trunk editor
+run_all_project_tests_cmb_service_trunk:
+  name: Run All CMB Service Tests [Trunk only]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for editor in validation_editors.default -%}
+{% for backend in scripting_backends -%}
+    - .yamato/cmb_service_standalone_tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+# Runs all CMB service tests on mimimum supported editor (6000.0 in case of NGOv2.X)
+run_all_project_tests_cmb_service_6000:
+  name: Run All CMB Service Tests [6000.0]
+  dependencies:
+{% for project in projects.default -%}
+{% for platform in test_platforms.default -%}
+{% for backend in scripting_backends -%}
+    - .yamato/cmb_service_standalone_tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_6000.0
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
