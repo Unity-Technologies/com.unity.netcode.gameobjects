@@ -26,8 +26,7 @@ namespace Unity.Netcode.RuntimeTests
         private List<NetworkObject> m_PrefabsToSpawn = new List<NetworkObject>();
         private NetworkObject m_ParentToSpawn;
 
-        private List<NetworkObject> m_ParentInstances = new List<NetworkObject>();
-        private List<NetworkObject> m_ChildInstances = new List<NetworkObject>();
+        private List<NetworkObject> m_ParentInstances = new List<NetworkObject>();        
         private NetworkObject m_ChildInstance;
         private NetworkObject m_FinalParent;
         private ulong m_NetworkObjectIdToValidate;
@@ -37,32 +36,6 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkTransformAutoParenting(HostOrServer host) : base(host)
         {
-        }
-
-
-        public class SpawnSequenceController : NetworkBehaviour
-        {
-            public NetworkObject ObjectToParentUnder;
-            public Vector3 Offset;
-
-            public bool ApplyParentAndOffset;
-
-            private NetworkTransform m_NetworkTransform;
-
-            protected override void OnNetworkPreSpawn(ref NetworkManager networkManager)
-            {
-                m_NetworkTransform = GetComponent<NetworkTransform>();
-                base.OnNetworkPreSpawn(ref networkManager);
-            }
-
-            protected override void OnNetworkPostSpawn()
-            {
-                if (ApplyParentAndOffset && m_NetworkTransform.CanCommitToTransform)
-                {
-
-                }
-                base.OnNetworkPostSpawn();
-            }
         }
 
         public class NetworkTransformStateMonitor : NetworkTransform
@@ -147,8 +120,6 @@ namespace Unity.Netcode.RuntimeTests
             networkTransform.UseHalfFloatPrecision = useHalfPrecision;
             networkTransform.UseQuaternionSynchronization = useQuaternion;
             networkTransform.UseQuaternionCompression = compressQuaternion;
-            var spawnSequenceController = prefabToSpawn.gameObject.AddComponent<SpawnSequenceController>();
-            spawnSequenceController.Offset = GetRandomVector3(-20.0f, 20.0f);
             return prefabToSpawn;
         }
 
