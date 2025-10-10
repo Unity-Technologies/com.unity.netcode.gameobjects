@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -143,15 +145,25 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
+            var hasObject = networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject);
 
             // If we are the DAHost then forward this message
             if (networkManager.DAHost)
             {
-                var shouldProcessLocally = HandleDAHostMessageForwarding(ref networkManager, context.SenderId);
+                var shouldProcessLocally = HandleDAHostMessageForwarding(ref networkManager, context.SenderId, hasObject, ref networkObject);
                 if (!shouldProcessLocally)
                 {
                     return;
                 }
+            }
+
+            if (!hasObject)
+            {
+                if (networkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError("Ownership change received for an unknown network object. This should not happen.");
+                }
+                return;
             }
 
             // If ownership is changing (either a straight change or a request approval), then run through the ownership changed sequence
@@ -159,12 +171,12 @@ namespace Unity.Netcode
             // If not in distributed authority mode, ChangeMessageType will always be OwnershipChanging.
             if (ChangeMessageType == ChangeType.OwnershipChanging || ChangeMessageType == ChangeType.RequestApproved || !networkManager.DistributedAuthorityMode)
             {
-                HandleOwnershipChange(ref context);
+                HandleOwnershipChange(ref context, ref networkManager, ref networkObject);
             }
             else if (networkManager.DistributedAuthorityMode)
             {
                 // Otherwise, we handle and extended ownership update
-                HandleExtendedOwnershipUpdate(ref context);
+                HandleExtendedOwnershipUpdate(ref context, ref networkObject);
             }
         }
 
@@ -172,13 +184,8 @@ namespace Unity.Netcode
         /// Handle the extended distributed authority ownership updates
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void HandleExtendedOwnershipUpdate(ref NetworkContext context)
+        private void HandleExtendedOwnershipUpdate(ref NetworkContext context, ref NetworkObject networkObject)
         {
-            var networkManager = (NetworkManager)context.SystemOwner;
-
-            // Handle the extended ownership message types
-            var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-
             if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate)
             {
                 // Just update the ownership flags
@@ -199,10 +206,8 @@ namespace Unity.Netcode
         /// Handle the traditional change in ownership message type logic
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void HandleOwnershipChange(ref NetworkContext context)
+        private void HandleOwnershipChange(ref NetworkContext context, ref NetworkManager networkManager, ref NetworkObject networkObject)
         {
-            var networkManager = (NetworkManager)context.SystemOwner;
-            var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
             var distributedAuthorityMode = networkManager.DistributedAuthorityMode;
 
             // Sanity check that we are not sending duplicated change ownership messages
@@ -260,12 +265,12 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkManager">The current NetworkManager from the NetworkContext</param>
         /// <param name="senderId">The sender of the current message from the NetworkContext</param>
+        /// <param name="hasObject">Whether the local client has this object spawned</param>
+        /// <param name="networkObject">The networkObject we are changing ownership on. Will be null if hasObject is false.</param>
         /// <returns>true if this message should also be processed locally; false if the message should only be forwarded</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool HandleDAHostMessageForwarding(ref NetworkManager networkManager, ulong senderId)
+        private bool HandleDAHostMessageForwarding(ref NetworkManager networkManager, ulong senderId, bool hasObject, ref NetworkObject networkObject)
         {
-            var clientList = ClientIdCount > 0 ? ClientIds : networkManager.ConnectedClientsIds;
-
             var message = new ChangeOwnershipMessage()
             {
                 NetworkObjectId = NetworkObjectId,
@@ -302,11 +307,35 @@ namespace Unity.Netcode
             }
             else
             {
+                var clientList = ClientIds;
+                var errorOnSender = true;
+
+                // OwnershipFlagsUpdate doesn't populate the ClientIds list.
+                if (ChangeMessageType == ChangeType.OwnershipFlagsUpdate)
+                {
+                    // if the DAHost can see this object, forward the message to all observers.
+                    // if the DAHost can't see the object, forward the message to everyone.
+                    clientList = hasObject ? networkObject.Observers.ToArray() : networkManager.ConnectedClientsIds.ToArray();
+
+                    // Both clientList arrays will have the local client so we can not throw an error.
+                    errorOnSender = false;
+                }
+
                 foreach (var clientId in clientList)
                 {
                     // Don't forward to self or originating client
-                    if (clientId == networkManager.LocalClientId || clientId == senderId)
+                    if (clientId == networkManager.LocalClientId)
                     {
+                        continue;
+                    }
+
+                    if (clientId == senderId)
+                    {
+                        if (errorOnSender)
+                        {
+                            Debug.LogError($"client-{senderId} sent a ChangeOwnershipMessage with themself inside the ClientIds list.");
+                        }
+
                         continue;
                     }
 
@@ -315,7 +344,7 @@ namespace Unity.Netcode
             }
 
             // Return whether to process the message on the DAHost itself (only if object is spawned).
-            return networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId);
+            return hasObject;
         }
     }
 }

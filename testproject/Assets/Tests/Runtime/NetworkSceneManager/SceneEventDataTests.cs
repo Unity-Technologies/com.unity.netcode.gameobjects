@@ -55,7 +55,7 @@ namespace TestProject.RuntimeTests
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
                 SceneEventProgressId = Guid.NewGuid(),
                 LoadSceneMode = LoadSceneMode.Single,
-                SceneHandle = 32768
+                SceneHandle = new NetworkSceneHandle(32768, true)
             };
 
             sceneEventData.Serialize(fastBufferWriter);
