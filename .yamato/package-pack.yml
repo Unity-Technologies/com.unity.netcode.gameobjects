@@ -29,7 +29,7 @@ package_pack_-_ngo_{{ platform.name }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.smaller_flavor }}
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}

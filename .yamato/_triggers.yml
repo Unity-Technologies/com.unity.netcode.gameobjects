@@ -44,7 +44,7 @@
   # It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
 
 
-#-----------------------------------------------------------------------------------  
+#-----------------------------------------------------------------------------------
 
 # After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
 # This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
@@ -82,7 +82,7 @@ pr_code_changes_checks:
 
     # Run standalone test. We run it only on Ubuntu since it's the fastest machine, and it was noted that for example distribution on macOS is taking 40m since we switched to Apple Silicon
     # Coverage on other standalone machines is present in Nightly job so it's enough to not run all of them for PRs
-    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_win_il2cpp_6000.0
+    - .yamato/desktop-standalone-tests.yml#desktop_standalone_test_testproject_ubuntu_il2cpp_trunk
     - .yamato/cmb-service-standalone-tests.yml#cmb_service_standalone_test_testproject_ubuntu_il2cpp_trunk
   triggers:
     expression: |-
@@ -104,9 +104,9 @@ pr_code_changes_checks:
         "**/*.md"
       ]
     cancel_old_ci: true
-      
-      
-      
+
+
+
 
 
 
