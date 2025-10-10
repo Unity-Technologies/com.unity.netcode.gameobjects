@@ -14,7 +14,7 @@ Netcode for GameObjects provides two authority models: [server authority](#serve
 
 The server authority model has a single game instance that is defined as the server. That game instance is responsible for running the main simulation and managing all aspects of running the networked game. Server authority is the authority model used for [client-server games](client-server.md).
 
-The server authority model has the strength of providing a centralized authority to manage any potential game state conflicts. This allows the implementation of systems such as game state rollback and competitive client prediction. However, this can come at the cost of adding latencies, because all state changes must be sent to the server game instance, processed, and then sent out to other game instances.
+The server authority model has the strength of providing a centralized authority to manage any potential game state conflicts. This allows the implementation of systems such as game state rollback and competitive client prediction. However, this can come at the expense of adding latencies, because all state changes must be sent to the server game instance, processed, and then sent out to other game instances.
 
 Server authority games can also be resource intensive. The server runs the simulation for the entire game world, and so the server needs to be powerful enough to handle the simulation and networking of all connected game clients. This resource requirement can become expensive.
 
@@ -22,10 +22,44 @@ Server authority is primarily used by performance-sensitive games, such as first
 
 ### Distributed authority
 
-The distributed authority model shares authority between game instances. Each game instance is the authority for a subdivision of the networked objects in the game and is responsible for running the simulation for their subdivision of objects. Updates are shared from other game instances for the rest of the simulation.
+The [distributed authority model](distributed-authority.md) shares authority between game instances. Each game instance is the authority for a subdivision of the networked objects in the game and is responsible for running the simulation for their subdivision of objects. Updates are shared from other game instances for the rest of the simulation.
 
-The authority of each networked object is responsible for simulating the behavior and managing any aspects of running the networked game that relate to the objects it is the authority of.
+The authority of each networked object is responsible for simulating the behavior and managing any aspects of running the networked game that relate to the objects it's the authority of.
 
-Because distributed authority games share the simulation between each connected client, they are less resource intensive. Each machine connected to the game processes a subdivision of the simulation, so no single machine needs to have the capacity to process the entire simulation. This results in a multiplayer game experience that can run on cheaper machines and is less resource intensive.
+Because distributed authority games share the simulation between each connected client, they're less resource intensive. Each machine connected to the game processes a subdivision of the simulation, so no single machine needs to have the capacity to process the entire simulation. This results in a multiplayer game experience that can run on cheaper machines and is less resource intensive.
 
-The distributed authority model is the authority model used for [distributed authority games](distributed-authority.md).
+## Checking for authority
+
+The `HasAuthority` property, which is available on both NetworkObjects and NetworkBehaviours, is session-mode agnostic and works in both distributed authority and client-server contexts. It's recommended to use `HasAuthority` whenever you're working with individual objects, regardless of whether you're using a distributed authority or client-server topology.
+
+```csharp
+public class MonsterAI : NetworkBehaviour
+{
+    public override void OnNetworkSpawn()
+    {
+        if (!HasAuthority)
+        {
+            return;
+        }
+        // Authority monster init script here
+        base.OnNetworkSpawn();
+    }
+
+    private void Update()
+    {
+        if (!IsSpawned || !HasAuthority)
+        {
+            return;
+        }
+        // Authority updates monster AI here
+    }
+}
+```
+
+Using distributed authority with Netcode for GameObjects requires a shift in the understanding of authority: instead of authority belonging to the server in all cases, it belongs to whichever client instance currently has authority. This necessitates a shift away from using local, non-replicated properties to store pertinent states; instead, [NetworkVariables](../basics/networkvariable.md) should be used to keep states synchronized and saved when all clients disconnect from a session or ownership is transferred to another client.
+
+Distributed authority supports all built-in NetworkVariable data types. Because there's no concept of an authoritative server in a distributed authority session, all NetworkVariables are automatically configured with owner write and everyone read permissions.
+
+## Additional resources
+
+- [Ownership](ownership.md)
