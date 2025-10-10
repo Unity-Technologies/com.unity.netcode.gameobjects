@@ -94,13 +94,13 @@ namespace TestProject.RuntimeTests
             {
                 // Validate that the clients finish synchronization and they used the proper synchronization mode
                 case SceneEventType.SynchronizeComplete:
-                {
-                    var authority = GetAuthorityNetworkManager();
-                    var matchedClient = m_ClientNetworkManagers.FirstOrDefault(c => c.LocalClientId == sceneEvent.ClientId);
-                    Assert.That(matchedClient, Is.Not.Null, $"Found no client {nameof(NetworkManager)}s that had a {nameof(NetworkManager.LocalClientId)} of {sceneEvent.ClientId}");
-                    Assert.AreEqual(matchedClient.SceneManager.ClientSynchronizationMode, authority.SceneManager.ClientSynchronizationMode);
-                    break;
-                }
+                    {
+                        var authority = GetAuthorityNetworkManager();
+                        var matchedClient = m_ClientNetworkManagers.FirstOrDefault(c => c.LocalClientId == sceneEvent.ClientId);
+                        Assert.That(matchedClient, Is.Not.Null, $"Found no client {nameof(NetworkManager)}s that had a {nameof(NetworkManager.LocalClientId)} of {sceneEvent.ClientId}");
+                        Assert.AreEqual(matchedClient.SceneManager.ClientSynchronizationMode, authority.SceneManager.ClientSynchronizationMode);
+                        break;
+                    }
             }
         }
 
@@ -311,6 +311,7 @@ namespace TestProject.RuntimeTests
             // Check error status for trying to load an invalid scene name
             LogAssert.Expect(LogType.Error, $"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             Assert.AreEqual(authority.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive), SceneEventProgressStatus.InvalidSceneName);
+            Assert.Fail("Test reruns!");
         }
 
 
