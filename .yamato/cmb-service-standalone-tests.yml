@@ -34,7 +34,7 @@
 cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}:
   name : CMB Service Test - NGO {{ project.name }} - [{{ platform.name }}, {{ editor }}, {{ backend }}]
   agent:
-    type: {{ platform.type }}::GPU
+    type: {{ platform.type }}
     image: {{ platform.image }}
     flavor: {{ platform.flavor }}
 
