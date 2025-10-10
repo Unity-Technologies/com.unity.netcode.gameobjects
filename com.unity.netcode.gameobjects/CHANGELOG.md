@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- `NetworkSceneManager` as an internal wrapper for the `SceneManager.Scene.handle` and swapped all places that use an `int` to represent a `Scene.handle` to instead use the `NetworkSceneManager`. (#3647)
 - Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
 - Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
 
@@ -26,6 +27,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
 - Made a variety of small performance improvements. (#3683)
 
 ### Security
