@@ -40,11 +40,17 @@ def is_release_date(weekday, release_week_cycle, anchor_date):
     return weeks_since_anchor % release_week_cycle == 0
 
 
-def is_changelog_empty(changelog_path):
+# Note that exceptions parameter can include changelog entries that are not considered "meaningful".
+# That means that if Changelog consists ONLY of these entries, it is still considered empty.
+def is_changelog_empty(changelog_path, exceptions=None):
     """
     Checks if the [Unreleased] section in the CHANGELOG.md contains meaningful entries.
     It is considered "empty" if the section only contains headers (like ### Added) but no actual content.
     """
+    
+    if exceptions is None:
+        exceptions = []
+            
     if not os.path.exists(changelog_path):
         raise FileNotFoundError(f"Changelog file not found at {changelog_path}")
 
@@ -55,11 +61,28 @@ def is_changelog_empty(changelog_path):
     # Then it matches in the first group all empty sections (only lines that are empty or start with ##)
     # The second group matches the start of the next Changelog entry (## [).
     # if both groups are matched it means that the Unreleased section is empty.
-    pattern = re.compile(r"^## \[Unreleased\]\n((?:^###.*\n|^\s*\n)*)(^## \[)", re.MULTILINE)
-    match = pattern.search(content)
-
-    # If we find a match for the "empty unreleased changelog entry" pattern, it means the changelog IS empty.
-    return match
+    unreleased_match = re.search(r"^## \[Unreleased\][ \t]*\n((?:.*\n)*?)(?=^## \[)", content, re.MULTILINE)
+    
+    if not unreleased_match:
+        print("Could not find [Unreleased] section in the changelog.")
+        return True  # No [Unreleased] section found, treat as empty
+        
+    unreleased_content = unreleased_match.group(1)
+    # Split into lines and filter out headers and empty lines
+    entries = [line.strip() for line in unreleased_content.splitlines()
+        if line.strip() and not line.strip().startswith("###")]
+    
+    # If no entries, changelog is empty
+    if not entries:
+        print("The [Unreleased] section in the changelog is empty.")
+        return True
+    
+    # If all entries are in exceptions, changelog is empty
+    if all(entry in exceptions for entry in entries):
+        print("The [Unreleased] section in the changelog has no meaningful entries (only exceptions).")
+        return True
+    
+    return False
 
 
 def verifyReleaseConditions(config: ReleaseConfig):
@@ -72,12 +95,15 @@ def verifyReleaseConditions(config: ReleaseConfig):
     """
 
     error_messages = []
+    exceptions = [
+        "* Changed minimum Unity version supported to 2022.3 LTS"
+    ]
 
     try:
         if not is_release_date(config.release_weekday, config.release_week_cycle, config.anchor_date):
             error_messages.append(f"Condition not met: Today is not the scheduled release day. It should be weekday: {config.release_weekday}, every {config.release_week_cycle} weeks starting from {config.anchor_date}.")
 
-        if is_changelog_empty(config.changelog_path):
+        if is_changelog_empty(config.changelog_path, exceptions):
             error_messages.append("Condition not met: The [Unreleased] section of the changelog has no meaningful entries.")
 
         if config.github_manager.is_branch_present(config.release_branch_name):

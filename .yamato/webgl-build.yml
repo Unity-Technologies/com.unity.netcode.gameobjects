@@ -10,7 +10,7 @@
   # Jobs configurations are generated using nested loops through:
     # 1. For the default project (project is used only as a context for the build).
     # 2. For all desktop platforms (Windows, Ubuntu, macOS)
-    # 3. For all supported Unity Editor versions (For NGOv1.X it means 2021.3+)
+    # 3. For all supported Unity Editor versions (For NGOv1.X it means 2022.3+)
   
 # TECHNICAL CONSIDERATIONS----------------------------------------------------------------
   # WebGL requires IL2CPP scripting backend (Mono is not supported)

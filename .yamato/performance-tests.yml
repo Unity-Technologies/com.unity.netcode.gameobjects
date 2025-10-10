@@ -9,7 +9,7 @@
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs configurations are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
-    # 2. For all supported Unity Editor versions (For NGOv1.X it means 2021.3+)
+    # 2. For all supported Unity Editor versions (For NGOv1.X it means 2022.3+)
     # 3. For the default project (project is used only as a context for the build). TODO-comment: if performance tests would be included in projects then we should make an appropriate split.
   
 # TECHNICAL CONSIDERATIONS---------------------------------------------------------------

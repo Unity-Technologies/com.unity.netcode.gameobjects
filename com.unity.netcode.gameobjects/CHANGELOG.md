@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+* Changed minimum Unity version supported to 2022.3 LTS
 
 ### Deprecated
 

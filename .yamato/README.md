@@ -70,7 +70,7 @@ Currently, the CI implementation supports the following platforms:
     - Ubuntu
     - macOS
 4. Unity Editor Versions
-    - Supports NGOv1.X (2021.3+ editors)
+    - Supports NGOv1.X (2022.3+ editors)
 5. Architectures
     - x64
     - ARM64 (This is present for consoles/mobiles but will be extended. More information is present in specific standalone test files)
