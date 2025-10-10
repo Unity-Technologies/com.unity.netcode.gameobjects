@@ -3420,7 +3420,7 @@ namespace Unity.Netcode
             {
                 // Since the authority is the source of truth for the NetworkSceneHandle,
                 // the NetworkSceneHandle is the same as the SceneOriginHandle.
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManager.DistributedAuthorityMode && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
                 {
                     NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
                 }
@@ -3428,7 +3428,6 @@ namespace Unity.Netcode
                 {
                     NetworkSceneHandle = SceneOriginHandle;
                 }
-
             }
             else // Otherwise, the client did not find the client to server scene handle
             if (NetworkManager.LogLevel == LogLevel.Developer)
