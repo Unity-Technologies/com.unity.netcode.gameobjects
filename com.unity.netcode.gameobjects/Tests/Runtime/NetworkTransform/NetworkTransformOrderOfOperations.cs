@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -22,7 +21,6 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_GenericObject;
 
         private NetworkObject m_ObjectToTest;
-        private SpawnSequenceController m_ObjectToTestSeqController;
         private SpawnSequenceController m_AuthoritySeqControllerInstance;
 
         private NetworkManager m_AuthorityNetworkManager;
@@ -35,8 +33,10 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_ObjectToTest = CreateNetworkObjectPrefab("TestObject").GetComponent<NetworkObject>();
-            m_ObjectToTestSeqController = m_ObjectToTest.gameObject.AddComponent<SpawnSequenceController>();
+            m_ObjectToTest.AllowOwnerToParent = true;
+            m_ObjectToTest.gameObject.AddComponent<SpawnSequenceController>();
             m_GenericObject = CreateNetworkObjectPrefab("GenericObject").GetComponent<NetworkObject>();
+            m_GenericObject.gameObject.AddComponent<ReferenceRpcHelper>();
             base.OnServerAndClientsCreated();
         }
 
@@ -68,69 +68,23 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthorityGenericInstances.Clear();
             for (int i = 0; i < 3; i++)
             {
-                var parent = SpawnObject(m_GenericObject.gameObject, m_AuthorityNetworkManager).GetComponent<NetworkObject>();
-                m_AuthorityGenericInstances.Add(parent);
+                var instance = Object.Instantiate(m_GenericObject);
+                instance.transform.position = GetRandomVector3(-10, 10);
+                instance.transform.rotation = new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                };
+                SpawnObjectInstance(instance, m_AuthorityNetworkManager);
+                m_AuthorityGenericInstances.Add(instance);
             }
             yield return WaitForConditionOrTimeOut(VerifyGenericsSpawned);
             AssertOnTimeout("Failure to spawn generics on one or more clients!");
         }
 
-        [UnityTest]
-
-        public IEnumerator OrderOfOperations()
-        {
-            m_AuthorityNetworkManager = GetAuthorityNetworkManager();
-            yield return SpawnGenericParents();
-
-            ConfigureSequencesTest1(m_AuthorityGenericInstances.First());
-
-            yield return RunTestSequences();
-
-        }
-
-        private void ConfigureSequencesTest1(NetworkObject parent)
+        protected override IEnumerator OnSetup()
         {
             SpawnSequenceController.Clear();
-            var teleportSequence = new TeleportSequence()
-            {
-                Stage = SpawnSequence.SpawnStage.Spawn,
-                Position = GetRandomVector3(-10, 10),
-                Rotation = (new Quaternion()
-                {
-                    eulerAngles = GetRandomVector3(-180, 180),
-                }),
-            };
-
-            var parentSequence = new ParentSequence()
-            {
-                Stage = SpawnSequence.SpawnStage.AfterSpawn,
-                TargetParent = parent,
-            };
-
-            var changeOwnershipSequence = new ChangeOwnershipSequence()
-            {
-                Stage = SpawnSequence.SpawnStage.AfterSpawn,
-                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
-            };
-
-            SpawnSequenceController.AddAction(parentSequence);
-            SpawnSequenceController.AddAction(changeOwnershipSequence);
-            SpawnSequenceController.AddAction(teleportSequence);
-        }
-
-        private IEnumerator RunTestSequences(bool spawnWithObservers = true)
-        {
-            m_ObjectToTest.SpawnWithObservers = spawnWithObservers;
-
-            m_AuthoritySeqControllerInstance = SpawnObject(m_ObjectToTest.gameObject, m_AuthorityNetworkManager).GetComponent<SpawnSequenceController>();
-
-            m_AuthoritySeqControllerInstance.AfterSpawn();
-
-            yield return WaitForSpawnedOnAllOrTimeOut(m_AuthoritySeqControllerInstance.NetworkObjectId);
-            AssertOnTimeout($"All clients did not spawn {m_AuthoritySeqControllerInstance.name}!");
-
-            yield return WaitForConditionOrTimeOut(TransformsMatch);
-            AssertOnTimeout($"Not all {m_AuthoritySeqControllerInstance.name} instances' transforms match!");
+            return base.OnSetup();
         }
 
         private bool TransformsMatch(StringBuilder errorLog)
@@ -138,6 +92,8 @@ namespace Unity.Netcode.RuntimeTests
             var hasErrors = false;
             var authorityEulerRotation = m_AuthoritySeqControllerInstance.GetSpaceRelativeRotation().eulerAngles;
             var authorityPosition = m_AuthoritySeqControllerInstance.GetSpaceRelativePosition();
+            var authorityParent = m_AuthoritySeqControllerInstance.transform.parent ? m_AuthoritySeqControllerInstance.transform.parent.GetComponent<NetworkObject>() : null;
+            var authParentName = authorityParent ? authorityParent.name : "root";
 
             foreach (var networkManager in m_NetworkManagers)
             {
@@ -162,8 +118,510 @@ namespace Unity.Netcode.RuntimeTests
                     errorLog.AppendLine($"[Client-{nonAuthorityInstance.NetworkManager.LocalClientId}][{nonAuthorityInstance.gameObject.name}] Position {GetVector3Values(nonAuthorityPosition)} does not match the authority position {GetVector3Values(authorityPosition)}!");
                     hasErrors = true;
                 }
+
+                var nonAuthorityParent = nonAuthorityInstance.transform.parent ? nonAuthorityInstance.transform.parent.GetComponent<NetworkObject>() : null;
+                var nonAuthorityParentName = nonAuthorityParent ? nonAuthorityParent.name : "root";
+                if (authorityParent != null)
+                {
+                    if (nonAuthorityParent != null)
+                    {
+                        if (nonAuthorityParent.NetworkObjectId != authorityParent.NetworkObjectId)
+                        {
+                            errorLog.AppendLine($"[Client-{nonAuthorityInstance.NetworkManager.LocalClientId}][{nonAuthorityInstance.gameObject.name}] Parent-{nonAuthorityParent.NetworkObjectId} does not match the authority Parent {authParentName}!");
+                            hasErrors = true;
+                        }
+                    }
+                    else
+                    {
+                        errorLog.AppendLine($"[Client-{nonAuthorityInstance.NetworkManager.LocalClientId}][{nonAuthorityInstance.gameObject.name}] Parent root does not match the authority parent {authParentName}!");
+                        hasErrors = true;
+                    }
+                }
+                else if (nonAuthorityInstance != null)
+                {
+                    errorLog.AppendLine($"[Client-{nonAuthorityInstance.NetworkManager.LocalClientId}][{nonAuthorityInstance.gameObject.name}] " +
+                        $"{nonAuthorityParentName}-{nonAuthorityParent.NetworkObjectId} does not match the authority parent {authParentName}-{authorityParent.NetworkObjectId}!");
+                    hasErrors = true;
+                }
             }
             return !hasErrors;
+        }
+
+        [UnityTest]
+
+        public IEnumerator OrderOfOperations()
+        {
+            m_EnableVerboseDebug = true;
+            SpawnSequenceController.VerboseLog = m_EnableVerboseDebug;
+            m_AuthorityNetworkManager = GetAuthorityNetworkManager();
+            yield return SpawnGenericParents();
+
+            ConfigureSequencesTest1(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences();
+
+            ConfigureSequencesTest2(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences();
+
+            ConfigureSequencesTest3(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            yield return RunTestSequences();
+
+            ConfigureSequencesTest4(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            yield return RunTestSequences(false);
+
+            ConfigureSequencesTest5(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences();
+
+            ConfigureSequencesTest6(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences();
+
+            ConfigureSequencesTest7(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences(spawnWithOwnership: true);
+
+            ConfigureSequencesTest8(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences(spawnWithObservers: false);
+
+            ConfigureSequencesTest9(m_AuthorityGenericInstances[0]);
+            yield return RunTestSequences(spawnWithObservers: false);
+
+            ConfigureSequencesTest10(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            yield return RunTestSequences(spawnWithOwnership: true);
+        }
+
+        private IEnumerator RunTestSequences(bool spawnWithObservers = true, bool spawnWithOwnership = false)
+        {
+            if (SpawnSequenceController.ShouldRun(m_AuthorityNetworkManager))
+            {
+                VerboseDebug($"Running {SpawnSequenceController.CurrentTest}");
+                var instance = Object.Instantiate(m_ObjectToTest);
+                instance.SpawnWithObservers = spawnWithObservers;
+                SpawnObjectInstance(instance, spawnWithOwnership ? GetNonAuthorityNetworkManager() : m_AuthorityNetworkManager);
+                m_AuthoritySeqControllerInstance = instance.GetComponent<SpawnSequenceController>();
+                var authorityObjectId = m_AuthoritySeqControllerInstance.NetworkObjectId;
+                m_AuthoritySeqControllerInstance.AfterSpawn();
+                if (spawnWithObservers)
+                {
+                    yield return WaitForSpawnedOnAllOrTimeOut(m_AuthoritySeqControllerInstance.NetworkObjectId);
+                    AssertOnTimeout($"All clients did not spawn {m_AuthoritySeqControllerInstance.name}!");
+                    foreach (var networkManager in m_NetworkManagers)
+                    {
+                        if (networkManager == m_AuthorityNetworkManager)
+                        {
+                            continue;
+                        }
+                        networkManager.SpawnManager.SpawnedObjects[authorityObjectId].GetComponent<SpawnSequenceController>().AfterSpawn();
+                    }
+                }
+
+                // Assure all sequenced actions have been invoked.
+                yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
+                if (s_GlobalTimeoutHelper.HasTimedOut())
+                {
+                    // If we timed out, then check for pending and if found wait for the condition
+                    // once more.
+                    if (SpawnSequenceController.ActionIsPending())
+                    {
+                        yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
+                    }
+                }
+                AssertOnTimeout($"[{SpawnSequenceController.CurrentTest}] Not all actions were invoked for the current test sequence!\n {SpawnSequenceController.ErrorLog}");
+                yield return WaitForConditionOrTimeOut(TransformsMatch);
+                AssertOnTimeout($"Not all {m_AuthoritySeqControllerInstance.name} instances' transforms match!");
+
+                // De-spawn the test object
+                if (m_AuthoritySeqControllerInstance.HasAuthority)
+                {
+                    m_AuthoritySeqControllerInstance.NetworkObject.Despawn();
+                }
+                else
+                {
+                    foreach (var networkManager in m_NetworkManagers)
+                    {
+                        if (networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].HasAuthority)
+                        {
+                            networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].Despawn();
+                            break;
+                        }
+                    }
+                }
+
+                // Assure the generic parents are all at the root hierarchy.
+                foreach (var parent in m_AuthorityGenericInstances)
+                {
+                    if (parent.transform.parent != null)
+                    {
+                        parent.transform.parent = null;
+                    }
+                }
+            }
+            else
+            {
+                VerboseDebug($"Skipping {SpawnSequenceController.CurrentTest}");
+            }
+            // Reset the controller's global settings
+            SpawnSequenceController.Clear();
+        }
+
+        /// <summary>
+        /// Test-1:
+        /// Authority-> Spawn, change ownership, (wait), parent
+        /// </summary>
+        private void ConfigureSequencesTest1(NetworkObject parent)
+        {
+            SpawnSequenceController.CurrentTest = "Test1";
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            var parentSequence = new ParentSequence()
+            {
+                TimeDelayInMS = 200,
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent,
+            };
+
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+            SpawnSequenceController.AddAction(parentSequence);
+        }
+
+        /// <summary>
+        /// Test-2:
+        /// Authority-> Spawn, change parent, change ownership
+        /// </summary>
+        private void ConfigureSequencesTest2(NetworkObject parent)
+        {
+            SpawnSequenceController.CurrentTest = "Test2";
+
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            var parentSequence = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence);
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+        }
+
+        /// <summary>
+        /// Test-3:
+        /// Authority-> Spawn, change parent(1), change ownership
+        /// Client-Owner-> Afterspawn re-parent(2)
+        /// </summary>
+        private void ConfigureSequencesTest3(NetworkObject parent1, NetworkObject parent2)
+        {
+            SpawnSequenceController.CurrentTest = "Test3";
+
+            // Authority
+            var parentSequence = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence);
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+
+            // Client-Owner
+            var parentSequenceClient = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent2,
+            };
+            SpawnSequenceController.AddAction(parentSequenceClient);
+        }
+
+        /// <summary>
+        /// Test-4:
+        /// Authority-> Spawn no observers, change parents(multiple), NetworkShow, change ownership, Teleport RPC
+        /// ClientOwner-> Teleport RPC
+        /// </summary>
+        private void ConfigureSequencesTest4(NetworkObject parent1, NetworkObject parent2)
+        {
+            SpawnSequenceController.CurrentTest = "Test4";
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var parentSequence2 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent2,
+            };
+
+            var networkShowSequence = new NetworkShowSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+            };
+
+            var teleportSequence = new TeleportSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TeleportContext = TeleportSequence.TeleportContexts.OwnerTelportRpc,
+                Position = GetRandomVector3(-10, 10),
+                Rotation = (new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                }),
+                InvokeOnlyOnClientId = m_AuthorityNetworkManager.LocalClientId,
+            };
+
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(parentSequence2);
+            SpawnSequenceController.AddAction(networkShowSequence);
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+            SpawnSequenceController.AddAction(teleportSequence);
+        }
+
+        /// <summary>
+        /// Test-5:
+        /// Authority-> Spawn, change parent (1), change ownership, Teleport RPC with NetworkBehaviourReference
+        /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
+        /// </summary>
+        private void ConfigureSequencesTest5(NetworkObject parent1)
+        {
+            SpawnSequenceController.CurrentTest = "Test5";
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            var teleportSequence = new ReferenceRpcSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TeleportContext = TeleportSequence.TeleportContexts.OwnerTelportRpc,
+                Position = GetRandomVector3(-10, 10),
+                Rotation = (new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                }),
+                InvokeOnlyOnClientId = m_AuthorityNetworkManager.LocalClientId,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+            SpawnSequenceController.AddAction(teleportSequence);
+        }
+
+        /// <summary>
+        /// Test-6: (Client-Server only)
+        /// Authority-> Spawn, change ownership, change parent (1), Teleport RPC with NetworkBehaviourReference
+        /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
+        /// </summary>
+        private void ConfigureSequencesTest6(NetworkObject parent1)
+        {
+            SpawnSequenceController.CurrentTest = "Test6 (Client-Server Only)";
+            if (m_AuthorityNetworkManager.DistributedAuthorityMode)
+            {
+                SpawnSequenceController.ClientServerOnly = true;
+                return;
+            }
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var changeOwnershipSequence = new ChangeOwnershipSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+            };
+
+            var teleportSequence = new ReferenceRpcSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TeleportContext = TeleportSequence.TeleportContexts.OwnerTelportRpc,
+                Position = GetRandomVector3(-10, 10),
+                Rotation = (new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                }),
+                InvokeOnlyOnClientId = m_AuthorityNetworkManager.LocalClientId,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+            };
+
+            SpawnSequenceController.AddAction(changeOwnershipSequence);
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(teleportSequence);
+        }
+
+        /// <summary>
+        /// Test-7: (Client-Server only)
+        /// Authority-> Spawn with ownership,change parent (1), Teleport RPC with NetworkBehaviourReference
+        /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
+        /// </summary>
+        private void ConfigureSequencesTest7(NetworkObject parent1)
+        {
+            SpawnSequenceController.CurrentTest = "Test7 (Client-Server Only)";
+            if (m_AuthorityNetworkManager.DistributedAuthorityMode)
+            {
+                SpawnSequenceController.ClientServerOnly = true;
+                return;
+            }
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var teleportSequence = new ReferenceRpcSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TeleportContext = TeleportSequence.TeleportContexts.OwnerTelportRpc,
+                Position = GetRandomVector3(-10, 10),
+                Rotation = (new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                }),
+                InvokeOnlyOnClientId = m_AuthorityNetworkManager.LocalClientId,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(teleportSequence);
+        }
+
+        /// <summary>
+        /// Test-8:
+        /// Authority-> Spawn with no observers, change parent(1), NetworkShow, change ownership, Teleport RPC with NetworkBehaviourReference
+        /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
+        /// </summary>
+        private void ConfigureSequencesTest8(NetworkObject parent1)
+        {
+            SpawnSequenceController.CurrentTest = "Test8";
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var networkShow = new NetworkShowSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn
+            };
+
+            var changeOwnership = new ChangeOwnershipSequence()
+            {
+                TargetOwnerClientId = GetNonAuthorityNetworkManager().LocalClientId,
+                Stage = SpawnSequence.SpawnStage.AfterSpawn
+            };
+
+            var teleportSequence = new ReferenceRpcSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TeleportContext = TeleportSequence.TeleportContexts.OwnerTelportRpc,
+                Position = GetRandomVector3(-10, 10),
+                Rotation = (new Quaternion()
+                {
+                    eulerAngles = GetRandomVector3(-180, 180),
+                }),
+                InvokeOnlyOnClientId = m_AuthorityNetworkManager.LocalClientId,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(networkShow);
+            SpawnSequenceController.AddAction(changeOwnership);
+            SpawnSequenceController.AddAction(teleportSequence);
+        }
+
+        /// <summary>
+        /// Test-9:
+        /// Authority-> Spawn with no observers, NetworkShow, change parent(1)
+        /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
+        /// </summary>
+        private void ConfigureSequencesTest9(NetworkObject parent1)
+        {
+            SpawnSequenceController.CurrentTest = "Test9";
+
+            // Authority
+
+            var networkShow = new NetworkShowSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn
+            };
+
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            SpawnSequenceController.AddAction(networkShow);
+            SpawnSequenceController.AddAction(parentSequence1);
+        }
+
+        /// <summary>
+        /// Test-10: (Client-Server Only)
+        /// Authority-> Spawn with ownership, change parent (1), Wait (1), Parent RPC with NetworkObjectReference
+        /// ClientOwner-> Re-parent (2) RPC using NetworkObjectReference
+        /// </summary>
+        private void ConfigureSequencesTest10(NetworkObject parent1, NetworkObject parent2)
+        {
+            SpawnSequenceController.CurrentTest = "Test10 (Client-Server Only)";
+            if (m_AuthorityNetworkManager.DistributedAuthorityMode)
+            {
+                SpawnSequenceController.ClientServerOnly = true;
+                return;
+            }
+
+            // Authority
+            var parentSequence1 = new ParentSequence()
+            {
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TargetParent = parent1,
+            };
+
+            var parentRpc = new ReferenceRpcSequence()
+            {
+                IsParentRPC = true,
+                Parent = parent2,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+                TimeDelayInMS = 1000,
+            };
+
+            SpawnSequenceController.AddAction(parentSequence1);
+            SpawnSequenceController.AddAction(parentRpc);
         }
 
         internal class NetworkShowSequence : SpawnSequence
@@ -179,18 +637,56 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (Clients.Count == 0)
                 {
-                    foreach(var clientId in m_NetworkObject.NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in m_NetworkObject.NetworkManager.ConnectedClientsIds)
                     {
-                        Clients.Add(clientId);
+                        if (clientId != m_NetworkObject.OwnerClientId)
+                        {
+                            Clients.Add(clientId);
+                        }
                     }
                 }
 
-                foreach(var clientId in Clients)
+                foreach (var clientId in Clients)
                 {
                     m_NetworkObject.NetworkShow(clientId);
                 }
 
                 base.OnAction();
+            }
+        }
+
+        internal class ReferenceRpcSequence : TeleportSequence
+        {
+            public bool IsParentRPC;
+            public ulong ReferenceTeleportHelperId;
+            public NetworkObject Parent;
+
+            protected override bool OnShouldInvoke(SpawnStage stage)
+            {
+                if (!m_NetworkObject.NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ReferenceTeleportHelperId))
+                {
+                    Debug.LogError($"[Client-{m_NetworkObject.NetworkManager.LocalClientId}] NetworkObject-{ReferenceTeleportHelperId} is not spawned on this client!");
+                }
+                // Check if it is the right stage and if the instance can teleport 
+                return base.OnShouldInvoke(stage);
+            }
+
+            // We use the same teleport RPC logic to determine if we can invoke the action and
+            // just do a broadcast RPC on an already spawned object. The primary validation here
+            // is to assure message ordering is maintained so if you do use a reference
+            // (NetworkObject or NetworkBehaviour) the target object will be spawned.
+            // !!! This pattern cannot be used when spawning without observers and then doing a show followed by this kind of RPC !!!
+            protected override void OnAction()
+            {
+                var referencRpcHelper = m_NetworkObject.NetworkManager.SpawnManager.SpawnedObjects[ReferenceTeleportHelperId].GetComponent<ReferenceRpcHelper>();
+                if (!IsParentRPC)
+                {
+                    referencRpcHelper.ReferenceTeleportRpc(new NetworkBehaviourReference(m_SpawnSequenceController), Position, Rotation);
+                }
+                else
+                {
+                    referencRpcHelper.ReferenceParentRpc(new NetworkObjectReference(m_SpawnSequenceController.NetworkObject), new NetworkObjectReference(Parent));
+                }
             }
         }
 
@@ -220,7 +716,7 @@ namespace Unity.Netcode.RuntimeTests
                     // we want to invoke on the server or the server should invoke the teleport RPC and it is the server-side instance.
                     return (!m_InvokeOnServer && canCommitToTransform) || ((m_InvokeOnServer || m_OwnerTeleportRpc) && !canCommitToTransform && m_NetworkObject.NetworkManager.IsServer);
                 }
-                return m_NetworkObject.HasAuthority;
+                return (m_NetworkObject.HasAuthority && TeleportContext == TeleportContexts.MotionAuthority) || (!m_NetworkObject.HasAuthority && TeleportContext == TeleportContexts.OwnerTelportRpc);
             }
 
             protected override bool OnShouldInvoke(SpawnStage stage)
@@ -231,7 +727,14 @@ namespace Unity.Netcode.RuntimeTests
 
             protected override void OnAction()
             {
-                m_SpawnSequenceController.SetState(Position, Rotation, teleportDisabled: false);
+                if (m_OwnerTeleportRpc)
+                {
+                    m_SpawnSequenceController.TeleportRpc(Position, Rotation);
+                }
+                else
+                {
+                    m_SpawnSequenceController.SetState(Position, Rotation, teleportDisabled: false);
+                }
                 base.OnAction();
             }
         }
@@ -293,11 +796,22 @@ namespace Unity.Netcode.RuntimeTests
             };
 
             public SpawnStage Stage;
+
+            public bool WasInvoked { get; protected set; }
+            public bool InvokePending { get; protected set; }
+
+            public int TimeDelayInMS = 0;
+
+            public ulong? InvokeOnlyOnClientId;
             protected SpawnSequenceController m_SpawnSequenceController;
             protected NetworkObject m_NetworkObject;
 
             protected virtual bool OnShouldInvoke(SpawnStage stage)
             {
+                if (InvokeOnlyOnClientId.HasValue && m_NetworkObject.NetworkManager.LocalClientId != InvokeOnlyOnClientId.Value)
+                {
+                    return false;
+                }
                 return Stage == stage;
             }
 
@@ -310,18 +824,61 @@ namespace Unity.Netcode.RuntimeTests
             {
                 m_NetworkObject = spawnSequenceController.NetworkObject;
                 m_SpawnSequenceController = spawnSequenceController;
-                if (OnShouldInvoke(stage))
+                if (OnShouldInvoke(stage) && !InvokePending)
                 {
-                    OnAction();
+                    if (TimeDelayInMS == 0)
+                    {
+                        OnAction();
+                        WasInvoked = true;
+                    }
+                    else
+                    {
+                        InvokePending = true;
+                        m_SpawnSequenceController.StartCoroutine(TimeDelayCoroutine(stage, spawnSequenceController));
+                    }
                 }
+            }
+
+            private IEnumerator TimeDelayCoroutine(SpawnStage stage, SpawnSequenceController spawnSequenceController)
+            {
+                yield return new WaitForSeconds(TimeDelayInMS / 1000.0f);
+                m_NetworkObject = spawnSequenceController.NetworkObject;
+                m_SpawnSequenceController = spawnSequenceController;
+                OnAction();
+                WasInvoked = true;
+                InvokePending = false;
             }
         }
 
         public class SpawnSequenceController : NetworkTransform
         {
+            public static bool VerboseLog;
+            public static string CurrentTest;
+
+            public static bool ClientServerOnly;
+
+            public static bool ShouldRun(NetworkManager authorityNetworkManager)
+            {
+                if (ClientServerOnly)
+                {
+                    return !authorityNetworkManager.DistributedAuthorityMode;
+                }
+                return true;
+            }
+
+            public void Log(string msg)
+            {
+                if (VerboseLog)
+                {
+                    Debug.Log($"[{name}] {msg}");
+                }
+            }
+
             // We can get away with using a static list since all instances share the same application domain
             // when running integration tests.
             private static List<SpawnSequence> s_SpawnSequencedActions = new List<SpawnSequence>();
+
+            public static StringBuilder ErrorLog = new StringBuilder();
 
             public static void AddAction(SpawnSequence spawnSequence)
             {
@@ -331,6 +888,34 @@ namespace Unity.Netcode.RuntimeTests
             public static void Clear()
             {
                 s_SpawnSequencedActions.Clear();
+                ErrorLog.Clear();
+                ClientServerOnly = false;
+            }
+
+            public static bool ActionIsPending()
+            {
+                foreach (var sequence in s_SpawnSequencedActions)
+                {
+                    if (sequence.InvokePending)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public static bool AllActionsInvoked()
+            {
+                ErrorLog.Clear();
+                foreach (var sequence in s_SpawnSequencedActions)
+                {
+                    if (!sequence.WasInvoked)
+                    {
+                        ErrorLog.AppendLine($"[{sequence.GetType().Name}] Has not been invoked!");
+                        return false;
+                    }
+                }
+                return true;
             }
 
             private void InvokeSequencesForStage(SpawnSequence.SpawnStage spawnStage)
@@ -343,6 +928,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
+                Log($"[{nameof(OnNetworkSpawn)}] Invoked on client-{NetworkManager.LocalClientId}.");
                 // Must invoke base first in order for CanCommit
                 base.OnNetworkSpawn();
                 InvokeSequencesForStage(SpawnSequence.SpawnStage.Spawn);
@@ -350,7 +936,7 @@ namespace Unity.Netcode.RuntimeTests
 
             protected override void OnNetworkPostSpawn()
             {
-                Debug.Log($"[{name}] Post spawned on client-{NetworkManager.LocalClientId}");
+                Log($"[{nameof(OnNetworkPostSpawn)}] Invoked on client-{NetworkManager.LocalClientId}.");
                 InvokeSequencesForStage(SpawnSequence.SpawnStage.PostSpawn);
                 base.OnNetworkPostSpawn();
             }
@@ -363,7 +949,48 @@ namespace Unity.Netcode.RuntimeTests
             [Rpc(SendTo.Owner)]
             public void TeleportRpc(Vector3 position, Quaternion rotation, RpcParams rpcParams = default)
             {
+                Log($"[{nameof(TeleportRpc)}] Invoked on client-{NetworkManager.LocalClientId}.");
                 SetState(posIn: position, rotIn: rotation, teleportDisabled: false);
+            }
+        }
+
+
+        public class ReferenceRpcHelper : NetworkBehaviour
+        {
+            [Rpc(SendTo.NotMe)]
+            public void ReferenceTeleportRpc(NetworkBehaviourReference networkBehaviourReference, Vector3 position, Quaternion rotation, RpcParams rpcParams = default)
+            {
+                networkBehaviourReference.TryGet<SpawnSequenceController>(out var spawnSequenceController);
+                if (spawnSequenceController != null)
+                {
+                    spawnSequenceController.Log($"[{nameof(ReferenceRpcHelper)}][{nameof(ReferenceTeleportRpc)}] Invoked on client-{NetworkManager.LocalClientId}.");
+                    spawnSequenceController.SetState(posIn: position, rotIn: rotation, teleportDisabled: false);
+                }
+                else
+                {
+                    Debug.LogError($"[{nameof(ReferenceTeleportRpc)}] Failed to resolve {nameof(NetworkBehaviourReference)}!");
+                }
+            }
+
+            [Rpc(SendTo.Owner)]
+            public void ReferenceParentRpc(NetworkObjectReference targetChildReference, NetworkObjectReference targetParentReference, RpcParams rpcParams = default)
+            {
+                targetChildReference.TryGet(out var networkObjectChild);
+                if (networkObjectChild == null)
+                {
+                    Debug.LogError($"[{nameof(ReferenceParentRpc)}] Failed to resolve {nameof(NetworkObjectReference)} for {nameof(targetChildReference)}!");
+                    return;
+                }
+                targetParentReference.TryGet(out var networkObjectParent);
+                if (networkObjectParent == null)
+                {
+                    Debug.LogError($"[{nameof(ReferenceParentRpc)}] Failed to resolve {nameof(NetworkObjectReference)} for {nameof(targetParentReference)}!");
+                    return;
+                }
+                var spawnSequenceController = networkObjectChild.GetComponent<SpawnSequenceController>();
+                spawnSequenceController.Log($"[{nameof(ReferenceRpcHelper)}][{nameof(ReferenceTeleportRpc)}] Invoked on client-{NetworkManager.LocalClientId}.");
+
+                networkObjectChild.TrySetParent(networkObjectParent);
             }
         }
     }
