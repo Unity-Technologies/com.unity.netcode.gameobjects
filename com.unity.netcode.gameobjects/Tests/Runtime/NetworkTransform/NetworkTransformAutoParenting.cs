@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests
         private List<NetworkObject> m_PrefabsToSpawn = new List<NetworkObject>();
         private NetworkObject m_ParentToSpawn;
 
-        private List<NetworkObject> m_ParentInstances = new List<NetworkObject>();        
+        private List<NetworkObject> m_ParentInstances = new List<NetworkObject>();
         private NetworkObject m_ChildInstance;
         private NetworkObject m_FinalParent;
         private ulong m_NetworkObjectIdToValidate;
