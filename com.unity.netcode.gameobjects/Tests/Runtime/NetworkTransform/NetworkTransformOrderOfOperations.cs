@@ -16,6 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     internal class NetworkTransformOrderOfOperations : IntegrationTestWithApproximation
     {
+        #region Configuration, Properties, and Overrides
         protected override int NumberOfClients => 4;
 
         private NetworkObject m_GenericObject;
@@ -30,6 +31,12 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
+        protected override IEnumerator OnSetup()
+        {
+            SpawnSequenceController.Clear();
+            return base.OnSetup();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_ObjectToTest = CreateNetworkObjectPrefab("TestObject").GetComponent<NetworkObject>();
@@ -40,6 +47,9 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
+        #endregion
+
+        #region (Wait for) Conditional Methods
         private bool VerifyGenericsSpawned(StringBuilder errorLog)
         {
             var conditionMet = true;
@@ -79,12 +89,6 @@ namespace Unity.Netcode.RuntimeTests
             }
             yield return WaitForConditionOrTimeOut(VerifyGenericsSpawned);
             AssertOnTimeout("Failure to spawn generics on one or more clients!");
-        }
-
-        protected override IEnumerator OnSetup()
-        {
-            SpawnSequenceController.Clear();
-            return base.OnSetup();
         }
 
         private bool TransformsMatch(StringBuilder errorLog)
@@ -146,7 +150,9 @@ namespace Unity.Netcode.RuntimeTests
             }
             return !hasErrors;
         }
+        #endregion
 
+        #region OrderOfOperations Core Test Methods
         [UnityTest]
 
         public IEnumerator OrderOfOperations()
@@ -260,7 +266,9 @@ namespace Unity.Netcode.RuntimeTests
             // Reset the controller's global settings
             SpawnSequenceController.Clear();
         }
+        #endregion
 
+        #region Test Sequence Configurations
         /// <summary>
         /// Test-1:
         /// Authority-> Spawn, change ownership, (wait), parent
@@ -623,7 +631,9 @@ namespace Unity.Netcode.RuntimeTests
             SpawnSequenceController.AddAction(parentSequence1);
             SpawnSequenceController.AddAction(parentRpc);
         }
+        #endregion
 
+        #region Sequence Class Definitions
         internal class NetworkShowSequence : SpawnSequence
         {
             public List<ulong> Clients = new List<ulong>();
@@ -954,7 +964,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-
         public class ReferenceRpcHelper : NetworkBehaviour
         {
             [Rpc(SendTo.NotMe)]
@@ -993,5 +1002,6 @@ namespace Unity.Netcode.RuntimeTests
                 networkObjectChild.TrySetParent(networkObjectParent);
             }
         }
+        #endregion
     }
 }
