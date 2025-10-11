@@ -15,8 +15,6 @@
 run_quick_checks:
   name: Run Quick Initial Checks
   dependencies:
-    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
-    - .yamato/vetting-test.yml#vetting_test
     # ensure the code is running to our current standards
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
     # ensure the package can be packed at at all on at least one platform

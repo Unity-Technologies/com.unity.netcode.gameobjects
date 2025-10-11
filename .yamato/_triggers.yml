@@ -72,6 +72,9 @@ pr_code_changes_checks:
   name: Code changes PR checks
   # Run the following tests on a selection of different desktop platforms
   dependencies:
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
+
     # Run package EditMode and Playmode package tests on trunk and an older supported editor (6000.0)
     - .yamato/package-tests.yml#package_test_-_ngo_trunk_mac
     - .yamato/package-tests.yml#package_test_-_ngo_6000.0_win
