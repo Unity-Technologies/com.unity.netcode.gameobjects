@@ -44,7 +44,8 @@ test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
       paths:
         - "test-results/**/*"
   dependencies:
-    - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    # - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
+    - .yamato/package-pack.yml#package_pack_-_ngo_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
 {% endif -%}
