@@ -44,9 +44,9 @@ standards_{{ platform.name }}_{{ project.name }}_{{ editor }}:
     # .NET environment setup. Ensures required .NET SDK and formatting tools are available
     - dotnet --version
     - dotnet format --version
-    - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --check # Runs standards check
 
     - unity-downloader-cli --fast --wait -u {{ editor }} -c editor {% if platform.name == "mac" %} --arch arm64 {% endif %} # For macOS we use ARM64 models. Downloads basic editor
+    - dotnet run --project=dotnet-tools/netcode.standards -- --project={{ project.path }} --check # Runs standards check
     - .Editor/Unity -batchmode -nographics -logFile - -executeMethod Packages.Rider.Editor.RiderScriptEditor.SyncSolution -projectPath {{ project.path }} -quit # This command is used to invoke Unity in a "headless" mode. It's used to sync the project
 {% endfor -%}
 {% endfor -%}
