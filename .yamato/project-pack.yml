@@ -31,7 +31,7 @@ project_pack_-_{{ project.name }}_{{ platform.name }}:
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
   commands:
-    - upm-pvp pack --project {{ project.path }} --output upm-ci~/packages
+    - upm-pvp pack {{ project.path }} --output upm-ci~/packages
   dependencies:
     - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
   artifacts:
