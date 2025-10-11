@@ -53,6 +53,7 @@ desktop_standalone_build_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{
       paths:
         - "artifacts/**/*"
   dependencies:
+    - .yamato/_run-all.yml#run_quick_checks # initial checks to perform fast validation of common errors
     - .yamato/project-pack.yml#project_pack_-_{{ project.name }}_{{ platform.name }}
 {% endfor -%}
 {% endfor -%}
