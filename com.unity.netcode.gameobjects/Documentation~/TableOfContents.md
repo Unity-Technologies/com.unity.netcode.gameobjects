@@ -7,6 +7,7 @@
     * [Distributed authority WebGL quickstart](learn/distributed-authority-webgl.md)
 * [Networking concepts](networking-concepts.md)
   * [Authority](terms-concepts/authority.md)
+  * [Ownership](terms-concepts/ownership.md)
   * [Network topologies](network-topologies.md)
     * [Network topologies](terms-concepts/network-topologies.md)
     * [Client-server](terms-concepts/client-server.md)

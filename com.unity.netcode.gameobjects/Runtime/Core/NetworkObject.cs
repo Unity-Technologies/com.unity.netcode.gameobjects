@@ -1367,12 +1367,12 @@ namespace Unity.Netcode
         ///  the most important part to uniquely identify in-scene
         ///  placed NetworkObjects
         /// </summary>
-        internal int SceneOriginHandle = 0;
+        internal NetworkSceneHandle SceneOriginHandle;
 
         /// <summary>
         /// The server-side scene origin handle
         /// </summary>
-        internal int NetworkSceneHandle = 0;
+        internal NetworkSceneHandle NetworkSceneHandle;
 
         private Scene m_SceneOrigin;
         /// <summary>
@@ -1393,7 +1393,7 @@ namespace Unity.Netcode
             {
                 // The scene origin should only be set once.
                 // Once set, it should never change.
-                if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
+                if (SceneOriginHandle.IsEmpty() && value.IsValid() && value.isLoaded)
                 {
                     m_SceneOrigin = value;
                     SceneOriginHandle = value.handle;
@@ -1405,13 +1405,13 @@ namespace Unity.Netcode
         /// Helper method to return the correct scene handle
         /// Note: Do not use this within NetworkSpawnManager.SpawnNetworkObjectLocallyCommon
         /// </summary>
-        internal int GetSceneOriginHandle()
+        internal NetworkSceneHandle GetSceneOriginHandle()
         {
-            if (SceneOriginHandle == 0 && IsSpawned && IsSceneObject != false)
+            if (SceneOriginHandle.IsEmpty() && IsSpawned && IsSceneObject != false)
             {
                 throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
             }
-            return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
+            return !SceneOriginHandle.IsEmpty() ? SceneOriginHandle : gameObject.scene.handle;
         }
 
         /// <summary>
@@ -2924,7 +2924,7 @@ namespace Unity.Netcode
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
 
-            public int NetworkSceneHandle;
+            public NetworkSceneHandle NetworkSceneHandle;
 
             internal int SynchronizationDataSize;
 
@@ -3438,7 +3438,7 @@ namespace Unity.Netcode
             {
                 // Since the authority is the source of truth for the NetworkSceneHandle,
                 // the NetworkSceneHandle is the same as the SceneOriginHandle.
-                if (NetworkManager.DistributedAuthorityMode)
+                if (NetworkManager.DistributedAuthorityMode && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
                 {
                     NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
                 }
@@ -3446,7 +3446,6 @@ namespace Unity.Netcode
                 {
                     NetworkSceneHandle = SceneOriginHandle;
                 }
-
             }
             else // Otherwise, the client did not find the client to server scene handle
             if (NetworkManager.LogLevel == LogLevel.Developer)
