@@ -311,7 +311,6 @@ namespace TestProject.RuntimeTests
             // Check error status for trying to load an invalid scene name
             LogAssert.Expect(LogType.Error, $"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             Assert.AreEqual(authority.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive), SceneEventProgressStatus.InvalidSceneName);
-            Assert.Fail("Test reruns!");
         }
 
 
