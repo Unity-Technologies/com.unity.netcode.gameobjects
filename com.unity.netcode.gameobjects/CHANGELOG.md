@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [2.6.0] - 2025-10-11
 
 ### Added
 
@@ -19,22 +19,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Improved performance of the NetworkVariable. (#3683)
 - Improved performance around the NetworkBehaviour component. (#3687)
 
-### Deprecated
-
-
-### Removed
-
-
 ### Fixed
 
 - Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
 - Made a variety of small performance improvements. (#3683)
-
-### Security
-
-
-### Obsolete
-
 
 ## [2.5.1] - 2025-09-14
 
