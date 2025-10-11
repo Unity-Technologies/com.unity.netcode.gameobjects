@@ -667,7 +667,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     Debug.LogError($"[Client-{m_NetworkObject.NetworkManager.LocalClientId}] NetworkObject-{ReferenceTeleportHelperId} is not spawned on this client!");
                 }
-                // Check if it is the right stage and if the instance can teleport 
+                // Check if it is the right stage and if the instance can teleport
                 return base.OnShouldInvoke(stage);
             }
 
@@ -721,7 +721,7 @@ namespace Unity.Netcode.RuntimeTests
 
             protected override bool OnShouldInvoke(SpawnStage stage)
             {
-                // Check if it is the right stage and if the instance can teleport 
+                // Check if it is the right stage and if the instance can teleport
                 return base.OnShouldInvoke(stage) && CanTeleport();
             }
 
