@@ -191,6 +191,9 @@ namespace Unity.Netcode.RuntimeTests
 
             ConfigureSequencesTest10(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
             yield return RunTestSequences(spawnWithOwnership: true);
+
+            ConfigureSequencesTest11(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            yield return RunTestSequences(spawnWithOwnership: true);
         }
 
         private IEnumerator RunTestSequences(bool spawnWithObservers = true, bool spawnWithOwnership = false)
@@ -631,9 +634,77 @@ namespace Unity.Netcode.RuntimeTests
             SpawnSequenceController.AddAction(parentSequence1);
             SpawnSequenceController.AddAction(parentRpc);
         }
+
+        /// <summary>
+        /// Test-11: (Client-Server Only)
+        /// Authority-> Spawn with ownership, Parent RPC with NetworkObjectReference.
+        /// ClientOwner-> Parent (1) RPC using NetworkObjectReference
+        /// Server-> On the parent changing --> re-parent (2)
+        /// </summary>
+        private void ConfigureSequencesTest11(NetworkObject parent1, NetworkObject parent2)
+        {
+            SpawnSequenceController.CurrentTest = "Test11 (Client-Server Only)";
+            if (m_AuthorityNetworkManager.DistributedAuthorityMode)
+            {
+                SpawnSequenceController.ClientServerOnly = true;
+                return;
+            }
+
+
+            var parentRpc = new ReferenceRpcSequence()
+            {
+                IsParentRPC = true,
+                Parent = parent1,
+                ReferenceTeleportHelperId = parent1.GetComponent<ReferenceRpcHelper>().NetworkObjectId,
+                Stage = SpawnSequence.SpawnStage.AfterSpawn,
+            };
+
+            var reparent = new ParentSequence()
+            {
+                TargetParent = parent2,
+                Stage = SpawnSequence.SpawnStage.Conditional,
+            };
+
+            // Authority
+            var conditionalParent = new ConditionalParentSequence()
+            {
+                ConditionalSequence = reparent,
+                ParentToWaitFor = parent1,
+                Stage = SpawnSequence.SpawnStage.Conditional,
+            };
+
+            SpawnSequenceController.AddAction(parentRpc);
+            SpawnSequenceController.AddAction(reparent);
+            SpawnSequenceController.AddAction(conditionalParent);
+        }
         #endregion
 
         #region Sequence Class Definitions
+
+        internal class ConditionalParentSequence : SpawnSequence
+        {
+            public NetworkObject ParentToWaitFor;
+
+            protected override bool OnShouldInvoke(SpawnStage stage)
+            {
+                // This could use additional properties to extend who
+                // registers for the parenting event (i.e. in a client-server topology).
+                if (m_NetworkObject.HasAuthority && stage == SpawnStage.PostSpawn)
+                {
+                    m_SpawnSequenceController.OnParentChanged += OnParentChanged;
+                }
+                return base.OnShouldInvoke(stage) && m_NetworkObject.HasAuthority;
+            }
+
+            private void OnParentChanged(NetworkObject parent)
+            {
+                if (ParentToWaitFor.NetworkObjectId == parent.NetworkObjectId)
+                {
+                    ConditionReached();
+                }
+            }
+        }
+
         internal class NetworkShowSequence : SpawnSequence
         {
             public List<ulong> Clients = new List<ulong>();
@@ -802,10 +873,13 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Spawn,
                 PostSpawn,
-                AfterSpawn
+                AfterSpawn,
+                Conditional,
             };
 
             public SpawnStage Stage;
+
+            public SpawnSequence ConditionalSequence;
 
             public bool WasInvoked { get; protected set; }
             public bool InvokePending { get; protected set; }
@@ -815,6 +889,19 @@ namespace Unity.Netcode.RuntimeTests
             public ulong? InvokeOnlyOnClientId;
             protected SpawnSequenceController m_SpawnSequenceController;
             protected NetworkObject m_NetworkObject;
+
+            protected void ConditionReached()
+            {
+                if (ConditionalSequence != null)
+                {
+                    WasInvoked = true;
+                    ConditionalSequence.Action(SpawnStage.Conditional, m_SpawnSequenceController);
+                }
+                else
+                {
+                    Debug.LogError($"[{GetType().Name}] Condition reached but {nameof(ConditionalSequence)} is null!");
+                }
+            }
 
             protected virtual bool OnShouldInvoke(SpawnStage stage)
             {
@@ -926,6 +1013,14 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
                 return true;
+            }
+
+            public event System.Action<NetworkObject> OnParentChanged;
+
+            public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+            {
+                OnParentChanged?.Invoke(parentNetworkObject);
+                base.OnNetworkObjectParentChanged(parentNetworkObject);
             }
 
             private void InvokeSequencesForStage(SpawnSequence.SpawnStage spawnStage)
