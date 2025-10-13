@@ -56,8 +56,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Assert.IsTrue(tasks[i].Result, $"HelpUrls.{names[i]} has an invalid path! Path: {allUrls[i]}");
             }
-
-            Assert.Fail("Test reruns!");
         }
 
         private async Task<bool> AreUnityDocsAvailableAt(string url)
