@@ -55,7 +55,7 @@ mobile_standalone_build_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     UNITY_HANDLEUIINTERRUPTIONS: 1
   commands:
     - unity-downloader-cli --fast --wait -u {{ editor }} -c Editor -c il2cpp {% if platform.base == "mac" %} -c ios {% else %} -c android {% endif %}
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --reruncount=1 --clean-library --build-only --timeout=1800
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --testproject={{ project.path }} --architecture={{ platform.architecture }} --scripting-backend=il2cpp --editor-location=.Editor --artifacts-path=artifacts --testfilter="Unity.Netcode.RuntimeTests.*" --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --clean-library-on-rerun --build-only --timeout=1800
   artifacts:
     players:
       paths:
@@ -97,11 +97,11 @@ mobile_standalone_test_{{ project.name }}_{{ platform.name }}_{{ editor }}:
     # Run tests for Android devices
     - |
       set ANDROID_DEVICE_CONNECTION=%BOKKEN_DEVICE_IP%
-      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --reruncount=1 --timeout=3600
+      UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --player-connection-ip=%BOKKEN_HOST_IP% --fail-on-assert --rerun-strategy=Test --retry=1 --clean-library-on-rerun --timeout=3600
 {% else %}
 
     # Run tests for non-Android devices
-    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --reruncount=1 --timeout=3600 --device-id=%BOKKEN_DEVICE_ID%
+    - UnifiedTestRunner --suite=playmode --platform={{ platform.standalone }} --artifacts-path=test-results --player-load-path=build/players --testproject={{ project.path }} --editor-location=.Editor --fail-on-assert --rerun-strategy=Test --retry=1 --clean-library-on-rerun --timeout=3600 --device-id=%BOKKEN_DEVICE_ID%
 {% endif %}
   artifacts:
     logs:
