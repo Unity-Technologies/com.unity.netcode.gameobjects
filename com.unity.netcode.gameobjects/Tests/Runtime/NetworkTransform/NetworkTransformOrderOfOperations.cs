@@ -1065,11 +1065,14 @@ namespace Unity.Netcode.RuntimeTests
             public void ReferenceTeleportRpc(NetworkBehaviourReference networkBehaviourReference, Vector3 position, Quaternion rotation, RpcParams rpcParams = default)
             {
                 networkBehaviourReference.TryGet<SpawnSequenceController>(out var spawnSequenceController);
-                // This validation assumes that user script will broadcast an update to everyone but only the motion authority will apply the update.
-                if (spawnSequenceController != null && spawnSequenceController.CanCommitToTransform)
+                if (spawnSequenceController != null)
                 {
-                    spawnSequenceController.Log($"[{nameof(ReferenceRpcHelper)}][{nameof(ReferenceTeleportRpc)}] Invoked on client-{NetworkManager.LocalClientId}.");
-                    spawnSequenceController.SetState(posIn: position, rotIn: rotation, teleportDisabled: false);
+                    // This validation assumes that user script will broadcast an update to everyone but only the motion authority will apply the update.
+                    if (spawnSequenceController.CanCommitToTransform)
+                    {
+                        spawnSequenceController.Log($"[{nameof(ReferenceRpcHelper)}][{nameof(ReferenceTeleportRpc)}] Invoked on client-{NetworkManager.LocalClientId}.");
+                        spawnSequenceController.SetState(posIn: position, rotIn: rotation, teleportDisabled: false);
+                    }
                 }
                 else
                 {
