@@ -129,6 +129,7 @@ namespace Unity.Netcode.Components
             /// <summary>
             /// When set, non-authority instances will smoothly transition between
             /// world and local space.
+            /// <see cref="NetworkTransform.SwitchTransformSpaceWhenParented"/>
             /// </summary>
             internal bool SwitchTransformSpaceWhenParented
             {
@@ -1498,26 +1499,23 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <remarks>
         /// This is synchronized by the authority. During runtime, this should only be changed by the
-        /// authoritative side. Non-authoritative instances will be overridden by the next
-        /// authoritative state update.<br />
+        /// authoritative side. Non-authoritative instances will be overridden by the currently applied authoritative state update.<br />
         /// Note:<br />
-        /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically adjusted.
-        /// Adjusting this field during runtime and when <see cref="SwitchTransformSpaceWhenParented"/> isn't enabled.
+        /// When <see cref="SwitchTransformSpaceWhenParented"/> is enabled, this field will be automatically adjusted and will no longer be visible in the inspector view.
+        /// It is not recommended to adjust this field during runtime when <see cref="SwitchTransformSpaceWhenParented"/> is enabled.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
         /// <summary>
-        /// When enabled, the NetworkTransform will automatically handle transitioning into the respective transform space when its <see cref="NetworkObject"/> parent changes.<br />
-        /// When parented: Automatically transitions into local space and coverts any existing pending interpolated states to local space on non-authority instances.<br />
-        /// When deparented: Automatically transitions into world space and converts any existing pending interpolated states to world space on non-authority instances.<br />
-        /// Set on the root <see cref="NetworkTransform"/> instance (nested <see cref="NetworkTransform"/> components should be pre-set in-editor to local space. <br />
+        /// When enabled: The NetworkTransform will automatically handle transitioning into the respective transform space when its <see cref="NetworkObject"/> parent changes.<br />
+        /// When parented: Automatically transitions into local space and coverts any pending interpolation states to the relative local space on non-authority instances.<br />
+        /// When de-parented: Automatically transitions into world space and coverts any pending interpolation states to the relative local space on non-authority instances.<br />
         /// </summary>
         /// <remarks>
         /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
         /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
-        /// This field doesn't auto-synchronize with non-authority clients if changed on the authority instance during runtime (so you should apply this setting in-Editor).
-        /// Read the NetworkTransform documentation for more information and to avoid improper use.
+        /// This field is auto-synchronize with non-authority clients if changed by the authority instance.
         /// </remarks>
         [Tooltip("When enabled, NetworkTransform controls world or local space settings while also providing smooth parenting transitions." +
             "When disabled, world or local space settings have to be adjusted by script or in the inspector view.")]
@@ -1726,7 +1724,6 @@ namespace Unity.Netcode.Components
         /// When interpolation is disabled, this value is applied immediately to the transform.
         /// When interpolation is enabled, this value is only updated in the event that if
         /// interpolation is disabled the last known state position update will be continually applied.
-        /// This might not be the exact
         /// </summary>
         private Vector3 m_LastStateTargetPosition;
         private Vector3 m_InternalCurrentScale;
@@ -3983,19 +3980,16 @@ namespace Unity.Netcode.Components
 
         #region API STATE UPDATE METHODS
         /// <summary>
-        /// Directly sets a state on the authoritative transform.
-        /// Owner clients can directly set the state on a server authoritative transform
-        /// This will override any changes made previously to the transform
-        /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
-        /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
-        ///  just the desired one(s).
-        /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage.
+        /// Directly sets a state on the authoritative transform. <br />
+        /// Owner clients can directly set the state on a server authoritative transform. <br />
+        /// This will override any changes made previously to the transform. <br />
+        /// This isn't resistant to network jitter. Authority side changes due to this method won't be interpolated when <paramref name="teleportDisabled"/> is false. <br />
+        /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage. <br />
         /// </summary>
         /// <param name="posIn">new position to move to. Can be null</param>
         /// <param name="rotIn">new rotation to rotate to. Can be null</param>
         /// <param name="scaleIn">new scale to scale to. Can be null</param>
         /// <param name="teleportDisabled">When true (the default) the <see cref="NetworkObject"/> will not be teleported and, if enabled, will interpolate. When false the <see cref="NetworkObject"/> will teleport/apply the parameters provided immediately.</param>
-        /// <exception cref="Exception">Thrown when the function is called on non-spawned object or, when it's called without proper authority</exception>
         public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool teleportDisabled = true)
         {
             if (!IsSpawned)
@@ -4124,12 +4118,13 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Teleport an already spawned object to the given values without interpolating.
-        /// Using this method during the spawn sequence isn't recommended. Refer to the NetworkTransform documentation for more information on the recommended usage.
+        /// Teleport an already spawned object to the given values without interpolating.<br />
+        /// Using this method during the spawn sequence isn't recommended since the authority already teleports to the currently set transform values.<br />
         /// </summary>
         /// <remarks>
         /// This is intended to be used on already spawned objects, for setting the position of a dynamically spawned object just apply the transform values prior to spawning.<br />
-        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.
+        /// With player objects, override the <see cref="OnNetworkSpawn"/> method and have the authority make adjustments to the transform prior to invoking base.OnNetworkSpawn.<br />
+        /// When using an owner authority motion model and a client-server network topology, it is recommended to stick with the motion authority (as much as possible) when invoking this method. <br />
         /// </remarks>
         /// <param name="newPosition">new position to move to.</param>
         /// <param name="newRotation">new rotation to rotate to.</param>

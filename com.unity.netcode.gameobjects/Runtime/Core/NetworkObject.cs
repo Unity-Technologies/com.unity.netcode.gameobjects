@@ -1738,7 +1738,7 @@ namespace Unity.Netcode
                 if (!NetworkManager.ShutdownInProgress)
                 {
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
-                    // If the NetworkObject's GaaeObject is not valid or the scene is no longer valid or loaded, then this was due to the
+                    // If the NetworkObject's GameObject is not valid or the scene is no longer valid or loaded, then this was due to the
                     // unloading of a scene which is done by the authority...
                     if (gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded)
                     {
