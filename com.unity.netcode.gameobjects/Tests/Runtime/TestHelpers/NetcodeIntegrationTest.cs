@@ -1736,7 +1736,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
@@ -2561,10 +2560,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(obj, new object[] { });
-                        foreach (var behaviour in obj.ChildNetworkBehaviours)
+
+                        if (obj.m_ChildNetworkBehaviours != null)
                         {
-                            var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                            behaviourMethod?.Invoke(behaviour, new object[] { });
+                            foreach (var behaviour in obj.m_ChildNetworkBehaviours)
+                            {
+                                var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                                behaviourMethod?.Invoke(behaviour, new object[] { });
+                            }
                         }
                     }
                 }

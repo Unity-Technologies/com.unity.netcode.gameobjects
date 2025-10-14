@@ -697,7 +697,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 name = baseName
             };
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = owner;
             MakeNetworkObjectTestPrefab(networkObject);
             if (moveToDDOL)
             {
@@ -754,10 +753,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             NetworkObject[] serverNetworkObjects = networkObjectRoot.GetComponentsInChildren<NetworkObject>();
 
-            for (int i = 0; i < serverNetworkObjects.Length; i++)
-            {
-                serverNetworkObjects[i].NetworkManagerOwner = server;
-            }
 
             for (int i = 0; i < clients.Length; i++)
             {
@@ -765,11 +760,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 root.name += " - Client - " + i;
 
                 NetworkObject[] clientNetworkObjects = root.GetComponentsInChildren<NetworkObject>();
-
-                for (int j = 0; j < clientNetworkObjects.Length; j++)
-                {
-                    clientNetworkObjects[j].NetworkManagerOwner = clients[i];
-                }
             }
         }
 

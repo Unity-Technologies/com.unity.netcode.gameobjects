@@ -807,7 +807,6 @@ namespace Unity.Netcode
             {
                 // Let the handler spawn the NetworkObject
                 var prefabHandlerObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationData);
-                prefabHandlerObject.NetworkManagerOwner = NetworkManager;
                 return prefabHandlerObject;
             }
 
@@ -879,7 +878,6 @@ namespace Unity.Netcode
         {
             var networkObject = UnityEngine.Object.Instantiate(networkPrefab).GetComponent<NetworkObject>();
             networkObject.transform.SetPositionAndRotation(position ?? networkObject.transform.position, rotation ?? networkObject.transform.rotation);
-            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.PrefabGlobalObjectIdHash = prefabGlobalObjectIdHash;
             return networkObject;
         }
@@ -1030,7 +1028,7 @@ namespace Unity.Netcode
         /// Distributed Authority:
         /// DAHost client and standard DA clients invoke this method.
         /// </summary>
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, NetworkManager networkManager, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -1052,7 +1050,7 @@ namespace Unity.Netcode
                 }
             }
             // Invoke NetworkBehaviour.OnPreSpawn methods
-            networkObject.NetworkManagerOwner = NetworkManager;
+            networkObject.NetworkManagerOwner = networkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
@@ -1112,13 +1110,6 @@ namespace Unity.Netcode
             if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle.IsEmpty())
             {
                 networkObject.SceneOrigin = networkObject.gameObject.scene;
-            }
-
-            // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
-            // the NetworkObject since it uses the NetworkManager.Singleton when not set
-            if (networkObject.NetworkManagerOwner != NetworkManager)
-            {
-                networkObject.NetworkManagerOwner = NetworkManager;
             }
 
             networkObject.NetworkObjectId = networkId;
@@ -1476,22 +1467,19 @@ namespace Unity.Netcode
             var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                // This used to be two loops.
+                // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
+                // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
+                if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
                 {
-                    // This used to be two loops.
-                    // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
-                    // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                    if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
+                    var ownerId = networkObjects[i].OwnerClientId;
+                    if (NetworkManager.DistributedAuthorityMode)
                     {
-                        var ownerId = networkObjects[i].OwnerClientId;
-                        if (NetworkManager.DistributedAuthorityMode)
-                        {
-                            ownerId = NetworkManager.LocalClientId;
-                        }
-
-                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
-                        networkObjectsToSpawn.Add(networkObjects[i]);
+                        ownerId = NetworkManager.LocalClientId;
                     }
+
+                    SpawnNetworkObjectLocally(networkObjects[i], NetworkManager, GetNetworkObjectId(), true, false, ownerId, true);
+                    networkObjectsToSpawn.Add(networkObjects[i]);
                 }
             }
 
