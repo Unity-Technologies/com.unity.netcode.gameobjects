@@ -548,9 +548,10 @@ namespace Unity.Netcode
                 ((networkManager.DistributedAuthorityMode && m_NetworkObject.IsOwner) || (!networkManager.DistributedAuthorityMode && networkManager.IsServer));
         }
 
-        internal void SetNetworkObject(NetworkObject networkObject)
+        internal void SetNetworkObject(NetworkObject networkObject, ushort behaviourId)
         {
             m_NetworkObject = networkObject;
+            NetworkBehaviourId = behaviourId;
         }
 
         //  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
@@ -616,11 +617,6 @@ namespace Unity.Netcode
         public ushort NetworkBehaviourId { get; internal set; }
 
         /// <summary>
-        /// Internally caches the Id of this behaviour in a NetworkObject. Makes look-up faster
-        /// </summary>
-        internal ushort NetworkBehaviourIdCache = 0;
-
-        /// <summary>
         /// Returns the NetworkBehaviour with a given BehaviourId for the current NetworkObject.
         /// </summary>
         /// <param name="behaviourId">The behaviourId to return</param>
@@ -649,11 +645,6 @@ namespace Unity.Netcode
             NetworkObjectId = networkObject.NetworkObjectId;
             IsLocalPlayer = networkObject.IsLocalPlayer;
 
-            // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
-            // NetworkObject.ChildNetworkBehaviours which is set once when first
-            // accessed.
-            NetworkBehaviourId = networkObject.GetNetworkBehaviourOrderIndex(this);
-
             // Set ownership related properties
             IsOwnedByServer = networkObject.IsOwnedByServer;
             IsOwner = networkObject.IsOwner;
@@ -669,35 +660,6 @@ namespace Unity.Netcode
                 HasAuthority = networkObject.HasAuthority;
                 ServerIsHost = networkManager.IsListening && networkManager.ServerIsHost;
             }
-        }
-
-        private void ResetAllFields()
-        {
-            m_NetworkObject = null;
-            m_NetworkManager = null;
-            RpcTarget = null;
-
-            // Set identification related properties
-            NetworkObjectId = default;
-            IsLocalPlayer = false;
-
-            // This is "OK" because GetNetworkBehaviourOrderIndex uses the order of
-            // NetworkObject.ChildNetworkBehaviours which is set once when first
-            // accessed.
-            NetworkBehaviourId = default;
-
-            // Set ownership related properties
-            IsOwnedByServer = false;
-            IsOwner = false;
-            OwnerClientId = default;
-
-            // Set NetworkManager dependent properties
-            IsHost = false;
-            IsClient = false;
-            IsServer = false;
-            IsSessionOwner = false;
-            HasAuthority = false;
-            ServerIsHost = false;
         }
 
         /// <summary>
@@ -892,8 +854,6 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[i].Deinitialize();
             }
-
-            ResetAllFields();
         }
 
         /// <summary>
@@ -1130,7 +1090,6 @@ namespace Unity.Netcode
             // Getting these ahead of time actually improves performance
             var networkManager = NetworkManager;
             var networkObject = m_NetworkObject;
-            var behaviourIndex = networkObject.GetNetworkBehaviourOrderIndex(this);
             var messageManager = networkManager.MessageManager;
             var connectionManager = networkManager.ConnectionManager;
 
@@ -1170,7 +1129,7 @@ namespace Unity.Netcode
                 var message = new NetworkVariableDeltaMessage
                 {
                     NetworkObjectId = NetworkObjectId,
-                    NetworkBehaviourIndex = behaviourIndex,
+                    NetworkBehaviourIndex = NetworkBehaviourId,
                     NetworkBehaviour = this,
                     TargetClientId = targetClientId,
                     DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j],
@@ -1608,8 +1567,6 @@ namespace Unity.Netcode
             {
                 networkVar.Dispose();
             }
-
-            ResetAllFields();
         }
     }
 }

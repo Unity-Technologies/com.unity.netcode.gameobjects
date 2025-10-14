@@ -376,8 +376,15 @@ namespace Unity.Netcode
 #endif
             foreach (var sobj in inSceneNetworkObjects)
             {
+                // For integration tests, don't collect objects that don't belong to us.
+                if (sobj.NetworkManagerOwner != null && sobj.NetworkManagerOwner != m_NetworkManager)
+                {
+                    continue;
+                }
+
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
                 {
+                    sobj.NetworkManagerOwner = m_NetworkManager;
                     m_DespawnedInSceneObjectsSync.Add(sobj);
                 }
             }
@@ -1083,19 +1090,22 @@ namespace Unity.Netcode
                 }
 
                 // Now find the in-scene NetworkObject with the current GlobalObjectIdHash we are looking for
-                if (sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
+                if (sceneRelativeNetworkObjects.TryGetValue(globalObjectIdHash, out var despawnedObject))
                 {
+                    // Set the owner of this network object
+                    despawnedObject.NetworkManagerOwner = m_NetworkManager;
+
                     // Since this is a NetworkObject that was never spawned, we just need to send a notification
                     // out that it was despawned so users can make adjustments
-                    sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
+                    despawnedObject.InvokeBehaviourNetworkDespawn();
                     if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
                         m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
                     }
 
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
+                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(despawnedObject.GetSceneOriginHandle()))
                     {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle(), sceneRelativeNetworkObjects[globalObjectIdHash]);
+                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(despawnedObject.GetSceneOriginHandle(), despawnedObject);
                     }
                 }
                 else

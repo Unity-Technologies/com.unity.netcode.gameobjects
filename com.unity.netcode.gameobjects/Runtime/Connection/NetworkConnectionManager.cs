@@ -805,6 +805,7 @@ namespace Unity.Netcode
                     // Spawn the player NetworkObject locally
                     NetworkManager.SpawnManager.SpawnNetworkObjectLocally(
                         playerObject,
+                        NetworkManager,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
                         sceneObject: false,
                         playerObject: true,
@@ -954,6 +955,7 @@ namespace Unity.Netcode
                     var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
                     var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
                     networkObject.IsSceneObject = false;
+                    networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
                 }
             }
