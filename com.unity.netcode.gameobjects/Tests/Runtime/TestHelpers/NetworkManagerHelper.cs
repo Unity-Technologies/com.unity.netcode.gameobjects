@@ -170,10 +170,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
-            if (!InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
+            Assert.IsTrue(InstantiatedNetworkObjects.TryGetValue(gameObjectIdentifier, out var objToSpawn));
+            if (!objToSpawn.IsSpawned)
             {
-                InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
+                objToSpawn.NetworkManagerOwner = NetworkManager.Singleton;
+                objToSpawn.Spawn();
             }
         }
 

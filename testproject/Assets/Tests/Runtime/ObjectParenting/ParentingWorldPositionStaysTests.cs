@@ -291,6 +291,7 @@ namespace TestProject.RuntimeTests
             }
 
             var serverSideParentNetworkObject = m_ServerSideParent.GetComponent<NetworkObject>();
+            serverSideParentNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
             serverSideParentNetworkObject.Spawn();
 
             // Instantiate the children
@@ -321,6 +322,7 @@ namespace TestProject.RuntimeTests
 
                 serverSideChild.transform.localScale = childScaleList[i];
                 VerboseDebug($"[Server][PreSpawn] Set scale of NetworkObject to ({childScaleList[i]})");
+                serverSideChildNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverSideChildNetworkObject.Spawn();
                 VerboseDebug($"[Server] Set scale of NetworkObjectID ({serverSideChildNetworkObject.NetworkObjectId}) to ({childScaleList[i]}) and is currently {serverSideChild.transform.localScale}");
 

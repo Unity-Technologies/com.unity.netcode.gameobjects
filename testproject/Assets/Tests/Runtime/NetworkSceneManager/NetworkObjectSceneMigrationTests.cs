@@ -159,6 +159,7 @@ namespace TestProject.RuntimeTests
             {
                 var serverInstance = Object.Instantiate(m_TestPrefab);
                 var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
+                serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverNetworkObject.Spawn();
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
@@ -276,6 +277,7 @@ namespace TestProject.RuntimeTests
                 // the active scene and marked to destroy with scene =are destroyed= if
                 // the scene being unloaded is currently the active scene and the scene that
                 // the NetworkObjects reside within.
+                serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverNetworkObject.Spawn(true);
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
@@ -291,6 +293,7 @@ namespace TestProject.RuntimeTests
                 // spawned with DestroyWithScene set to false will migrate into the current
                 // active scene if the scene they currently reside within is destroyed and
                 // is not the currently active scene.
+                serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverNetworkObject.Spawn();
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
@@ -304,6 +307,7 @@ namespace TestProject.RuntimeTests
                 // This set of NetworkObjects will be used to verify that NetworkObjets
                 // spawned with DestroyWithScene == true will get destroyed when the scene
                 // is unloaded
+                serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 serverNetworkObject.Spawn(true);
                 m_ServerSpawnedDestroyWithSceneInstances.Add(serverNetworkObject);
             }
