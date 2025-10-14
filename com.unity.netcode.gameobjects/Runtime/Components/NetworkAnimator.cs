@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor.Animations;
@@ -186,6 +187,7 @@ namespace Unity.Netcode.Components
     /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
     [AddComponentMenu("Netcode/Network Animator")]
+    [HelpURL(HelpUrls.NetworkAnimator)]
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
     {
         [Serializable]
@@ -996,7 +998,7 @@ namespace Unity.Netcode.Components
                 {
                     // Just notify all remote clients and not the local server
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == NetworkManager.LocalClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1315,7 +1317,7 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1378,7 +1380,7 @@ namespace Unity.Netcode.Components
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
-                    foreach (var clientId in NetworkManager.ConnectedClientsIds)
+                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
                     {
                         if (clientId == serverRpcParams.Receive.SenderClientId || clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                         {
@@ -1452,7 +1454,7 @@ namespace Unity.Netcode.Components
             InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
             m_ClientSendList.Clear();
-            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
             {
                 if (clientId == NetworkManager.ServerClientId || !NetworkObject.Observers.Contains(clientId))
                 {

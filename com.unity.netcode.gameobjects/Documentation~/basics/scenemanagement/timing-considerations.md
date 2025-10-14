@@ -42,12 +42,12 @@ Now that we have covered the high-level synchronization process, we can dive a l
 
 ![](../../images/sequence_diagrams/SceneManagement/SceneEventSynchronizationTimeline_Light.png)
 
-You can see that upon receiving the message, the client appears to be iterating over portions of the data included in the synchronize message.  This is primarily the asynchronous scene loading phase of the client synchronization process. This means the more scenes loaded, the more a client will be required to load which means the Client Synchronization Period is directly proportional to the number of scene being loaded and the size of each scene being loaded.  Once all scenes are loaded, the client will then locally spawn all `NetworkObject`s.  As a final step, the client sends the list of all `NetworkObjectId`s it spawned as part of its `SceneEventType.SynchronizeComplete` scene event message so the server can determine if it needs to resynchronize the client with a list of any `NetworkObjects` that might have despawned during the Client Synchronization Period.
+You can see that upon receiving the message, the client appears to be iterating over portions of the data included in the synchronize message.  This is primarily the asynchronous scene loading phase of the client synchronization process. This means the more scenes loaded, the more a client will be required to load which means the Client Synchronization Period is directly proportional to the number of scene being loaded and the size of each scene being loaded.  Once all scenes are loaded, the client will then locally spawn all NetworkObjects.  As a final step, the client sends the list of all `NetworkObjectId`s it spawned as part of its `SceneEventType.SynchronizeComplete` scene event message so the server can determine if it needs to resynchronize the client with a list of any `NetworkObjects` that might have despawned during the Client Synchronization Period.
 
 ## Loading Scenes
 
 ### LoadSceneMode.Additive
-Looking at the timeline diagram below, "Loading an Additive Scene", we can see that it includes a server, two clients, and that the server will always precede all clients when it comes to processing the scene loading event. The big-picture this diagram is conveying is that only when the server has finished loading the scene and spawning any in-scene placed `NetworkObject`s, instantiated by the newly loaded scene, will it send the scene loading event message to the clients.
+Looking at the timeline diagram below, "Loading an Additive Scene", we can see that it includes a server, two clients, and that the server will always precede all clients when it comes to processing the scene loading event. The big-picture this diagram is conveying is that only when the server has finished loading the scene and spawning any in-scene placed NetworkObjects, instantiated by the newly loaded scene, will it send the scene loading event message to the clients.
 
 Another point of interest in the below diagram is how Client 1 receives the scene loading event, processes it, and then responds with a `SceneEventType.LoadComplete` scene event message before client 2. This delta between client 1 and client 2 represents the varying client-server latencies and further enforces the underlying concept behind the `SceneEventType.LoadEventCompleted` message.  Once a server has received all `SceneEventType.LoadComplete` messages from the connected clients, it will then broadcast the `SceneEventType.LoadEventCompleted` message to all connected clients.  At this point, we can consider the scene loading event (truly) complete and all connected clients are able to receive and process netcode messages.
 
@@ -57,14 +57,14 @@ Another point of interest in the below diagram is how Client 1 receives the scen
 > While a client can start sending the server messages (including NetworkVariable changes) upon local `SceneEventType.LoadComplete` event notifications, under more controlled testing environments where the network being used has little to no latency (that is, using loopback with multiple instances running on the same system or using your LAN), this approach won't expose latency related issues. Even though the timing might "work out" under controlled low latency conditions you can still run into edge case scenarios where if a client approaches or exceeds a 500ms RTT latency you can potentially run into issues.
 
 > [!NOTE]
-> It is recommended that if your project's design requires that one or more `NetworkBehaviour`s immediately send any form of client to server message (that is, changing a `NetworkVariable`, sending an RPC, sending a custom message, etc.) upon a client being locally notified of a `SceneEventType.LoadComplete` then you should test with artificial/simulated network conditions.
+> It is recommended that if your project's design requires that one or more NetworkBehaviours immediately send any form of client to server message (that is, changing a `NetworkVariable`, sending an RPC, sending a custom message, etc.) upon a client being locally notified of a `SceneEventType.LoadComplete` then you should test with artificial/simulated network conditions.
 > [Learn More About Simulating NetworkConditions Here](../../tutorials/testing/testing_with_artificial_conditions.md)
 
 
 ### LoadSceneMode.Single (a.k.a. Scene Switching)
 Loading a scene in `LoadSceneMode.Single` mode via `NetworkSceneManager` is almost exactly like loading a scene additively.  The primary difference between additively loading and single mode loading is that when loading a scene in single mode:
 - all currently loaded scenes are unloaded
-- all `NetworkObject`s that have `DestroyWithScene` set to `true` will be despawned and destroyed.
+- all NetworkObjects that have `DestroyWithScene` set to `true` will be despawned and destroyed.
 
 How you load scenes is up to your project/design requirements.
 
@@ -73,12 +73,12 @@ How you load scenes is up to your project/design requirements.
     - Because your single mode loaded scene is automatically loaded, the server and all clients will already have this scene loaded
         - To prevent clients from loading the bootstrap scene, you should use server-side [scene validation](using-networkscenemanager.md#scene-validation)
     - All other scenes are loaded additively
-    - There is no real need to preserve any `NetworkObject` you want to persist when loading a scene additively.
+    - There is no real need to preserve any NetworkObject you want to persist when loading a scene additively.
     - You need to keep track of the scenes loaded by `NetworkSceneManager` to be able to unload them.
 
 - **Scene Switch Usage Pattern (Single and Additive Loading)**
     - Typically this usage pattern is desirable when your project's design separates "areas" by a primary scene that may have companion additively loaded scenes.
-    - Any scenes loaded by `NetworkSceneManager`, before scene switching, will be unloaded and any `NetworkObject` that has the `DestroyWithScene` set to `true` will be destroyed.
+    - Any scenes loaded by `NetworkSceneManager`, before scene switching, will be unloaded and any NetworkObject that has the `DestroyWithScene` set to `true` will be destroyed.
         - If `DestroyWithScene` is set to `false` it will be "preserved" (_see the sub-diagram "Load New Scene Timeline" below_)
 
 ![](../../images/sequence_diagrams/SceneManagement/SwitchingToNewScene_Light.png)
@@ -87,24 +87,24 @@ How you load scenes is up to your project/design requirements.
 
 Both scene loading diagrams (Additive and Single) refer to the below sub-diagram that provides additional details of the scene loading process.
 > [!NOTE]
->When looking at the below sub-diagram, both single and additive scene loading modes use close to the exact same flow with the exception that additively loaded scenes only flow through the four middle steps that are grouped together by the light red filled region highlighted by red dashed lines.  When loading a scene additively, no other scenes are unloaded nor are any NetworkObjects moved into the DDoL temporarily. This setting, by default, is true for dynamically spawned `NetworkObject`s unless otherwise specified when using `NetworkObject.Spawn`, `NetworkObject.SpawnWithOwnership`, or `NetworkObject.SpawnAsPlayerObject`.  In-scene placed `NetworkObject`'s, by default, will be destroyed with the scene that instantiated them.  At any point, within a `NetworkBehaviour` you can change the `NetworkObject.DestroyWithScene` property.
+>When looking at the below sub-diagram, both single and additive scene loading modes use close to the exact same flow with the exception that additively loaded scenes only flow through the four middle steps that are grouped together by the light red filled region highlighted by red dashed lines.  When loading a scene additively, no other scenes are unloaded nor are any NetworkObjects moved into the DDoL temporarily. This setting, by default, is true for dynamically spawned NetworkObjects unless otherwise specified when using `NetworkObject.Spawn`, `NetworkObject.SpawnWithOwnership`, or `NetworkObject.SpawnAsPlayerObject`.  In-scene placed NetworkObject's, by default, will be destroyed with the scene that instantiated them.  At any point, within a NetworkBehaviour you can change the `NetworkObject.DestroyWithScene` property.
 
 ![](../../images/sequence_diagrams/SceneManagement/LoadNewSceneTimeline_Light.png)
 
 **Load New Scene Additively**
 1. Starts loading the scene
-2. During the scene loading process, in-scene placed `NetworkObject`s are instantiated and their `Awake` and then `Start` methods are invoked (in that order).
+2. During the scene loading process, in-scene placed NetworkObjects are instantiated and their `Awake` and then `Start` methods are invoked (in that order).
 3. Scene loading completes.
-4. All in-scene placed `NetworkObject`s are spawned.
+4. All in-scene placed NetworkObjects are spawned.
 
-Step 3 above signifies that the `UnityEngine.SceneManagement.SceneManager` has finished loading the scene. If you subscribe to the `UnityEngine.SceneManagement.SceneManager.sceneLoaded` event, then step #3 would happen on the same frame that your subscribed handler is invoked. **Don't use this event** as a way to determine that the current Load SceneEvent has completed. <br/> <center>_Doing so will result in unexpected results that most commonly are associated with "yet-to-be-spawned" (locally) `NetworkObject`'s and/or their related `NetworkBehaviour` dependencies._</center> When using Netcode Integrated SceneManagement, it's recommended to use the `NetworkSceneManager` scene events to determine when the "netcode scene loading event" has completed locally or for all clients.
+Step 3 above signifies that the `UnityEngine.SceneManagement.SceneManager` has finished loading the scene. If you subscribe to the `UnityEngine.SceneManagement.SceneManager.sceneLoaded` event, then step #3 would happen on the same frame that your subscribed handler is invoked. **Don't use this event** as a way to determine that the current Load SceneEvent has completed. <br/> <center>_Doing so will result in unexpected results that most commonly are associated with "yet-to-be-spawned" (locally) NetworkObject's and/or their related NetworkBehaviour dependencies._</center> When using Netcode Integrated SceneManagement, it's recommended to use the `NetworkSceneManager` scene events to determine when the "netcode scene loading event" has completed locally or for all clients.
 
 
 **Load New Scene Single (a.k.a "Scene Switching")**
 1. All `NetworkObjects` that have their `DestroyWithScene` property set to `false` are migrated into the DDoL (temporarily).
 2. All currently loaded scenes are unloaded.  If you loaded any scenes additively, they will be automatically unloaded.
 3. _(refer to the 4 steps outlined above)_
-4. After any newly instantiated `NetworkObject`s are spawned, the newly loaded scene is set as the currently active scene and then the `NetworkObject`s that were previously migrated into th DDoL (from step 1) are now migrated into the newly loaded scene.
+4. After any newly instantiated NetworkObjects are spawned, the newly loaded scene is set as the currently active scene and then the NetworkObjects that were previously migrated into th DDoL (from step 1) are now migrated into the newly loaded scene.
 
 ## Unloading a Scene
 Primarily, this applies to unloading additively loaded scenes via th `NetworkSceneManager.UnloadScene` method. to unload a scene it must:
@@ -121,10 +121,10 @@ If you look at the below diagram, "Unloading an Additive Scene", you will see a 
 Review over the below diagram and take note of the following things:
 - **Server Side:**
     - When a server starts the `SceneEventType.Unload` event, Unity will naturally being to destroy all `GameObjects` in the scene being unloaded.
-        - If a `GameObject` has a `NetworkObject` component attached to it and it's still considered spawned at the time the `GameObject` is destroyed, then the `NetworkObject` will be despawned before the `GameObject` being destroyed.
+        - If a GameObject has a NetworkObject component attached to it and it's still considered spawned at the time the GameObject is destroyed, then the NetworkObject will be despawned before the GameObject being destroyed.
             - This will cause a series of server-to-client despawn messages to be sent to all clients.
 - **Client Side:**
-    - While a server is unloading a scene, the client can begin to receive a bunch of despawn messages for the `NetworkObject`s being destroyed on the server-side while the scene is being unloaded.
-        - By the time a client receives the `SceneEventType.Unload` scene event message, it well can have no remaining `NetworkObject`s in the scene being unloaded.  This won't impact the client-side scene unloading process, but it's useful to know that this will happen.
+    - While a server is unloading a scene, the client can begin to receive a bunch of despawn messages for the NetworkObjects being destroyed on the server-side while the scene is being unloaded.
+        - By the time a client receives the `SceneEventType.Unload` scene event message, it well can have no remaining NetworkObjects in the scene being unloaded.  This won't impact the client-side scene unloading process, but it's useful to know that this will happen.
 
 ![](../../images/sequence_diagrams/SceneManagement/UnloadingSceneTimeline_Light.png)

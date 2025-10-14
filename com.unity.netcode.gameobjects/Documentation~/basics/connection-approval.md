@@ -1,5 +1,8 @@
 # Connection approval
 
+> [!NOTE]
+>Connection approval is not currently supported when using a [distributed authority topology](../terms-concepts/distributed-authority.md).
+
 With every new connection, Netcode for GameObjects performs a handshake in addition to handshakes done by the transport. This ensures that the NetworkConfig on the client matches the server's NetworkConfig. You can enable ConnectionApproval in the NetworkManager or via code by setting `NetworkManager.NetworkConfig.ConnectionApproval` to `true`. Connection approval allows you to decide, on a per connection basis, whether to allow a connection. You can also use connection approval to specify the player Prefab to create, allowing you to override the default NetworkManager-defined player Prefab on a per player basis.
 
 When you set the ConnectionApproval property of the NetworkManager to true, Netcode for GameObjects checks to make sure the `NetworkManager.ConnectionApprovalCallback` has been assigned. If assigned, the connection approval process is used for connecting clients to decide whether to allow a connection or deny it. If you don't assign the `NetworkManager.ConnectionApprovalCallback` (even with the `NetworkManager.ConnectionApprovalCallback` set to `true`), Netcode for GameObjects uses basic authentication for the user, which automatically authorizes and assigns the default player Prefab.
@@ -134,7 +137,7 @@ The `Payload`, defined by the client-side `NetworkConfig.ConnectionData`, is sen
 
 Netcode for GameObjects uses a callback system to allow for external validation. For example, you might have an authentication ticket sent as the `ConnectionData` that you want to validate against the owning servers. This can take some time, so you want to set the `NetworkManager.ConnectionApprovalResponse.Pending` to true while the server (or other third-party authentication service) validates the incoming ticket.
 
-If the third-party authentication process takes longer than the time specified by the `NetworkConfig.ClientConnectionBufferTimeout`, then the connection is dropped. The timer for this starts when the server is notified of the new inbound client connection. You can set the **Client Connection Buffer Timeout** value via the `NetworkManager` in the Inspector view or with the `NetworkManager.NetworkConfig.ClientConnectionBufferTimeout` property.
+If the third-party authentication process takes longer than the time specified by the `NetworkConfig.ClientConnectionBufferTimeout`, then the connection is dropped. The timer for this starts when the server is notified of the new inbound client connection. You can set the **Client Connection Buffer Timeout** value via the NetworkManager in the Inspector view or with the `NetworkManager.NetworkConfig.ClientConnectionBufferTimeout` property.
 
 ## Security
 

@@ -43,7 +43,7 @@ namespace Unity.Netcode
             }
             else
             {
-                foreach (var clientId in m_NetworkManager.ConnectedClientsIds)
+                foreach (var clientId in ConnectionManager.ConnectedClientIds)
                 {
                     if (clientId == behaviour.NetworkManager.LocalClientId)
                     {

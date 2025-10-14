@@ -52,14 +52,14 @@ This sample strips other components and GameObjects from the server manually. To
 This sample splits the logic of the Player Character and the AI Character into separate scripts so that you can use the Content Selection window to run each character separately on the client, server and network. For example, the `PlayerCharacter` script logic is split into the following scripts:
 * Client Player Character. This script only exists on the clients.
 * Server Player Character.This script only exists on the server.
-* Networked Player Character: This script inherits from `NetworkBehaviour`.It synchronizes data and sends messages between the server and clients. This script exists on both clients and the server.
+* Networked Player Character: This script inherits from NetworkBehaviour.It synchronizes data and sends messages between the server and clients. This script exists on both clients and the server.
 
 These scripts separate the logic of each player which means you can strip the components that each script uses. For example, Client Player Character is the only script that uses the Player Character’s `CharacterController` component, so you can safely strip the `CharacterController` component from the server. To learn where the scripts in this sample exist, do the following:
 1. Select a Player Character GameObject.
 2. Open the GameObject’s Inspector window.
 3. Refer to the script component’s [Multiplayer role icon](https://docs.unity3d.com/Packages/com.unity.dedicated-server@1.0/manual/mutliplayer-roles-icons.html).
 
-The logic for scripts that contain a small class, like the doors and switches in this sample scene, exist in a single script that inherits from ``NetworkBehaviour``.
+The logic for scripts that contain a small class, like the doors and switches in this sample scene, exist in a single script that inherits from `NetworkBehaviour`.
 
 #### Synchronize animations between clients
 

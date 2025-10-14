@@ -12,7 +12,8 @@
         "Unity.Networking.Transport",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Unity.Netcode.Runtime.Tests"
     ],
     "includePlatforms": [
         "Editor"
@@ -37,11 +38,6 @@
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
-        },
-        {
-            "name": "com.unity.transport",
-            "expression": "2.4.0",
-            "define": "UTP_TRANSPORT_2_4_ABOVE"
         },
         {
             "name": "Unity",

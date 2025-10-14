@@ -31,12 +31,6 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_InitialOwnerOwnedBySever;
         private bool m_TargetOwnerOwnedBySever;
 
-        // TODO: [CmbServiceTests] Adapt to run with the service
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
-
         public NetworkObjectOwnershipPropertiesTests(NetworkTopologyTypes networkTopologyType) : base(networkTopologyType) { }
 
         protected override IEnumerator OnTearDown()
@@ -57,51 +51,29 @@ namespace Unity.Netcode.RuntimeTests
 
         public enum InstanceTypes
         {
-            Server,
-            Client
+            Authority,
+            NonAuthority,
         }
 
-        private StringBuilder m_OwnershipPropagatedFailures = new StringBuilder();
-        private bool OwnershipPropagated()
+        private bool OwnershipPropagated(StringBuilder errorLog)
         {
             var conditionMet = true;
-            m_OwnershipPropagatedFailures.Clear();
-            // In distributed authority mode, we will check client owner to DAHost owner with InstanceTypes.Server and client owner to client
-            // when InstanceTypes.Client
-            if (m_DistributedAuthority)
+
+            foreach (var manager in m_NetworkManagers)
             {
-                if (!m_ClientNetworkManagers[1].SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
+                if (!manager.SpawnManager.SpawnedObjects.TryGetValue(m_OwnerSpawnedInstance.NetworkObjectId, out var networkObject))
                 {
                     conditionMet = false;
-                    m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ClientNetworkManagers[1].LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
+                    errorLog.AppendLine($"Client-{manager.LocalClientId} has not spawned {m_OwnerSpawnedInstance.name}");
+
                 }
-                if (!m_ClientNetworkManagers[0].SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
+                else if (networkObject.OwnerClientId != m_NextTargetOwner.LocalClientId)
                 {
                     conditionMet = false;
-                    m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ClientNetworkManagers[0].LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
-                }
-                if (!m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
-                {
-                    conditionMet = false;
-                    m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
+                    errorLog.AppendLine($"Client-{manager.LocalClientId} has incorrect ownership set for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
                 }
             }
-            else
-            {
-                if (m_NextTargetOwner != m_ServerNetworkManager)
-                {
-                    if (!m_NextTargetOwner.SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
-                    {
-                        conditionMet = false;
-                        m_OwnershipPropagatedFailures.AppendLine($"Client-{m_NextTargetOwner.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
-                    }
-                }
-                if (!m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_NextTargetOwner.LocalClientId).Any(x => x.NetworkObjectId == m_OwnerSpawnedInstance.NetworkObjectId))
-                {
-                    conditionMet = false;
-                    m_OwnershipPropagatedFailures.AppendLine($"Client-{m_ServerNetworkManager.LocalClientId} has no ownership entry for {m_OwnerSpawnedInstance.name} ({m_OwnerSpawnedInstance.NetworkObjectId})");
-                }
-            }
+
             return conditionMet;
         }
 
@@ -128,19 +100,23 @@ namespace Unity.Netcode.RuntimeTests
 
 
         [UnityTest]
-        public IEnumerator ValidatePropertiesWithOwnershipChanges([Values(InstanceTypes.Server, InstanceTypes.Client)] InstanceTypes instanceType)
+        public IEnumerator ValidatePropertiesWithOwnershipChanges([Values(InstanceTypes.Authority, InstanceTypes.NonAuthority)] InstanceTypes instanceType)
         {
-            m_NextTargetOwner = instanceType == InstanceTypes.Server ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
-            m_InitialOwner = instanceType == InstanceTypes.Client ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
+            var authority = GetAuthorityNetworkManager();
+            var firstClient = GetNonAuthorityNetworkManager(0);
+            var secondClient = GetNonAuthorityNetworkManager(1);
 
-            // In distributed authority mode, we will check client owner to DAHost owner with InstanceTypes.Server and client owner to client
-            // when InstanceTypes.Client
+            m_NextTargetOwner = instanceType == InstanceTypes.Authority ? authority : firstClient;
+            m_InitialOwner = instanceType == InstanceTypes.NonAuthority ? authority : firstClient;
+
+            // In distributed authority mode, we will check client owner to DAHost owner with InstanceTypes.Authority and client owner to client
+            // when InstanceTypes.NonAuthority
             if (m_DistributedAuthority)
             {
-                m_InitialOwner = m_ClientNetworkManagers[0];
-                if (instanceType == InstanceTypes.Client)
+                m_InitialOwner = firstClient;
+                if (instanceType == InstanceTypes.NonAuthority)
                 {
-                    m_NextTargetOwner = m_ClientNetworkManagers[1];
+                    m_NextTargetOwner = secondClient;
                 }
                 m_PrefabToSpawn.GetComponent<NetworkObject>().SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable);
             }
@@ -174,16 +150,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Use the target client's instance to change ownership
                 m_TargetOwnerInstance.ChangeOwnership(m_NextTargetOwner.LocalClientId);
-                if (instanceType == InstanceTypes.Client)
+                if (instanceType == InstanceTypes.NonAuthority)
                 {
-                    var networkManagersList = new System.Collections.Generic.List<NetworkManager>() { m_ServerNetworkManager, m_ClientNetworkManagers[0] };
+                    var networkManagersList = new System.Collections.Generic.List<NetworkManager> { authority, firstClient };
                     // Provide enough time for the client to receive and process the spawned message.
                     yield return WaitForMessageReceived<ChangeOwnershipMessage>(networkManagersList);
                 }
                 else
                 {
+                    var networkManagersList = new System.Collections.Generic.List<NetworkManager> { firstClient, secondClient };
                     // Provide enough time for the client to receive and process the change in ownership message.
-                    yield return WaitForMessageReceived<ChangeOwnershipMessage>(m_ClientNetworkManagers.ToList());
+                    yield return WaitForMessageReceived<ChangeOwnershipMessage>(networkManagersList);
                 }
             }
             else
@@ -195,7 +172,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Ensure it's the ownership tables are updated
             yield return WaitForConditionOrTimeOut(OwnershipPropagated);
-            AssertOnTimeout($"Timed out waiting for ownership to propagate!\n{m_OwnershipPropagatedFailures}");
+            AssertOnTimeout($"Timed out waiting for ownership to propagate!");
 
             m_SpawnedInstanceIsOwner = m_OwnerSpawnedInstance.NetworkManager == m_NextTargetOwner;
             if (m_SpawnedInstanceIsOwner)
