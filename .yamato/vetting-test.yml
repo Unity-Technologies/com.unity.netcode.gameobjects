@@ -8,7 +8,7 @@
 {% for editor in validation_editors.minimal -%}
 vetting_test:
   name: NGO - Vetting Test (Win, {{editor}} LTS)
-  agent: { type: Unity::VM, flavor: b1.medium, image: package-ci/win11:v4 }
+  agent: { type: Unity::VM, flavor: b1.small, image: package-ci/win11:v4 }
   commands:
     - npm install -g "upm-ci-utils@stable" --registry https://artifactory.prd.it.unity3d.com/artifactory/api/npm/upm-npm
     - unity-downloader-cli --fast --wait --unity-version {{ editor }} --components editor --arch x64
