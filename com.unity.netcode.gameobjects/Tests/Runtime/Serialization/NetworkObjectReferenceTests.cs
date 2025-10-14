@@ -418,6 +418,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var gameObject = new GameObject(name);
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = NetworkManager.Singleton;
             return new UnityObjectContext<NetworkObject>(networkObject, gameObject);
         }
 

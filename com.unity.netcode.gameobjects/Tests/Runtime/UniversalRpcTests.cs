@@ -601,6 +601,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
 
         protected override void OnTimeTravelServerAndClientsConnected()
         {
+            m_ServerObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             m_ServerObject.GetComponent<NetworkObject>().Spawn();
             WaitForMessageReceivedWithTimeTravel<CreateObjectMessage>(m_ClientNetworkManagers.ToList());
         }

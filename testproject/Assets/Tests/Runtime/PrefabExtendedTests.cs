@@ -258,6 +258,7 @@ namespace TestProject.RuntimeTests
                     }
                     var gameObjectInstance = Object.Instantiate(prefabOverride.gameObject);
                     spawnedNetworkObject = gameObjectInstance.GetComponent<NetworkObject>();
+                    spawnedNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     spawnedNetworkObject.Spawn();
                     manualSpawnCount++;
                 }

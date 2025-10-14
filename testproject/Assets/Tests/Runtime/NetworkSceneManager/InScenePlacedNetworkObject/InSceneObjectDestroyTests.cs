@@ -140,6 +140,7 @@ namespace TestProject.RuntimeTests
             yield return LoadSceneAndDespawnObject(DestroyMode.DespawnGameObject);
 
             var serverObject = NetworkObjectTestComponent.ServerNetworkObjectInstance;
+            serverObject.NetworkManagerOwner = m_ServerNetworkManager;
 
             Assert.IsNotNull(serverObject, "Could not find server-side in-scene placed NetworkObject!");
 
