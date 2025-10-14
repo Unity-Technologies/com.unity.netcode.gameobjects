@@ -4,13 +4,16 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.EditorTests
 {
-    internal class NetworkBehaviourTests
+    internal class NetworkBehaviourEditorTests
     {
         [Test]
         public void HasNetworkObjectTest()
         {
             var gameObject = new GameObject(nameof(HasNetworkObjectTest));
             var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
+
+            // Ensure GetTypeName returns the correct value
+            Assert.AreEqual(nameof(EmptyNetworkBehaviour), networkBehaviour.__getTypeName());
 
             Assert.That(networkBehaviour.HasNetworkObject, Is.False);
 
@@ -47,33 +50,33 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void GivenClassDerivesFromNetworkBehaviour_GetTypeNameReturnsCorrectValue()
+        public void AccessNetworkObjectTestInDerivedClassWithOverrideFunctions()
         {
-            var gameObject = new GameObject(nameof(GivenClassDerivesFromNetworkBehaviour_GetTypeNameReturnsCorrectValue));
-            var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
-
-            Assert.AreEqual(nameof(EmptyNetworkBehaviour), networkBehaviour.__getTypeName());
-        }
-
-        [Test]
-        public void GivenClassDerivesFromNetworkBehaviourDerivedClass_GetTypeNameReturnsCorrectValue()
-        {
-            var gameObject = new GameObject(nameof(GivenClassDerivesFromNetworkBehaviourDerivedClass_GetTypeNameReturnsCorrectValue));
+            var gameObject = new GameObject(nameof(AccessNetworkObjectTestInDerivedClassWithOverrideFunctions));
             var networkBehaviour = gameObject.AddComponent<DerivedNetworkBehaviour>();
 
             Assert.AreEqual(nameof(DerivedNetworkBehaviour), networkBehaviour.__getTypeName());
+
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+
+            Assert.That(networkBehaviour.NetworkObject, Is.EqualTo(networkObject));
+
+            Object.DestroyImmediate(networkObject);
+
+            Assert.That(networkBehaviour.NetworkObject, Is.Null);
+
+            // Cleanup
+            Object.DestroyImmediate(gameObject);
         }
 
         // Note: in order to repro https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1078
         // this child class must be defined before its parent to assure it is processed first by ILPP
         internal class DerivedNetworkBehaviour : EmptyNetworkBehaviour
         {
-
         }
 
         internal class EmptyNetworkBehaviour : NetworkBehaviour
         {
-
         }
     }
 }

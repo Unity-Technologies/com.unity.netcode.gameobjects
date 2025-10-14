@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
 
 ### Changed
 
@@ -23,7 +22,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 
 ### Security
@@ -31,6 +29,34 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Obsolete
 
+
+## [2.6.0] - 2025-10-12
+
+### Added
+
+- `NetworkSceneManager` as an internal wrapper for the `SceneManager.Scene.handle` and swapped all places that use an `int` to represent a `Scene.handle` to instead use the `NetworkSceneManager`. (#3647)
+- Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
+- Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
+
+### Changed
+
+- Improved performance of the NetworkVariable. (#3683)
+- Improved performance around the NetworkBehaviour component. (#3687)
+
+### Fixed
+
+- Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
+- Made a variety of small performance improvements. (#3683)
+
+## [2.5.1] - 2025-09-14
+
+### Added
+
+- Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
+
+### Fixed
+
+- Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
 
 ## [2.5.0] - 2025-08-17
 

@@ -78,8 +78,8 @@ namespace Unity.Netcode
                 throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
             }
 
-            var obj = NetworkBehaviour.NetworkObject;
-            var networkManager = obj.NetworkManagerOwner;
+            var networkObject = NetworkBehaviour.NetworkObject;
+            var networkManager = networkObject.NetworkManagerOwner;
             var typeName = NetworkBehaviour.__getTypeName();
             var nonFragmentedMessageMaxSize = networkManager.MessageManager.NonFragmentedMessageMaxSize;
             var fragmentedMessageMaxSize = networkManager.MessageManager.FragmentedMessageMaxSize;
@@ -117,7 +117,7 @@ namespace Unity.Netcode
                         if (shouldWrite)
                         {
                             WriteNetworkVariable(ref writer, ref networkVariable, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
-                            networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, obj, networkVariable.Name, typeName, writer.Length - startingSize);
+                            networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, networkObject, networkVariable.Name, typeName, writer.Length - startingSize);
                         }
                     }
                     return;
@@ -146,12 +146,12 @@ namespace Unity.Netcode
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId)
                     && (networkManager.IsServer ||
-                    (networkVariable.CanWrite && networkVariable.CanSend()));
+                    (networkVariable.CanWrite() && networkVariable.CanSend()));
 
                 // Prevent the server from writing to the client that owns a given NetworkVariable
                 // Allowing the write would send an old value to the client and cause jitter
                 if (networkVariable.WritePerm == NetworkVariableWritePermission.Owner &&
-                    networkVariable.OwnerClientId() == TargetClientId)
+                    networkObject.OwnerClientId == TargetClientId)
                 {
                     shouldWrite = false;
                 }
@@ -159,9 +159,8 @@ namespace Unity.Netcode
                 // The object containing the behaviour we're about to process is about to be shown to this client
                 // As a result, the client will get the fully serialized NetworkVariable and would be confused by
                 // an extraneous delta
-                if (networkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
-                    networkManager.SpawnManager.ObjectsToShowToClient[TargetClientId]
-                    .Contains(obj))
+                if (networkManager.SpawnManager.ObjectsToShowToClient.TryGetValue(TargetClientId, out var objectsToShow)
+                    && objectsToShow.Contains(networkObject))
                 {
                     shouldWrite = false;
                 }
@@ -181,7 +180,7 @@ namespace Unity.Netcode
                 if (shouldWrite)
                 {
                     WriteNetworkVariable(ref writer, ref networkVariable, ensureNetworkVariableLengthSafety, nonFragmentedMessageMaxSize, fragmentedMessageMaxSize);
-                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, obj, networkVariable.Name, typeName, writer.Length - startingSize);
+                    networkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(TargetClientId, networkObject, networkVariable.Name, typeName, writer.Length - startingSize);
                 }
             }
         }
@@ -205,203 +204,201 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
 
-            if (networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
-            {
-                var ensureNetworkVariableLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
-                var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
-                var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery && networkManager.IsServer;
-                var markNetworkVariableDirty = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery ? false : networkManager.IsServer;
-                m_UpdatedNetworkVariables = new List<int>();
-
-                if (networkBehaviour == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"Network variable delta message received for a non-existent behaviour. {nameof(NetworkObjectId)}: {NetworkObjectId}, {nameof(NetworkBehaviourIndex)}: {NetworkBehaviourIndex}");
-                    }
-                }
-                else
-                {
-                    // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
-                    // updates at the end of the frame, we now track all NetworkVariable state updates, per client, that need to be forwarded
-                    // to the client. This creates a list of all remaining connected clients that could have updates applied.
-                    if (isServerAndDeltaForwarding)
-                    {
-                        m_ForwardUpdates = new Dictionary<ulong, List<int>>();
-                        foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
-                        {
-                            if (clientId == context.SenderId || clientId == networkManager.LocalClientId || !networkObject.Observers.Contains(clientId))
-                            {
-                                continue;
-                            }
-                            m_ForwardUpdates.Add(clientId, new List<int>());
-                        }
-                    }
-
-                    // Update NetworkVariable Fields
-                    for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
-                    {
-                        int expectedBytesToRead = 0;
-                        var networkVariable = networkBehaviour.NetworkVariableFields[i];
-
-                        if (ensureNetworkVariableLengthSafety)
-                        {
-                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out expectedBytesToRead);
-                            if (expectedBytesToRead == 0)
-                            {
-                                continue;
-                            }
-                        }
-                        else
-                        {
-                            m_ReceivedNetworkVariableData.ReadValueSafe(out bool deltaExists);
-                            if (!deltaExists)
-                            {
-                                continue;
-                            }
-                        }
-
-                        if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
-                        {
-                            // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
-                            if (ensureNetworkVariableLengthSafety)
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                                {
-                                    NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                    NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
-                                }
-
-                                m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + expectedBytesToRead);
-                                continue;
-                            }
-
-                            //This client wrote somewhere they are not allowed. This is critical
-                            //We can't just skip this field. Because we don't actually know how to dummy read
-                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a
-                            //Read that gives us the value. Only a Read that applies the value straight away
-                            //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                            //This is after all a developer fault. A critical error should be fine.
-                            // - TwoTen
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                            {
-                                NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
-                                NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
-                            }
-                            return;
-                        }
-                        var readStartPos = m_ReceivedNetworkVariableData.Position;
-
-                        if (ensureNetworkVariableLengthSafety)
-                        {
-                            var remainingBufferSize = m_ReceivedNetworkVariableData.Length - readStartPos;
-                            if (expectedBytesToRead > remainingBufferSize)
-                            {
-                                UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {expectedBytesToRead} but only {remainingBufferSize} remains!");
-                                return;
-                            }
-                        }
-
-                        // Added a try catch here to assure any failure will only fail on this one message and not disrupt the stack
-                        try
-                        {
-                            // Read the delta
-                            networkVariable.ReadDelta(m_ReceivedNetworkVariableData, markNetworkVariableDirty);
-
-                            // Add the NetworkVariable field index so we can invoke the PostDeltaRead
-                            m_UpdatedNetworkVariables.Add(i);
-                        }
-                        catch (Exception ex)
-                        {
-                            UnityEngine.Debug.LogException(ex);
-                            return;
-                        }
-
-                        if (ensureNetworkVariableLengthSafety)
-                        {
-                            var totalBytesRead = m_ReceivedNetworkVariableData.Position - readStartPos;
-                            if (totalBytesRead != expectedBytesToRead)
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                {
-                                    NetworkLog.LogWarning($"[{nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}][Delta State Read] NetworkVariable read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes!");
-                                }
-                                m_ReceivedNetworkVariableData.Seek(readStartPos + expectedBytesToRead);
-                            }
-                        }
-
-                        // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
-                        // updates at the end of the frame, we now track all NetworkVariable state updates, per client, that need to be forwarded
-                        // to the client. This happens once the server is finished processing all state updates for this message.
-                        if (isServerAndDeltaForwarding)
-                        {
-                            foreach (var forwardEntry in m_ForwardUpdates)
-                            {
-                                // Only track things that the client can read
-                                if (networkVariable.CanClientRead(forwardEntry.Key))
-                                {
-                                    // If the object is about to be shown to the client then don't send an update as it will
-                                    // send a full update when shown.
-                                    if (networkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(forwardEntry.Key) &&
-                                        networkManager.SpawnManager.ObjectsToShowToClient[forwardEntry.Key]
-                                        .Contains(networkObject))
-                                    {
-                                        continue;
-                                    }
-                                    forwardEntry.Value.Add(i);
-                                }
-                            }
-                        }
-
-                        networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
-                            context.SenderId,
-                            networkObject,
-                            networkVariable.Name,
-                            networkBehaviour.__getTypeName(),
-                            context.MessageSize);
-                    }
-
-                    // If we are using the version of this message that includes network delivery, then
-                    // forward this update to all connected clients (other than the sender and the server).
-                    if (isServerAndDeltaForwarding)
-                    {
-                        var message = new NetworkVariableDeltaMessage()
-                        {
-                            NetworkBehaviour = networkBehaviour,
-                            NetworkBehaviourIndex = NetworkBehaviourIndex,
-                            NetworkObjectId = NetworkObjectId,
-                            m_ForwardingMessage = true,
-                            m_ForwardUpdates = m_ForwardUpdates,
-                        };
-
-                        foreach (var forwardEntry in m_ForwardUpdates)
-                        {
-                            // Only forward updates to any client that has visibility to the state updates included in this message
-                            if (forwardEntry.Value.Count > 0)
-                            {
-                                message.TargetClientId = forwardEntry.Key;
-                                networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery, forwardEntry.Key);
-                            }
-                        }
-                    }
-
-                    // This should be always invoked (client & server) to assure the previous values are set
-                    // !! IMPORTANT ORDER OF OPERATIONS !! (Has to happen after forwarding deltas)
-                    // When a server forwards delta updates to connected clients, it needs to preserve the previous value
-                    // until it is done serializing all valid NetworkVariable field deltas (relative to each client). This
-                    // is invoked after it is done forwarding the deltas.
-                    foreach (var fieldIndex in m_UpdatedNetworkVariables)
-                    {
-                        networkBehaviour.NetworkVariableFields[fieldIndex].PostDeltaRead();
-                    }
-                }
-            }
-            else
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out NetworkObject networkObject))
             {
                 // DANGO-TODO: Fix me!
                 // When a client-spawned NetworkObject is despawned by the owner client, the owner client will still get messages for deltas and cause this to
                 // log a warning. The issue is primarily how NetworkVariables handle updating and will require some additional re-factoring.
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context, k_Name);
+                return;
+            }
+
+            var ensureNetworkVariableLengthSafety = networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety;
+            var networkBehaviour = networkObject.GetNetworkBehaviourAtOrderIndex(NetworkBehaviourIndex);
+            var isServerAndDeltaForwarding = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery && networkManager.IsServer;
+            var markNetworkVariableDirty = m_ReceivedMessageVersion >= k_ServerDeltaForwardingAndNetworkDelivery ? false : networkManager.IsServer;
+            m_UpdatedNetworkVariables = new List<int>();
+
+            if (networkBehaviour == null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Network variable delta message received for a non-existent behaviour. {nameof(NetworkObjectId)}: {NetworkObjectId}, {nameof(NetworkBehaviourIndex)}: {NetworkBehaviourIndex}");
+                }
+                return;
+            }
+
+            // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
+            // updates at the end of the frame, we now track all NetworkVariable state updates, per client, that need to be forwarded
+            // to the client. This creates a list of all remaining connected clients that could have updates applied.
+            if (isServerAndDeltaForwarding)
+            {
+                m_ForwardUpdates = new Dictionary<ulong, List<int>>();
+                foreach (var clientId in networkManager.ConnectionManager.ConnectedClientIds)
+                {
+                    if (clientId == context.SenderId || clientId == networkManager.LocalClientId || !networkObject.Observers.Contains(clientId))
+                    {
+                        continue;
+                    }
+                    m_ForwardUpdates.Add(clientId, new List<int>());
+                }
+            }
+
+            // Update NetworkVariable Fields
+            for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
+            {
+                int expectedBytesToRead = 0;
+                var networkVariable = networkBehaviour.NetworkVariableFields[i];
+
+                if (ensureNetworkVariableLengthSafety)
+                {
+                    ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out expectedBytesToRead);
+                    if (expectedBytesToRead == 0)
+                    {
+                        continue;
+                    }
+                }
+                else
+                {
+                    m_ReceivedNetworkVariableData.ReadValueSafe(out bool deltaExists);
+                    if (!deltaExists)
+                    {
+                        continue;
+                    }
+                }
+
+                if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
+                {
+                    // we are choosing not to fire an exception here, because otherwise a malicious client could use this to crash the server
+                    if (ensureNetworkVariableLengthSafety)
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogWarning($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
+                            NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
+                        }
+
+                        m_ReceivedNetworkVariableData.Seek(m_ReceivedNetworkVariableData.Position + expectedBytesToRead);
+                        continue;
+                    }
+
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogError($"Client wrote to {typeof(NetworkVariable<>).Name} without permission. No more variables can be read. This is critical. => {nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}(): {networkObject.GetNetworkBehaviourOrderIndex(networkBehaviour)} - VariableIndex: {i}");
+                        NetworkLog.LogError($"[{networkVariable.GetType().Name}]");
+                    }
+                    return;
+                }
+                var readStartPos = m_ReceivedNetworkVariableData.Position;
+
+                if (ensureNetworkVariableLengthSafety)
+                {
+                    var remainingBufferSize = m_ReceivedNetworkVariableData.Length - readStartPos;
+                    if (expectedBytesToRead > remainingBufferSize)
+                    {
+                        UnityEngine.Debug.LogError($"[{networkBehaviour.name}][Delta State Read Error] Expecting to read {expectedBytesToRead} but only {remainingBufferSize} remains!");
+                        return;
+                    }
+                }
+
+                // Added a try catch here to assure any failure will only fail on this one message and not disrupt the stack
+                try
+                {
+                    // Read the delta
+                    networkVariable.ReadDelta(m_ReceivedNetworkVariableData, markNetworkVariableDirty);
+
+                    // Add the NetworkVariable field index so we can invoke the PostDeltaRead
+                    m_UpdatedNetworkVariables.Add(i);
+                }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogException(ex);
+                    return;
+                }
+
+                if (ensureNetworkVariableLengthSafety)
+                {
+                    var totalBytesRead = m_ReceivedNetworkVariableData.Position - readStartPos;
+                    if (totalBytesRead != expectedBytesToRead)
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"[{nameof(NetworkObjectId)}: {NetworkObjectId} - {nameof(NetworkObject.GetNetworkBehaviourOrderIndex)}][Delta State Read] NetworkVariable read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes!");
+                        }
+                        m_ReceivedNetworkVariableData.Seek(readStartPos + expectedBytesToRead);
+                    }
+                }
+
+                // (For client-server) As opposed to worrying about adding additional processing on the server to send NetworkVariable
+                // updates at the end of the frame, we now track all NetworkVariable state updates, per client, that need to be forwarded
+                // to the client. This happens once the server is finished processing all state updates for this message.
+                if (isServerAndDeltaForwarding)
+                {
+                    foreach (var forwardEntry in m_ForwardUpdates)
+                    {
+                        // Only track things that the client can read
+                        if (networkVariable.CanClientRead(forwardEntry.Key))
+                        {
+                            // If the object is about to be shown to the client then don't send an update as it will
+                            // send a full update when shown.
+                            if (networkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(forwardEntry.Key) &&
+                                networkManager.SpawnManager.ObjectsToShowToClient[forwardEntry.Key]
+                                .Contains(networkObject))
+                            {
+                                continue;
+                            }
+                            forwardEntry.Value.Add(i);
+                        }
+                    }
+                }
+
+                networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
+                    context.SenderId,
+                    networkObject,
+                    networkVariable.Name,
+                    networkBehaviour.__getTypeName(),
+                    context.MessageSize);
+            }
+
+            // If we are using the version of this message that includes network delivery, then
+            // forward this update to all connected clients (other than the sender and the server).
+            if (isServerAndDeltaForwarding)
+            {
+                var message = new NetworkVariableDeltaMessage()
+                {
+                    NetworkBehaviour = networkBehaviour,
+                    NetworkBehaviourIndex = NetworkBehaviourIndex,
+                    NetworkObjectId = NetworkObjectId,
+                    m_ForwardingMessage = true,
+                    m_ForwardUpdates = m_ForwardUpdates,
+                };
+
+                foreach (var forwardEntry in m_ForwardUpdates)
+                {
+                    // Only forward updates to any client that has visibility to the state updates included in this message
+                    if (forwardEntry.Value.Count > 0)
+                    {
+                        message.TargetClientId = forwardEntry.Key;
+                        networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery, forwardEntry.Key);
+                    }
+                }
+            }
+
+            // This should be always invoked (client & server) to assure the previous values are set
+            // !! IMPORTANT ORDER OF OPERATIONS !! (Has to happen after forwarding deltas)
+            // When a server forwards delta updates to connected clients, it needs to preserve the previous value
+            // until it is done serializing all valid NetworkVariable field deltas (relative to each client). This
+            // is invoked after it is done forwarding the deltas.
+            foreach (var fieldIndex in m_UpdatedNetworkVariables)
+            {
+                networkBehaviour.NetworkVariableFields[fieldIndex].PostDeltaRead();
             }
         }
     }

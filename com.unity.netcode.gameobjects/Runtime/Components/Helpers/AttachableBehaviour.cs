@@ -463,8 +463,7 @@ namespace Unity.Netcode.Components
                 {
                     // Set the original parent and origianl local position and rotation
                     transform.SetParent(m_DefaultParent.transform, false);
-                    transform.localPosition = m_OriginalLocalPosition;
-                    transform.localRotation = m_OriginalLocalRotation;
+                    transform.SetLocalPositionAndRotation(m_OriginalLocalPosition, m_OriginalLocalRotation);
                 }
                 m_AttachState = AttachState.Detached;
             }
