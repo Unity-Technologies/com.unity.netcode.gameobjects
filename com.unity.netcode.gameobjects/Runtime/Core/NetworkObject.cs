@@ -1929,7 +1929,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation, networkManager);
         }
 
         /// <summary>
