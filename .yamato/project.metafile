@@ -191,3 +191,16 @@ projects:
         - name: minimalproject
           path: minimalproject
           has_tests: false
+
+
+# UNIFIED TEST RUNNER CONFIGURATIONS--------------------------------------------------------------------
+# Shared settings for the UnifiedTestRunner
+
+# Configures the number of times a failed test is retried before it is considered failed.
+# Helps handle flaky tests
+# Passed into --retry
+num_test_retries: 1
+
+# Number of seconds before a single test times out
+# Passed into --timeout
+test_timeout: 1800
