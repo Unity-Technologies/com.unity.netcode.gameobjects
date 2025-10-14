@@ -2613,7 +2613,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal List<NetworkBehaviour> m_ChildNetworkBehaviours;
+        private List<NetworkBehaviour> m_ChildNetworkBehaviours;
 
         internal List<NetworkBehaviour> ChildNetworkBehaviours
         {
