@@ -108,16 +108,24 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private bool TransportIdCleanedUp()
         {
-            if (m_ServerNetworkManager.ConnectionManager.TransportIdToClientId(m_TransportClientId) == m_ClientId)
+            var (clientId, isConnected) = m_ServerNetworkManager.ConnectionManager.TransportIdToClientId(m_TransportClientId);
+            if (isConnected)
             {
                 return false;
             }
 
-            if (m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId) == m_TransportClientId)
+            if (clientId == m_ClientId)
             {
                 return false;
             }
-            return true;
+
+            var (transportId, connectionExists) = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
+            if (connectionExists)
+            {
+                return false;
+            }
+
+            return transportId != m_TransportClientId;
         }
 
         /// <summary>
@@ -144,7 +152,9 @@ namespace Unity.Netcode.RuntimeTests
 
             var serverSideClientPlayer = m_ServerNetworkManager.ConnectionManager.ConnectedClients[m_ClientId].PlayerObject;
 
-            m_TransportClientId = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
+            bool connectionExists;
+            (m_TransportClientId, connectionExists) = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
+            Assert.IsTrue(connectionExists);
 
             var clientManager = m_ClientNetworkManagers[0];
 
