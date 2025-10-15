@@ -124,7 +124,11 @@ namespace Unity.Netcode.RuntimeTests
             m_Client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureVariableLengthSafety;
             utpTransport.ConnectionData.Address = Dns.GetHostAddresses(m_TransportHost).First().ToString();
             utpTransport.ConnectionData.Port = k_TransportPort;
-            m_Client.LogLevel = LogLevel.Developer;
+
+            if (m_EnableVerboseDebug)
+            {
+                m_Client.LogLevel = LogLevel.Developer;
+            }
 
             // Validate we are in distributed authority mode with client side spawning and using CMB Service
             Assert.True(m_Client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
@@ -375,6 +379,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
+
+            // We need to preSpawn the behaviours to set the internal data for the synchronize methods
+            prefabNetworkObject.NetworkManagerOwner = m_Client;
+            prefabNetworkObject.InvokeBehaviourNetworkPreSpawn();
 
             m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<NetworkSceneHandle, NetworkObject>()
             {

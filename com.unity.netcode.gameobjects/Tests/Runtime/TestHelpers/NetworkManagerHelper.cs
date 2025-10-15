@@ -45,6 +45,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static NetworkManagerOperatingMode CurrentNetworkManagerMode;
 
         /// <summary>
+        /// When true, logs will be generated for <see cref="NetworkManager"/> lifecycle events.
+        /// </summary>
+        public static bool VerboseDebugMode;
+
+        /// <summary>
         /// This provides the ability to start NetworkManager in various modes
         /// </summary>
         public enum NetworkManagerOperatingMode
@@ -97,7 +102,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     return false;
                 }
 
-                Debug.Log($"{nameof(NetworkManager)} Instantiated.");
+                VerboseLog($"{nameof(NetworkManager)} Instantiated.");
 
                 var unityTransport = NetworkManagerGameObject.AddComponent<UnityTransport>();
                 if (networkConfig == null)
@@ -165,10 +170,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="gameObjectIdentifier">ID returned to reference the game object</param>
         public static void SpawnNetworkObject(Guid gameObjectIdentifier)
         {
-            Assert.IsTrue(InstantiatedNetworkObjects.ContainsKey(gameObjectIdentifier));
-            if (!InstantiatedNetworkObjects[gameObjectIdentifier].IsSpawned)
+            Assert.IsTrue(InstantiatedNetworkObjects.TryGetValue(gameObjectIdentifier, out var objToSpawn));
+            if (!objToSpawn.IsSpawned)
             {
-                InstantiatedNetworkObjects[gameObjectIdentifier].Spawn();
+                objToSpawn.NetworkManagerOwner = NetworkManager.Singleton;
+                objToSpawn.Spawn();
             }
         }
 
@@ -212,7 +218,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
 
                 // Only log this if we started an netcode session
-                Debug.Log($"{CurrentNetworkManagerMode} started.");
+                VerboseLog($"{CurrentNetworkManagerMode} started.");
             }
         }
 
@@ -223,7 +229,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             NetworkManagerObject.Shutdown();
 
-            Debug.Log($"{CurrentNetworkManagerMode} stopped.");
+            VerboseLog($"{CurrentNetworkManagerMode} stopped.");
             CurrentNetworkManagerMode = NetworkManagerOperatingMode.None;
         }
 
@@ -243,11 +249,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (NetworkManagerGameObject != null)
             {
-                Debug.Log($"{nameof(NetworkManager)} shutdown.");
+                VerboseLog($"{nameof(NetworkManager)} shutdown.");
 
                 StopNetworkManagerMode();
                 UnityEngine.Object.DestroyImmediate(NetworkManagerGameObject);
-                Debug.Log($"{nameof(NetworkManager)} destroyed.");
+                VerboseLog($"{nameof(NetworkManager)} destroyed.");
             }
             NetworkManagerGameObject = null;
             NetworkManagerObject = null;
@@ -303,6 +309,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             return true;
+        }
+
+        private static void VerboseLog(string message)
+        {
+            if (VerboseDebugMode)
+            {
+                Debug.unityLogger.Log(message);
+            }
         }
     }
 }

@@ -754,13 +754,13 @@ namespace Unity.Netcode
                 return null;
             }
 
-            return InstantiateAndSpawnNoParameterChecks(networkPrefab, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+            return InstantiateAndSpawnNoParameterChecks(networkPrefab, NetworkManager, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
         }
 
         /// <summary>
         /// !!! Does not perform any parameter checks prior to attempting to instantiate and spawn the NetworkObject !!!
         /// </summary>
-        internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
+        internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, NetworkManager networkManager, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
         {
             NetworkObject networkObject;
             // - Host and clients always instantiate the override if one exists.
@@ -782,6 +782,8 @@ namespace Unity.Netcode
                 Debug.LogError($"Failed to instantiate and spawn {networkPrefab.name}!");
                 return null;
             }
+
+            networkObject.NetworkManagerOwner = networkManager;
             networkObject.IsPlayerObject = isPlayerObject;
             networkObject.transform.SetPositionAndRotation(position, rotation);
             // If spawning as a player, then invoke SpawnAsPlayerObject
@@ -807,7 +809,6 @@ namespace Unity.Netcode
             {
                 // Let the handler spawn the NetworkObject
                 var prefabHandlerObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerId, position ?? default, rotation ?? default, instantiationData);
-                prefabHandlerObject.NetworkManagerOwner = NetworkManager;
                 return prefabHandlerObject;
             }
 
@@ -879,7 +880,6 @@ namespace Unity.Netcode
         {
             var networkObject = UnityEngine.Object.Instantiate(networkPrefab).GetComponent<NetworkObject>();
             networkObject.transform.SetPositionAndRotation(position ?? networkObject.transform.position, rotation ?? networkObject.transform.rotation);
-            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.PrefabGlobalObjectIdHash = prefabGlobalObjectIdHash;
             return networkObject;
         }
@@ -1135,6 +1135,11 @@ namespace Unity.Netcode
 
         internal void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
+            if (networkObject.NetworkManagerOwner == null)
+            {
+                Debug.LogError("NetworkManagerOwner should not be null!");
+            }
+
             if (SpawnedObjects.ContainsKey(networkId))
             {
                 Debug.LogWarning($"[{NetworkManager.name}] Trying to spawn {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkId} but it is already in the spawned list!");
@@ -1148,13 +1153,6 @@ namespace Unity.Netcode
             if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle.IsEmpty())
             {
                 networkObject.SceneOrigin = networkObject.gameObject.scene;
-            }
-
-            // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
-            // the NetworkObject since it uses the NetworkManager.Singleton when not set
-            if (networkObject.NetworkManagerOwner != NetworkManager)
-            {
-                networkObject.NetworkManagerOwner = NetworkManager;
             }
 
             networkObject.NetworkObjectId = networkId;
@@ -1350,12 +1348,6 @@ namespace Unity.Netcode
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false, bool authorityOverride = false)
         {
-            if (!networkObject.IsSpawned)
-            {
-                NetworkLog.LogErrorServer("Object is not spawned!");
-                return;
-            }
-
             if (!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode)
             {
                 NetworkLog.LogErrorServer("Only server can despawn objects");
