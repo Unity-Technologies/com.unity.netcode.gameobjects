@@ -853,7 +853,7 @@ namespace Unity.Netcode
                 : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
 
                 // Spawn the player NetworkObject locally
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(
+                NetworkManager.SpawnManager.AuthorityLocalSpawn(
                     playerObject,
                     NetworkManager.SpawnManager.GetNetworkObjectId(),
                     sceneObject: false,
