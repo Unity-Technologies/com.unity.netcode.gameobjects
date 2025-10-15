@@ -1927,7 +1927,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
+            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, networkManager, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
         }
 
         /// <summary>
@@ -1966,6 +1966,12 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+            if (!IsSpawned)
+            {
+                NetworkLog.LogErrorServer("Object is not spawned!");
+                return;
+            }
+
             foreach (var behavior in ChildNetworkBehaviours)
             {
                 behavior.MarkVariablesDirty(false);
@@ -2635,7 +2641,8 @@ namespace Unity.Netcode
                     }
 
                     // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
-                    networkBehaviours[i].SetNetworkObject(this);
+                    var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
+                    networkBehaviours[i].SetNetworkObject(this, nextIndex);
                     m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
 
                     var type = networkBehaviours[i].GetType();
@@ -3245,6 +3252,8 @@ namespace Unity.Netcode
                 // We have nothing left to do here.
                 return null;
             }
+
+            networkObject.NetworkManagerOwner = networkManager;
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.

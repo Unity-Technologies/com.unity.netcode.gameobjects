@@ -576,6 +576,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
+            NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
@@ -1735,7 +1736,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
