@@ -176,10 +176,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         private static void ProcessInSceneObject(NetworkObject networkObject, NetworkManager networkManager)
         {
-            if (networkObject.NetworkManagerOwner != networkManager)
-            {
-                networkObject.NetworkManagerOwner = networkManager;
-            }
             if (networkObject.GetComponent<ObjectNameIdentifier>() == null)
             {
                 networkObject.gameObject.AddComponent<ObjectNameIdentifier>();

@@ -686,18 +686,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Creates a <see cref="NetworkObject"/> to be used with integration testing
         /// </summary>
-        /// <param name="baseName">namr of the object</param>
-        /// <param name="owner">owner of the object</param>
+        /// <param name="baseName">name of the object</param>
         /// <param name="moveToDDOL">when true, the instance is automatically migrated into the DDOL</param>
         /// <returns><see cref="GameObject"/></returns>
-        internal static GameObject CreateNetworkObject(string baseName, NetworkManager owner, bool moveToDDOL = false)
+        internal static GameObject CreateNetworkObject(string baseName, bool moveToDDOL = false)
         {
             var gameObject = new GameObject
             {
                 name = baseName
             };
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = owner;
             MakeNetworkObjectTestPrefab(networkObject);
             if (moveToDDOL)
             {
@@ -724,7 +722,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(authorityNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(authorityNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = CreateNetworkObject(baseName, authorityNetworkManager);
+            var gameObject = CreateNetworkObject(baseName);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
 
             // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
@@ -750,27 +748,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [Obsolete("This method is no longer valid or used.", false)]
         public static void MarkAsSceneObjectRoot(GameObject networkObjectRoot, NetworkManager server, NetworkManager[] clients)
         {
-            networkObjectRoot.name += " - Server";
-
-            NetworkObject[] serverNetworkObjects = networkObjectRoot.GetComponentsInChildren<NetworkObject>();
-
-            for (int i = 0; i < serverNetworkObjects.Length; i++)
-            {
-                serverNetworkObjects[i].NetworkManagerOwner = server;
-            }
-
-            for (int i = 0; i < clients.Length; i++)
-            {
-                GameObject root = Object.Instantiate(networkObjectRoot);
-                root.name += " - Client - " + i;
-
-                NetworkObject[] clientNetworkObjects = root.GetComponentsInChildren<NetworkObject>();
-
-                for (int j = 0; j < clientNetworkObjects.Length; j++)
-                {
-                    clientNetworkObjects[j].NetworkManagerOwner = clients[i];
-                }
-            }
         }
 
         /// <summary>
