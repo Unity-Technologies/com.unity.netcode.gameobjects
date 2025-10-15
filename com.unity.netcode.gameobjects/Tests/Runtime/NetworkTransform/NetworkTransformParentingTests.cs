@@ -103,7 +103,6 @@ namespace Unity.Netcode.RuntimeTests
             private void RequestPlayerObjectSpawnServerRpc(ServerRpcParams rpcParams = default)
             {
                 SpawnedPlayer = Instantiate(PlayerPrefab);
-                SpawnedPlayer.NetworkManagerOwner = NetworkManager;
                 SpawnedPlayer.SpawnAsPlayerObject(rpcParams.Receive.SenderClientId);
                 SpawnedPlayer.TrySetParent(NetworkObject, false);
                 State = MoveState.PlayerSpawned;

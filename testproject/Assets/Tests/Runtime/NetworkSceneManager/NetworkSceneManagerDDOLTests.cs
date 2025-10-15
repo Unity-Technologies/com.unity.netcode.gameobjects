@@ -112,7 +112,6 @@ namespace TestProject.RuntimeTests
             // Sets whether we are in-scene or dynamically spawned NetworkObject
             ddolBehaviour.SetInScene(isInScene);
 
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             networkObject.Spawn();
             yield return waitForFullNetworkTick;
 

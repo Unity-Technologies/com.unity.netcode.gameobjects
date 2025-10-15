@@ -105,10 +105,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkObject SpawnPrefabWithData(NetworkSerializableTest data)
         {
-            var authority = GetAuthorityNetworkManager();
             var instance = UnityEngine.Object.Instantiate(m_Prefab).GetComponent<NetworkObject>();
-            instance.NetworkManagerOwner = authority;
-            authority.PrefabHandler.SetInstantiationData(instance, data);
+            GetAuthorityNetworkManager().PrefabHandler.SetInstantiationData(instance, data);
             instance.Spawn();
             return instance;
         }

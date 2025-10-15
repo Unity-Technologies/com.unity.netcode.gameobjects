@@ -129,9 +129,8 @@ namespace TestProject.RuntimeTests
 
             // Now dynamically spawn a NetworkObject to also test dynamically spawned NetworkObjects being parented
             // under in-scene placed NetworkObjects
-            var dynamicallySpawnedServerSide = Object.Instantiate(m_DynamicallySpawned).GetComponent<NetworkObject>();
-            dynamicallySpawnedServerSide.NetworkManagerOwner = m_ServerNetworkManager;
-            dynamicallySpawnedServerSide.Spawn(true);
+            var dynamicallySpawnedServerSide = Object.Instantiate(m_DynamicallySpawned);
+            dynamicallySpawnedServerSide.GetComponent<NetworkObject>().Spawn(true);
 
             for (int i = 0; i < 5; i++)
             {

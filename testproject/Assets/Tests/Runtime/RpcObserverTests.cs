@@ -179,7 +179,6 @@ namespace TestProject.RuntimeTests
 
             yield return s_DefaultWaitForTick;
             m_ServerRpcObserverObject.ResetTest();
-            m_ServerRpcObserverObject.NetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
             m_ServerRpcObserverObject.NetworkObject.Spawn();
             m_ServerRpcObserverObject.ObserverMessageClientRpc();
             yield return WaitForConditionOrTimeOut(m_ServerRpcObserverObject.AllObserversReceivedRPC);

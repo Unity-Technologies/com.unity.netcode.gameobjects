@@ -67,7 +67,6 @@ namespace TestProject.RuntimeTests
 
             // Test #3: Now spawn the same in-scene placed NetworkObject
             serverInSceneObjectInstance.gameObject.SetActive(true);
-            serverInSceneObjectInstance.NetworkManagerOwner = m_ServerNetworkManager;
             serverInSceneObjectInstance.Spawn();
             yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
 
@@ -105,7 +104,6 @@ namespace TestProject.RuntimeTests
 
             // Test #5: Now spawn the in-scene placed NetworkObject
             serverInSceneObjectInstance.gameObject.SetActive(true);
-            serverInSceneObjectInstance.NetworkManagerOwner = m_ServerNetworkManager;
             serverInSceneObjectInstance.Spawn();
 
             // Verify all clients spawned their in-scene NetworkObject relative instance
