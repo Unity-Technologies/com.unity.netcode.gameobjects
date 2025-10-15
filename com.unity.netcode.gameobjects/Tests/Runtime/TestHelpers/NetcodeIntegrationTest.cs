@@ -2560,14 +2560,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     {
                         var method = obj.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(obj, new object[] { });
-
-                        if (obj.IsSpawned)
+                        foreach (var behaviour in obj.ChildNetworkBehaviours)
                         {
-                            foreach (var behaviour in obj.ChildNetworkBehaviours)
-                            {
-                                var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                                behaviourMethod?.Invoke(behaviour, new object[] { });
-                            }
+                            var behaviourMethod = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                            behaviourMethod?.Invoke(behaviour, new object[] { });
                         }
                     }
                 }

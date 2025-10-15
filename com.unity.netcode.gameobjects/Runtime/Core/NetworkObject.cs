@@ -1119,7 +1119,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// The NetworkManager that is responsible for this NetworkObject instance.
+        /// The NetworkManager that owns this NetworkObject.
+        /// This property controls where this NetworkObject belongs.
         /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
@@ -1770,9 +1771,6 @@ namespace Unity.Netcode
         {
             if (NetworkManagerOwner == null)
             {
-#if TEST_NO_SINGLETON
-                Debug.LogError("NetworkObject has no owner client! setting as singleton owner");
-#endif
                 NetworkManagerOwner = NetworkManager.Singleton;
             }
             if (!NetworkManager.IsListening)
@@ -1929,7 +1927,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation, networkManager);
+            return networkManager.SpawnManager.InstantiateAndSpawnNoParameterChecks(this, ownerClientId, destroyWithScene, isPlayerObject, forceOverride, position, rotation);
         }
 
         /// <summary>
@@ -2060,13 +2058,6 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            if (NetworkManagerOwner == null)
-            {
-#if TEST_NO_SINGLETON
-                    Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
-#endif
-                NetworkManagerOwner = NetworkManager.Singleton;
-            }
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 // Invoke internal notification
@@ -2295,13 +2286,6 @@ namespace Unity.Netcode
 
             if (!IsSpawned)
             {
-                if (NetworkManagerOwner == null)
-                {
-#if TEST_NO_SINGLETON
-                    Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
-#endif
-                    NetworkManagerOwner = NetworkManager;
-                }
                 AuthorityAppliedParenting = false;
                 // and we are removing the parent, then go ahead and allow parenting to occur
                 if (transform.parent == null)
@@ -2550,7 +2534,7 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkPreSpawn()
         {
-            var networkManager = NetworkManagerOwner;
+            var networkManager = NetworkManager;
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
@@ -2633,68 +2617,53 @@ namespace Unity.Netcode
         {
             get
             {
-                if (m_ChildNetworkBehaviours == null)
+                if (m_ChildNetworkBehaviours != null)
                 {
-                    m_ChildNetworkBehaviours = BuildChildBehavioursList();
+                    return m_ChildNetworkBehaviours;
+                }
+
+                m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
+                var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
+                for (int i = 0; i < networkBehaviours.Length; i++)
+                {
+                    // Find the first parent NetworkObject of this child
+                    // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.
+                    var networkObj = networkBehaviours[i].GetComponentInParent<NetworkObject>();
+                    if (networkObj != this)
+                    {
+                        continue;
+                    }
+
+                    // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
+                    var nextIndex = (ushort)m_ChildNetworkBehaviours.Count;
+                    networkBehaviours[i].SetNetworkObject(this, nextIndex);
+                    m_ChildNetworkBehaviours.Add(networkBehaviours[i]);
+
+                    var type = networkBehaviours[i].GetType();
+                    if (type == typeof(NetworkTransform) || type.IsInstanceOfType(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
+                    {
+                        if (NetworkTransforms == null)
+                        {
+                            NetworkTransforms = new List<NetworkTransform>();
+                        }
+                        var networkTransform = networkBehaviours[i] as NetworkTransform;
+                        networkTransform.IsNested = i != 0 && networkTransform.gameObject != gameObject;
+                        NetworkTransforms.Add(networkTransform);
+                    }
+#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
+                    else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
+                    {
+                        if (NetworkRigidbodies == null)
+                        {
+                            NetworkRigidbodies = new List<NetworkRigidbodyBase>();
+                        }
+                        NetworkRigidbodies.Add(networkBehaviours[i] as NetworkRigidbodyBase);
+                    }
+#endif
                 }
 
                 return m_ChildNetworkBehaviours;
             }
-        }
-
-        private List<NetworkBehaviour> BuildChildBehavioursList()
-        {
-            if (NetworkManagerOwner == null)
-            {
-#if TEST_NO_SINGLETON
-                Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
-#endif
-                NetworkManagerOwner = NetworkManager.Singleton;
-            }
-
-            var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
-            var childBehaviours = new List<NetworkBehaviour>(networkBehaviours.Length);
-
-            foreach (var behaviour in networkBehaviours)
-            {
-                // Find the first parent NetworkObject of this child
-                // if it's not ourselves, this childBehaviour belongs to a different NetworkObject.
-                var networkObj = behaviour.GetComponentInParent<NetworkObject>();
-                if (networkObj != this)
-                {
-                    continue;
-                }
-
-                // Set ourselves as the NetworkObject that this behaviour belongs to and add it to the child list
-                var nextIndex = childBehaviours.Count;
-                childBehaviours.Add(behaviour);
-                behaviour.SetNetworkObject(this, (ushort)nextIndex);
-
-                var type = behaviour.GetType();
-                if (type == typeof(NetworkTransform) || type.IsAssignableFrom(typeof(NetworkTransform)) || type.IsSubclassOf(typeof(NetworkTransform)))
-                {
-                    if (NetworkTransforms == null)
-                    {
-                        NetworkTransforms = new List<NetworkTransform>();
-                    }
-                    var networkTransform = behaviour as NetworkTransform;
-                    networkTransform.IsNested = networkTransform.gameObject != gameObject;
-                    NetworkTransforms.Add(networkTransform);
-                }
-#if COM_UNITY_MODULES_PHYSICS || COM_UNITY_MODULES_PHYSICS2D
-                else if (type.IsSubclassOf(typeof(NetworkRigidbodyBase)))
-                {
-                    if (NetworkRigidbodies == null)
-                    {
-                        NetworkRigidbodies = new List<NetworkRigidbodyBase>();
-                    }
-                    NetworkRigidbodies.Add(behaviour as NetworkRigidbodyBase);
-                }
-#endif
-            }
-
-            childBehaviours.TrimExcess();
-            return childBehaviours;
         }
 
         /// <summary>
@@ -2775,24 +2744,26 @@ namespace Unity.Netcode
         /// </returns>
         public ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
-            if (!IsSpawned)
+            // read the cached index, and verify it first
+            if (instance.NetworkBehaviourIdCache < ChildNetworkBehaviours.Count)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                if (ChildNetworkBehaviours[instance.NetworkBehaviourIdCache] == instance)
                 {
-                    Debug.LogWarning($"{nameof(NetworkObject)} is not spawned yet. Cannot get index of NetworkBehaviour.");
+                    return instance.NetworkBehaviourIdCache;
                 }
-                return 0;
+
+                // invalid cached id reset
+                instance.NetworkBehaviourIdCache = default;
             }
 
-            // read the cached index, and verify it first
-            if (instance.NetworkBehaviourId < ChildNetworkBehaviours.Count)
+            for (ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                if (ChildNetworkBehaviours[instance.NetworkBehaviourId] == instance)
+                if (ChildNetworkBehaviours[i] == instance)
                 {
-                    return instance.NetworkBehaviourId;
+                    // cache the id, for next query
+                    instance.NetworkBehaviourIdCache = i;
+                    return i;
                 }
-
-                Debug.LogError("Network behaviour at index has changed. This should not be possible.");
             }
 
             return 0;
@@ -2805,15 +2776,6 @@ namespace Unity.Netcode
         /// <returns>The <see cref="NetworkBehaviour"/> at the ordered index value or null if it does not exist.</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
-            if (!IsSpawned)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                {
-                    Debug.LogWarning($"{nameof(NetworkObject)} is not spawned yet. Cannot get NetworkBehaviour at index.");
-                }
-                return null;
-            }
-
             if (index >= ChildNetworkBehaviours.Count)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
