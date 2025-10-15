@@ -13,7 +13,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-* Changed minimum Unity version supported to 2022.3 LTS
+- The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3721)
+- Changed minimum Unity version supported to 2022.3 LTS
 
 ### Deprecated
 
@@ -23,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Multiple disconnect events from the same transport will no longer disconnect the host. (#3721)
 
 ### Security
 
