@@ -760,7 +760,7 @@ namespace Unity.Netcode
         /// <summary>
         /// !!! Does not perform any parameter checks prior to attempting to instantiate and spawn the NetworkObject !!!
         /// </summary>
-        internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default, NetworkManager networkManager = null)
+        internal NetworkObject InstantiateAndSpawnNoParameterChecks(NetworkObject networkPrefab, ulong ownerClientId = NetworkManager.ServerClientId, bool destroyWithScene = false, bool isPlayerObject = false, bool forceOverride = false, Vector3 position = default, Quaternion rotation = default)
         {
             NetworkObject networkObject;
             // - Host and clients always instantiate the override if one exists.
@@ -782,8 +782,6 @@ namespace Unity.Netcode
                 Debug.LogError($"Failed to instantiate and spawn {networkPrefab.name}!");
                 return null;
             }
-
-            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.IsPlayerObject = isPlayerObject;
             networkObject.transform.SetPositionAndRotation(position, rotation);
             // If spawning as a player, then invoke SpawnAsPlayerObject
@@ -1051,7 +1049,6 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
-
             // Invoke NetworkBehaviour.OnPreSpawn methods
             networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
@@ -1473,25 +1470,24 @@ namespace Unity.Netcode
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
             var networkObjectsToSpawn = new List<NetworkObject>();
-            foreach (var networkObject in networkObjects)
+            for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObject.NetworkManager != NetworkManager)
+                if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    continue;
-                }
-                // This used to be two loops.
-                // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
-                // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                if (networkObject.IsSceneObject == null || (networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value))
-                {
-                    var ownerId = networkObject.OwnerClientId;
-                    if (NetworkManager.DistributedAuthorityMode)
+                    // This used to be two loops.
+                    // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
+                    // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
+                    if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
                     {
-                        ownerId = NetworkManager.LocalClientId;
-                    }
+                        var ownerId = networkObjects[i].OwnerClientId;
+                        if (NetworkManager.DistributedAuthorityMode)
+                        {
+                            ownerId = NetworkManager.LocalClientId;
+                        }
 
-                    SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, ownerId, true);
-                    networkObjectsToSpawn.Add(networkObject);
+                        SpawnNetworkObjectLocally(networkObjects[i], GetNetworkObjectId(), true, false, ownerId, true);
+                        networkObjectsToSpawn.Add(networkObjects[i]);
+                    }
                 }
             }
 
