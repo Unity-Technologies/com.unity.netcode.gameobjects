@@ -2630,13 +2630,13 @@ namespace Unity.Netcode
 
         private List<NetworkBehaviour> BuildChildBehavioursList()
         {
-#if UNITY_EDITOR
             if (NetworkManagerOwner == null)
             {
+#if TEST_NO_SINGLETON
                 Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
+#endif
                 NetworkManagerOwner = NetworkManager.Singleton;
             }
-#endif
 
             var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
             var childBehaviours = new List<NetworkBehaviour>(networkBehaviours.Length);
