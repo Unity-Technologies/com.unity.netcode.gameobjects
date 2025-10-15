@@ -210,12 +210,16 @@ namespace Unity.Netcode
             }
             else
             {
-                var response = new NetworkManager.ConnectionApprovalResponse
+                var createPlayerObject = networkManager.NetworkConfig.PlayerPrefab != null;
+
+                // DAHost only:
+                // Never create the player object on the server if AutoSpawnPlayerPrefabClientSide is set.
+                if (networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide)
                 {
-                    Approved = true,
-                    CreatePlayerObject = networkManager.DistributedAuthorityMode && networkManager.AutoSpawnPlayerPrefabClientSide ? false : networkManager.NetworkConfig.PlayerPrefab != null
-                };
-                networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
+                    createPlayerObject = false;
+                }
+
+                networkManager.ConnectionManager.HandleConnectionApproval(senderId, createPlayerObject);
             }
         }
     }
