@@ -805,7 +805,6 @@ namespace Unity.Netcode
                     // Spawn the player NetworkObject locally
                     NetworkManager.SpawnManager.SpawnNetworkObjectLocally(
                         playerObject,
-                        NetworkManager,
                         NetworkManager.SpawnManager.GetNetworkObjectId(),
                         sceneObject: false,
                         playerObject: true,
