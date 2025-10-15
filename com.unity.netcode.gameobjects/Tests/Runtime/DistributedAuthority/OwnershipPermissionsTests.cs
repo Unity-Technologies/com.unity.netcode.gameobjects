@@ -17,12 +17,6 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 4;
 
-        // TODO: [CmbServiceTests] Adapt to run with the service - daHostInstance will be firstInstance with cmbService
-        protected override bool UseCMBService()
-        {
-            return false;
-        }
-
         public OwnershipPermissionsTests() : base(HostOrServer.DAHost)
         {
         }
@@ -44,41 +38,42 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkObject m_ObjectToValidate;
 
-        private bool ValidateObjectSpawnedOnAllClients()
-        {
-            m_ErrorLog.Clear();
 
-            var networkObjectId = m_ObjectToValidate.NetworkObjectId;
-            var name = m_ObjectToValidate.name;
-
-            foreach (var client in m_NetworkManagers)
-            {
-                if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                {
-                    m_ErrorLog.Append($"Client-{client.LocalClientId} has not spawned {name}!");
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool ValidatePermissionsOnAllClients()
+        private bool ValidatePermissionsOnAllClients(StringBuilder errorLog)
         {
             var currentPermissions = (ushort)m_ObjectToValidate.Ownership;
             var networkObjectId = m_ObjectToValidate.NetworkObjectId;
             var objectName = m_ObjectToValidate.name;
-            m_ErrorLog.Clear();
 
             foreach (var client in m_NetworkManagers)
             {
                 var otherPermissions = (ushort)client.SpawnManager.SpawnedObjects[networkObjectId].Ownership;
                 if (currentPermissions != otherPermissions)
                 {
-                    m_ErrorLog.Append($"Client-{client.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
+                    errorLog.Append($"Client-{client.LocalClientId} permissions for {objectName} is {otherPermissions} when it should be {currentPermissions}!");
                     return false;
                 }
             }
             return true;
+        }
+
+        private bool WaitForOneClientToBeApproved(OwnershipPermissionsTestHelper[] clients)
+        {
+            var approvedClients = 0;
+            var requestInProgressClients = 0;
+            foreach (var helper in clients)
+            {
+                if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
+                {
+                    approvedClients++;
+                }
+                else if (helper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress)
+                {
+                    requestInProgressClients++;
+                }
+            }
+
+            return approvedClients == 1 && requestInProgressClients == clients.Length - 1;
         }
 
         private bool ValidateAllInstancesAreOwnedByClient(ulong clientId)
@@ -101,17 +96,19 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ValidateOwnershipPermissionsTest()
         {
-            var firstInstance = SpawnObject(m_PermissionsObject, m_ClientNetworkManagers[0]).GetComponent<NetworkObject>();
+            var firstClient = GetNonAuthorityNetworkManager(0);
+            var firstInstance = SpawnObject(m_PermissionsObject, firstClient).GetComponent<NetworkObject>();
             OwnershipPermissionsTestHelper.CurrentOwnedInstance = firstInstance;
             var firstInstanceHelper = firstInstance.GetComponent<OwnershipPermissionsTestHelper>();
             var networkObjectId = firstInstance.NetworkObjectId;
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
-            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients);
-            AssertOnTimeout($"[Failed To Spawn] {firstInstance.name}: \n {m_ErrorLog}");
+
+            yield return WaitForSpawnedOnAllOrTimeOut(firstInstance);
+            AssertOnTimeout($"[Failed To Spawn] Ownership permissions object {firstInstance.name} failed to spawn!");
 
             // Validate the base non-assigned permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Permissions Mismatch] {firstInstance.name} has incorrect ownership permissions!");
 
             //////////////////////////////////////
             // Setting & Removing Ownership Flags:
@@ -132,7 +129,7 @@ namespace Unity.Netcode.RuntimeTests
                 firstInstance.SetOwnershipStatus(permission);
                 // Validate the permissions value for all instances are the same.
                 yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-                AssertOnTimeout($"[Add][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+                AssertOnTimeout($"[Add][Permissions Mismatch] {firstInstance.name}");
 
                 // Remove the status unless it is None (ignore None).
                 if (permission == NetworkObject.OwnershipStatus.None)
@@ -142,7 +139,7 @@ namespace Unity.Netcode.RuntimeTests
                 firstInstance.RemoveOwnershipStatus(permission);
                 // Validate the permissions value for all instances are the same.
                 yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-                AssertOnTimeout($"[Remove][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+                AssertOnTimeout($"[Remove][Permissions Mismatch] {firstInstance.name}");
             }
 
             //Add multiple flags at the same time
@@ -152,7 +149,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}");
 
             // Remove multiple flags at the same time
             multipleFlags = NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.RequestRequired;
@@ -164,7 +161,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Set Multiple][Permissions Mismatch] {firstInstance.name}");
 
             //////////////////////
             // Changing Ownership:
@@ -175,12 +172,13 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Reset][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Reset][Permissions Mismatch] {firstInstance.name}");
 
-            var secondInstance = m_ClientNetworkManagers[1].SpawnManager.SpawnedObjects[networkObjectId];
+            var secondClient = GetNonAuthorityNetworkManager(1);
+            var secondInstance = secondClient.SpawnManager.SpawnedObjects[networkObjectId];
             var secondInstanceHelper = secondInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
-            secondInstance.ChangeOwnership(m_ClientNetworkManagers[1].LocalClientId);
+            secondInstance.ChangeOwnership(secondClient.LocalClientId);
             Assert.IsTrue(secondInstanceHelper.OwnershipPermissionsFailureStatus == NetworkObject.OwnershipPermissionsFailureStatus.Locked,
                 $"Expected {secondInstance.name} to return {NetworkObject.OwnershipPermissionsFailureStatus.Locked} but its permission failure" +
                 $" status is {secondInstanceHelper.OwnershipPermissionsFailureStatus}!");
@@ -188,20 +186,25 @@ namespace Unity.Netcode.RuntimeTests
             firstInstance.SetOwnershipLock(false);
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Unlock][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Unlock][Permissions Mismatch] {firstInstance.name}");
 
             // Sanity check to assure this client's instance isn't already the owner.
-            Assert.True(!secondInstance.IsOwner, $"[Ownership Check] Client-{m_ClientNetworkManagers[1].LocalClientId} already is the owner!");
+            Assert.True(!secondInstance.IsOwner, $"[Ownership Check] Client-{secondClient.LocalClientId} already is the owner!");
+
+            // With transferable ownership, the second client shouldn't be able to request ownership
+            var requestStatus = secondInstance.RequestOwnership();
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestRequiredNotSet, $"Client-{secondClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+
             // Now try to acquire ownership
-            secondInstance.ChangeOwnership(m_ClientNetworkManagers[1].LocalClientId);
+            secondInstance.ChangeOwnership(secondClient.LocalClientId);
 
             // Validate the permissions value for all instances are the same
             yield return WaitForConditionOrTimeOut(() => secondInstance.IsOwner);
-            AssertOnTimeout($"[Acquire Ownership Failed] Client-{m_ClientNetworkManagers[1].LocalClientId} failed to get ownership!");
+            AssertOnTimeout($"[Acquire Ownership Failed] Client-{secondClient.LocalClientId} failed to get ownership!");
 
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
             // Validate all other client instances are showing the same owner
-            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(m_ClientNetworkManagers[1].LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(secondClient.LocalClientId));
             AssertOnTimeout($"[Ownership Mismatch] {secondInstance.name}: \n {m_ErrorLog}");
 
             // Clear the flags, set the permissions to RequestRequired, and lock ownership in one pass.
@@ -209,10 +212,10 @@ namespace Unity.Netcode.RuntimeTests
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Unlock][Permissions Mismatch] {secondInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Unlock][Permissions Mismatch] {secondInstance.name}");
 
             // Attempt to acquire ownership by just changing it
-            firstInstance.ChangeOwnership(firstInstance.NetworkManager.LocalClientId);
+            firstInstance.ChangeOwnership(firstClient.LocalClientId);
 
             // Assure we are denied ownership due to it requiring ownership be requested
             Assert.IsTrue(firstInstanceHelper.OwnershipPermissionsFailureStatus == NetworkObject.OwnershipPermissionsFailureStatus.RequestRequired,
@@ -224,68 +227,83 @@ namespace Unity.Netcode.RuntimeTests
             //////////////////////////////////
 
             // Start with a request for the client we expect to be given ownership
-            var requestStatus = firstInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            requestStatus = firstInstance.RequestOwnership();
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+
+            yield return null;
 
             // Get the 3rd client to send a request at the "relatively" same time
-            var thirdInstance = m_ClientNetworkManagers[2].SpawnManager.SpawnedObjects[networkObjectId];
+            var thirdClient = GetNonAuthorityNetworkManager(2);
+            var thirdInstance = thirdClient.SpawnManager.SpawnedObjects[networkObjectId];
             var thirdInstanceHelper = thirdInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
             // At the same time send a request by the third client.
             requestStatus = thirdInstance.RequestOwnership();
 
             // We expect the 3rd client's request should be able to be sent at this time as well (i.e. creates the race condition between two clients)
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // We expect the first requesting client to be given ownership
             yield return WaitForConditionOrTimeOut(() => firstInstance.IsOwner);
-            AssertOnTimeout($"[Acquire Ownership Failed] Client-{firstInstance.NetworkManager.LocalClientId} failed to get ownership! ({firstInstanceHelper.OwnershipRequestResponseStatus})(Owner: {OwnershipPermissionsTestHelper.CurrentOwnedInstance.OwnerClientId}");
+            AssertOnTimeout($"[Acquire Ownership Failed] Client-{firstClient.LocalClientId} failed to get ownership! ({firstInstanceHelper.OwnershipRequestResponseStatus})(Owner: {OwnershipPermissionsTestHelper.CurrentOwnedInstance.OwnerClientId}");
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
 
             // Just do a sanity check to assure ownership has changed on all clients.
-            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstInstance.NetworkManager.LocalClientId));
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(firstClient.LocalClientId));
             AssertOnTimeout($"[Ownership Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
 
             // Now, the third client should get a RequestInProgress returned as their request response
             yield return WaitForConditionOrTimeOut(() => thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress);
-            AssertOnTimeout($"[Request In Progress Failed] Client-{thirdInstanceHelper.NetworkManager.LocalClientId} did not get the right request denied reponse!");
+            AssertOnTimeout($"[Request In Progress Failed] Client-{thirdClient.LocalClientId} did not get the right request denied response!");
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Unlock][Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Unlock][Permissions Mismatch] {firstInstance.name}");
+
+            // Check for various permissions denied race conditions with changing permissions and requesting ownership
+            yield return ValidateRequestAndPermissionsChangeRaceCondition(NetworkObject.OwnershipStatus.Distributable, NetworkObject.OwnershipLockActions.SetAndUnlock, NetworkObject.OwnershipRequestResponseStatus.CannotRequest, firstClient, firstInstance, secondInstance, secondInstanceHelper);
+            yield return ValidateRequestAndPermissionsChangeRaceCondition(NetworkObject.OwnershipStatus.Transferable, NetworkObject.OwnershipLockActions.SetAndLock, NetworkObject.OwnershipRequestResponseStatus.Locked, firstClient, firstInstance, secondInstance, secondInstanceHelper);
+
+            // Should successfully change ownership to secondClient
+            yield return ValidateRequestAndPermissionsChangeRaceCondition(NetworkObject.OwnershipStatus.Transferable, NetworkObject.OwnershipLockActions.SetAndUnlock, NetworkObject.OwnershipRequestResponseStatus.Approved, firstClient, firstInstance, secondInstance, secondInstanceHelper);
+
+            // Transfer ownership back to firstClient. ValidateRequestAndPermissionsChangeRaceCondition will reset permissions to RequestRequired
+            yield return ValidateRequestAndPermissionsChangeRaceCondition(NetworkObject.OwnershipStatus.Transferable, NetworkObject.OwnershipLockActions.None, NetworkObject.OwnershipRequestResponseStatus.Approved, secondClient, secondInstance, firstInstance, firstInstanceHelper, false);
 
             ///////////////////////////////////////////////
             // Test for multiple ownership race conditions:
             ///////////////////////////////////////////////
 
             // Get the 4th client's instance
-            var fourthInstance = m_ClientNetworkManagers[3].SpawnManager.SpawnedObjects[networkObjectId];
+            var fourthClient = GetNonAuthorityNetworkManager(3);
+            var fourthInstance = fourthClient.SpawnManager.SpawnedObjects[networkObjectId];
             var fourthInstanceHelper = fourthInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
             // Send out a request from three clients at the same time
             // The first one sent (and received for this test) gets ownership
             requestStatus = secondInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{secondInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{secondClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
             requestStatus = thirdInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
             requestStatus = fourthInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // The 2nd and 3rd client should be denied and the 4th client should be approved
-            yield return WaitForConditionOrTimeOut(() =>
-            (fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
-            (thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.RequestInProgress) &&
-            (secondInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
-            );
-            AssertOnTimeout($"[Targeted Owner] Client-{secondInstanceHelper.NetworkManager.LocalClientId} did not get the right request denied reponse: {secondInstanceHelper.OwnershipRequestResponseStatus}!");
+            yield return WaitForConditionOrTimeOut(() => WaitForOneClientToBeApproved(new[] { secondInstanceHelper, thirdInstanceHelper, fourthInstanceHelper }));
+            AssertOnTimeout("[Targeted Owner] A client received an incorrect response. " +
+                            $"Expected one client to have {NetworkObject.OwnershipRequestResponseStatus.Approved} and the others to have {NetworkObject.OwnershipRequestResponseStatus.RequestInProgress}!."
+                            + $"\n Client-{fourthClient.LocalClientId}: has {fourthInstanceHelper.OwnershipRequestResponseStatus}!"
+                            + $"\n Client-{thirdClient.LocalClientId}: has {thirdInstanceHelper.OwnershipRequestResponseStatus}!"
+                            + $"\n Client-{secondClient.LocalClientId}: has {secondInstanceHelper.OwnershipRequestResponseStatus}!");
+
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
             // Just do a sanity check to assure ownership has changed on all clients.
-            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(secondInstance.NetworkManager.LocalClientId));
-            AssertOnTimeout($"[Ownership Mismatch] {secondInstance.name}: \n {m_ErrorLog}");
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(secondClient.LocalClientId));
+            AssertOnTimeout($"[Multiple request race condition][Ownership Mismatch] {secondInstance.name}: \n {m_ErrorLog}");
 
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Unlock][Permissions Mismatch] {secondInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Multiple request race condition][Permissions Mismatch] {secondInstance.name}");
 
             ///////////////////////////////////////////////
             // Test for targeted ownership request:
@@ -293,74 +311,78 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now get the DAHost's client's instance
             var authority = GetAuthorityNetworkManager();
-            var daHostInstance = authority.SpawnManager.SpawnedObjects[networkObjectId];
-            var daHostInstanceHelper = daHostInstance.GetComponent<OwnershipPermissionsTestHelper>();
+            var authorityInstance = authority.SpawnManager.SpawnedObjects[networkObjectId];
+            var authorityInstanceHelper = authorityInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
             secondInstanceHelper.AllowOwnershipRequest = true;
             secondInstanceHelper.OnlyAllowTargetClientId = true;
-            secondInstanceHelper.ClientToAllowOwnership = daHostInstance.NetworkManager.LocalClientId;
+            secondInstanceHelper.ClientToAllowOwnership = authority.LocalClientId;
 
             // Send out a request from all three clients
             requestStatus = firstInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
             requestStatus = thirdInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{thirdClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
             requestStatus = fourthInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
-            requestStatus = daHostInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{daHostInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{fourthClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            requestStatus = authorityInstance.RequestOwnership();
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{authority.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // Only the client marked as ClientToAllowOwnership (daHost) should be approved. All others should be denied.
             yield return WaitForConditionOrTimeOut(() =>
             (firstInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
             (thirdInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
             (fourthInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Denied) &&
-            (daHostInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
+            (authorityInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved)
             );
-            AssertOnTimeout($"[Targeted Owner] Client-{daHostInstance.NetworkManager.LocalClientId} did not get the right request response: {daHostInstanceHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.Approved}!");
+            AssertOnTimeout($"[Targeted Owner] A client received an incorrect response."
+                + $"\n Client-{firstClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.Denied}, and got {firstInstanceHelper.OwnershipRequestResponseStatus}!"
+                + $"\n Client-{thirdClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.Denied}, and got {thirdInstanceHelper.OwnershipRequestResponseStatus}!"
+                + $"\n Client-{fourthClient.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.Denied}, and got {fourthInstanceHelper.OwnershipRequestResponseStatus}!"
+                + $"\n Client-{authority.LocalClientId}: Expected {NetworkObject.OwnershipRequestResponseStatus.Approved}, and got {authorityInstanceHelper.OwnershipRequestResponseStatus}!");
 
             ///////////////////////////////////////////////
             // Test OwnershipStatus.SessionOwner:
             ///////////////////////////////////////////////
 
-            OwnershipPermissionsTestHelper.CurrentOwnedInstance = daHostInstance;
+            OwnershipPermissionsTestHelper.CurrentOwnedInstance = authorityInstance;
             m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
 
             // Add multiple statuses
-            daHostInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.SessionOwner);
+            authorityInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable | NetworkObject.OwnershipStatus.SessionOwner);
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Add][Permissions Mismatch] {daHostInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Add][Permissions Mismatch] {authorityInstance.name}");
 
             // Trying to set SessionOwner flag should override any other flags.
-            Assert.IsFalse(daHostInstance.HasOwnershipStatus(NetworkObject.OwnershipStatus.Transferable), $"[Set][SessionOwner flag Failure] Expected: {NetworkObject.OwnershipStatus.Transferable} not to be set!");
+            Assert.IsFalse(authorityInstance.HasOwnershipStatus(NetworkObject.OwnershipStatus.Transferable), $"[Set][SessionOwner flag Failure] Expected: {NetworkObject.OwnershipStatus.Transferable} not to be set!");
 
             // Add another status. Should fail as SessionOwner should be exclusive
-            daHostInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
-            Assert.IsFalse(daHostInstance.HasOwnershipStatus(NetworkObject.OwnershipStatus.Distributable), $"[Add][SessionOwner flag Failure] Expected: {NetworkObject.OwnershipStatus.Transferable} not to be set!");
+            authorityInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Distributable);
+            Assert.IsFalse(authorityInstance.HasOwnershipStatus(NetworkObject.OwnershipStatus.Distributable), $"[Add][SessionOwner flag Failure] Expected: {NetworkObject.OwnershipStatus.Transferable} not to be set!");
 
             // Request ownership of the SessionOwner flag instance
             requestStatus = firstInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestRequiredNotSet, $"Client-{firstInstance.NetworkManager.LocalClientId} should not be able to send a request for ownership because object is marked as owned by the session owner. {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestRequiredNotSet, $"Client-{firstClient.LocalClientId} should not be able to send a request for ownership because object is marked as owned by the session owner. {requestStatus}!");
 
             // Set ownership directly on local object. This will allow the request to be sent
             firstInstance.Ownership = NetworkObject.OwnershipStatus.RequestRequired;
             requestStatus = firstInstance.RequestOwnership();
-            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstInstance.NetworkManager.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
 
             // Request should be denied with CannotRequest
             yield return WaitForConditionOrTimeOut(() => firstInstanceHelper.OwnershipRequestResponseStatus == NetworkObject.OwnershipRequestResponseStatus.CannotRequest);
-            AssertOnTimeout($"[Targeted Owner] Client-{firstInstance.NetworkManager.LocalClientId} did not get the right request response: {daHostInstanceHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.CannotRequest}!");
+            AssertOnTimeout($"[Targeted Owner] Client-{firstClient.LocalClientId} did not get the right request response: {firstInstanceHelper.OwnershipRequestResponseStatus} Expecting: {NetworkObject.OwnershipRequestResponseStatus.CannotRequest}!");
 
             // Try changing the ownership explicitly
-            // Get the cloned daHostInstance instance on a client side
-            var clientInstance = m_ClientNetworkManagers[2].SpawnManager.SpawnedObjects[daHostInstance.NetworkObjectId];
+            // Get the cloned authorityClient instance on a client side
+            var clientInstance = thirdClient.SpawnManager.SpawnedObjects[authorityInstance.NetworkObjectId];
 
             // Get the client instance of the OwnershipPermissionsTestHelper component
             var clientInstanceHelper = clientInstance.GetComponent<OwnershipPermissionsTestHelper>();
 
             // Have the client attempt to change ownership
-            clientInstance.ChangeOwnership(m_ClientNetworkManagers[2].LocalClientId);
+            clientInstance.ChangeOwnership(thirdClient.LocalClientId);
 
             // Verify the client side gets a permission failure status of NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly
             Assert.IsTrue(clientInstanceHelper.OwnershipPermissionsFailureStatus == NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly,
@@ -368,58 +390,102 @@ namespace Unity.Netcode.RuntimeTests
                 $" status is {clientInstanceHelper.OwnershipPermissionsFailureStatus}!");
 
             // Have the session owner attempt to change ownership to a non-session owner
-            daHostInstance.ChangeOwnership(m_ClientNetworkManagers[2].LocalClientId);
+            authorityInstance.ChangeOwnership(thirdClient.LocalClientId);
 
-            // Verify the session owner cannot assign a SessionOwner permission NetworkObject to a non-sessionowner client
-            Assert.IsTrue(daHostInstanceHelper.OwnershipPermissionsFailureStatus == NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly,
-                $"Expected {daHostInstance.name} to return {NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly} but its permission failure" +
-                $" status is {daHostInstanceHelper.OwnershipPermissionsFailureStatus}!");
+            // Verify the session owner cannot assign a SessionOwner permission NetworkObject to a non-authority client
+            Assert.IsTrue(authorityInstanceHelper.OwnershipPermissionsFailureStatus == NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly,
+                $"Expected {authorityInstance.name} to return {NetworkObject.OwnershipPermissionsFailureStatus.SessionOwnerOnly} but its permission failure" +
+                $" status is {authorityInstanceHelper.OwnershipPermissionsFailureStatus}!");
 
             // Remove status
-            daHostInstance.RemoveOwnershipStatus(NetworkObject.OwnershipStatus.SessionOwner);
+            authorityInstance.RemoveOwnershipStatus(NetworkObject.OwnershipStatus.SessionOwner);
             // Validate the permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Remove][Permissions Mismatch] {daHostInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Remove][Permissions Mismatch] {authorityInstance.name}");
         }
 
 
         [UnityTest]
         public IEnumerator ChangeOwnershipWithoutObservers()
         {
-            var initialLogLevel = m_ServerNetworkManager.LogLevel;
-            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
-            var firstInstance = SpawnObject(m_PermissionsObject, m_ServerNetworkManager).GetComponent<NetworkObject>();
-            OwnershipPermissionsTestHelper.CurrentOwnedInstance = firstInstance;
-            var firstInstanceHelper = firstInstance.GetComponent<OwnershipPermissionsTestHelper>();
-            var networkObjectId = firstInstance.NetworkObjectId;
-            m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
-            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients);
-            AssertOnTimeout($"[Failed To Spawn] {firstInstance.name}: \n {m_ErrorLog}");
+            var authority = GetAuthorityNetworkManager();
+            var initialLogLevel = authority.LogLevel;
+            authority.LogLevel = LogLevel.Developer;
 
-            firstInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable, true);
+            var authorityInstance = SpawnObject(m_PermissionsObject, authority).GetComponent<NetworkObject>();
+            OwnershipPermissionsTestHelper.CurrentOwnedInstance = authorityInstance;
+            m_ObjectToValidate = OwnershipPermissionsTestHelper.CurrentOwnedInstance;
+
+            yield return WaitForSpawnedOnAllOrTimeOut(authorityInstance);
+            AssertOnTimeout($"[Failed To Spawn] {authorityInstance.name}");
+
+            authorityInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.Transferable, true);
             // Validate the base non-assigned permissions value for all instances are the same.
             yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
-            AssertOnTimeout($"[Permissions Mismatch] {firstInstance.name}: \n {m_ErrorLog}");
+            AssertOnTimeout($"[Permissions Mismatch] {authorityInstance.name}");
 
-            var secondInstance = m_ClientNetworkManagers[0].SpawnManager.SpawnedObjects[networkObjectId];
+            var otherClient = GetNonAuthorityNetworkManager(0);
+            var otherInstance = otherClient.SpawnManager.SpawnedObjects[authorityInstance.NetworkObjectId];
 
             // Remove the client from the observers list
-            firstInstance.Observers.Remove(m_ClientNetworkManagers[0].LocalClientId);
+            authorityInstance.Observers.Remove(otherClient.LocalClientId);
 
             // ChangeOwnership should fail
-            firstInstance.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-            LogAssert.Expect(LogType.Warning, "[Session-Owner Sender=0] [Invalid Owner] Cannot send Ownership change as client-1 cannot see PermObject{2}-OnServer{0}! Use NetworkShow first.");
-            Assert.True(firstInstance.IsOwner, $"[Ownership Check] Client-{m_ServerNetworkManager.LocalClientId} should still own this object!");
+            authorityInstance.ChangeOwnership(otherClient.LocalClientId);
+            var senderId = authority.LocalClientId;
+            var receiverId = otherClient.LocalClientId;
+            LogAssert.Expect(LogType.Warning, $"[Session-Owner Sender={senderId}] [Invalid Owner] Cannot send Ownership change as client-{receiverId} cannot see {authorityInstance.name}! Use NetworkShow first.");
+            Assert.True(authorityInstance.IsOwner, $"[Ownership Check] Client-{senderId} should still own this object!");
 
             // Now re-add the client to the Observers list and try to change ownership
-            firstInstance.Observers.Add(m_ClientNetworkManagers[0].LocalClientId);
-            firstInstance.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+            authorityInstance.Observers.Add(otherClient.LocalClientId);
+            authorityInstance.ChangeOwnership(otherClient.LocalClientId);
 
-            // Validate the second client now owns the object
-            yield return WaitForConditionOrTimeOut(() => secondInstance.IsOwner);
-            AssertOnTimeout($"[Acquire Ownership Failed] Client-{m_ClientNetworkManagers[0].LocalClientId} failed to get ownership!");
+            // Validate the non-authority client now owns the object
+            yield return WaitForConditionOrTimeOut(() => otherInstance.IsOwner);
+            AssertOnTimeout($"[Acquire Ownership Failed] Client-{otherClient.LocalClientId} failed to get ownership!");
 
-            m_ServerNetworkManager.LogLevel = initialLogLevel;
+            authority.LogLevel = initialLogLevel;
+        }
+
+        private IEnumerator ValidateRequestAndPermissionsChangeRaceCondition(NetworkObject.OwnershipStatus newStatus, NetworkObject.OwnershipLockActions lockActions, NetworkObject.OwnershipRequestResponseStatus expectedResponseStatus, NetworkManager firstClient, NetworkObject firstInstance, NetworkObject secondInstance, OwnershipPermissionsTestHelper secondInstanceHelper, bool setFlagsFirst = true)
+        {
+            var secondClientId = secondInstance.NetworkManager.LocalClientId;
+
+            if (setFlagsFirst)
+            {
+                firstInstance.SetOwnershipStatus(newStatus, true, lockActions);
+            }
+
+            // Request ownership
+            var requestStatus = secondInstance.RequestOwnership();
+
+            if (!setFlagsFirst)
+            {
+                firstInstance.SetOwnershipStatus(newStatus, true, lockActions);
+
+            }
+
+            // We expect the request should be able to be sent at this time as well (i.e. creates the race condition between request and permissions change)
+            Assert.True(requestStatus == NetworkObject.OwnershipRequestStatus.RequestSent, $"[{newStatus}] Client-{firstClient.LocalClientId} was unable to send a request for ownership because: {requestStatus}!");
+
+            yield return WaitForConditionOrTimeOut(() => secondInstanceHelper.OwnershipRequestResponseStatus == expectedResponseStatus);
+            AssertOnTimeout($"[{newStatus}][Request race condition failed] Client-{secondClientId} did not get the right request response status! Expected: {expectedResponseStatus} Received: {secondInstanceHelper.OwnershipRequestResponseStatus}!");
+
+            var expectedOwner = expectedResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved ? secondClientId : firstClient.LocalClientId;
+            yield return WaitForConditionOrTimeOut(() => ValidateAllInstancesAreOwnedByClient(expectedOwner));
+            AssertOnTimeout($"[{newStatus}][Request race condition][Ownership Mismatch] Expected Client-{expectedOwner} to have ownership: \n {m_ErrorLog}");
+
+            // Owner permissions should prevail - ownership shouldn't change
+            yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
+            AssertOnTimeout($"[{newStatus}][Unlock][Race condition permissions mismatch] {secondInstance.name}");
+
+            // Reset the permissions to requestRequired
+            var finalInstance = expectedResponseStatus == NetworkObject.OwnershipRequestResponseStatus.Approved ? secondInstance : firstInstance;
+
+            finalInstance.SetOwnershipStatus(NetworkObject.OwnershipStatus.RequestRequired, true);
+            yield return WaitForConditionOrTimeOut(ValidatePermissionsOnAllClients);
+            AssertOnTimeout($"[{newStatus}][Set RequestRequired][Permissions mismatch] {firstClient.name}");
         }
 
         internal class OwnershipPermissionsTestHelper : NetworkBehaviour

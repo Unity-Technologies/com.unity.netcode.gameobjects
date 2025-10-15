@@ -576,6 +576,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
+            NetworkManagerHelper.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
@@ -1735,7 +1736,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
@@ -1891,7 +1891,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Waits until the specified condition returns true or a timeout occurs, then asserts if the timeout was reached.
+        /// Waits until the specified condition returns true or a timeout occurs.
         /// This overload allows the condition to provide additional error details via a <see cref="StringBuilder"/>.
         /// </summary>
         /// <param name="checkForCondition">A delegate that takes a <see cref="StringBuilder"/> for error details and returns true when the desired condition is met.</param>
@@ -1905,6 +1905,54 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_InternalErrorLog.Clear();
                 return checkForCondition(m_InternalErrorLog);
             }, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObjectId">The id of the<see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(ulong networkObjectId, TimeoutHelper timeOutHelper = null)
+        {
+            bool ValidateObjectSpawnedOnAllClients(StringBuilder errorLog)
+            {
+                foreach (var client in m_NetworkManagers)
+                {
+                    if (!client.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
+                    {
+                        errorLog.Append($"Client-{client.LocalClientId} has not spawned Object-{networkObjectId}!");
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            yield return WaitForConditionOrTimeOut(ValidateObjectSpawnedOnAllClients, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(NetworkObject networkObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = networkObject.NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
+        }
+
+        /// <summary>
+        /// Waits until the given NetworkObject is spawned on all clients or a timeout occurs.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> containing a <see cref="NetworkObject"/> to wait for.</param>
+        /// <param name="timeOutHelper">An optional <see cref="TimeoutHelper"/> to control the timeout period. If null, the default timeout is used.</param>
+        /// <returns>An <see cref="IEnumerator"/> for use in Unity coroutines.</returns>
+        protected IEnumerator WaitForSpawnedOnAllOrTimeOut(GameObject gameObject, TimeoutHelper timeOutHelper = null)
+        {
+            var networkObjectId = gameObject.GetComponent<NetworkObject>().NetworkObjectId;
+            yield return WaitForSpawnedOnAllOrTimeOut(networkObjectId, timeOutHelper);
         }
 
         /// <summary>
@@ -2205,6 +2253,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             return gameObjectsSpawned;
         }
+
 
         /// <summary>
         /// Default constructor

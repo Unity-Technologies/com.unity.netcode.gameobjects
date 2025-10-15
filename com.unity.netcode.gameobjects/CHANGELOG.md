@@ -10,22 +10,58 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
-
-### Fixed
-
-- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
-- Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
 
 ### Changed
 
-- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
+
+### Deprecated
 
 
-## [2.5.0] - 2025-08-01
+### Removed
+
+
+### Fixed
+
+
+### Security
+
+
+### Obsolete
+
+
+## [2.6.0] - 2025-10-12
 
 ### Added
 
+- `NetworkSceneManager` as an internal wrapper for the `SceneManager.Scene.handle` and swapped all places that use an `int` to represent a `Scene.handle` to instead use the `NetworkSceneManager`. (#3647)
+- Clicking on the Help icon in the inspector will now redirect to the relevant documentation. (#3663)
+- Added a `Set` function onto `NetworkList` that takes an optional parameter that forces an update to be processed even if the current value is equal to the previous value. (#3690)
+
+### Changed
+
+- Improved performance of the NetworkVariable. (#3683)
+- Improved performance around the NetworkBehaviour component. (#3687)
+
+### Fixed
+
+- Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
+- Made a variety of small performance improvements. (#3683)
+
+## [2.5.1] - 2025-09-14
+
+### Added
+
+- Added a warning when `NetworkManager.NetworkConfig.ConnectionApproval` is set in a distributed authority context. (#3658)
+
+### Fixed
+
+- Fixed issue where a client, under above average latency and packet loss conditions, could receive multiple NetworkTransform state updates in one frame and when processing the state updates only the last state update would be applied to the transform if interpolation was disabled. (#3614)
+
+## [2.5.0] - 2025-08-17
+
+### Added
+
+- Added `AsNativeArray()` read‑only accessor to `NetworkList<T>` (#3567)
 - Added serializer for `Pose` (#3546)
 - Added `AttachableBehaviour` helper component to provide an alternate approach to parenting items without using the `NetworkObject` parenting. (#3518)
 - Added `AttachableNode` helper component that is used by `AttachableBehaviour` as the target node for parenting. (#3518)
@@ -43,8 +79,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed ensuring OnValueChanged callback is still triggered on the authority when a collection changes and then reverts to the previous value in the same frame. (#3539)
 - Fixed synchronizing the destroyGameObject parameter to clients for InScenePlaced network objects. (#3514)
 - Fixed distributed authority related issue where enabling the `NetworkObject.DestroyWithScene` would cause errors when a destroying non-authority instances due to loading (single mode) or unloading scene events. (#3500)
+- Fixed an issue where `UnityTransport` would not accept single words as valid hostnames (notably "localhost"). (#3591)
+- Fixed issue where viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields could throw an exception if running a distributed authority network topology with a local (DAHost) host and viewed on the host when the host is not the authority of the associated `NetworkObject`. (#3578)
+- Fixed issue when using a distributed authority network topology and  viewing a `NetworkBehaviour` with one or more `NetworkVariable` fields in the inspector view would not show editable fields. (#3578)
+- Fixed issue with unnecessary internal GC Allocations when using the `IReadOnlyList`  `NetworkManager.ConnectedClientsIds` within a `foreach` statement by either replacing with a `for` loop or directly referencing the `NetworkConnectionManager.ConnectedClientIds`. (#3527)
 
 ### Changed
+
+- Marked `UnityTransport.ConnectionAddressData.ServerEndPoint` as obsolete. It can't work when using hostnames as the server address, and its functionality can easily be replicated using `NetworkEndpoint.Parse`. (#3591)
+- Optimized `NetworkList<T>` indexer setter to skip operations when the new value equals the existing value, improving performance by avoiding unnecessary list events and network synchronization. (#3587)
 
 ## [2.4.4] - 2025-07-07
 
@@ -338,9 +381,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 
 ## [2.0.0-exp.5] - 2024-06-03
-
-### Added
-
 
 ### Fixed
 

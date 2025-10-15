@@ -124,7 +124,11 @@ namespace Unity.Netcode.RuntimeTests
             m_Client.NetworkConfig.EnsureNetworkVariableLengthSafety = m_EnsureVariableLengthSafety;
             utpTransport.ConnectionData.Address = Dns.GetHostAddresses(m_TransportHost).First().ToString();
             utpTransport.ConnectionData.Port = k_TransportPort;
-            m_Client.LogLevel = LogLevel.Developer;
+
+            if (m_EnableVerboseDebug)
+            {
+                m_Client.LogLevel = LogLevel.Developer;
+            }
 
             // Validate we are in distributed authority mode with client side spawning and using CMB Service
             Assert.True(m_Client.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority, "Distributed authority topology is not set!");
@@ -360,7 +364,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true)
             };
 
             var message = new SceneEventMessage()
@@ -376,9 +380,13 @@ namespace Unity.Netcode.RuntimeTests
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
 
-            m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<int, NetworkObject>()
+            // We need to preSpawn the behaviours to set the internal data for the synchronize methods
+            prefabNetworkObject.NetworkManagerOwner = m_Client;
+            prefabNetworkObject.InvokeBehaviourNetworkPreSpawn();
+
+            m_Client.SceneManager.ScenePlacedObjects.Add(0, new Dictionary<NetworkSceneHandle, NetworkObject>()
             {
-                { 1, prefabNetworkObject }
+                { new NetworkSceneHandle(1, true), prefabNetworkObject }
             });
             var eventData = new SceneEventData(m_Client)
             {
@@ -386,7 +394,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -406,7 +414,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -426,7 +434,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -446,7 +454,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -466,9 +474,9 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
                 ClientsCompleted = new List<ulong>() { k_ClientId },
-                ClientsTimedOut = new List<ulong>() { 123456789 },
+                ClientsTimedOut = new List<ulong>() { 23456789 },
             };
 
             var message = new SceneEventMessage()
@@ -488,9 +496,9 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 SceneEventProgressId = Guid.NewGuid(),
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
                 ClientsCompleted = new List<ulong>() { k_ClientId },
-                ClientsTimedOut = new List<ulong>() { 123456789 },
+                ClientsTimedOut = new List<ulong>() { 23456789 },
             };
 
             var message = new SceneEventMessage()
@@ -510,12 +518,12 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
                 ScenesToSynchronize = new Queue<uint>()
             };
             eventData.ScenesToSynchronize.Enqueue(101);
-            eventData.SceneHandlesToSynchronize = new Queue<uint>();
-            eventData.SceneHandlesToSynchronize.Enqueue(202);
+            eventData.SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>();
+            eventData.SceneHandlesToSynchronize.Enqueue(new NetworkSceneHandle(202, true));
 
 
             var message = new SceneEventMessage()
@@ -535,7 +543,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -555,7 +563,7 @@ namespace Unity.Netcode.RuntimeTests
                 LoadSceneMode = LoadSceneMode.Single,
                 ClientSynchronizationMode = LoadSceneMode.Single,
                 SceneHash = XXHash.Hash32("SomeRandomSceneName"),
-                SceneHandle = 23456,
+                SceneHandle = new NetworkSceneHandle(23456, true),
             };
 
             var message = new SceneEventMessage()
@@ -587,12 +595,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_Client.SceneManager.SkipSceneHandling = true;
             var prefabNetworkObject = m_SpawnObject.GetComponent<NetworkObject>();
-            m_Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<int, Dictionary<ulong, List<NetworkObject>>>
+            var sceneHandle = new NetworkSceneHandle(23456, true);
+            m_Client.SceneManager.ObjectsMigratedIntoNewScene = new Dictionary<NetworkSceneHandle, Dictionary<ulong, List<NetworkObject>>>
             {
-                { 0, new Dictionary<ulong, List<NetworkObject>>()}
+                { sceneHandle, new Dictionary<ulong, List<NetworkObject>>()}
             };
 
-            m_Client.SceneManager.ObjectsMigratedIntoNewScene[0].Add(m_Client.LocalClientId, new List<NetworkObject>() { prefabNetworkObject });
+            m_Client.SceneManager.ObjectsMigratedIntoNewScene[sceneHandle].Add(m_Client.LocalClientId, new List<NetworkObject>() { prefabNetworkObject });
             var eventData = new SceneEventData(m_Client)
             {
                 SceneEventType = SceneEventType.ObjectSceneChanged,

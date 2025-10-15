@@ -107,11 +107,11 @@ namespace Unity.Netcode
 
         internal uint ActiveSceneHash;
         internal uint SceneHash;
-        internal int SceneHandle;
+        internal NetworkSceneHandle SceneHandle;
 
         // Used by the client during synchronization
         internal uint ClientSceneHash;
-        internal int NetworkSceneHandle;
+        internal NetworkSceneHandle NetworkSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
         /// NetworkVariable information.  If that process changes, then we need to update this
@@ -151,7 +151,7 @@ namespace Unity.Netcode
         internal List<ulong> ClientsTimedOut;
 
         internal Queue<uint> ScenesToSynchronize;
-        internal Queue<uint> SceneHandlesToSynchronize;
+        internal Queue<NetworkSceneHandle> SceneHandlesToSynchronize;
 
         internal LoadSceneMode ClientSynchronizationMode;
 
@@ -170,10 +170,10 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sceneIndex"></param>
         /// <param name="sceneHandle"></param>
-        internal void AddSceneToSynchronize(uint sceneHash, int sceneHandle)
+        internal void AddSceneToSynchronize(uint sceneHash, NetworkSceneHandle sceneHandle)
         {
             ScenesToSynchronize.Enqueue(sceneHash);
-            SceneHandlesToSynchronize.Enqueue((uint)sceneHandle);
+            SceneHandlesToSynchronize.Enqueue(sceneHandle);
         }
 
         /// <summary>
@@ -191,9 +191,9 @@ namespace Unity.Netcode
         /// Gets the next scene handle to be loaded for approval and/or late joining
         /// </summary>
         /// <returns></returns>
-        internal int GetNextSceneSynchronizationHandle()
+        internal NetworkSceneHandle GetNextSceneSynchronizationHandle()
         {
-            return (int)SceneHandlesToSynchronize.Dequeue();
+            return SceneHandlesToSynchronize.Dequeue();
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace Unity.Netcode
 
             if (SceneHandlesToSynchronize == null)
             {
-                SceneHandlesToSynchronize = new Queue<uint>();
+                SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>();
             }
             else
             {
@@ -378,6 +378,7 @@ namespace Unity.Netcode
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
                 {
+                    sobj.NetworkManagerOwner = m_NetworkManager;
                     m_DespawnedInSceneObjectsSync.Add(sobj);
                 }
             }
@@ -831,9 +832,9 @@ namespace Unity.Netcode
         {
             m_NetworkObjectsSync.Clear();
             reader.ReadValueSafe(out uint[] scenesToSynchronize);
-            reader.ReadValueSafe(out uint[] sceneHandlesToSynchronize);
+            reader.ReadValueSafe(out NetworkSceneHandle[] sceneHandlesToSynchronize);
             ScenesToSynchronize = new Queue<uint>(scenesToSynchronize);
-            SceneHandlesToSynchronize = new Queue<uint>(sceneHandlesToSynchronize);
+            SceneHandlesToSynchronize = new Queue<NetworkSceneHandle>(sceneHandlesToSynchronize);
 
             // is not packed!
             reader.ReadValueSafe(out int sizeToCopy);
@@ -1030,12 +1031,12 @@ namespace Unity.Netcode
             // Process all de-spawned in-scene NetworkObjects for this network session
             m_DespawnedInSceneObjects.Clear();
             InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
-            var sceneCache = new Dictionary<int, Dictionary<uint, NetworkObject>>();
+            var sceneCache = new Dictionary<NetworkSceneHandle, Dictionary<uint, NetworkObject>>();
 
             for (int i = 0; i < despawnedObjectsCount; i++)
             {
                 // We just need to get the scene
-                InternalBuffer.ReadValueSafe(out int networkSceneHandle);
+                InternalBuffer.ReadValueSafe(out NetworkSceneHandle networkSceneHandle);
                 InternalBuffer.ReadValueSafe(out uint globalObjectIdHash);
                 var sceneRelativeNetworkObjects = new Dictionary<uint, NetworkObject>();
                 if (!sceneCache.ContainsKey(networkSceneHandle))
@@ -1083,19 +1084,22 @@ namespace Unity.Netcode
                 }
 
                 // Now find the in-scene NetworkObject with the current GlobalObjectIdHash we are looking for
-                if (sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
+                if (sceneRelativeNetworkObjects.TryGetValue(globalObjectIdHash, out var despawnedObject))
                 {
+                    // Set the owner of this network object
+                    despawnedObject.NetworkManagerOwner = m_NetworkManager;
+
                     // Since this is a NetworkObject that was never spawned, we just need to send a notification
                     // out that it was despawned so users can make adjustments
-                    sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
+                    despawnedObject.InvokeBehaviourNetworkDespawn();
                     if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
+                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<NetworkSceneHandle, NetworkObject>());
                     }
 
-                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
+                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(despawnedObject.GetSceneOriginHandle()))
                     {
-                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle(), sceneRelativeNetworkObjects[globalObjectIdHash]);
+                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(despawnedObject.GetSceneOriginHandle(), despawnedObject);
                     }
                 }
                 else
@@ -1277,7 +1281,7 @@ namespace Unity.Netcode
             var spawnManager = m_NetworkManager.SpawnManager;
 
             var numberOfScenes = 0;
-            var sceneHandle = 0;
+            NetworkSceneHandle sceneHandle;
             var objectCount = 0;
             var networkObjectId = (ulong)0;
 
@@ -1289,14 +1293,15 @@ namespace Unity.Netcode
             for (int i = 0; i < numberOfScenes; i++)
             {
                 reader.ReadValueSafe(out sceneHandle);
-                if (!sceneManager.ObjectsMigratedIntoNewScene.ContainsKey(sceneHandle))
+                if (!sceneManager.ObjectsMigratedIntoNewScene.TryGetValue(sceneHandle, out var migratedObjects))
                 {
-                    sceneManager.ObjectsMigratedIntoNewScene.Add(sceneHandle, new Dictionary<ulong, List<NetworkObject>>());
+                    migratedObjects = new Dictionary<ulong, List<NetworkObject>>();
+                    sceneManager.ObjectsMigratedIntoNewScene.Add(sceneHandle, migratedObjects);
                 }
 
-                if (!sceneManager.ObjectsMigratedIntoNewScene[sceneHandle].ContainsKey(ownerID))
+                if (!migratedObjects.ContainsKey(ownerID))
                 {
-                    sceneManager.ObjectsMigratedIntoNewScene[sceneHandle].Add(ownerID, new List<NetworkObject>());
+                    migratedObjects.Add(ownerID, new List<NetworkObject>());
                 }
 
                 reader.ReadValueSafe(out objectCount);
@@ -1310,7 +1315,7 @@ namespace Unity.Netcode
                     }
                     var networkObject = spawnManager.SpawnedObjects[networkObjectId];
                     // Add NetworkObject scene migration to ObjectsMigratedIntoNewScene dictionary that is processed
-                    sceneManager.ObjectsMigratedIntoNewScene[sceneHandle][ownerID].Add(networkObject);
+                    migratedObjects[ownerID].Add(networkObject);
                 }
             }
         }
@@ -1328,7 +1333,7 @@ namespace Unity.Netcode
             var spawnManager = m_NetworkManager.SpawnManager;
             var ownerId = (ulong)0;
             var numberOfScenes = 0;
-            var sceneHandle = 0;
+            NetworkSceneHandle sceneHandle;
             var objectCount = 0;
             var networkObjectId = (ulong)0;
 
@@ -1338,7 +1343,7 @@ namespace Unity.Netcode
             var deferredObjectsMovedEvent = new NetworkSceneManager.DeferredObjectsMovedEvent()
             {
                 OwnerId = ownerId,
-                ObjectsMigratedTable = new Dictionary<int, List<ulong>>(),
+                ObjectsMigratedTable = new Dictionary<NetworkSceneHandle, List<ulong>>(),
             };
 
 
@@ -1346,12 +1351,13 @@ namespace Unity.Netcode
             for (int i = 0; i < numberOfScenes; i++)
             {
                 reader.ReadValueSafe(out sceneHandle);
-                deferredObjectsMovedEvent.ObjectsMigratedTable.Add(sceneHandle, new List<ulong>());
+                var objectsMigrated = new List<ulong>();
+                deferredObjectsMovedEvent.ObjectsMigratedTable.Add(sceneHandle, objectsMigrated);
                 reader.ReadValueSafe(out objectCount);
                 for (int j = 0; j < objectCount; j++)
                 {
                     reader.ReadValueSafe(out networkObjectId);
-                    deferredObjectsMovedEvent.ObjectsMigratedTable[sceneHandle].Add(networkObjectId);
+                    objectsMigrated.Add(networkObjectId);
                 }
             }
             sceneManager.DeferredObjectsMovedEvents.Add(deferredObjectsMovedEvent);
@@ -1369,26 +1375,27 @@ namespace Unity.Netcode
             {
                 foreach (var keyEntry in objectsMovedEvent.ObjectsMigratedTable)
                 {
-                    if (!sceneManager.ObjectsMigratedIntoNewScene.ContainsKey(keyEntry.Key))
+                    if (!sceneManager.ObjectsMigratedIntoNewScene.TryGetValue(keyEntry.Key, out var migratedObjects))
                     {
-                        sceneManager.ObjectsMigratedIntoNewScene.Add(keyEntry.Key, new Dictionary<ulong, List<NetworkObject>>());
+                        migratedObjects = new Dictionary<ulong, List<NetworkObject>>();
+                        sceneManager.ObjectsMigratedIntoNewScene.Add(keyEntry.Key, migratedObjects);
                     }
-                    if (!sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key].ContainsKey(objectsMovedEvent.OwnerId))
+                    if (!migratedObjects.ContainsKey(objectsMovedEvent.OwnerId))
                     {
-                        sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key].Add(objectsMovedEvent.OwnerId, new List<NetworkObject>());
+                        migratedObjects.Add(objectsMovedEvent.OwnerId, new List<NetworkObject>());
                     }
 
                     foreach (var objectId in keyEntry.Value)
                     {
-                        if (!spawnManager.SpawnedObjects.ContainsKey(objectId))
+                        if (!spawnManager.SpawnedObjects.TryGetValue(objectId, out var networkObject))
                         {
                             NetworkLog.LogWarning($"[Deferred][Object Scene Migration] Trying to synchronize NetworkObjectId ({objectId}) but it was not spawned or no longer exists!");
                             continue;
                         }
-                        var networkObject = spawnManager.SpawnedObjects[objectId];
-                        if (!sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key][objectsMovedEvent.OwnerId].Contains(networkObject))
+
+                        if (!migratedObjects[objectsMovedEvent.OwnerId].Contains(networkObject))
                         {
-                            sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key][objectsMovedEvent.OwnerId].Add(networkObject);
+                            migratedObjects[objectsMovedEvent.OwnerId].Add(networkObject);
                         }
                     }
                 }

@@ -7,6 +7,11 @@
   # The job performs additional validation by using Package Verification Pipeline (PVP). It includes x-ray validation for quick package structure verification
   # Because of that validation we can detect errors at the early stage of testing so not to waste CI resources
 
+# NOTES--------------------------------------------------------------------------------
+  # For NGO we use package_pack everywhere rather than project_pack
+  # This is because only the NGO package is being referenced as a file inside testproject
+  # This means both project_pack and package_pack produce same package artifacts
+
 # CONFIGURATION STRUCTURE--------------------------------------------------------------
   # Jobs are generated using nested loops through:
     # 1. For all desktop platforms (Windows, Ubuntu, macOS)
@@ -29,7 +34,7 @@ package_pack_-_ngo_{{ platform.name }}:
   agent:
     type: {{ platform.type }}
     image: {{ platform.image }}
-    flavor: {{ platform.flavor }}
+    flavor: {{ platform.smaller_flavor }}
 {% if platform.model %}
     model: {{ platform.model }} # This is set only in platforms where we want non-default model to use (more information in project.metafile)
 {% endif %}
@@ -37,7 +42,6 @@ package_pack_-_ngo_{{ platform.name }}:
   variables:
     XRAY_PROFILE: "gold ./pvpExceptions.json"
   commands:
-    - python Tools/scripts/release.py # Needed to ensure that CHANGELOG is properly formatted for this test due to the fact that we have bumped package version (to properly perform vetting tests)
     - upm-pvp pack "com.unity.netcode.gameobjects" --output upm-ci~/packages
     - upm-pvp xray --packages "upm-ci~/packages/com.unity.netcode.gameobjects*.tgz" --results pvp-results
     - upm-pvp require {% if platform.name == "win" %}"%XRAY_PROFILE%"{% else %}"$XRAY_PROFILE"{% endif %} --results pvp-results --allow-missing

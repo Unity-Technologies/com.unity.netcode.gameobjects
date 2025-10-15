@@ -127,16 +127,11 @@ namespace Unity.Netcode.EditorTests
             UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
             transport.Initialize();
 
-            transport.SetConnectionData("127.0.0.", 4242, "127.0.0.");
+            transport.SetConnectionData("127.0.0.1", 4242, "foobar");
 
             Assert.False(transport.StartServer());
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
+            LogAssert.Expect(LogType.Error, "Invalid listen endpoint: foobar:4242. Note that the listen endpoint MUST be an IP address (not a hostname).");
 
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-            LogAssert.Expect(LogType.Error, "Listen network address (127.0.0.) is not a valid Ipv4 or Ipv6 address!");
-#else
-            LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
-#endif
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
             Assert.True(transport.StartServer());
 
@@ -153,24 +148,6 @@ namespace Unity.Netcode.EditorTests
             transport.SetConnectionData(string.Empty, 4242);
             Assert.True(transport.StartServer());
 
-            transport.Shutdown();
-        }
-
-        // Check that StartClient returns false with bad connection data.
-        [Test]
-        public void UnityTransport_StartClientFailsWithBadAddress()
-        {
-            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
-            transport.Initialize();
-
-            transport.SetConnectionData("foobar", 4242);
-            Assert.False(transport.StartClient());
-            LogAssert.Expect(LogType.Error, "Invalid network endpoint: foobar:4242.");
-#if HOSTNAME_RESOLUTION_AVAILABLE && UTP_TRANSPORT_2_4_ABOVE
-            LogAssert.Expect(LogType.Error, "Target server network address (foobar) is not a valid Fully Qualified Domain Name!");
-#else
-            LogAssert.Expect(LogType.Error, "Target server network address (foobar) is Invalid!");
-#endif
             transport.Shutdown();
         }
 
@@ -206,5 +183,37 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
+
+#if HOSTNAME_RESOLUTION_AVAILABLE
+        private static readonly (string, bool)[] k_HostnameChecks =
+        {
+            ("localhost", true),
+            ("unity3d.com", true),
+            ("unity3d.com.", true),
+            (string.Empty, false),
+            ("unity3d.com/test", false),
+            ("test%123.com", false),
+        };
+
+        [Test]
+        [TestCaseSource(nameof(k_HostnameChecks))]
+        public void UnityTransport_HostnameValidation((string, bool) testCase)
+        {
+            var (hostname, isValid) = testCase;
+
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+
+            if (!isValid)
+            {
+                LogAssert.Expect(LogType.Error, $"Provided connection address \"{hostname}\" is not a valid hostname.");
+            }
+
+            transport.SetConnectionData(hostname, 4242);
+            Assert.AreEqual(isValid, transport.StartClient());
+
+            transport.Shutdown();
+        }
+#endif
     }
 }

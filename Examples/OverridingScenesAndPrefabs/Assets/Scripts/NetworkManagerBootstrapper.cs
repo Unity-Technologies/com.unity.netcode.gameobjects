@@ -415,8 +415,7 @@ public class NetworkManagerBootstrapper : NetworkManager
         if (Camera.main != null && Camera.main.transform.parent != null)
         {
             Camera.main.transform.SetParent(null, false);
-            Camera.main.transform.position = m_CameraOriginalPosition;
-            Camera.main.transform.rotation = m_CameraOriginalRotation;
+            Camera.main.transform.SetPositionAndRotation(m_CameraOriginalPosition, m_CameraOriginalRotation);
         }
     }
 
@@ -522,7 +521,7 @@ public class NetworkManagerBootstrapper : NetworkManager
 
     /// <summary>
     /// Register callbacks when the OnServerStarted callback is invoked.
-    /// This makes it easier to know you are registering for events only 
+    /// This makes it easier to know you are registering for events only
     /// when the server successfully has started.
     /// </summary>
     private void ServerStarted()
@@ -578,11 +577,11 @@ public class NetworkManagerBootstrapper : NetworkManager
 #else
     private void HandleConsoleKeyCommands()
     {
-        if (Console.KeyAvailable) 
+        if (Console.KeyAvailable)
         {
             var networkManager = NetworkManager.Singleton;
             var keyPressed = Console.ReadKey(true);
-            switch(keyPressed.Key) 
+            switch(keyPressed.Key)
             {
                 case ConsoleKey.X:
                     {

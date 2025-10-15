@@ -149,12 +149,12 @@ namespace Unity.Netcode
             }
 
             // Invoking connection event on non-authority local client. Need to calculate PeerIds.
-            var peerClientIds = new NativeArray<ulong>(Math.Max(NetworkManager.ConnectedClientsIds.Count - 1, 0), Allocator.Temp);
+            var peerClientIds = new NativeArray<ulong>(Math.Max(ConnectedClientIds.Count - 1, 0), Allocator.Temp);
             // `using var peerClientIds` or `using(peerClientIds)` renders it immutable...
             using var sentinel = peerClientIds;
 
             var idx = 0;
-            foreach (var peerId in NetworkManager.ConnectedClientsIds)
+            foreach (var peerId in ConnectedClientIds)
             {
                 if (peerId == NetworkManager.LocalClientId)
                 {
@@ -954,6 +954,7 @@ namespace Unity.Netcode
                     var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
                     var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
                     networkObject.IsSceneObject = false;
+                    networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
                 }
             }
