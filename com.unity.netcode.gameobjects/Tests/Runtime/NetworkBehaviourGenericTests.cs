@@ -69,7 +69,6 @@ namespace Unity.Netcode.RuntimeTests
 
             LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
 
-            parentNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
             parentNetworkObject.Spawn();
             yield return s_DefaultWaitForTick;
         }
@@ -135,7 +134,6 @@ namespace Unity.Netcode.RuntimeTests
             var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
             childObject.AddComponent<SimpleNetworkBehaviour>();
 
-            parentNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
             parentNetworkObject.Spawn();
             yield return s_DefaultWaitForTick;
 
