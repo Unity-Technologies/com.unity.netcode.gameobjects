@@ -377,7 +377,7 @@ namespace Unity.Netcode
             foreach (var sobj in inSceneNetworkObjects)
             {
                 // For integration tests, don't collect objects that don't belong to us.
-                if (sobj.NetworkManagerOwner != null && sobj.NetworkManagerOwner != m_NetworkManager)
+                if (sobj.NetworkManager != m_NetworkManager)
                 {
                     continue;
                 }

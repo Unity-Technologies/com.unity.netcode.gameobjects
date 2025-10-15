@@ -1030,7 +1030,7 @@ namespace Unity.Netcode
         /// Distributed Authority:
         /// DAHost client and standard DA clients invoke this method.
         /// </summary>
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, NetworkManager networkManager, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -1051,12 +1051,9 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+
             // Invoke NetworkBehaviour.OnPreSpawn methods
-            if (networkObject.NetworkManagerOwner != networkManager || NetworkManager != networkManager)
-            {
-                Debug.LogWarning("overriding network manager");
-            }
-            networkObject.NetworkManagerOwner = networkManager;
+            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
             // DANGO-TODO: It would be nice to allow users to specify which clients are observers prior to spawning
@@ -1103,6 +1100,11 @@ namespace Unity.Netcode
 
         internal void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
+            if (networkObject.NetworkManagerOwner == null)
+            {
+                Debug.LogError("NetworkManagerOwner should not be null!");
+            }
+
             if (SpawnedObjects.ContainsKey(networkId))
             {
                 Debug.LogWarning($"[{NetworkManager.name}] Trying to spawn {networkObject.name} with a {nameof(NetworkObject.NetworkObjectId)} of {networkId} but it is already in the spawned list!");
@@ -1471,25 +1473,25 @@ namespace Unity.Netcode
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
             var networkObjectsToSpawn = new List<NetworkObject>();
-            for (int i = 0; i < networkObjects.Length; i++)
+            foreach (var networkObject in networkObjects)
             {
-                if (networkObjects[i].NetworkManager != NetworkManager)
+                if (networkObject.NetworkManager != NetworkManager)
                 {
-                    Debug.LogWarning("Well this is strange");
+                    continue;
                 }
                 // This used to be two loops.
                 // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
                 // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.
-                if (networkObjects[i].IsSceneObject == null || (networkObjects[i].IsSceneObject.HasValue && networkObjects[i].IsSceneObject.Value))
+                if (networkObject.IsSceneObject == null || (networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value))
                 {
-                    var ownerId = networkObjects[i].OwnerClientId;
+                    var ownerId = networkObject.OwnerClientId;
                     if (NetworkManager.DistributedAuthorityMode)
                     {
                         ownerId = NetworkManager.LocalClientId;
                     }
 
-                    SpawnNetworkObjectLocally(networkObjects[i], NetworkManager, GetNetworkObjectId(), true, false, ownerId, true);
-                    networkObjectsToSpawn.Add(networkObjects[i]);
+                    SpawnNetworkObjectLocally(networkObject, GetNetworkObjectId(), true, false, ownerId, true);
+                    networkObjectsToSpawn.Add(networkObject);
                 }
             }
 
