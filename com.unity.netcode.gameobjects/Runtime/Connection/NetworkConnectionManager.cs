@@ -954,7 +954,6 @@ namespace Unity.Netcode
                     var globalObjectIdHash = playerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
                     var networkObject = NetworkManager.SpawnManager.GetNetworkObjectToSpawn(globalObjectIdHash, ownerId, playerPrefab.transform.position, playerPrefab.transform.rotation);
                     networkObject.IsSceneObject = false;
-                    networkObject.NetworkManagerOwner = NetworkManager;
                     networkObject.SpawnAsPlayerObject(ownerId, networkObject.DestroyWithScene);
                 }
             }
