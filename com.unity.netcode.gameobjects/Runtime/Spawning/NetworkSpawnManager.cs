@@ -1318,12 +1318,6 @@ namespace Unity.Netcode
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false, bool authorityOverride = false)
         {
-            if (!networkObject.IsSpawned)
-            {
-                NetworkLog.LogErrorServer("Object is not spawned!");
-                return;
-            }
-
             if (!NetworkManager.IsServer && !NetworkManager.DistributedAuthorityMode)
             {
                 NetworkLog.LogErrorServer("Only server can despawn objects");

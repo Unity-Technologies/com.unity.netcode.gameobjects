@@ -1966,6 +1966,12 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+            if (!IsSpawned)
+            {
+                NetworkLog.LogErrorServer("Object is not spawned!");
+                return;
+            }
+
             foreach (var behavior in ChildNetworkBehaviours)
             {
                 behavior.MarkVariablesDirty(false);
