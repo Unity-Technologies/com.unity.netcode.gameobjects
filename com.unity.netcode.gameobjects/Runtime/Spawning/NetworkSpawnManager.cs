@@ -783,7 +783,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            networkObject.NetworkManagerOwner = networkManager;
+            networkObject.NetworkManagerOwner = NetworkManager;
             networkObject.IsPlayerObject = isPlayerObject;
             networkObject.transform.SetPositionAndRotation(position, rotation);
             // If spawning as a player, then invoke SpawnAsPlayerObject
@@ -1052,6 +1052,10 @@ namespace Unity.Netcode
                 }
             }
             // Invoke NetworkBehaviour.OnPreSpawn methods
+            if (networkObject.NetworkManagerOwner != networkManager || NetworkManager != networkManager)
+            {
+                Debug.LogWarning("overriding network manager");
+            }
             networkObject.NetworkManagerOwner = networkManager;
             networkObject.InvokeBehaviourNetworkPreSpawn();
 
@@ -1469,6 +1473,10 @@ namespace Unity.Netcode
             var networkObjectsToSpawn = new List<NetworkObject>();
             for (int i = 0; i < networkObjects.Length; i++)
             {
+                if (networkObjects[i].NetworkManager != NetworkManager)
+                {
+                    Debug.LogWarning("Well this is strange");
+                }
                 // This used to be two loops.
                 // The first added all NetworkObjects to a list and the second spawned all NetworkObjects in the list.
                 // Now, a parent will set its children's IsSceneObject value when spawned, so we check for null or for true.

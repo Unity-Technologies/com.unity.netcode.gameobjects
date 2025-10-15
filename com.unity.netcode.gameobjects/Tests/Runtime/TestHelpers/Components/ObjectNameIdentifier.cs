@@ -108,7 +108,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 DeRegisterNetworkObject();
                 // This is required otherwise it will try to continue to update the NetworkBehaviour even if
                 // it has been destroyed (most likely integration test specific)
-                m_NetworkObject.ChildNetworkBehaviours?.Remove(this);
+                if (m_NetworkObject.ChildNetworkBehaviours != null && m_NetworkObject.ChildNetworkBehaviours.Contains(this))
+                {
+                    NetworkObject.ChildNetworkBehaviours.Remove(this);
+                }
                 m_NetworkObject = null;
             }
             base.OnDestroy();

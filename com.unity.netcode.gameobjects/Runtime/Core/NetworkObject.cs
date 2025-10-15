@@ -2060,6 +2060,13 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
+            if (NetworkManagerOwner == null)
+            {
+#if TEST_NO_SINGLETON
+                    Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
+#endif
+                NetworkManagerOwner = NetworkManager.Singleton;
+            }
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 // Invoke internal notification
@@ -2288,6 +2295,13 @@ namespace Unity.Netcode
 
             if (!IsSpawned)
             {
+                if (NetworkManagerOwner == null)
+                {
+#if TEST_NO_SINGLETON
+                    Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
+#endif
+                    NetworkManagerOwner = NetworkManager;
+                }
                 AuthorityAppliedParenting = false;
                 // and we are removing the parent, then go ahead and allow parenting to occur
                 if (transform.parent == null)
@@ -2632,7 +2646,9 @@ namespace Unity.Netcode
         {
             if (NetworkManagerOwner == null)
             {
+#if TEST_NO_SINGLETON
                 Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
+#endif
                 NetworkManagerOwner = NetworkManager.Singleton;
             }
 
@@ -2759,6 +2775,15 @@ namespace Unity.Netcode
         /// </returns>
         public ushort GetNetworkBehaviourOrderIndex(NetworkBehaviour instance)
         {
+            if (!IsSpawned)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"{nameof(NetworkObject)} is not spawned yet. Cannot get index of NetworkBehaviour.");
+                }
+                return 0;
+            }
+
             // read the cached index, and verify it first
             if (instance.NetworkBehaviourId < ChildNetworkBehaviours.Count)
             {
@@ -2780,6 +2805,15 @@ namespace Unity.Netcode
         /// <returns>The <see cref="NetworkBehaviour"/> at the ordered index value or null if it does not exist.</returns>
         public NetworkBehaviour GetNetworkBehaviourAtOrderIndex(ushort index)
         {
+            if (!IsSpawned)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    Debug.LogWarning($"{nameof(NetworkObject)} is not spawned yet. Cannot get NetworkBehaviour at index.");
+                }
+                return null;
+            }
+
             if (index >= ChildNetworkBehaviours.Count)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
