@@ -15,9 +15,9 @@
 run_quick_checks:
   name: Run Quick Initial Checks
   dependencies:
-    # ensure the code is running to our current standards
+    # Ensure the code is running to our current standards
     - .yamato/project-standards.yml#standards_ubuntu_testproject_trunk
-    # ensure the package can be packed at at all on at least one platform
+    # This is needed for most of the jobs to execute tests + it runs xray PVP checks (all fast checks)
     - .yamato/package-pack.yml#package_pack_-_ngo_win
 
 
