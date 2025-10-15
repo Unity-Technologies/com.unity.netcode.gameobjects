@@ -1447,18 +1447,13 @@ namespace Unity.Netcode
                     }
                 }
 
-                response.Approved = true;
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+                ConnectionManager.HandleConnectionApproval(ServerClientId, response.CreatePlayerObject, response.PlayerPrefabHash, response.Position, response.Rotation);
             }
             else
             {
-                var response = new ConnectionApprovalResponse
-                {
-                    Approved = true,
-                    // Distributed authority always returns true since the client side handles spawning (whether automatically or manually)
-                    CreatePlayerObject = DistributedAuthorityMode || NetworkConfig.PlayerPrefab != null,
-                };
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+                // Distributed authority always tries to create the player object since the client side handles spawning (whether automatically or manually)
+                var createPlayerObject = DistributedAuthorityMode || NetworkConfig.PlayerPrefab != null;
+                ConnectionManager.HandleConnectionApproval(ServerClientId, createPlayerObject);
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -1479,15 +1474,27 @@ namespace Unity.Netcode
         /// Get the TransportId from the associated ClientId.
         /// </summary>
         /// <param name="clientId">The ClientId to get the TransportId from</param>
-        /// <returns>The TransportId associated with the given ClientId</returns>
-        public ulong GetTransportIdFromClientId(ulong clientId) => ConnectionManager.ClientIdToTransportId(clientId);
+        /// <returns>
+        /// The TransportId associated with the given ClientId if the given clientId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
+        public ulong GetTransportIdFromClientId(ulong clientId)
+        {
+            var (id, success) = ConnectionManager.ClientIdToTransportId(clientId);
+            return success ? id : ulong.MaxValue;
+        }
 
         /// <summary>
         /// Get the ClientId from the associated TransportId.
         /// </summary>
         /// <param name="transportId">The TransportId to get the ClientId from</param>
-        /// <returns>The ClientId from the associated TransportId</returns>
-        public ulong GetClientIdFromTransportId(ulong transportId) => ConnectionManager.TransportIdToClientId(transportId);
+        /// <returns>
+        /// The ClientId from the associated TransportId if the given transportId is valid; otherwise <see cref="ulong.MaxValue"/>
+        /// </returns>
+        public ulong GetClientIdFromTransportId(ulong transportId)
+        {
+            var (id, success) = ConnectionManager.TransportIdToClientId(transportId);
+            return success ? id : ulong.MaxValue;
+        }
 
         /// <summary>
         /// Disconnects the remote client.
