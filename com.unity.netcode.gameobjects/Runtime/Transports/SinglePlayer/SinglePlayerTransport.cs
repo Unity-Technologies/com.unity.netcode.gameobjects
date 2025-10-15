@@ -32,7 +32,6 @@ namespace Unity.Netcode.Transports.SinglePlayer
 
         private static Dictionary<ulong, Queue<MessageData>> s_MessageQueue = new Dictionary<ulong, Queue<MessageData>>();
 
-        private bool m_Initialized;
         private ulong m_TransportId = 0;
         private NetworkManager m_NetworkManager;
 

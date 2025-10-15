@@ -28,6 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
 - Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
 - Made a variety of small performance improvements. (#3683)
+- Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 
 ### Security
 
