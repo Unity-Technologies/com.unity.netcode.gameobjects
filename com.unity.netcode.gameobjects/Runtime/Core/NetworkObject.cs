@@ -2632,9 +2632,7 @@ namespace Unity.Netcode
         {
             if (NetworkManagerOwner == null)
             {
-#if TEST_NO_SINGLETON
                 Debug.LogError("NetworkManagerOwner should be set! Setting owner to NetworkManager.Singleton");
-#endif
                 NetworkManagerOwner = NetworkManager.Singleton;
             }
 
