@@ -1440,7 +1440,12 @@ namespace Unity.Netcode
             }
 
             Transport.ClosingRemoteConnection();
-            GenerateDisconnectInformation(clientId, ClientIdToTransportId(clientId), reason);
+            var transportId = ClientIdToTransportId(clientId);
+            if (transportId.Item2)
+            {
+                GenerateDisconnectInformation(clientId, transportId.Item1, reason);
+            }
+
             HandleConnectionDisconnect(clientId, reason);
         }
 
@@ -1487,7 +1492,7 @@ namespace Unity.Netcode
                 Transport.ShuttingDown();
                 var clientId = NetworkManager ? NetworkManager.LocalClientId : NetworkManager.ServerClientId;
                 var transportId = ClientIdToTransportId(clientId);
-                GenerateDisconnectInformation(clientId, transportId, $"{nameof(NetworkConnectionManager)} was shutdown.");
+                GenerateDisconnectInformation(clientId, transportId.Item1, $"{nameof(NetworkConnectionManager)} was shutdown.");
             }
 
             if (LocalClient.IsServer)
