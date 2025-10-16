@@ -62,7 +62,7 @@ To give ownership back to the server use the `RemoveOwnership` method:
 GetComponent<NetworkObject>().RemoveOwnership();
 ```
 > [!NOTE]
-> Using `RemoveOwnership` in a distributed authority network topology isn't recommended.
+> `RemoveOwnership` isn't supported when using a [distributed authority network topology](../../terms-concepts/distributed-authority.md).
 
 
 To see if the local client is the owner of a NetworkObject, you can check the [`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwner.html) property.
