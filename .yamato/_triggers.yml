@@ -41,7 +41,7 @@
     # It's important to ensure that all dependencies exist (this can be verified in Yamato) since a modification in parameters may result in a given job not being generated, and thus we will not be able to run such erroneous job.
 
 
-#-----------------------------------------------------------------------------------  
+#-----------------------------------------------------------------------------------
 
 # After some experimenting with CI setups we discovered that even though sometimes we don't need CI to run (no reason to run package tests if only Documentation is changed) there are some checks that devs may not realize but changes in seemingly unrelated files will cause their failures
 # This trigger was created to ensure that ALL PRs run this minimal check even when we don't need to run full tests
@@ -69,6 +69,9 @@ pr_code_changes_checks:
   name: Code changes PR checks
   # Run the following tests on a selection of different desktop platforms
   dependencies:
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
+
     # Run package EditMode and Playmode package tests on 6000.2 (latest supported editor) and an older supported editor (2022.3) (2022.3 will soon be a minimum supported editor)
     - .yamato/package-tests.yml#package_test_-_ngo_6000.2_mac
     - .yamato/package-tests.yml#package_test_-_ngo_2022.3_win
@@ -104,9 +107,9 @@ pr_code_changes_checks:
         "**/*.md"
       ]
     cancel_old_ci: true
-      
-      
-      
+
+
+
 
 
 
@@ -122,6 +125,8 @@ develop_nightly:
         frequency: daily
         rerun: always
   dependencies:
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
     # Run project standards to verify package/default project
     - .yamato/project-standards.yml#standards_ubuntu_testproject_6000.2
     - .yamato/project-standards.yml#standards_ubuntu_testproject_2022.3
@@ -164,6 +169,8 @@ develop_weekly_trunk:
         frequency: weekly
         rerun: always
   dependencies:
+    # Run API validation to early-detect all new APIs that would force us to release new minor version of the package. Note that for this to work the package version in package.json must correspond to "actual package state" which means that it should be higher than last released version
+    - .yamato/vetting-test.yml#vetting_test
     # Run project standards to verify package/default project
     - .yamato/_run-all.yml#run_all_projects_standards
     # Run package EditMode and Playmode tests on desktop platforms
