@@ -373,20 +373,17 @@ namespace Unity.Netcode
 
                     if (!networkManager.SceneManager.IsRestoringSession)
                     {
-                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
-
                         // Spawn any in-scene placed NetworkObjects
                         networkManager.SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
+                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // Spawn the local player of the session owner
                         if (networkManager.AutoSpawnPlayerPrefabClientSide)
                         {
                             networkManager.ConnectionManager.CreateAndSpawnPlayer(OwnerClientId);
                         }
-
-                        // Synchronize the service with the initial session owner's loaded scenes and spawned objects
-                        networkManager.SceneManager.SynchronizeNetworkObjects(NetworkManager.ServerClientId, true);
 
                         // With scene management enabled and since the session owner doesn't send a scene event synchronize to itself,
                         // we need to notify the session owner that everything should be synchronized/spawned at this time.
