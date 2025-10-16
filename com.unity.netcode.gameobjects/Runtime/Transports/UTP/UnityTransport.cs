@@ -868,7 +868,11 @@ namespace Unity.Netcode.Transports.UTP
             var mtu = 0;
             if (NetworkManager)
             {
-                var ngoClientId = NetworkManager.ConnectionManager.TransportIdToClientId(sendTarget.ClientId);
+                var (ngoClientId, isConnectedClient) = NetworkManager.ConnectionManager.TransportIdToClientId(sendTarget.ClientId);
+                if (!isConnectedClient)
+                {
+                    return;
+                }
                 mtu = NetworkManager.GetPeerMTU(ngoClientId);
             }
 
@@ -1278,7 +1282,7 @@ namespace Unity.Netcode.Transports.UTP
 
             if (NetworkManager != null)
             {
-                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
+                var (transportId, _) = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
 
                 var rtt = ExtractRtt(ParseClientId(transportId));
                 if (rtt > 0)
@@ -1290,55 +1294,33 @@ namespace Unity.Netcode.Transports.UTP
             return (ulong)ExtractRtt(ParseClientId(clientId));
         }
 
+        /// <summary>
+        /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
+        /// </summary>
+        /// <remarks>
+        /// - This is only really useful for direct connections.
+        /// - Relay connections and clients connected using a distributed authority network topology will not provide the client's actual endpoint information.
+        /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
+        /// </remarks>
+        /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
+        /// <returns><see cref="NetworkEndpoint"/></returns>
+        public NetworkEndpoint GetEndpoint(ulong clientId)
+        {
+            if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
+            {
+                var (transportId, connectionExists) = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
+                var networkConnection = ParseClientId(transportId);
+                if (connectionExists && m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
+                {
 #if UTP_TRANSPORT_2_0_ABOVE
-        /// <summary>
-        /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
-        /// </summary>
-        /// <remarks>
-        /// - This is only really useful for direct connections.
-        /// - Relay connections and clients connected using a distributed authority network topology will not provide the client's actual endpoint information.
-        /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
-        /// </remarks>
-        /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
-        /// <returns><see cref="NetworkEndpoint"/></returns>
-        public NetworkEndpoint GetEndpoint(ulong clientId)
-        {
-            if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
-            {
-                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
-                var networkConnection = ParseClientId(transportId);
-                if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
-                {
                     return m_Driver.GetRemoteEndpoint(networkConnection);
-                }
-            }
-            return new NetworkEndpoint();
-        }
 #else
-        /// <summary>
-        /// Provides the <see cref="NetworkEndpoint"/> for the NGO client identifier specified.
-        /// </summary>
-        /// <remarks>
-        /// - This is only really useful for direct connections.
-        /// - Relay connections and clients connected using a distributed authority network topology will not provide the client's actual endpoint information.
-        /// - For LAN topologies this should work as long as it is a direct connection and not a relay connection.
-        /// </remarks>
-        /// <param name="clientId">NGO client identifier to get endpoint information about.</param>
-        /// <returns><see cref="NetworkEndpoint"/></returns>
-        public NetworkEndpoint GetEndpoint(ulong clientId)
-        {
-            if (m_Driver.IsCreated && NetworkManager != null && NetworkManager.IsListening)
-            {
-                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
-                var networkConnection = ParseClientId(transportId);
-                if (m_Driver.GetConnectionState(networkConnection) == NetworkConnection.State.Connected)
-                {
                     return m_Driver.RemoteEndPoint(networkConnection);
+#endif
                 }
             }
             return new NetworkEndpoint();
         }
-#endif
 
 
         /// <summary>
@@ -1460,10 +1442,17 @@ namespace Unity.Netcode.Transports.UTP
                     // If the message is sent reliably, then we're over capacity and we can't
                     // provide any reliability guarantees anymore. Disconnect the client since at
                     // this point they're bound to become desynchronized.
+                    if (NetworkManager != null)
+                    {
+                        var (ngoClientId, isConnectedClient) = NetworkManager.ConnectionManager.TransportIdToClientId(clientId);
+                        if (isConnectedClient)
+                        {
+                            clientId = ngoClientId;
+                        }
 
-                    var ngoClientId = NetworkManager?.ConnectionManager.TransportIdToClientId(clientId) ?? clientId;
+                    }
                     Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
-                        $"Closing connection {ngoClientId} as reliability guarantees can't be maintained.");
+                        $"Closing connection {clientId} as reliability guarantees can't be maintained.");
 
                     if (clientId == m_ServerClientId)
                     {

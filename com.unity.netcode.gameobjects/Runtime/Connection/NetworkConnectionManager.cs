@@ -317,16 +317,16 @@ namespace Unity.Netcode
         private ulong m_NextClientId = 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ulong TransportIdToClientId(ulong transportId)
+        internal (ulong, bool) TransportIdToClientId(ulong transportId)
         {
             if (transportId == GetServerTransportId())
             {
-                return NetworkManager.ServerClientId;
+                return (NetworkManager.ServerClientId, true);
             }
 
             if (TransportIdToClientIdMap.TryGetValue(transportId, out var clientId))
             {
-                return clientId;
+                return (clientId, true);
             }
 
             if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
@@ -334,20 +334,20 @@ namespace Unity.Netcode
                 NetworkLog.LogWarning($"Trying to get the NGO client ID map for the transport ID ({transportId}) but did not find the map entry! Returning default transport ID value.");
             }
 
-            return default;
+            return (0, false);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ulong ClientIdToTransportId(ulong clientId)
+        internal (ulong, bool) ClientIdToTransportId(ulong clientId)
         {
             if (clientId == NetworkManager.ServerClientId)
             {
-                return GetServerTransportId();
+                return (GetServerTransportId(), true);
             }
 
             if (ClientIdToTransportIdMap.TryGetValue(clientId, out var transportClientId))
             {
-                return transportClientId;
+                return (transportClientId, true);
             }
 
             if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
@@ -355,7 +355,7 @@ namespace Unity.Netcode
                 NetworkLog.LogWarning($"Trying to get the transport client ID map for the NGO client ID ({clientId}) but did not find the map entry! Returning default transport ID value.");
             }
 
-            return default;
+            return (0, false);
         }
 
         /// <summary>
@@ -384,19 +384,24 @@ namespace Unity.Netcode
         /// Handles cleaning up the transport id/client id tables after receiving a disconnect event from transport.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ulong TransportIdCleanUp(ulong transportId)
+        internal (ulong, bool) TransportIdCleanUp(ulong transportId)
         {
             // This check is for clients that attempted to connect but failed.
             // When this happens, the client will not have an entry within the m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup tables so we exit early and just return 0 to be used for the disconnect event.
             if (!LocalClient.IsServer && !TransportIdToClientIdMap.ContainsKey(transportId))
             {
-                return NetworkManager.LocalClientId;
+                return (NetworkManager.LocalClientId, true);
             }
 
-            var clientId = TransportIdToClientId(transportId);
+            var (clientId, isConnectedClient) = TransportIdToClientId(transportId);
+            if (!isConnectedClient)
+            {
+                return (default, false);
+            }
+
             TransportIdToClientIdMap.Remove(transportId);
             ClientIdToTransportIdMap.Remove(clientId);
-            return clientId;
+            return (clientId, true);
         }
 
         internal void PollAndHandleNetworkEvents()
@@ -502,8 +507,11 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
 #endif
-            var clientId = TransportIdToClientId(transportClientId);
-            MessageManager.HandleIncomingData(clientId, payload, receiveTime);
+            var (clientId, isConnectedClient) = TransportIdToClientId(transportClientId);
+            if (isConnectedClient)
+            {
+                MessageManager.HandleIncomingData(clientId, payload, receiveTime);
+            }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
@@ -515,10 +523,15 @@ namespace Unity.Netcode
         /// </summary>
         internal void DisconnectEventHandler(ulong transportClientId)
         {
+            var (clientId, wasConnectedClient) = TransportIdCleanUp(transportClientId);
+            if (!wasConnectedClient)
+            {
+                return;
+            }
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportDisconnect.Begin();
 #endif
-            var clientId = TransportIdCleanUp(transportClientId);
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo($"Disconnect Event From {clientId}");
@@ -1040,9 +1053,9 @@ namespace Unity.Netcode
             }
 
             // If the client ID transport map exists
-            if (ClientIdToTransportIdMap.ContainsKey(clientId))
+            var (transportId, isConnected) = ClientIdToTransportId(clientId);
+            if (isConnected)
             {
-                var transportId = ClientIdToTransportId(clientId);
                 NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
 
                 InvokeOnClientDisconnectCallback(clientId);

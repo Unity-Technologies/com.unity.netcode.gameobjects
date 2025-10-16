@@ -288,6 +288,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected virtual bool m_EnableTimeTravel => false;
 
         /// <summary>
+        /// When true, <see cref="CreateServerAndClients()"/> and <see cref="CreateNewClient"/> will use a <see cref="MockTransport"/>
+        /// as the <see cref="NetworkConfig.NetworkTransport"/> on the created server and/or clients.
+        /// When false, a <see cref="UnityTransport"/> is used.
+        /// </summary>
+        /// <remarks>
+        /// This defaults to, and is required to be true when <see cref="m_EnableTimeTravel"/> is true.
+        /// <see cref="m_EnableTimeTravel"/> will not work with the <see cref="UnityTransport"/> component.
+        /// </remarks>
+        protected virtual bool m_UseMockTransport => m_EnableTimeTravel;
+
+        /// <summary>
         /// If this is false, SetUp will call OnInlineSetUp instead of OnSetUp.
         /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
         /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
@@ -407,7 +418,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebug($"Entering {nameof(SetUp)}");
             NetcodeLogAssert = new NetcodeLogAssert();
-            if (m_EnableTimeTravel)
+            if (m_UseMockTransport)
             {
                 if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
                 {
@@ -417,9 +428,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     MockTransport.Reset();
                 }
-                // Setup the frames per tick for time travel advance to next tick
+            }
+
+            // Setup the frames per tick for time travel advance to next tick
+            if (m_EnableTimeTravel)
+            {
                 ConfigureFramesPerTick();
             }
+
             if (m_SetupIsACoroutine)
             {
                 yield return OnSetup();
@@ -577,7 +593,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <returns>An IEnumerator for use with Unity's coroutine system.</returns>
         protected IEnumerator CreateAndStartNewClient()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_UseMockTransport);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Notification that the new client (NetworkManager) has been created
@@ -619,7 +635,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void CreateAndStartNewClientWithTimeTravel()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_UseMockTransport);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Notification that the new client (NetworkManager) has been created
@@ -732,7 +748,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel))
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_UseMockTransport))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -1219,7 +1235,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(TearDown)}");
             LogWaitForMessages();
             NetcodeLogAssert.Dispose();
-            if (m_EnableTimeTravel)
+            if (m_UseMockTransport)
             {
                 if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests)
                 {
