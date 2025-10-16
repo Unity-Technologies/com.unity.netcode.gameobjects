@@ -39,6 +39,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Made a variety of small performance improvements. (#3683)
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
+- Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 
 ### Security
 
