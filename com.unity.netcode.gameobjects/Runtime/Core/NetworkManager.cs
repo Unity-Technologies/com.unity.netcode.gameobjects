@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using System.Linq;
+using Unity.Netcode.Components;
+using Unity.Netcode.Runtime;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -9,8 +11,6 @@ using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 #endif
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
-using Unity.Netcode.Components;
-using Unity.Netcode.Runtime;
 
 namespace Unity.Netcode
 {
@@ -618,6 +618,16 @@ namespace Unity.Netcode
         /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
         /// </summary>
         public string DisconnectReason => ConnectionManager.DisconnectReason;
+
+        /// <summary>
+        /// If supported by the <see cref="NetworkTransport"/>, this <see cref="NetworkTransport.DisconnectEvents"/> property will be set for each disconnect event.
+        /// If not supported, then this remain as the default <see cref="Networking.Transport.Error.DisconnectReason"/> value.
+        /// </summary>
+        /// <remarks>
+        /// A server/host will receive notifications for remote clients disconnecting and will update this <see cref="Networking.Transport.Error.DisconnectReason"/> property
+        /// upon each disconnect event.<br />
+        /// </remarks>
+        public NetworkTransport.DisconnectEvents DisconnectEvent => ConnectionManager.DisconnectEvent;
 
         /// <summary>
         /// Is true when a server or host is listening for connections.
@@ -1500,7 +1510,7 @@ namespace Unity.Netcode
         /// Disconnects the remote client.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
-        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId);
+        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId, $"Client-{clientId} disconnected by server.");
 
         /// <summary>
         /// Disconnects the remote client.

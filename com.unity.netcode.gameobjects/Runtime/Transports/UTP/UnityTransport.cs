@@ -13,6 +13,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Netcode.Runtime;
 using Unity.Networking.Transport;
+using Unity.Networking.Transport.Error;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
@@ -1005,6 +1006,10 @@ namespace Unity.Netcode.Transports.UTP
                             Debug.LogError("Failed to connect to server.");
                         }
 
+                        // Set the disconnect event error code
+                        var errorCode = m_UnityTransportNotificationHandler.GetDisconnectEvent(reader.ReadByte());
+                        SetDisconnectEvent(errorCode);
+
                         m_ServerClientId = default;
                         m_ReliableReceiveQueues.Remove(clientId);
                         ClearSendQueuesForClientId(clientId);
@@ -1297,7 +1302,9 @@ namespace Unity.Netcode.Transports.UTP
             }
 #endif
 
-            if (m_Driver.IsCreated)
+            var hasAuthority = m_NetworkManager ? m_NetworkManager.IsServer : true;
+
+            if (hasAuthority && m_Driver.IsCreated)
             {
                 FlushSendQueuesForClientId(clientId);
 
@@ -1360,30 +1367,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             return new NetworkEndpoint();
-        }
-
-        /// <summary>
-        /// Initializes the transport
-        /// </summary>
-        /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
-        public override void Initialize(NetworkManager networkManager = null)
-        {
-#if DEBUG
-            if (sizeof(ulong) != UnsafeUtility.SizeOf<NetworkConnection>())
-            {
-                Debug.LogWarning($"Netcode connection id size {sizeof(ulong)} does not match UTP connection id size {UnsafeUtility.SizeOf<NetworkConnection>()}!");
-                return;
-            }
-#endif
-
-            m_NetworkManager = networkManager;
-
-            if (m_NetworkManager && m_NetworkManager.PortOverride.Overidden)
-            {
-                ConnectionData.Port = m_NetworkManager.PortOverride.Value;
-            }
-
-            m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
         }
 
         /// <summary>
@@ -1547,6 +1530,39 @@ namespace Unity.Netcode.Transports.UTP
             return succeeded;
         }
 
+        private UnityTransportNotificationHandler m_UnityTransportNotificationHandler;
+
+        /// <inheritdoc/>
+        protected override string GetDisconnectEventMessage(DisconnectEvents disconnectEvent)
+        {
+            return m_UnityTransportNotificationHandler.GetDisconnectEventMessage(disconnectEvent);
+        }
+
+        /// <summary>
+        /// Initializes the transport
+        /// </summary>
+        /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
+        public override void Initialize(NetworkManager networkManager = null)
+        {
+#if DEBUG
+            if (sizeof(ulong) != UnsafeUtility.SizeOf<NetworkConnection>())
+            {
+                Debug.LogWarning($"Netcode connection id size {sizeof(ulong)} does not match UTP connection id size {UnsafeUtility.SizeOf<NetworkConnection>()}!");
+                return;
+            }
+#endif
+
+            m_NetworkManager = networkManager;
+
+            if (m_NetworkManager && m_NetworkManager.PortOverride.Overidden)
+            {
+                ConnectionData.Port = m_NetworkManager.PortOverride.Value;
+            }
+
+            m_RealTimeProvider = m_NetworkManager ? m_NetworkManager.RealTimeProvider : new RealTimeProvider();
+            m_UnityTransportNotificationHandler = new UnityTransportNotificationHandler();
+        }
+
         /// <summary>
         /// Shuts down the transport
         /// </summary>
@@ -1584,6 +1600,8 @@ namespace Unity.Netcode.Transports.UTP
 
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = default;
+
+            m_UnityTransportNotificationHandler = null;
         }
 
         /// <inheritdoc cref="NetworkTransport.OnCurrentTopology"/>
@@ -1768,6 +1786,70 @@ namespace Unity.Netcode.Transports.UTP
                 default:
                     return FixedString.Format("unexpected error code {0}", error);
             }
+        }
+    }
+
+    /// <summary>
+    /// Handles mapping <see cref="DisconnectReason"/> to <see cref="NetworkTransport.DisconnectEvents"/> as well
+    /// as mapping additional disconnect event message information to each <see cref="NetworkTransport.DisconnectEvents"/>.
+    /// </summary>
+    internal class UnityTransportNotificationHandler
+    {
+        private const int k_ClosedRemoteConnection = 128;
+        private const int k_TransportShutdown = 129;
+
+        internal const string DisconnectedMessage = "Gracefully disconnected.";
+        internal const string TimeoutMessage = "Connection closed due to timed out.";
+        internal const string MaxConnectionAttemptsMessage = "Connection closed due to maximum connection attempts reached.";
+        internal const string ClosedByRemoteMessage = "Connection was closed by remote endpoint.";
+        internal const string AuthenticationFailureMessage = "Connection closed due to authentication failure.";
+        internal const string ProtocolErrorMessage = "Gracefully disconnected.";
+        internal const string ClosedRemoteConnectionMessage = "Local transport closed the remote endpoint connection.";
+        internal const string TransportShutdownMessage = "The transport was shutdown.";
+
+        private Dictionary<int, NetworkTransport.DisconnectEvents> m_DisconnectEventMap = new Dictionary<int, NetworkTransport.DisconnectEvents>();
+        private Dictionary<NetworkTransport.DisconnectEvents, string> m_DisconnectEventMessageMap = new Dictionary<NetworkTransport.DisconnectEvents, string>();
+
+        /// <summary>
+        /// Returns the mapped transport disconnect event id to a <see cref="NetworkTransport.DisconnectEvents"/> value.
+        /// </summary>
+        internal NetworkTransport.DisconnectEvents GetDisconnectEvent(int disconnectEventId)
+        {
+            return m_DisconnectEventMap.ContainsKey(disconnectEventId) ? m_DisconnectEventMap[disconnectEventId] : NetworkTransport.DisconnectEvents.Disconnected;
+        }
+
+        /// <summary>
+        /// Returns the disconnect event message for the the disconnect event.
+        /// </summary>
+        public string GetDisconnectEventMessage(NetworkTransport.DisconnectEvents disconnectEvent)
+        {
+            return m_DisconnectEventMessageMap.ContainsKey(disconnectEvent) ? m_DisconnectEventMessageMap[disconnectEvent] : string.Empty;
+        }
+
+        private void AddDisconnectEventMap(NetworkTransport.DisconnectEvents disconnectEvent, int disconnectReason, string message)
+        {
+            m_DisconnectEventMap.Add(disconnectReason, disconnectEvent);
+            m_DisconnectEventMessageMap.Add(disconnectEvent, message);
+        }
+
+        private void AddDisconnectEventMap(NetworkTransport.DisconnectEvents disconnectEvent, DisconnectReason disconnectReason, string message)
+        {
+            AddDisconnectEventMap(disconnectEvent, (int)disconnectReason, message);
+        }
+
+        public UnityTransportNotificationHandler()
+        {
+            // Implemented in UTP
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.Disconnected, DisconnectReason.Default, DisconnectedMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.ProtocolTimeout, DisconnectReason.Timeout, TimeoutMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.MaxConnectionAttempts, DisconnectReason.MaxConnectionAttempts, MaxConnectionAttemptsMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.ClosedByRemote, DisconnectReason.ClosedByRemote, ClosedByRemoteMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.AuthenticationFailure, DisconnectReason.AuthenticationFailure, AuthenticationFailureMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.ProtocolError, DisconnectReason.ProtocolError, ProtocolErrorMessage);
+
+            // Not implemented in UTP
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.ClosedRemoteConnection, k_ClosedRemoteConnection, ClosedRemoteConnectionMessage);
+            AddDisconnectEventMap(NetworkTransport.DisconnectEvents.TransportShutdown, k_TransportShutdown, TransportShutdownMessage);
         }
     }
 }
