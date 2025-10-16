@@ -164,6 +164,104 @@ namespace Unity.Netcode
         {
             return OnCurrentTopology();
         }
+
+        /// <summary>
+        /// The Netcode for GameObjects standardized disconnection event types.
+        /// </summary>
+        public enum DisconnectEvents
+        {
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport closed the connection due to a locally invoked shutdown.
+            /// </summary>
+            TransportShutdown,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies a graceful disconnect.
+            /// </summary>
+            Disconnected,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the transport's connection to the endpoint has timed out and the connection was closed.
+            /// </summary>
+            ProtocolTimeout,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the disconnect is due to the maximum number of failed connection attempts has been reached.
+            /// </summary>
+            MaxConnectionAttempts,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the remote endpoint closed the connection.
+            /// </summary>
+            ClosedByRemote,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies the local transport closed the incoming remote endpoint connection.
+            /// </summary>
+            ClosedRemoteConnection,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that the connection was closed due to an authentication failure.
+            /// </summary>
+            AuthenticationFailure,
+            /// <summary>
+            /// If transport has mapped its disconnect events, this event signifies that a lower-level (unkown) transport error occurred.
+            /// </summary>
+            ProtocolError,
+        }
+
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping, then this will be set to the most recent disconnection event.
+        /// </summary>
+        public DisconnectEvents DisconnectEvent { get; private set; }
+
+        /// <summary>
+        /// If the transport has implemented disconnection event mapping and disconnection event message mapping, then this will contain
+        /// the transport specific message associated with the disconnect event type.
+        /// </summary>
+        public string DisconnectEventMessage { get; private set; }
+
+        /// <summary>
+        /// This should be invoked by the <see cref="NetworkTransport"/> derived class when a transport level disconnect event occurs.<br />
+        /// It is up to the <see cref="NetworkTransport"/> derived class to create a map between the transport's disconnect events and the
+        /// pre-defined <see cref="DisconnectEvents"/> enum values.
+        /// </summary>
+        /// <param name="disconnectEvent">The <see cref="DisconnectEvents"/> type to set.</param>
+        /// <param name="message">An optional message override.</param>
+        protected void SetDisconnectEvent(DisconnectEvents disconnectEvent, string message = null)
+        {
+            DisconnectEvent = disconnectEvent;
+            DisconnectEventMessage = string.Empty;
+
+            if (message != null)
+            {
+                DisconnectEventMessage = message;
+            }
+            else
+            {
+                DisconnectEventMessage = GetDisconnectEventMessage(disconnectEvent);
+            }
+        }
+
+        /// <summary>
+        /// Override this method to provide additional information about the disconnection event.
+        /// </summary>
+        /// <param name="disconnectEvent">The disconnect event to get from the <see cref="NetworkTransport"/> derived class.</param>
+        /// <returns><see cref="string.Empty"/> as a default or if overridden the <see cref="string"/> returned.</returns>
+        protected virtual string GetDisconnectEventMessage(DisconnectEvents disconnectEvent)
+        {
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Invoked when the local <see cref="NetworkManager"/> forces the transport to close a remote connection.
+        /// </summary>
+        internal void ClosingRemoteConnection()
+        {
+            SetDisconnectEvent(DisconnectEvents.ClosedRemoteConnection);
+        }
+
+        /// <summary>
+        /// Invoked just before the transport is shutdown.
+        /// </summary>
+        internal void ShuttingDown()
+        {
+            SetDisconnectEvent(DisconnectEvents.TransportShutdown);
+        }
     }
 
     /// <summary>

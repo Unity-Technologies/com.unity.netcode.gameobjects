@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 yield return WaitForConditionOrTimeOut(() => m_ClientWasDisconnected);
                 AssertOnTimeout("Client was not disconnected when it should have been!");
-                Assert.True(m_ClientNetworkManager.DisconnectReason == ConnectionRequestMessage.InvalidSessionVersionMessage, "Client did not receive the correct invalid session version message!");
+                Assert.True(m_ClientNetworkManager.DisconnectReason.Contains(ConnectionRequestMessage.InvalidSessionVersionMessage), "Client did not receive the correct invalid session version message!");
             }
             else
             {
