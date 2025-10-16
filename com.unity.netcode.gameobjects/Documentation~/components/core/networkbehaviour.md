@@ -166,7 +166,7 @@ Each NetworkBehaviour has a virtual `OnDestroy` method that you can override to 
         }
 ```
 
-> [!NOTE] 
+> [!NOTE]
 > Destroying the GameObject<br />
 > When destroying a NetworkObject from within an associated NetworkBehaviour component script, you should always destroy the `NetworkObject.gameObject` and not the `NetworkBehaviour.gameObject` in case the NetworkBehaviour is located on a child GameObject nested under the NetworkObject's GameObject.
 
