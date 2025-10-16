@@ -1515,7 +1515,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only works with <see cref="NetworkTransform"/> components that are not paired with a <see cref="NetworkRigidbody"/> or <see cref="NetworkRigidbody2D"/> component that is configured to use the rigid body for motion.<br />
         /// <see cref="TickSyncChildren"/> will automatically be set when this is enabled.
-        /// This field is auto-synchronize with non-authority clients if changed by the authority instance.
+        /// This field is auto-synchronized with non-authority clients when changed by the authority instance.
         /// </remarks>
         [Tooltip("When enabled, NetworkTransform controls world or local space settings while also providing smooth parenting transitions." +
             "When disabled, world or local space settings have to be adjusted by script or in the inspector view.")]
