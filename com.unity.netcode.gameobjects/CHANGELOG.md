@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
 - Improved performance of the NetworkVariable. (#3683)
 - Improved performance around the NetworkBehaviour component. (#3687)
+- The first session owner no longer sends two synchronization messages to the service. (#3563)
 
 ### Deprecated
 
