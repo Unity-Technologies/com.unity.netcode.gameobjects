@@ -41,7 +41,7 @@ The default `NetworkObject.Spawn` method assumes server-side ownership:
 GetComponent<NetworkObject>().Spawn();
 ```
 
-To spawn NetworkObjects with ownership use the following:
+To spawn a `NetworkObject` that is [owned](../../terms-concepts/ownership.md) by a different game client than the one doing the spawning, use the following:
 
 ```csharp
 GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
