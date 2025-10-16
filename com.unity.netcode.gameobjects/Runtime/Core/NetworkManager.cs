@@ -236,7 +236,11 @@ namespace Unity.Netcode
             OnSessionOwnerPromoted?.Invoke(sessionOwner);
         }
 
+#if ENABLE_SESSIONOWNER_PROMOTION_NOTIFICATION
+        public void PromoteSessionOwner(ulong clientId)
+#else
         internal void PromoteSessionOwner(ulong clientId)
+#endif
         {
             if (!DistributedAuthorityMode)
             {
@@ -253,10 +257,18 @@ namespace Unity.Netcode
             {
                 SessionOwner = clientId,
             };
-            var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
-            foreach (var targetClient in clients)
+            var delivery = MessageDeliveryType<SessionOwnerMessage>.DefaultDelivery;
+            if (CMBServiceConnection)
             {
-                ConnectionManager.SendMessage(ref sessionOwnerMessage, MessageDeliveryType<SessionOwnerMessage>.DefaultDelivery, targetClient);
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, ServerClientId);
+            }
+            else
+            {
+                var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
+                foreach (var targetClient in clients)
+                {
+                    ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, targetClient);
+                }
             }
         }
 
