@@ -51,9 +51,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectServer(NetworkObject dirtyObj, bool forceSend)
         {
-            for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
+            foreach (var client in m_ConnectionManager.ConnectedClientsList)
             {
-                var client = m_ConnectionManager.ConnectedClientsList[i];
                 if (m_NetworkManager.DistributedAuthorityMode || dirtyObj.IsNetworkVisibleTo(client.ClientId))
                 {
                     // Sync just the variables for just the objects this client sees
