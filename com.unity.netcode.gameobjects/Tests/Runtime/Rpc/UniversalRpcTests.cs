@@ -432,7 +432,7 @@ namespace Unity.Netcode.RuntimeTests.UniversalRpcTests
         {
             OnRpcReceived();
         }
-
+        
         // RPCs with RequireOwnership = true
 
         [Rpc(SendTo.Everyone, RequireOwnership = true)]
