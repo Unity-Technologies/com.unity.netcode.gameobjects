@@ -1,6 +1,6 @@
-
-
+#if UNITY_EDITOR
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +12,8 @@ using NUnit.Framework;
 using Unity.Netcode.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using UnityEngine.Windows;
 
-namespace Unity.Netcode.RuntimeTests
+namespace TestProject.RuntimeTests
 {
     internal class HelpUrlTests
     {
@@ -23,10 +22,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_VerboseLogging = false;
 
-        // TODO: Since help URIs are only used in the editor, we should migrate this into the editor tests.
-        // IOS platform can't run this test for some reason.
         [UnityTest]
-        [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer })]
         public IEnumerator ValidateUrlsAreValid()
         {
             var names = new List<string>();
@@ -116,7 +112,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var splitFilter = url.Contains(HelpUrls.BaseManualUrl) ? HelpUrls.BaseManualUrl : HelpUrls.BaseApiUrl;
             var split = url.Split(splitFilter);
-            var current = System.IO.Directory.GetCurrentDirectory().Replace("testproject", string.Empty);
+            var current = Directory.GetCurrentDirectory().Replace("testproject", string.Empty);
             var filePath = $"{current}com.unity.netcode.gameobjects/Documentation~/{split[1].Replace(".html", ".md")}";
             try
             {
@@ -207,3 +203,4 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 }
+#endif
