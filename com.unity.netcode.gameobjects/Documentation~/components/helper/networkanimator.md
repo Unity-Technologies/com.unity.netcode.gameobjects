@@ -121,5 +121,6 @@ public void SetPlayerJumping(bool isJumping)
 }
 ```
 
-> [!NOTE] Changing meshes
+> [!NOTE]
+> Changing meshes<br/>
 > When swapping a skinned mesh with another reparented skinned mesh, you can invoke the `Rebind ` method on the `Animator` components: `Animator.Rebind()`.

@@ -281,14 +281,14 @@ namespace Unity.Netcode
                 ClientIdCount = 0,
                 ChangeMessageType = ChangeMessageType,
             };
-
+            var networkDelivery = MessageDeliveryType<ChangeOwnershipMessage>.DefaultDelivery;
             if (ChangeMessageType == ChangeType.RequestDenied)
             {
                 // If the local DAHost's client is not the target, then forward to the target
                 if (RequestClientId != networkManager.LocalClientId)
                 {
                     message.OwnershipRequestResponseStatus = OwnershipRequestResponseStatus;
-                    networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, RequestClientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, networkDelivery, RequestClientId);
 
                     // We don't want the local DAHost's client to process this message
                     return false;
@@ -299,7 +299,7 @@ namespace Unity.Netcode
                 // If the DAHost client is not authority, just forward the message to the authority
                 if (OwnerClientId != networkManager.LocalClientId)
                 {
-                    networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, OwnerClientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, networkDelivery, OwnerClientId);
 
                     // We don't want the local DAHost's client to process this message
                     return false;
@@ -339,7 +339,7 @@ namespace Unity.Netcode
                         continue;
                     }
 
-                    networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, clientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
                 }
             }
 

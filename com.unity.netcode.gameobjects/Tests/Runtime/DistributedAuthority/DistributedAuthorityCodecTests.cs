@@ -617,11 +617,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator SendMessage<T>(ref T message) where T : INetworkMessage
         {
+            var delivery = MessageDelivery.GetDelivery(typeof(T));
             m_Client.MessageManager.SetVersion(k_ClientId, XXHash.Hash32(typeof(T).FullName), message.Version);
 
             var clientIds = new NativeArray<ulong>(1, Allocator.Temp);
             clientIds[0] = k_ClientId;
-            m_Client.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds);
+            m_Client.MessageManager.SendMessage(ref message, delivery, clientIds);
             m_Client.MessageManager.ProcessSendQueues();
             return m_ClientCodecHook.WaitForMessageReceived(message);
         }

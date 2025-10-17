@@ -10,12 +10,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added NetworkRigidbody documentation section. (#3664)
 
 ### Changed
 
 - The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
-- Improved performance of the NetworkVariable. (#3683)
-- Improved performance around the NetworkBehaviour component. (#3687)
+- Changed NetworkShow to send a message at the end of the frame and force a NetworkVariable synchronization prior to generating the CreateObjectMessage as opposed to waiting until the next network tick to synchronize the show with the update to NetworkVariables. (#3664)
+- Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
+- Changed when NetworkObjects pending to be shown to clients can now occur on partial network ticks. If any pending NetworkObjects pending to be shown to clients happens to be ready on a new network tick they still are shown after network variable deltas have been processed. (#3664)
+- Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
+- Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 - The first session owner no longer sends two synchronization messages to the service. (#3563)
 
 ### Deprecated
@@ -27,8 +31,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Multiple disconnect events from the same transport will no longer disconnect the host. (#3707)
-- Distributed authority clients no longer send themselves in the `ClientIds` list when sending a `ChangeOwnershipMessage`. (#3687)
-- Made a variety of small performance improvements. (#3683)
+- Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
+- Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
 
 ### Security

@@ -781,7 +781,6 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             m_CurrentKey = 1000;
-
             if (m_EnableDebug)
             {
                 VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Init Values <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
@@ -808,12 +807,11 @@ namespace Unity.Netcode.RuntimeTests
                     count++;
                     m_Stage = 0;
                 }
-
                 Assert.IsTrue(m_IsInitialized, $"Not all clients synchronized properly!\n {m_InitializedStatus.ToString()}");
                 VerboseDebug(m_InitializedStatus.ToString());
+                VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
             }
 
-            VerboseDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BEGIN <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
             foreach (var client in m_Clients)
             {
                 ///////////////////////////////////////////////////////////////////////////

@@ -2172,19 +2172,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Spawn a NetworkObject prefab instance
+        /// Spawn an already instantiated instance of a network prefab.
+        /// Note: If you pass in the NetworkPrefab itself this method will not create an instance but will spawn the pefab itself. (don't do this)
         /// </summary>
-        /// <param name="prefabNetworkObject">the prefab <see cref="NetworkObject"/> to spawn</param>
+        /// <param name="networkObjectToSpawn">the instance of a prefab <see cref="NetworkObject"/> to spawn</param>
         /// <param name="owner">the owner of the instance</param>
         /// <param name="destroyWithScene">default is false</param>
         /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
-        /// <returns>GameObject instance spawned</returns>
-        private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
+        protected void SpawnObjectInstance(NetworkObject networkObjectToSpawn, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
         {
-            Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
-            var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
-            var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
-
             if (owner.NetworkConfig.NetworkTopology == NetworkTopologyTypes.DistributedAuthority)
             {
                 networkObjectToSpawn.NetworkManagerOwner = owner; // Required to assure the client does the spawning
@@ -2230,6 +2226,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Spawn a NetworkObject prefab instance
+        /// </summary>
+        /// <param name="prefabNetworkObject">the prefab <see cref="NetworkObject"/> to spawn</param>
+        /// <param name="owner">the owner of the instance</param>
+        /// <param name="destroyWithScene">default is false</param>
+        /// <param name="isPlayerObject">when <see cref="true"/>, the object will be spawned as the <see cref="NetworkManager.LocalClientId"/> owned player.</param>
+        /// <returns>GameObject instance spawned</returns>
+        private GameObject SpawnObject(NetworkObject prefabNetworkObject, NetworkManager owner, bool destroyWithScene = false, bool isPlayerObject = false)
+        {
+            Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
+            var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
+            var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
+            SpawnObjectInstance(networkObjectToSpawn, owner, destroyWithScene, isPlayerObject);
             return newInstance;
         }
 
