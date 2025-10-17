@@ -5,12 +5,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Unity.Netcode.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.Windows;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -21,6 +23,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool m_VerboseLogging = false;
 
+        // TODO: Since help URIs are only used in the editor, we should migrate this into the editor tests.
         // IOS platform can't run this test for some reason.
         [UnityTest]
         [UnityPlatform(exclude = new[] { RuntimePlatform.IPhonePlayer })]
@@ -62,18 +65,30 @@ namespace Unity.Netcode.RuntimeTests
         {
             try
             {
-                var split = url.Split('#');
-                url = split[0];
+                var split = (string[])null;
+                var hasAnchor = url.Contains("#");
+                if (hasAnchor)
+                {
+                    split = url.Split('#');
+                    url = split[0];
+                }
 
-                var stream = await GetContentFromRemoteFile(url);
+                var documentText = ContentExistsInDocumentation(url);
+                var docExists = !string.IsNullOrEmpty(documentText);
+
+                var stream = await GetContentFromRemoteFile(url, docExists);
 
                 var redirectUrl = CalculateRedirectURl(url, stream);
                 VerboseLog($"Calculated Redirect URL: {redirectUrl}");
 
-                var content = await GetContentFromRemoteFile(redirectUrl);
+                var content = await GetContentFromRemoteFile(redirectUrl, docExists);
 
+                if (string.IsNullOrEmpty(content))
+                {
+                    content = documentText;
+                }
                 // If original url had an anchor part (e.g. some/url.html#anchor)
-                if (split.Length > 1)
+                if (hasAnchor)
                 {
                     var anchorString = split[1];
 
@@ -83,7 +98,6 @@ namespace Unity.Netcode.RuntimeTests
                         return false;
                     }
                 }
-
                 return true;
             }
             catch (Exception e)
@@ -94,11 +108,35 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Checks if the help URI is yet to be published but exists as a document.
+        /// </summary>
+        /// <param name="url">the help uri</param>
+        /// <returns>the contents of the file if it exist otherwise it returns an emtpy string</returns>
+        private string ContentExistsInDocumentation(string url)
+        {
+            var splitFilter = url.Contains(HelpUrls.BaseManualUrl) ? HelpUrls.BaseManualUrl : HelpUrls.BaseApiUrl;
+            var split = url.Split(splitFilter);
+            var current = System.IO.Directory.GetCurrentDirectory().Replace("testproject", string.Empty);
+            var filePath = $"{current}com.unity.netcode.gameobjects/Documentation~/{split[1].Replace(".html", ".md")}";
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    var bytes = File.ReadAllBytes(filePath);
+                    return Encoding.UTF8.GetString(bytes);
+                }
+            }
+            catch
+            { }
+            return string.Empty;
+        }
+
+        /// <summary>
         /// Checks if a remote file at the <paramref name="url"/> exists, and if access is not restricted.
         /// </summary>
         /// <param name="url">URL to a remote file.</param>
         /// <returns>True if the file at the <paramref name="url"/> is able to be downloaded, false if the file does not exist, or if the file is restricted.</returns>
-        private async Task<string> GetContentFromRemoteFile(string url)
+        private async Task<string> GetContentFromRemoteFile(string url, bool documentExists)
         {
             //Checking if URI is well formed is optional
             var uri = new Uri(url);
@@ -113,7 +151,11 @@ namespace Unity.Netcode.RuntimeTests
                 using var response = await k_HttpClient.SendAsync(request);
                 if (!response.IsSuccessStatusCode || response.Content.Headers.ContentLength <= 0)
                 {
-                    throw new Exception($"Failed to get remote file from URL {url}");
+                    if (!documentExists)
+                    {
+                        throw new Exception($"Failed to get remote file from URL {url}");
+                    }
+                    return string.Empty;
                 }
 
                 return await response.Content.ReadAsStringAsync();
