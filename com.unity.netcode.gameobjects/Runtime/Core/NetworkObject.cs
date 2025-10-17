@@ -1742,7 +1742,7 @@ namespace Unity.Netcode
                     // unloading of a scene which is done by the authority...
                     if (gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded)
                     {
-                        if (NetworkManager.LogLevel <= LogLevel.Error && gameObject != null && gameObject.scene.IsValid() && gameObject.scene.isLoaded)
+                        if (NetworkManager.LogLevel <= LogLevel.Error)
                         {
                             if (NetworkManager.DistributedAuthorityMode)
                             {
