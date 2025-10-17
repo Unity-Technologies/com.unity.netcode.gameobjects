@@ -1031,13 +1031,8 @@ namespace Unity.Netcode
         /// Distributed Authority:
         /// DAHost client and standard DA clients invoke this method.
         /// </summary>
-        internal void AuthorityLocalSpawn(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
+        internal void AuthorityLocalSpawn([NotNull] NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)
         {
-            if (networkObject == null)
-            {
-                throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
-            }
-
             if (networkObject.IsSpawned)
             {
                 Debug.LogError($"{networkObject.name} is already spawned!");
@@ -1111,16 +1106,12 @@ namespace Unity.Netcode
         /// <remarks>
         /// IMPORTANT: Pre spawn methods need to be invoked from within <see cref="NetworkObject.AddSceneObject"/>.
         /// </remarks>
-        internal void NonAuthorityLocalSpawn(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
+        internal void NonAuthorityLocalSpawn([NotNull] NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
-            if (networkObject == null)
-            {
-                throw new ArgumentNullException(nameof(networkObject), "Cannot spawn null object");
-            }
-
             if (networkObject.IsSpawned)
             {
-                throw new SpawnStateException($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
+                Debug.LogError($"[{networkObject.name}] Object-{networkObject.NetworkObjectId} is already spawned!");
+                return;
             }
 
             // Do not invoke Pre spawn here (SynchronizeNetworkBehaviours needs to be invoked prior to this)

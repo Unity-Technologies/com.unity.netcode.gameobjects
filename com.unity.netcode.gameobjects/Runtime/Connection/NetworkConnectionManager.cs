@@ -885,16 +885,23 @@ namespace Unity.Netcode
                 var playerObject = playerPrefabHash.HasValue ? NetworkManager.SpawnManager.GetNetworkObjectToSpawn(playerPrefabHash.Value, ownerClientId, playerPosition, playerRotation)
                 : NetworkManager.SpawnManager.GetNetworkObjectToSpawn(NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, playerPosition, playerRotation);
 
-                // Spawn the player NetworkObject locally
-                NetworkManager.SpawnManager.AuthorityLocalSpawn(
-                    playerObject,
-                    NetworkManager.SpawnManager.GetNetworkObjectId(),
-                    sceneObject: false,
-                    playerObject: true,
-                    ownerClientId,
-                    destroyWithScene: false);
+                if (playerObject == null)
+                {
+                    Debug.LogError($"[{nameof(NetworkObject)}] Player prefab is null! Cannot spawn player object!");
+                }
+                else
+                {
+                    // Spawn the player NetworkObject locally
+                    NetworkManager.SpawnManager.AuthorityLocalSpawn(
+                        playerObject,
+                        NetworkManager.SpawnManager.GetNetworkObjectId(),
+                        sceneObject: false,
+                        playerObject: true,
+                        ownerClientId,
+                        destroyWithScene: false);
 
-                client.AssignPlayerObject(ref playerObject);
+                    client.AssignPlayerObject(ref playerObject);
+                }
             }
 
             if (ownerClientId == NetworkManager.ServerClientId || !NetworkManager.NetworkConfig.EnableSceneManagement)
