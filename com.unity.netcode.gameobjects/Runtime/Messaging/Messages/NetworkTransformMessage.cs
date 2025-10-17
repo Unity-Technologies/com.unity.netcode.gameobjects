@@ -147,6 +147,9 @@ namespace Unity.Netcode
 
                     if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
                     {
+                        // Using foreach loop as opposed to for loop using targetCount as maximum
+                        // observers to doulbe check that the number of observers in the list of
+                        // observers matches the targetCount.
                         var count = 0;
                         foreach (var targetId in networkObject.Observers)
                         {
