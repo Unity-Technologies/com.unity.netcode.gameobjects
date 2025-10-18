@@ -32,7 +32,28 @@ namespace Unity.Netcode
             }
             else
             {
-                BytesWritten = NetworkTransform.SerializeMessage(writer, targetVersion);
+                var position = writer.Position;
+                // Provides the source of the message (NetworkObject-->NetworkTransform : NetworkBehaviour).
+                BytePacker.WriteValueBitPacked(writer, NetworkTransform.NetworkObjectId);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkObjectIdSize = writer.Position - position;
+#endif
+                BytePacker.WriteValueBitPacked(writer, (int)NetworkTransform.NetworkBehaviourId);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkBehaviourIdSize = writer.Position - position - networkObjectIdSize;
+#endif
+
+                // Serialize the current local state.
+                writer.WriteNetworkSerializable(NetworkTransform.LocalAuthoritativeNetworkState);
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var networkTransformStateSize = writer.Position - position - networkObjectIdSize - networkBehaviourIdSize;
+#endif
+                BytesWritten = writer.Position - position;
+
+#if NGO_NETWORKTRANSFORMSTATE_LOGWRITESIZE
+                var parentInfo = writer.Position - position - networkObjectIdSize - networkBehaviourIdSize - networkTransformStateSize;
+                Debug.Log($"[NO-ID: {networkObjectIdSize}][NB-ID: {networkBehaviourIdSize}][NTState: {networkTransformStateSize}][PINFO: {parentInfo}][Total: {BytesWritten}]");
+#endif
             }
         }
 
@@ -42,6 +63,10 @@ namespace Unity.Netcode
             if (networkManager == null)
             {
                 Debug.LogError($"[{nameof(NetworkTransformMessage)}] System owner context was not of type {nameof(NetworkManager)}!");
+                return false;
+            }
+            if (networkManager.ShutdownInProgress)
+            {
                 return false;
             }
             var currentPosition = reader.Position;
@@ -89,7 +114,9 @@ namespace Unity.Netcode
                 isServerAuthoritative = NetworkTransform.IsServerAuthoritative();
                 ownerAuthoritativeServerSide = !isServerAuthoritative && networkManager.IsServer;
 
+                // Deserialize the inbound NetworkTransformState
                 reader.ReadNetworkSerializableInPlace(ref NetworkTransform.InboundState);
+
                 NetworkTransform.InboundState.LastSerializedSize = reader.Position - currentPosition;
             }
             else
@@ -114,22 +141,25 @@ namespace Unity.Netcode
             {
                 if (ownerAuthoritativeServerSide)
                 {
-                    var targetCount = 1;
-
-                    if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
-                    {
-                        ByteUnpacker.ReadValueBitPacked(reader, out targetCount);
-                    }
+                    var targetCount = networkObject.Observers.Count;
 
                     var targetIds = stackalloc ulong[targetCount];
 
                     if (networkManager.DistributedAuthorityMode && networkManager.DAHost)
                     {
-                        var targetId = (ulong)0;
-                        for (int i = 0; i < targetCount; i++)
+                        // Using foreach loop as opposed to for loop using targetCount as maximum
+                        // observers to doulbe check that the number of observers in the list of
+                        // observers matches the targetCount.
+                        var count = 0;
+                        foreach (var targetId in networkObject.Observers)
                         {
-                            ByteUnpacker.ReadValueBitPacked(reader, out targetId);
-                            targetIds[i] = targetId;
+                            targetIds[count] = targetId;
+                            // Sanity check, this should never happen.
+                            if (count >= targetCount)
+                            {
+                                Debug.LogError($"[{nameof(NetworkTransformMessage)}] Exceeded total number of observers!");
+                            }
+                            count++;
                         }
                     }
 
@@ -208,6 +238,8 @@ namespace Unity.Netcode
                 Debug.LogError($"[{nameof(NetworkTransformMessage)}][Dropped] Reciever {nameof(NetworkTransform)} was not set!");
                 return;
             }
+
+            // Update the state
             NetworkTransform.TransformStateUpdate(context.SenderId);
         }
     }

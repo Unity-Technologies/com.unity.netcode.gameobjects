@@ -44,4 +44,14 @@ namespace Unity.Netcode
         void Handle(ref NetworkContext context);
         int Version { get; }
     }
+
+
+    internal static class MessageDeliveryType<T> where T : INetworkMessage
+    {
+        internal static NetworkDelivery DefaultDelivery { get; private set; }
+        internal static void Initialize()
+        {
+            DefaultDelivery = MessageDelivery.GetDelivery(typeof(T));
+        }
+    }
 }

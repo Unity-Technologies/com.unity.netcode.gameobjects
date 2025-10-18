@@ -83,7 +83,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
             };
-            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
+            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionApproved), m_ClientNetworkManagers[0].LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -105,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenSendingConnectionRequestToAnyClient_ConnectionRequestMessageIsRejected()
         {
             var message = new ConnectionRequestMessage();
-            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ClientNetworkManagers[0].LocalClientId);
+            m_ServerNetworkManager.ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionRequest), m_ClientNetworkManagers[0].LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -127,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenSendingConnectionRequestFromAlreadyConnectedClient_ConnectionRequestMessageIsRejected()
         {
             var message = new ConnectionRequestMessage();
-            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
+            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionRequest), m_ServerNetworkManager.LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
@@ -152,7 +152,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 ConnectedClientIds = new NativeArray<ulong>(0, Allocator.Temp)
             };
-            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, NetworkDelivery.Reliable, m_ServerNetworkManager.LocalClientId);
+            m_ClientNetworkManagers[0].ConnectionManager.SendMessage(ref message, MessageDelivery.GetDelivery(NetworkMessageTypes.ConnectionApproved), m_ServerNetworkManager.LocalClientId);
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.

@@ -108,8 +108,7 @@ namespace Unity.Netcode
                     Message = message,
                     SenderId = localId
                 };
-                var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, NetworkDelivery.ReliableFragmentedSequenced, NetworkManager.ServerClientId);
-
+                var size = networkManager.ConnectionManager.SendMessage(ref networkMessage, MessageDeliveryType<ServerLogMessage>.DefaultDelivery, NetworkManager.ServerClientId);
                 networkManager.NetworkMetrics.TrackServerLogSent(NetworkManager.ServerClientId, (uint)logType, size);
             }
         }
