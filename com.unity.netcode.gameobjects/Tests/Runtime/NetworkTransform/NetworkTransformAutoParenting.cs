@@ -162,18 +162,6 @@ namespace Unity.Netcode.RuntimeTests
             return !hadError;
         }
 
-        private bool AllClientsSpawnedObject()
-        {
-            foreach (var networkManager in m_NetworkManagers)
-            {
-                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_NetworkObjectIdToValidate))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         private bool AllClientsDespawnedObject()
         {
             foreach (var networkManager in m_NetworkManagers)
@@ -270,7 +258,7 @@ namespace Unity.Netcode.RuntimeTests
                     m_FinalParent = parent;
                 }
             }
-            yield return WaitForConditionOrTimeOut(AllClientsSpawnedObject);
+            yield return WaitForSpawnedOnAllOrTimeOut(m_NetworkObjectIdToValidate);
             AssertOnTimeout($"Timed out waiting for all clients to spawn {m_ChildInstance.name} instance!");
 
             yield return WaitForConditionOrTimeOut(AllClientsParented);
