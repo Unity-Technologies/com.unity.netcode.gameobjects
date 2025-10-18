@@ -49,7 +49,7 @@ namespace Unity.Netcode
                 networkManager.ConnectionManager.InvokeOnPeerConnectedCallback(ClientId);
             }
 
-            // DANGO-TODO: Remove the session owner object distribution check once the service handles object distribution
+            // This handles object redistribution when scene management is disabled
             if (networkManager.DistributedAuthorityMode && networkManager.CMBServiceConnection && !networkManager.NetworkConfig.EnableSceneManagement)
             {
                 // Don't redistribute for the local instance

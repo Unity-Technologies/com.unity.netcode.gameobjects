@@ -34,11 +34,6 @@ namespace Unity.Netcode
         internal double LastUpdateSent;
 
         /// <summary>
-        /// The delivery type (QoS) to send data with
-        /// </summary>
-        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableFragmentedSequenced;
-
-        /// <summary>
         /// Maintains a link to the associated NetworkBehaviour
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
