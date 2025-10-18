@@ -68,7 +68,7 @@ namespace Unity.Netcode
         /// Clients handle processing dirty objects relative to the client.
         /// The <see cref="NetworkVariableDeltaMessage"/> is client to server.
         /// With distributed authority live service sessions, this is sent to
-        /// the Rust server.
+        /// the CMB service.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void ProcessDirtyObjectClient(NetworkObject dirtyObj, bool forceSend)
