@@ -17,9 +17,9 @@ namespace Unity.Netcode.RuntimeTests
     /// authority instance (i.e. preserving order of operations).
     /// <see cref="OrderOfOperations"/>: Test entry point.<br />
     /// <see cref="RunTestSequences"/>: Runs a test based a series of sequences configured sequences.<br />
-    /// <see cref="SpawnSequence"/>: Derived from to create a spawn sequence. 
+    /// <see cref="SpawnSequence"/>: Derived from to create a spawn sequence.
     /// <see cref="SpawnSequenceController"/>: Iterates through all defined/configured spawn sequences
-    /// on both authoritative and non-authoritative instances for a test configuration.    
+    /// on both authoritative and non-authoritative instances for a test configuration.
     /// </summary>
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
