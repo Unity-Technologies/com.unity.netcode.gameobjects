@@ -10,7 +10,17 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-
+    /// <summary>
+    /// This test validates various spawn sequences to verify message
+    /// ordering is preserved and each sequence action is invoked
+    /// on non-authority instances in the order they were invoked on the
+    /// authority instance (i.e. preserving order of operations).
+    /// <see cref="OrderOfOperations"/>: Test entry point.<br />
+    /// <see cref="RunTestSequences"/>: Runs a test based a series of sequences configured sequences.<br />
+    /// <see cref="SpawnSequence"/>: Derived from to create a spawn sequence. 
+    /// <see cref="SpawnSequenceController"/>: Iterates through all defined/configured spawn sequences
+    /// on both authoritative and non-authoritative instances for a test configuration.    
+    /// </summary>
     [TestFixture(HostOrServer.DAHost)]
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
@@ -25,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests
         private SpawnSequenceController m_AuthoritySeqControllerInstance;
 
         private NetworkManager m_AuthorityNetworkManager;
-        private List<NetworkObject> m_AuthorityGenericInstances = new List<NetworkObject>();
+        private List<NetworkObject> m_AuthorityParentInstances = new List<NetworkObject>();
 
         public NetworkTransformOrderOfOperations(HostOrServer host) : base(host)
         {
@@ -53,7 +63,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool VerifyGenericsSpawned(StringBuilder errorLog)
         {
             var conditionMet = true;
-            foreach (var networkObject in m_AuthorityGenericInstances)
+            foreach (var networkObject in m_AuthorityParentInstances)
             {
                 var networkObjectId = networkObject.NetworkObjectId;
                 foreach (var networkManager in m_NetworkManagers)
@@ -75,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private IEnumerator SpawnGenericParents()
         {
-            m_AuthorityGenericInstances.Clear();
+            m_AuthorityParentInstances.Clear();
             for (int i = 0; i < 3; i++)
             {
                 var instance = Object.Instantiate(m_GenericObject);
@@ -85,7 +95,7 @@ namespace Unity.Netcode.RuntimeTests
                     eulerAngles = GetRandomVector3(-180, 180),
                 };
                 SpawnObjectInstance(instance, m_AuthorityNetworkManager);
-                m_AuthorityGenericInstances.Add(instance);
+                m_AuthorityParentInstances.Add(instance);
             }
             yield return WaitForConditionOrTimeOut(VerifyGenericsSpawned);
             AssertOnTimeout("Failure to spawn generics on one or more clients!");
@@ -154,120 +164,125 @@ namespace Unity.Netcode.RuntimeTests
 
         #region OrderOfOperations Core Test Methods
         [UnityTest]
-
         public IEnumerator OrderOfOperations()
         {
             m_EnableVerboseDebug = true;
             SpawnSequenceController.VerboseLog = m_EnableVerboseDebug;
             m_AuthorityNetworkManager = GetAuthorityNetworkManager();
             yield return SpawnGenericParents();
+            var parent1 = m_AuthorityParentInstances[0];
+            var parent2 = m_AuthorityParentInstances[1];
 
-            ConfigureSequencesTest1(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest1(parent1);
             yield return RunTestSequences();
 
-            ConfigureSequencesTest2(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest2(parent1);
             yield return RunTestSequences();
 
-            ConfigureSequencesTest3(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            ConfigureSequencesTest3(parent1, parent2);
             yield return RunTestSequences();
 
-            ConfigureSequencesTest4(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            ConfigureSequencesTest4(parent1, parent2);
             yield return RunTestSequences(false);
 
-            ConfigureSequencesTest5(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest5(parent1);
             yield return RunTestSequences();
 
-            ConfigureSequencesTest6(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest6_ClientServerOnly(parent1);
             yield return RunTestSequences();
 
-            ConfigureSequencesTest7(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest7_ClientServerOnly(parent1);
             yield return RunTestSequences(spawnWithOwnership: true);
 
-            ConfigureSequencesTest8(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest8(parent1);
             yield return RunTestSequences(spawnWithObservers: false);
 
-            ConfigureSequencesTest9(m_AuthorityGenericInstances[0]);
+            ConfigureSequencesTest9(parent1);
             yield return RunTestSequences(spawnWithObservers: false);
 
-            ConfigureSequencesTest10(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            ConfigureSequencesTest10_ClientServerOnly(parent1, parent2);
             yield return RunTestSequences(spawnWithOwnership: true);
 
-            ConfigureSequencesTest11(m_AuthorityGenericInstances[0], m_AuthorityGenericInstances[1]);
+            ConfigureSequencesTest11_ClientServerOnly(parent1, parent2);
             yield return RunTestSequences(spawnWithOwnership: true);
         }
 
+
         private IEnumerator RunTestSequences(bool spawnWithObservers = true, bool spawnWithOwnership = false)
         {
-            if (SpawnSequenceController.ShouldRun(m_AuthorityNetworkManager))
+            yield return __RunTestSequences(spawnWithObservers, spawnWithOwnership);
+
+            // Assure the generic parents are all at the root hierarchy.
+            foreach (var parent in m_AuthorityParentInstances)
             {
-                VerboseDebug($"Running {SpawnSequenceController.CurrentTest}");
-                var instance = Object.Instantiate(m_ObjectToTest);
-                instance.SpawnWithObservers = spawnWithObservers;
-                SpawnObjectInstance(instance, spawnWithOwnership ? GetNonAuthorityNetworkManager() : m_AuthorityNetworkManager);
-                m_AuthoritySeqControllerInstance = instance.GetComponent<SpawnSequenceController>();
-                var authorityObjectId = m_AuthoritySeqControllerInstance.NetworkObjectId;
-                m_AuthoritySeqControllerInstance.AfterSpawn();
-                if (spawnWithObservers)
-                {
-                    yield return WaitForSpawnedOnAllOrTimeOut(m_AuthoritySeqControllerInstance.NetworkObjectId);
-                    AssertOnTimeout($"All clients did not spawn {m_AuthoritySeqControllerInstance.name}!");
-                    foreach (var networkManager in m_NetworkManagers)
-                    {
-                        if (networkManager == m_AuthorityNetworkManager)
-                        {
-                            continue;
-                        }
-                        networkManager.SpawnManager.SpawnedObjects[authorityObjectId].GetComponent<SpawnSequenceController>().AfterSpawn();
-                    }
-                }
+                parent.transform.parent = null;
+            }
 
-                // Assure all sequenced actions have been invoked.
-                yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
-                if (s_GlobalTimeoutHelper.HasTimedOut())
-                {
-                    // If we timed out, then check for pending and if found wait for the condition
-                    // once more.
-                    if (SpawnSequenceController.ActionIsPending())
-                    {
-                        yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
-                    }
-                }
-                AssertOnTimeout($"[{SpawnSequenceController.CurrentTest}] Not all actions were invoked for the current test sequence!\n {SpawnSequenceController.ErrorLog}");
-                yield return WaitForConditionOrTimeOut(TransformsMatch);
-                AssertOnTimeout($"Not all {m_AuthoritySeqControllerInstance.name} instances' transforms match!");
+            // Reset the controller's global settings
+            SpawnSequenceController.Clear();
+        }
 
-                // De-spawn the test object
-                if (m_AuthoritySeqControllerInstance.HasAuthority)
-                {
-                    m_AuthoritySeqControllerInstance.NetworkObject.Despawn();
-                }
-                else
-                {
-                    foreach (var networkManager in m_NetworkManagers)
-                    {
-                        if (networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].HasAuthority)
-                        {
-                            networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].Despawn();
-                            break;
-                        }
-                    }
-                }
+        private IEnumerator __RunTestSequences(bool spawnWithObservers = true, bool spawnWithOwnership = false)
+        {
+            // Exit early if we shouldn't run
+            if (!SpawnSequenceController.ShouldRun(m_AuthorityNetworkManager))
+            {
+                VerboseDebug($"Skipping {SpawnSequenceController.CurrentTest}");
+                yield break;
+            }
 
-                // Assure the generic parents are all at the root hierarchy.
-                foreach (var parent in m_AuthorityGenericInstances)
+            VerboseDebug($"Running {SpawnSequenceController.CurrentTest}");
+            var instance = Object.Instantiate(m_ObjectToTest);
+            instance.SpawnWithObservers = spawnWithObservers;
+            SpawnObjectInstance(instance, spawnWithOwnership ? GetNonAuthorityNetworkManager() : m_AuthorityNetworkManager);
+            m_AuthoritySeqControllerInstance = instance.GetComponent<SpawnSequenceController>();
+            var authorityObjectId = m_AuthoritySeqControllerInstance.NetworkObjectId;
+            m_AuthoritySeqControllerInstance.AfterSpawn();
+            if (spawnWithObservers)
+            {
+                yield return WaitForSpawnedOnAllOrTimeOut(m_AuthoritySeqControllerInstance.NetworkObjectId);
+                AssertOnTimeout($"All clients did not spawn {m_AuthoritySeqControllerInstance.name}!");
+                foreach (var networkManager in m_NetworkManagers)
                 {
-                    if (parent.transform.parent != null)
+                    if (networkManager == m_AuthorityNetworkManager)
                     {
-                        parent.transform.parent = null;
+                        continue;
                     }
+                    networkManager.SpawnManager.SpawnedObjects[authorityObjectId].GetComponent<SpawnSequenceController>().AfterSpawn();
                 }
+            }
+
+            // Assure all sequenced actions have been invoked.
+            yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
+            if (s_GlobalTimeoutHelper.HasTimedOut())
+            {
+                // If we timed out, then check for pending and if found wait for the condition
+                // once more.
+                if (SpawnSequenceController.ActionIsPending())
+                {
+                    yield return WaitForConditionOrTimeOut(SpawnSequenceController.AllActionsInvoked);
+                }
+            }
+            AssertOnTimeout($"[{SpawnSequenceController.CurrentTest}] Not all actions were invoked for the current test sequence!\n {SpawnSequenceController.ErrorLog}");
+            yield return WaitForConditionOrTimeOut(TransformsMatch);
+            AssertOnTimeout($"Not all {m_AuthoritySeqControllerInstance.name} instances' transforms match!");
+
+            // De-spawn the test object
+            if (m_AuthoritySeqControllerInstance.HasAuthority)
+            {
+                m_AuthoritySeqControllerInstance.NetworkObject.Despawn();
             }
             else
             {
-                VerboseDebug($"Skipping {SpawnSequenceController.CurrentTest}");
+                foreach (var networkManager in m_NetworkManagers)
+                {
+                    if (networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].HasAuthority)
+                    {
+                        networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].Despawn();
+                        break;
+                    }
+                }
             }
-            // Reset the controller's global settings
-            SpawnSequenceController.Clear();
         }
         #endregion
 
@@ -451,7 +466,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Authority-> Spawn, change ownership, change parent (1), Teleport RPC with NetworkBehaviourReference
         /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
         /// </summary>
-        private void ConfigureSequencesTest6(NetworkObject parent1)
+        private void ConfigureSequencesTest6_ClientServerOnly(NetworkObject parent1)
         {
             SpawnSequenceController.CurrentTest = "Test6 (Client-Server Only)";
             if (m_AuthorityNetworkManager.DistributedAuthorityMode)
@@ -496,7 +511,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Authority-> Spawn with ownership,change parent (1), Teleport RPC with NetworkBehaviourReference
         /// ClientOwner-> Teleport RPC using NetworkBehaviourReference
         /// </summary>
-        private void ConfigureSequencesTest7(NetworkObject parent1)
+        private void ConfigureSequencesTest7_ClientServerOnly(NetworkObject parent1)
         {
             SpawnSequenceController.CurrentTest = "Test7 (Client-Server Only)";
             if (m_AuthorityNetworkManager.DistributedAuthorityMode)
@@ -606,7 +621,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Authority-> Spawn with ownership, change parent (1), Wait (1), Parent RPC with NetworkObjectReference
         /// ClientOwner-> Re-parent (2) RPC using NetworkObjectReference
         /// </summary>
-        private void ConfigureSequencesTest10(NetworkObject parent1, NetworkObject parent2)
+        private void ConfigureSequencesTest10_ClientServerOnly(NetworkObject parent1, NetworkObject parent2)
         {
             SpawnSequenceController.CurrentTest = "Test10 (Client-Server Only)";
             if (m_AuthorityNetworkManager.DistributedAuthorityMode)
@@ -641,7 +656,7 @@ namespace Unity.Netcode.RuntimeTests
         /// ClientOwner-> Parent (1) RPC using NetworkObjectReference
         /// Server-> On the parent changing --> re-parent (2)
         /// </summary>
-        private void ConfigureSequencesTest11(NetworkObject parent1, NetworkObject parent2)
+        private void ConfigureSequencesTest11_ClientServerOnly(NetworkObject parent1, NetworkObject parent2)
         {
             SpawnSequenceController.CurrentTest = "Test11 (Client-Server Only)";
             if (m_AuthorityNetworkManager.DistributedAuthorityMode)
@@ -649,7 +664,6 @@ namespace Unity.Netcode.RuntimeTests
                 SpawnSequenceController.ClientServerOnly = true;
                 return;
             }
-
 
             var parentRpc = new ReferenceRpcSequence()
             {
@@ -867,6 +881,11 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Derive from this to create a new type of spawn sequence
+        /// or derive from an existing one to modify or extend the
+        /// sequence's behavior.
+        /// </summary>
         internal class SpawnSequence
         {
             public enum SpawnStage
@@ -947,12 +966,18 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Process the current giveen set of configured spawn sequences. <br />
+        /// <see cref="s_SpawnSequencedActions"/> contains the spawn sequences for a test configuraiton. <br />
+        /// Some spawn sequences might only run under certain conditions determined within <see cref="ShouldRun(NetworkManager)"/>.
+        /// </summary>
         public class SpawnSequenceController : NetworkTransform
         {
             public static bool VerboseLog;
             public static string CurrentTest;
 
             public static bool ClientServerOnly;
+            public static bool DistributedAuthorityOnly;
 
             public static bool ShouldRun(NetworkManager authorityNetworkManager)
             {
@@ -1059,6 +1084,23 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// This is added to the generic spawned objects (parents) to validate that
+        /// after having spawned a NetworkObject, as the authority, and then invoking
+        /// an RPC, that accepts an <see cref="NetworkBehaviourReference"/> or <see cref="NetworkObjectReference"/>
+        /// which references the newly spawned <see cref="NetworkObject"/> or an associated <see cref="NetworkBehaviour"/>
+        /// component on an already known spawned object, that the object will have been spawned prior to the
+        /// RPC being invoked on the non-authority side.
+        /// </summary>
+        /// <remarks>
+        /// Currently, NGO does not support this usage pattern if you:
+        /// - spawn with no observers
+        /// - invoke the RPC with a reference to the spawned object within the same frame/call-stack
+        /// This limitation is due to the network show defers the queuing of the <see cref="CreateObjectMessage"/>
+        /// until the end of the frame as opposed to generating it when spawned. This could be supported if
+        /// we convert to more of a command based system that is applied locally on the spawn authority side
+        /// but queued and then messages are generated from the queued commands at the end of the frame.
+        /// </remarks>
         public class ReferenceRpcHelper : NetworkBehaviour
         {
             [Rpc(SendTo.NotMe)]
