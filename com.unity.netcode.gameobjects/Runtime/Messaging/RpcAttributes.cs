@@ -57,6 +57,15 @@ namespace Unity.Netcode
             public RpcDelivery Delivery;
 
             /// <summary>
+            /// When true, only the owner of the object can execute this RPC
+            /// </summary>
+            /// <remarks>
+            /// Deprecated in favor of <see cref="InvokePermission"/>.
+            /// </remarks>
+            [Obsolete("RequireOwnership is deprecated. Please use InvokePermission instead.")]
+            public bool RequireOwnership;
+
+            /// <summary>
             /// Who has network permission to invoke this RPC
             /// </summary>
             public RpcInvokePermission InvokePermission;
@@ -70,8 +79,6 @@ namespace Unity.Netcode
             /// When true, allows the RPC target to be overridden at runtime
             /// </summary>
             public bool AllowTargetOverride;
-
-            public bool RequireOwnership;
         }
 
         // Must match the fields in RemoteAttributeParams
