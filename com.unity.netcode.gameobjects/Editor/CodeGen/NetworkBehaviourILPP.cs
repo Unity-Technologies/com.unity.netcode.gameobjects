@@ -1651,14 +1651,14 @@ namespace Unity.Netcode.Editor.CodeGen
             var hasInvokePermission = false;
 
             CustomAttributeNamedArgument? invokePermissionAttribute = null;
-            foreach(var argument in rpcAttribute.Fields)
+            foreach (var argument in rpcAttribute.Fields)
             {
                 switch (argument.Name)
                 {
                     case k_ServerRpcAttribute_RequireOwnership:
                         var requireOwnership = argument.Argument.Type == typeSystem.Boolean && (bool)argument.Argument.Value;
                         var invokePermissionArg = new CustomAttributeArgument(m_RpcInvokePermissions_TypeRef, requireOwnership ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone);
-                        invokePermissionAttribute = new CustomAttributeNamedArgument( k_RpcAttribute_InvokePermission,  invokePermissionArg);
+                        invokePermissionAttribute = new CustomAttributeNamedArgument(k_RpcAttribute_InvokePermission, invokePermissionArg);
                         break;
                     case k_RpcAttribute_InvokePermission:
                         hasInvokePermission = true;
