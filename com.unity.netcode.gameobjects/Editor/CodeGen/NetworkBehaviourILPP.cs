@@ -470,6 +470,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private FieldReference m_UniversalRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference m_UniversalRpcParams_TypeRef;
         private TypeReference m_ClientRpcParams_TypeRef;
+        private TypeReference m_RpcInvokePermissions_TypeRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyArray_MethodRef;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -656,6 +657,7 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition serverRpcParamsTypeDef = null;
             TypeDefinition clientRpcParamsTypeDef = null;
             TypeDefinition universalRpcParamsTypeDef = null;
+            TypeDefinition rpcInvokePermissionTypeDef = null;
             TypeDefinition fastBufferWriterTypeDef = null;
             TypeDefinition fastBufferReaderTypeDef = null;
             TypeDefinition networkVariableSerializationTypesTypeDef = null;
@@ -714,6 +716,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (clientRpcParamsTypeDef == null && netcodeTypeDef.Name == nameof(ClientRpcParams))
                 {
                     clientRpcParamsTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (rpcInvokePermissionTypeDef == null && netcodeTypeDef.Name == nameof(RpcInvokePermission))
+                {
+                    rpcInvokePermissionTypeDef = netcodeTypeDef;
                     continue;
                 }
 
@@ -942,6 +950,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             m_ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsTypeDef);
+            m_RpcInvokePermissions_TypeRef = moduleDefinition.ImportReference(rpcInvokePermissionTypeDef);
             m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterTypeDef);
             m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(fastBufferReaderTypeDef);
 
@@ -1638,14 +1647,18 @@ namespace Unity.Netcode.Editor.CodeGen
                 return null;
             }
 
-            bool hasRequireOwnership = false, hasInvokePermission = false;
+            var typeSystem = methodDefinition.Module.TypeSystem;
+            var hasInvokePermission = false;
 
-            foreach (var argument in rpcAttribute.Fields)
+            CustomAttributeNamedArgument? invokePermissionAttribute = null;
+            foreach(var argument in rpcAttribute.Fields)
             {
                 switch (argument.Name)
                 {
                     case k_ServerRpcAttribute_RequireOwnership:
-                        hasRequireOwnership = true;
+                        var requireOwnership = argument.Argument.Type == typeSystem.Boolean && (bool)argument.Argument.Value;
+                        var invokePermissionArg = new CustomAttributeArgument(m_RpcInvokePermissions_TypeRef, requireOwnership ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone);
+                        invokePermissionAttribute = new CustomAttributeNamedArgument( k_RpcAttribute_InvokePermission,  invokePermissionArg);
                         break;
                     case k_RpcAttribute_InvokePermission:
                         hasInvokePermission = true;
@@ -1653,11 +1666,17 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            if (hasRequireOwnership && hasInvokePermission)
+            if (invokePermissionAttribute != null)
             {
-                m_Diagnostics.AddError("Rpc attribute cannot declare both RequireOwnership and InvokePermission!");
-                return null;
+                if (hasInvokePermission)
+                {
+                    m_Diagnostics.AddError($"{methodDefinition.Name} cannot declare both RequireOwnership and InvokePermission!");
+                    return null;
+                }
+
+                rpcAttribute.Fields.Add(invokePermissionAttribute.Value);
             }
+
 
             // Checks for IsSerializable are moved to later as the check is now done by dynamically seeing if any valid
             // serializer OR extension method exists for it.
@@ -2922,8 +2941,6 @@ namespace Unity.Netcode.Editor.CodeGen
             var processor = rpcHandler.Body.GetILProcessor();
 
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
-            var isGenericRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.RpcAttribute_FullName;
             var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
             foreach (var attrField in rpcAttribute.Fields)
             {

@@ -22,6 +22,9 @@ namespace Unity.Netcode.RuntimeTests.Rpc
 
         private Dictionary<NetworkManager, InvokePermissionBehaviour> m_InvokeInstances = new();
 
+        // TODO: [CmbServiceTests] Enable once the CMB service fixes the client spoofing issue.
+        protected override bool UseCMBService() => false;
+
         protected override void OnServerAndClientsCreated()
         {
             m_Prefab = CreateNetworkObjectPrefab("RpcInvokePermissionTest");
@@ -188,42 +191,38 @@ namespace Unity.Netcode.RuntimeTests.Rpc
             yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
             AssertOnTimeout("[InvokePermissions.Everyone] Incorrect Rpc calls received");
 
-            // DANGO-TODO: Fix the client spoofing issue
-            if (!m_UseCmbService)
+            var firstClientInstance = m_InvokeInstances[firstClient];
+            var secondClient = GetNonAuthorityNetworkManager(1);
+            var thirdClient = GetNonAuthorityNetworkManager(2);
+
+            firstClientInstance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.TrackSenderIdRpc)] = 1;
+
+            // Manually set the senderId to an incorrect value
+            var secondClientInstance = m_InvokeInstances[secondClient];
+            var bufferWriter = new FastBufferWriter(1024, Allocator.Temp);
+            using (bufferWriter)
             {
-                var firstClientInstance = m_InvokeInstances[firstClient];
-                var secondClient = GetNonAuthorityNetworkManager(1);
-                var thirdClient = GetNonAuthorityNetworkManager(2);
-
-                firstClientInstance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.TrackSenderIdRpc)] = 1;
-
-                // Manually set the senderId to an incorrect value
-                var secondClientInstance = m_InvokeInstances[secondClient];
-                var bufferWriter = new FastBufferWriter(1024, Allocator.Temp);
-                using (bufferWriter)
+                var rpcMessage = new RpcMessage
                 {
-                    var rpcMessage = new RpcMessage
+                    Metadata = new RpcMetadata
                     {
-                        Metadata = new RpcMetadata
-                        {
-                            NetworkObjectId = secondClientInstance.NetworkObjectId,
-                            NetworkBehaviourId = secondClientInstance.NetworkBehaviourId,
-                            NetworkRpcMethodId = GetMethodIdFromMethodName(nameof(InvokePermissionBehaviour.TrackSenderIdRpc)),
-                        },
-                        // Set the sender to the third client
-                        SenderClientId = thirdClient.LocalClientId,
-                        WriteBuffer = bufferWriter
-                    };
+                        NetworkObjectId = secondClientInstance.NetworkObjectId,
+                        NetworkBehaviourId = secondClientInstance.NetworkBehaviourId,
+                        NetworkRpcMethodId = GetMethodIdFromMethodName(nameof(InvokePermissionBehaviour.TrackSenderIdRpc)),
+                    },
+                    // Set the sender to the third client
+                    SenderClientId = thirdClient.LocalClientId,
+                    WriteBuffer = bufferWriter
+                };
 
-                    // Send the message on the second client
-                    secondClientInstance.RpcTarget.Owner.Send(secondClientInstance, ref rpcMessage, NetworkDelivery.Reliable, new RpcParams());
-                }
-
-                yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
-                AssertOnTimeout("[SpoofedSenderId] Incorrect Rpc calls received");
-
-                Assert.That(firstClientInstance.SenderIdReceived, Is.EqualTo(secondClient.LocalClientId), "Received spoofed sender id!");
+                // Send the message on the second client
+                secondClientInstance.RpcTarget.Owner.Send(secondClientInstance, ref rpcMessage, NetworkDelivery.Reliable, new RpcParams());
             }
+
+            yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
+            AssertOnTimeout("[SpoofedSenderId] Incorrect Rpc calls received");
+
+            Assert.That(firstClientInstance.SenderIdReceived, Is.EqualTo(secondClient.LocalClientId), "Received spoofed sender id!");
         }
 
         private void SendUncheckedMessage(NetworkManager manager, InvokePermissionBehaviour invokePermissionsObject, string rpcMethodName)

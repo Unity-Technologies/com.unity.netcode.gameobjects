@@ -335,7 +335,7 @@ namespace Unity.Netcode
                 throw new RpcException("This RPC can only be sent by the server.");
             }
 
-            if ((attributeParams.RequireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
+            if (attributeParams.InvokePermission == RpcInvokePermission.Owner && !IsOwner)
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }
