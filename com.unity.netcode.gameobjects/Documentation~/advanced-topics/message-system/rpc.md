@@ -1,6 +1,6 @@
 # RPC
 
-Any process can communicate with any other process by sending a remote procedure call (RPC). As of Netcode for GameObjects version 1.8.0, the `Rpc` attribute encompasses server to client RPCs, client to server RPCs, and client to client RPCs.
+Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is used to define who receives and executes the RPC.
 
 ![](../../images/sequence_diagrams/RPCs/ServerRPCs.png)
 

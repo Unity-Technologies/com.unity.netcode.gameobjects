@@ -40,7 +40,8 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// <para>Represents the common base class for Rpc attributes.</para>
+    /// <para>Marks a method as a remote procedure call (RPC).</para>
+    /// <para>The marked method will be executed on all game instances defined by the <see cref="SendTo"/> target.</para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class RpcAttribute : Attribute
@@ -80,7 +81,7 @@ namespace Unity.Netcode
         public RpcDelivery Delivery = RpcDelivery.Reliable;
 
         /// <summary>
-        /// Who has network permission to invoke this RPC
+        /// Controls who has permission to invoke this RPC. The default setting is <see cref="RpcInvokePermission.Everyone"/>
         /// </summary>
         public RpcInvokePermission InvokePermission;
 
@@ -90,7 +91,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// Deprecated in favor of <see cref="InvokePermission"/>.
         /// </remarks>
-        [Obsolete("RequireOwnership is deprecated. Please use InvokePermission = RpcInvokePermission.Owner instead.")]
+        [Obsolete("RequireOwnership is deprecated. Please use InvokePermission = RpcInvokePermission.Owner or InvokePermission = RpcInvokePermission.Everyone instead.")]
         public bool RequireOwnership;
 
         /// <summary>
@@ -127,15 +128,14 @@ namespace Unity.Netcode
     {
         /// <summary>
         /// When true, only the owner of the NetworkObject can invoke this ServerRpc.
-        /// This property sets the base <see cref="RpcAttribute.InvokePermission"/> to <see cref="RpcInvokePermission.Owner"/> when "RequireOwnership = true" or to  <see cref="RpcInvokePermission.Everyone"/> when "RequireOwnership = false". />.
         /// </summary>
         /// <remarks>
-        /// Deprecated in favor of using <see cref="RpcAttribute"/> with <see cref="SendTo.Server"/> and an <see cref="RpcAttribute.InvokePermission"/>.
+        /// <para> Deprecated in favor of using <see cref="RpcAttribute"/> with a <see cref="SendTo.Server"/> target and an <see cref="RpcAttribute.InvokePermission"/>.</para>
         /// <code>
         ///     [ServerRpc(RequireOwnership = false)]
         ///     // is replaced with
         ///     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        ///     // or, as InvokePermission has a default setting of RpcInvokePermission.Everyone, you can also use
+        ///     // as InvokePermission has a default setting of RpcInvokePermission.Everyone, you can also use
         ///     [Rpc(SendTo.Server)]
         /// </code>
         /// <code>

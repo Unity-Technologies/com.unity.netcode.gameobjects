@@ -127,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
 
             rpcManyClientsObject.ReceivedFrom.Clear();
             rpcManyClientsObject.Count = 0;
-            var target = new [] { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            var target = new[] { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
             param.Send.Target = rpcManyClientsObject.RpcTarget.Group(target, RpcTargetUse.Temp);
             rpcManyClientsObject.WithParamsClientRpc(param);
 

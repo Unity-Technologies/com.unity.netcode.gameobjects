@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -13,11 +12,11 @@ namespace Unity.Netcode.RuntimeTests.Rpc
 {
     [TestFixture(NetworkTopologyTypes.DistributedAuthority)]
     [TestFixture(NetworkTopologyTypes.ClientServer)]
-    internal class RpcInvocationTests: NetcodeIntegrationTest
+    internal class RpcInvocationTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 3;
 
-        public RpcInvocationTests(NetworkTopologyTypes topologyType) : base(topologyType) {}
+        public RpcInvocationTests(NetworkTopologyTypes topologyType) : base(topologyType) { }
 
         private GameObject m_Prefab;
 
