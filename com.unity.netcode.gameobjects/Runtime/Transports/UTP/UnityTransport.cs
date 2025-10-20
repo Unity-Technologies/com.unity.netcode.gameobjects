@@ -496,14 +496,11 @@ namespace Unity.Netcode.Transports.UTP
             // Latency, jitter and packet loss will be set by the network simulator in the tools
             // package. We just need to initialize the settings since otherwise these features will
             // not be enabled at all in the driver.
-            settings.WithSimulatorStageParameters(
-                // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush
-                // an entire reliable window every tick, then at 60 ticks per second we need to be
-                // able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
-                // pipeline stage. Double that since we handle both directions and round it up, and
-                // that's how we get 400 here.
-                maxPacketCount: 400,
-                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
+            // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush an entire reliable window every tick,
+            // then at 60 ticks per second we need to be able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
+            // pipeline stage. Double that since we handle both directions and round it up, and
+            // that's how we get 400 here.
+            settings.WithSimulatorStageParameters(maxPacketCount: 400, randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
             settings.WithNetworkSimulatorParameters();
 #endif
 
