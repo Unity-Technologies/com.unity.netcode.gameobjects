@@ -211,5 +211,10 @@ namespace Unity.Netcode
         public RpcParams Ext;
         public ServerRpcParams Server;
         public ClientRpcParams Client;
+
+        /// <summary>
+        /// Internal information used by <see cref="RpcMessageHelpers"/> to help handle this message.
+        /// </summary>
+        internal ulong SenderId;
     }
 }

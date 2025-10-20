@@ -51,7 +51,7 @@ namespace Unity.Netcode
                 RpcInvokePermission permission = NetworkBehaviour.__rpc_permission_table[networkBehaviour.GetType()][WrappedMessage.Metadata.NetworkRpcMethodId];
                 bool hasPermission = permission switch
                 {
-                    RpcInvokePermission.Anyone => true,
+                    RpcInvokePermission.Everyone => true,
                     RpcInvokePermission.Server => context.SenderId == networkManager.LocalClientId,
                     RpcInvokePermission.Owner => context.SenderId == networkBehaviour.OwnerClientId,
                     _ => false,

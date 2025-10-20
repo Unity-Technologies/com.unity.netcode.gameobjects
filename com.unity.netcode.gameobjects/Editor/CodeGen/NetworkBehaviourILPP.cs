@@ -1314,8 +1314,6 @@ namespace Unity.Netcode.Editor.CodeGen
             }
             var rpcHandlers = new List<(uint RpcMethodId, MethodDefinition RpcHandler, string RpcMethodName, CustomAttribute rpcAttribute)>();
 
-            bool isEditorOrDevelopment = assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD");
-
             foreach (var methodDefinition in typeDefinition.Methods)
             {
                 var rpcAttribute = CheckAndGetRpcAttribute(methodDefinition);
@@ -1436,16 +1434,18 @@ namespace Unity.Netcode.Editor.CodeGen
                         callMethod = callMethod.MakeGeneric(genericTypes.ToArray());
                     }
 
+                    var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
                     var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
 
-                    var invokePermission = RpcInvokePermission.Anyone;
+                    var invokePermission = isServerRpc ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone;
 
                     foreach (var attrField in rpcAttribute.Fields)
                     {
                         switch (attrField.Name)
                         {
                             case k_ServerRpcAttribute_RequireOwnership:
-                                invokePermission = (attrField.Argument.Type == rpcHandler.Module.TypeSystem.Boolean && (bool)attrField.Argument.Value) ? RpcInvokePermission.Owner : RpcInvokePermission.Anyone;
+                                var requireOwnership = attrField.Argument.Type == rpcHandler.Module.TypeSystem.Boolean && (bool)attrField.Argument.Value;
+                                invokePermission = requireOwnership ? RpcInvokePermission.Owner : RpcInvokePermission.Everyone;
                                 break;
                             case k_RpcAttribute_InvokePermission:
                                 invokePermission = (RpcInvokePermission)attrField.Argument.Value;
@@ -1583,17 +1583,24 @@ namespace Unity.Netcode.Editor.CodeGen
                         isValid = false;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.RpcAttribute_FullName &&
-                        !methodDefinition.Name.EndsWith("Rpc", StringComparison.OrdinalIgnoreCase))
-                    {
-                        m_Diagnostics.AddError(methodDefinition, "Rpc method must end with 'Rpc' suffix!");
-                        isValid = false;
-                    }
-
                     if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        isValid = false;
+                    }
+
+                    if (customAttributeType_FullName == CodeGenHelpers.RpcAttribute_FullName &&
+                        !methodDefinition.Name.EndsWith("Rpc", StringComparison.OrdinalIgnoreCase))
+                    {
+                        m_Diagnostics.AddError(methodDefinition, "Rpc method must end with 'Rpc' suffix!");
+
+                        // Extra compiler information if a method was defined as a local function
+                        if (methodDefinition.Name.Contains("Rpc|", StringComparison.OrdinalIgnoreCase) && methodDefinition.Name.StartsWith("g__", StringComparison.OrdinalIgnoreCase))
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} appears to be a local function. Local functions cannot be RPCs.");
+                        }
+
                         isValid = false;
                     }
 
@@ -1637,8 +1644,6 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                     case k_RpcAttribute_InvokePermission:
                         hasInvokePermission = true;
-                        break;
-                    default:
                         break;
                 }
             }
@@ -2206,12 +2211,29 @@ namespace Unity.Netcode.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour_getNetworkManager_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Stloc, netManLocIdx));
 
-                // if (networkManager == null || !networkManager.IsListening) return;
+                // if (networkManager == null || !networkManager.IsListening) { ... return };
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsListening_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
+
+                var logNextInstr = processor.Create(OpCodes.Nop);
+
+                // if (LogLevel.Normal > networkManager.LogLevel)
+                instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
+                instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
+                instructions.Add(processor.Create(OpCodes.Cgt));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
+                instructions.Add(processor.Create(OpCodes.Ceq));
+                instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
+
+                // Debug.LogError(...);
+                instructions.Add(processor.Create(OpCodes.Ldstr, "Rpc methods can only be invoked after starting the NetworkManager!"));
+                instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
+
+                instructions.Add(logNextInstr);
 
                 instructions.Add(returnInstr);
                 instructions.Add(lastInstr);
@@ -2341,7 +2363,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldloca, rpcAttributeParamsIdx));
                     instructions.Add(processor.Create(OpCodes.Initobj, m_AttributeParamsType_TypeRef));
 
-                    RpcAttribute.RpcAttributeParams dflt = default;
+                    RpcAttribute.RpcAttributeParams defaultParameters = default;
                     foreach (var field in rpcAttribute.Fields)
                     {
                         var found = false;
@@ -2351,8 +2373,8 @@ namespace Unity.Netcode.Editor.CodeGen
                             {
                                 found = true;
                                 var value = field.Argument.Value;
-                                var paramField = dflt.GetType().GetField(attrField.Name);
-                                if (value != paramField.GetValue(dflt))
+                                var paramField = defaultParameters.GetType().GetField(attrField.Name);
+                                if (value != paramField.GetValue(defaultParameters))
                                 {
                                     instructions.Add(processor.Create(OpCodes.Ldloca, rpcAttributeParamsIdx));
                                     var type = value.GetType();
@@ -2458,11 +2480,11 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{nameof(RpcParams)} must be the last parameter in a ClientRpc.");
+                            m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} is invalid. {nameof(RpcParams)} must be the last parameter in a ClientRpc.");
                         }
                         if (!isGenericRpc)
                         {
-                            m_Diagnostics.AddError($"Only Rpcs may accept {nameof(RpcParams)} as a parameter.");
+                            m_Diagnostics.AddError($"{methodDefinition.Name} is invalid. Only Rpcs may accept {nameof(RpcParams)} as a parameter.");
                         }
                         continue;
                     }
@@ -2897,24 +2919,15 @@ namespace Unity.Netcode.Editor.CodeGen
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
             var isClientRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ClientRpcAttribute_FullName;
             var isGenericRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.RpcAttribute_FullName;
-            var invokePermission = RpcInvokePermission.Anyone;
+            var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
                     case k_ServerRpcAttribute_RequireOwnership:
-                        invokePermission = (attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value) ? RpcInvokePermission.Owner : RpcInvokePermission.Anyone;
-                        break;
-                    case k_RpcAttribute_InvokePermission:
-                        invokePermission = (RpcInvokePermission)attrField.Argument.Value;
+                        requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                 }
-            }
-
-            // legacy ClientRpc should always be RpcInvokePermission.Server
-            if (isClientRpc)
-            {
-                invokePermission = RpcInvokePermission.Server;
             }
 
             rpcHandler.Body.InitLocals = true;
@@ -2942,7 +2955,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 processor.Append(lastInstr);
             }
 
-            if (isServerRpc && invokePermission == RpcInvokePermission.Owner)
+            if (isServerRpc && requireOwnership)
             {
                 var roReturnInstr = processor.Create(OpCodes.Ret);
                 var roLastInstr = processor.Create(OpCodes.Nop);
@@ -2972,42 +2985,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // Debug.LogError(...);
                 processor.Emit(OpCodes.Ldstr, "Only the owner can invoke a ServerRpc that requires ownership!");
-                processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
-
-                processor.Append(logNextInstr);
-
-                processor.Append(roReturnInstr);
-                processor.Append(roLastInstr);
-            } else if (invokePermission == RpcInvokePermission.Server)
-            {
-                var roReturnInstr = processor.Create(OpCodes.Ret);
-                var roLastInstr = processor.Create(OpCodes.Nop);
-
-                // if (rpcParams.Server.Receive.SenderClientId != NetworkManager.IsServer) { ... } return;
-                processor.Emit(OpCodes.Ldarg_2);
-                processor.Emit(OpCodes.Ldfld, m_RpcParams_Server_FieldRef);
-                processor.Emit(OpCodes.Ldfld, m_ServerRpcParams_Receive_FieldRef);
-                processor.Emit(OpCodes.Ldfld, m_ServerRpcParams_Receive_SenderClientId_FieldRef);
-                processor.Emit(OpCodes.Ldarg_0);
-                processor.Emit(OpCodes.Call, m_NetworkManager_getIsServer_MethodRef);
-                processor.Emit(OpCodes.Ceq);
-                processor.Emit(OpCodes.Ldc_I4, 0);
-                processor.Emit(OpCodes.Ceq);
-                processor.Emit(OpCodes.Brfalse, roLastInstr);
-
-                var logNextInstr = processor.Create(OpCodes.Nop);
-
-                // if (LogLevel.Normal > networkManager.LogLevel)
-                processor.Emit(OpCodes.Ldloc, netManLocIdx);
-                processor.Emit(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef);
-                processor.Emit(OpCodes.Ldc_I4, (int)LogLevel.Normal);
-                processor.Emit(OpCodes.Cgt);
-                processor.Emit(OpCodes.Ldc_I4, 0);
-                processor.Emit(OpCodes.Ceq);
-                processor.Emit(OpCodes.Brfalse, logNextInstr);
-
-                // Debug.LogError(...);
-                processor.Emit(OpCodes.Ldstr, "Only the server can invoke an Rpc with RpcInvokePermission.Server!");
                 processor.Emit(OpCodes.Call, m_Debug_LogError_MethodRef);
 
                 processor.Append(logNextInstr);

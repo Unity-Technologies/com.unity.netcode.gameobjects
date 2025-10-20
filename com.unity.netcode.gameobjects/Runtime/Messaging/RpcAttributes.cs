@@ -24,13 +24,15 @@ namespace Unity.Netcode
     public enum RpcInvokePermission
     {
         /// <summary>
-        /// Anyone can invoke the Rpc.
+        /// Any connected client can invoke the Rpc.
         /// </summary>
-        Anyone = 0,
+        Everyone = 0,
+
         /// <summary>
         /// Rpc can only be invoked by the server.
         /// </summary>
         Server,
+
         /// <summary>
         /// Rpc can only be invoked by the owner of the NetworkBehaviour.
         /// </summary>
@@ -86,9 +88,9 @@ namespace Unity.Netcode
         /// When true, only the owner of the object can execute this RPC
         /// </summary>
         /// <remarks>
-        /// Deprecated in favor of <see cref="RpcInvokePermission"/>.
+        /// Deprecated in favor of <see cref="InvokePermission"/>.
         /// </remarks>
-        [Obsolete]
+        [Obsolete("RequireOwnership is deprecated. Please use InvokePermission = RpcInvokePermission.Owner instead.")]
         public bool RequireOwnership;
 
         /// <summary>
@@ -125,7 +127,7 @@ namespace Unity.Netcode
     {
         /// <summary>
         /// When true, only the owner of the NetworkObject can invoke this ServerRpc.
-        /// This property overrides the base RpcAttribute.RequireOwnership.
+        /// This property sets the base <see cref="RpcAttribute.InvokePermission"/> to <see cref="RpcInvokePermission.Owner"/> when "RequireOwnership = true" or to  <see cref="RpcInvokePermission.Everyone"/> when "RequireOwnership = false". />.
         /// </summary>
         public new bool RequireOwnership;
 

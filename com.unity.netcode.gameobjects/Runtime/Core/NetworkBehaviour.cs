@@ -326,14 +326,16 @@ namespace Unity.Netcode
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             if (m_NetworkObject == null && !IsSpawned)
-            {   
+            {
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
-            else if (attributeParams.InvokePermission == RpcInvokePermission.Server && !IsServer)
+
+            if (attributeParams.InvokePermission == RpcInvokePermission.Server && !IsServer)
             {
                 throw new RpcException("This RPC can only be sent by the server.");
             }
-            else if ((attributeParams.RequireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
+
+            if ((attributeParams.RequireOwnership || attributeParams.InvokePermission == RpcInvokePermission.Owner) && !IsOwner)
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }
