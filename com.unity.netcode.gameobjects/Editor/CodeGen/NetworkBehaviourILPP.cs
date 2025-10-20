@@ -1478,8 +1478,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     instructions.Add(processor.Create(OpCodes.Ldnull));
                     instructions.Add(processor.Create(OpCodes.Ldftn, callMethod));
                     instructions.Add(processor.Create(OpCodes.Newobj, m_NetworkHandlerDelegateCtor_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)invokePermission));
                     instructions.Add(processor.Create(OpCodes.Ldstr, rpcMethodName));
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)invokePermission));
                     instructions.Add(processor.Create(OpCodes.Call, m_NetworkBehaviour___registerRpc_MethodRef));
                 }
 

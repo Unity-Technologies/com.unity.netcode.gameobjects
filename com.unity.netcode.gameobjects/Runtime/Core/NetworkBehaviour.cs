@@ -942,7 +942,7 @@ namespace Unity.Netcode
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __registerRpc(uint hash, RpcReceiveHandler handler, RpcInvokePermission permission, string rpcMethodName)
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission = RpcInvokePermission.Everyone)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             __rpc_func_table[GetType()][hash] = handler;
