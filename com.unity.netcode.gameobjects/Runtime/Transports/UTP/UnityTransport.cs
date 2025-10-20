@@ -1107,8 +1107,11 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         continue;
                     }
-                    var transportClientId = m_NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
-                    ExtractNetworkMetricsForClient(transportClientId);
+                    var transportClientIdReturn = m_NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
+                    if (transportClientIdReturn.Item2)
+                    {
+                        ExtractNetworkMetricsForClient(transportClientIdReturn.Item1);
+                    }
                 }
             }
             else
