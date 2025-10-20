@@ -941,8 +941,10 @@ namespace Unity.Netcode
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
+        // This is needed to add the RpcInvokePermission as even with an optional parameter, the change counts as a breaking change.
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName) => __registerRpc(hash, handler, rpcMethodName, RpcInvokePermission.Everyone);
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission = RpcInvokePermission.Everyone)
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             __rpc_func_table[GetType()][hash] = handler;
