@@ -8,7 +8,7 @@ Netcode for GameObjects also supports building games with a [distributed authori
 
 ## Ownership in client-server
 
-In a client-server topology, the server has ultimate authority over all NetworkObjects. Clients can request ownership of [specific objects](../components/core/networkobject.md#ownership), but the server has the final say in whether to grant or deny these requests.
+In a client-server topology, the server has ultimate authority over all NetworkObjects. Clients can request ownership of [specific objects](../components/core/networkobject.md#ownership), but the server has the final say in whether to grant or deny these requests.x
 
 ## Ownership in distributed authority
 

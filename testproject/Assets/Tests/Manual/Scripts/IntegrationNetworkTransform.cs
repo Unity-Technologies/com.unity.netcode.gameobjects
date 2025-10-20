@@ -241,8 +241,8 @@ namespace TestProject.ManualTests
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        private void AddLogEntryServerRpc(HalfPosDebugStates logEntry, ulong ownerId, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        private void AddLogEntryServerRpc(HalfPosDebugStates logEntry, ulong ownerId, RpcParams serverRpcParams = default)
         {
             if (!m_FirstInitialStateUpdates.ContainsKey(ownerId))
             {
@@ -316,7 +316,7 @@ namespace TestProject.ManualTests
 
             OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
         }
-#endif       
+#endif
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>

@@ -35,6 +35,8 @@ namespace Unity.Netcode.EditorTests
             var gameObject = new GameObject(nameof(AccessNetworkObjectTest));
             var networkBehaviour = gameObject.AddComponent<EmptyNetworkBehaviour>();
 
+            networkBehaviour.NoNetworkRpc();
+
             Assert.That(networkBehaviour.NetworkObject, Is.Null);
 
             var networkObject = gameObject.AddComponent<NetworkObject>();
@@ -77,6 +79,11 @@ namespace Unity.Netcode.EditorTests
 
         internal class EmptyNetworkBehaviour : NetworkBehaviour
         {
+            [Rpc(SendTo.Everyone)]
+            public void NoNetworkRpc()
+            {
+                Debug.Log("No Network Rpc");
+            }
         }
     }
 }
