@@ -192,12 +192,12 @@ namespace Unity.Netcode
             };
             var ownerClientId = networkObject == null ? senderId : networkObject.OwnerClientId;
             var clientIds = networkObject == null ? networkManager.ConnectionManager.ConnectedClientIds : networkObject.Observers.ToList();
-
+            var networkDelivery = MessageDeliveryType<DestroyObjectMessage>.DefaultDelivery;
             foreach (var clientId in clientIds)
             {
                 if (clientId != networkManager.LocalClientId && clientId != ownerClientId)
                 {
-                    networkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                    networkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
                 }
             }
         }

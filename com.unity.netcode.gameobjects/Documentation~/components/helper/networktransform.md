@@ -93,9 +93,8 @@ Fortunately, the authority of the NetworkTransform instance can make changes to 
 
 When disabling an axis to be synchronized for performance purposes, you should always consider that NetworkTransform won't send updates as long as the axis in question doesn't have a change that exceeds its [threshold](#thresholds) value. So, taking the scale example into consideration, it can be simpler to leave those axes enabled if you only ever plan on changing them once or twice because the CPU cost for checking that change isn't as expensive as the serialization and state update sending process. The associated axis threshold values can make the biggest impact on frequency of sending state updates that, in turn, will reduce the number of state updates sent per second at the cost of losing some motion resolution.
 
-:::info
-The __Axis to Synchronize__ properties that determine which axes are synchronized don't get synchronized with other instances. If you change ownership and there have been any adjustments to these values that are different from the network prefab's original settings, you'll need to keep those values synchronized and apply them upon the notification that ownership has changed.
-:::
+> [!NOTE]
+> The __Axis to Synchronize__ properties that determine which axes are synchronized don't get synchronized with other instances. If you change ownership and there have been any adjustments to these values that are different from the network prefab's original settings, you'll need to keep those values synchronized and apply them upon the notification that ownership has changed.
 
 ### Authority
 
@@ -114,9 +113,8 @@ When using a client-server network topology, you have the option of making the s
 - The most common use for an owner authority motion model is for player prefabs, when you want the player to have a more immediate response to their inputs.
 - The most common use for a server authority motion model is for things like AI, NPCs, items that can be picked up, and moving world objects (such as elevators, platforms, and doors).
 
-:::info
-When mixing authority motion models and using physics, latency will impact how (and when) things collide and requires additional consideration and planning.
-:::
+> [!NOTE]
+> When mixing authority motion models and using physics, latency will impact how (and when) things collide and requires additional consideration and planning.
 
 ### Thresholds
 
@@ -144,7 +142,7 @@ When __Tick Sync Children__ is enabled, the top-most parent NetworkTransform aut
 
 #### Network conditions to consider
 
-Sometimes network conditions are poor, with packets experiencing latency and potentially packet loss. When NetworkTransform [interpolation](#interpolation) is enabled, packet loss can mean undesirable visual artifacts such as stutter. To try and mitigate these issues, NetworkTransform defaults to sending delta state updates (such as position, rotation, or scale changes) as unreliable sequenced network-delivered messages. This ensures that if one state is lost then the `BufferedLinearInterpolator` can recover easily, because it doesn't have to wait precisely for the next state update and can just lose a small portion of the overall interpolated path. For example, with a `TickRate` setting of 30, you could lose 5 to 10% of the overall state updates over one second and still have a relatively similar interpolated path to that of a perfectly delivered 30 delta state updates generated path. The [__UseUnreliableDeltas__](#use-unreliable-deltas) NetworkTransform property, which defaults to disabled, controls whether you send your delta state updates unreliably or reliably.
+Sometimes network conditions are poor, with packets experiencing latency and potentially packet loss. When NetworkTransform [interpolation](#interpolation) is enabled, packet loss can mean undesirable visual artifacts such as stutter. To try and mitigate these issues, NetworkTransform defaults to sending delta state updates (such as position, rotation, or scale changes) as unreliable sequenced network-delivered messages. This ensures that if one state is lost then the `BufferedLinearInterpolator` can recover easily, because it doesn't have to wait precisely for the next state update and can just lose a small portion of the overall interpolated path. For example, with a `TickRate` setting of 30, you could lose 5 to 10% of the overall state updates over one second and still have a relatively similar interpolated path to that of a perfectly delivered 30 delta state updates generated path. The [__UseUnreliableDeltas__](#unreliable-state-updates) NetworkTransform property, which defaults to disabled, controls whether you send your delta state updates unreliably or reliably.
 
 Of course, you might wonder what would happen if 5% of the end of a jumping motion were dropped and how NetworkTransform might recover since each state update sent is only based on axial deltas defined by each axis threshold setting. The answer is that there is a small bandwidth penalty for sending standard delta state updates unreliably,  full axial frame synchronization, which assures that in the event there is loss each NetworkTransform will be "auto-corrected" once per second.
 
@@ -168,9 +166,8 @@ By default, NetworkTransform synchronizes the Transform of an object in world sp
 
 Enabling the __In Local Space__ property on a parented NetworkTransform can improve the synchronization of the transform when the object gets re-parented because the re-parenting won't change the local space Transform of the object (but does change the world space position) and you only need to update motion of the parented NetworkTransform relative to its parent (if the parent is moving and the child has no motion then there are no delta states to detect for the child but the child moves with the parent).
 
-:::info
-The authority instance does synchronize changes to the __In Local Space__ property. As such, you can make adjustments to this property on the authoritative side during runtime and the non-authoritative instances will automatically be updated.
-:::
+> [!NOTE]
+> The authority instance does synchronize changes to the __In Local Space__ property. As such, you can make adjustments to this property on the authoritative side during runtime and the non-authoritative instances will automatically be updated.
 
 #### Switch Transform Space When Parented
 
@@ -178,7 +175,188 @@ When changing from world space to local space and vice versa, NetworkTransform c
 
 This means that non-authority instances could still have state updates pending to be processed when a NetworkObject is parented (or de-parented) and those buffered state values are still expressed as world (or local) space values. Since parenting is not network tick synchronized, the non-authority instances could still have the previous (world or local space) state updates remaining to be processed. This can create a visual "popping" result on the non-authority instance because it has been placed in a different Transform space while processing the previous Transform space state updates.
 
-To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and the NetworkTransform will automatically detect when its NetworkObject has changed parented status and convert the pending states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) when parenting.
+To resolve this issue, you can enable the __Switch Transform Space When Parented__ configuration property and let NetworkTransform automatically detect when its associated NetworkObject has changed its parented status, automatically switch to local or world space (parented or not parented), and convert the pending interpolator(s) states within each respective axis's `BufferedLinearInterpolator` to the appropriate Transform space values. The end result yields a seamless transition between world and local (and vice versa) space when parenting. This is the recommended way to handle smooth transitions between world and local space when parenting.
+
+Things to consider when using __Switch Transform Space When Parented__:
+
+- This property is synchronized by the authority instance. If you disable it on the authority instance then it will synchronize this adjustment on all non-authority instances.
+- When using __Switch Transform Space When Parented__, it's best to not make adjustments to the __NetworkTransform.InLocalSpace__ field and let the NetworkTransform handle this for you.
+  - While you can still change __In Local Space__ directly via script while __Switch Transform Space When Parented__ is enabled, this could impact the end results. It is recommended to not adjust __In Local Space__ when __Switch Transform Space When Parented__ is enabled.
+
+### Parenting
+
+NetworkObject parenting can become complex when:
+
+- You are parenting a NetworkObject while it's [in motion](#spawning-or-in-motion).
+- You are parenting a NetworkObject [while spawning](#when-spawning) (depending upon network topology and the desired authority motion model).
+
+#### Spawning or in motion
+
+The __Switch Transform Space When Parented__ field is intended to smooth the transition between world and local spaces. This setting is specifically designed to handle converting all of the non-authority instance's currently queued `NetworkTransformState`s to the appropriate transform space. When parenting, the transform space is automatically switched to local (transform) space on the authority instance that will then send this change in the transform space on the next network tick. This feature can also handle multiple parenting actions that occur on the same frame or over a few frames that are all within the normal network tick update period.
+
+When __Switch Transform Space When Parented__ is enabled, each parenting action will generate a unique transform message that is immediately added to the outbound message queued to preserve the order of operations. This means for each parenting event that occurs, a transform message will be generated. As such, it is recommended to not parent the same object dozens of times within the same frame to keep message traffic minimalized.
+
+
+> [!NOTE]
+> __Switch Transform Space When Parented__ is designed to work with the Unity transform's world and local space capabilities. However, when using a Rigidbody component and setting the NetworkRigidbody to use the Rigidbody for motion, the position and rotation values being synchronized are based on the Rigidbody's position and rotation values and not the Unity transform values. The Rigidbody position and rotation values are separate PhysX values that are adjusted during the `FixedUpdate` update loop stage. Because PhysX has no concept of local space, it's not recommended to enable this field when the authority is synchronizing the Rigidbody's position and rotation values. [You can read more about parenting rigid bodies here](../../advanced-topics//physics.md).
+
+#### When spawning
+
+If you want to handle parenting during the spawn sequence of a NetworkObject, then it's recommended that you create a custom NetworkTransform that handles parenting before the `base.OnNetworkSpawn` method is invoked. This ensures that any necessary modifications (to parenting and transform adjustments) are applied before the NetworkTransform has initialized.
+
+```c#
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
+
+public class ParentAndAdjustOffset : NetworkTransform
+{
+    public GameObject ParentObject;
+    public Vector3 Offset;
+
+    /// <summary>
+    /// Prior to being initialized in OnNetworkSpawn, <see cref="NetworkTransform.CanCommitToTransform"/>
+    /// is not yet initialized. We can determine who is going to be the motion authority this way.
+    /// </summary>
+    private bool IsMotionAuthority()
+    {
+        return OnIsServerAuthoritative() && !NetworkManager.DistributedAuthorityMode ? IsServer : IsOwner;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        // Handle parenting and applying offset prior to
+        // invoking the base OnNetworkSpawn method
+        if (IsMotionAuthority())
+        {
+            NetworkObject.TrySetParent(ParentObject, false);
+            if (!SwitchTransformSpaceWhenParented)
+            {
+                InLocalSpace = true;
+            }
+            transform.localPosition = Offset;
+        }
+        // NetworkTransform initializes
+        base.OnNetworkSpawn();
+    }
+}
+```
+
+The method above works under most conditions, but can have unexpected results when using:
+
+- A client-server network topology.
+- An owner authority motion model (when __Authority Mode__ is set to owner).
+- You are spawning with ownership.
+
+Because a client-server network topology requires the server (or host) to spawn the object, while the network prefab is spawning on the server side the authority will already have been applied to the NetworkTransform. To avoid issues with this particular scenario, it's recommended that you spawn the network prefab initially with the server as the motion authority and change ownership to the intended client when finishing the spawn sequence on the server.
+
+```c#
+using Unity.Netcode;
+using UnityEngine;
+
+public class ObjectSpawner : NetworkBehaviour
+{
+    public NetworkObject ObjectToSpawn;
+    // Consider the ParentObject as having already been spawned.
+    public NetworkObject ParentObject;
+
+    public Vector3 Offset;
+
+    public void SpawnObject(ulong ownerId)
+    {
+        var instance = Instantiate(ObjectToSpawn.gameObject).GetComponent<NetworkObject>();
+        var parentAndAdjustOffset = GetComponent<ParentAndAdjustOffset>();
+        parentAndAdjustOffset.ParentObject = ParentObject;
+        parentAndAdjustOffset.Offset = Offset;
+        // Both of these calls are collapsed into a single CreateObjectMessage
+        instance.Spawn();
+        instance.ChangeOwnership(ownerId);
+    }
+}
+```
+
+This results in the spawned object running through the spawn sequence with the server as the authority to ensure that any changes are properly applied, and then immediately after invoking the `Spawn` method it changes ownership. The net result of these two scripts generates a single `CreateObjectMessage`.
+
+When working with an owner authority motion model, you might want to handle all of the parenting on the intended owning client side and it may seem convenient to use `NetworkObject.SpawnWithOwnership`. But this can produce visual anomalies on the host side (if you are using a host vs a server) where the instance on the host side will have an initial spawn position and then after a period of time, driven by the latency between the owning client and the host, the parenting and offset values will be applied to the host-side instance. To further complicate matters, the host then forwards these messages to any other connected client that increases the latency from the moment the object was spawned to the moment it has been parented and an offset applied.
+
+The messages generated (under this specific scenario) would be:
+
+- (Server)
+  - Spawns the object
+    - One `CreateObjectMessage` is sent to all connected clients.
+- (Authority Client)
+  - Parents the object.
+    - One `ParentSyncMessage` is sent to the host.
+      - The host then forwards this to the other clients.
+  - Applies an offset.
+    - At the end of the current tick when the parenting and offset was applied, a `NetworkTransformMessage` is generated to update the object's transform values with the offset applied. The delay between the parenting message and this message could be close to the tick frequency (default would be ~33ms).
+      - Upon receiving this message, the host forwards it to the rest of the clients.
+
+This can produce visual anomalies because of the time delta between when the object is spawned and when the object is both parented and an offset applied, which is all dependent on the latency between the owning client and the host, as well as the latency between the host and non-owning clients.
+
+To avoid this kind of timing issue, it's recommended (in a client-server network topology when using an owner authoritative motion model) to spawn with the server as the initial owner and then change ownership afterwards where all of the actions (spawning, parenting, and applying a local space offset) are included in the single `CreateObjectMessage`. It reduces the bandwidth cost per spawn and avoids having to deal with the above latency-driven timing issues.
+
+#### Other options
+
+Netcode for GameObjects also has the [AttachableBehaviour](../helper/attachablebehaviour.md) component that provides an alternative way to handle parenting without having to use the traditional NetworkObject parenting approach. You can also use a distributed authority network topology, since that allows clients to spawn objects locally where they can apply modifications (as if they were the host) prior to the `CreateObjectMessage` being sent to all of the other connected clients.
+
+### Teleport and SetState
+
+When you want to move an object to a new position without having non-authoritative instances interpolate between the current and new position, you can use either the `NetworkTransform.Teleport` or `NetworkTransform.SetState` methods. Both of these methods effectively do the same thing, but they have different intended use cases.
+
+#### Intended use cases
+
+- Invoke on already spawned objects.
+  - You can invoke these methods during the spawn process, but it's recommended to directly apply the transform settings when spawning.
+- Invoking either of these methods consumes state updates for the current tick.
+  - This means that if you invoke either of these two methods multiple times in a single tick you will only get the current values of the transform. Calls to these two methods do not stack.
+
+If you need to make multiple teleports in a short period of time, you can create a custom derived NetworkTransform class that notifies the authority when a state update (like a teleport) has been pushed by deriving from `NetworkTransform.OnAuthorityPushTransformState`. This allows you to queue up multiple teleports and apply them once per tick.
+
+Here is an example of how you could teleport to multiple locations over a short period of time (with one network tick between each teleport):
+
+```c#
+using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
+
+public class TeleportMultiplePoints : NetworkTransform
+{
+    private List<Vector3> m_TeleportPositions = new List<Vector3>();
+
+    public void SetTeleportPoint(Vector3 point)
+    {
+        var teleportInProgress = m_TeleportPositions.Count > 0;
+        m_TeleportPositions.Add(point);
+        if (!teleportInProgress)
+        {
+            TeleportToNextPoint();
+        }
+    }
+
+    private void TeleportToNextPoint()
+    {
+        var position = m_TeleportPositions.First();
+        m_TeleportPositions.RemoveAt(0);
+        SetState(posIn: position, teleportDisabled: false);
+    }
+
+    /// <summary>
+    /// Invoked only on the authority side when a NetworkTransformState
+    /// has been pushed (sent).
+    /// </summary>
+    protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+    {
+        if (networkTransformState.WasTeleported && m_TeleportPositions.Count > 0)
+        {
+            TeleportToNextPoint();
+        }
+        base.OnAuthorityPushTransformState(ref networkTransformState);
+    }
+}
+```
+The overall idea is that you should only perform one teleport (set state) per tick on an already spawned NetworkObject.
 
 ### Interpolation
 
@@ -279,9 +457,8 @@ Quaternion synchronization comes with a price, however. It increases the bandwid
 
 ![image](../../images/networktransform/NetworkTransformQuaternionSynch.png)
 
-:::note
-The rotation synchronization axis checkboxes are no longer available when __Use Quaternion Synchronization__ is enabled (since synchronizing the quaternion of a transform always updates all rotation axes) and __Use Quaternion Compression__ becomes a visible option.
-:::
+> [!NOTE]
+> The rotation synchronization axis checkboxes are no longer available when __Use Quaternion Synchronization__ is enabled (since synchronizing the quaternion of a transform always updates all rotation axes) and __Use Quaternion Compression__ becomes a visible option.
 
 ### Use Quaternion Compression
 

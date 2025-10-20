@@ -146,9 +146,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSceneManager : IDisposable
     {
-        private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
         internal const int InvalidSceneNameOrPath = -1;
-
+        private NetworkDelivery m_NetworkDelivery;
         // Used to be able to turn re-synchronization off
         internal static bool DisableReSynchronization;
 
@@ -815,6 +814,7 @@ namespace Unity.Netcode
         {
             NetworkManager = networkManager;
             SceneEventDataStore = new Dictionary<uint, SceneEventData>();
+            m_NetworkDelivery = MessageDeliveryType<SceneEventMessage>.DefaultDelivery;
 
             // Generates the scene name to hash value
             GenerateScenesInBuild();
@@ -1079,7 +1079,7 @@ namespace Unity.Netcode
                 {
                     EventData = sceneEvent,
                 };
-                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, NetworkManager.ServerClientId);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
             }
 
@@ -1093,7 +1093,7 @@ namespace Unity.Netcode
                     EventData = sceneEvent,
                 };
                 var sendTarget = distributedAuthority && !NetworkManager.DAHost ? NetworkManager.ServerClientId : clientId;
-                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, sendTarget);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, sendTarget);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEvent.SceneEventType, SceneNameFromHash(sceneEvent.SceneHash), size);
             }
         }
@@ -1226,7 +1226,7 @@ namespace Unity.Netcode
                     EventData = sceneEventData
                 };
 
-                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ConnectedClientsIds);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, NetworkManager.ConnectedClientsIds);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(
                     NetworkManager.ConnectedClientsIds,
                     (uint)sceneEventProgress.SceneEventType,
@@ -1433,7 +1433,7 @@ namespace Unity.Netcode
                 // This might seem like it needs more logic to determine the target, but the only scenario where we send to the session owner is if the
                 // current instance is the DAHost.
                 var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
             }
             EndSceneEvent(sceneEventId);
@@ -1822,7 +1822,7 @@ namespace Unity.Netcode
                     if (!keyValuePairBySceneHandle.Value.IsPlayerObject)
                     {
                         // All in-scene placed NetworkObjects default to being owned by the server
-                        NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePairBySceneHandle.Value,
+                        NetworkManager.SpawnManager.AuthorityLocalSpawn(keyValuePairBySceneHandle.Value,
                             NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, NetworkManager.LocalClientId, true);
                     }
                 }
@@ -1888,7 +1888,7 @@ namespace Unity.Netcode
                     EventData = sceneEventData,
                 };
                 var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
                 NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
             }
             else
@@ -2053,11 +2053,11 @@ namespace Unity.Netcode
             var size = 0;
             if (NetworkManager.DistributedAuthorityMode && !NetworkManager.DAHost)
             {
-                size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+                size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, NetworkManager.ServerClientId);
             }
             else
             {
-                size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, clientId);
+                size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, clientId);
             }
             NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, "", size);
 
@@ -2210,7 +2210,7 @@ namespace Unity.Netcode
             {
                 EventData = responseSceneEventData
             };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
 
             NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)responseSceneEventData.SceneEventType, sceneName, size);
 
@@ -2343,7 +2343,7 @@ namespace Unity.Netcode
                                     EventData = sceneEventData,
                                 };
                                 var target = NetworkManager.DAHost ? NetworkManager.CurrentSessionOwner : NetworkManager.ServerClientId;
-                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, target);
+                                var size = NetworkManager.ConnectionManager.SendMessage(ref message, m_NetworkDelivery, target);
                                 NetworkManager.NetworkMetrics.TrackSceneEventSent(target, (uint)sceneEventData.SceneEventType, SceneNameFromHash(sceneEventData.SceneHash), size);
                             }
                             else
@@ -2598,7 +2598,7 @@ namespace Unity.Netcode
                                 {
                                     continue;
                                 }
-                                NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, client);
+                                NetworkManager.MessageManager.SendMessage(ref message, m_NetworkDelivery, client);
                             }
                         }
                     }
@@ -2617,7 +2617,7 @@ namespace Unity.Netcode
                             {
                                 EventData = sceneEventData,
                             };
-                            NetworkManager.MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, sceneEventData.TargetClientId);
+                            NetworkManager.MessageManager.SendMessage(ref message, m_NetworkDelivery, sceneEventData.TargetClientId);
                             EndSceneEvent(sceneEventData.SceneEventId);
                             return;
                         }

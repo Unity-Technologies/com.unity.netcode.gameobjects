@@ -188,11 +188,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void HandleRedistributionToClients()
         {
-            if (!DistributedAuthorityMode || !RedistributeToClients || NetworkConfig.EnableSceneManagement || ShutdownInProgress)
-            {
-                return;
-            }
-
             foreach (var clientId in ClientsToRedistribute)
             {
                 SpawnManager.DistributeNetworkObjects(clientId);
@@ -262,17 +257,17 @@ namespace Unity.Netcode
             {
                 SessionOwner = clientId,
             };
-
+            var delivery = MessageDeliveryType<SessionOwnerMessage>.DefaultDelivery;
             if (CMBServiceConnection)
             {
-                ConnectionManager.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableSequenced, ServerClientId);
+                ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, ServerClientId);
             }
             else
             {
                 var clients = ConnectionManager.ConnectedClientIds.Where(c => c != LocalClientId).ToArray();
                 foreach (var targetClient in clients)
                 {
-                    ConnectionManager.SendMessage(ref sessionOwnerMessage, NetworkDelivery.ReliableSequenced, targetClient);
+                    ConnectionManager.SendMessage(ref sessionOwnerMessage, delivery, targetClient);
                 }
             }
         }
@@ -451,6 +446,17 @@ namespace Unity.Netcode
                         if (DistributedAuthorityMode)
                         {
                             SpawnManager.DeferredDespawnUpdate(ServerTime);
+                        }
+
+                        // Send any pending objects to be shown (in-between ticks)
+                        SpawnManager.HandleNetworkObjectShow(true);
+
+                        // Handles object redistribution when scene management is disabled and
+                        // using a distributed authority network topology. Only set specific to
+                        // this configuration and when a client connects.
+                        if (RedistributeToClients)
+                        {
+                            HandleRedistributionToClients();
                         }
 
                         // Update any NetworkObject's registered to notify of scene migration changes.
@@ -1569,13 +1575,27 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
             EndNetworkSession();
 #endif
-
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
-            OnPreShutdown?.Invoke();
+            // Always wrap events that can invoke user script in a
+            // try-catch to assure any proceeding script is still
+            // executed.
+            // Example:
+            // In editor some script registered to OnPreShutdown
+            // throws and exception. The UnregisterAllNetworkUpdates
+            // will never be invoked which means it will continue to
+            // be invoked outside of play mode.
+            try
+            {
+                OnPreShutdown?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             this.UnregisterAllNetworkUpdates();
 
@@ -1662,30 +1682,59 @@ namespace Unity.Netcode
             NetworkTickSystem = null;
         }
 
-
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Abrupt shutdown (or immediate exit of play mode).
+            // Assure we unregister from network updates.
+            this.UnregisterAllNetworkUpdates();
+
             // Make sure ShutdownInProgress returns true during this time
             m_ShuttingDown = true;
+            // Exit early if this is invoked and the Singleton has yet to be set.
+            if (Singleton == null && !IsListening)
+            {
+                return;
+            }
             OnDestroy();
+#if UNITY_EDITOR
+            if (Singleton != null)
+            {
+                Debug.LogWarning($"[nameof({nameof(OnApplicationQuit)}][{nameof(NetworkManager)}][{name}] Singleton is not null after invoking OnDestroy. Singleton instance name is {Singleton.name}. Do you have more than one {nameof(NetworkManager)} instance in the DDOL scene?");
+            }
+#endif
         }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
         {
-            ShutdownInternal();
+            try
+            {
+                ShutdownInternal();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
-            // Notify we are destroying NetworkManager
-            OnDestroying?.Invoke(this);
+            // try-catch to assure we reset the Singleton and, if in the editor,
+            // unscubscribe from playModeStateChanged.
+            try
+            {
+                // Notify we are destroying NetworkManager
+                OnDestroying?.Invoke(this);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
 
             if (Singleton == this)
             {
                 Singleton = null;
             }
-
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged -= ModeChanged;
 #endif

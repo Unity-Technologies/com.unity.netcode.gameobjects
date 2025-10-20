@@ -41,11 +41,14 @@ The default `NetworkObject.Spawn` method assumes server-side ownership:
 GetComponent<NetworkObject>().Spawn();
 ```
 
-To spawn NetworkObjects with ownership use the following:
+To spawn a `NetworkObject` that is [owned](../../terms-concepts/ownership.md) by a different game client than the one doing the spawning, use the following:
 
 ```csharp
 GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
 ```
+> [!NOTE]
+> The `SpawnWithOwnership` method allows a game client to spawn an object that it doesn't own. This means any owner-specific checks during the spawn sequence will not be invoked on the spawn authority side. Using `SpawnWithOwnership` can result in unexpected behavior if the spawn authority makes any additional post-spawn adjustments within the same frame.
+> To avoid potential issues, it's recommended to use `Spawn` if the spawn authority needs to make any adjustments post-spawn. After adjusting, the spawn authority can immediately follow with a call to `ChangeOwnership`.
 
 To change ownership, use the `ChangeOwnership` method:
 
@@ -58,6 +61,9 @@ To give ownership back to the server use the `RemoveOwnership` method:
 ```csharp
 GetComponent<NetworkObject>().RemoveOwnership();
 ```
+> [!NOTE]
+> `RemoveOwnership` isn't supported when using a [distributed authority network topology](../../terms-concepts/distributed-authority.md).
+
 
 To see if the local client is the owner of a NetworkObject, you can check the [`NetworkBehaviour.IsOwner`](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest?subfolder=/api/Unity.Netcode.NetworkBehaviour.IsOwner.html) property.
 
