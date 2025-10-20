@@ -2229,6 +2229,7 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 var returnInstr = processor.Create(OpCodes.Ret);
                 var lastInstr = processor.Create(OpCodes.Nop);
+                var logNextInstr = processor.Create(OpCodes.Nop);
 
                 // networkManager = this.NetworkManager;
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
@@ -2237,27 +2238,15 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 // if (networkManager == null || !networkManager.IsListening) { ... return };
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
+                instructions.Add(processor.Create(OpCodes.Brfalse_S, logNextInstr));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, m_NetworkManager_getIsListening_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
-
-                var logNextInstr = processor.Create(OpCodes.Nop);
-
-                // if (LogLevel.Normal > networkManager.LogLevel)
-                instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Ldfld, m_NetworkManager_LogLevel_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)LogLevel.Normal));
-                instructions.Add(processor.Create(OpCodes.Cgt));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
-                instructions.Add(processor.Create(OpCodes.Ceq));
-                instructions.Add(processor.Create(OpCodes.Brfalse, logNextInstr));
+                instructions.Add(processor.Create(OpCodes.Brtrue_S, lastInstr));
 
                 // Debug.LogError(...);
+                instructions.Add(logNextInstr);
                 instructions.Add(processor.Create(OpCodes.Ldstr, "Rpc methods can only be invoked after starting the NetworkManager!"));
                 instructions.Add(processor.Create(OpCodes.Call, m_Debug_LogError_MethodRef));
-
-                instructions.Add(logNextInstr);
 
                 instructions.Add(returnInstr);
                 instructions.Add(lastInstr);
