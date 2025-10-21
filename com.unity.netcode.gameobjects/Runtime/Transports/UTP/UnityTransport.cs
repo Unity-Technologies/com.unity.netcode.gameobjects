@@ -428,8 +428,11 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
-
+#if UNITY_6000_2_OR_NEWER
+            TransportInitialized?.Invoke(GetEntityId(), m_Driver);
+#else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
+#endif
         }
 
         private void DisposeInternals()
@@ -446,7 +449,11 @@ namespace Unity.Netcode.Transports.UTP
 
             m_SendQueue.Clear();
 
+#if UNITY_6000_2_OR_NEWER
+            TransportDisposed?.Invoke(GetEntityId());
+#else
             TransportDisposed?.Invoke(GetInstanceID());
+#endif
         }
 
         /// <summary>
