@@ -111,6 +111,11 @@ namespace Unity.Netcode.RuntimeTests
 
             foreach (var networkManager in m_NetworkManagers)
             {
+                if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(m_AuthoritySeqControllerInstance.NetworkObjectId))
+                {
+                    hasErrors = true;
+                    continue;
+                }
                 var nonAuthorityInstance = networkManager.SpawnManager.SpawnedObjects[m_AuthoritySeqControllerInstance.NetworkObjectId].GetComponent<SpawnSequenceController>();
                 var nonAuthorityEulerRotation = nonAuthorityInstance.GetSpaceRelativeRotation().eulerAngles;
 
