@@ -1171,14 +1171,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner
-        {
-            get
-            {
-                Debug.Log($"[Client-{NetworkManager.LocalClientId}][Object-{NetworkObjectId}] Owned by {OwnerClientId}");
-                return NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
-            }
-        }
+        public bool IsOwner => NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
@@ -2224,12 +2217,12 @@ namespace Unity.Netcode
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
             var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
+            Debug.Log($"something is broken! isAuthority={isAuthority} | HasAuthority={HasAuthority} | (AllowOwnerToParent && IsOwner)={(AllowOwnerToParent && IsOwner)}");
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
             if (!isAuthority && !NetworkManager.ShutdownInProgress)
             {
-                Debug.LogError("We don't have authority here");
                 return false;
             }
 
@@ -2293,7 +2286,6 @@ namespace Unity.Netcode
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
             isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
-            Debug.Log($"[Client-{NetworkManager.LocalClientId}][Object-{NetworkObjectId}] OnTransformParentChanged. HasAuthority={HasAuthority}, AuthorityAppliedParenting={AuthorityAppliedParenting}, AllowOwnerToParent && IsOwner={AllowOwnerToParent && IsOwner}");
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
             // If we do not have authority and we are spawned
@@ -2363,8 +2355,6 @@ namespace Unity.Netcode
             // This can be reset within ApplyNetworkParenting
             var authorityApplied = AuthorityAppliedParenting;
             ApplyNetworkParenting(removeParent);
-
-
 
             var message = new ParentSyncMessage
             {
