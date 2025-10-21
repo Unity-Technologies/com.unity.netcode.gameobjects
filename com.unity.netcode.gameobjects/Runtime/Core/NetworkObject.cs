@@ -1171,7 +1171,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner => NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
+        public bool IsOwner
+        {
+            get
+            {
+                Debug.Log($"[Client-{NetworkManager.LocalClientId}][Object-{NetworkObjectId}] Owned by {OwnerClientId}");
+                return NetworkManager != null && OwnerClientId == NetworkManager.LocalClientId;
+            }
+        }
 
         /// <summary>
         /// Gets Whether or not the object is owned by anyone
@@ -2222,6 +2229,7 @@ namespace Unity.Netcode
             // If we are shutting down and don't have authority then allow it.
             if (!isAuthority && !NetworkManager.ShutdownInProgress)
             {
+                Debug.LogError("We don't have authority here");
                 return false;
             }
 
@@ -2285,6 +2293,7 @@ namespace Unity.Netcode
             // With distributed authority, we need to track "valid authoritative" parenting changes.
             // So, either the authority or AuthorityAppliedParenting is considered a "valid parenting change".
             isAuthority = HasAuthority || AuthorityAppliedParenting || (AllowOwnerToParent && IsOwner);
+            Debug.Log($"[Client-{NetworkManager.LocalClientId}][Object-{NetworkObjectId}] OnTransformParentChanged. HasAuthority={HasAuthority}, AuthorityAppliedParenting={AuthorityAppliedParenting}, AllowOwnerToParent && IsOwner={AllowOwnerToParent && IsOwner}");
             var distributedAuthority = NetworkManager.DistributedAuthorityMode;
 
             // If we do not have authority and we are spawned
@@ -2355,6 +2364,8 @@ namespace Unity.Netcode
             var authorityApplied = AuthorityAppliedParenting;
             ApplyNetworkParenting(removeParent);
 
+
+
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
@@ -2376,47 +2387,29 @@ namespace Unity.Netcode
                 m_CachedWorldPositionStays = true;
             }
 
-            // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
+            // If we're not the server, we should tell the server about this parent change
+            if (!NetworkManager.IsServer)
             {
-                if (!NetworkManager.DAHost)
+                // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
+                if (distributedAuthority && Observers.Count <= 1)
                 {
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, 0);
                     return;
                 }
-                else
-                {
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
-                    }
-                }
+
+                NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                return;
             }
-            else
+
+            // Otherwise we are a Server (client-server or DAHost). Send to all observers
+            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
             {
-                // Otherwise we are running in client-server =or= this has to be a DAHost instance.
-                // Send to all connected clients.
-                unsafe
+                if (clientId == NetworkManager.ServerClientId)
                 {
-                    var maxCount = NetworkManager.ConnectedClientsIds.Count;
-                    ulong* clientIds = stackalloc ulong[maxCount];
-                    int idx = 0;
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        if (Observers.Contains(clientId))
-                        {
-                            clientIds[idx++] = clientId;
-                        }
-                    }
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientIds, idx);
+                    continue;
+                }
+                if (Observers.Contains(clientId))
+                {
+                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }
