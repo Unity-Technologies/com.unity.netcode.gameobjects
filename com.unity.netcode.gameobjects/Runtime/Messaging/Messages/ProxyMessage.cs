@@ -60,6 +60,10 @@ namespace Unity.Netcode
                 // Do not handle the message if the sender does not have permission to do so.
                 if (!hasPermission)
                 {
+                    if (networkManager.LogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogErrorServer($"Rpc message received from client-{context.SenderId} who does not have permission to perform this operation!");
+                    }
                     return;
                 }
 
@@ -68,20 +72,20 @@ namespace Unity.Netcode
 
 
             var nonServerIds = new NativeList<ulong>(Allocator.Temp);
-            for (var i = 0; i < TargetClientIds.Length; ++i)
+            foreach (var client in TargetClientIds)
             {
-                if (!observers.Contains(TargetClientIds[i]))
+                if (!observers.Contains(client))
                 {
                     continue;
                 }
 
-                if (TargetClientIds[i] == NetworkManager.ServerClientId)
+                if (client == NetworkManager.ServerClientId)
                 {
                     WrappedMessage.Handle(ref context);
                 }
                 else
                 {
-                    nonServerIds.Add(TargetClientIds[i]);
+                    nonServerIds.Add(client);
                 }
             }
 

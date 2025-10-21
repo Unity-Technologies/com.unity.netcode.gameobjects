@@ -80,7 +80,7 @@ namespace Unity.Netcode
                 {
                     if (networkManager.LogLevel <= LogLevel.Developer)
                     {
-                        Debug.LogError("Rpc message received from a client who does not have permission to perform this operation!");
+                        NetworkLog.LogErrorServer($"Rpc message received from client-{rpcParams.SenderId} who does not have permission to perform this operation!");
                     }
                     return;
                 }
