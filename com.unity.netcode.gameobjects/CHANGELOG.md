@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added NetworkRigidbody documentation section. (#3664)
+- Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
 
 ### Changed
 
@@ -24,6 +25,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- On Unity 6.5 some `SceneMap` fields that use an `int` to represent a `SceneHandle` are deprecated. (#3734)
 
 ### Removed
 
