@@ -597,9 +597,7 @@ namespace Unity.Netcode.Transports.UTP
 #if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
                 NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
 #endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-#endif
             };
 
             var unreliableSequencedFragmented = new NetworkPipelineStageId[]
@@ -609,9 +607,7 @@ namespace Unity.Netcode.Transports.UTP
 #if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
                 NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
 #endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-#endif
             };
 
             var reliableSequenced = new NetworkPipelineStageId[]
@@ -620,9 +616,7 @@ namespace Unity.Netcode.Transports.UTP
 #if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
                 NetworkPipelineStageId.Get<SimulatorPipelineStage>(),
 #endif
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-#endif
             };
 
             unreliableFragmentedPipelineStages = new(unreliableFragmented, Allocator.Temp);
@@ -1084,12 +1078,10 @@ namespace Unity.Netcode.Transports.UTP
                 // current frame.
                 m_Driver.ScheduleFlushSend(default).Complete();
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 if (m_NetworkManager)
                 {
                     ExtractNetworkMetrics();
                 }
-#endif
             }
             base.OnPostLateUpdate();
         }
@@ -1099,7 +1091,6 @@ namespace Unity.Netcode.Transports.UTP
             DisposeInternals();
         }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private void ExtractNetworkMetrics()
         {
             if (m_NetworkManager.IsServer)
@@ -1167,7 +1158,6 @@ namespace Unity.Netcode.Transports.UTP
                 networkMetricsContext->PacketReceivedCount = 0;
             }
         }
-#endif
 
         private int ExtractRtt(NetworkConnection networkConnection)
         {
@@ -1713,9 +1703,7 @@ namespace Unity.Netcode.Transports.UTP
 #endif
             }
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-#endif
 
             GetDefaultPipelineConfigurations(
                 out var unreliableFragmentedPipelineStages,
