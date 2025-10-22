@@ -1,7 +1,7 @@
 # Netcode for GameObjects
 
 [![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://discussions.unity.com/tag/Netcode-for-GameObjects) [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/unity)
-[![Manual](https://img.shields.io/badge/docs-manual-informational.svg)](https://docs.unity3d.com/Manual/com.unity.netcode.gameobjects.html) [![API](https://img.shields.io/badge/docs-api-informational.svg)](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.6/api/index.html)
+[![Manual](https://img.shields.io/badge/docs-manual-informational.svg)](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest) [![API](https://img.shields.io/badge/docs-api-informational.svg)](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest/?subfolder=/api/Unity.Netcode.NetworkManager.html)
 
 [![GitHub Release](https://img.shields.io/github/release/Unity-Technologies/com.unity.netcode.gameobjects.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/releases/latest)
 
@@ -9,13 +9,13 @@
 
 Welcome to the Netcode for GameObjects repository.
 
-Netcode for GameObjects is a Unity package that provides networking capabilities to GameObject & MonoBehaviour workflows. The framework is interoperable with many low-level transports, including the official [Unity Transport Package](https://docs.unity3d.com/Manual/com.unity.transport.html).
+Netcode for GameObjects is a Unity package that provides networking capabilities to GameObject & MonoBehaviour workflows. The framework is interoperable with many low-level transports, including the official [Unity Transport Package](https://docs.unity3d.com/Packages/com.unity.transport@latest).
 
 ### Getting Started
 
 Visit the [Multiplayer Docs Site](https://docs.unity3d.com/Manual/multiplayer.html) for package & API documentation, as well as information about several samples which leverage the Netcode for GameObjects package.
 
-You can also jump right into our [Hello World](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.6/manual/tutorials/helloworld.html) guide for a taste of how to use the framework for basic networked tasks.
+You can also use our [quickstart guide](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@latest/?subfolder=/manual/tutorials/get-started-with-ngo.html) to get a taste of how to use the framework for basic networked tasks.
 
 ### Community and Feedback
 
