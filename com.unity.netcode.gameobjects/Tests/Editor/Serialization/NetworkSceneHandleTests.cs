@@ -14,13 +14,20 @@ namespace Unity.Netcode.EditorTests
             Assert.That(writer.Position, Is.EqualTo(0), "Writer position should be zero");
 
             writer.WriteValue(handle);
-
-            Assert.That(writer.Position, Is.EqualTo(sizeof(ulong)), "Writer position should not be beyond size");
+#if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
+            Assert.That(writer.Position, Is.EqualTo(sizeof(ulong)), $"Writer position should not be beyond size! Expected: {sizeof(ulong)} Actual: {writer.Position}");
+#else
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int)), $"Writer position should not be beyond size! Expected: {sizeof(int)} Actual: {writer.Position}");
+#endif
 
             var reader = new FastBufferReader(writer, Allocator.Temp);
             Assert.That(reader.Position, Is.EqualTo(0), "Reader position should be zero");
             reader.ReadValue(out NetworkSceneHandle deserializedHandle);
-            Assert.That(writer.Position, Is.EqualTo(sizeof(ulong)), "Reader position should not be beyond size");
+#if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
+            Assert.That(reader.Position, Is.EqualTo(sizeof(ulong)), $"Reader position should not be beyond size! Expected: {sizeof(ulong)} Actual: {reader.Position}");
+#else
+            Assert.That(reader.Position, Is.EqualTo(sizeof(int)), $"Reader position should not be beyond size! Expected: {sizeof(int)} Actual: {reader.Position}");
+#endif
 
             Assert.AreEqual(handle, deserializedHandle);
 
@@ -32,14 +39,17 @@ namespace Unity.Netcode.EditorTests
             Assert.That(listWriter.Position, Is.EqualTo(0), "Writer position should be zero");
 
             listWriter.WriteValue(handles);
-
+#if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
             var expectedSize = sizeof(int) + (sizeof(ulong) * handles.Length);
-            Assert.That(listWriter.Position, Is.EqualTo(expectedSize), "Writer position should not be beyond size");
+#else
+            var expectedSize = sizeof(int) + (sizeof(int) * handles.Length);
+#endif
+            Assert.That(listWriter.Position, Is.EqualTo(expectedSize), $"Writer position should not be beyond size! Expected: {expectedSize} Actual: {listWriter.Position}");
 
             var listReader = new FastBufferReader(listWriter, Allocator.Temp);
             Assert.That(listReader.Position, Is.EqualTo(0), "Reader position should be zero");
             listReader.ReadValue(out NetworkSceneHandle[] deserializedHandleList);
-            Assert.That(listReader.Position, Is.EqualTo(expectedSize), "Reader position should not be beyond expected size");
+            Assert.That(listReader.Position, Is.EqualTo(expectedSize), $"Reader position should not be beyond expected size! Expected: {expectedSize} Actual: {listReader.Position}");
 
             Assert.AreEqual(handles, deserializedHandleList);
         }
