@@ -3115,18 +3115,66 @@ namespace Unity.Netcode
             /// The name of the scene
             /// </summary>
             public string SceneName;
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
             /// <summary>
             /// The scene's server handle (a.k.a network scene handle)
             /// </summary>
+            /// <remarks>
+            /// This is deprecated in favor of ServerSceneHandle
+            /// </remarks>
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> ServerSceneHandle")]
+#else
+            /// <summary>
+            /// The scene's server handle (a.k.a network scene handle)
+            /// </summary>
+#endif
             public int ServerHandle;
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
             /// <summary>
             /// The mapped handled. This could be the ServerHandle or LocalHandle depending upon context (client or server).
             /// </summary>
+            /// <remarks>
+            /// This is deprecated in favor of MappedLocalSceneHandle
+            /// </remarks>
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> MappedLocalSceneHandle")]
+#else
+            /// <summary>
+            /// The mapped handled. This could be the ServerHandle or LocalHandle depending upon context (client or server).
+            /// </summary>
+#endif
             public int MappedLocalHandle;
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_NO_INT_CONVERSION
             /// <summary>
             /// The local handle of the scene.
             /// </summary>
+            /// <remarks>
+            /// This is deprecated in favor of LocalSceneHandle
+            /// </remarks>
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> LocalSceneHandle")]
+#else
+            /// <summary>
+            /// The local handle of the scene.
+            /// </summary>
+#endif
             public int LocalHandle;
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+            /// <summary>
+            /// The scene's server handle (a.k.a network scene handle)
+            /// </summary>
+            public SceneHandle ServerSceneHandle;
+            /// <summary>
+            /// The mapped handled. This could be the ServerSceneHandle or LocalSceneHandle depending upon context (client or server).
+            /// </summary>
+            public SceneHandle MappedLocalSceneHandle;
+            /// <summary>
+            /// The local handle of the scene.
+            /// </summary>
+            public SceneHandle LocalSceneHandle;
+#endif
 
             /// <inheritdoc cref="INetworkSerializable.NetworkSerialize{T}(BufferSerializer{T})"/>
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -3156,43 +3204,38 @@ namespace Unity.Netcode
         public List<SceneMap> GetSceneMapping(MapTypes mapType)
         {
             var mapping = new List<SceneMap>();
-            if (mapType == MapTypes.ServerToClient)
+            var map = mapType == MapTypes.ServerToClient ? ServerSceneHandleToClientSceneHandle : ClientSceneHandleToServerSceneHandle;
+
+            foreach (var entry in map)
             {
-                foreach (var entry in ServerSceneHandleToClientSceneHandle)
+                var scene = ScenesLoaded[entry.Key];
+                var sceneIsPresent = scene.IsValid() && scene.isLoaded;
+                var sceneMap = new SceneMap()
                 {
-                    var scene = ScenesLoaded[entry.Value];
-                    var sceneIsPresent = scene.IsValid() && scene.isLoaded;
-                    var sceneMap = new SceneMap()
-                    {
-                        MapType = mapType,
-                        ServerHandle = entry.Key.GetRawData(),
-                        MappedLocalHandle = entry.Value.GetRawData(),
-                        LocalHandle = new NetworkSceneHandle(scene.handle).GetRawData(),
-                        Scene = scene,
-                        ScenePresent = sceneIsPresent,
-                        SceneName = sceneIsPresent ? scene.name : "NotPresent",
-                    };
-                    mapping.Add(sceneMap);
-                }
-            }
-            else
-            {
-                foreach (var entry in ClientSceneHandleToServerSceneHandle)
-                {
-                    var scene = ScenesLoaded[entry.Key];
-                    var sceneIsPresent = scene.IsValid() && scene.isLoaded;
-                    var sceneMap = new SceneMap()
-                    {
-                        MapType = mapType,
-                        ServerHandle = entry.Key.GetRawData(),
-                        MappedLocalHandle = entry.Value.GetRawData(),
-                        LocalHandle = new NetworkSceneHandle(scene.handle).GetRawData(),
-                        Scene = scene,
-                        ScenePresent = sceneIsPresent,
-                        SceneName = sceneIsPresent ? scene.name : "NotPresent",
-                    };
-                    mapping.Add(sceneMap);
-                }
+                    MapType = mapType,
+
+#pragma warning disable CS0618 // Type or member is obsolete
+#if SCENE_MANAGEMENT_SCENE_HANDLE_MUST_USE_ULONG
+                    ServerHandle = (int)entry.Key.GetRawData(),
+                    MappedLocalHandle = (int)entry.Value.GetRawData(),
+                    LocalHandle = (int)new NetworkSceneHandle(scene.handle).GetRawData(),
+#else
+                    ServerHandle = entry.Key.GetRawData(),
+                    MappedLocalHandle = entry.Value.GetRawData(),
+                    LocalHandle = new NetworkSceneHandle(scene.handle).GetRawData(),
+#endif
+#pragma warning restore CS0618 // Type or member is obsolete
+
+#if SCENE_MANAGEMENT_SCENE_HANDLE_AVAILABLE
+                    ServerSceneHandle = entry.Key,
+                    MappedLocalSceneHandle = entry.Value,
+                    LocalSceneHandle = scene.handle,
+#endif
+                    Scene = scene,
+                    ScenePresent = sceneIsPresent,
+                    SceneName = sceneIsPresent ? scene.name : "NotPresent",
+                };
+                mapping.Add(sceneMap);
             }
 
             return mapping;

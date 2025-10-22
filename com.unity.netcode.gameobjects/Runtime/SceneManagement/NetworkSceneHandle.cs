@@ -92,8 +92,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Implicit conversion from <see cref="SceneHandle"/> to <see cref="NetworkSceneHandle"/>.
         /// </summary>
-        /// <param name="handle"></param>
+        /// <param name="handle">The SceneHandle to covert</param>
         public static implicit operator NetworkSceneHandle(SceneHandle handle) => new(handle);
+
+        /// <summary>
+        /// Implicit conversion from <see cref="NetworkSceneHandle"/> to <see cref="SceneHandle"/>.
+        /// </summary>
+        /// <param name="handle">The NetworkSceneHandle to convert</param>
+        public static implicit operator SceneHandle(NetworkSceneHandle handle) => handle.m_Handle;
 #else
         /// <summary>
         /// Implicit conversion from <see langword="int"/> to <see cref="NetworkSceneHandle"/>.
