@@ -2217,6 +2217,7 @@ namespace Unity.Netcode
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
             var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
+            Debug.Log($"something is broken! isAuthority={isAuthority} | HasAuthority={HasAuthority} | (AllowOwnerToParent && IsOwner)={(AllowOwnerToParent && IsOwner)}");
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
@@ -2376,47 +2377,29 @@ namespace Unity.Netcode
                 m_CachedWorldPositionStays = true;
             }
 
-            // If we are connected to a CMB service or we are running a mock CMB service then send to the "server" identifier
-            if (distributedAuthority || (!distributedAuthority && AllowOwnerToParent && IsOwner && !NetworkManager.IsServer))
+            // If we're not the server, we should tell the server about this parent change
+            if (!NetworkManager.IsServer)
             {
-                if (!NetworkManager.DAHost)
+                // Don't send a message in DA mode if we're the only observers of this object (we're the only authority).
+                if (distributedAuthority && Observers.Count <= 1)
                 {
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, 0);
                     return;
                 }
-                else
-                {
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
-                    }
-                }
+
+                NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, NetworkManager.ServerClientId);
+                return;
             }
-            else
+
+            // Otherwise we are a Server (client-server or DAHost). Send to all observers
+            foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
             {
-                // Otherwise we are running in client-server =or= this has to be a DAHost instance.
-                // Send to all connected clients.
-                unsafe
+                if (clientId == NetworkManager.ServerClientId)
                 {
-                    var maxCount = NetworkManager.ConnectedClientsIds.Count;
-                    ulong* clientIds = stackalloc ulong[maxCount];
-                    int idx = 0;
-                    foreach (var clientId in NetworkManager.ConnectionManager.ConnectedClientIds)
-                    {
-                        if (clientId == NetworkManager.ServerClientId)
-                        {
-                            continue;
-                        }
-                        if (Observers.Contains(clientId))
-                        {
-                            clientIds[idx++] = clientId;
-                        }
-                    }
-                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientIds, idx);
+                    continue;
+                }
+                if (Observers.Contains(clientId))
+                {
+                    NetworkManager.ConnectionManager.SendMessage(ref message, MessageDeliveryType<ParentSyncMessage>.DefaultDelivery, clientId);
                 }
             }
         }

@@ -428,8 +428,11 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
-
+#if UNITY_6000_2_OR_NEWER
+            TransportInitialized?.Invoke(GetEntityId(), m_Driver);
+#else
             TransportInitialized?.Invoke(GetInstanceID(), m_Driver);
+#endif
         }
 
         private void DisposeInternals()
@@ -446,7 +449,11 @@ namespace Unity.Netcode.Transports.UTP
 
             m_SendQueue.Clear();
 
+#if UNITY_6000_2_OR_NEWER
+            TransportDisposed?.Invoke(GetEntityId());
+#else
             TransportDisposed?.Invoke(GetInstanceID());
+#endif
         }
 
         /// <summary>
@@ -496,14 +503,11 @@ namespace Unity.Netcode.Transports.UTP
             // Latency, jitter and packet loss will be set by the network simulator in the tools
             // package. We just need to initialize the settings since otherwise these features will
             // not be enabled at all in the driver.
-            settings.WithSimulatorStageParameters(
-                // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush
-                // an entire reliable window every tick, then at 60 ticks per second we need to be
-                // able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
-                // pipeline stage. Double that since we handle both directions and round it up, and
-                // that's how we get 400 here.
-                maxPacketCount: 400,
-                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
+            // Assuming a maximum average latency of 50 ms, and that we're somehow able to flush an entire reliable window every tick,
+            // then at 60 ticks per second we need to be able to store 60 * 0.05 * 64 = 192 packets per connection in the simulator
+            // pipeline stage. Double that since we handle both directions and round it up, and
+            // that's how we get 400 here.
+            settings.WithSimulatorStageParameters(maxPacketCount: 400, randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp());
             settings.WithNetworkSimulatorParameters();
 #endif
 
@@ -1100,15 +1104,18 @@ namespace Unity.Netcode.Transports.UTP
         {
             if (m_NetworkManager.IsServer)
             {
-                for (int i=0; i<m_NetworkManager.ConnectedClientsIds.Count; ++i)
+                for (int i = 0; i < m_NetworkManager.ConnectedClientsIds.Count; ++i)
                 {
-                    var ngoConnectionId =  m_NetworkManager.ConnectedClientsIds[i];
+                    var ngoConnectionId = m_NetworkManager.ConnectedClientsIds[i];
                     if (ngoConnectionId == 0 && m_NetworkManager.IsHost)
                     {
                         continue;
                     }
-                    var transportClientId = m_NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
-                    ExtractNetworkMetricsForClient(transportClientId);
+                    var transportClientIdReturn = m_NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
+                    if (transportClientIdReturn.Item2)
+                    {
+                        ExtractNetworkMetricsForClient(transportClientIdReturn.Item1);
+                    }
                 }
             }
             else

@@ -125,7 +125,11 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+#if UNITY_6000_2_OR_NEWER
+            var instanceId = rigidbody.GetEntityId();
+#else
             var instanceId = rigidbody.GetInstanceID();
+#endif
             if (register)
             {
                 if (!m_RigidbodyMapping.ContainsKey(instanceId))
