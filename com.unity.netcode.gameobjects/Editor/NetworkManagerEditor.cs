@@ -285,7 +285,11 @@ namespace Unity.Netcode.Editor
                             }
                         }
                         var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
+#if UNITY_6000_2_OR_NEWER
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetEntityId()}.asset");
+#else
                         string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
+#endif
                         Debug.Log("Saving migrated Network Prefabs List to " + path);
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
@@ -390,7 +394,8 @@ namespace Unity.Netcode.Editor
 #if !MULTIPLAYER_TOOLS
             DrawInstallMultiplayerToolsTip();
 #endif
-            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; };
+            void SetExpanded(bool expanded) { networkManager.NetworkManagerExpanded = expanded; }
+            ;
             DrawFoldOutGroup<NetworkManager>(networkManager.GetType(), DisplayNetworkManagerProperties, networkManager.NetworkManagerExpanded, SetExpanded);
             DisplayCallToActionButtons();
             base.OnInspectorGUI();
