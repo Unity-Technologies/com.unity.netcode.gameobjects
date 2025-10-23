@@ -626,7 +626,7 @@ public class TestFixedString : NetworkBehaviour
 
 Generic `INetworkSerializable` types with generic `IEquatable` are not supported, implemented as `public class NotSupported<T> : INetworkSerializable, IEquatable<NotSupported<T>>` where the type would be passed in during declaration like `NetworkVariable<NotSupported<int>> myVar;`.
 
-The recommended workaround for this would be to create the generic class as usual but add a virtual method for handling the serialization of the type. Then wrap this generic `INetworkSerializable` in a derived class which then needs to have a serializable type defined where the implementation for the serialization is provided. 
+The recommended workaround for this would be to create the generic class as usual but add a virtual method for handling the serialization of the type. Then wrap this generic `INetworkSerializable` in a derived class which then needs to have a serializable type defined where the implementation for the serialization is provided.
 
 For example:
 
