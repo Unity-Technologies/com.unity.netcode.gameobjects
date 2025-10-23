@@ -3123,7 +3123,7 @@ namespace Unity.Netcode
             /// <remarks>
             /// This is deprecated in favor of ServerSceneHandle
             /// </remarks>
-            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> ServerSceneHandle")]
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead.")]
 #else
             /// <summary>
             /// The scene's server handle (a.k.a network scene handle)
@@ -3138,7 +3138,7 @@ namespace Unity.Netcode
             /// <remarks>
             /// This is deprecated in favor of MappedLocalSceneHandle
             /// </remarks>
-            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> MappedLocalSceneHandle")]
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead.")]
 #else
             /// <summary>
             /// The mapped handled. This could be the ServerHandle or LocalHandle depending upon context (client or server).
@@ -3153,7 +3153,7 @@ namespace Unity.Netcode
             /// <remarks>
             /// This is deprecated in favor of LocalSceneHandle
             /// </remarks>
-            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead. (UnityUpgradable) -> LocalSceneHandle")]
+            [Obsolete("Int representation of a SceneHandle is deprecated, please use SceneHandle instead.")]
 #else
             /// <summary>
             /// The local handle of the scene.
