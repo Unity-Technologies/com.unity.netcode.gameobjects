@@ -91,20 +91,20 @@ logError(){
 
 # Protocol Buffer Compiler ------------------------------------------------------
 
-# Apply any updates 
+# Apply any updates
 logMessage "Updating modules..."
 sudo apt-get update
 
 # Install Protocol Buffer Compiler (using apt-get)
-logMessage "Installing protocol bufffer compiler as SUDO..."
+logMessage "Installing protocol buffer compiler as SUDO..."
 try sudo apt-get install -y protobuf-compiler
 
 # If the previous command failed, try without sudo
 if $ThrewError; then
-logMessage "Installing protocol bufffer compiler as shell assigned account..."
+logMessage "Installing protocol buffer compiler as shell assigned account..."
 apt-get install -y protobuf-compiler
 else
-logMessage "Protocol bufffer compiler was installed as sudo!"
+logMessage "Protocol buffer compiler was installed as sudo!"
 fi
 
 # Add the PROTOC environment variable that points to the Protocol Buffer Compiler binary
