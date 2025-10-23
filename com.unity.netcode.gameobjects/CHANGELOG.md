@@ -21,12 +21,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
 - Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 - The first session owner no longer sends two synchronization messages to the service. (#3563)
+- Updated transport dependency of the package to 2.6.0 (#3736)
 
 ### Deprecated
 
 
 ### Removed
 
+- Removed usage of MULTIPLAYER_TOOLS_1_0_0_PRE_7 and UNITY_UNET_PRESENT defines (#3736)
 
 ### Fixed
 
