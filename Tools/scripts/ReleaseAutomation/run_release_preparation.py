@@ -18,7 +18,12 @@ def PrepareNetcodePackageForRelease():
 
         print("\nStep 1: Verifying release conditions...")
         verifyReleaseConditions(config)
-
+    except Exception as e:
+        print("\n--- Release conditions were not met ---", file=sys.stderr)
+        print(f"Reason: {e}", file=sys.stderr)
+        sys.exit(0) # In this case we want the job not to fail because this will be an intended behavior
+    
+    try:
         print("\nStep 2: Creating release branch...")
         create_branch_execute_commands_and_push(config)
 
