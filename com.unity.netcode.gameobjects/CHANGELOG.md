@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
 - Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 - The first session owner no longer sends two synchronization messages to the service. (#3563)
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround.
 
 ### Deprecated
 
@@ -34,6 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
+- Exception when the network prefab list in the network manager has uninitialized elements.
 
 ### Security
 
