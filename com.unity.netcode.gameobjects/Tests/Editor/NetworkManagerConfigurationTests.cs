@@ -295,6 +295,36 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenThereAreUninitializedElementsInPrefabsList_NoErrors()
+        {
+            // Setup
+            var networkManagerObject = new GameObject();
+            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
+
+            try
+            {
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
+                networkManager.Initialize(true);
+
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 1);
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0] == null);
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Prefabs.Count == 0);
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+            }
+        }
+
+        [Test]
         public void WhenModifyingPrefabListUsingPrefabsListAPI_ModificationIsShared()
         {
             // Setup
