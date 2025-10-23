@@ -60,7 +60,6 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator RpcInvokePermissionSendingTests()
         {
             var nonAuthority = GetNonAuthorityNetworkManager();
-
             var authorityInstance = SpawnObject(m_Prefab, nonAuthority).GetComponent<NetworkObject>();
 
             yield return WaitForSpawnedOnAllOrTimeOut(authorityInstance);
@@ -88,17 +87,15 @@ namespace Unity.Netcode.RuntimeTests
                     threwException = true;
                 }
 
-                if (!manager.IsServer)
-                {
-                    Assert.IsTrue(threwException);
-                }
+                // Server should not throw, everyone else should throw
+                Assert.AreEqual(!manager.IsServer, threwException, $"[Client-{manager.LocalClientId}] had an unexpected exception behaviour. Expected {(manager.IsServer ? "no exception" : "exception")} but was {(threwException ? "exception" : "no exception")}");
             }
 
             yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
             AssertOnTimeout("[InvokePermissions.Server] Rpc invoked an incorrect number of times");
 
             // [Rpc(SendTo.Everyone, InvokePermission.Owner)]
-            foreach (var (_, instance) in m_InvokeInstances)
+            foreach (var (manager, instance) in m_InvokeInstances)
             {
                 instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc)] = 1;
 
@@ -113,10 +110,7 @@ namespace Unity.Netcode.RuntimeTests
                     threwException = true;
                 }
 
-                if (!instance.IsOwner)
-                {
-                    Assert.IsTrue(threwException);
-                }
+                Assert.AreEqual(!instance.IsOwner, threwException, $"[Client-{manager.LocalClientId}] had an unexpected exception behaviour. Expected {(instance.IsOwner ? "no exception" : "exception")} but was {(threwException ? "exception" : "no exception")}");
             }
 
             yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
@@ -225,6 +219,122 @@ namespace Unity.Netcode.RuntimeTests
             Assert.That(firstClientInstance.SenderIdReceived, Is.EqualTo(secondClient.LocalClientId), "Received spoofed sender id!");
         }
 
+        private bool ValidateInvocationOrder(StringBuilder errorLog)
+        {
+            var allInstancesValid = true;
+            foreach (var instance in m_InvokeInstances.Values)
+            {
+                if (!instance.RpcsWereInvokedInExpectedOrder(errorLog))
+                {
+                    allInstancesValid = false;
+                }
+            }
+            return allInstancesValid;
+        }
+
+        [UnityTest]
+        public IEnumerator RpcInvocationOrderTests()
+        {
+            var authority = GetAuthorityNetworkManager();
+            var authorityInstance = SpawnObject(m_Prefab, authority).GetComponent<InvokePermissionBehaviour>();
+            var errorLog = new StringBuilder();
+
+            yield return WaitForSpawnedOnAllOrTimeOut(authorityInstance.NetworkObjectId);
+            AssertOnTimeout("Failed to spawn InvokePermissions test object");
+
+            Assert.IsTrue(authorityInstance.IsOwner);
+
+            BuildInvokeInstancesMap(authorityInstance.NetworkObjectId);
+
+            var expectedOrder = new List<string>()
+            {
+                nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc),
+                nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc),
+                nameof(InvokePermissionBehaviour.AnotherEveryoneInvokePermissionRpc),
+            };
+            foreach (var instance in m_InvokeInstances.Values)
+            {
+                instance.ExpectedInvocationOrder = expectedOrder;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc)] = 1;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.OwnerInvokePermissionRpc)] = 1;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.AnotherEveryoneInvokePermissionRpc)] = 1;
+            }
+
+            authorityInstance.EveryoneInvokePermissionRpc();
+            authorityInstance.OwnerInvokePermissionRpc();
+            authorityInstance.AnotherEveryoneInvokePermissionRpc();
+
+            yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
+            AssertOnTimeout("[Simple ordering][authority] Incorrect number of rpcs were invoked");
+            Assert.IsTrue(ValidateInvocationOrder(errorLog), $"[Simple ordering][authority] Rpcs were invoked in an incorrect order\n {errorLog}");
+            errorLog.Clear();
+
+            ResetAllExpectedInvocations();
+
+            var nonAuthority = GetNonAuthorityNetworkManager();
+            var nonAuthorityInstance = m_InvokeInstances[nonAuthority];
+
+            expectedOrder = new List<string>()
+            {
+                nameof(InvokePermissionBehaviour.AnotherEveryoneInvokePermissionRpc),
+                nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc),
+                nameof(InvokePermissionBehaviour.AnotherEveryoneInvokePermissionRpc),
+            };
+            foreach (var instance in m_InvokeInstances.Values)
+            {
+                instance.ExpectedInvocationOrder = expectedOrder;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc)] = 1;
+                instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.AnotherEveryoneInvokePermissionRpc)] = 2;
+            }
+
+            nonAuthorityInstance.AnotherEveryoneInvokePermissionRpc();
+            nonAuthorityInstance.EveryoneInvokePermissionRpc();
+            nonAuthorityInstance.AnotherEveryoneInvokePermissionRpc();
+
+            yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
+            AssertOnTimeout("[Simple ordering][nonAuthority] Incorrect number of rpcs were invoked");
+            Assert.IsTrue(ValidateInvocationOrder(errorLog), $"[Simple ordering][nonAuthority] Rpcs were invoked in an incorrect order\n {errorLog}");
+            errorLog.Clear();
+
+            for (var i = 0; i < 3; i++)
+            {
+                var testType = (LocalDeferMode)i;
+
+                ResetAllExpectedInvocations();
+
+                expectedOrder = new List<string>()
+                {
+                    nameof(InvokePermissionBehaviour.NestedInvocationRpc),
+                    nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc),
+                };
+                var reversedOrder = new List<string>() { expectedOrder[1], expectedOrder[0] };
+                foreach (var (manager, instance) in m_InvokeInstances)
+                {
+                    // Invocation order will be reversed when not the invoking instance if not using defer mode
+                    var isReversed = testType != LocalDeferMode.Defer && manager != nonAuthority;
+                    instance.ExpectedInvocationOrder = isReversed ? reversedOrder : expectedOrder;
+                    instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.NestedInvocationRpc)] = 1;
+                    instance.ExpectedCallCounts[nameof(InvokePermissionBehaviour.EveryoneInvokePermissionRpc)] = 1;
+                }
+
+                nonAuthorityInstance.NestedInvocationRpc(testType);
+
+                yield return WaitForConditionOrTimeOut(AllExpectedCallsReceived);
+                AssertOnTimeout($"[Has nested][nonAuthority][{testType}] Incorrect number of rpcs were invoked");
+                Assert.IsTrue(ValidateInvocationOrder(errorLog), $"[Has nested][nonAuthority][{testType}] Rpcs were invoked in an incorrect order\n {errorLog}");
+                errorLog.Clear();
+            }
+        }
+
+        private void ResetAllExpectedInvocations()
+        {
+            foreach (var instance in m_InvokeInstances.Values)
+            {
+                instance.Reset();
+            }
+        }
+
+
         private void SendUncheckedMessage(NetworkManager manager, InvokePermissionBehaviour invokePermissionsObject, string rpcMethodName)
         {
             using var bufferWriter = new FastBufferWriter(1024, Allocator.Temp);
@@ -270,8 +380,10 @@ namespace Unity.Netcode.RuntimeTests
 
     internal class InvokePermissionBehaviour : NetworkBehaviour
     {
-        public readonly Dictionary<string, int> RpcCallCounts = new();
+        private readonly Dictionary<string, int> m_RpcCallCounts = new();
         public readonly Dictionary<string, int> ExpectedCallCounts = new();
+        private readonly List<string> m_RpcInvocationOrder = new();
+        public List<string> ExpectedInvocationOrder = new();
 
         public bool HasReceivedExpectedRpcs(StringBuilder errorLog)
         {
@@ -280,7 +392,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var (expectedMethodCall, expectedCallCount) in ExpectedCallCounts)
             {
                 seen.Add(expectedMethodCall);
-                if (!RpcCallCounts.TryGetValue(expectedMethodCall, out var actualCallCount))
+                if (!m_RpcCallCounts.TryGetValue(expectedMethodCall, out var actualCallCount))
                 {
                     errorLog.AppendLine($"[Client-{NetworkManager.LocalClientId}] Expected {expectedMethodCall} to have been invoked!");
                 }
@@ -293,7 +405,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Ensure no other rpcs were called when they weren't expected
-            foreach (var rpcCall in RpcCallCounts.Keys)
+            foreach (var rpcCall in m_RpcCallCounts.Keys)
             {
                 if (!seen.Contains(rpcCall))
                 {
@@ -305,10 +417,26 @@ namespace Unity.Netcode.RuntimeTests
             return isValid;
         }
 
+        public bool RpcsWereInvokedInExpectedOrder(StringBuilder errorLog)
+        {
+            var isValid = true;
+            for (var i = 0; i < m_RpcInvocationOrder.Count; i++)
+            {
+                if (!ExpectedInvocationOrder[i].Equals(m_RpcInvocationOrder[i]))
+                {
+                    errorLog.AppendLine($"[Client-{NetworkManager.LocalClientId}][Invocation-{i}] Rpc invoked in incorrect order. Expected {ExpectedInvocationOrder[i]}, but was {m_RpcInvocationOrder[i]}");
+                    isValid = false;
+                }
+            }
+            return isValid;
+        }
+
         public void Reset()
         {
-            RpcCallCounts.Clear();
+            m_RpcCallCounts.Clear();
             ExpectedCallCounts.Clear();
+            m_RpcInvocationOrder.Clear();
+            ExpectedInvocationOrder.Clear();
         }
 
         [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
@@ -329,6 +457,23 @@ namespace Unity.Netcode.RuntimeTests
             TrackRpcCalled(GetCaller());
         }
 
+        [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Everyone)]
+        public void AnotherEveryoneInvokePermissionRpc()
+        {
+            TrackRpcCalled(GetCaller());
+        }
+
+        [Rpc(SendTo.Everyone)]
+        public void NestedInvocationRpc(RpcParams rpcParams = default)
+        {
+            TrackRpcCalled(GetCaller());
+
+            if (rpcParams.Receive.SenderClientId == NetworkManager.LocalClientId)
+            {
+                EveryoneInvokePermissionRpc();
+            }
+        }
+
         internal ulong SenderIdReceived;
         [Rpc(SendTo.Owner)]
         public void TrackSenderIdRpc(RpcParams rpcParams)
@@ -340,11 +485,13 @@ namespace Unity.Netcode.RuntimeTests
         private void TrackRpcCalled(string rpcName)
         {
             // TryAdd returns false and will not add anything if the key already existed.
-            if (!RpcCallCounts.TryAdd(rpcName, 1))
+            if (!m_RpcCallCounts.TryAdd(rpcName, 1))
             {
                 // If the key already existed, increment it
-                RpcCallCounts[rpcName]++;
+                m_RpcCallCounts[rpcName]++;
             }
+
+            m_RpcInvocationOrder.Add(rpcName);
         }
 
         private static string GetCaller([CallerMemberName] string caller = null)
