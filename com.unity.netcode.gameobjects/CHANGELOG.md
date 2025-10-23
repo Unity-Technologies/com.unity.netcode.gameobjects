@@ -37,7 +37,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
-- Exception when the network prefab list in the network manager has uninitialized elements.
+- Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
 
 ### Security
 
