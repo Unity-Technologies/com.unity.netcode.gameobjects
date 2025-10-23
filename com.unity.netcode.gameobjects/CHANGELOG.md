@@ -30,7 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed usage of MULTIPLAYER_TOOLS_1_0_0_PRE_7 and UNITY_UNET_PRESENT defines (#3736)
+- Removed usage of UNITY_UNET_PRESENT define (#3736)
 
 ### Fixed
 
