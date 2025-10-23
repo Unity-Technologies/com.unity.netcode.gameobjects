@@ -1,6 +1,6 @@
 # RPC
 
-Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is the recommended attribute to use when declaring RPC methods. The `Rpc` attribute's parameters defines the receivers and execution rights for the RPC method.
+Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is the recommended attribute to use when declaring RPC methods. The `Rpc` attribute's parameters define the receivers and execution rights for the RPC method.
 
 ![](../../images/sequence_diagrams/RPCs/ServerRPCs.png)
 
