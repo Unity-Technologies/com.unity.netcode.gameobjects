@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround. (#3739)
 - The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
 - Changed NetworkShow to send a message at the end of the frame and force a NetworkVariable synchronization prior to generating the CreateObjectMessage as opposed to waiting until the next network tick to synchronize the show with the update to NetworkVariables. (#3664)
 - Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
@@ -22,7 +23,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed the default `NetworkDelivery` used by all messages is now reliable fragmented sequenced with the exception of named, unnamed, and any messages sent with a user specified network delivery type. This assures certain order of operations to be preserved when same call-stack changes are applied to a newly spawned, authority side, NetworkObject. (#3664)
 - Changed NetworkTransform documentation to better reflect the Teleport methods intended usage along with updates to NetworkObject and physics areas of the documentation. (#3664)
 - The first session owner no longer sends two synchronization messages to the service. (#3563)
-- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround.
 
 ### Deprecated
 
