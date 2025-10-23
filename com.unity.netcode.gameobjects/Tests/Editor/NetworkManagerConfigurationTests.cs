@@ -297,31 +297,17 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenThereAreUninitializedElementsInPrefabsList_NoErrors()
         {
-            // Setup
-            var networkManagerObject = new GameObject();
-            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig
-            {
-                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
-            };
+            var networkConfig = new NetworkConfig();
 
-            try
-            {
-                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
-                networkManager.Initialize(true);
+            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
 
-                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 1);
-                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0] == null);
-                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Prefabs.Count == 0);
-            }
-            finally
-            {
-                networkManager.ShutdownInternal();
-                // Shutdown doesn't get called correctly because we called Initialize()
-                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
-                // why.
-                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
-            }
+            networkConfig.InitializePrefabs();
+
+            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 1);
+            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists[0] == null);
+            Assert.IsTrue(networkConfig.Prefabs.Prefabs.Count == 0);
+
+            networkConfig.Prefabs.Shutdown();
         }
 
         [Test]
