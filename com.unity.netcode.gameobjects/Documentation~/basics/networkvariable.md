@@ -631,7 +631,7 @@ The recommended workaround for this would be to create the generic class as usua
 For example:
 
 ```csharp
-public class FirstGenClass<T> : INetworkSerializable
+public class MyGameData<T> : INetworkSerializable
 {
     // This needs to be a serializable type according to what network variables support
     public T Data;
@@ -646,16 +646,16 @@ public class FirstGenClass<T> : INetworkSerializable
     }
 }
 
-public class SecondGenWithLong : FirstGenClass<long>, IEquatable<SecondGenWithLong>
+public class GameDataWithLong : MyGameData<long>, IEquatable<GameDataWithLong>
 {
     // Potential additional data
     public int AdditionalData;
 
-    protected virtual bool OnEquals(SecondGenWithLong other)
+    protected virtual bool OnEquals(GameDataWithLong other)
     {
         return other.Data.Equals(other);
     }
-    public bool Equals(SecondGenWithLong other)
+    public bool Equals(GameDataWithLong other)
     {
         return OnEquals(other);
     }
@@ -671,5 +671,5 @@ public class SecondGenWithLong : FirstGenClass<long>, IEquatable<SecondGenWithLo
 Then declare this network variable like so:
 
 ```csharp
-NetworkVariable<SecondGenWithLong> myVar = new NetworkVariable<SecondGenWithLong>();
+NetworkVariable<GameDataWithLong> myVar = new NetworkVariable<GameDataWithLong>();
 ```
