@@ -303,8 +303,8 @@ namespace Unity.Netcode.EditorTests
 
             networkConfig.InitializePrefabs();
 
-            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 1);
-            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists[0] == null);
+            // Null elements will be removed from the list so it should be empty
+            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 0);
             Assert.IsTrue(networkConfig.Prefabs.Prefabs.Count == 0);
 
             networkConfig.Prefabs.Shutdown();

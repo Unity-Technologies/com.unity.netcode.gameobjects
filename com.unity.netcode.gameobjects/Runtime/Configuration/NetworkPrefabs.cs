@@ -81,10 +81,6 @@ namespace Unity.Netcode
         {
             foreach (var list in NetworkPrefabsLists)
             {
-                if (list == null)
-                {
-                    continue;
-                }
                 list.OnAdd -= AddTriggeredByNetworkPrefabList;
                 list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
             }
@@ -98,12 +94,9 @@ namespace Unity.Netcode
         public void Initialize(bool warnInvalid = true)
         {
             m_Prefabs.Clear();
+            NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
             {
-                if (list == null)
-                {
-                    continue;
-                }
                 list.OnAdd += AddTriggeredByNetworkPrefabList;
                 list.OnRemove += RemoveTriggeredByNetworkPrefabList;
             }
@@ -117,10 +110,6 @@ namespace Unity.Netcode
             {
                 foreach (var list in NetworkPrefabsLists)
                 {
-                    if (list == null)
-                    {
-                        continue;
-                    }
                     prefabs.AddRange(list.PrefabList);
                 }
             }
