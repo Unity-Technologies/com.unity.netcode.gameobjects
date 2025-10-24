@@ -402,7 +402,7 @@ public class TestCoordinator : NetworkBehaviour
         };
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void ClientFinishedServerRpc(ServerRpcParams p = default)
     {
         // signal from clients to the server to say the client is done with it's task
@@ -487,7 +487,7 @@ public class TestCoordinator : NetworkBehaviour
         m_TimeSinceLastKeepAlive = Time.time;
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteTestResultsServerRpc(float result, ServerRpcParams receiveParams = default)
     {
         var senderId = receiveParams.Receive.SenderClientId;
@@ -506,16 +506,15 @@ public class TestCoordinator : NetworkBehaviour
     /// <remarks>
     /// Use <see cref="NetworkLog.LogErrorServer"/> to log server-side without MultiprocessLogger formatting.
     /// </remarks>
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [Rpc(SendTo.Server)]
     public void WriteLogServerRpc(string logMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.Log($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {logMessage}");
     }
 }
-

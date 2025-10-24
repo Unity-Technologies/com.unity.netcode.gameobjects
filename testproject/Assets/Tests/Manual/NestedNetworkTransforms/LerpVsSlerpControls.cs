@@ -60,7 +60,7 @@ namespace TestProject.ManualTests
             ChildMover.RotationSpeed = speed;
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void OnSliderUpdatedServerRpc(float sliderValue)
         {
             UpdateRotationSpeed(sliderValue);
@@ -80,7 +80,7 @@ namespace TestProject.ManualTests
             ChildMover.SlerpPosition = isOn;
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void OnInterpolateToggleUpdatedServerRpc(bool toggleState)
         {
             UpdateSlerPosition(toggleState);
