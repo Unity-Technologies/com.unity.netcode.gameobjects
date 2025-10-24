@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
 - Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
 
@@ -25,10 +26,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Deprecated all `RequireOwnership` fields around the RPCs in favor of the `RpcInvokePermission`. (#3731)
 - On Unity 6.5 some `SceneMap` fields that use an `int` to represent a `SceneHandle` are deprecated. (#3734)
 
 ### Removed
-
 
 ### Fixed
 

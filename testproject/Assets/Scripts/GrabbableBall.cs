@@ -75,8 +75,8 @@ public class GrabbableBall : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void TryGrabServerRpc(ServerRpcParams serverRpcParams = default)
+    [Rpc(SendTo.Server)]
+    private void TryGrabServerRpc(RpcParams serverRpcParams = default)
     {
         if (!m_IsGrabbed.Value)
         {

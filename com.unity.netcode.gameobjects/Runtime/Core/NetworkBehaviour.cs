@@ -38,6 +38,7 @@ namespace Unity.Netcode
 
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
+        internal static readonly Dictionary<Type, Dictionary<uint, RpcInvokePermission>> __rpc_permission_table = new Dictionary<Type, Dictionary<uint, RpcInvokePermission>>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
         // RuntimeAccessModifiersILPP will make this `public`
@@ -328,7 +329,13 @@ namespace Unity.Netcode
             {
                 throw new RpcException("The NetworkBehaviour must be spawned before calling this method.");
             }
-            if (attributeParams.RequireOwnership && !IsOwner)
+
+            if (attributeParams.InvokePermission == RpcInvokePermission.Server && !IsServer)
+            {
+                throw new RpcException("This RPC can only be sent by the server.");
+            }
+
+            if (attributeParams.InvokePermission == RpcInvokePermission.Owner && !IsOwner)
             {
                 throw new RpcException("This RPC can only be sent by its owner.");
             }
@@ -934,11 +941,14 @@ namespace Unity.Netcode
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
+        // This is needed to add the RpcInvokePermission as even with an optional parameter, the change counts as a breaking change.
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName) => __registerRpc(hash, handler, rpcMethodName, RpcInvokePermission.Everyone);
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName)
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName, RpcInvokePermission permission)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             __rpc_func_table[GetType()][hash] = handler;
+            __rpc_permission_table[GetType()][hash] = permission;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
             __rpc_name_table[GetType()][hash] = rpcMethodName;
 #endif
@@ -985,6 +995,7 @@ namespace Unity.Netcode
             if (!__rpc_func_table.ContainsKey(GetType()))
             {
                 __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
+                __rpc_permission_table[GetType()] = new Dictionary<uint, RpcInvokePermission>();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NET_STATS_MONITOR_ENABLED_IN_RELEASE
                 __rpc_name_table[GetType()] = new Dictionary<uint, string>();
 #endif

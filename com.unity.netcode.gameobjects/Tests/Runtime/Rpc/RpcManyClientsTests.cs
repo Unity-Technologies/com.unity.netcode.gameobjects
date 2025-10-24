@@ -11,33 +11,33 @@ namespace Unity.Netcode.RuntimeTests
     {
         public int Count = 0;
         public List<ulong> ReceivedFrom = new List<ulong>();
-        [ServerRpc(RequireOwnership = false)]
-        public void ResponseServerRpc(ServerRpcParams rpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void ResponseServerRpc(RpcParams rpcParams = default)
         {
             ReceivedFrom.Add(rpcParams.Receive.SenderClientId);
             Count++;
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         public void NoParamsClientRpc()
         {
             ResponseServerRpc();
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         public void OneParamClientRpc(int value)
         {
             ResponseServerRpc();
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         public void TwoParamsClientRpc(int value1, int value2)
         {
             ResponseServerRpc();
         }
 
-        [ClientRpc]
-        public void WithParamsClientRpc(ClientRpcParams param)
+        [Rpc(SendTo.SpecifiedInParams)]
+        public void WithParamsClientRpc(RpcParams param)
         {
             ResponseServerRpc();
         }
@@ -114,7 +114,7 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(() => TotalClients == rpcManyClientsObject.Count);
             Assert.True(success, $"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
 
-            var param = new ClientRpcParams();
+            var param = new RpcParams();
 
             rpcManyClientsObject.Count = 0;
             rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
@@ -127,8 +127,8 @@ namespace Unity.Netcode.RuntimeTests
 
             rpcManyClientsObject.ReceivedFrom.Clear();
             rpcManyClientsObject.Count = 0;
-            var target = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
-            param.Send.TargetClientIds = target;
+            var target = new[] { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+            param.Send.Target = rpcManyClientsObject.RpcTarget.Group(target, RpcTargetUse.Temp);
             rpcManyClientsObject.WithParamsClientRpc(param);
 
             messageHookList.Clear();
