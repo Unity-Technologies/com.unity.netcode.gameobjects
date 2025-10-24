@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround. (#3739)
 - The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
 - Changed NetworkShow to send a message at the end of the frame and force a NetworkVariable synchronization prior to generating the CreateObjectMessage as opposed to waiting until the next network tick to synchronize the show with the update to NetworkVariables. (#3664)
 - Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
@@ -37,6 +38,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
+- Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
 
 ### Security
 
