@@ -93,6 +93,7 @@ namespace Unity.Netcode
         public void Initialize(bool warnInvalid = true)
         {
             m_Prefabs.Clear();
+            NetworkPrefabsLists.RemoveAll(x => x == null);
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd += AddTriggeredByNetworkPrefabList;

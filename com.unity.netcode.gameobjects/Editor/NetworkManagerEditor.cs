@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
@@ -538,6 +539,10 @@ namespace Unity.Netcode.Editor
                 if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
                 {
                     EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                }
+                else if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.All(x => x == null))
+                {
+                    EditorGUILayout.HelpBox("All prefab lists selected are uninitialized. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
                 }
 
                 EditorGUILayout.PropertyField(m_PrefabsList);
