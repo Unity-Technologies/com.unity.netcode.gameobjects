@@ -311,7 +311,7 @@ namespace Unity.Netcode
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                     }

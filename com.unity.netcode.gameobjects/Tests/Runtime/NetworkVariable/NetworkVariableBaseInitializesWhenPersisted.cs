@@ -26,7 +26,6 @@ namespace Unity.Netcode.RuntimeTests
             s_NetworkPrefab = new GameObject("PresistPrefab");
             var networkObject = s_NetworkPrefab.AddComponent<NetworkObject>();
             networkObject.GlobalObjectIdHash = 8888888;
-            networkObject.SetSceneObjectStatus(false);
             s_NetworkPrefab.AddComponent<TestBehaviour>();
             s_NetworkPrefab.AddComponent<ObjectNameIdentifier>();
             // Create enough prefab instance handlers to be re-used for all tests.
@@ -374,7 +373,6 @@ namespace Unity.Netcode.RuntimeTests
                 if (PrefabInstances.Count == 0)
                 {
                     instanceToReturn = Object.Instantiate(m_NetworkPrefab).GetComponent<NetworkObject>();
-                    instanceToReturn.SetSceneObjectStatus(false);
                     instanceToReturn.gameObject.SetActive(true);
                 }
                 else

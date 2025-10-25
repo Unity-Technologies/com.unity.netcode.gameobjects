@@ -37,7 +37,6 @@ namespace Unity.Netcode.RuntimeTests
             var gameObject = new GameObject("TestObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            networkObject.IsSceneObject = false;
             gameObject.AddComponent<SpawnObjectTrackingComponent>();
 
             m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };

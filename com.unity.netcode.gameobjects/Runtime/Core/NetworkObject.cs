@@ -281,7 +281,7 @@ namespace Unity.Netcode
             if (GlobalObjectIdHash != oldValue)
             {
                 // Check if this is an in-scnee placed NetworkObject (Special Case for In-Scene Placed).
-                if (IsSceneObject.HasValue && IsSceneObject.Value)
+                if (InScenePlaced)
                 {
                     // Sanity check to make sure this is a scene placed object.
                     if (globalId.identifierType != k_SceneObjectType)
@@ -330,7 +330,7 @@ namespace Unity.Netcode
                         EditorUtility.SetDirty(this);
                     }
                 }
-                IsSceneObject = true;
+                SetSceneObjectStatus(true);
 
                 // Default scene migration synchronization to false for in-scene placed NetworkObjects
                 SceneMigrationSynchronization = false;
@@ -1184,18 +1184,23 @@ namespace Unity.Netcode
         public bool IsSpawned { get; internal set; }
 
         /// <summary>
-        /// Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.
+        /// Gets if the object is a SceneObject.
         /// </summary>
         public bool? IsSceneObject { get; internal set; }
 
-        //DANGOEXP TODO: Determine if we want to keep this
+        [HideInInspector]
+        [SerializeField]
+        internal bool InScenePlaced;
+
         /// <summary>
         /// Sets whether this NetworkObject was instantiated as part of a scene
         /// </summary>
+        /// <remarks>Only use this when using custom scene loading</remarks>
         /// <param name="isSceneObject">When true, marks this as a scene-instantiated object; when false, marks it as runtime-instantiated</param>
         public void SetSceneObjectStatus(bool isSceneObject = false)
         {
             IsSceneObject = isSceneObject;
+            InScenePlaced = isSceneObject;
         }
 
         /// <summary>
@@ -1407,7 +1412,7 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkSceneHandle GetSceneOriginHandle()
         {
-            if (SceneOriginHandle.IsEmpty() && IsSpawned && IsSceneObject != false)
+            if (SceneOriginHandle.IsEmpty() && IsSpawned && InScenePlaced)
             {
                 throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
             }
@@ -1598,7 +1603,7 @@ namespace Unity.Netcode
                 var message = new DestroyObjectMessage
                 {
                     NetworkObjectId = NetworkObjectId,
-                    DestroyGameObject = !IsSceneObject.Value,
+                    DestroyGameObject = !InScenePlaced,
                     IsDistributedAuthority = NetworkManager.DistributedAuthorityMode,
                     IsTargetedDestroy = NetworkManager.DistributedAuthorityMode,
                     TargetClientId = clientId, // Just always populate this value whether we write it or not
@@ -1727,8 +1732,7 @@ namespace Unity.Netcode
             // was marked as destroy pending scene event (which means the destroy with scene property was set).
             var isAuthorityDestroy = HasAuthority || NetworkManager.DAHost || DestroyPendingSceneEvent;
 
-            if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            if (NetworkManager.IsListening && !isAuthorityDestroy && IsSpawned && !InScenePlaced)
             {
                 // If we destroyed a GameObject with a NetworkObject component on the non-authority side, handle cleaning up the SceneMigrationSynchronization.
                 NetworkManager.SpawnManager?.RemoveNetworkObjectFromSceneChangedUpdates(this);
@@ -1835,7 +1839,7 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManager.SpawnManager.AuthorityLocalSpawn(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.AuthorityLocalSpawn(this, NetworkManager.SpawnManager.GetNetworkObjectId(), InScenePlaced, playerObject, ownerClientId, destroyWithScene);
 
             if ((NetworkManager.DistributedAuthorityMode && NetworkManager.DAHost) || (!NetworkManager.DistributedAuthorityMode && NetworkManager.IsServer))
             {
@@ -2217,7 +2221,6 @@ namespace Unity.Netcode
             // DANGO-TODO: Do we want to worry about ownership permissions here?
             // It wouldn't make sense to not allow parenting, but keeping this note here as a reminder.
             var isAuthority = HasAuthority || (AllowOwnerToParent && IsOwner);
-            Debug.Log($"something is broken! isAuthority={isAuthority} | HasAuthority={HasAuthority} | (AllowOwnerToParent && IsOwner)={(AllowOwnerToParent && IsOwner)}");
 
             // If we don't have authority and we are not shutting down, then don't allow any parenting.
             // If we are shutting down and don't have authority then allow it.
@@ -2435,8 +2438,7 @@ namespace Unity.Netcode
             // Handle the first in-scene placed NetworkObject parenting scenarios. Once the m_LatestParent
             // has been set, this will not be entered into again (i.e. the later code will be invoked and
             // users will get notifications when the parent changes).
-            var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
+            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && InScenePlaced)
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
@@ -3142,7 +3144,7 @@ namespace Unity.Netcode
                 NetworkObjectId = NetworkObjectId,
                 OwnerClientId = OwnerClientId,
                 IsPlayerObject = IsPlayerObject,
-                IsSceneObject = IsSceneObject ?? true,
+                IsSceneObject = InScenePlaced,
                 DestroyWithScene = DestroyWithScene,
                 DontDestroyWithOwner = DontDestroyWithOwner,
                 HasOwnershipFlags = NetworkManager.DistributedAuthorityMode,
@@ -3367,7 +3369,7 @@ namespace Unity.Netcode
         {
             if (ActiveSceneSynchronization)
             {
-                if (IsSceneObject.HasValue && !IsSceneObject.Value)
+                if (!InScenePlaced)
                 {
                     // Just in case it is a recycled NetworkObject, unsubscribe first
                     SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
@@ -3384,7 +3386,7 @@ namespace Unity.Netcode
         {
             // Early exit if there is no NetworkManager assigned, the NetworkManager is shutting down, the NetworkObject
             // is not spawned, or an in-scene placed NetworkObject
-            if (NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
+            if (NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned || InScenePlaced)
             {
                 return;
             }
@@ -3394,7 +3396,7 @@ namespace Unity.Netcode
             {
                 // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
                 // and update their scene handles
-                if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
+                if (gameObject.scene != next && gameObject.transform.parent == null)
                 {
                     SceneManager.MoveGameObjectToScene(gameObject, next);
                     SceneChangedUpdate(next);
@@ -3487,7 +3489,7 @@ namespace Unity.Netcode
             // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
             // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
             if (!SceneMigrationSynchronization || !IsSpawned || NetworkManager == null || NetworkManager.ShutdownInProgress ||
-                !NetworkManager.NetworkConfig.EnableSceneManagement || IsSceneObject != false || !gameObject)
+                !NetworkManager.NetworkConfig.EnableSceneManagement || InScenePlaced || !gameObject)
             {
                 // Stop checking for a scene migration
                 return false;
@@ -3521,7 +3523,7 @@ namespace Unity.Netcode
 
                 // If scene management is disabled and this is an in-scene placed NetworkObject then go ahead
                 // and send the InScenePlacedSourcePrefab's GlobalObjectIdHash value (i.e. what to dynamically spawn)
-                if (!NetworkManager.NetworkConfig.EnableSceneManagement && IsSceneObject.Value && InScenePlacedSourceGlobalObjectIdHash != 0)
+                if (!NetworkManager.NetworkConfig.EnableSceneManagement && InScenePlaced && InScenePlacedSourceGlobalObjectIdHash != 0)
                 {
                     return InScenePlacedSourceGlobalObjectIdHash;
                 }
@@ -3529,7 +3531,7 @@ namespace Unity.Netcode
                 // If the PrefabGlobalObjectIdHash is a non-zero value and the GlobalObjectIdHash value is
                 // different from the PrefabGlobalObjectIdHash value, then the NetworkObject instance is
                 // an override for the original network prefab (i.e. PrefabGlobalObjectIdHash)
-                if (!IsSceneObject.Value && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
+                if (!InScenePlaced && GlobalObjectIdHash != PrefabGlobalObjectIdHash)
                 {
                     // If the PrefabGlobalObjectIdHash is already populated (i.e. InstantiateAndSpawn used), then return this
                     if (PrefabGlobalObjectIdHash != 0)

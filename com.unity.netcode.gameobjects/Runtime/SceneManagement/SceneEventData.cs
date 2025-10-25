@@ -376,7 +376,7 @@ namespace Unity.Netcode
 #endif
             foreach (var sobj in inSceneNetworkObjects)
             {
-                if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
+                if (sobj.InScenePlaced && !sobj.IsSpawned)
                 {
                     sobj.NetworkManagerOwner = m_NetworkManager;
                     m_DespawnedInSceneObjectsSync.Add(sobj);
@@ -1051,10 +1051,10 @@ namespace Unity.Netcode
                             // Find all active and non-active in-scene placed NetworkObjects
 #if UNITY_2023_1_OR_NEWER
                             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.InstanceID).Where((c) =>
-                            c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+                            c.GetSceneOriginHandle() == localSceneHandle && c.InScenePlaced).ToList();
 #else
                             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) =>
-                            c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+                            c.GetSceneOriginHandle() == localSceneHandle && c.InScenePlaced).ToList();
 #endif
 
 
@@ -1169,7 +1169,7 @@ namespace Unity.Netcode
                 // Notify that all in-scene placed NetworkObjects have been spawned
                 foreach (var networkObject in m_NetworkObjectsSync)
                 {
-                    if (networkObject.IsSceneObject.HasValue && networkObject.IsSceneObject.Value)
+                    if (networkObject.IsSpawned && networkObject.InScenePlaced)
                     {
                         networkObject.InternalInSceneNetworkObjectsSpawned();
                     }

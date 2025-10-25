@@ -157,9 +157,7 @@ namespace TestProject.RuntimeTests
             // Spawn 9 NetworkObject instances
             for (int i = 0; i < k_MaxObjectsToSpawn; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefab);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
-                serverNetworkObject.Spawn();
+                var serverNetworkObject = SpawnObject(m_TestPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
             yield return WaitForConditionOrTimeOut(VerifyAllClientsSpawnedInstances);
@@ -270,13 +268,11 @@ namespace TestProject.RuntimeTests
             // Spawn 3 NetworkObject instances that auto synchronize to active scene changes
             for (int i = 0; i < 3; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefabAutoSynchActiveScene);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
                 // We are also testing that objects marked to synchronize with changes to
                 // the active scene and marked to destroy with scene =are destroyed= if
                 // the scene being unloaded is currently the active scene and the scene that
                 // the NetworkObjects reside within.
-                serverNetworkObject.Spawn(true);
+                var serverNetworkObject = SpawnObject(m_TestPrefabAutoSynchActiveScene, m_ServerNetworkManager, true).GetComponent<NetworkObject>();
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
 
@@ -285,13 +281,11 @@ namespace TestProject.RuntimeTests
             // instances)
             for (int i = 0; i < 3; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefab);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
                 // This set of NetworkObjects will be used to verify that NetworkObjets
                 // spawned with DestroyWithScene set to false will migrate into the current
                 // active scene if the scene they currently reside within is destroyed and
                 // is not the currently active scene.
-                serverNetworkObject.Spawn();
+                var serverNetworkObject = SpawnObject(m_TestPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
                 m_ServerSpawnedPrefabInstances.Add(serverNetworkObject);
             }
 
@@ -299,12 +293,10 @@ namespace TestProject.RuntimeTests
             // and ==should be== destroyed with the scene when it is unloaded
             for (int i = 0; i < 3; i++)
             {
-                var serverInstance = Object.Instantiate(m_TestPrefabDestroyWithScene);
-                var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
                 // This set of NetworkObjects will be used to verify that NetworkObjets
                 // spawned with DestroyWithScene == true will get destroyed when the scene
                 // is unloaded
-                serverNetworkObject.Spawn(true);
+                var serverNetworkObject = SpawnObject(m_TestPrefabDestroyWithScene, m_ServerNetworkManager, true).GetComponent<NetworkObject>();
                 m_ServerSpawnedDestroyWithSceneInstances.Add(serverNetworkObject);
             }
 

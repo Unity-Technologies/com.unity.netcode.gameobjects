@@ -160,9 +160,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
 #if UNITY_2023_1_OR_NEWER
-            var inSceneNetworkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
+            var inSceneNetworkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.InScenePlaced && c.GetSceneOriginHandle() == scene.handle);
 #else
-            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
+            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.InScenePlaced && c.GetSceneOriginHandle() == scene.handle);
 #endif
 
             foreach (var sobj in inSceneNetworkObjects)
@@ -358,9 +358,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                         if (networkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                         {
-                            if (NetworkManager.LogLevel == LogLevel.Developer)
+                            if (NetworkManager.LogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogInfo($"{NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
+                                NetworkLog.LogInfo($"[Client-{NetworkManager.LocalClientId}] {NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
                             }
                             skip = true;
                             break;
@@ -369,7 +369,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (!skip && !NetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                     {
-                        if (NetworkManager.LogLevel == LogLevel.Developer)
+                        if (NetworkManager.LogLevel <= LogLevel.Normal)
                         {
                             NetworkLog.LogInfo($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
                         }
@@ -435,6 +435,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
             {
+                Debug.Log($"[Client-{networkManager.LocalClientId}] Starting tracking scene handle {scene.handle}");
                 var sceneEntry = new SceneEntry()
                 {
                     IsAssigned = true,
@@ -446,15 +447,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private bool DoesANetworkManagerHoldThisScene(Scene scene)
         {
-            foreach (var netManEntry in SceneNameToSceneHandles)
+            foreach (var sceneNameToHandles in SceneNameToSceneHandles.Values)
             {
-                if (!netManEntry.Value.ContainsKey(scene.name))
+                if (!sceneNameToHandles.ContainsKey(scene.name))
                 {
                     continue;
                 }
                 // The other NetworkManager only has to have an entry to
                 // disqualify this scene instance
-                if (netManEntry.Value[scene.name].ContainsKey(scene.handle))
+                if (sceneNameToHandles[scene.name].ContainsKey(scene.handle))
                 {
                     return true;
                 }
@@ -601,15 +602,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
             for (int i = 0; i < sceneCount; i++)
             {
                 var scene = SceneManager.GetSceneAt(i);
+                Debug.Log($"[Client-{networkManager.LocalClientId}] Populating scene {scene.handle}");
                 // Ignore scenes that belong to other NetworkManager instances
 
                 if (DoesANetworkManagerHoldThisScene(scene))
                 {
+                    Debug.Log($"[Client-{networkManager.LocalClientId}][{scene.handle}] continuing because a network manager has already been holding this scene.");
                     continue;
                 }
 
                 if (!DoesSceneHaveUnassignedEntry(scene.name, networkManager))
                 {
+                    Debug.Log($"[Client-{networkManager.LocalClientId}][{scene.handle}] continuing because scene is already assigned.");
                     continue;
                 }
 
@@ -620,6 +624,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
                 {
+                    Debug.Log($"$[Client-{networkManager.LocalClientId}] Starting tracking scene handle {scene.handle}");
                     var sceneEntry = new SceneEntry()
                     {
                         IsAssigned = false,
@@ -759,7 +764,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Moving {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
                         Object.DontDestroyOnLoad(networkObject.gameObject);

@@ -2235,7 +2235,7 @@ namespace Unity.Netcode
                 // This is only done for dynamically spawned NetworkObjects
                 // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
                 // then skip it (it will reside in the currently active scene in this scenario on the client-side)
-                if (networkObject.IsSceneObject.Value == false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+                if (!networkObject.InScenePlaced && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
                 {
                     networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
@@ -2697,7 +2697,7 @@ namespace Unity.Netcode
                 if (!networkObject.DestroyWithScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                         // When temporarily migrating to the DDOL, adjust the network and origin scene handles so no messages are generated
@@ -2744,8 +2744,8 @@ namespace Unity.Netcode
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.gameObject.scene.handle;
-                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-                if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == NetworkManager ||
+                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per-scene basis (for additive scenes)
+                if (networkObjectInstance.InScenePlaced && (networkObjectInstance.NetworkManager == NetworkManager ||
                     networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
@@ -2784,7 +2784,7 @@ namespace Unity.Netcode
                 {
                     // only move dynamically spawned network objects, with no parent as child objects will follow,
                     // back into the currently active scene
-                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    if (networkObject.gameObject.transform.parent == null && !networkObject.InScenePlaced)
                     {
                         if (NetworkManager.DistributedAuthorityMode)
                         {
@@ -2868,7 +2868,7 @@ namespace Unity.Netcode
             }
 
             // Ignore in-scene placed NetworkObjects
-            if (networkObject.IsSceneObject != false)
+            if (networkObject.InScenePlaced)
             {
                 // Really, this should ever happen but in case it does
                 if (NetworkManager.LogLevel == LogLevel.Developer)

@@ -174,11 +174,6 @@ namespace Unity.Netcode.RuntimeTests
                 networkManager.NetworkConfig.Prefabs.Add(m_ClientSidePlayerPrefab);
             }
 
-            m_PrefabOverride.Prefab.GetComponent<NetworkObject>().IsSceneObject = false;
-            m_PrefabOverride.SourcePrefabToOverride.GetComponent<NetworkObject>().IsSceneObject = false;
-            m_PrefabOverride.OverridingTargetPrefab.GetComponent<NetworkObject>().IsSceneObject = false;
-            m_ClientSidePlayerPrefab.Prefab.GetComponent<NetworkObject>().IsSceneObject = false;
-
             base.OnServerAndClientsCreated();
         }
 

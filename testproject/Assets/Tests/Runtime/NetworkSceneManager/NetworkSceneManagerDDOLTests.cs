@@ -152,7 +152,7 @@ namespace TestProject.RuntimeTests
             public void SetInScene(bool isInScene)
             {
                 var networkObject = GetComponent<NetworkObject>();
-                networkObject.IsSceneObject = isInScene;
+                networkObject.SetSceneObjectStatus(isInScene);
             }
         }
 
