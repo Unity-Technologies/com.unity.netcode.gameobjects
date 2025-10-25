@@ -15,6 +15,11 @@ namespace Unity.Netcode.Editor.Configuration
         /// </summary>
         [SerializeField] public string NetworkPrefabsPath = DefaultNetworkPrefabsPath;
 
+        [HideInInspector]
+        [SerializeField]
+        internal NgoVersion CurrentVersion;
+
+
         /// <summary>
         /// A temporary network prefabs path used internally.
         /// </summary>
