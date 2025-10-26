@@ -1,6 +1,6 @@
 # RPC
 
-Any process can communicate with any other process by sending a remote procedure call (RPC). As of Netcode for GameObjects version 1.8.0, the `Rpc` attribute encompasses server to client RPCs, client to server RPCs, and client to client RPCs.
+Any process can communicate with any other process by sending a remote procedure call (RPC). The `Rpc` attribute is the recommended attribute to use when declaring RPC methods. The `Rpc` attribute's parameters define the receivers and execution rights for the RPC method.
 
 ![](../../images/sequence_diagrams/RPCs/ServerRPCs.png)
 
@@ -204,7 +204,7 @@ There are a few other parameters that can be passed to either the `Rpc` attribut
 | Parameter               | Description                                                  |
 | ----------------------- | ------------------------------------------------------------ |
 | `Delivery`            | Controls whether the delivery is reliable (default) or unreliable.<br /><br />Options: `RpcDelivery.Reliable` or `RpcDelivery.Unreliable`<br />Default: `RpcDelivery.Reliable` |
-| `RequireOwnership`    | If `true`, this RPC throws an exception if invoked by a player that does not own the object. This is in effect for server-to-client, client-to-server, and client-to-client RPCs - i.e., a server-to-client RPC will still fail if the server is not the object's owner.<br /><br />Default: `false` |
+| `InvokePermission`    | Sets an RPC's invocation permissions.<br /><br />Options:<br /> `RpcInvokePermission.Server` - This RPC throws an exception if invoked by a game client that is not the server.<br />`RpcInvokePermission.Owner` - This RPC throws an exception if invoked by a game client that does not own the object.<br />`RpcInvokePermission.Everyone` - This can be invoked by any connected game client.<br />Default: `RpcInvokePermission.Everyone` |
 | `DeferLocal`          | If `true`, RPCs that execute locally will be deferred until the start of the next frame, as if they had been sent over the network. (They will not actually be sent over the network, but will be treated as if they were.) This is useful for mutually recursive RPCs on hosts, where sending back and forth between the server and the "host client" will cause a stack overflow if each RPC is executed instantly; simulating the flow of RPCs between remote client and server enables this flow to work the same in both contexts.<br /><br />Default: `false` |
 | `AllowTargetOverride` | By default, any `SendTo` value other than `SendTo.SpecifiedInParams` is a hard-coded value that cannot be changed. Setting this to `true` allows you to provide an alternate target at runtime, while using the `SendTo` value as a fallback if no runtime value is provided. |
 
@@ -214,6 +214,116 @@ There are a few other parameters that can be passed to either the `Rpc` attribut
 | ------------------ | ------------------------------------------------------------ |
 | `Target`         | Runtime override destination for the RPC. (See above for more details.) Populating this value will throw an exception unless either the `SendTo` value for the RPC is `SendTo.SpecifiedInParams`, or `AllowTargetOverride` is `true`.<br /><br />Default: `null` |
 | `LocalDeferMode` | Overrides the `DeferLocal` value. `DeferLocalMode.Defer` causes this particular invocation of this RPC to be deferred until the next frame even if `DeferLocal` is `false`, while `DeferLocalMode.SendImmediate` causes the RPC to be executed immediately on the local machine even if `DeferLocal` is `true`. `DeferLocalMode.Default` does whatever the `DeferLocal` value in the attribute is configured to do.<br /><br />Options: `DeferLocalMode.Default`, `DeferLocalMode.Defer`, `DeferLocalMode.SendImmediate`<br />Default: `DeferLocalMode.Default` |
+
+## Invocation order
+
+Rpc message sent with `RpcDelivery.Reliable` will be sent and invoked on other game clients in the same order as they were called on the local game client.
+
+```csharp
+[Rpc(SendTo.Server)]
+public void OpenDoorRpc(int doorId, RpcParams rpcParams)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} has opened door {doorId}");
+
+    // Server can handle door opening here
+}
+
+[Rpc(SendTo.Server)]
+void OpenChestRPC(int chestId, RpcParams rpcParams)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} has opened chest {chestId}");
+
+    // Server can handle door opening here
+}
+
+void Update()
+{
+    if (IsClient && Input.GetKeyDown(KeyCode.O))
+    {
+        OpenDoorRpc(1)
+        OpenDoorRpc(2)
+        OpenChestRpc(5)
+    }
+
+    // Other clients will log:
+    //
+    // "client 1 has opened door 1"
+    // "client 1 has opened door 2"
+    // "client 1 has opened chest 5"
+}
+```
+
+> [!Warning]
+> Invocation order is not guaranteed with nested RPC invocations that include targets that may invoke locally. Invocation order is also not guaranteed when using `RpcDelivery.Unreliable`
+
+### Deferring local invocation
+
+Invoking an RPC from within another RPC introduces the risk that the local RPC may invoke before messages are sent to other game clients. This will result in the RPC message for the inner RPC invocation being sent before the message for the outer RPC.
+
+```csharp
+[Rpc(SendTo.Everyone)]
+public void TryOpenDoorRpc(int doorId, RpcParams rpcParams)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} is trying to open door {doorId}");
+
+    if (HasAuthority) {
+      // Authority handles opening the door here
+
+      // If the authority is invoking TryOpenDoorRpc locally before the authority has sent TryOpenDoorRpc to other clients, OpenDoorRpc will be sent before TryOpenDoorRpc.
+      OpenDoorRpc(doorId);
+    }
+}
+
+[Rpc(SendTo.Everyone)]
+public void OpenDoorRpc(int doorId, RpcParams rpcParams)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} marked door {doorId} as open");
+}
+
+void Update()
+{
+    if (Input.GetKeyDown(KeyCode.O))
+    {
+        // Invocation of TryOpenDoorRpc and OpenDoorRpc may be inverted depending on the context in which TryOpenDoorRpc is invoked
+        TryOpenDoorRpc(20);
+    }
+}
+```
+
+Use the RPC `LocalDeferMode` to resolve issue. Configuring the RPC to be deferred when invoked locally will ensure that any outer RPC messages are always sent before the inner function is invoked.
+
+```csharp
+// An RPC can be configured to defer the local invocation in the attribute definition
+[Rpc(SendTo.Everyone, DeferLocal = true)]
+public void TryOpenDoorRpc(int doorId, RpcParams rpcParams = default)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} is trying to open door {doorId}");
+
+    if (HasAuthority) {
+
+      // Authority handles opening the door here
+
+      // Defer mode can also be passed in at the call site.
+      OpenDoorRpc(doorId, LocalDeferMode.Defer);
+    }
+}
+
+[Rpc(SendTo.Everyone)]
+public void OpenDoorRpc(int doorId, RpcParams rpcParams = default)
+{
+    Debug.Log($"client {rpcParams.Receive.SenderClientId} marked door {doorId} as open");
+}
+
+void Update()
+{
+    if (Input.GetKeyDown(KeyCode.O))
+    {
+        // TryOpenDoorRpc is defined with DeferLocal
+        // DeferLocal ensures that RPC messages are sent to all other targets before the RPC is invoked locally
+        TryOpenDoorRpc(20);
+    }
+}
+```
 
 ## Additional resources
 

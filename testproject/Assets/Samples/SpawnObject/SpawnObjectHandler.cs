@@ -65,8 +65,8 @@ public class SpawnObjectHandler : NetworkBehaviour
         SetMotion(networkObject.gameObject);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void AutoSpawnObjectServerRpc(int selection, ServerRpcParams serverRpcParams = default)
+    [Rpc(SendTo.Server)]
+    private void AutoSpawnObjectServerRpc(int selection, RpcParams serverRpcParams = default)
     {
         AutoSpawnObject(serverRpcParams.Receive.SenderClientId, selection);
     }
@@ -88,8 +88,8 @@ public class SpawnObjectHandler : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void ManualSpawnObjectServerRpc(int selection, ServerRpcParams serverRpcParams = default)
+    [Rpc(SendTo.Server)]
+    private void ManualSpawnObjectServerRpc(int selection, RpcParams serverRpcParams = default)
     {
         AutoSpawnObject(serverRpcParams.Receive.SenderClientId, selection);
     }

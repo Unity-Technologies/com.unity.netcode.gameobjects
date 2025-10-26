@@ -10,10 +10,13 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- `RpcInvokePermission` to control who has permission to invoke specific RPC methods. (#3731)
 - Added NetworkRigidbody documentation section. (#3664)
+- Added new fields to the `SceneMap` struct when using Unity 6.3 or higher. These fields allow referencing scene handles via the new `SceneHandle` struct. (#3734)
 
 ### Changed
 
+- Better error message when using generic IEquatable in a generic INetworkSerializable class and updated documentation with workaround. (#3739)
 - The `NetworkManager` functions `GetTransportIdFromClientId` and `GetClientIdFromTransportId` will now return `ulong.MaxValue` when the clientId or transportId do not exist. (#3707)
 - Changed NetworkShow to send a message at the end of the frame and force a NetworkVariable synchronization prior to generating the CreateObjectMessage as opposed to waiting until the next network tick to synchronize the show with the update to NetworkVariables. (#3664)
 - Changed NetworkTransform now synchronizes `NetworkTransform.SwitchTransformSpaceWhenParented` when it is updated by the motion model authority. (#3664)
@@ -24,9 +27,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Deprecated
 
+- Deprecated all `RequireOwnership` fields around the RPCs in favor of the `RpcInvokePermission`. (#3731)
+- On Unity 6.5 some `SceneMap` fields that use an `int` to represent a `SceneHandle` are deprecated. (#3734)
 
 ### Removed
-
 
 ### Fixed
 
@@ -34,6 +38,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkTransform state synchronization issue when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled and the associated NetworkObject is parented multiple times in a single frame or within a couple of frames. (#3664)
 - Fixed issue when spawning, parenting, and immediately re-parenting when `NetworkTransform.SwitchTransformSpaceWhenParented` is enabled. (#3664)
 - Fixed issue where the disconnect event and provided message was too generic to know why the disconnect occurred. (#3551)
+- Exception when the network prefab list in the network manager has uninitialized elements. (#3739)
 
 ### Security
 
