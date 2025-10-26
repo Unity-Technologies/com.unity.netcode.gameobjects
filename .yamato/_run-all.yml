@@ -275,10 +275,8 @@ run_all_project_tests_cmb_service_trunk:
   dependencies:
 {% for project in projects.default -%}
 {% for platform in test_platforms.default -%}
-{% for editor in validation_editors.default -%}
 {% for backend in scripting_backends -%}
-    - .yamato/cmb_service_standalone_tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_{{ editor }}
-{% endfor -%}
+    - .yamato/cmb_service_standalone_tests.yml#cmb_service_standalone_test_{{ project.name }}_{{ platform.name }}_{{ backend }}_trunk
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
