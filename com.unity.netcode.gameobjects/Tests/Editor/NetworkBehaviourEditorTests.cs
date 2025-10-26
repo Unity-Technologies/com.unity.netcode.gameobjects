@@ -1,5 +1,7 @@
+using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.EditorTests
@@ -69,6 +71,34 @@ namespace Unity.Netcode.EditorTests
             Object.DestroyImmediate(gameObject);
         }
 
+        [UnityTest]
+        public IEnumerator RpcShouldNoopWhenInvokedWithoutANetworkManagerSession()
+        {
+            var noNetworkError = "Rpc methods can only be invoked after starting the NetworkManager!";
+            var gameObject = new GameObject(nameof(AccessNetworkObjectTestInDerivedClassWithOverrideFunctions));
+            var networkBehaviour = gameObject.AddComponent<RpcNetworkBehaviour>();
+
+            // No networkManager exists so error should be logged
+            LogAssert.Expect(LogType.Error, noNetworkError);
+            networkBehaviour.NoNetworkRpc();
+
+            // Ensure RPC was not invoked locally
+            yield return null;
+            Assert.That(networkBehaviour.RpcWasInvoked, Is.False);
+
+            var networkManager = gameObject.AddComponent<NetworkManager>();
+            networkManager.SetSingleton();
+
+            LogAssert.Expect(LogType.Error, noNetworkError);
+            networkBehaviour.NoNetworkRpc();
+
+            // Ensure RPC was not invoked locally
+            yield return null;
+            Assert.That(networkBehaviour.RpcWasInvoked, Is.False);
+
+            Object.DestroyImmediate(gameObject);
+        }
+
         // Note: in order to repro https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1078
         // this child class must be defined before its parent to assure it is processed first by ILPP
         internal class DerivedNetworkBehaviour : EmptyNetworkBehaviour
@@ -77,6 +107,17 @@ namespace Unity.Netcode.EditorTests
 
         internal class EmptyNetworkBehaviour : NetworkBehaviour
         {
+        }
+
+        internal class RpcNetworkBehaviour : NetworkBehaviour
+        {
+            public bool RpcWasInvoked;
+
+            [Rpc(SendTo.Everyone)]
+            public void NoNetworkRpc()
+            {
+                RpcWasInvoked = true;
+            }
         }
     }
 }

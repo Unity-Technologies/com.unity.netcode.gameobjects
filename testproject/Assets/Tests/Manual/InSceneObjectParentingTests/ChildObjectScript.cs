@@ -95,8 +95,8 @@ namespace TestProject.ManualTests
         }
 
 
-        [ServerRpc(RequireOwnership = false)]
-        public void PickupItemServerRpc(bool worldPositionStays = true, ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void PickupItemServerRpc(bool worldPositionStays = true, RpcParams serverRpcParams = default)
         {
             if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {
@@ -104,8 +104,8 @@ namespace TestProject.ManualTests
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
-        public void DropItemServerRpc(ServerRpcParams serverRpcParams = default)
+        [Rpc(SendTo.Server)]
+        public void DropItemServerRpc(RpcParams serverRpcParams = default)
         {
             if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {

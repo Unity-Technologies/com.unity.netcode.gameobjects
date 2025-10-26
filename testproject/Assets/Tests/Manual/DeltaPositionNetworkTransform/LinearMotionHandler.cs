@@ -412,7 +412,7 @@ namespace TestProject.ManualTests
             ClientDelta.text = $"C-Delta: {GetVector3AsString(ref m_ClientDelta)}";
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server)]
         private void OnNonAuthorityUpdatePositionServerRpc(Vector3 position)
         {
             m_ClientPosition = position;
