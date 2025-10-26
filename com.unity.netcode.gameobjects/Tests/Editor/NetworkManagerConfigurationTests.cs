@@ -295,6 +295,22 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenThereAreUninitializedElementsInPrefabsList_NoErrors()
+        {
+            var networkConfig = new NetworkConfig();
+
+            networkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { null };
+
+            networkConfig.InitializePrefabs();
+
+            // Null elements will be removed from the list so it should be empty
+            Assert.IsTrue(networkConfig.Prefabs.NetworkPrefabsLists.Count == 0);
+            Assert.IsTrue(networkConfig.Prefabs.Prefabs.Count == 0);
+
+            networkConfig.Prefabs.Shutdown();
+        }
+
+        [Test]
         public void WhenModifyingPrefabListUsingPrefabsListAPI_ModificationIsShared()
         {
             // Setup
