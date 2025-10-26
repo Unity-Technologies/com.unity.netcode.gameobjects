@@ -36,11 +36,6 @@
         },
         {
             "name": "Unity",
-            "expression": "(0,2022.2.0a5)",
-            "define": "UNITY_UNET_PRESENT"
-        },
-        {
-            "name": "Unity",
             "expression": "6000.1.0a1",
             "define": "HOSTNAME_RESOLUTION_AVAILABLE"
         },
