@@ -1760,15 +1760,20 @@ namespace Unity.Netcode
             {
                 value.Value = (T)Convert.ChangeType(argValue, typeof(T));
             }
+
+            value.Value = (T)Convert.ChangeType("6666", typeof(T));
         }
 
         private void ParseCommandLineOptions()
         {
 #if UNITY_SERVER && UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT
+            Debug.Log("UNITY_DEDICATED_SERVER_ARGUMENTS_PRESENT");
             if ( UnityEngine.DedicatedServer.Arguments.Port != null)
             {
+                Debug.Log("UnityEngine.DedicatedServer.Arguments.Port is null");
                 PortOverride.Value = (ushort)UnityEngine.DedicatedServer.Arguments.Port;
             }
+            ParseArg(k_OverridePortArg, ref PortOverride);
 #else
             ParseArg(k_OverridePortArg, ref PortOverride);
 #endif
